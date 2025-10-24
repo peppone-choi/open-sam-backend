@@ -1,26 +1,44 @@
-import cron from 'node-cron';
 import dotenv from 'dotenv';
+import { mongoConnection } from './infrastructure/db/connection';
+import { GameLoop } from './daemon/game-loop';
+import { CommandProcessor } from './daemon/command-processor';
+import { PersistScheduler } from './daemon/persist-scheduler';
+import { logger } from './common/utils/logger';
 
 dotenv.config();
 
-console.log('Game Daemon started');
+async function start() {
+  try {
+    // TODO: MongoDB 연결
+    await mongoConnection.connect(process.env.MONGODB_URI!);
 
-// 매 초마다 실행 (테스트용)
-cron.schedule('* * * * * *', () => {
-  console.log('Tick:', new Date().toISOString());
-});
+    // TODO: Game Loop 시작
+    const gameLoop = new GameLoop();
+    gameLoop.start();
 
-// 매 분마다 실행
-cron.schedule('* * * * *', () => {
-  console.log('Every minute task');
-});
+    // TODO: Command Processor 시작
+    const processor = new CommandProcessor();
+    await processor.start();
 
-// 매 10초마다 실행
-cron.schedule('*/10 * * * * *', () => {
-  console.log('Every 10 seconds task');
-});
+    // TODO: Persist Scheduler 시작
+    const scheduler = new PersistScheduler();
+    scheduler.start();
 
-process.on('SIGINT', () => {
-  console.log('Daemon shutting down...');
-  process.exit(0);
-});
+    logger.info('✅ Game Daemon started');
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      logger.info('\n🛑 Shutting down...');
+      gameLoop.stop();
+      processor.stop();
+      await mongoConnection.disconnect();
+      process.exit(0);
+    });
+
+  } catch (error) {
+    logger.error('Failed to start daemon:', error);
+    process.exit(1);
+  }
+}
+
+start();
