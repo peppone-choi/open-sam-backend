@@ -27,14 +27,38 @@ model General {
   intel      Int @default(50)
   politics   Int @default(50)
 
-  // TODO: 추가 능력치, 경험치, 레벨 등
-  // TODO: PCP, MCP (Command Points)
-  // TODO: 장비, 특수능력 관계
+  // 경험치 & 레벨
+  experience Int @default(0)
+  level      Int @default(1)
 
-  nation   Nation? @relation(fields: [nationId], references: [id])
-  city     City?   @relation(fields: [cityId], references: [id])
-  items    Item[]
-  commands Command[]
+  // Command Points (CP)
+  pcp    Int @default(100) // Political/Personal CP
+  pcpMax Int @default(100)
+  mcp    Int @default(100) // Military CP
+  mcpMax Int @default(100)
+
+  // 자원
+  gold Int @default(10000)
+  rice Int @default(10000)
+
+  // 병력
+  crew     Int @default(0) // 현재 병력
+  crewType String? // 병종 (CrewType ID)
+
+  // 훈련도
+  training Int @default(0)
+
+  // 상태
+  isOnline       Boolean   @default(false)
+  lastOnline     DateTime?
+  isProtected    Boolean   @default(false)
+  protectedUntil DateTime?
+
+  nation           Nation?           @relation(fields: [nationId], references: [id])
+  city             City?             @relation(fields: [cityId], references: [id])
+  items            Item[]
+  commands         Command[]
+  specialAbilities SpecialAbility[]
 
   @@index([nationId])
   @@index([cityId])
@@ -127,40 +151,159 @@ model Command {
   @@index([completionTime])
 }
 
-// 6. 아이템 (Item)
+// 6. 아이템 (Item) - Runtime instance
 model Item {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name      String
-  type      String // WEAPON, ARMOR, ACCESSORY, BOOK
-  rarity    String @default("COMMON") // COMMON, RARE, LEGENDARY
-  
   generalId String?
+  typeId    String
+  
+  // 인스턴스별 데이터
+  durability  Int?     // 내구도
+  rolledStats Json?    // 랜덤 옵션
+  equippedAt  DateTime?
 
-  // 효과 (JSON으로 유연하게)
-  effects Json // { "leadership": 10, "strength": 5 }
-
-  // TODO: 아이템 획득 조건, 특수 효과
-
-  general General? @relation(fields: [generalId], references: [id])
+  general General?  @relation(fields: [generalId], references: [id])
+  type    ItemType @relation(fields: [typeId], references: [id])
 
   @@index([generalId])
+  @@index([typeId])
 }
 
-// 7. 특수능력 (SpecialAbility)
+// 7. 특수능력 (SpecialAbility) - Runtime instance
 model SpecialAbility {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name        String @unique
+  generalId String
+  typeId    String
+
+  level       Int      @default(1)
+  acquiredAt  DateTime @default(now())
+
+  general General          @relation(fields: [generalId], references: [id])
+  type    SpecialAbilityType @relation(fields: [typeId], references: [id])
+
+  @@index([generalId])
+  @@index([typeId])
+}
+
+// ===== Master Data (Type Tables) =====
+
+// ItemType - 하드코딩된 아이템을 DB로
+model ItemType {
+  id        String   @id // che_명마_01_노기
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name           String // 노기(+1)
+  category       String // 명마, 무기, 서적
+  rarity         String @default("COMMON") // COMMON, RARE, LEGENDARY
+  slot           String @default("NONE") // WEAPON, ARMOR, ACCESSORY, BOOK, HORSE
+
+  // 기본 스탯
+  statType  String? // leadership, strength, intel
+  statValue Int     @default(0)
+
+  // 비용 및 조건
+  cost       Int     @default(0)
+  buyable    Boolean @default(true)
+  consumable Boolean @default(false)
+  reqSecu    Int     @default(0) // 필요 치안
+
+  // 효과 (JSON)
+  effectCode   String  @default("NONE") // ADD_STAT, COUNTER, etc.
+  effectParams Json?
+
+  // 밸런싱
+  balanceVersion Int     @default(1)
+  legacyKey      String? @unique
+
+  items Item[]
+
+  @@index([category])
+  @@index([balanceVersion])
+}
+
+// CrewType - 병종
+model CrewType {
+  id        String   @id // che_보병, che_궁병, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name String
+
+  // 전투 스탯
+  atk   Int @default(0)
+  def   Int @default(0)
+  speed Int @default(0)
+
+  // 비용
+  costGold Int @default(0)
+  costRice Int @default(0)
+
+  // 지형 보정, 상성 (JSON)
+  terrainMods Json? // { "mountain": 1.2, "plain": 1.0 }
+  counters    Json? // { "cavalry": 1.5 }
+
+  // 밸런싱
+  balanceVersion Int     @default(1)
+  legacyKey      String? @unique
+
+  @@index([balanceVersion])
+}
+
+// SpecialAbilityType - 특수능력 타입
+model SpecialAbilityType {
+  id        String   @id // che_계략_삼략
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
   description String
-  type        String // PASSIVE, ACTIVE, BATTLE
+  category    String // PASSIVE, ACTIVE, BATTLE
 
   // 효과
-  effects Json
+  effectCode   String
+  effectParams Json
 
-  // TODO: 활성화 조건, 쿨다운
+  tags String[] // for filtering
+
+  // 밸런싱
+  balanceVersion Int     @default(1)
+  legacyKey      String? @unique
+
+  specialAbilities SpecialAbility[]
+
+  @@index([category])
+  @@index([balanceVersion])
+}
+
+// CommandType - 커맨드 타입 정의
+model CommandType {
+  id        String   @id // MOVE, RECRUIT, BUILD, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  description String
+
+  // Payload 스키마 (JSON Schema for validation)
+  payloadSchema Json
+
+  // 비용 및 제약
+  cooldownSec     Int  @default(0)
+  costFormulaRef  String? // 동적 비용 계산 참조
+  preconditions   Json? // 실행 조건
+
+  // 효과
+  effectParams Json?
+
+  // 밸런싱
+  balanceVersion Int @default(1)
+
+  @@index([balanceVersion])
 }
