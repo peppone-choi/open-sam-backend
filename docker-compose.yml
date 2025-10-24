@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sangokushi
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sangokushi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sangokushi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Server (개발 환경에서는 1개만 실행)
+  # 프로덕션에서는 docker-compose.prod.yml 참고
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://sangokushi:password@postgres:5432/sangokushi_db
+      REDIS_URL: redis://redis:6379
+      API_PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Game Daemon (단일 인스턴스)
+  game-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile.daemon
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://sangokushi:password@postgres:5432/sangokushi_db
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev:daemon
+
+volumes:
+  postgres_data:
+  redis_data:
