@@ -1,0 +1,166 @@
+// Prisma Schema for 삼국지 게임
+// 7개 핵심 엔티티: General, City, Nation, Battle, Command, Item, SpecialAbility
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. 장수 (General)
+model General {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 기본 정보
+  name      String
+  nationId  String?
+  cityId    String?
+
+  // 능력치 (0-150)
+  leadership Int @default(50)
+  strength   Int @default(50)
+  intel      Int @default(50)
+  politics   Int @default(50)
+
+  // TODO: 추가 능력치, 경험치, 레벨 등
+  // TODO: PCP, MCP (Command Points)
+  // TODO: 장비, 특수능력 관계
+
+  nation   Nation? @relation(fields: [nationId], references: [id])
+  city     City?   @relation(fields: [cityId], references: [id])
+  items    Item[]
+  commands Command[]
+
+  @@index([nationId])
+  @@index([cityId])
+}
+
+// 2. 도시 (City)
+model City {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name     String
+  nationId String?
+
+  // 자원
+  gold     Int @default(10000)
+  food     Int @default(10000)
+  garrison Int @default(5000)
+
+  // TODO: 좌표, 건물, 생산 시설 등
+  // TODO: 특수 자원 (무기, 말 등)
+
+  nation   Nation?    @relation(fields: [nationId], references: [id])
+  generals General[]
+  commands Command[]
+
+  @@index([nationId])
+}
+
+// 3. 국가 (Nation)
+model Nation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name      String @unique
+  color     String @default("#FF0000")
+  emperorId String?
+
+  // TODO: 국가 정책, 외교 관계, 직책 시스템
+
+  generals General[]
+  cities   City[]
+}
+
+// 4. 전투 (Battle)
+model Battle {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cityId       String
+  attackerNationId String
+  defenderNationId String
+
+  status String @default("ONGOING") // ONGOING, ATTACKER_WIN, DEFENDER_WIN
+
+  // TODO: 전투 유닛, 실시간 전투 상태
+  // TODO: 60 FPS 게임 루프 데이터
+
+  @@index([cityId])
+  @@index([status])
+}
+
+// 5. 커맨드 (Command)
+model Command {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  generalId String
+  cityId    String?
+
+  type   String // MOVE, PRODUCE, RECRUIT, TRAIN, BUILD, etc.
+  status String @default("PENDING") // PENDING, EXECUTING, COMPLETED, FAILED
+
+  data Json // 커맨드별 데이터 (유연성)
+
+  startTime      DateTime?
+  completionTime DateTime?
+  completedAt    DateTime?
+
+  // TODO: CP 소모량, 우선순위
+
+  general General @relation(fields: [generalId], references: [id])
+  city    City?   @relation(fields: [cityId], references: [id])
+
+  @@index([generalId])
+  @@index([status])
+  @@index([completionTime])
+}
+
+// 6. 아이템 (Item)
+model Item {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name      String
+  type      String // WEAPON, ARMOR, ACCESSORY, BOOK
+  rarity    String @default("COMMON") // COMMON, RARE, LEGENDARY
+  
+  generalId String?
+
+  // 효과 (JSON으로 유연하게)
+  effects Json // { "leadership": 10, "strength": 5 }
+
+  // TODO: 아이템 획득 조건, 특수 효과
+
+  general General? @relation(fields: [generalId], references: [id])
+
+  @@index([generalId])
+}
+
+// 7. 특수능력 (SpecialAbility)
+model SpecialAbility {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String @unique
+  description String
+  type        String // PASSIVE, ACTIVE, BATTLE
+
+  // 효과
+  effects Json
+
+  // TODO: 활성화 조건, 쿨다운
+}
