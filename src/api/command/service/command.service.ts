@@ -1,6 +1,6 @@
 import { CommandRepository } from '../repository/command.repository';
 import { CommandQueue } from '../../../infrastructure/queue/command-queue';
-import { ICommand, CommandType, SubmitCommandDto } from '../../../@types';
+import { ICommand, CommandType, SubmitCommandDto } from '../@types/command.types';
 import { HttpException } from '../../../common/errors/HttpException';
 
 /**

@@ -1,5 +1,5 @@
 import { GeneralModel, IGeneralDocument } from '../model/general.model';
-import { IGeneral } from '../../../@types';
+import { IGeneral } from '../@types/general.types';
 
 /**
  * General Repository (데이터 접근 계층)

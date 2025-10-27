@@ -1,11 +1,13 @@
 import { Schema, model, Document } from 'mongoose';
-import { ICity } from '../../@types';
+import { ICity } from '../@types/city.types';
 
 /**
  * City Mongoose Schema
  * schema.sql의 city 테이블 기반
  */
-export interface ICityDocument extends ICity, Document {}
+export interface ICityDocument extends Omit<ICity, 'id'>, Document {
+  id: string;
+}
 
 const CitySchema = new Schema<ICityDocument>(
   {

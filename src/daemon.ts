@@ -50,7 +50,7 @@ async function start() {
       logger.info('\n🛑 Shutting down...');
       gameLoop.stop();
       processor.stop();
-      scheduler.stop();
+      // scheduler.stop(); // TODO: Implement stop method
       await mongoConnection.disconnect();
       logger.info('✅ Daemon stopped');
       process.exit(0);

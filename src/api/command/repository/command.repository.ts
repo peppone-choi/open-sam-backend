@@ -1,5 +1,5 @@
 import { CommandModel, ICommandDocument } from '../model/command.model';
-import { ICommand, CommandStatus } from '../../../@types';
+import { ICommand, CommandStatus } from '../@types/command.types';
 
 /**
  * Command Repository (데이터 접근 계층)

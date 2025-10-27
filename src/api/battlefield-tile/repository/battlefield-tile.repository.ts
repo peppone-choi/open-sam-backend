@@ -5,7 +5,7 @@ export class BattleFieldTileRepository {
    * 도시의 타일 조회
    */
   async findByCityId(sessionId: string, cityId: string): Promise<IBattleFieldTileDocument | null> {
-    return await BattleFieldTileModel.findOne({ sessionId, cityId }).lean().exec();
+    return await BattleFieldTileModel.findOne({ sessionId, cityId }).lean().exec() as any;
   }
 
   /**
@@ -35,6 +35,6 @@ export class BattleFieldTileRepository {
    * 세션의 모든 타일 조회
    */
   async findBySessionId(sessionId: string): Promise<IBattleFieldTileDocument[]> {
-    return await BattleFieldTileModel.find({ sessionId }).lean().exec();
+    return await BattleFieldTileModel.find({ sessionId }).lean().exec() as any;
   }
 }

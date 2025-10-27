@@ -1,8 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { CityService } from '../service/city.service';
+import { CityRepository } from '../repository/city.repository';
+import { BattleFieldTileRepository } from '../../battlefield-tile/repository/battlefield-tile.repository';
+import { getCacheManager } from '../../../container';
 
 const router = Router();
-const service = new CityService();
+const cityRepo = new CityRepository();
+const tileRepo = new BattleFieldTileRepository();
+const cacheManager = getCacheManager();
+const service = new CityService(cityRepo, cacheManager, tileRepo);
 
 router.get('/:id', async (req: Request, res: Response) => {
   try {

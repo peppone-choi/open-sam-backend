@@ -83,7 +83,7 @@ export const makeCommandService = (): CommandService => {
  * GeneralService 팩토리
  */
 export const makeGeneralService = (): GeneralService => {
-  return new GeneralService(getGeneralRepository(), getCacheManager());
+  return new GeneralService(getGeneralRepository(), getCacheManager(), getCommandQueue());
 };
 
 /**

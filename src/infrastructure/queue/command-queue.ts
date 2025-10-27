@@ -1,5 +1,5 @@
 import { RedisService } from '../cache/redis.service';
-import { CommandType } from '../../@types';
+import { CommandType } from '../../api/command/@types/command.types';
 
 /**
  * 커맨드 큐 (Redis Streams)

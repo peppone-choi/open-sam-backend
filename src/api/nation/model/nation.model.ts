@@ -1,11 +1,13 @@
 import { Schema, model, Document } from 'mongoose';
-import { INation } from '../../@types';
+import { INation } from '../@types/nation.types';
 
 /**
  * Nation Mongoose Schema
  * schema.sql의 nation 테이블 기반
  */
-export interface INationDocument extends INation, Document {}
+export interface INationDocument extends Omit<INation, 'id'>, Document {
+  id: string;
+}
 
 const NationSchema = new Schema<INationDocument>(
   {

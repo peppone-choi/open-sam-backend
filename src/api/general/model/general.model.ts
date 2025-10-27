@@ -1,11 +1,13 @@
 import { Schema, model, Document } from 'mongoose';
-import { IGeneral } from '../../@types';
+import { IGeneral } from '../@types/general.types';
 
 /**
  * General Mongoose Schema
  * schema.sql의 general 테이블 기반
  */
-export interface IGeneralDocument extends IGeneral, Document {}
+export interface IGeneralDocument extends Omit<IGeneral, 'id'>, Document {
+  id: string;
+}
 
 const GeneralSchema = new Schema<IGeneralDocument>(
   {

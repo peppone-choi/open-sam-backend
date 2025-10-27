@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { makeGeneralController } from '../../../container';
+import { makeGeneralService } from '../../../container';
 import { asyncHandler } from '../../../common/utils/async-handler';
 // import { validate } from '../../../common/middleware/validator.middleware';
 // import { cacheMiddleware } from '../../../common/middleware/cache.middleware';

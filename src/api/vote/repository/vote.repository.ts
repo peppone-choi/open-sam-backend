@@ -1,4 +1,4 @@
-import { VoteModel } from '../vote.schema';
+import { VoteModel } from '../model/vote.model';
 
 export class VoteRepository {
   // TODO: 구현

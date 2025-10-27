@@ -1,7 +1,7 @@
 import { GeneralRepository } from '../repository/general.repository';
 import { CacheManager } from '../../../infrastructure/cache/cache-manager';
 import { CommandQueue } from '../../../infrastructure/queue/command-queue';
-import { IGeneral } from '../../../@types';
+import { IGeneral } from '../@types/general.types';
 import { HttpException } from '../../../common/errors/HttpException';
 
 /**

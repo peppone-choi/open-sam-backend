@@ -1,4 +1,4 @@
-import { NationModel, INationDocument } from '../nation.schema';
+import { NationModel, INationDocument } from '../model/nation.model';
 
 export class NationRepository {
   async findById(id: string): Promise<INationDocument | null> {

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { CacheManager } from '../../infrastructure/cache/cache-manager';
+import { CacheManager } from '../../../infrastructure/cache/cache-manager';
 
 const cacheManager = new CacheManager();
 

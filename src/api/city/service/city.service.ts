@@ -1,7 +1,7 @@
 import { CityRepository } from '../repository/city.repository';
 import { BattleFieldTileRepository } from '../../battlefield-tile/repository/battlefield-tile.repository';
 import { CacheManager } from '../../../infrastructure/cache/cache-manager';
-import { ICity } from '../../../@types';
+import { ICity } from '../@types/city.types';
 
 export class CityService {
   constructor(

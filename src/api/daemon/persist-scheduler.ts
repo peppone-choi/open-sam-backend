@@ -1,6 +1,7 @@
 import cron from 'node-cron';
-import { RedisService } from '../infrastructure/cache/redis.service';
+
 import { logger } from '../common/utils/logger';
+import { RedisService } from '../../infrastructure/cache/redis.service';
 
 export class PersistScheduler {
   private redis = new RedisService();

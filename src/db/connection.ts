@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { logger } from '../../common/utils/logger';
+import { logger } from '../api/common/utils/logger';
 
 export class MongoConnection {
   private static instance: MongoConnection;

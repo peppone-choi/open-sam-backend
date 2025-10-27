@@ -1,4 +1,4 @@
-import { GeneralRecordModel } from '../general-record.schema';
+import { GeneralRecordModel } from '../model/general-record.model';
 
 export class GeneralRecordRepository {
   // TODO: 구현

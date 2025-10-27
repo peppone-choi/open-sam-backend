@@ -96,7 +96,8 @@ export class RedisService {
       fields.push(key, typeof value === 'string' ? value : JSON.stringify(value));
     });
     
-    return await this.client.xadd(stream, '*', ...fields);
+    const result = await this.client.xadd(stream, '*', ...fields);
+    return result || '';
   }
 
   /**

@@ -32,8 +32,9 @@ async function generateAllCityTiles() {
     
     for (const city of cities) {
       // 이미 타일이 있는지 확인
+      const cityObj = city.toObject ? city.toObject() : city;
       const existing = await BattleFieldTileModel.findOne({ 
-        sessionId: city.sessionId || 'default',
+        sessionId: (cityObj as any).sessionId || 'default',
         cityId: city._id.toString() 
       });
       

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { makeCommandController } from '../../../container';
+import { makeCommandService } from '../../../container';
 import { asyncHandler } from '../../../common/utils/async-handler';
 // import { validate } from '../../../common/middleware/validator.middleware';
 

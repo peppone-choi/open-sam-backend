@@ -1,10 +1,12 @@
 import { Schema, model, Document } from 'mongoose';
-import { ICommand, CommandType, CommandStatus } from '../../@types';
+import { ICommand, CommandType, CommandStatus } from '../@types/command.types';
 
 /**
  * Command Mongoose Schema
  */
-export interface ICommandDocument extends ICommand, Document {}
+export interface ICommandDocument extends Omit<ICommand, 'id'>, Document {
+  id: string;
+}
 
 const CommandSchema = new Schema<ICommandDocument>(
   {

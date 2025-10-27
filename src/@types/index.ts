@@ -1,59 +1,20 @@
 /**
- * 타입 정의 중앙 집중 관리
+ * 타입 정의 중앙 export
+ * 
+ * 도메인 타입은 각 도메인의 @types 폴더에서 관리됩니다.
+ * 여기서는 공통 타입만 export합니다.
  */
 
 export * from './http';
 
-// 게임 세션
-export * from './domain/game-session';
+// 도메인별 타입은 각 도메인에서 직접 import하세요
+// import { IGeneral } from '@/api/general/@types/general.types';
+// import { ICity } from '@/api/city/@types/city.types';
+// import { ICommand, CommandType } from '@/api/command/@types/command.types';
 
-// 핵심 도메인
-export * from './domain/general';
-export * from './domain/city';
-export * from './domain/nation';
-export * from './domain/command';
-
-// 장수 관련
-export * from './domain/general-turn';
-export * from './domain/general-access-log';
-export * from './domain/general-record';
-
-// 국가 관련
-export * from './domain/nation-turn';
-export * from './domain/nation-env';
-
-// 전투/부대
-export * from './domain/troop';
-export * from './domain/battle';
-export * from './domain/battlefield-tile';
-export * from './domain/item';
-
-// 커뮤니케이션
-export * from './domain/message';
-export * from './domain/board';
-export * from './domain/comment';
-
-// 역사/기록
-export * from './domain/world-history';
-export * from './domain/ng-history';
-
-// 게임 시스템
-export * from './domain/event';
-export * from './domain/plock';
-export * from './domain/reserved-open';
-export * from './domain/storage';
-export * from './domain/rank-data';
-
-// 장수 선택
-export * from './domain/select-npc-token';
-export * from './domain/select-pool';
-
-// 사용자
-export * from './domain/user-record';
-
-// 게임 이벤트
-export * from './domain/ng-betting';
-export * from './domain/vote';
-export * from './domain/vote-comment';
-export * from './domain/ng-auction';
-export * from './domain/ng-auction-bid';
+// Re-export 주요 타입들 (하위 호환성)
+export * from '../api/general/@types/general.types';
+export * from '../api/city/@types/city.types';
+export * from '../api/nation/@types/nation.types';
+export * from '../api/command/@types/command.types';
+export * from '../api/game-session/@types/game-session.types';
