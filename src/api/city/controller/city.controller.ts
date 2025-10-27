@@ -9,9 +9,20 @@ export class CityController {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const skip = parseInt(req.query.skip as string) || 0;
-      
-      // TODO: Implement list
-      res.json({ data: [], total: 0 });
+      const nationId = req.query.nationId as string;
+
+      let cities;
+      let count;
+
+      if (nationId) {
+        cities = await this.service.getByNation(nationId);
+        count = cities.length;
+      } else {
+        cities = await this.service.getAll(limit, skip);
+        count = cities.length;
+      }
+
+      res.json({ data: cities, count, limit, skip });
     } catch (error) {
       next(error);
     }
@@ -33,8 +44,8 @@ export class CityController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement create
-      res.status(201).json({ message: 'Create not implemented' });
+      const city = await this.service.create(req.body);
+      res.status(201).json({ data: city });
     } catch (error) {
       next(error);
     }
@@ -42,8 +53,13 @@ export class CityController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement update
-      res.json({ message: 'Update not implemented' });
+      const city = await this.service.update(req.params.id, req.body);
+
+      if (!city) {
+        throw new HttpException(404, 'City not found');
+      }
+
+      res.json({ data: city });
     } catch (error) {
       next(error);
     }
@@ -51,8 +67,13 @@ export class CityController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement delete
-      res.json({ message: 'Delete not implemented' });
+      const deleted = await this.service.delete(req.params.id);
+
+      if (!deleted) {
+        throw new HttpException(404, 'City not found');
+      }
+
+      res.status(204).send();
     } catch (error) {
       next(error);
     }

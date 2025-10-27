@@ -1,36 +1,35 @@
 import { BoardRepository } from '../repository/board.repository';
 import { IBoard } from '../@types/board.types';
 
+/**
+ * Board Service
+ * 
+ * Manages bulletin board posts for in-game communication and announcements
+ */
 export class BoardService {
   constructor(private repository: BoardRepository) {}
 
   async getById(id: string): Promise<IBoard | null> {
-    return null as any;
-    // TODO: 구현
-    return null;
+    return await this.repository.findById(id);
   }
 
-  async list(limit: number, skip: number): Promise<IBoard[]> {
-    return null as any;
-    // TODO: 구현
-    return [];
+  async getAll(limit = 20, skip = 0): Promise<IBoard[]> {
+    return await this.repository.findAll(limit, skip);
+  }
+
+  async getBySessionId(sessionId: string, limit = 20, skip = 0): Promise<IBoard[]> {
+    return await this.repository.findBySessionId(sessionId, limit, skip);
   }
 
   async create(data: Partial<IBoard>): Promise<IBoard> {
-    return null as any;
-    // TODO: 구현
-    throw new Error('Not implemented');
+    return await this.repository.create(data);
   }
 
   async update(id: string, data: Partial<IBoard>): Promise<IBoard | null> {
-    return null as any;
-    // TODO: 구현
-    return null;
+    return await this.repository.update(id, data);
   }
 
-  async remove(id: string): Promise<boolean> {
-    return null as any;
-    // TODO: 구현
-    return false;
+  async delete(id: string): Promise<boolean> {
+    return await this.repository.delete(id);
   }
 }

@@ -1,42 +1,39 @@
 import { EventRepository } from '../repository/event.repository';
 import { IEvent } from '../@types/event.types';
 
+/**
+ * Event Service
+ * 
+ * Manages in-game events with priority-based queuing and target-specific event handling
+ */
 export class EventService {
   constructor(private repository: EventRepository) {}
 
   async getById(id: string): Promise<IEvent | null> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return null;
+    return await this.repository.findById(id);
   }
 
-  async getAll(limit: number, skip: number): Promise<IEvent[]> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return [];
+  async getAll(limit = 20, skip = 0): Promise<IEvent[]> {
+    return await this.repository.findAll(limit, skip);
+  }
+
+  async getByTarget(target: string, limit = 20, skip = 0): Promise<IEvent[]> {
+    return await this.repository.findByTarget(target, limit, skip);
   }
 
   async create(data: Partial<IEvent>): Promise<IEvent> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    throw new Error('Not implemented');
+    return await this.repository.create(data);
   }
 
   async update(id: string, data: Partial<IEvent>): Promise<IEvent | null> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return null;
+    return await this.repository.update(id, data);
   }
 
   async delete(id: string): Promise<boolean> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return false;
+    return await this.repository.delete(id);
   }
 
   async count(filter?: Record<string, any>): Promise<number> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return 0;
+    return await this.repository.count(filter);
   }
 }

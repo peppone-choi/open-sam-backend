@@ -7,8 +7,24 @@ export class ItemController {
   
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement list
-      res.json({ data: [], total: 0 });
+      const sessionId = req.query.sessionId as string;
+      const ownerId = req.query.ownerId as string;
+      const type = req.query.type as string;
+
+      if (!sessionId) {
+        throw new HttpException(400, 'sessionId is required');
+      }
+
+      let items;
+      if (ownerId) {
+        items = await this.service.findByOwnerId(sessionId, ownerId);
+      } else if (type) {
+        items = await this.service.findByType(sessionId, type);
+      } else {
+        throw new HttpException(400, 'ownerId or type is required');
+      }
+
+      res.json({ data: items, count: items.length });
     } catch (error) {
       next(error);
     }
@@ -16,8 +32,7 @@ export class ItemController {
 
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement getById
-      res.json({ data: null });
+      throw new HttpException(501, 'Item getById is not implemented yet');
     } catch (error) {
       next(error);
     }
@@ -25,8 +40,7 @@ export class ItemController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement create
-      res.status(201).json({ message: 'Create not implemented' });
+      throw new HttpException(501, 'Items are created by Game Daemon');
     } catch (error) {
       next(error);
     }
@@ -34,8 +48,7 @@ export class ItemController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement update
-      res.json({ message: 'Update not implemented' });
+      throw new HttpException(501, 'Items are updated by Game Daemon');
     } catch (error) {
       next(error);
     }
@@ -43,8 +56,7 @@ export class ItemController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement delete
-      res.json({ message: 'Delete not implemented' });
+      throw new HttpException(501, 'Items are deleted by Game Daemon');
     } catch (error) {
       next(error);
     }

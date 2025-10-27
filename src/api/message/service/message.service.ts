@@ -1,36 +1,35 @@
 import { MessageRepository } from '../repository/message.repository';
 import { IMessage } from '../@types/message.types';
 
+/**
+ * Message Service
+ * 
+ * Manages in-game messaging between players including sending and receiving messages
+ */
 export class MessageService {
   constructor(private repository: MessageRepository) {}
 
   async getById(id: string): Promise<IMessage | null> {
-    return null as any;
-    // TODO: 구현
-    return null;
+    return await this.repository.findById(id);
   }
 
-  async list(limit: number, skip: number): Promise<IMessage[]> {
-    return null as any;
-    // TODO: 구현
-    return [];
+  async getAll(limit = 20, skip = 0): Promise<IMessage[]> {
+    return await this.repository.findAll(limit, skip);
+  }
+
+  async getByReceiverId(receiverId: string, limit = 20, skip = 0): Promise<IMessage[]> {
+    return await this.repository.findByReceiverId(receiverId, limit, skip);
   }
 
   async create(data: Partial<IMessage>): Promise<IMessage> {
-    return null as any;
-    // TODO: 구현
-    throw new Error('Not implemented');
+    return await this.repository.create(data);
   }
 
   async update(id: string, data: Partial<IMessage>): Promise<IMessage | null> {
-    return null as any;
-    // TODO: 구현
-    return null;
+    return await this.repository.update(id, data);
   }
 
-  async remove(id: string): Promise<boolean> {
-    return null as any;
-    // TODO: 구현
-    return false;
+  async delete(id: string): Promise<boolean> {
+    return await this.repository.delete(id);
   }
 }

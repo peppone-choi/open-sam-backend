@@ -34,7 +34,7 @@ export class MessageController {
       const limit = parseInt(req.query.limit as string) || 20;
       const skip = parseInt(req.query.skip as string) || 0;
 
-      const messages = await this.service.list(limit, skip);
+      const messages = await this.service.getAll(limit, skip);
 
       const response: Paginated<typeof messages[0]> = {
         data: messages,
@@ -88,7 +88,7 @@ export class MessageController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const success = await this.service.remove(req.params.id);
+      const success = await this.service.delete(req.params.id);
 
       if (!success) {
         throw new HttpException(404, 'Message not found');

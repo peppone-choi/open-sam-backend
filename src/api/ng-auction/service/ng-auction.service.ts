@@ -1,42 +1,51 @@
 import { NgAuctionRepository } from '../repository/ng-auction.repository';
 import { INgAuction } from '../@types/ng-auction.types';
 
+/**
+ * Nation Game Auction Service
+ * 
+ * Manages auction system for trading generals, items, and resources
+ */
 export class NgAuctionService {
   constructor(private repository: NgAuctionRepository) {}
 
   async getById(id: string): Promise<INgAuction | null> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return null;
+    return await this.repository.findById(id);
   }
 
-  async getAll(limit: number, skip: number): Promise<INgAuction[]> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return [];
+  async getAll(limit = 20, skip = 0): Promise<INgAuction[]> {
+    return await this.repository.findAll(limit, skip);
+  }
+
+  async getBySessionId(sessionId: string, limit = 20, skip = 0): Promise<INgAuction[]> {
+    return await this.repository.findBySessionId(sessionId, limit, skip);
+  }
+
+  async getActive(sessionId: string, limit = 20, skip = 0): Promise<INgAuction[]> {
+    return await this.repository.findActive(sessionId, limit, skip);
+  }
+
+  async getByType(sessionId: string, type: string, limit = 20, skip = 0): Promise<INgAuction[]> {
+    return await this.repository.findByType(sessionId, type, limit, skip);
+  }
+
+  async getByHostGeneralId(hostGeneralId: string, limit = 20, skip = 0): Promise<INgAuction[]> {
+    return await this.repository.findByHostGeneralId(hostGeneralId, limit, skip);
   }
 
   async create(data: Partial<INgAuction>): Promise<INgAuction> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    throw new Error('Not implemented');
+    return await this.repository.create(data);
   }
 
   async update(id: string, data: Partial<INgAuction>): Promise<INgAuction | null> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return null;
+    return await this.repository.update(id, data);
   }
 
   async delete(id: string): Promise<boolean> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return false;
+    return await this.repository.delete(id);
   }
 
   async count(filter?: Record<string, any>): Promise<number> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return 0;
+    return await this.repository.count(filter);
   }
 }

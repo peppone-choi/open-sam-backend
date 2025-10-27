@@ -13,9 +13,15 @@ export class CommandController {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const skip = parseInt(req.query.skip as string) || 0;
-      
-      // TODO: Implement list
-      res.json({ data: [], total: 0 });
+      const generalId = req.query.generalId as string;
+
+      if (generalId) {
+        const commands = await this.service.getByGeneralId(generalId, limit, skip);
+        res.json({ data: commands, count: commands.length, limit, skip });
+      } else {
+        const commands = await this.service.getExecuting();
+        res.json({ data: commands, count: commands.length, limit, skip });
+      }
     } catch (error) {
       next(error);
     }
@@ -32,8 +38,7 @@ export class CommandController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement update
-      res.json({ message: 'Update not implemented' });
+      throw new HttpException(501, 'Command updates are handled by Game Daemon');
     } catch (error) {
       next(error);
     }
@@ -41,27 +46,20 @@ export class CommandController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement delete
-      res.json({ message: 'Delete not implemented' });
+      throw new HttpException(501, 'Command deletion is handled by Game Daemon');
     } catch (error) {
       next(error);
     }
   };
 
-  /**
-   * POST /api/commands
-   * 명령 제출
-   */
   submit = async (
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
     try {
-      // TODO: DTO 검증 (validate middleware에서 처리됨)
       const result = await this.service.submit(req.body);
 
-      // TODO: 응답 (명령 접수됨)
       res.status(202).json({
         message: 'Command submitted successfully',
         messageId: result.messageId,
@@ -71,10 +69,6 @@ export class CommandController {
     }
   };
 
-  /**
-   * GET /api/commands/:id
-   * 명령 조회
-   */
   getById = async (
     req: Request,
     res: Response,
@@ -94,10 +88,6 @@ export class CommandController {
     }
   };
 
-  /**
-   * GET /api/commands?generalId=xxx
-   * 장수별 명령 조회
-   */
   getByGeneralId = async (
     req: Request,
     res: Response,

@@ -7,8 +7,14 @@ export class BattleFieldTileController {
 
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement list
-      res.json({ data: [], total: 0 });
+      const sessionId = req.query.sessionId as string;
+
+      if (!sessionId) {
+        throw new HttpException(400, 'sessionId is required');
+      }
+
+      const tiles = await this.service.findBySessionId(sessionId);
+      res.json({ data: tiles, count: tiles.length });
     } catch (error) {
       next(error);
     }
@@ -16,8 +22,20 @@ export class BattleFieldTileController {
 
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement getById
-      res.json({ data: null });
+      const sessionId = req.query.sessionId as string;
+      const cityId = req.params.id;
+
+      if (!sessionId) {
+        throw new HttpException(400, 'sessionId is required');
+      }
+
+      const tile = await this.service.findByCityId(sessionId, cityId);
+
+      if (!tile) {
+        throw new HttpException(404, 'Battlefield tile not found');
+      }
+
+      res.json({ data: tile });
     } catch (error) {
       next(error);
     }
@@ -25,8 +43,8 @@ export class BattleFieldTileController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement create
-      res.status(201).json({ message: 'Create not implemented' });
+      const tile = await this.service.create(req.body);
+      res.status(201).json({ data: tile });
     } catch (error) {
       next(error);
     }
@@ -34,8 +52,21 @@ export class BattleFieldTileController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement update
-      res.json({ message: 'Update not implemented' });
+      const sessionId = req.query.sessionId as string;
+      const cityId = req.params.id;
+      const { tiles } = req.body;
+
+      if (!sessionId) {
+        throw new HttpException(400, 'sessionId is required');
+      }
+
+      const updated = await this.service.update(sessionId, cityId, tiles);
+
+      if (!updated) {
+        throw new HttpException(404, 'Battlefield tile not found');
+      }
+
+      res.json({ data: updated });
     } catch (error) {
       next(error);
     }
@@ -43,8 +74,7 @@ export class BattleFieldTileController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement delete
-      res.json({ message: 'Delete not implemented' });
+      throw new HttpException(501, 'Battlefield tile deletion is not supported');
     } catch (error) {
       next(error);
     }

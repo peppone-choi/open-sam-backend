@@ -1,42 +1,39 @@
 import { PlockRepository } from '../repository/plock.repository';
 import { IPlock } from '../@types/plock.types';
 
+/**
+ * Plock Service
+ * 
+ * Manages persistent locks for coordinating distributed game state updates
+ */
 export class PlockService {
   constructor(private repository: PlockRepository) {}
 
   async getById(id: string): Promise<IPlock | null> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return null;
+    return await this.repository.findById(id);
   }
 
-  async getAll(limit: number, skip: number): Promise<IPlock[]> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return [];
+  async getAll(limit = 20, skip = 0): Promise<IPlock[]> {
+    return await this.repository.findAll(limit, skip);
+  }
+
+  async getByType(type: string): Promise<IPlock | null> {
+    return await this.repository.findByType(type);
   }
 
   async create(data: Partial<IPlock>): Promise<IPlock> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    throw new Error('Not implemented');
+    return await this.repository.create(data);
   }
 
   async update(id: string, data: Partial<IPlock>): Promise<IPlock | null> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return null;
+    return await this.repository.update(id, data);
   }
 
   async delete(id: string): Promise<boolean> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return false;
+    return await this.repository.delete(id);
   }
 
   async count(filter?: Record<string, any>): Promise<number> {
-    return null as any;
-    // TODO: 비즈니스 로직 구현
-    return 0;
+    return await this.repository.count(filter);
   }
 }

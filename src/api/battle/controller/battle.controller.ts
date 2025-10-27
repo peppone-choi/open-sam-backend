@@ -7,8 +7,21 @@ export class BattleController {
   
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement list
-      res.json({ data: [], total: 0 });
+      const sessionId = req.query.sessionId as string;
+      const generalId = req.query.generalId as string;
+
+      if (!sessionId) {
+        throw new HttpException(400, 'sessionId is required');
+      }
+
+      let battles;
+      if (generalId) {
+        battles = await this.service.findByGeneralId(sessionId, generalId);
+      } else {
+        battles = await this.service.findActive(sessionId);
+      }
+
+      res.json({ data: battles, count: battles.length });
     } catch (error) {
       next(error);
     }
@@ -16,8 +29,7 @@ export class BattleController {
 
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement getById
-      res.json({ data: null });
+      throw new HttpException(501, 'Battle getById is not implemented yet');
     } catch (error) {
       next(error);
     }
@@ -25,8 +37,7 @@ export class BattleController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement create
-      res.status(201).json({ message: 'Create not implemented' });
+      throw new HttpException(501, 'Battles are created by Game Daemon');
     } catch (error) {
       next(error);
     }
@@ -34,8 +45,7 @@ export class BattleController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement update
-      res.json({ message: 'Update not implemented' });
+      throw new HttpException(501, 'Battles are updated by Game Daemon');
     } catch (error) {
       next(error);
     }
@@ -43,8 +53,7 @@ export class BattleController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // TODO: Implement delete
-      res.json({ message: 'Delete not implemented' });
+      throw new HttpException(501, 'Battles are deleted by Game Daemon');
     } catch (error) {
       next(error);
     }

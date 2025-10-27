@@ -34,7 +34,7 @@ export class CommentController {
       const limit = parseInt(req.query.limit as string) || 20;
       const skip = parseInt(req.query.skip as string) || 0;
 
-      const comments = await this.service.list(limit, skip);
+      const comments = await this.service.getAll(limit, skip);
 
       const response: Paginated<typeof comments[0]> = {
         data: comments,
@@ -88,7 +88,7 @@ export class CommentController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const success = await this.service.remove(req.params.id);
+      const success = await this.service.delete(req.params.id);
 
       if (!success) {
         throw new HttpException(404, 'Comment not found');
