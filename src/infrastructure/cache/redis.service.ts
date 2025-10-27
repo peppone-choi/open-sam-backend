@@ -1,92 +1,118 @@
 import Redis from 'ioredis';
 
+/**
+ * Redis 서비스 (L2 캐시 + Pub/Sub + Streams)
+ */
 export class RedisService {
-  private redis: Redis;
-  private subscriber: Redis;
+  private client: Redis;
+  private subscriber?: Redis;
 
   constructor() {
-    const url = process.env.REDIS_URL || 'redis://localhost:6379';
-    this.redis = new Redis(url);
-    this.subscriber = new Redis(url);
-  }
-
-  async hgetall(key: string): Promise<Record<string, string>> {
-    return this.redis.hgetall(key);
-  }
-
-  async hset(key: string, data: Record<string, any>): Promise<number> {
-    return this.redis.hset(key, data);
-  }
-
-  async hincrby(key: string, field: string, value: number): Promise<number> {
-    return this.redis.hincrby(key, field, value);
-  }
-
-  async get(key: string): Promise<string | null> {
-    return this.redis.get(key);
-  }
-
-  async set(key: string, value: string, ...args: any[]): Promise<string | null> {
-    return this.redis.set(key, value, ...args);
-  }
-
-  async del(key: string): Promise<number> {
-    return this.redis.del(key);
-  }
-
-  async xadd(stream: string, data: Record<string, any>): Promise<string> {
-    return this.redis.xadd(stream, '*', 'payload', JSON.stringify(data)) as any;
-  }
-
-  async xreadgroup(
-    group: string,
-    consumer: string,
-    streams: Record<string, string>,
-    opts?: { COUNT?: number; BLOCK?: number }
-  ): Promise<any> {
-    // TODO: Implement xreadgroup
-    return null;
-  }
-
-  async xack(stream: string, group: string, id: string): Promise<number> {
-    return this.redis.xack(stream, group, id);
-  }
-
-  subscribe(channel: string, handler: (message: string) => void): void {
-    this.subscriber.subscribe(channel);
-    this.subscriber.on('message', (ch, msg) => {
-      if (ch === channel) handler(msg);
+    // TODO: 환경변수에서 Redis URL 가져오기
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    
+    this.client = new Redis(redisUrl);
+    
+    // TODO: 에러 핸들링
+    this.client.on('error', (err) => {
+      console.error('Redis Client Error:', err);
     });
   }
 
-  async publish(channel: string, message: string): Promise<number> {
-    return this.redis.publish(channel, message);
+  /**
+   * 데이터 조회
+   */
+  async get<T>(key: string): Promise<T | null> {
+    // TODO: 구현
+    const data = await this.client.get(key);
+    if (!data) return null;
+    
+    try {
+      return JSON.parse(data) as T;
+    } catch {
+      return data as unknown as T;
+    }
   }
 
-  async scan(cursor: string, ...args: any[]): Promise<[string, string[]]> {
-    return this.redis.scan(cursor, ...args);
+  /**
+   * 데이터 저장
+   */
+  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
+    // TODO: 구현
+    const data = JSON.stringify(value);
+    
+    if (ttl) {
+      await this.client.setex(key, ttl, data);
+    } else {
+      await this.client.set(key, data);
+    }
   }
 
-  async reservePCP(generalId: string, cost: number): Promise<boolean> {
-    const script = `
-      local key = KEYS[1]
-      local cost = tonumber(ARGV[1])
-      local pcp = tonumber(redis.call('HGET', key, 'pcp') or 0)
-      if pcp >= cost then
-        redis.call('HINCRBY', key, 'pcp', -cost)
-        return 1
-      else
-        return 0
-      end
-    `;
+  /**
+   * 데이터 삭제
+   */
+  async del(key: string): Promise<void> {
+    // TODO: 구현
+    await this.client.del(key);
+  }
+
+  /**
+   * Pub/Sub 발행
+   */
+  async publish(channel: string, message: any): Promise<void> {
+    // TODO: 구현
+    const data = typeof message === 'string' ? message : JSON.stringify(message);
+    await this.client.publish(channel, data);
+  }
+
+  /**
+   * Pub/Sub 구독
+   */
+  async subscribe(channel: string, callback: (message: any) => void): Promise<void> {
+    // TODO: 구현
+    if (!this.subscriber) {
+      this.subscriber = this.client.duplicate();
+    }
     
-    const result = await this.redis.eval(
-      script,
-      1,
-      `state:general:${generalId}`,
-      cost
-    ) as number;
+    this.subscriber.subscribe(channel);
+    this.subscriber.on('message', (ch, msg) => {
+      if (ch === channel) {
+        try {
+          callback(JSON.parse(msg));
+        } catch {
+          callback(msg);
+        }
+      }
+    });
+  }
+
+  /**
+   * Redis Streams에 메시지 추가
+   */
+  async xadd(stream: string, data: Record<string, any>): Promise<string> {
+    // TODO: 구현
+    const fields: string[] = [];
+    Object.entries(data).forEach(([key, value]) => {
+      fields.push(key, typeof value === 'string' ? value : JSON.stringify(value));
+    });
     
-    return result === 1;
+    return await this.client.xadd(stream, '*', ...fields);
+  }
+
+  /**
+   * 연결 종료
+   */
+  async disconnect(): Promise<void> {
+    await this.client.quit();
+    if (this.subscriber) {
+      await this.subscriber.quit();
+    }
+  }
+
+  /**
+   * 싱글톤 인스턴스 반환용
+   */
+  getClient(): Redis {
+    return this.client;
   }
 }

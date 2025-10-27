@@ -1,33 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
+import { HttpException } from '../errors/HttpException';
 
-export class AppError extends Error {
-  constructor(
-    public statusCode: number,
-    public message: string,
-    public isOperational = true
-  ) {
-    super(message);
-    Object.setPrototypeOf(this, AppError.prototype);
-  }
-}
-
-export function errorMiddleware(
-  err: Error | AppError,
-  req: Request,
+/**
+ * 중앙 집중식 에러 핸들링 미들웨어
+ * 모든 에러를 통일된 형식으로 반환
+ */
+export const errorMiddleware = (
+  err: Error | HttpException,
+  _req: Request,
   res: Response,
-  next: NextFunction
-) {
-  // TODO: 에러 로깅
-  console.error('Error:', err);
+  _next: NextFunction
+): void => {
+  // TODO: 로깅 추가 (winston, pino 등)
+  
+  const status = err instanceof HttpException ? err.status : 500;
+  const code = err instanceof HttpException ? err.code : 'INTERNAL_ERROR';
+  const details = err instanceof HttpException ? err.details : undefined;
 
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: err.message
-    });
-  }
-
-  // TODO: 프로덕션에서는 상세 에러 숨기기
-  res.status(500).json({
-    error: 'Internal server error'
+  res.status(status).json({
+    error: {
+      message: err.message || 'Internal Server Error',
+      code: code || 'INTERNAL_ERROR',
+      details
+    }
   });
-}
+};
