@@ -11,18 +11,18 @@ export class PersistScheduler {
       await this.flush();
     });
 
-    logger.info('📅 Persist scheduler started (every 5 minutes)');
+    logger.info('📅 영속화 스케줄러 시작 완료 (5분마다 실행)');
   }
 
   private async flush() {
-    logger.info('🔄 Starting persist flush...');
+    logger.info('🔄 영속화 플러시 시작 중...');
     const startTime = Date.now();
 
     try {
       // TODO: 1. 더티 키 스캔 (version > persistedVersion)
       const dirtyKeys = await this.scanDirtyKeys();
       
-      logger.info(`Found ${dirtyKeys.length} dirty keys`);
+      logger.info(`변경된 키 ${dirtyKeys.length}개 발견`);
 
       // TODO: 2. 배치 저장
       for (const key of dirtyKeys) {
@@ -30,10 +30,10 @@ export class PersistScheduler {
       }
 
       const elapsed = Date.now() - startTime;
-      logger.info(`✅ Persist flush complete (keys=${dirtyKeys.length}, time=${elapsed}ms)`);
+      logger.info(`✅ 영속화 플러시 완료 (키=${dirtyKeys.length}개, 소요시간=${elapsed}ms)`);
 
     } catch (error) {
-      logger.error('Persist flush error:', error);
+      logger.error('영속화 플러시 오류:', error);
     }
   }
 
@@ -50,7 +50,7 @@ export class PersistScheduler {
       // TODO: Save to MongoDB
       // TODO: Update persistedVersion in Redis
     } catch (error) {
-      logger.error(`Failed to persist ${key}:`, error);
+      logger.error(`${key} 영속화 실패:`, error);
     }
   }
 }

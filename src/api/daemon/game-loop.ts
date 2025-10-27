@@ -11,7 +11,7 @@ export class GameLoop {
 
   start() {
     this.isRunning = true;
-    logger.info('🕐 Game loop started (24x speed)');
+    logger.info('🕐 게임 루프 시작 (24배속)');
 
     this.tickInterval = setInterval(() => {
       if (this.isRunning) {
@@ -25,7 +25,7 @@ export class GameLoop {
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
     }
-    logger.info('⏸️  Game loop stopped');
+    logger.info('⏸️  게임 루프 중지됨');
   }
 
   private async tick() {
@@ -49,7 +49,7 @@ export class GameLoop {
         await this.collectTaxes();
       }
     } catch (error) {
-      logger.error('Game loop tick error:', error);
+      logger.error('게임 루프 틱 오류:', error);
     }
   }
 
@@ -79,7 +79,7 @@ export class GameLoop {
   }
 
   private async collectTaxes() {
-    logger.info('💰 Collecting monthly taxes...');
+    logger.info('💰 월간 세금 징수 중...');
     // TODO: Implement tax collection
   }
 }

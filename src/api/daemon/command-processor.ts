@@ -28,12 +28,12 @@ export class CommandProcessor {
 
   async start() {
     this.isRunning = true;
-    logger.info('🔄 Command processor started');
+    logger.info('🔄 커맨드 프로세서 시작 완료');
 
     // Consumer Group 생성 (이미 존재하면 무시)
     try {
       await this.redis.createConsumerGroup(this.STREAM_KEY, this.GROUP_NAME);
-      logger.info(`✅ Consumer group created: ${this.GROUP_NAME}`);
+      logger.info(`✅ Consumer group 생성 완료: ${this.GROUP_NAME}`);
     } catch (error) {
       // Group already exists - ignore
     }
@@ -43,7 +43,7 @@ export class CommandProcessor {
 
   stop() {
     this.isRunning = false;
-    logger.info('⏸️  Command processor stopped');
+    logger.info('⏸️  커맨드 프로세서 중지됨');
   }
 
   private async poll() {
@@ -64,7 +64,7 @@ export class CommandProcessor {
           }
         }
       } catch (error) {
-        logger.error('Poll error:', error);
+        logger.error('폴링 오류:', error);
         await this.sleep(1000);
       }
     }
@@ -74,7 +74,7 @@ export class CommandProcessor {
     try {
       const commandData = typeof data === 'string' ? JSON.parse(data) : data;
       
-      logger.info(`📨 Processing command: ${commandData.type} (${messageId})`);
+      logger.info(`📨 커맨드 처리 중: ${commandData.type} (${messageId})`);
 
       // DB에 Command 레코드 생성
       const command = await this.commandRepo.create({
@@ -93,10 +93,10 @@ export class CommandProcessor {
 
       // ACK
       await this.redis.ack(this.STREAM_KEY, this.GROUP_NAME, messageId);
-      logger.info(`✅ Command processed: ${messageId}`);
+      logger.info(`✅ 커맨드 처리 완료: ${messageId}`);
 
     } catch (error) {
-      logger.error(`❌ Error processing command ${messageId}:`, error);
+      logger.error(`❌ 커맨드 처리 오류 ${messageId}:`, error);
       // TODO: DLQ (Dead Letter Queue)로 이동
     }
   }
@@ -169,20 +169,20 @@ export class CommandProcessor {
           break;
 
         default:
-          logger.warn(`⚠️  Command not implemented: ${commandData.type}`);
+          logger.warn(`⚠️  구현되지 않은 커맨드: ${commandData.type}`);
           await this.commandRepo.updateStatus(
             commandId,
             CommandStatus.COMPLETED,
-            { message: 'Command type not yet implemented' }
+            { message: '아직 구현되지 않은 커맨드 타입입니다' }
           );
       }
     } catch (error) {
-      logger.error(`❌ Error executing command ${commandId}:`, error);
+      logger.error(`❌ 커맨드 실행 오류 ${commandId}:`, error);
       await this.commandRepo.updateStatus(
         commandId,
         CommandStatus.FAILED,
         null,
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : '알 수 없는 오류'
       );
     }
   }
@@ -191,7 +191,7 @@ export class CommandProcessor {
    * 휴식 처리
    */
   private async handleRest(commandId: string, data: any) {
-    logger.info(`😴 Rest: ${data.generalId}`);
+    logger.info(`😴 휴식: ${data.generalId}`);
     
     // TODO: 자율행동 처리
     await this.commandRepo.updateStatus(
@@ -206,11 +206,11 @@ export class CommandProcessor {
    */
   private async handleCure(commandId: string, data: any) {
     const { generalId } = data;
-    logger.info(`🏥 Cure: ${generalId}`);
+    logger.info(`🏥 요양: ${generalId}`);
 
     const general = await this.generalRepo.findById(generalId);
     if (!general) {
-      throw new Error('General not found');
+      throw new Error('장수를 찾을 수 없음');
     }
 
     // 부상 완전 치료
@@ -222,7 +222,7 @@ export class CommandProcessor {
       { injury: 0 }
     );
 
-    logger.info(`✅ Cure completed: ${generalId}`);
+    logger.info(`✅ 요양 완료: ${generalId}`);
   }
 
   /**
@@ -232,7 +232,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { unitType } = payload;
 
-    logger.info(`🏋️  Drill: ${generalId}, unitType: ${unitType}`);
+    logger.info(`🏋️  단련: ${generalId}, 병종: ${unitType}`);
 
     // TODO: 병종 숙련도 증가 로직 구현
     
@@ -242,7 +242,7 @@ export class CommandProcessor {
       { unitType, increased: true }
     );
 
-    logger.info(`✅ Drill completed: ${generalId}`);
+    logger.info(`✅ 단련 완료: ${generalId}`);
   }
 
   /**
@@ -250,7 +250,7 @@ export class CommandProcessor {
    */
   private async handleDomestic(commandId: string, data: any) {
     const { generalId, type, payload } = data;
-    logger.info(`🏛️  Domestic ${type}: ${generalId}`);
+    logger.info(`🏛️  내정 ${type}: ${generalId}`);
 
     // TODO: 도시 내정 수치 증가 로직
     
@@ -268,7 +268,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { unitType, amount } = payload;
     
-    logger.info(`⚔️  Conscript: ${generalId}, ${amount} troops of type ${unitType}`);
+    logger.info(`⚔️  징병: ${generalId}, ${amount}명 (병종 ${unitType})`);
     
     // TODO: 징병 로직 구현
     await this.commandRepo.updateStatus(
@@ -285,7 +285,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { unitType, amount } = payload;
     
-    logger.info(`🎖️  Recruit: ${generalId}, ${amount} troops of type ${unitType}`);
+    logger.info(`🎖️  모병: ${generalId}, ${amount}명 (병종 ${unitType})`);
     
     // TODO: 모병 로직 구현
     await this.commandRepo.updateStatus(
@@ -299,7 +299,7 @@ export class CommandProcessor {
    * 훈련 처리
    */
   private async handleTrain(commandId: string, data: any) {
-    logger.info(`💪 Train: ${data.generalId}`);
+    logger.info(`💪 훈련: ${data.generalId}`);
     
     // TODO: 훈련도 증가 로직
     await this.commandRepo.updateStatus(
@@ -313,7 +313,7 @@ export class CommandProcessor {
    * 사기진작 처리
    */
   private async handleBoostMorale(commandId: string, data: any) {
-    logger.info(`📣 Boost morale: ${data.generalId}`);
+    logger.info(`📣 사기진작: ${data.generalId}`);
     
     // TODO: 사기 증가 로직
     await this.commandRepo.updateStatus(
@@ -330,7 +330,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { targetCityId } = payload;
     
-    logger.info(`⚔️  Deploy: ${generalId} → ${targetCityId}`);
+    logger.info(`⚔️  출병: ${generalId} → ${targetCityId}`);
     
     // TODO: 출병 로직 구현 (전투 시스템 연동)
     await this.commandRepo.updateStatus(
@@ -347,7 +347,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { targetCityId } = payload;
     
-    logger.info(`🚶 Move: ${generalId} → ${targetCityId}`);
+    logger.info(`🚶 이동: ${generalId} → ${targetCityId}`);
     
     // TODO: 이동 로직 구현
     await this.commandRepo.updateStatus(
@@ -364,7 +364,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { targetCityId } = payload;
     
-    logger.info(`🏃 Force march: ${generalId} → ${targetCityId}`);
+    logger.info(`🏃 강행: ${generalId} → ${targetCityId}`);
     
     // TODO: 강행 로직 (병력/훈련/사기 감소)
     await this.commandRepo.updateStatus(
@@ -381,7 +381,7 @@ export class CommandProcessor {
     const { generalId, type, payload } = data;
     const { targetCityId } = payload;
     
-    logger.info(`🎭 Stratagem ${type}: ${generalId} → ${targetCityId}`);
+    logger.info(`🎭 계략 ${type}: ${generalId} → ${targetCityId}`);
     
     // TODO: 계략 로직 구현
     await this.commandRepo.updateStatus(
@@ -398,7 +398,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { targetGeneralId, gold, rice } = payload;
     
-    logger.info(`🎁 Grant: ${generalId} → ${targetGeneralId}, gold: ${gold}, rice: ${rice}`);
+    logger.info(`🎁 증여: ${generalId} → ${targetGeneralId}, 금: ${gold}, 쌀: ${rice}`);
     
     // TODO: 자원 이전 로직
     await this.commandRepo.updateStatus(
@@ -415,7 +415,7 @@ export class CommandProcessor {
     const { generalId, payload } = data;
     const { gold, rice } = payload;
     
-    logger.info(`🏛️  Tribute: ${generalId}, gold: ${gold}, rice: ${rice}`);
+    logger.info(`🏛️  헌납: ${generalId}, 금: ${gold}, 쌀: ${rice}`);
     
     // TODO: 국가에 헌납 로직
     await this.commandRepo.updateStatus(
