@@ -100,6 +100,75 @@ export class RedisService {
   }
 
   /**
+   * Consumer Group 생성
+   */
+  async createConsumerGroup(stream: string, groupName: string): Promise<void> {
+    try {
+      await this.client.xgroup('CREATE', stream, groupName, '0', 'MKSTREAM');
+    } catch (error: any) {
+      // BUSYGROUP 에러는 무시 (이미 존재)
+      if (!error.message.includes('BUSYGROUP')) {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Consumer Group에서 메시지 읽기
+   */
+  async readGroup(
+    stream: string,
+    groupName: string,
+    consumerName: string,
+    count: number,
+    block: number
+  ): Promise<Array<{ id: string; data: any }>> {
+    const result = await this.client.xreadgroup(
+      'GROUP',
+      groupName,
+      consumerName,
+      'COUNT',
+      count,
+      'BLOCK',
+      block,
+      'STREAMS',
+      stream,
+      '>'
+    );
+
+    if (!result || result.length === 0) {
+      return [];
+    }
+
+    const messages: Array<{ id: string; data: any }> = [];
+    for (const [streamName, streamMessages] of result as any[]) {
+      for (const [id, fields] of streamMessages as any[]) {
+        // fields는 [key, value, key, value, ...] 형태
+        const data: any = {};
+        for (let i = 0; i < fields.length; i += 2) {
+          const key = fields[i];
+          const value = fields[i + 1];
+          try {
+            data[key] = JSON.parse(value);
+          } catch {
+            data[key] = value;
+          }
+        }
+        messages.push({ id, data });
+      }
+    }
+
+    return messages;
+  }
+
+  /**
+   * 메시지 ACK (확인)
+   */
+  async ack(stream: string, groupName: string, messageId: string): Promise<void> {
+    await this.client.xack(stream, groupName, messageId);
+  }
+
+  /**
    * 연결 종료
    */
   async disconnect(): Promise<void> {
