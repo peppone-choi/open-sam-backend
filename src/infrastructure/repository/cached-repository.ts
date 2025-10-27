@@ -136,7 +136,7 @@ export interface GeneralEntity extends CachedEntity {
   [key: string]: any;
 }
 
-export class GeneralRepository extends CachedRepository<GeneralEntity> {
+export class CommanderRepository extends CachedRepository<GeneralEntity> {
   constructor(gameCache: GameStateCache, model: Model<any>) {
     super(gameCache, model, EntityType.GENERAL);
   }
@@ -196,7 +196,7 @@ export interface CityEntity extends CachedEntity {
   [key: string]: any;
 }
 
-export class CityRepository extends CachedRepository<CityEntity> {
+export class SettlementRepository extends CachedRepository<CityEntity> {
   constructor(gameCache: GameStateCache, model: Model<any>) {
     super(gameCache, model, EntityType.CITY);
   }
@@ -243,7 +243,7 @@ export interface NationEntity extends CachedEntity {
   [key: string]: any;
 }
 
-export class NationRepository extends CachedRepository<NationEntity> {
+export class FactionRepository extends CachedRepository<NationEntity> {
   constructor(gameCache: GameStateCache, model: Model<any>) {
     super(gameCache, model, EntityType.NATION);
   }

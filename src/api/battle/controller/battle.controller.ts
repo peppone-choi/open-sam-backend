@@ -8,20 +8,20 @@ export class BattleController {
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const sessionId = req.query.sessionId as string;
-      const generalId = req.query.generalId as string;
+      const commanderId = req.query.commanderId as string;
 
       if (!sessionId) {
         throw new HttpException(400, 'sessionId is required');
       }
 
       let battles;
-      if (generalId) {
-        battles = await this.service.findByGeneralId(sessionId, generalId);
+      if (commanderId) {
+        battles = await this.service.findByCommanderId(sessionId, commanderId);
       } else {
         battles = await this.service.findActive(sessionId);
       }
 
-      res.json({ data: battles, count: battles.length });
+      res.json(battles);
     } catch (error) {
       next(error);
     }

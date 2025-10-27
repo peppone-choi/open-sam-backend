@@ -1,85 +1,62 @@
 import { logger } from '../common/utils/logger';
+import { EntityRepository } from '../../common/repository/entity-repository';
+import { Role } from '../../common/@types/role.types';
+import { Entity } from '../../common/@types/entity.types';
 
 export class GameLoop {
-  private startTime: number;
   private isRunning = false;
-  private tickInterval?: NodeJS.Timeout;
-
-  constructor() {
-    this.startTime = Date.now();
-  }
+  private intervalId?: NodeJS.Timeout;
 
   start() {
     this.isRunning = true;
-    logger.info('🕐 게임 루프 시작 (24배속)');
-
-    this.tickInterval = setInterval(() => {
-      if (this.isRunning) {
-        this.tick();
-      }
-    }, 1000);
+    logger.info('🎮 Game Loop 시작');
+    this.intervalId = setInterval(() => this.tick(), 1000);
   }
 
   stop() {
     this.isRunning = false;
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-    }
-    logger.info('⏸️  게임 루프 중지됨');
+    if (this.intervalId) clearInterval(this.intervalId);
+    logger.info('⏸️  Game Loop 중지');
   }
 
   private async tick() {
     try {
-      const now = this.getGameTime();
-
-      // TODO: 1. 커맨드 완료 확인
-      await this.checkCommandCompletion(now);
-
-      // TODO: 2. 이동 업데이트
-      await this.updateMovements(now);
-
-      // TODO: 3. 생산 업데이트
-      await this.updateProductions(now);
-
-      // TODO: 4. PCP/MCP 자동 회복
-      await this.recoverCP(now);
-
-      // TODO: 5. 월간 이벤트 (세금)
-      if (this.isFirstDayOfMonth(now)) {
-        await this.collectTaxes();
-      }
+      await this.regenerateCP();
+      await this.produceResources();
     } catch (error) {
-      logger.error('게임 루프 틱 오류:', error);
+      logger.error('Game Loop 오류:', error);
     }
   }
 
-  private getGameTime(): Date {
-    const elapsed = Date.now() - this.startTime;
-    return new Date(elapsed * 24);
+  private async regenerateCP() {
+    const commanders = await EntityRepository.findByQuery({ role: Role.COMMANDER }) as Entity[];
+    
+    for (const cmd of commanders) {
+      if (!cmd.systems) cmd.systems = {};
+      if (!cmd.systems.cp) cmd.systems.cp = { pcp: 0, mcp: 0, maxPCP: 100, maxMCP: 100 };
+      
+      cmd.systems.cp.pcp = Math.min(cmd.systems.cp.pcp + 1, cmd.systems.cp.maxPCP);
+      cmd.systems.cp.mcp = Math.min(cmd.systems.cp.mcp + 0.5, cmd.systems.cp.maxMCP);
+      
+      const ref = { role: cmd.role, id: cmd.id, scenario: cmd.scenario };
+      await EntityRepository.update(ref, { systems: cmd.systems });
+    }
   }
 
-  private async checkCommandCompletion(now: Date) {
-    // TODO: Implement command completion check
-  }
-
-  private async updateMovements(now: Date) {
-    // TODO: Implement movement updates
-  }
-
-  private async updateProductions(now: Date) {
-    // TODO: Implement production updates
-  }
-
-  private async recoverCP(now: Date) {
-    // TODO: Implement PCP/MCP recovery
-  }
-
-  private isFirstDayOfMonth(date: Date): boolean {
-    return date.getDate() === 1;
-  }
-
-  private async collectTaxes() {
-    logger.info('💰 월간 세금 징수 중...');
-    // TODO: Implement tax collection
+  private async produceResources() {
+    const settlements = await EntityRepository.findByQuery({ role: Role.SETTLEMENT }) as Entity[];
+    
+    for (const s of settlements) {
+      if (!s.slots || !s.resources) continue;
+      
+      const goldProd = Math.floor((s.slots.production_2?.value || 0) / 100);
+      const riceProd = Math.floor((s.slots.production_1?.value || 0) / 100);
+      
+      s.resources.gold = (s.resources.gold || 0) + goldProd;
+      s.resources.rice = (s.resources.rice || 0) + riceProd;
+      
+      const ref = { role: s.role, id: s.id, scenario: s.scenario };
+      await EntityRepository.update(ref, { resources: s.resources });
+    }
   }
 }

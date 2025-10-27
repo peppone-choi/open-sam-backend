@@ -49,11 +49,11 @@ async function start() {
       console.log('  /api/commands, /api/game-sessions');
       console.log('');
       console.log('General:');
-      console.log('  /api/general-turns, /api/general-access-logs');
-      console.log('  /api/general-records');
+      console.log('  /api/commander-turns, /api/commander-access-logs');
+      console.log('  /api/commander-records');
       console.log('');
       console.log('Nation:');
-      console.log('  /api/nation-turns, /api/nation-envs');
+      console.log('  /api/faction-turns, /api/faction-envs');
       console.log('');
       console.log('Military:');
       console.log('  /api/troops, /api/battles');

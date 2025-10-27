@@ -1,15 +1,13 @@
 /**
  * DI Container (수동 의존성 주입 팩토리)
- * blackandwhite-dev-back 패턴: 생성자 기반 DI
  */
 
 import { CacheManager } from './infrastructure/cache/cache-manager';
 import { RedisService } from './infrastructure/cache/redis.service';
 import { CommandQueue } from './infrastructure/queue/command-queue';
 import { CommandRepository } from './api/command/repository/command.repository';
-import { GeneralRepository } from './api/general/repository/general.repository';
+import { GameSessionRepository } from './api/game-session/repository/game-session.repository';
 import { CommandService } from './api/command/service/command.service';
-import { GeneralService } from './api/general/service/general.service';
 
 /**
  * 싱글톤 인스턴스 저장소
@@ -19,7 +17,7 @@ const singletons = {
   redisService: null as RedisService | null,
   commandQueue: null as CommandQueue | null,
   commandRepository: null as CommandRepository | null,
-  generalRepository: null as GeneralRepository | null,
+  gameSessionRepository: null as GameSessionRepository | null,
 };
 
 /**
@@ -63,38 +61,18 @@ export const getCommandRepository = (): CommandRepository => {
 };
 
 /**
- * GeneralRepository 싱글톤 반환
+ * GameSessionRepository 싱글톤 반환
  */
-export const getGeneralRepository = (): GeneralRepository => {
-  if (!singletons.generalRepository) {
-    singletons.generalRepository = new GeneralRepository();
+export const getGameSessionRepository = (): GameSessionRepository => {
+  if (!singletons.gameSessionRepository) {
+    singletons.gameSessionRepository = new GameSessionRepository();
   }
-  return singletons.generalRepository;
+  return singletons.gameSessionRepository;
 };
 
 /**
  * CommandService 팩토리
  */
 export const makeCommandService = (): CommandService => {
-  return new CommandService(getCommandRepository(), getCommandQueue());
+  return new CommandService(getCommandRepository(), getCommandQueue(), getGameSessionRepository());
 };
-
-/**
- * GeneralService 팩토리
- */
-export const makeGeneralService = (): GeneralService => {
-  return new GeneralService(getGeneralRepository(), getCacheManager(), getCommandQueue());
-};
-
-/**
- * City Controller 팩토리
- * TODO: Repository, Service 구현 후 활성화
- */
-export const makeCityController = () => {
-  throw new Error('makeCityController: Not implemented yet');
-};
-
-// TODO: 나머지 도메인 Controller 팩토리 추가
-// - makeNationController
-// - makeBattleController
-// - makeItemController
