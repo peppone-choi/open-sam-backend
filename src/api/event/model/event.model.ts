@@ -1,15 +1,27 @@
 import { Schema, model, Document } from 'mongoose';
+import { IEvent } from '../@types/event.types';
 
-export interface IEventDocument extends Document {
-  sessionId: string;
-  // TODO: 필드 정의 (schema.sql 참조)
+export interface IEventDocument extends Omit<IEvent, 'id'>, Document {
+  id: string;
 }
 
-const EventSchema = new Schema<IEventDocument>({
-  sessionId: { type: String, required: true },
-  // TODO: 스키마 정의
-}, { timestamps: true });
+const EventSchema = new Schema<IEventDocument>(
+  {
+    target: {
+      type: String,
+      enum: ['MONTH', 'OCCUPY_CITY', 'DESTROY_NATION', 'PRE_MONTH', 'UNITED'],
+      required: true,
+      default: 'MONTH',
+    },
+    priority: { type: Number, required: true, default: 1000 },
+    condition: { type: Schema.Types.Mixed, required: true },
+    action: { type: Schema.Types.Mixed, required: true },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-EventSchema.index({ sessionId: 1 });
+EventSchema.index({ target: 1, priority: 1 });
 
 export const EventModel = model<IEventDocument>('Event', EventSchema);

@@ -1,6 +1,102 @@
+import { Request, Response, NextFunction } from 'express';
 import { CommentService } from '../service/comment.service';
+import { HttpException } from '../../../common/errors/HttpException';
+import { ApiResponse, Paginated } from '../../../@types';
 
 export class CommentController {
   constructor(private service: CommentService) {}
-  // TODO: 구현
+
+  getById = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const comment = await this.service.getById(req.params.id);
+
+      if (!comment) {
+        throw new HttpException(404, 'Comment not found');
+      }
+
+      const response: ApiResponse<typeof comment> = { data: comment };
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  list = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = parseInt(req.query.skip as string) || 0;
+
+      const comments = await this.service.list(limit, skip);
+
+      const response: Paginated<typeof comments[0]> = {
+        data: comments,
+        count: comments.length,
+        limit,
+        skip,
+      };
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  create = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const comment = await this.service.create(req.body);
+
+      const response: ApiResponse<typeof comment> = { data: comment };
+      res.status(201).json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  update = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const comment = await this.service.update(req.params.id, req.body);
+
+      if (!comment) {
+        throw new HttpException(404, 'Comment not found');
+      }
+
+      const response: ApiResponse<typeof comment> = { data: comment };
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  remove = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const success = await this.service.remove(req.params.id);
+
+      if (!success) {
+        throw new HttpException(404, 'Comment not found');
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -1,83 +1,20 @@
 import { Router } from 'express';
-import { asyncHandler } from '../../../common/utils/async-handler';
+import { GameSessionController } from '../controller/game-session.controller';
+import { GameSessionService } from '../service/game-session.service';
+import { GameSessionRepository } from '../repository/game-session.repository';
 
 const router = Router();
 
-/**
- * GET /game-session
- * 목록 조회
- */
-router.get(
-  '/',
-  asyncHandler(async (req, res) => {
-    // TODO: Implement list
-    res.json({ 
-      message: 'List game-session',
-      data: [],
-      total: 0 
-    });
-  })
-);
+// DI
+const repository = new GameSessionRepository();
+const service = new GameSessionService(repository);
+const controller = new GameSessionController(service);
 
-/**
- * GET /game-session/:id
- * 상세 조회
- */
-router.get(
-  '/:id',
-  asyncHandler(async (req, res) => {
-    // TODO: Implement get by id
-    res.json({ 
-      message: 'Get game-session by id',
-      id: req.params.id 
-    });
-  })
-);
-
-/**
- * POST /game-session
- * 생성
- */
-router.post(
-  '/',
-  asyncHandler(async (req, res) => {
-    // TODO: Implement create
-    res.status(201).json({ 
-      message: 'GameSession created',
-      data: req.body 
-    });
-  })
-);
-
-/**
- * PUT /game-session/:id
- * 수정
- */
-router.put(
-  '/:id',
-  asyncHandler(async (req, res) => {
-    // TODO: Implement update
-    res.json({ 
-      message: 'GameSession updated',
-      id: req.params.id,
-      data: req.body 
-    });
-  })
-);
-
-/**
- * DELETE /game-session/:id
- * 삭제
- */
-router.delete(
-  '/:id',
-  asyncHandler(async (req, res) => {
-    // TODO: Implement delete
-    res.json({ 
-      message: 'GameSession deleted',
-      id: req.params.id 
-    });
-  })
-);
+// Routes
+router.get('/', controller.list);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.put('/:id', controller.update);
+router.delete('/:id', controller.remove);
 
 export default router;

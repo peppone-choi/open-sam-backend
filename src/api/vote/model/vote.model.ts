@@ -1,15 +1,25 @@
 import { Schema, model, Document } from 'mongoose';
+import { IVote } from '../@types/vote.types';
 
-export interface IVoteDocument extends Document {
-  sessionId: string;
-  // TODO: 필드 정의 (schema.sql 참조)
+export interface IVoteDocument extends Omit<IVote, 'id'>, Document {
+  id: string;
 }
 
-const VoteSchema = new Schema<IVoteDocument>({
-  sessionId: { type: String, required: true },
-  // TODO: 스키마 정의
-}, { timestamps: true });
+const VoteSchema = new Schema<IVoteDocument>(
+  {
+    sessionId: { type: String, required: true },
+    voteId: { type: Number, required: true },
+    generalId: { type: String, required: true },
+    nationId: { type: String, required: true },
+    selection: { type: Schema.Types.Mixed, required: true },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-VoteSchema.index({ sessionId: 1 });
+VoteSchema.index({ sessionId: 1, voteId: 1 });
+VoteSchema.index({ generalId: 1 });
+VoteSchema.index({ nationId: 1 });
 
 export const VoteModel = model<IVoteDocument>('Vote', VoteSchema);

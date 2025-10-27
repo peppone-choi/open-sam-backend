@@ -1,28 +1,24 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import { CityController } from '../controller/city.controller';
 import { CityService } from '../service/city.service';
 import { CityRepository } from '../repository/city.repository';
 import { BattleFieldTileRepository } from '../../battlefield-tile/repository/battlefield-tile.repository';
 import { getCacheManager } from '../../../container';
 
 const router = Router();
+
+// DI
 const cityRepo = new CityRepository();
 const tileRepo = new BattleFieldTileRepository();
 const cacheManager = getCacheManager();
 const service = new CityService(cityRepo, cacheManager, tileRepo);
+const controller = new CityController(service);
 
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    // TODO: 캐시 미들웨어 적용
-    const city = await service.getById(req.params.id);
-    
-    if (!city) {
-      return res.status(404).json({ error: 'City not found' });
-    }
-    
-    res.json({ city });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Routes
+router.get('/', controller.list);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.put('/:id', controller.update);
+router.delete('/:id', controller.remove);
 
 export default router;

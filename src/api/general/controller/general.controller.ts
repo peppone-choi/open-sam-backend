@@ -37,6 +37,60 @@ export class GeneralController {
   /**
    * GET /api/generals
    */
+  list = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = parseInt(req.query.skip as string) || 0;
+
+      const generals = await this.service.getAll(limit, skip);
+      const count = await this.service.count();
+
+      const response: Paginated<typeof generals[0]> = {
+        data: generals,
+        count,
+        limit,
+        skip,
+      };
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // TODO: Implement create
+      res.status(201).json({ message: 'Create not implemented' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // TODO: Implement update
+      res.json({ message: 'Update not implemented' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // TODO: Implement delete
+      res.json({ message: 'Delete not implemented' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/generals (legacy)
+   */
   getAll = async (
     req: Request,
     res: Response,

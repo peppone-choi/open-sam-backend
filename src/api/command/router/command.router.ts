@@ -1,44 +1,21 @@
 import { Router } from 'express';
-import { makeCommandService } from '../../../container';
-import { asyncHandler } from '../../../common/utils/async-handler';
-// import { validate } from '../../../common/middleware/validator.middleware';
+import { CommandController } from '../controller/command.controller';
+import { CommandService } from '../service/command.service';
+import { CommandRepository } from '../repository/command.repository';
+import { getCommandQueue } from '../../../container';
 
 const router = Router();
 
-// TODO: Controller 생성 (DI)
-// const controller = makeCommandController();
+// DI
+const repository = new CommandRepository();
+const service = new CommandService(repository, getCommandQueue());
+const controller = new CommandController(service);
 
-/**
- * POST /api/commands
- * 명령 제출
- */
-// router.post(
-//   '/',
-//   validate(SubmitCommandSchema),
-//   asyncHandler(controller.submit)
-// );
-
-/**
- * GET /api/commands/:id
- * 명령 조회
- */
-// router.get(
-//   '/:id',
-//   asyncHandler(controller.getById)
-// );
-
-/**
- * GET /api/commands?generalId=xxx
- * 장수별 명령 조회
- */
-// router.get(
-//   '/',
-//   asyncHandler(controller.getByGeneralId)
-// );
-
-// TODO: 임시 라우트 (구현 전)
-router.get('/', (_req, res) => {
-  res.json({ message: 'Command routes - TODO' });
-});
+// Routes
+router.get('/', controller.list);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.put('/:id', controller.update);
+router.delete('/:id', controller.remove);
 
 export default router;

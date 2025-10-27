@@ -1,15 +1,27 @@
 import { Schema, model, Document } from 'mongoose';
+import { IUserRecord } from '../@types/user-record.types';
 
-export interface IUserRecordDocument extends Document {
-  sessionId: string;
-  // TODO: 필드 정의 (schema.sql 참조)
+export interface IUserRecordDocument extends Omit<IUserRecord, 'id'>, Document {
+  id: string;
 }
 
-const UserRecordSchema = new Schema<IUserRecordDocument>({
-  sessionId: { type: String, required: true },
-  // TODO: 스키마 정의
-}, { timestamps: true });
+const UserRecordSchema = new Schema<IUserRecordDocument>(
+  {
+    userId: { type: String, required: true },
+    serverId: { type: String, required: true },
+    logType: { type: String, required: true },
+    year: { type: Number, required: true },
+    month: { type: Number, required: true },
+    date: { type: Date },
+    text: { type: String, required: true },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-UserRecordSchema.index({ sessionId: 1 });
+UserRecordSchema.index({ userId: 1, serverId: 1 });
+UserRecordSchema.index({ serverId: 1, year: 1, month: 1 });
+UserRecordSchema.index({ logType: 1 });
 
 export const UserRecordModel = model<IUserRecordDocument>('UserRecord', UserRecordSchema);

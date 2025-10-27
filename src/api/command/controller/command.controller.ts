@@ -9,6 +9,45 @@ import { ApiResponse } from '../../../@types';
 export class CommandController {
   constructor(private service: CommandService) {}
 
+  list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = parseInt(req.query.skip as string) || 0;
+      
+      // TODO: Implement list
+      res.json({ data: [], total: 0 });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.service.submit(req.body);
+      res.status(202).json({ messageId: result.messageId });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // TODO: Implement update
+      res.json({ message: 'Update not implemented' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // TODO: Implement delete
+      res.json({ message: 'Delete not implemented' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   /**
    * POST /api/commands
    * 명령 제출

@@ -1,50 +1,41 @@
 import { Schema, model, Document } from 'mongoose';
 import { INation } from '../@types/nation.types';
 
-/**
- * Nation Mongoose Schema
- * schema.sql의 nation 테이블 기반
- */
 export interface INationDocument extends Omit<INation, 'id'>, Document {
   id: string;
 }
 
 const NationSchema = new Schema<INationDocument>(
   {
+    sessionId: { type: String, required: true, index: true },
+    
     name: { type: String, required: true },
     color: { type: String, required: true },
     
-    // 수도
-    capital: { type: Number, default: 0 },
-    capSet: { type: String, default: '0' },
+    capital: { type: Number, required: true, default: 0 },
+    capSet: { type: String, default: '' },
     
-    // 인구 & 자원
-    genNum: { type: Number, default: 1 },
-    gold: { type: Number, default: 0 },
-    rice: { type: Number, default: 0 },
+    genNum: { type: Number, required: true, default: 0 },
+    gold: { type: Number, required: true, default: 0 },
+    rice: { type: Number, required: true, default: 0 },
     
-    // 세율
-    bill: { type: Number, default: 0 },
-    rate: { type: Number, default: 0 },
-    rateTemp: { type: Number, default: 0 },
+    bill: { type: Number, required: true, default: 0 },
+    rate: { type: Number, required: true, default: 0 },
+    rateTemp: { type: Number, required: true, default: 0 },
     
-    // 외교/정보
-    secretLimit: { type: Number, default: 3 },
+    secretLimit: { type: Number, required: true, default: 0 },
     chiefSet: { type: Number, required: true, default: 0 },
-    scout: { type: Boolean, default: false },
-    war: { type: Boolean, default: false },
+    scout: { type: Boolean, required: true, default: false },
+    war: { type: Boolean, required: true, default: false },
     
-    // 커맨드
-    strategicCmdLimit: { type: Number, default: 36 },
-    surLimit: { type: Number, default: 72 },
+    strategicCmdLimit: { type: Number, required: true, default: 0 },
+    surLimit: { type: Number, required: true, default: 0 },
     
-    // 국력
-    tech: { type: Number, default: 0 },
-    power: { type: Number, default: 0 },
-    level: { type: Number, default: 0 },
+    tech: { type: Number, required: true, default: 0 },
+    power: { type: Number, required: true, default: 0 },
+    level: { type: Number, required: true, default: 1 },
     type: { type: String, required: true, default: 'che_중립' },
     
-    // JSON 필드
     spy: { type: Schema.Types.Mixed, default: {} },
     aux: { type: Schema.Types.Mixed, default: {} },
   },
@@ -53,8 +44,7 @@ const NationSchema = new Schema<INationDocument>(
   }
 );
 
-// 인덱스
-NationSchema.index({ name: 1 });
-NationSchema.index({ type: 1 });
+NationSchema.index({ sessionId: 1, name: 1 });
+NationSchema.index({ sessionId: 1, type: 1 });
 
 export const NationModel = model<INationDocument>('Nation', NationSchema);
