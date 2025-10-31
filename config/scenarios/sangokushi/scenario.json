@@ -1,0 +1,289 @@
+{
+  "id": "sangokushi",
+  "name": "삼국지",
+  "description": "후한 말 삼국시대 배경 전략 시뮬레이션",
+  "version": "1.0.0",
+  "author": "open-sam-backend",
+  "roles": {
+    "SETTLEMENT": {
+      "collection": "cities",
+      "label": {
+        "ko": "도시",
+        "en": "City"
+      },
+      "schema": {
+        "attributes": {
+          "population": {
+            "label": "인구",
+            "min": 0,
+            "max": 999999,
+            "default": 10000
+          },
+          "defense": {
+            "label": "방어도",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          },
+          "trust": {
+            "label": "민심",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          },
+          "development": {
+            "label": "개발도",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "commerce": {
+            "label": "상업도",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "agriculture": {
+            "label": "농업도",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          }
+        },
+        "slots": {
+          "production_1": {
+            "label": "농업",
+            "icon": "🌾",
+            "description": "농업 생산 시설",
+            "maxLevel": 10
+          },
+          "production_2": {
+            "label": "상업",
+            "icon": "💰",
+            "description": "상업 생산 시설",
+            "maxLevel": 10
+          },
+          "production_3": {
+            "label": "기술",
+            "icon": "🔬",
+            "description": "기술 연구 시설",
+            "maxLevel": 10
+          },
+          "defense": {
+            "label": "성벽",
+            "icon": "🏰",
+            "description": "방어 시설",
+            "maxLevel": 10
+          },
+          "security": {
+            "label": "치안",
+            "icon": "👮",
+            "description": "치안 시설",
+            "maxLevel": 10
+          }
+        }
+      }
+    },
+    "COMMANDER": {
+      "collection": "generals",
+      "label": {
+        "ko": "장수",
+        "en": "General"
+      },
+      "schema": {
+        "attributes": {
+          "leadership": {
+            "label": "통솔력",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "strength": {
+            "label": "무력",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "intel": {
+            "label": "지력",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "charm": {
+            "label": "매력",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "age": {
+            "label": "나이",
+            "min": 15,
+            "max": 100,
+            "default": 25
+          },
+          "injury": {
+            "label": "부상도",
+            "min": 0,
+            "max": 100,
+            "default": 0
+          },
+          "loyalty": {
+            "label": "충성도",
+            "min": 0,
+            "max": 100,
+            "default": 70
+          },
+          "exp": {
+            "label": "경험치",
+            "min": 0,
+            "max": 999999,
+            "default": 0
+          }
+        }
+      }
+    },
+    "FACTION": {
+      "collection": "nations",
+      "label": {
+        "ko": "국가",
+        "en": "Nation"
+      },
+      "schema": {
+        "attributes": {
+          "tech": {
+            "label": "기술력",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "prestige": {
+            "label": "명성",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "legitimacy": {
+            "label": "정통성",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          }
+        }
+      }
+    },
+    "FORCE": {
+      "collection": "forces",
+      "label": {
+        "ko": "부대",
+        "en": "Force"
+      }
+    },
+    "DIPLOMACY": {
+      "collection": "diplomacy",
+      "label": {
+        "ko": "외교",
+        "en": "Diplomacy"
+      }
+    }
+  },
+  "relations": {
+    "ASSIGNED_SETTLEMENT": {
+      "from": "COMMANDER",
+      "to": "SETTLEMENT",
+      "viaField": "city"
+    },
+    "MEMBER_OF": {
+      "from": "COMMANDER",
+      "to": "FACTION",
+      "viaField": "nation"
+    },
+    "OWNS": {
+      "from": "FACTION",
+      "to": "SETTLEMENT",
+      "viaField": "nation",
+      "inverse": "cities"
+    }
+  },
+  "data": {
+    "collections": {
+      "cities": {
+        "file": "data/cities.json",
+        "root": "cities",
+        "idField": "id"
+      },
+      "generals": {
+        "file": "data/generals.json",
+        "root": "generals",
+        "idField": "id"
+      },
+      "nations": {
+        "file": "data/nations.json",
+        "root": "nations",
+        "idField": "id"
+      },
+      "forces": {
+        "file": "data/forces.json",
+        "root": "forces",
+        "idField": "id"
+      },
+      "diplomacy": {
+        "file": "data/diplomacy.json",
+        "root": "relations"
+      }
+    },
+    "assets": {
+      "constants": {
+        "file": "data/constants.json"
+      },
+      "units": {
+        "file": "data/units.json",
+        "root": "units",
+        "defaultKey": "defaultUnit"
+      },
+      "specials": {
+        "file": "data/specials.json"
+      },
+      "map": {
+        "file": "data/map.json"
+      }
+    }
+  },
+  "config": {
+    "systems": {
+      "economy": {
+        "id": "economy",
+        "label": "경제 시스템",
+        "description": "자원 생산, 거래, 세금 관리",
+        "enabled": true
+      },
+      "diplomacy": {
+        "id": "diplomacy",
+        "label": "외교 시스템",
+        "description": "동맹, 전쟁, 협상 관리",
+        "enabled": true
+      },
+      "warfare": {
+        "id": "warfare",
+        "label": "전쟁 시스템",
+        "description": "전투, 침략, 방어 관리",
+        "enabled": true
+      }
+    },
+    "resources": ["gold", "rice"]
+  },
+  "metadata": {
+    "baseYear": 180,
+    "mapName": "che",
+    "unitSet": "che",
+    "totalCities": 94,
+    "totalRegions": 8,
+    "gameMode": "turn",
+    "turnConfig": {
+      "defaultHour": 21,
+      "defaultMinute": 0,
+      "allowCustom": true,
+      "maxTurnsPerCycle": 30
+    }
+  }
+}

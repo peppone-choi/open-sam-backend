@@ -1,0 +1,2499 @@
+{
+  "cities": [
+    {
+      "id": 1,
+      "name": "업",
+      "levelId": 9,
+      "regionId": 1,
+      "initialState": {
+        "population": 6205,
+        "agriculture": 125,
+        "commerce": 113,
+        "security": 100,
+        "defense": 117,
+        "wall": 122
+      },
+      "position": {
+        "x": 345,
+        "y": 130
+      },
+      "neighbors": [
+        9,
+        18,
+        70,
+        78,
+        80
+      ]
+    },
+    {
+      "id": 2,
+      "name": "허창",
+      "levelId": 8,
+      "regionId": 2,
+      "initialState": {
+        "population": 5876,
+        "agriculture": 121,
+        "commerce": 124,
+        "security": 100,
+        "defense": 117,
+        "wall": 125
+      },
+      "position": {
+        "x": 330,
+        "y": 215
+      },
+      "neighbors": [
+        10,
+        19,
+        38,
+        71,
+        74,
+        80
+      ]
+    },
+    {
+      "id": 3,
+      "name": "낙양",
+      "levelId": 10,
+      "regionId": 2,
+      "initialState": {
+        "population": 8357,
+        "agriculture": 117,
+        "commerce": 120,
+        "security": 100,
+        "defense": 121,
+        "wall": 124
+      },
+      "position": {
+        "x": 275,
+        "y": 180
+      },
+      "neighbors": [
+        70,
+        71,
+        72,
+        74
+      ]
+    },
+    {
+      "id": 4,
+      "name": "장안",
+      "levelId": 10,
+      "regionId": 3,
+      "initialState": {
+        "population": 5923,
+        "agriculture": 116,
+        "commerce": 123,
+        "security": 100,
+        "defense": 120,
+        "wall": 118
+      },
+      "position": {
+        "x": 145,
+        "y": 165
+      },
+      "neighbors": [
+        41,
+        73,
+        86
+      ]
+    },
+    {
+      "id": 5,
+      "name": "성도",
+      "levelId": 8,
+      "regionId": 4,
+      "initialState": {
+        "population": 6525,
+        "agriculture": 123,
+        "commerce": 125,
+        "security": 100,
+        "defense": 125,
+        "wall": 123
+      },
+      "position": {
+        "x": 25,
+        "y": 290
+      },
+      "neighbors": [
+        26,
+        27,
+        87
+      ]
+    },
+    {
+      "id": 6,
+      "name": "양양",
+      "levelId": 8,
+      "regionId": 6,
+      "initialState": {
+        "population": 5837,
+        "agriculture": 120,
+        "commerce": 126,
+        "security": 100,
+        "defense": 115,
+        "wall": 117
+      },
+      "position": {
+        "x": 255,
+        "y": 290
+      },
+      "neighbors": [
+        51,
+        89
+      ]
+    },
+    {
+      "id": 7,
+      "name": "건업",
+      "levelId": 8,
+      "regionId": 7,
+      "initialState": {
+        "population": 6386,
+        "agriculture": 116,
+        "commerce": 123,
+        "security": 100,
+        "defense": 115,
+        "wall": 119
+      },
+      "position": {
+        "x": 505,
+        "y": 305
+      },
+      "neighbors": [
+        31,
+        82,
+        83
+      ]
+    },
+    {
+      "id": 8,
+      "name": "북평",
+      "levelId": 7,
+      "regionId": 1,
+      "initialState": {
+        "population": 4862,
+        "agriculture": 102,
+        "commerce": 95,
+        "security": 80,
+        "defense": 103,
+        "wall": 99
+      },
+      "position": {
+        "x": 465,
+        "y": 65
+      },
+      "neighbors": [
+        77,
+        90,
+        95
+      ]
+    },
+    {
+      "id": 9,
+      "name": "남피",
+      "levelId": 7,
+      "regionId": 1,
+      "initialState": {
+        "population": 5032,
+        "agriculture": 99,
+        "commerce": 101,
+        "security": 80,
+        "defense": 101,
+        "wall": 105
+      },
+      "position": {
+        "x": 395,
+        "y": 95
+      },
+      "neighbors": [
+        1,
+        36,
+        77
+      ]
+    },
+    {
+      "id": 10,
+      "name": "완",
+      "levelId": 7,
+      "regionId": 2,
+      "initialState": {
+        "population": 4724,
+        "agriculture": 103,
+        "commerce": 100,
+        "security": 80,
+        "defense": 101,
+        "wall": 99
+      },
+      "position": {
+        "x": 270,
+        "y": 235
+      },
+      "neighbors": [
+        2,
+        20,
+        51,
+        71
+      ]
+    },
+    {
+      "id": 11,
+      "name": "수춘",
+      "levelId": 7,
+      "regionId": 2,
+      "initialState": {
+        "population": 5143,
+        "agriculture": 99,
+        "commerce": 96,
+        "security": 80,
+        "defense": 99,
+        "wall": 95
+      },
+      "position": {
+        "x": 395,
+        "y": 270
+      },
+      "neighbors": [
+        12,
+        20,
+        38,
+        82
+      ]
+    },
+    {
+      "id": 12,
+      "name": "서주",
+      "levelId": 7,
+      "regionId": 2,
+      "initialState": {
+        "population": 4853,
+        "agriculture": 101,
+        "commerce": 98,
+        "security": 80,
+        "defense": 102,
+        "wall": 97
+      },
+      "position": {
+        "x": 440,
+        "y": 250
+      },
+      "neighbors": [
+        11,
+        21,
+        38,
+        39
+      ]
+    },
+    {
+      "id": 13,
+      "name": "강릉",
+      "levelId": 7,
+      "regionId": 6,
+      "initialState": {
+        "population": 4850,
+        "agriculture": 105,
+        "commerce": 96,
+        "security": 80,
+        "defense": 95,
+        "wall": 96
+      },
+      "position": {
+        "x": 245,
+        "y": 335
+      },
+      "neighbors": [
+        14,
+        53,
+        88,
+        89
+      ]
+    },
+    {
+      "id": 14,
+      "name": "장사",
+      "levelId": 7,
+      "regionId": 6,
+      "initialState": {
+        "population": 4710,
+        "agriculture": 97,
+        "commerce": 99,
+        "security": 80,
+        "defense": 100,
+        "wall": 105
+      },
+      "position": {
+        "x": 255,
+        "y": 375
+      },
+      "neighbors": [
+        13,
+        15,
+        30,
+        53,
+        54
+      ]
+    },
+    {
+      "id": 15,
+      "name": "시상",
+      "levelId": 7,
+      "regionId": 7,
+      "initialState": {
+        "population": 5252,
+        "agriculture": 98,
+        "commerce": 100,
+        "security": 100,
+        "defense": 99,
+        "wall": 96
+      },
+      "position": {
+        "x": 360,
+        "y": 360
+      },
+      "neighbors": [
+        14,
+        56,
+        58,
+        91,
+        92
+      ]
+    },
+    {
+      "id": 16,
+      "name": "위례",
+      "levelId": 7,
+      "regionId": 8,
+      "initialState": {
+        "population": 4926,
+        "agriculture": 100,
+        "commerce": 93,
+        "security": 80,
+        "defense": 98,
+        "wall": 103
+      },
+      "position": {
+        "x": 620,
+        "y": 145
+      },
+      "neighbors": [
+        32,
+        33,
+        34,
+        60,
+        79,
+        104
+      ]
+    },
+    {
+      "id": 17,
+      "name": "계",
+      "levelId": 6,
+      "regionId": 1,
+      "initialState": {
+        "population": 3885,
+        "agriculture": 75,
+        "commerce": 80,
+        "security": 60,
+        "defense": 78,
+        "wall": 81
+      },
+      "position": {
+        "x": 365,
+        "y": 35
+      },
+      "neighbors": [
+        35,
+        77
+      ]
+    },
+    {
+      "id": 18,
+      "name": "복양",
+      "levelId": 6,
+      "regionId": 2,
+      "initialState": {
+        "population": 4185,
+        "agriculture": 80,
+        "commerce": 83,
+        "security": 60,
+        "defense": 82,
+        "wall": 80
+      },
+      "position": {
+        "x": 410,
+        "y": 170
+      },
+      "neighbors": [
+        1,
+        19,
+        78,
+        81
+      ]
+    },
+    {
+      "id": 19,
+      "name": "진류",
+      "levelId": 6,
+      "regionId": 2,
+      "initialState": {
+        "population": 3957,
+        "agriculture": 82,
+        "commerce": 80,
+        "security": 60,
+        "defense": 80,
+        "wall": 83
+      },
+      "position": {
+        "x": 365,
+        "y": 185
+      },
+      "neighbors": [
+        2,
+        18,
+        74,
+        80,
+        81
+      ]
+    },
+    {
+      "id": 20,
+      "name": "여남",
+      "levelId": 6,
+      "regionId": 2,
+      "initialState": {
+        "population": 3831,
+        "agriculture": 77,
+        "commerce": 81,
+        "security": 60,
+        "defense": 84,
+        "wall": 77
+      },
+      "position": {
+        "x": 330,
+        "y": 260
+      },
+      "neighbors": [
+        10,
+        11,
+        38
+      ]
+    },
+    {
+      "id": 21,
+      "name": "하비",
+      "levelId": 6,
+      "regionId": 2,
+      "initialState": {
+        "population": 4278,
+        "agriculture": 85,
+        "commerce": 83,
+        "security": 60,
+        "defense": 82,
+        "wall": 78
+      },
+      "position": {
+        "x": 480,
+        "y": 235
+      },
+      "neighbors": [
+        12,
+        83
+      ]
+    },
+    {
+      "id": 22,
+      "name": "서량",
+      "levelId": 6,
+      "regionId": 3,
+      "initialState": {
+        "population": 3874,
+        "agriculture": 77,
+        "commerce": 79,
+        "security": 60,
+        "defense": 83,
+        "wall": 80
+      },
+      "position": {
+        "x": 25,
+        "y": 50
+      },
+      "neighbors": [
+        40,
+        63,
+        64,
+        98
+      ]
+    },
+    {
+      "id": 23,
+      "name": "하내",
+      "levelId": 6,
+      "regionId": 3,
+      "initialState": {
+        "population": 3736,
+        "agriculture": 77,
+        "commerce": 81,
+        "security": 60,
+        "defense": 81,
+        "wall": 80
+      },
+      "position": {
+        "x": 230,
+        "y": 150
+      },
+      "neighbors": [
+        35,
+        42,
+        65,
+        70,
+        100
+      ]
+    },
+    {
+      "id": 24,
+      "name": "한중",
+      "levelId": 6,
+      "regionId": 4,
+      "initialState": {
+        "population": 4027,
+        "agriculture": 77,
+        "commerce": 84,
+        "security": 60,
+        "defense": 80,
+        "wall": 85
+      },
+      "position": {
+        "x": 135,
+        "y": 205
+      },
+      "neighbors": [
+        25,
+        75,
+        86
+      ]
+    },
+    {
+      "id": 25,
+      "name": "상용",
+      "levelId": 6,
+      "regionId": 4,
+      "initialState": {
+        "population": 3687,
+        "agriculture": 78,
+        "commerce": 76,
+        "security": 60,
+        "defense": 77,
+        "wall": 81
+      },
+      "position": {
+        "x": 185,
+        "y": 225
+      },
+      "neighbors": [
+        24,
+        51
+      ]
+    },
+    {
+      "id": 26,
+      "name": "덕양",
+      "levelId": 6,
+      "regionId": 4,
+      "initialState": {
+        "population": 3803,
+        "agriculture": 81,
+        "commerce": 84,
+        "security": 60,
+        "defense": 79,
+        "wall": 77
+      },
+      "position": {
+        "x": 85,
+        "y": 275
+      },
+      "neighbors": [
+        5,
+        27,
+        44,
+        45
+      ]
+    },
+    {
+      "id": 27,
+      "name": "강주",
+      "levelId": 6,
+      "regionId": 4,
+      "initialState": {
+        "population": 4126,
+        "agriculture": 79,
+        "commerce": 80,
+        "security": 60,
+        "defense": 84,
+        "wall": 81
+      },
+      "position": {
+        "x": 70,
+        "y": 310
+      },
+      "neighbors": [
+        5,
+        26,
+        45,
+        46,
+        47
+      ]
+    },
+    {
+      "id": 28,
+      "name": "건녕",
+      "levelId": 6,
+      "regionId": 5,
+      "initialState": {
+        "population": 3765,
+        "agriculture": 82,
+        "commerce": 80,
+        "security": 60,
+        "defense": 86,
+        "wall": 81
+      },
+      "position": {
+        "x": 80,
+        "y": 400
+      },
+      "neighbors": [
+        46,
+        48,
+        49,
+        101
+      ]
+    },
+    {
+      "id": 29,
+      "name": "남해",
+      "levelId": 6,
+      "regionId": 5,
+      "initialState": {
+        "population": 3803,
+        "agriculture": 82,
+        "commerce": 76,
+        "security": 60,
+        "defense": 80,
+        "wall": 81
+      },
+      "position": {
+        "x": 245,
+        "y": 480
+      },
+      "neighbors": [
+        50,
+        55,
+        67,
+        99
+      ]
+    },
+    {
+      "id": 30,
+      "name": "계양",
+      "levelId": 6,
+      "regionId": 6,
+      "initialState": {
+        "population": 3955,
+        "agriculture": 83,
+        "commerce": 80,
+        "security": 60,
+        "defense": 81,
+        "wall": 77
+      },
+      "position": {
+        "x": 230,
+        "y": 400
+      },
+      "neighbors": [
+        14,
+        54,
+        55
+      ]
+    },
+    {
+      "id": 31,
+      "name": "오",
+      "levelId": 6,
+      "regionId": 7,
+      "initialState": {
+        "population": 4355,
+        "agriculture": 77,
+        "commerce": 81,
+        "security": 60,
+        "defense": 77,
+        "wall": 76
+      },
+      "position": {
+        "x": 510,
+        "y": 345
+      },
+      "neighbors": [
+        7,
+        57,
+        92,
+        93
+      ]
+    },
+    {
+      "id": 32,
+      "name": "평양",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 3982,
+        "agriculture": 78,
+        "commerce": 80,
+        "security": 60,
+        "defense": 83,
+        "wall": 78
+      },
+      "position": {
+        "x": 590,
+        "y": 100
+      },
+      "neighbors": [
+        16,
+        61,
+        105,
+        107
+      ]
+    },
+    {
+      "id": 33,
+      "name": "사비",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 4157,
+        "agriculture": 77,
+        "commerce": 79,
+        "security": 60,
+        "defense": 78,
+        "wall": 80
+      },
+      "position": {
+        "x": 605,
+        "y": 205
+      },
+      "neighbors": [
+        16,
+        34,
+        93,
+        104,
+        106
+      ]
+    },
+    {
+      "id": 34,
+      "name": "계림",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 3911,
+        "agriculture": 80,
+        "commerce": 74,
+        "security": 60,
+        "defense": 81,
+        "wall": 78
+      },
+      "position": {
+        "x": 655,
+        "y": 200
+      },
+      "neighbors": [
+        16,
+        33,
+        62,
+        93,
+        96,
+        106
+      ]
+    },
+    {
+      "id": 35,
+      "name": "진양",
+      "levelId": 1,
+      "regionId": 1,
+      "initialState": {
+        "population": 3074,
+        "agriculture": 56,
+        "commerce": 59,
+        "security": 40,
+        "defense": 64,
+        "wall": 59
+      },
+      "position": {
+        "x": 295,
+        "y": 60
+      },
+      "neighbors": [
+        17,
+        23,
+        70
+      ]
+    },
+    {
+      "id": 36,
+      "name": "평원",
+      "levelId": 1,
+      "regionId": 1,
+      "initialState": {
+        "population": 3074,
+        "agriculture": 62,
+        "commerce": 65,
+        "security": 40,
+        "defense": 61,
+        "wall": 63
+      },
+      "position": {
+        "x": 440,
+        "y": 115
+      },
+      "neighbors": [
+        9,
+        37,
+        78
+      ]
+    },
+    {
+      "id": 37,
+      "name": "북해",
+      "levelId": 1,
+      "regionId": 1,
+      "initialState": {
+        "population": 3146,
+        "agriculture": 55,
+        "commerce": 63,
+        "security": 40,
+        "defense": 63,
+        "wall": 58
+      },
+      "position": {
+        "x": 470,
+        "y": 155
+      },
+      "neighbors": [
+        36,
+        39,
+        79
+      ]
+    },
+    {
+      "id": 38,
+      "name": "초",
+      "levelId": 1,
+      "regionId": 2,
+      "initialState": {
+        "population": 3286,
+        "agriculture": 60,
+        "commerce": 62,
+        "security": 40,
+        "defense": 62,
+        "wall": 57
+      },
+      "position": {
+        "x": 365,
+        "y": 230
+      },
+      "neighbors": [
+        2,
+        11,
+        12,
+        20,
+        81
+      ]
+    },
+    {
+      "id": 39,
+      "name": "패",
+      "levelId": 1,
+      "regionId": 2,
+      "initialState": {
+        "population": 2877,
+        "agriculture": 64,
+        "commerce": 58,
+        "security": 40,
+        "defense": 58,
+        "wall": 59
+      },
+      "position": {
+        "x": 430,
+        "y": 220
+      },
+      "neighbors": [
+        12,
+        37,
+        81
+      ]
+    },
+    {
+      "id": 40,
+      "name": "천수",
+      "levelId": 1,
+      "regionId": 3,
+      "initialState": {
+        "population": 2985,
+        "agriculture": 59,
+        "commerce": 64,
+        "security": 40,
+        "defense": 60,
+        "wall": 58
+      },
+      "position": {
+        "x": 70,
+        "y": 105
+      },
+      "neighbors": [
+        22,
+        41,
+        64,
+        84
+      ]
+    },
+    {
+      "id": 41,
+      "name": "안정",
+      "levelId": 1,
+      "regionId": 3,
+      "initialState": {
+        "population": 2764,
+        "agriculture": 57,
+        "commerce": 59,
+        "security": 40,
+        "defense": 57,
+        "wall": 62
+      },
+      "position": {
+        "x": 95,
+        "y": 145
+      },
+      "neighbors": [
+        4,
+        40,
+        85
+      ]
+    },
+    {
+      "id": 42,
+      "name": "홍농",
+      "levelId": 1,
+      "regionId": 3,
+      "initialState": {
+        "population": 2748,
+        "agriculture": 57,
+        "commerce": 63,
+        "security": 40,
+        "defense": 58,
+        "wall": 63
+      },
+      "position": {
+        "x": 210,
+        "y": 175
+      },
+      "neighbors": [
+        23,
+        72,
+        73
+      ]
+    },
+    {
+      "id": 43,
+      "name": "하변",
+      "levelId": 1,
+      "regionId": 4,
+      "initialState": {
+        "population": 2785,
+        "agriculture": 58,
+        "commerce": 62,
+        "security": 40,
+        "defense": 60,
+        "wall": 56
+      },
+      "position": {
+        "x": 45,
+        "y": 190
+      },
+      "neighbors": [
+        76,
+        85
+      ]
+    },
+    {
+      "id": 44,
+      "name": "자동",
+      "levelId": 1,
+      "regionId": 4,
+      "initialState": {
+        "population": 2870,
+        "agriculture": 57,
+        "commerce": 55,
+        "security": 40,
+        "defense": 60,
+        "wall": 58
+      },
+      "position": {
+        "x": 75,
+        "y": 245
+      },
+      "neighbors": [
+        26,
+        75,
+        76,
+        87
+      ]
+    },
+    {
+      "id": 45,
+      "name": "영안",
+      "levelId": 1,
+      "regionId": 4,
+      "initialState": {
+        "population": 3153,
+        "agriculture": 62,
+        "commerce": 59,
+        "security": 40,
+        "defense": 58,
+        "wall": 59
+      },
+      "position": {
+        "x": 115,
+        "y": 295
+      },
+      "neighbors": [
+        26,
+        27,
+        88
+      ]
+    },
+    {
+      "id": 46,
+      "name": "귀양",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 2746,
+        "agriculture": 58,
+        "commerce": 61,
+        "security": 40,
+        "defense": 61,
+        "wall": 58
+      },
+      "position": {
+        "x": 90,
+        "y": 360
+      },
+      "neighbors": [
+        27,
+        28,
+        47
+      ]
+    },
+    {
+      "id": 47,
+      "name": "주시",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 2828,
+        "agriculture": 60,
+        "commerce": 59,
+        "security": 40,
+        "defense": 58,
+        "wall": 63
+      },
+      "position": {
+        "x": 30,
+        "y": 345
+      },
+      "neighbors": [
+        27,
+        46,
+        48
+      ]
+    },
+    {
+      "id": 48,
+      "name": "운남",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 3258,
+        "agriculture": 62,
+        "commerce": 60,
+        "security": 40,
+        "defense": 64,
+        "wall": 61
+      },
+      "position": {
+        "x": 30,
+        "y": 415
+      },
+      "neighbors": [
+        28,
+        47,
+        101
+      ]
+    },
+    {
+      "id": 49,
+      "name": "남영",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 2853,
+        "agriculture": 59,
+        "commerce": 62,
+        "security": 40,
+        "defense": 58,
+        "wall": 57
+      },
+      "position": {
+        "x": 135,
+        "y": 405
+      },
+      "neighbors": [
+        28,
+        54,
+        66
+      ]
+    },
+    {
+      "id": 50,
+      "name": "교지",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 3195,
+        "agriculture": 58,
+        "commerce": 59,
+        "security": 40,
+        "defense": 58,
+        "wall": 59
+      },
+      "position": {
+        "x": 130,
+        "y": 480
+      },
+      "neighbors": [
+        29,
+        66,
+        99
+      ]
+    },
+    {
+      "id": 51,
+      "name": "신야",
+      "levelId": 1,
+      "regionId": 6,
+      "initialState": {
+        "population": 2786,
+        "agriculture": 60,
+        "commerce": 62,
+        "security": 40,
+        "defense": 58,
+        "wall": 55
+      },
+      "position": {
+        "x": 250,
+        "y": 260
+      },
+      "neighbors": [
+        6,
+        10,
+        25
+      ]
+    },
+    {
+      "id": 52,
+      "name": "강하",
+      "levelId": 1,
+      "regionId": 6,
+      "initialState": {
+        "population": 3074,
+        "agriculture": 55,
+        "commerce": 56,
+        "security": 40,
+        "defense": 57,
+        "wall": 60
+      },
+      "position": {
+        "x": 315,
+        "y": 295
+      },
+      "neighbors": [
+        89,
+        91
+      ]
+    },
+    {
+      "id": 53,
+      "name": "무릉",
+      "levelId": 1,
+      "regionId": 6,
+      "initialState": {
+        "population": 3196,
+        "agriculture": 58,
+        "commerce": 63,
+        "security": 40,
+        "defense": 63,
+        "wall": 58
+      },
+      "position": {
+        "x": 195,
+        "y": 355
+      },
+      "neighbors": [
+        13,
+        14,
+        54
+      ]
+    },
+    {
+      "id": 54,
+      "name": "영릉",
+      "levelId": 1,
+      "regionId": 6,
+      "initialState": {
+        "population": 2849,
+        "agriculture": 62,
+        "commerce": 58,
+        "security": 40,
+        "defense": 62,
+        "wall": 62
+      },
+      "position": {
+        "x": 190,
+        "y": 395
+      },
+      "neighbors": [
+        30,
+        49,
+        53,
+        14
+      ]
+    },
+    {
+      "id": 55,
+      "name": "상동",
+      "levelId": 1,
+      "regionId": 6,
+      "initialState": {
+        "population": 2767,
+        "agriculture": 58,
+        "commerce": 59,
+        "security": 40,
+        "defense": 62,
+        "wall": 58
+      },
+      "position": {
+        "x": 210,
+        "y": 435
+      },
+      "neighbors": [
+        29,
+        30,
+        58,
+        99
+      ]
+    },
+    {
+      "id": 56,
+      "name": "여강",
+      "levelId": 1,
+      "regionId": 7,
+      "initialState": {
+        "population": 2905,
+        "agriculture": 56,
+        "commerce": 58,
+        "security": 40,
+        "defense": 60,
+        "wall": 55
+      },
+      "position": {
+        "x": 380,
+        "y": 315
+      },
+      "neighbors": [
+        15,
+        82,
+        91,
+        92
+      ]
+    },
+    {
+      "id": 57,
+      "name": "회계",
+      "levelId": 1,
+      "regionId": 7,
+      "initialState": {
+        "population": 3005,
+        "agriculture": 64,
+        "commerce": 59,
+        "security": 40,
+        "defense": 62,
+        "wall": 64
+      },
+      "position": {
+        "x": 480,
+        "y": 395
+      },
+      "neighbors": [
+        31,
+        67,
+        103
+      ]
+    },
+    {
+      "id": 58,
+      "name": "고창",
+      "levelId": 1,
+      "regionId": 7,
+      "initialState": {
+        "population": 2802,
+        "agriculture": 57,
+        "commerce": 62,
+        "security": 40,
+        "defense": 58,
+        "wall": 63
+      },
+      "position": {
+        "x": 350,
+        "y": 405
+      },
+      "neighbors": [
+        15,
+        55,
+        67
+      ]
+    },
+    {
+      "id": 59,
+      "name": "대",
+      "levelId": 1,
+      "regionId": 7,
+      "initialState": {
+        "population": 3256,
+        "agriculture": 60,
+        "commerce": 62,
+        "security": 40,
+        "defense": 57,
+        "wall": 60
+      },
+      "position": {
+        "x": 450,
+        "y": 480
+      },
+      "neighbors": [
+        67,
+        94,
+        97
+      ]
+    },
+    {
+      "id": 60,
+      "name": "안평",
+      "levelId": 1,
+      "regionId": 8,
+      "initialState": {
+        "population": 2937,
+        "agriculture": 63,
+        "commerce": 59,
+        "security": 40,
+        "defense": 59,
+        "wall": 63
+      },
+      "position": {
+        "x": 530,
+        "y": 80
+      },
+      "neighbors": [
+        16,
+        61,
+        79,
+        90
+      ]
+    },
+    {
+      "id": 61,
+      "name": "졸본",
+      "levelId": 1,
+      "regionId": 8,
+      "initialState": {
+        "population": 2939,
+        "agriculture": 55,
+        "commerce": 59,
+        "security": 40,
+        "defense": 60,
+        "wall": 58
+      },
+      "position": {
+        "x": 570,
+        "y": 65
+      },
+      "neighbors": [
+        32,
+        60,
+        102,
+        105
+      ]
+    },
+    {
+      "id": 62,
+      "name": "이도",
+      "levelId": 1,
+      "regionId": 8,
+      "initialState": {
+        "population": 3174,
+        "agriculture": 58,
+        "commerce": 61,
+        "security": 40,
+        "defense": 58,
+        "wall": 56
+      },
+      "position": {
+        "x": 680,
+        "y": 260
+      },
+      "neighbors": [
+        34,
+        69,
+        93,
+        96
+      ]
+    },
+    {
+      "id": 63,
+      "name": "강",
+      "levelId": 5,
+      "regionId": 3,
+      "initialState": {
+        "population": 2095,
+        "agriculture": 40,
+        "commerce": 42,
+        "security": 20,
+        "defense": 43,
+        "wall": 40
+      },
+      "position": {
+        "x": 95,
+        "y": 35
+      },
+      "neighbors": [
+        22,
+        84,
+        98
+      ]
+    },
+    {
+      "id": 64,
+      "name": "저",
+      "levelId": 5,
+      "regionId": 3,
+      "initialState": {
+        "population": 1957,
+        "agriculture": 40,
+        "commerce": 42,
+        "security": 20,
+        "defense": 43,
+        "wall": 42
+      },
+      "position": {
+        "x": 25,
+        "y": 120
+      },
+      "neighbors": [
+        22,
+        40,
+        85
+      ]
+    },
+    {
+      "id": 65,
+      "name": "흉노",
+      "levelId": 5,
+      "regionId": 3,
+      "initialState": {
+        "population": 2064,
+        "agriculture": 40,
+        "commerce": 41,
+        "security": 20,
+        "defense": 40,
+        "wall": 38
+      },
+      "position": {
+        "x": 180,
+        "y": 95
+      },
+      "neighbors": [
+        23,
+        84,
+        100
+      ]
+    },
+    {
+      "id": 66,
+      "name": "남만",
+      "levelId": 5,
+      "regionId": 5,
+      "initialState": {
+        "population": 2378,
+        "agriculture": 40,
+        "commerce": 42,
+        "security": 20,
+        "defense": 43,
+        "wall": 45
+      },
+      "position": {
+        "x": 80,
+        "y": 455
+      },
+      "neighbors": [
+        49,
+        50,
+        101
+      ]
+    },
+    {
+      "id": 67,
+      "name": "산월",
+      "levelId": 5,
+      "regionId": 7,
+      "initialState": {
+        "population": 2275,
+        "agriculture": 40,
+        "commerce": 37,
+        "security": 20,
+        "defense": 43,
+        "wall": 38
+      },
+      "position": {
+        "x": 425,
+        "y": 430
+      },
+      "neighbors": [
+        29,
+        57,
+        58,
+        103
+      ]
+    },
+    {
+      "id": 68,
+      "name": "오환",
+      "levelId": 5,
+      "regionId": 8,
+      "initialState": {
+        "population": 2153,
+        "agriculture": 42,
+        "commerce": 37,
+        "security": 20,
+        "defense": 43,
+        "wall": 40
+      },
+      "position": {
+        "x": 610,
+        "y": 20
+      },
+      "neighbors": [
+        90,
+        95,
+        102
+      ]
+    },
+    {
+      "id": 69,
+      "name": "왜",
+      "levelId": 5,
+      "regionId": 8,
+      "initialState": {
+        "population": 2065,
+        "agriculture": 39,
+        "commerce": 37,
+        "security": 20,
+        "defense": 43,
+        "wall": 41
+      },
+      "position": {
+        "x": 680,
+        "y": 320
+      },
+      "neighbors": [
+        62,
+        94
+      ]
+    },
+    {
+      "id": 70,
+      "name": "호관",
+      "levelId": 4,
+      "regionId": 1,
+      "initialState": {
+        "population": 887,
+        "agriculture": 19,
+        "commerce": 18,
+        "security": 20,
+        "defense": 95,
+        "wall": 96
+      },
+      "position": {
+        "x": 285,
+        "y": 140
+      },
+      "neighbors": [
+        1,
+        3,
+        23,
+        35
+      ]
+    },
+    {
+      "id": 71,
+      "name": "호로",
+      "levelId": 3,
+      "regionId": 2,
+      "initialState": {
+        "population": 1112,
+        "agriculture": 22,
+        "commerce": 21,
+        "security": 20,
+        "defense": 103,
+        "wall": 98
+      },
+      "position": {
+        "x": 285,
+        "y": 205
+      },
+      "neighbors": [
+        2,
+        3,
+        10
+      ]
+    },
+    {
+      "id": 72,
+      "name": "사곡",
+      "levelId": 3,
+      "regionId": 3,
+      "initialState": {
+        "population": 1008,
+        "agriculture": 21,
+        "commerce": 19,
+        "security": 20,
+        "defense": 99,
+        "wall": 101
+      },
+      "position": {
+        "x": 240,
+        "y": 175
+      },
+      "neighbors": [
+        3,
+        42
+      ]
+    },
+    {
+      "id": 73,
+      "name": "함곡",
+      "levelId": 4,
+      "regionId": 3,
+      "initialState": {
+        "population": 1081,
+        "agriculture": 20,
+        "commerce": 22,
+        "security": 20,
+        "defense": 101,
+        "wall": 102
+      },
+      "position": {
+        "x": 180,
+        "y": 175
+      },
+      "neighbors": [
+        4,
+        42
+      ]
+    },
+    {
+      "id": 74,
+      "name": "사수",
+      "levelId": 3,
+      "regionId": 2,
+      "initialState": {
+        "population": 958,
+        "agriculture": 17,
+        "commerce": 19,
+        "security": 20,
+        "defense": 95,
+        "wall": 96
+      },
+      "position": {
+        "x": 310,
+        "y": 185
+      },
+      "neighbors": [
+        2,
+        3,
+        19,
+        80
+      ]
+    },
+    {
+      "id": 75,
+      "name": "양평",
+      "levelId": 3,
+      "regionId": 4,
+      "initialState": {
+        "population": 868,
+        "agriculture": 19,
+        "commerce": 19,
+        "security": 20,
+        "defense": 97,
+        "wall": 96
+      },
+      "position": {
+        "x": 90,
+        "y": 220
+      },
+      "neighbors": [
+        24,
+        44,
+        86
+      ]
+    },
+    {
+      "id": 76,
+      "name": "가맹",
+      "levelId": 3,
+      "regionId": 4,
+      "initialState": {
+        "population": 855,
+        "agriculture": 17,
+        "commerce": 18,
+        "security": 20,
+        "defense": 96,
+        "wall": 95
+      },
+      "position": {
+        "x": 45,
+        "y": 225
+      },
+      "neighbors": [
+        43,
+        44
+      ]
+    },
+    {
+      "id": 77,
+      "name": "역경",
+      "levelId": 0,
+      "regionId": 1,
+      "initialState": {
+        "population": 985,
+        "agriculture": 18,
+        "commerce": 19,
+        "security": 20,
+        "defense": 39,
+        "wall": 41
+      },
+      "position": {
+        "x": 410,
+        "y": 65
+      },
+      "neighbors": [
+        8,
+        9,
+        17
+      ]
+    },
+    {
+      "id": 78,
+      "name": "계교",
+      "levelId": 0,
+      "regionId": 1,
+      "initialState": {
+        "population": 1012,
+        "agriculture": 21,
+        "commerce": 19,
+        "security": 20,
+        "defense": 40,
+        "wall": 42
+      },
+      "position": {
+        "x": 405,
+        "y": 135
+      },
+      "neighbors": [
+        1,
+        18,
+        36
+      ]
+    },
+    {
+      "id": 79,
+      "name": "동황",
+      "levelId": 0,
+      "regionId": 1,
+      "initialState": {
+        "population": 992,
+        "agriculture": 19,
+        "commerce": 21,
+        "security": 20,
+        "defense": 38,
+        "wall": 40
+      },
+      "position": {
+        "x": 515,
+        "y": 145
+      },
+      "neighbors": [
+        16,
+        37,
+        60
+      ]
+    },
+    {
+      "id": 80,
+      "name": "관도",
+      "levelId": 0,
+      "regionId": 2,
+      "initialState": {
+        "population": 1123,
+        "agriculture": 22,
+        "commerce": 20,
+        "security": 20,
+        "defense": 42,
+        "wall": 43
+      },
+      "position": {
+        "x": 340,
+        "y": 165
+      },
+      "neighbors": [
+        1,
+        2,
+        19,
+        74
+      ]
+    },
+    {
+      "id": 81,
+      "name": "정도",
+      "levelId": 0,
+      "regionId": 2,
+      "initialState": {
+        "population": 1085,
+        "agriculture": 21,
+        "commerce": 21,
+        "security": 20,
+        "defense": 41,
+        "wall": 38
+      },
+      "position": {
+        "x": 400,
+        "y": 210
+      },
+      "neighbors": [
+        18,
+        19,
+        38,
+        39
+      ]
+    },
+    {
+      "id": 82,
+      "name": "합비",
+      "levelId": 0,
+      "regionId": 2,
+      "initialState": {
+        "population": 998,
+        "agriculture": 20,
+        "commerce": 19,
+        "security": 20,
+        "defense": 39,
+        "wall": 41
+      },
+      "position": {
+        "x": 435,
+        "y": 285
+      },
+      "neighbors": [
+        7,
+        11,
+        56
+      ]
+    },
+    {
+      "id": 83,
+      "name": "광릉",
+      "levelId": 0,
+      "regionId": 2,
+      "initialState": {
+        "population": 1001,
+        "agriculture": 20,
+        "commerce": 21,
+        "security": 20,
+        "defense": 41,
+        "wall": 40
+      },
+      "position": {
+        "x": 490,
+        "y": 275
+      },
+      "neighbors": [
+        7,
+        21
+      ]
+    },
+    {
+      "id": 84,
+      "name": "적도",
+      "levelId": 0,
+      "regionId": 3,
+      "initialState": {
+        "population": 952,
+        "agriculture": 18,
+        "commerce": 17,
+        "security": 20,
+        "defense": 38,
+        "wall": 37
+      },
+      "position": {
+        "x": 130,
+        "y": 75
+      },
+      "neighbors": [
+        40,
+        63,
+        65
+      ]
+    },
+    {
+      "id": 85,
+      "name": "가정",
+      "levelId": 0,
+      "regionId": 3,
+      "initialState": {
+        "population": 931,
+        "agriculture": 17,
+        "commerce": 17,
+        "security": 20,
+        "defense": 36,
+        "wall": 38
+      },
+      "position": {
+        "x": 40,
+        "y": 160
+      },
+      "neighbors": [
+        41,
+        43,
+        64
+      ]
+    },
+    {
+      "id": 86,
+      "name": "기산",
+      "levelId": 0,
+      "regionId": 4,
+      "initialState": {
+        "population": 1005,
+        "agriculture": 19,
+        "commerce": 18,
+        "security": 20,
+        "defense": 41,
+        "wall": 40
+      },
+      "position": {
+        "x": 110,
+        "y": 180
+      },
+      "neighbors": [
+        4,
+        24,
+        75
+      ]
+    },
+    {
+      "id": 87,
+      "name": "면죽",
+      "levelId": 3,
+      "regionId": 4,
+      "initialState": {
+        "population": 1093,
+        "agriculture": 22,
+        "commerce": 21,
+        "security": 20,
+        "defense": 108,
+        "wall": 99
+      },
+      "position": {
+        "x": 35,
+        "y": 255
+      },
+      "neighbors": [
+        5,
+        44
+      ]
+    },
+    {
+      "id": 88,
+      "name": "이릉",
+      "levelId": 0,
+      "regionId": 6,
+      "initialState": {
+        "population": 968,
+        "agriculture": 18,
+        "commerce": 19,
+        "security": 20,
+        "defense": 39,
+        "wall": 41
+      },
+      "position": {
+        "x": 215,
+        "y": 295
+      },
+      "neighbors": [
+        13,
+        45
+      ]
+    },
+    {
+      "id": 89,
+      "name": "장판",
+      "levelId": 0,
+      "regionId": 6,
+      "initialState": {
+        "population": 1032,
+        "agriculture": 21,
+        "commerce": 20,
+        "security": 20,
+        "defense": 40,
+        "wall": 37
+      },
+      "position": {
+        "x": 280,
+        "y": 315
+      },
+      "neighbors": [
+        6,
+        13,
+        52,
+        91
+      ]
+    },
+    {
+      "id": 90,
+      "name": "백랑",
+      "levelId": 0,
+      "regionId": 8,
+      "initialState": {
+        "population": 1052,
+        "agriculture": 22,
+        "commerce": 19,
+        "security": 20,
+        "defense": 38,
+        "wall": 42
+      },
+      "position": {
+        "x": 530,
+        "y": 30
+      },
+      "neighbors": [
+        8,
+        60,
+        68
+      ]
+    },
+    {
+      "id": 91,
+      "name": "적벽",
+      "levelId": 2,
+      "regionId": 7,
+      "initialState": {
+        "population": 1117,
+        "agriculture": 23,
+        "commerce": 21,
+        "security": 20,
+        "defense": 42,
+        "wall": 41
+      },
+      "position": {
+        "x": 330,
+        "y": 325
+      },
+      "neighbors": [
+        15,
+        52,
+        56,
+        89
+      ]
+    },
+    {
+      "id": 92,
+      "name": "파양",
+      "levelId": 2,
+      "regionId": 7,
+      "initialState": {
+        "population": 1037,
+        "agriculture": 20,
+        "commerce": 22,
+        "security": 20,
+        "defense": 38,
+        "wall": 38
+      },
+      "position": {
+        "x": 430,
+        "y": 350
+      },
+      "neighbors": [
+        15,
+        31,
+        56
+      ]
+    },
+    {
+      "id": 93,
+      "name": "탐라",
+      "levelId": 2,
+      "regionId": 8,
+      "initialState": {
+        "population": 1130,
+        "agriculture": 22,
+        "commerce": 21,
+        "security": 20,
+        "defense": 43,
+        "wall": 41
+      },
+      "position": {
+        "x": 605,
+        "y": 260
+      },
+      "neighbors": [
+        31,
+        33,
+        34,
+        62,
+        96
+      ]
+    },
+    {
+      "id": 94,
+      "name": "유구",
+      "levelId": 2,
+      "regionId": 8,
+      "initialState": {
+        "population": 921,
+        "agriculture": 17,
+        "commerce": 18,
+        "security": 20,
+        "defense": 37,
+        "wall": 37
+      },
+      "position": {
+        "x": 625,
+        "y": 435
+      },
+      "neighbors": [
+        59,
+        69,
+        97
+      ]
+    },
+    {
+      "id": 95,
+      "name": "양평",
+      "levelId": 7,
+      "regionId": 8,
+      "initialState": {
+        "population": 4800,
+        "agriculture": 100,
+        "commerce": 90,
+        "security": 80,
+        "defense": 100,
+        "wall": 100
+      },
+      "position": {
+        "x": 510,
+        "y": 50
+      },
+      "neighbors": [
+        8,
+        68,
+        90
+      ]
+    },
+    {
+      "id": 96,
+      "name": "김해",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 3900,
+        "agriculture": 78,
+        "commerce": 75,
+        "security": 60,
+        "defense": 80,
+        "wall": 78
+      },
+      "position": {
+        "x": 680,
+        "y": 230
+      },
+      "neighbors": [
+        34,
+        62,
+        93
+      ]
+    },
+    {
+      "id": 97,
+      "name": "이주",
+      "levelId": 2,
+      "regionId": 8,
+      "initialState": {
+        "population": 950,
+        "agriculture": 18,
+        "commerce": 18,
+        "security": 20,
+        "defense": 38,
+        "wall": 38
+      },
+      "position": {
+        "x": 500,
+        "y": 510
+      },
+      "neighbors": [
+        59,
+        94
+      ]
+    },
+    {
+      "id": 98,
+      "name": "돈황",
+      "levelId": 5,
+      "regionId": 3,
+      "initialState": {
+        "population": 2100,
+        "agriculture": 40,
+        "commerce": 45,
+        "security": 20,
+        "defense": 43,
+        "wall": 40
+      },
+      "position": {
+        "x": 10,
+        "y": 20
+      },
+      "neighbors": [
+        22,
+        63
+      ]
+    },
+    {
+      "id": 99,
+      "name": "창오",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 2800,
+        "agriculture": 59,
+        "commerce": 60,
+        "security": 40,
+        "defense": 60,
+        "wall": 58
+      },
+      "position": {
+        "x": 190,
+        "y": 460
+      },
+      "neighbors": [
+        29,
+        50,
+        55
+      ]
+    },
+    {
+      "id": 100,
+      "name": "선비",
+      "levelId": 5,
+      "regionId": 3,
+      "initialState": {
+        "population": 2200,
+        "agriculture": 40,
+        "commerce": 41,
+        "security": 20,
+        "defense": 42,
+        "wall": 39
+      },
+      "position": {
+        "x": 170,
+        "y": 60
+      },
+      "neighbors": [
+        23,
+        65
+      ]
+    },
+    {
+      "id": 101,
+      "name": "영창",
+      "levelId": 1,
+      "regionId": 5,
+      "initialState": {
+        "population": 2900,
+        "agriculture": 60,
+        "commerce": 60,
+        "security": 40,
+        "defense": 59,
+        "wall": 57
+      },
+      "position": {
+        "x": 50,
+        "y": 430
+      },
+      "neighbors": [
+        28,
+        48,
+        66
+      ]
+    },
+    {
+      "id": 102,
+      "name": "부여",
+      "levelId": 5,
+      "regionId": 8,
+      "initialState": {
+        "population": 2150,
+        "agriculture": 43,
+        "commerce": 38,
+        "security": 20,
+        "defense": 43,
+        "wall": 40
+      },
+      "position": {
+        "x": 560,
+        "y": 30
+      },
+      "neighbors": [
+        61,
+        68
+      ]
+    },
+    {
+      "id": 103,
+      "name": "건안",
+      "levelId": 1,
+      "regionId": 7,
+      "initialState": {
+        "population": 2950,
+        "agriculture": 63,
+        "commerce": 60,
+        "security": 40,
+        "defense": 61,
+        "wall": 62
+      },
+      "position": {
+        "x": 470,
+        "y": 430
+      },
+      "neighbors": [
+        57,
+        58,
+        67
+      ]
+    },
+    {
+      "id": 104,
+      "name": "웅진",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 4000,
+        "agriculture": 78,
+        "commerce": 78,
+        "security": 60,
+        "defense": 79,
+        "wall": 80
+      },
+      "position": {
+        "x": 610,
+        "y": 175
+      },
+      "neighbors": [
+        16,
+        33
+      ]
+    },
+    {
+      "id": 105,
+      "name": "국내성",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 4100,
+        "agriculture": 79,
+        "commerce": 80,
+        "security": 60,
+        "defense": 82,
+        "wall": 79
+      },
+      "position": {
+        "x": 580,
+        "y": 80
+      },
+      "neighbors": [
+        32,
+        61,
+        107
+      ]
+    },
+    {
+      "id": 106,
+      "name": "대가야",
+      "levelId": 6,
+      "regionId": 8,
+      "initialState": {
+        "population": 3850,
+        "agriculture": 79,
+        "commerce": 73,
+        "security": 60,
+        "defense": 80,
+        "wall": 78
+      },
+      "position": {
+        "x": 630,
+        "y": 200
+      },
+      "neighbors": [
+        33,
+        34
+      ]
+    },
+    {
+      "id": 107,
+      "name": "옥저",
+      "levelId": 5,
+      "regionId": 8,
+      "initialState": {
+        "population": 2100,
+        "agriculture": 42,
+        "commerce": 37,
+        "security": 20,
+        "defense": 42,
+        "wall": 40
+      },
+      "position": {
+        "x": 630,
+        "y": 100
+      },
+      "neighbors": [
+        32,
+        105
+      ]
+    }
+  ]
+}

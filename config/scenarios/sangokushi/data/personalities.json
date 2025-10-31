@@ -1,0 +1,124 @@
+{
+  "personalities": {
+    "0": {
+      "id": 0,
+      "name": "왕좌",
+      "category": "prestige",
+      "description": "명성 +10%, 사기 -5",
+      "effects": {
+        "experience": 1.1,
+        "bonusAtmos": -5
+      }
+    },
+    "1": {
+      "id": 1,
+      "name": "대의",
+      "category": "prestige",
+      "description": "명성 +10%, 훈련 -5",
+      "effects": {
+        "experience": 1.1,
+        "bonusTrain": -5
+      }
+    },
+    "2": {
+      "id": 2,
+      "name": "의협",
+      "category": "morale",
+      "description": "사기 +5, 징·모병 비용 +20%",
+      "effects": {
+        "bonusAtmos": 5,
+        "recruitCostMultiplier": 1.2
+      }
+    },
+    "3": {
+      "id": 3,
+      "name": "패권",
+      "category": "training",
+      "description": "훈련 +5, 징·모병 비용 +20%",
+      "effects": {
+        "bonusTrain": 5,
+        "recruitCostMultiplier": 1.2
+      }
+    },
+    "4": {
+      "id": 4,
+      "name": "정복",
+      "category": "aggressive",
+      "description": "명성 -10%, 사기 +5",
+      "effects": {
+        "experience": 0.9,
+        "bonusAtmos": 5
+      }
+    },
+    "5": {
+      "id": 5,
+      "name": "할거",
+      "category": "regional",
+      "description": "명성 -10%, 훈련 +5",
+      "effects": {
+        "experience": 0.9,
+        "bonusTrain": 5
+      }
+    },
+    "6": {
+      "id": 6,
+      "name": "출세",
+      "category": "ambitious",
+      "description": "명성 +10%, 징·모병 비용 +20%",
+      "effects": {
+        "experience": 1.1,
+        "recruitCostMultiplier": 1.2
+      }
+    },
+    "7": {
+      "id": 7,
+      "name": "재간",
+      "category": "efficient",
+      "description": "명성 -10%, 징·모병 비용 -20%",
+      "effects": {
+        "experience": 0.9,
+        "recruitCostMultiplier": 0.8
+      }
+    },
+    "8": {
+      "id": 8,
+      "name": "유지",
+      "category": "defensive",
+      "description": "훈련 -5, 징·모병 비용 -20%",
+      "effects": {
+        "bonusTrain": -5,
+        "recruitCostMultiplier": 0.8
+      }
+    },
+    "9": {
+      "id": 9,
+      "name": "안전",
+      "category": "cautious",
+      "description": "사기 -5, 징·모병 비용 -20%",
+      "effects": {
+        "bonusAtmos": -5,
+        "recruitCostMultiplier": 0.8
+      }
+    },
+    "10": {
+      "id": 10,
+      "name": "은둔",
+      "category": "hermit",
+      "description": "명성 -10%, 계급 -10%, 사기 -5, 훈련 -5, 단련 성공률 +10%",
+      "effects": {
+        "bonusAtmos": -5,
+        "bonusTrain": -5,
+        "experience": 0.9,
+        "dedication": 0.9,
+        "trainingSuccessBonus": 0.1
+      }
+    },
+    "-1": {
+      "id": -1,
+      "name": "-",
+      "category": "none",
+      "description": "",
+      "effects": {}
+    }
+  }
+}

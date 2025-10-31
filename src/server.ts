@@ -3,12 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 import { mongoConnection } from './db/connection';
 import { mountRoutes } from './api';
 import { errorMiddleware } from './common/middleware/error.middleware';
 import { requestLogger } from './common/middleware/request-logger.middleware';
 import { logger } from './common/logger';
 import { CommandRegistry } from './core/command';
+import { swaggerSpec } from './config/swagger';
 
 dotenv.config();
 
@@ -30,6 +32,18 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: '삼국지 게임 API 문서'
+}));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // 기존 도메인 라우터
 mountRoutes(app);
 
@@ -42,6 +56,7 @@ import auctionRoutes from './routes/auction.routes';
 import bettingRoutes from './routes/betting.routes';
 import messageRoutes from './routes/message.routes';
 import voteRoutes from './routes/vote.routes';
+import scenarioRoutes from './routes/scenario.routes';
 
 app.use('/api/session', sessionRoutes);
 app.use('/api/general', generalRoutes);
@@ -51,6 +66,7 @@ app.use('/api/auction', auctionRoutes);
 app.use('/api/betting', bettingRoutes);
 app.use('/api/message', messageRoutes);
 app.use('/api/vote', voteRoutes);
+app.use('/api/scenarios', scenarioRoutes);
 
 // 에러 핸들링 미들웨어 (맨 마지막)
 app.use(errorMiddleware);
@@ -77,6 +93,12 @@ async function start() {
     const commandStats = CommandRegistry.getStats();
     logger.info('커맨드 시스템 초기화 완료', commandStats);
     
+    // 시나리오 로드
+    logger.info('시나리오 로딩 중...');
+    const { ScenarioLoader } = await import('./common/registry/scenario-loader');
+    await ScenarioLoader.loadAll();
+    logger.info('시나리오 로딩 완료');
+    
     // 기본 세션 자동 생성
     logger.info('세션 초기화 중...');
     const { SessionService } = await import('./services/session.service');
@@ -87,10 +109,20 @@ async function start() {
     let session = await Session.findOne({ session_id: sessionId });
     
     if (!session) {
-      logger.info('기본 삼국지 세션 생성 중...');
-      session = await SessionService.createDefaultSangokushi();
-      await InitService.initializeSession(sessionId);
-      logger.info('기본 세션 생성 완료', { sessionId });
+      logger.info('기본 삼국지 세션 생성 중...', { sessionId });
+      try {
+        session = await SessionService.createDefaultSangokushi(sessionId);
+        await InitService.initializeSession(sessionId);
+        logger.info('기본 세션 생성 완료', { sessionId });
+      } catch (error: any) {
+        // 중복 세션이면 무시하고 로드
+        if (error.message?.includes('E11000') || error.message?.includes('이미 존재')) {
+          session = await Session.findOne({ session_id: sessionId });
+          logger.info('기존 세션 로드', { sessionId });
+        } else {
+          throw error;
+        }
+      }
     } else {
       logger.info('기본 세션 로드 완료', { sessionId, sessionName: session.name });
     }
@@ -115,7 +147,8 @@ async function start() {
       console.log('\n🚀 서버가 성공적으로 시작되었습니다!');
       console.log(`📍 포트: ${PORT}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🎮 커맨드: ${commandStats.total}개 (General: ${commandStats.generalCount}, Nation: ${commandStats.nationCount})\n`);
+      console.log(`🎮 커맨드: ${commandStats.total}개 (General: ${commandStats.generalCount}, Nation: ${commandStats.nationCount})`);
+      console.log(`📖 Swagger UI: http://localhost:${PORT}/api-docs\n`);
     });
   } catch (error) {
     logger.error('서버 시작 실패', {

@@ -4,7 +4,33 @@ import { Session } from '../models/session.model';
 
 const router = Router();
 
-// 턴 시각 변경 (유산 사용)
+/**
+ * @swagger
+ * /api/inheritance/change-turn-time:
+ *   post:
+ *     summary: 턴 시각 변경 (유산 사용)
+ *     tags: [Inheritance]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - generalId
+ *               - hour
+ *               - minute
+ *             properties:
+ *               generalId:
+ *                 type: integer
+ *               hour:
+ *                 type: integer
+ *               minute:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: 성공
+ */
 router.post('/change-turn-time', async (req, res) => {
   try {
     const { generalId, hour, minute } = req.body;

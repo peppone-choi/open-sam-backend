@@ -6,6 +6,7 @@ import { LastTurn } from '../../types/LastTurn';
 import { RandUtil } from '../../utils/RandUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
+import { getMilitaryRankTrainBonus } from '../../utils/rank-system';
 
 export class TrainTroopsCommand extends GeneralCommand {
   protected static actionName = '훈련';
@@ -70,11 +71,19 @@ export class TrainTroopsCommand extends GeneralCommand {
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
-    const score = Util.clamp(
+    let score = Util.clamp(
       Util.round((general as any).getLeadership() * 100 / general.getVar('crew') * (GameConst as any).trainDelta),
       0,
       Util.clamp((GameConst as any).maxTrainByCommand - general.getVar('train'), 0)
     );
+
+    // 이십등작 훈련 보너스 적용
+    const militaryRank = general?.data?.military_rank || 0;
+    const trainBonus = getMilitaryRankTrainBonus(militaryRank);
+    if (trainBonus > 0) {
+      score = Math.round(score * (1 + trainBonus / 100));
+    }
+
     const scoreText = score.toLocaleString();
 
     const sideEffect = Util.valueFit(

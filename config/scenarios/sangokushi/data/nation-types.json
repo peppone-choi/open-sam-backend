@@ -1,0 +1,474 @@
+{
+  "nationTypes": {
+    "none": {
+      "id": "none",
+      "name": "-",
+      "category": "neutral",
+      "description": "",
+      "effects": []
+    },
+    "neutral": {
+      "id": "neutral",
+      "name": "-",
+      "category": "neutral",
+      "description": "",
+      "effects": []
+    },
+    "confucianism": {
+      "id": "confucianism",
+      "name": "유가",
+      "category": "philosophy",
+      "description": "농상↑ 민심↑ / 쌀수입↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "agriculture",
+            "commerce"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "national_income",
+          "target": "rice",
+          "multiplier": 0.9
+        }
+      ]
+    },
+    "legalism": {
+      "id": "legalism",
+      "name": "법가",
+      "category": "philosophy",
+      "description": "금수입↑ 치안↑ / 인구↓ 민심↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "security"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "gold",
+          "multiplier": 1.1
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 0.8
+        }
+      ]
+    },
+    "militarism": {
+      "id": "militarism",
+      "name": "병가",
+      "category": "philosophy",
+      "description": "기술↑ 수성↑ / 인구↓ 민심↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 0.8
+        }
+      ]
+    },
+    "mohism": {
+      "id": "mohism",
+      "name": "묵가",
+      "category": "philosophy",
+      "description": "수성↑ / 기술↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        }
+      ]
+    },
+    "logicians": {
+      "id": "logicians",
+      "name": "명가",
+      "category": "philosophy",
+      "description": "기술↑ 인구↑ / 쌀수입↓ 수성↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "rice",
+          "multiplier": 0.9
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 1.2
+        }
+      ]
+    },
+    "diplomatists": {
+      "id": "diplomatists",
+      "name": "종횡가",
+      "category": "philosophy",
+      "description": "전략↑ 수성↑ / 금수입↓ 농상↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "agriculture",
+            "commerce"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "gold",
+          "multiplier": 0.9
+        },
+        {
+          "type": "strategic_speed",
+          "delayMultiplier": 0.75,
+          "globalDelayMultiplier": 0.5
+        }
+      ]
+    },
+    "yinyang": {
+      "id": "yinyang",
+      "name": "음양가",
+      "category": "philosophy",
+      "description": "농상↑ 인구↑ / 기술↓ 전략↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "agriculture",
+            "commerce"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 1.2
+        },
+        {
+          "type": "strategic_speed",
+          "delayMultiplier": 1.33
+        }
+      ]
+    },
+    "taoism": {
+      "id": "taoism",
+      "name": "도가",
+      "category": "philosophy",
+      "description": "인구↑ / 기술↓ 치안↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "security"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 1.2
+        }
+      ]
+    },
+    "bandits": {
+      "id": "bandits",
+      "name": "도적",
+      "category": "outlaw",
+      "description": "계략↑ / 금수입↓ 치안↓ 민심↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "security"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "stratagem_bonus",
+          "successBonus": 0.1
+        },
+        {
+          "type": "national_income",
+          "target": "gold",
+          "multiplier": 0.9
+        }
+      ]
+    },
+    "buddhism": {
+      "id": "buddhism",
+      "name": "불가",
+      "category": "religion",
+      "description": "민심↑ 수성↑ / 금수입↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "national_income",
+          "target": "gold",
+          "multiplier": 0.9
+        }
+      ]
+    },
+    "taoism_religious": {
+      "id": "taoism_religious",
+      "name": "오두미도",
+      "category": "religion",
+      "description": "쌀수입↑ 인구↑ / 기술↓ 수성↓ 농상↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "agriculture",
+            "commerce"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "rice",
+          "multiplier": 1.1
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 1.2
+        }
+      ]
+    },
+    "taiping": {
+      "id": "taiping",
+      "name": "태평도",
+      "category": "religion",
+      "description": "인구↑ 민심↑ / 기술↓ 수성↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "technology"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 1.2
+        }
+      ]
+    },
+    "virtue": {
+      "id": "virtue",
+      "name": "덕가",
+      "category": "philosophy",
+      "description": "치안↑ 인구↑ 민심↑ / 쌀수입↓ 수성↓",
+      "effects": [
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "security"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "loyalty",
+            "population"
+          ],
+          "scoreMultiplier": 1.1,
+          "costMultiplier": 0.8
+        },
+        {
+          "type": "domestic_efficiency",
+          "target": [
+            "defense",
+            "wall"
+          ],
+          "scoreMultiplier": 0.9,
+          "costMultiplier": 1.2
+        },
+        {
+          "type": "national_income",
+          "target": "rice",
+          "multiplier": 0.9
+        },
+        {
+          "type": "national_income",
+          "target": "population_growth",
+          "multiplier": 1.2
+        }
+      ]
+    }
+  }
+}

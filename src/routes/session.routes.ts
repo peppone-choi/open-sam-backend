@@ -99,16 +99,16 @@ router.get('/:sessionId', async (req: Request, res: Response) => {
  *             properties:
  *               templateId:
  *                 type: string
- *                 description: 템플릿 ID (예: 'sangokushi')
+ *                 description: 템플릿 ID (예 - sangokushi)
  *               sessionId:
  *                 type: string
- *                 description: 새 세션 ID (예: 'sangokushi_room1')
+ *                 description: 새 세션 ID (예 - sangokushi_room1)
  *               sessionName:
  *                 type: string
- *                 description: 세션 이름 (예: '삼국지 방 1')
+ *                 description: 세션 이름 (예 - 삼국지 방 1)
  *               autoInit:
  *                 type: boolean
- *                 description: 자동 초기화 여부 (기본값: true)
+ *                 description: 자동 초기화 여부 (기본값 - true)
  *     responses:
  *       201:
  *         description: 세션 생성 성공
@@ -289,7 +289,7 @@ router.patch('/:sessionId/update', async (req: Request, res: Response) => {
  *             properties:
  *               templateId:
  *                 type: string
- *                 description: 템플릿 ID (생략시 기존 template_id 사용)
+ *                 description: "템플릿 ID (생략시 기존 template_id 사용)"
  *     responses:
  *       200:
  *         description: 리로드 성공

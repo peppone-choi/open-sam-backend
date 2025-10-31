@@ -5,6 +5,8 @@
  * 더 간결하고 균형잡힌 전투 시스템 구현
  */
 
+import { getMilitaryRankMoraleBonus } from '../utils/rank-system';
+
 export enum UnitType {
   FOOTMAN = 'FOOTMAN',    // 보병
   CAVALRY = 'CAVALRY',     // 기병
@@ -31,6 +33,7 @@ export interface BattleUnit {
   morale: number;             // 사기 (0-100)
   training: number;           // 훈련도 (0-100)
   techLevel: number;          // 기술력 (0-100)
+  militaryRank?: number;      // 이십등작 등급 (0~20)
   specialSkills?: string[];   // 특기 목록
 }
 
@@ -294,7 +297,12 @@ export class BattleCalculator {
     const attackPower = baseStats.attack * effectiveStat * troopsFactor;
     
     // 4. 훈련도/사기 반영
-    const moraleBonus = 0.5 + (attacker.morale / 100) * 0.5;
+    let effectiveMorale = attacker.morale;
+    if (attacker.militaryRank) {
+      const moraleRankBonus = getMilitaryRankMoraleBonus(attacker.militaryRank);
+      effectiveMorale = Math.min(150, attacker.morale * (1 + moraleRankBonus / 100));
+    }
+    const moraleBonus = 0.5 + (effectiveMorale / 100) * 0.5;
     const trainingBonus = 0.7 + (attacker.training / 100) * 0.3;
     
     // 5. 기술력 반영
