@@ -1,0 +1,23 @@
+import { NationCommandRepository } from '../../repositories/nationcommand.repository';
+
+/**
+ * ReserveCommand Service
+ * PHP: /mnt/d/open-sam-backend/sam/hwe/sammo/API/NationCommand/ReserveCommand.php
+ */
+export class ReserveCommandService {
+  static async execute(data: any, user?: any) {
+    // TODO: 비즈니스 로직 구현
+    // PHP 파일 참조: /mnt/d/open-sam-backend/sam/hwe/sammo/API/NationCommand/ReserveCommand.php
+    
+    const sessionId = data.session_id || 'sangokushi_default';
+    
+    // Repository 호출 예시
+    // const result = await NationCommandRepository.someMethod(sessionId, data);
+    
+    return {
+      success: true,
+      message: 'ReserveCommand executed',
+      data: {}
+    };
+  }
+}

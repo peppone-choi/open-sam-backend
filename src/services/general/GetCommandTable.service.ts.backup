@@ -1,0 +1,54 @@
+import { GeneralRepository } from '../../repositories/general.repository';
+import { General } from '../../models/general.model';
+import { Session } from '../../models/session.model';
+
+/**
+ * GetCommandTable Service
+ * 사용 가능한 커맨드 목록 조회
+ * PHP: /sam/hwe/sammo/API/General/GetCommandTable.php
+ */
+export class GetCommandTableService {
+  static async execute(data: any, user?: any) {
+    const sessionId = data.session_id || 'sangokushi_default';
+    const generalId = user?.generalId || data.general_id;
+    
+    if (!generalId) {
+      return { success: false, message: '장수 ID가 필요합니다' };
+    }
+
+    try {
+      // 1. 세션의 커맨드 테이블 조회
+      const session = await Session.findOne({ session_id: sessionId });
+      if (!session) {
+        return { success: false, message: '세션을 찾을 수 없습니다' };
+      }
+
+      // 2. 장수 정보 조회
+      const general = await General.findOne({
+        session_id: sessionId,
+        'data.no': generalId
+      });
+
+      if (!general) {
+        return { success: false, message: '장수를 찾을 수 없습니다' };
+      }
+
+      // 3. 세션의 commands 반환 (session-sangokushi.json에서 로드된 것)
+      const commandTable = session.commands || [];
+
+      // 4. 장수 상태에 따라 사용 가능한 커맨드 필터링
+      // TODO: 장수의 관직, 위치, 국가 상태 등에 따른 필터링
+
+      return {
+        success: true,
+        result: true,
+        commandTable
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  }
+}

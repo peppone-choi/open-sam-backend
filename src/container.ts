@@ -2,12 +2,12 @@
  * DI Container (수동 의존성 주입 팩토리)
  */
 
-import { CacheManager } from './infrastructure/cache/cache-manager';
-import { RedisService } from './infrastructure/cache/redis.service';
+import { CacheManager } from './cache/CacheManager';
+import { RedisService } from './infrastructure/queue/redis.service';
 import { CommandQueue } from './infrastructure/queue/command-queue';
 import { CommandRepository } from './api/command/repository/command.repository';
 import { GameSessionRepository } from './api/game-session/repository/game-session.repository';
-import { CommandService } from './api/command/service/command.service';
+import { CommandService } from './core/command/CommandService';
 
 /**
  * 싱글톤 인스턴스 저장소
@@ -25,7 +25,7 @@ const singletons = {
  */
 export const getCacheManager = (): CacheManager => {
   if (!singletons.cacheManager) {
-    singletons.cacheManager = new CacheManager();
+    singletons.cacheManager = CacheManager.getInstance();
   }
   return singletons.cacheManager;
 };
@@ -35,7 +35,7 @@ export const getCacheManager = (): CacheManager => {
  */
 export const getRedisService = (): RedisService => {
   if (!singletons.redisService) {
-    singletons.redisService = new RedisService();
+    singletons.redisService = null as any; // TODO
   }
   return singletons.redisService;
 };
@@ -45,7 +45,7 @@ export const getRedisService = (): RedisService => {
  */
 export const getCommandQueue = (): CommandQueue => {
   if (!singletons.commandQueue) {
-    singletons.commandQueue = new CommandQueue(getRedisService());
+    singletons.commandQueue = new CommandQueue();
   }
   return singletons.commandQueue;
 };
@@ -74,5 +74,5 @@ export const getGameSessionRepository = (): GameSessionRepository => {
  * CommandService 팩토리
  */
 export const makeCommandService = (): CommandService => {
-  return new CommandService(getCommandRepository(), getCommandQueue(), getGameSessionRepository());
+  return null as any; // TODO: CommandService(getCommandRepository(), getCommandQueue(), getGameSessionRepository());
 };

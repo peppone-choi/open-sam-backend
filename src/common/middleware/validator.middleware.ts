@@ -1,44 +1,81 @@
 import { Request, Response, NextFunction } from 'express';
-import { HttpException } from '../errors/HttpException';
+import { Schema, ValidationError } from 'yup';
+import { BadRequestError } from '../errors/app-error';
+import { logger } from '../logger';
 
-// TODO: yup 설치 및 임포트
-// import { AnyObjectSchema } from 'yup';
+/**
+ * DTO 스키마 인터페이스
+ */
+interface DtoSchema {
+  body?: Schema;
+  params?: Schema;
+  query?: Schema;
+}
 
 /**
  * Yup 기반 검증 미들웨어
  * 
- * 사용 예시:
- * router.post('/', validate(SubmitCommandSchema), controller.submit)
+ * 요청 데이터(body, params, query)의 유효성을 검증합니다.
+ * 검증 실패 시 400 Bad Request 에러를 반환합니다.
  * 
- * TODO: 
- * 1. npm install yup
- * 2. npm install --save-dev @types/yup
+ * @param schema - 검증할 스키마 객체
+ * @returns Express 미들웨어 함수
+ * 
+ * @example
+ * router.post('/', validate(SubmitCommandSchema), controller.submit);
  */
-export const validate = (schema: {
-  body?: any; // TODO: AnyObjectSchema
-  params?: any; // TODO: AnyObjectSchema
-  query?: any; // TODO: AnyObjectSchema
-}) => {
+export const validate = (schema: DtoSchema) => {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
-      // TODO: Yup 검증 로직 구현
-      // if (schema.body) {
-      //   req.body = await schema.body.validate(req.body, { 
-      //     abortEarly: false, 
-      //     stripUnknown: true 
-      //   });
-      // }
-      // if (schema.params) {
-      //   req.params = await schema.params.validate(req.params);
-      // }
-      // if (schema.query) {
-      //   req.query = await schema.query.validate(req.query);
-      // }
-      
+      // Body 검증
+      if (schema.body) {
+        req.body = await schema.body.validate(req.body, { 
+          abortEarly: false,  // 모든 에러 수집
+          stripUnknown: true  // 스키마에 없는 필드 제거
+        });
+      }
+
+      // Params 검증
+      if (schema.params) {
+        req.params = await schema.params.validate(req.params, {
+          abortEarly: false,
+          stripUnknown: true
+        });
+      }
+
+      // Query 검증
+      if (schema.query) {
+        req.query = await schema.query.validate(req.query, {
+          abortEarly: false,
+          stripUnknown: true
+        });
+      }
+
       next();
-    } catch (error: any) {
-      // TODO: Yup 에러를 HttpException으로 변환
-      next(new HttpException(400, 'Validation Error', error.errors));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        // Yup ValidationError 처리
+        const errors = error.inner.map(err => ({
+          path: err.path,
+          message: err.message,
+          value: err.value
+        }));
+
+        logger.warn('요청 데이터 검증 실패', {
+          requestId: (req as any).requestId,
+          method: req.method,
+          url: req.originalUrl,
+          errors
+        });
+
+        next(new BadRequestError('요청 데이터가 유효하지 않습니다', { errors }));
+      } else {
+        // 기타 에러
+        logger.error('검증 미들웨어 에러', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        next(error);
+      }
     }
   };
 };

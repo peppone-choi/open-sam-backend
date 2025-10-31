@@ -1,0 +1,23 @@
+import { MessageRepository } from '../../repositories/message.repository';
+
+/**
+ * GetRecentMessage Service
+ * PHP: /mnt/d/open-sam-backend/sam/hwe/sammo/API/Message/GetRecentMessage.php
+ */
+export class GetRecentMessageService {
+  static async execute(data: any, user?: any) {
+    // TODO: 비즈니스 로직 구현
+    // PHP 파일 참조: /mnt/d/open-sam-backend/sam/hwe/sammo/API/Message/GetRecentMessage.php
+    
+    const sessionId = data.session_id || 'sangokushi_default';
+    
+    // Repository 호출 예시
+    // const result = await MessageRepository.someMethod(sessionId, data);
+    
+    return {
+      success: true,
+      message: 'GetRecentMessage executed',
+      data: {}
+    };
+  }
+}

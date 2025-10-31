@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
-import { logger } from '../api/common/utils/logger';
+import { logger } from '../common/logger';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 export class MongoConnection {
   private static instance: MongoConnection;
@@ -14,14 +18,17 @@ export class MongoConnection {
     return MongoConnection.instance;
   }
 
-  async connect(uri: string): Promise<void> {
+  async connect(uri?: string): Promise<void> {
     if (this.isConnected) {
       logger.info('MongoDB already connected');
       return;
     }
 
+    const mongoUri = uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/sangokushi';
+    console.log('🔌 MongoDB URI:', mongoUri);
+
     try {
-      await mongoose.connect(uri);
+      await mongoose.connect(mongoUri);
       this.isConnected = true;
       logger.info('MongoDB connected successfully');
 

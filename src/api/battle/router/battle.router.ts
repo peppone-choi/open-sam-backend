@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { BattleController } from '../controller/battle.controller';
-import { BattleService } from '../service/battle.service';
-import { BattleRepository } from '../repository/battle.repository';
+import { BattleService } from '../../services/battle/StartBattle.service';
+import { BattleRepository } from '../../models/battle.model';
 
 const router = Router();
 

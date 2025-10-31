@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { BattleService } from '../service/battle.service';
+import { BattleService } from '../../services/battle/StartBattle.service';
 import { HttpException } from '../../../common/errors/HttpException';
 
 export class BattleController {

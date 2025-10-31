@@ -1,0 +1,23 @@
+import { TroopRepository } from '../../repositories/troop.repository';
+
+/**
+ * KickFromTroop Service
+ * PHP: /mnt/d/open-sam-backend/sam/hwe/sammo/API/Troop/KickFromTroop.php
+ */
+export class KickFromTroopService {
+  static async execute(data: any, user?: any) {
+    // TODO: 비즈니스 로직 구현
+    // PHP 파일 참조: /mnt/d/open-sam-backend/sam/hwe/sammo/API/Troop/KickFromTroop.php
+    
+    const sessionId = data.session_id || 'sangokushi_default';
+    
+    // Repository 호출 예시
+    // const result = await TroopRepository.someMethod(sessionId, data);
+    
+    return {
+      success: true,
+      message: 'KickFromTroop executed',
+      data: {}
+    };
+  }
+}

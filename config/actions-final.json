@@ -1,0 +1,1595 @@
+{
+  "items": {
+    "간파_노군입산부": {
+      "id": "간파_노군입산부",
+      "original_id": "che_간파_노군입산부",
+      "category": "item",
+      "cost": "200"
+    },
+    "격노_구정신단경": {
+      "id": "격노_구정신단경",
+      "original_id": "che_격노_구정신단경",
+      "category": "item",
+      "cost": "200"
+    },
+    "계략_삼략": {
+      "id": "계략_삼략",
+      "original_id": "che_계략_삼략",
+      "category": "item",
+      "cost": "200"
+    },
+    "계략_육도": {
+      "id": "계략_육도",
+      "original_id": "che_계략_육도",
+      "category": "item",
+      "cost": "200"
+    },
+    "계략_이추": {
+      "id": "계략_이추",
+      "original_id": "che_계략_이추",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true
+    },
+    "계략_향낭": {
+      "id": "계략_향낭",
+      "original_id": "che_계략_향낭",
+      "category": "item",
+      "cost": "3000",
+      "buyable": true
+    },
+    "공성_묵자": {
+      "id": "공성_묵자",
+      "original_id": "che_공성_묵자",
+      "category": "item",
+      "cost": "200"
+    },
+    "내정_납금박산로": {
+      "id": "내정_납금박산로",
+      "original_id": "che_내정_납금박산로",
+      "category": "item",
+      "cost": "200"
+    },
+    "농성_위공자병법": {
+      "id": "농성_위공자병법",
+      "original_id": "che_농성_위공자병법",
+      "category": "item",
+      "cost": "200"
+    },
+    "농성_주서음부": {
+      "id": "농성_주서음부",
+      "original_id": "che_농성_주서음부",
+      "category": "item",
+      "cost": "200"
+    },
+    "능력치_무력_두강주": {
+      "id": "능력치_무력_두강주",
+      "original_id": "che_능력치_무력_두강주",
+      "category": "item",
+      "cost": "200"
+    },
+    "능력치_지력_이강주": {
+      "id": "능력치_지력_이강주",
+      "original_id": "che_능력치_지력_이강주",
+      "category": "item",
+      "cost": "200"
+    },
+    "능력치_통솔_보령압주": {
+      "id": "능력치_통솔_보령압주",
+      "original_id": "che_능력치_통솔_보령압주",
+      "category": "item",
+      "cost": "200"
+    },
+    "명마_01_노기": {
+      "id": "명마_01_노기",
+      "original_id": "che_명마_01_노기",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true
+    },
+    "명마_02_조랑": {
+      "id": "명마_02_조랑",
+      "original_id": "che_명마_02_조랑",
+      "category": "item",
+      "cost": "3000",
+      "buyable": true
+    },
+    "명마_03_노새": {
+      "id": "명마_03_노새",
+      "original_id": "che_명마_03_노새",
+      "category": "item",
+      "cost": "6000",
+      "buyable": true
+    },
+    "명마_04_나귀": {
+      "id": "명마_04_나귀",
+      "original_id": "che_명마_04_나귀",
+      "category": "item",
+      "cost": "10000",
+      "buyable": true
+    },
+    "명마_05_갈색마": {
+      "id": "명마_05_갈색마",
+      "original_id": "che_명마_05_갈색마",
+      "category": "item",
+      "cost": "15000",
+      "buyable": true
+    },
+    "명마_06_흑색마": {
+      "id": "명마_06_흑색마",
+      "original_id": "che_명마_06_흑색마",
+      "category": "item",
+      "cost": "21000",
+      "buyable": true
+    },
+    "명마_07_기주마": {
+      "id": "명마_07_기주마",
+      "original_id": "che_명마_07_기주마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 공격 시 페이즈 +1"
+    },
+    "명마_07_백마": {
+      "id": "명마_07_백마",
+      "original_id": "che_명마_07_백마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 전투 종료로 인한 부상 없음"
+    },
+    "명마_07_백상": {
+      "id": "명마_07_백상",
+      "original_id": "che_명마_07_백상",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 공격력 +20%, 소모 군량 +10%, 공격 시 페이즈 -1",
+      "effects": {
+        "killRice": {
+          "operator": "*",
+          "value": "1.1"
+        }
+      }
+    },
+    "명마_07_오환마": {
+      "id": "명마_07_오환마",
+      "original_id": "che_명마_07_오환마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_08_양주마": {
+      "id": "명마_08_양주마",
+      "original_id": "che_명마_08_양주마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_08_흉노마": {
+      "id": "명마_08_흉노마",
+      "original_id": "che_명마_08_흉노마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_09_과하마": {
+      "id": "명마_09_과하마",
+      "original_id": "che_명마_09_과하마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_09_의남백마": {
+      "id": "명마_09_의남백마",
+      "original_id": "che_명마_09_의남백마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_10_대완마": {
+      "id": "명마_10_대완마",
+      "original_id": "che_명마_10_대완마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_10_옥추마": {
+      "id": "명마_10_옥추마",
+      "original_id": "che_명마_10_옥추마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_11_서량마": {
+      "id": "명마_11_서량마",
+      "original_id": "che_명마_11_서량마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_11_화종마": {
+      "id": "명마_11_화종마",
+      "original_id": "che_명마_11_화종마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_12_사륜거": {
+      "id": "명마_12_사륜거",
+      "original_id": "che_명마_12_사륜거",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 전투 종료로 인한 부상 없음"
+    },
+    "명마_12_옥란백용구": {
+      "id": "명마_12_옥란백용구",
+      "original_id": "che_명마_12_옥란백용구",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 남은 병력이 적을수록 회피 확률 증가. 최대 +50%p",
+      "effects": {
+        "warAvoidRatio": {
+          "operator": "+",
+          "value": "\\sammo\\Util::valueFit((1 - crewL / leadership) * 0.5, 0, 0.5)"
+        }
+      }
+    },
+    "명마_13_적로": {
+      "id": "명마_13_적로",
+      "original_id": "che_명마_13_적로",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_13_절영": {
+      "id": "명마_13_절영",
+      "original_id": "che_명마_13_절영",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_14_적란마": {
+      "id": "명마_14_적란마",
+      "original_id": "che_명마_14_적란마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_14_조황비전": {
+      "id": "명마_14_조황비전",
+      "original_id": "che_명마_14_조황비전",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_15_적토마": {
+      "id": "명마_15_적토마",
+      "original_id": "che_명마_15_적토마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명마_15_한혈마": {
+      "id": "명마_15_한혈마",
+      "original_id": "che_명마_15_한혈마",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "명성_구석": {
+      "id": "명성_구석",
+      "original_id": "che_명성_구석",
+      "category": "item",
+      "cost": "200",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "1.20"
+        }
+      }
+    },
+    "무기_01_단도": {
+      "id": "무기_01_단도",
+      "original_id": "che_무기_01_단도",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true
+    },
+    "무기_02_단궁": {
+      "id": "무기_02_단궁",
+      "original_id": "che_무기_02_단궁",
+      "category": "item",
+      "cost": "3000",
+      "buyable": true,
+      "description": " [전투] 새로운 상대와 전투 시 1% 확률로 저격 발동, 성공 시 사기+20"
+    },
+    "무기_03_단극": {
+      "id": "무기_03_단극",
+      "original_id": "che_무기_03_단극",
+      "category": "item",
+      "cost": "6000",
+      "buyable": true
+    },
+    "무기_04_목검": {
+      "id": "무기_04_목검",
+      "original_id": "che_무기_04_목검",
+      "category": "item",
+      "cost": "10000",
+      "buyable": true
+    },
+    "무기_05_죽창": {
+      "id": "무기_05_죽창",
+      "original_id": "che_무기_05_죽창",
+      "category": "item",
+      "cost": "15000",
+      "buyable": true
+    },
+    "무기_06_소부": {
+      "id": "무기_06_소부",
+      "original_id": "che_무기_06_소부",
+      "category": "item",
+      "cost": "21000",
+      "buyable": true
+    },
+    "무기_07_동추": {
+      "id": "무기_07_동추",
+      "original_id": "che_무기_07_동추",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_07_맥궁": {
+      "id": "무기_07_맥궁",
+      "original_id": "che_무기_07_맥궁",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 새로운 상대와 전투 시 20% 확률로 저격 발동, 성공 시 사기+20"
+    },
+    "무기_07_철쇄": {
+      "id": "무기_07_철쇄",
+      "original_id": "che_무기_07_철쇄",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_07_철편": {
+      "id": "무기_07_철편",
+      "original_id": "che_무기_07_철편",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_08_유성추": {
+      "id": "무기_08_유성추",
+      "original_id": "che_무기_08_유성추",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_08_철질여골": {
+      "id": "무기_08_철질여골",
+      "original_id": "che_무기_08_철질여골",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_09_동호비궁": {
+      "id": "무기_09_동호비궁",
+      "original_id": "che_무기_09_동호비궁",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 새로운 상대와 전투 시 20% 확률로 저격 발동, 성공 시 사기+20"
+    },
+    "무기_09_쌍철극": {
+      "id": "무기_09_쌍철극",
+      "original_id": "che_무기_09_쌍철극",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_10_대부": {
+      "id": "무기_10_대부",
+      "original_id": "che_무기_10_대부",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_10_삼첨도": {
+      "id": "무기_10_삼첨도",
+      "original_id": "che_무기_10_삼첨도",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_11_고정도": {
+      "id": "무기_11_고정도",
+      "original_id": "che_무기_11_고정도",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_11_이광궁": {
+      "id": "무기_11_이광궁",
+      "original_id": "che_무기_11_이광궁",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 새로운 상대와 전투 시 10% 확률로 저격 발동, 성공 시 사기+10"
+    },
+    "무기_12_철척사모": {
+      "id": "무기_12_철척사모",
+      "original_id": "che_무기_12_철척사모",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_12_칠성검": {
+      "id": "무기_12_칠성검",
+      "original_id": "che_무기_12_칠성검",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_13_사모": {
+      "id": "무기_13_사모",
+      "original_id": "che_무기_13_사모",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_13_양유기궁": {
+      "id": "무기_13_양유기궁",
+      "original_id": "che_무기_13_양유기궁",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 새로운 상대와 전투 시 10% 확률로 저격 발동, 성공 시 사기+10"
+    },
+    "무기_14_방천화극": {
+      "id": "무기_14_방천화극",
+      "original_id": "che_무기_14_방천화극",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_14_언월도": {
+      "id": "무기_14_언월도",
+      "original_id": "che_무기_14_언월도",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_15_의천검": {
+      "id": "무기_15_의천검",
+      "original_id": "che_무기_15_의천검",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "무기_15_청홍검": {
+      "id": "무기_15_청홍검",
+      "original_id": "che_무기_15_청홍검",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "반계_백우선": {
+      "id": "반계_백우선",
+      "original_id": "che_반계_백우선",
+      "category": "item",
+      "cost": "200",
+      "effects": {
+        "killRice": {
+          "operator": "*",
+          "value": "1.1"
+        }
+      }
+    },
+    "반계_파초선": {
+      "id": "반계_파초선",
+      "original_id": "che_반계_파초선",
+      "category": "item",
+      "cost": "200"
+    },
+    "보물_도기": {
+      "id": "보물_도기",
+      "original_id": "che_보물_도기",
+      "category": "item",
+      "cost": "200"
+    },
+    "부적_태현청생부": {
+      "id": "부적_태현청생부",
+      "original_id": "che_부적_태현청생부",
+      "category": "item",
+      "cost": "200"
+    },
+    "불굴_상편": {
+      "id": "불굴_상편",
+      "original_id": "che_불굴_상편",
+      "category": "item",
+      "cost": "200"
+    },
+    "사기_두강주": {
+      "id": "사기_두강주",
+      "original_id": "che_사기_두강주",
+      "category": "item",
+      "cost": "200"
+    },
+    "사기_보령압주": {
+      "id": "사기_보령압주",
+      "original_id": "che_사기_보령압주",
+      "category": "item",
+      "cost": "200"
+    },
+    "사기_의적주": {
+      "id": "사기_의적주",
+      "original_id": "che_사기_의적주",
+      "category": "item",
+      "cost": "200"
+    },
+    "사기_초선화": {
+      "id": "사기_초선화",
+      "original_id": "che_사기_초선화",
+      "category": "item",
+      "cost": "200"
+    },
+    "사기_춘화첩": {
+      "id": "사기_춘화첩",
+      "original_id": "che_사기_춘화첩",
+      "category": "item",
+      "cost": "200"
+    },
+    "사기_탁주": {
+      "id": "사기_탁주",
+      "original_id": "che_사기_탁주",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true
+    },
+    "상성보정_과실주": {
+      "id": "상성보정_과실주",
+      "original_id": "che_상성보정_과실주",
+      "category": "item",
+      "cost": "200"
+    },
+    "서적_01_효경전": {
+      "id": "서적_01_효경전",
+      "original_id": "che_서적_01_효경전",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true,
+      "description": " [전투] 계략 시도 확률 +1%p"
+    },
+    "서적_02_회남자": {
+      "id": "서적_02_회남자",
+      "original_id": "che_서적_02_회남자",
+      "category": "item",
+      "cost": "3000",
+      "buyable": true,
+      "description": " [전투] 계략 시도 확률 +1%p"
+    },
+    "서적_03_변도론": {
+      "id": "서적_03_변도론",
+      "original_id": "che_서적_03_변도론",
+      "category": "item",
+      "cost": "6000",
+      "buyable": true,
+      "description": " [전투] 계략 시도 확률 +2%p"
+    },
+    "서적_04_건상역주": {
+      "id": "서적_04_건상역주",
+      "original_id": "che_서적_04_건상역주",
+      "category": "item",
+      "cost": "10000",
+      "buyable": true,
+      "description": " [전투] 계략 시도 확률 +2%p"
+    },
+    "서적_05_여씨춘추": {
+      "id": "서적_05_여씨춘추",
+      "original_id": "che_서적_05_여씨춘추",
+      "category": "item",
+      "cost": "15000",
+      "buyable": true,
+      "description": " [전투] 계략 시도 확률 +3%p"
+    },
+    "서적_06_사민월령": {
+      "id": "서적_06_사민월령",
+      "original_id": "che_서적_06_사민월령",
+      "category": "item",
+      "cost": "21000",
+      "buyable": true,
+      "description": " [전투] 계략 시도 확률 +3%p"
+    },
+    "서적_07_논어": {
+      "id": "서적_07_논어",
+      "original_id": "che_서적_07_논어",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 상대의 계략 성공 확률 -10%p"
+    },
+    "서적_07_사마법": {
+      "id": "서적_07_사마법",
+      "original_id": "che_서적_07_사마법",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 상대의 계략을 10% 확률로 되돌림"
+    },
+    "서적_07_위료자": {
+      "id": "서적_07_위료자",
+      "original_id": "che_서적_07_위료자",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 계략 시도 확률 +20%p"
+    },
+    "서적_07_한서": {
+      "id": "서적_07_한서",
+      "original_id": "che_서적_07_한서",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_08_사기": {
+      "id": "서적_08_사기",
+      "original_id": "che_서적_08_사기",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_08_전론": {
+      "id": "서적_08_전론",
+      "original_id": "che_서적_08_전론",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 계략 성공 시 대미지 +20%"
+    },
+    "서적_09_역경": {
+      "id": "서적_09_역경",
+      "original_id": "che_서적_09_역경",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_09_장자": {
+      "id": "서적_09_장자",
+      "original_id": "che_서적_09_장자",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_10_구국론": {
+      "id": "서적_10_구국론",
+      "original_id": "che_서적_10_구국론",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_10_시경": {
+      "id": "서적_10_시경",
+      "original_id": "che_서적_10_시경",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_11_상군서": {
+      "id": "서적_11_상군서",
+      "original_id": "che_서적_11_상군서",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_11_춘추전": {
+      "id": "서적_11_춘추전",
+      "original_id": "che_서적_11_춘추전",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 상대의 계략 성공 확률 -10%p"
+    },
+    "서적_12_맹덕신서": {
+      "id": "서적_12_맹덕신서",
+      "original_id": "che_서적_12_맹덕신서",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_12_산해경": {
+      "id": "서적_12_산해경",
+      "original_id": "che_서적_12_산해경",
+      "category": "item",
+      "cost": "200",
+      "buyable": false,
+      "description": " [전투] 상대의 계략을 10% 확률로 되돌림"
+    },
+    "서적_13_관자": {
+      "id": "서적_13_관자",
+      "original_id": "che_서적_13_관자",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_13_병법24편": {
+      "id": "서적_13_병법24편",
+      "original_id": "che_서적_13_병법24편",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_14_오자병법": {
+      "id": "서적_14_오자병법",
+      "original_id": "che_서적_14_오자병법",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_14_한비자": {
+      "id": "서적_14_한비자",
+      "original_id": "che_서적_14_한비자",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_15_노자": {
+      "id": "서적_15_노자",
+      "original_id": "che_서적_15_노자",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "서적_15_손자병법": {
+      "id": "서적_15_손자병법",
+      "original_id": "che_서적_15_손자병법",
+      "category": "item",
+      "cost": "200",
+      "buyable": false
+    },
+    "숙련_동작": {
+      "id": "숙련_동작",
+      "original_id": "che_숙련_동작",
+      "category": "item",
+      "cost": "200",
+      "effects": {
+        "addDex": {
+          "operator": "*",
+          "value": "1.20"
+        }
+      }
+    },
+    "약탈_옥벽": {
+      "id": "약탈_옥벽",
+      "original_id": "che_약탈_옥벽",
+      "category": "item",
+      "cost": "200"
+    },
+    "위압_조목삭": {
+      "id": "위압_조목삭",
+      "original_id": "che_위압_조목삭",
+      "category": "item",
+      "cost": "200"
+    },
+    "의술_상한잡병론": {
+      "id": "의술_상한잡병론",
+      "original_id": "che_의술_상한잡병론",
+      "category": "item",
+      "cost": "200"
+    },
+    "의술_정력견혈산": {
+      "id": "의술_정력견혈산",
+      "original_id": "che_의술_정력견혈산",
+      "category": "item",
+      "cost": "200"
+    },
+    "의술_청낭서": {
+      "id": "의술_청낭서",
+      "original_id": "che_의술_청낭서",
+      "category": "item",
+      "cost": "200"
+    },
+    "의술_태평청령": {
+      "id": "의술_태평청령",
+      "original_id": "che_의술_태평청령",
+      "category": "item",
+      "cost": "200"
+    },
+    "저격_매화수전": {
+      "id": "저격_매화수전",
+      "original_id": "che_저격_매화수전",
+      "category": "item",
+      "cost": "200"
+    },
+    "저격_비도": {
+      "id": "저격_비도",
+      "original_id": "che_저격_비도",
+      "category": "item",
+      "cost": "200"
+    },
+    "저격_수극": {
+      "id": "저격_수극",
+      "original_id": "che_저격_수극",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true
+    },
+    "저지_삼황내문": {
+      "id": "저지_삼황내문",
+      "original_id": "che_저지_삼황내문",
+      "category": "item",
+      "cost": "200"
+    },
+    "전략_평만지장도": {
+      "id": "전략_평만지장도",
+      "original_id": "che_전략_평만지장도",
+      "category": "item",
+      "cost": "200"
+    },
+    "조달_주판": {
+      "id": "조달_주판",
+      "original_id": "che_조달_주판",
+      "category": "item",
+      "cost": "200"
+    },
+    "진압_박혁론": {
+      "id": "진압_박혁론",
+      "original_id": "che_진압_박혁론",
+      "category": "item",
+      "cost": "200"
+    },
+    "집중_전국책": {
+      "id": "집중_전국책",
+      "original_id": "che_집중_전국책",
+      "category": "item",
+      "cost": "200"
+    },
+    "징병_낙주": {
+      "id": "징병_낙주",
+      "original_id": "che_징병_낙주",
+      "category": "item",
+      "cost": "200"
+    },
+    "척사_오악진형도": {
+      "id": "척사_오악진형도",
+      "original_id": "che_척사_오악진형도",
+      "category": "item",
+      "cost": "200"
+    },
+    "치료_도소연명": {
+      "id": "치료_도소연명",
+      "original_id": "che_치료_도소연명",
+      "category": "item",
+      "cost": "200"
+    },
+    "치료_무후행군": {
+      "id": "치료_무후행군",
+      "original_id": "che_치료_무후행군",
+      "category": "item",
+      "cost": "200"
+    },
+    "치료_오석산": {
+      "id": "치료_오석산",
+      "original_id": "che_치료_오석산",
+      "category": "item",
+      "cost": "200"
+    },
+    "치료_정력견혈": {
+      "id": "치료_정력견혈",
+      "original_id": "che_치료_정력견혈",
+      "category": "item",
+      "cost": "200"
+    },
+    "치료_칠엽청점": {
+      "id": "치료_칠엽청점",
+      "original_id": "che_치료_칠엽청점",
+      "category": "item",
+      "cost": "200"
+    },
+    "치료_환약": {
+      "id": "치료_환약",
+      "original_id": "che_치료_환약",
+      "category": "item",
+      "cost": "200",
+      "buyable": true
+    },
+    "치트_HideD의_사인검": {
+      "id": "치트_HideD의_사인검",
+      "original_id": "che_치트_HideD의_사인검",
+      "category": "item",
+      "cost": "9000000",
+      "buyable": false
+    },
+    "필살_둔갑천서": {
+      "id": "필살_둔갑천서",
+      "original_id": "che_필살_둔갑천서",
+      "category": "item",
+      "cost": "200"
+    },
+    "행동_서촉지형도": {
+      "id": "행동_서촉지형도",
+      "original_id": "che_행동_서촉지형도",
+      "category": "item",
+      "cost": "200"
+    },
+    "환술_논어집해": {
+      "id": "환술_논어집해",
+      "original_id": "che_환술_논어집해",
+      "category": "item",
+      "cost": "200"
+    },
+    "회피_둔갑천서": {
+      "id": "회피_둔갑천서",
+      "original_id": "che_회피_둔갑천서",
+      "category": "item",
+      "cost": "200"
+    },
+    "회피_태평요술": {
+      "id": "회피_태평요술",
+      "original_id": "che_회피_태평요술",
+      "category": "item",
+      "cost": "200"
+    },
+    "훈련_과실주": {
+      "id": "훈련_과실주",
+      "original_id": "che_훈련_과실주",
+      "category": "item",
+      "cost": "200"
+    },
+    "훈련_단결도": {
+      "id": "훈련_단결도",
+      "original_id": "che_훈련_단결도",
+      "category": "item",
+      "cost": "200"
+    },
+    "훈련_이강주": {
+      "id": "훈련_이강주",
+      "original_id": "che_훈련_이강주",
+      "category": "item",
+      "cost": "200"
+    },
+    "훈련_철벽서": {
+      "id": "훈련_철벽서",
+      "original_id": "che_훈련_철벽서",
+      "category": "item",
+      "cost": "200"
+    },
+    "훈련_청주": {
+      "id": "훈련_청주",
+      "original_id": "che_훈련_청주",
+      "category": "item",
+      "cost": "1000",
+      "buyable": true
+    },
+    "event_빼빼로": {
+      "id": "event_빼빼로",
+      "original_id": "event_빼빼로",
+      "category": "item",
+      "cost": "1500",
+      "buyable": true
+    },
+    "event_전투특기_격노": {
+      "id": "event_전투특기_격노",
+      "original_id": "event_전투특기_격노",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_견고": {
+      "id": "event_전투특기_견고",
+      "original_id": "event_전투특기_견고",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_공성": {
+      "id": "event_전투특기_공성",
+      "original_id": "event_전투특기_공성",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_궁병": {
+      "id": "event_전투특기_궁병",
+      "original_id": "event_전투특기_궁병",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_귀병": {
+      "id": "event_전투특기_귀병",
+      "original_id": "event_전투특기_귀병",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_기병": {
+      "id": "event_전투특기_기병",
+      "original_id": "event_전투특기_기병",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_돌격": {
+      "id": "event_전투특기_돌격",
+      "original_id": "event_전투특기_돌격",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_무쌍": {
+      "id": "event_전투특기_무쌍",
+      "original_id": "event_전투특기_무쌍",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_반계": {
+      "id": "event_전투특기_반계",
+      "original_id": "event_전투특기_반계",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_보병": {
+      "id": "event_전투특기_보병",
+      "original_id": "event_전투특기_보병",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_신산": {
+      "id": "event_전투특기_신산",
+      "original_id": "event_전투특기_신산",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_신중": {
+      "id": "event_전투특기_신중",
+      "original_id": "event_전투특기_신중",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_위압": {
+      "id": "event_전투특기_위압",
+      "original_id": "event_전투특기_위압",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_의술": {
+      "id": "event_전투특기_의술",
+      "original_id": "event_전투특기_의술",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_저격": {
+      "id": "event_전투특기_저격",
+      "original_id": "event_전투특기_저격",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_집중": {
+      "id": "event_전투특기_집중",
+      "original_id": "event_전투특기_집중",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_징병": {
+      "id": "event_전투특기_징병",
+      "original_id": "event_전투특기_징병",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_척사": {
+      "id": "event_전투특기_척사",
+      "original_id": "event_전투특기_척사",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_필살": {
+      "id": "event_전투특기_필살",
+      "original_id": "event_전투특기_필살",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_전투특기_환술": {
+      "id": "event_전투특기_환술",
+      "original_id": "event_전투특기_환술",
+      "category": "item",
+      "cost": "100",
+      "buyable": true
+    },
+    "event_충차": {
+      "id": "event_충차",
+      "original_id": "event_충차",
+      "category": "item",
+      "cost": "2000",
+      "buyable": true
+    }
+  },
+  "special_domestic": {
+    "event_격노": {
+      "id": "event_격노",
+      "original_id": "che_event_격노",
+      "category": "special_domestic"
+    },
+    "event_견고": {
+      "id": "event_견고",
+      "original_id": "che_event_견고",
+      "category": "special_domestic"
+    },
+    "event_공성": {
+      "id": "event_공성",
+      "original_id": "che_event_공성",
+      "category": "special_domestic"
+    },
+    "event_궁병": {
+      "id": "event_궁병",
+      "original_id": "che_event_궁병",
+      "category": "special_domestic"
+    },
+    "event_귀병": {
+      "id": "event_귀병",
+      "original_id": "che_event_귀병",
+      "category": "special_domestic"
+    },
+    "event_기병": {
+      "id": "event_기병",
+      "original_id": "che_event_기병",
+      "category": "special_domestic"
+    },
+    "event_돌격": {
+      "id": "event_돌격",
+      "original_id": "che_event_돌격",
+      "category": "special_domestic"
+    },
+    "event_무쌍": {
+      "id": "event_무쌍",
+      "original_id": "che_event_무쌍",
+      "category": "special_domestic"
+    },
+    "event_반계": {
+      "id": "event_반계",
+      "original_id": "che_event_반계",
+      "category": "special_domestic"
+    },
+    "event_보병": {
+      "id": "event_보병",
+      "original_id": "che_event_보병",
+      "category": "special_domestic"
+    },
+    "event_신산": {
+      "id": "event_신산",
+      "original_id": "che_event_신산",
+      "category": "special_domestic"
+    },
+    "event_신중": {
+      "id": "event_신중",
+      "original_id": "che_event_신중",
+      "category": "special_domestic"
+    },
+    "event_위압": {
+      "id": "event_위압",
+      "original_id": "che_event_위압",
+      "category": "special_domestic"
+    },
+    "event_의술": {
+      "id": "event_의술",
+      "original_id": "che_event_의술",
+      "category": "special_domestic"
+    },
+    "event_저격": {
+      "id": "event_저격",
+      "original_id": "che_event_저격",
+      "category": "special_domestic"
+    },
+    "event_집중": {
+      "id": "event_집중",
+      "original_id": "che_event_집중",
+      "category": "special_domestic"
+    },
+    "event_징병": {
+      "id": "event_징병",
+      "original_id": "che_event_징병",
+      "category": "special_domestic"
+    },
+    "event_척사": {
+      "id": "event_척사",
+      "original_id": "che_event_척사",
+      "category": "special_domestic"
+    },
+    "event_필살": {
+      "id": "event_필살",
+      "original_id": "che_event_필살",
+      "category": "special_domestic"
+    },
+    "event_환술": {
+      "id": "event_환술",
+      "original_id": "che_event_환술",
+      "category": "special_domestic"
+    },
+    "거상": {
+      "id": "거상",
+      "original_id": "che_거상",
+      "category": "special_domestic"
+    },
+    "경작": {
+      "id": "경작",
+      "original_id": "che_경작",
+      "category": "special_domestic"
+    },
+    "귀모": {
+      "id": "귀모",
+      "original_id": "che_귀모",
+      "category": "special_domestic"
+    },
+    "발명": {
+      "id": "발명",
+      "original_id": "che_발명",
+      "category": "special_domestic"
+    },
+    "상재": {
+      "id": "상재",
+      "original_id": "che_상재",
+      "category": "special_domestic"
+    },
+    "수비": {
+      "id": "수비",
+      "original_id": "che_수비",
+      "category": "special_domestic"
+    },
+    "인덕": {
+      "id": "인덕",
+      "original_id": "che_인덕",
+      "category": "special_domestic"
+    },
+    "축성": {
+      "id": "축성",
+      "original_id": "che_축성",
+      "category": "special_domestic"
+    },
+    "통찰": {
+      "id": "통찰",
+      "original_id": "che_통찰",
+      "category": "special_domestic"
+    }
+  },
+  "special_war": {
+    "격노": {
+      "id": "격노",
+      "original_id": "che_격노",
+      "category": "special_war"
+    },
+    "견고": {
+      "id": "견고",
+      "original_id": "che_견고",
+      "category": "special_war"
+    },
+    "공성": {
+      "id": "공성",
+      "original_id": "che_공성",
+      "category": "special_war"
+    },
+    "궁병": {
+      "id": "궁병",
+      "original_id": "che_궁병",
+      "category": "special_war"
+    },
+    "귀병": {
+      "id": "귀병",
+      "original_id": "che_귀병",
+      "category": "special_war"
+    },
+    "기병": {
+      "id": "기병",
+      "original_id": "che_기병",
+      "category": "special_war"
+    },
+    "돌격": {
+      "id": "돌격",
+      "original_id": "che_돌격",
+      "category": "special_war"
+    },
+    "무쌍": {
+      "id": "무쌍",
+      "original_id": "che_무쌍",
+      "category": "special_war"
+    },
+    "반계": {
+      "id": "반계",
+      "original_id": "che_반계",
+      "category": "special_war"
+    },
+    "보병": {
+      "id": "보병",
+      "original_id": "che_보병",
+      "category": "special_war"
+    },
+    "신산": {
+      "id": "신산",
+      "original_id": "che_신산",
+      "category": "special_war"
+    },
+    "신중": {
+      "id": "신중",
+      "original_id": "che_신중",
+      "category": "special_war"
+    },
+    "위압": {
+      "id": "위압",
+      "original_id": "che_위압",
+      "category": "special_war"
+    },
+    "의술": {
+      "id": "의술",
+      "original_id": "che_의술",
+      "category": "special_war"
+    },
+    "저격": {
+      "id": "저격",
+      "original_id": "che_저격",
+      "category": "special_war"
+    },
+    "집중": {
+      "id": "집중",
+      "original_id": "che_집중",
+      "category": "special_war"
+    },
+    "징병": {
+      "id": "징병",
+      "original_id": "che_징병",
+      "category": "special_war"
+    },
+    "척사": {
+      "id": "척사",
+      "original_id": "che_척사",
+      "category": "special_war"
+    },
+    "필살": {
+      "id": "필살",
+      "original_id": "che_필살",
+      "category": "special_war"
+    },
+    "환술": {
+      "id": "환술",
+      "original_id": "che_환술",
+      "category": "special_war"
+    }
+  },
+  "nation_types": {
+    "덕가": {
+      "id": "덕가",
+      "original_id": "che_덕가",
+      "category": "nation_type"
+    },
+    "도가": {
+      "id": "도가",
+      "original_id": "che_도가",
+      "category": "nation_type"
+    },
+    "도적": {
+      "id": "도적",
+      "original_id": "che_도적",
+      "category": "nation_type"
+    },
+    "명가": {
+      "id": "명가",
+      "original_id": "che_명가",
+      "category": "nation_type"
+    },
+    "묵가": {
+      "id": "묵가",
+      "original_id": "che_묵가",
+      "category": "nation_type"
+    },
+    "법가": {
+      "id": "법가",
+      "original_id": "che_법가",
+      "category": "nation_type"
+    },
+    "병가": {
+      "id": "병가",
+      "original_id": "che_병가",
+      "category": "nation_type"
+    },
+    "불가": {
+      "id": "불가",
+      "original_id": "che_불가",
+      "category": "nation_type"
+    },
+    "오두미도": {
+      "id": "오두미도",
+      "original_id": "che_오두미도",
+      "category": "nation_type"
+    },
+    "유가": {
+      "id": "유가",
+      "original_id": "che_유가",
+      "category": "nation_type"
+    },
+    "음양가": {
+      "id": "음양가",
+      "original_id": "che_음양가",
+      "category": "nation_type"
+    },
+    "종횡가": {
+      "id": "종횡가",
+      "original_id": "che_종횡가",
+      "category": "nation_type"
+    },
+    "중립": {
+      "id": "중립",
+      "original_id": "che_중립",
+      "category": "nation_type"
+    },
+    "태평도": {
+      "id": "태평도",
+      "original_id": "che_태평도",
+      "category": "nation_type"
+    }
+  },
+  "personalities": {
+    "대의": {
+      "id": "대의",
+      "original_id": "che_대의",
+      "category": "personality",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "1.1"
+        },
+        "bonusTrain": {
+          "operator": "-",
+          "value": "5"
+        }
+      }
+    },
+    "안전": {
+      "id": "안전",
+      "original_id": "che_안전",
+      "category": "personality",
+      "effects": {
+        "bonusAtmos": {
+          "operator": "-",
+          "value": "5"
+        }
+      }
+    },
+    "왕좌": {
+      "id": "왕좌",
+      "original_id": "che_왕좌",
+      "category": "personality",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "1.1"
+        },
+        "bonusAtmos": {
+          "operator": "-",
+          "value": "5"
+        }
+      }
+    },
+    "유지": {
+      "id": "유지",
+      "original_id": "che_유지",
+      "category": "personality",
+      "effects": {
+        "bonusTrain": {
+          "operator": "-",
+          "value": "5"
+        }
+      }
+    },
+    "은둔": {
+      "id": "은둔",
+      "original_id": "che_은둔",
+      "category": "personality",
+      "effects": {
+        "bonusAtmos": {
+          "operator": "-",
+          "value": "5"
+        },
+        "bonusTrain": {
+          "operator": "-",
+          "value": "5"
+        },
+        "experience": {
+          "operator": "*",
+          "value": "0.9"
+        },
+        "dedication": {
+          "operator": "*",
+          "value": "0.9"
+        }
+      }
+    },
+    "의협": {
+      "id": "의협",
+      "original_id": "che_의협",
+      "category": "personality",
+      "effects": {
+        "bonusAtmos": {
+          "operator": "+",
+          "value": "5"
+        }
+      }
+    },
+    "재간": {
+      "id": "재간",
+      "original_id": "che_재간",
+      "category": "personality",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "0.9"
+        }
+      }
+    },
+    "정복": {
+      "id": "정복",
+      "original_id": "che_정복",
+      "category": "personality",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "0.9"
+        },
+        "bonusAtmos": {
+          "operator": "+",
+          "value": "5"
+        }
+      }
+    },
+    "출세": {
+      "id": "출세",
+      "original_id": "che_출세",
+      "category": "personality",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "1.1"
+        }
+      }
+    },
+    "패권": {
+      "id": "패권",
+      "original_id": "che_패권",
+      "category": "personality",
+      "effects": {
+        "bonusTrain": {
+          "operator": "+",
+          "value": "5"
+        }
+      }
+    },
+    "할거": {
+      "id": "할거",
+      "original_id": "che_할거",
+      "category": "personality",
+      "effects": {
+        "experience": {
+          "operator": "*",
+          "value": "0.9"
+        },
+        "bonusTrain": {
+          "operator": "+",
+          "value": "5"
+        }
+      }
+    }
+  }
+}

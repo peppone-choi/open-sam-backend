@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { CommandService } from '../service/command.service';
+import { CommandService } from '../../../core/command/CommandService';
 import { HttpException } from '../../../common/errors/HttpException';
 import { ApiResponse } from '../../../common/@types/api.types';
 

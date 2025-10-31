@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CommandController } from '../controller/command.controller';
-import { CommandService } from '../service/command.service';
+import { CommandService } from '../../../core/command/CommandService';
 import { CommandRepository } from '../repository/command.repository';
 import { GameSessionRepository } from '../../game-session/repository/game-session.repository';
 import { getCommandQueue } from '../../../container';
