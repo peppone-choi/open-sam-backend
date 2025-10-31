@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { CacheManager } from '../../infrastructure/cache/cache-manager';
+import { CacheManager } from '../../../cache/CacheManager';
 
-const cacheManager = new CacheManager();
+const cacheManager = CacheManager.getInstance();
 
 export function cacheMiddleware(ttl: number = 3) {
   return async (req: Request, res: Response, next: NextFunction) => {

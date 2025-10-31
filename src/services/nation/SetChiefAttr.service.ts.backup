@@ -1,0 +1,28 @@
+import { NationRepository } from '../../repositories/nation.repository';
+import { General } from '../../models/general.model';
+import { Session } from '../../models/session.model';
+
+/**
+ * SetChiefAttr Service
+ */
+export class SetChiefAttrService {
+  static async execute(data: any, user?: any) {
+    const sessionId = data.session_id || 'sangokushi_default';
+    const generalId = user?.generalId || data.general_id;
+    
+    try {
+      // TODO: 비즈니스 로직 구현
+      
+      return {
+        success: true,
+        message: 'SetChiefAttr executed',
+        data: {}
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  }
+}

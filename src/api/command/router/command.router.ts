@@ -1,44 +1,42 @@
 import { Router } from 'express';
-import { makeCommandController } from '../../../container';
-import { asyncHandler } from '../../../common/utils/async-handler';
-// import { validate } from '../../../common/middleware/validator.middleware';
+import { CommandController } from '../controller/command.controller';
+import { CommandService } from '../../../core/command/CommandService';
+import { CommandRepository } from '../repository/command.repository';
+import { GameSessionRepository } from '../../game-session/repository/game-session.repository';
+import { getCommandQueue } from '../../../container';
 
 const router = Router();
 
-// TODO: Controller 생성 (DI)
-// const controller = makeCommandController();
+// 의존성 주입
+const repository = new CommandRepository();
+const sessionRepository = new GameSessionRepository();
+const service = new CommandService(repository, getCommandQueue(), sessionRepository);
+const controller = new CommandController(service);
 
 /**
- * POST /api/commands
- * 명령 제출
+ * 명령 라우터
+ * 
+ * Entity 기반 Controller 연결
+ * 기존 API 경로 유지
  */
-// router.post(
-//   '/',
-//   validate(SubmitCommandSchema),
-//   asyncHandler(controller.submit)
-// );
 
-/**
- * GET /api/commands/:id
- * 명령 조회
- */
-// router.get(
-//   '/:id',
-//   asyncHandler(controller.getById)
-// );
+// 목록 조회
+router.get('/', controller.list);
 
-/**
- * GET /api/commands?generalId=xxx
- * 장수별 명령 조회
- */
-// router.get(
-//   '/',
-//   asyncHandler(controller.getByGeneralId)
-// );
+// 상세 조회
+router.get('/:id', controller.getById);
 
-// TODO: 임시 라우트 (구현 전)
-router.get('/', (_req, res) => {
-  res.json({ message: 'Command routes - TODO' });
-});
+// 지휘관별 조회
+router.get('/commander/:commanderId', controller.getByCommanderId);
+
+// 명령 제출
+router.post('/', controller.create);
+router.post('/submit', controller.submit);
+
+// 명령 업데이트 (비활성화)
+router.put('/:id', controller.update);
+
+// 명령 취소
+router.delete('/:id', controller.remove);
 
 export default router;

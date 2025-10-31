@@ -1,0 +1,23 @@
+import { GlobalRepository } from '../../repositories/global.repository';
+
+/**
+ * GetDiplomacy Service
+ * PHP: /mnt/d/open-sam-backend/sam/hwe/sammo/API/Global/GetDiplomacy.php
+ */
+export class GetDiplomacyService {
+  static async execute(data: any, user?: any) {
+    // TODO: 비즈니스 로직 구현
+    // PHP 파일 참조: /mnt/d/open-sam-backend/sam/hwe/sammo/API/Global/GetDiplomacy.php
+    
+    const sessionId = data.session_id || 'sangokushi_default';
+    
+    // Repository 호출 예시
+    // const result = await GlobalRepository.someMethod(sessionId, data);
+    
+    return {
+      success: true,
+      message: 'GetDiplomacy executed',
+      data: {}
+    };
+  }
+}

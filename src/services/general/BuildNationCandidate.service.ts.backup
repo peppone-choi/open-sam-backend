@@ -1,0 +1,114 @@
+import { GeneralRepository } from '../../repositories/general.repository';
+import { General } from '../../models/general.model';
+import { Session } from '../../models/session.model';
+import { Nation } from '../../models/nation.model';
+import { City } from '../../models/city.model';
+
+/**
+ * BuildNationCandidate Service
+ * 사전 거병 (게임 시작 전 국가 건국)
+ * PHP: /sam/hwe/sammo/API/General/BuildNationCandidate.php
+ */
+export class BuildNationCandidateService {
+  static async execute(data: any, user?: any) {
+    const sessionId = data.session_id || 'sangokushi_default';
+    const userId = user?.userId;
+    
+    if (!userId) {
+      return { success: false, message: '사용자 ID가 필요합니다' };
+    }
+
+    try {
+      // 1. 세션 정보 조회
+      const session = await Session.findOne({ session_id: sessionId });
+      if (!session) {
+        return { success: false, message: '세션을 찾을 수 없습니다' };
+      }
+
+      const opentime = session.data?.opentime || new Date(0);
+      const turntime = session.data?.turntime || new Date();
+
+      // 2. 장수 조회
+      const general = await General.findOne({
+        session_id: sessionId,
+        'data.owner': userId,
+        'data.npc': 0
+      });
+
+      if (!general) {
+        return { success: false, message: '장수가 없습니다' };
+      }
+
+      // 3. 게임 시작 여부 확인
+      if (turntime > opentime) {
+        return { success: false, message: '게임이 시작되었습니다.' };
+      }
+
+      // 4. 이미 국가에 소속되어 있는지 확인
+      if (general.data?.nation && general.data.nation !== 0) {
+        return { success: false, message: '이미 국가에 소속되어있습니다.' };
+      }
+
+      // 5. 거병 가능한 모드인지 확인 (간단하게 처리)
+      // TODO: GameConst::$availableGeneralCommand 체크
+
+      // 6. 국가 생성
+      const generalNo = general.data?.no;
+      const generalName = general.data?.name || '무명';
+      const cityId = general.data?.city;
+
+      // 새로운 국가 번호 할당 (기존 국가 중 최대값 + 1)
+      const nations = await Nation.find({ session_id: sessionId });
+      const maxNationNo = nations.reduce((max, n) => Math.max(max, n.data?.nation || 0), 0);
+      const newNationNo = maxNationNo + 1;
+
+      // 국가 생성
+      const newNation = await Nation.create({
+        session_id: sessionId,
+        data: {
+          nation: newNationNo,
+          name: `${generalName}의 세력`,
+          color: Math.floor(Math.random() * 16777215), // 랜덤 색상
+          capital: cityId,
+          chief_set: [generalNo],
+          belong_list: [generalNo],
+          officer_level: { [generalNo]: 12 }, // 군주
+          power: { [generalNo]: 255 } // 모든 권한
+        }
+      });
+
+      // 장수의 nation 필드 업데이트
+      general.data = general.data || {};
+      general.data.nation = newNationNo;
+      general.data.officer_level = 12; // 군주
+      general.markModified('data');
+      await general.save();
+
+      // 도시 소유권 변경
+      if (cityId) {
+        await City.updateOne(
+          {
+            session_id: sessionId,
+            'data.id': cityId
+          },
+          {
+            $set: {
+              'data.nation': newNationNo
+            }
+          }
+        );
+      }
+
+      return {
+        success: true,
+        message: '거병에 성공했습니다',
+        nationNo: newNationNo
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  }
+}

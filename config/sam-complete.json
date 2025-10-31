@@ -1,0 +1,5765 @@
+{
+  "metadata": {
+    "extracted_at": "2025-10-29T07:04:27.955Z",
+    "source": "sam/hwe"
+  },
+  "schema": {
+    "general": {
+      "no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "owner": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "npcmsg": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "npc": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "npc_org": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "affinity": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "bornyear": {
+        "type": "int",
+        "default": 180,
+        "required": false,
+        "comment": null
+      },
+      "deadyear": {
+        "type": "int",
+        "default": 300,
+        "required": false,
+        "comment": null
+      },
+      "newmsg": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "picture": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "imgsvr": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "owner_name": {
+        "type": "varchar",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "nation": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "city": {
+        "type": "int",
+        "default": 3,
+        "required": true,
+        "comment": null
+      },
+      "troop": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "leadership": {
+        "type": "int",
+        "default": 50,
+        "required": true,
+        "comment": null
+      },
+      "leadership_exp": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "strength": {
+        "type": "int",
+        "default": 50,
+        "required": true,
+        "comment": null
+      },
+      "strength_exp": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "intel": {
+        "type": "int",
+        "default": 50,
+        "required": true,
+        "comment": null
+      },
+      "intel_exp": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "injury": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "experience": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "dedication": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "dex1": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "dex2": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "dex3": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "dex4": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "dex5": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "officer_level": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "officer_city": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "permission": {
+        "type": "enum",
+        "default": "normal",
+        "required": false,
+        "comment": null
+      },
+      "gold": {
+        "type": "int",
+        "default": 1000,
+        "required": true,
+        "comment": null
+      },
+      "rice": {
+        "type": "int",
+        "default": 1000,
+        "required": true,
+        "comment": null
+      },
+      "crew": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "crewtype": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "train": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "atmos": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "weapon": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "book": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "horse": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "item": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "turntime": {
+        "type": "datetime",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "recent_war": {
+        "type": "datetime",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "makelimit": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "killturn": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "block": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "dedlevel": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "explevel": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "age": {
+        "type": "int",
+        "default": 20,
+        "required": false,
+        "comment": null
+      },
+      "startage": {
+        "type": "int",
+        "default": 20,
+        "required": false,
+        "comment": null
+      },
+      "belong": {
+        "type": "int",
+        "default": 1,
+        "required": false,
+        "comment": null
+      },
+      "betray": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "personal": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "special": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "specage": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "special2": {
+        "type": "varchar",
+        "default": "None",
+        "required": true,
+        "comment": null
+      },
+      "specage2": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "defence_train": {
+        "type": "int",
+        "default": 80,
+        "required": false,
+        "comment": null
+      },
+      "tnmt": {
+        "type": "int",
+        "default": 1,
+        "required": false,
+        "comment": null
+      },
+      "myset": {
+        "type": "int",
+        "default": 6,
+        "required": false,
+        "comment": null
+      },
+      "tournament": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "newvote": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "last_turn": {
+        "type": "text",
+        "default": "{}",
+        "required": true,
+        "comment": null
+      },
+      "aux": {
+        "type": "longtext",
+        "default": "{}",
+        "required": true,
+        "comment": null
+      },
+      "penalty": {
+        "type": "text",
+        "default": "{}",
+        "required": false,
+        "comment": null
+      }
+    },
+    "general_turn": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "turn_idx": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "action": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "arg": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "brief": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      }
+    },
+    "general_access_log": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "user_id": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "last_refresh": {
+        "type": "datetime",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "refresh": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "refresh_total": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "refresh_score": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "refresh_score_total": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "nation": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "color": {
+        "type": "char",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "capital": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "capset": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "gennum": {
+        "type": "int",
+        "default": 1,
+        "required": false,
+        "comment": null
+      },
+      "gold": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "rice": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "bill": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "rate": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "rate_tmp": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "secretlimit": {
+        "type": "int",
+        "default": 3,
+        "required": false,
+        "comment": null
+      },
+      "chief_set": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "scout": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "war": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "strategic_cmd_limit": {
+        "type": "int",
+        "default": 36,
+        "required": false,
+        "comment": null
+      },
+      "surlimit": {
+        "type": "int",
+        "default": 72,
+        "required": false,
+        "comment": null
+      },
+      "tech": {
+        "type": "float",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "power": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "spy": {
+        "type": "text",
+        "default": "{}",
+        "required": true,
+        "comment": null
+      },
+      "level": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "type": {
+        "type": "varchar",
+        "default": "che_중립",
+        "required": true,
+        "comment": null
+      },
+      "aux": {
+        "type": "longtext",
+        "default": "{}",
+        "required": true,
+        "comment": null
+      }
+    },
+    "nation_turn": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "officer_level": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "turn_idx": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "action": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "arg": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "brief": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      }
+    },
+    "board": {
+      "no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "is_secret": {
+        "type": "tinyint",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "date": {
+        "type": "datetime",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "author": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "author_icon": {
+        "type": "varchar",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "title": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "text": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "comment": {
+      "no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "is_secret": {
+        "type": "tinyint",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "date": {
+        "type": "datetime",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "document_no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "author": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "text": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "city": {
+      "city": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "level": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "supply": {
+        "type": "int",
+        "default": 1,
+        "required": true,
+        "comment": null
+      },
+      "front": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "pop": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "pop_max": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "agri": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "agri_max": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "comm": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "comm_max": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "secu": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "secu_max": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "trust": {
+        "type": "float",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "trade": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "dead": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "def": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "def_max": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "wall": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "wall_max": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "officer_set": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "state": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "region": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "term": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "conflict": {
+        "type": "text",
+        "default": "{}",
+        "required": true,
+        "comment": null
+      }
+    },
+    "troop": {
+      "troop_leader": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "plock": {
+      "no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "type": {
+        "type": "enum",
+        "default": "GAME",
+        "required": true,
+        "comment": null
+      },
+      "plock": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "locktime": {
+        "type": "datetime",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "message": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "mailbox": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": "9999 == public, >= 9000 national"
+      },
+      "type": {
+        "type": "enum",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "src": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "dest": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "time": {
+        "type": "datetime",
+        "default": "CURRENT_TIMESTAMP",
+        "required": true,
+        "comment": null
+      },
+      "valid_until": {
+        "type": "datetime",
+        "default": "9999-12-31",
+        "required": true,
+        "comment": null
+      },
+      "message": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "ng_diplomacy": {
+      "no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "src_nation_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "dest_nation_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "prev_no": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "state": {
+        "type": "enum",
+        "default": "proposed",
+        "required": true,
+        "comment": null
+      },
+      "text_brief": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "text_detail": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "date": {
+        "type": "datetime",
+        "default": "CURRENT_TIMESTAMP",
+        "required": true,
+        "comment": null
+      },
+      "src_signer": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "dest_signer": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "aux": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      }
+    },
+    "tournament": {
+      "seq": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "no": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "npc": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "name": {
+        "type": "varchar",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "w": {
+        "type": "varchar",
+        "default": "None",
+        "required": false,
+        "comment": null
+      },
+      "b": {
+        "type": "varchar",
+        "default": "None",
+        "required": false,
+        "comment": null
+      },
+      "h": {
+        "type": "varchar",
+        "default": "None",
+        "required": false,
+        "comment": null
+      },
+      "leadership": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "strength": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "intel": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "lvl": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "grp": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "grp_no": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "win": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "draw": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "lose": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "gl": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "prmt": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      }
+    },
+    "statistic": {
+      "no": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "year": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "month": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "nation_count": {
+        "type": "int",
+        "default": 0,
+        "required": false,
+        "comment": null
+      },
+      "nation_name": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "nation_hist": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "gen_count": {
+        "type": "varchar",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "personal_hist": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "special_hist": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "power_hist": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "crewtype": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "etc": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "aux": {
+        "type": "text",
+        "default": null,
+        "required": false,
+        "comment": null
+      }
+    },
+    "event": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "target": {
+        "type": "enum",
+        "default": "MONTH",
+        "required": true,
+        "comment": null
+      },
+      "priority": {
+        "type": "int",
+        "default": 1000,
+        "required": true,
+        "comment": null
+      },
+      "condition": {
+        "type": "mediumtext",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "action": {
+        "type": "mediumtext",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "world_history": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "year": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "month": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "text": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "general_record": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "log_type": {
+        "type": "enum",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "year": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "month": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "text": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "select_npc_token": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "owner": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "valid_until": {
+        "type": "datetime",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "pick_more_from": {
+        "type": "datetime",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "pick_result": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nonce": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "select_pool": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "unique_name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "owner": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "reserved_until": {
+        "type": "datetime",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "info": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "rank_data": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_id": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "type": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "value": {
+        "type": "int",
+        "default": 0,
+        "required": true,
+        "comment": null
+      }
+    },
+    "ng_betting": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "betting_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "user_id": {
+        "type": "int",
+        "default": null,
+        "required": false,
+        "comment": null
+      },
+      "betting_type": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "amount": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "vote": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "vote_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "selection": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      }
+    },
+    "vote_comment": {
+      "id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "vote_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_id": {
+        "type": "int",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "general_name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "nation_name": {
+        "type": "varchar",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "text": {
+        "type": "text",
+        "default": null,
+        "required": true,
+        "comment": null
+      },
+      "date": {
+        "type": "datetime",
+        "default": null,
+        "required": false,
+        "comment": null
+      }
+    }
+  },
+  "cities": {
+    "1": {
+      "id": 1,
+      "name": "업",
+      "level": "특",
+      "population": 6205,
+      "agriculture": 125,
+      "commerce": 113,
+      "security": 100,
+      "defense": 117,
+      "wall": 122,
+      "region": "하북",
+      "x": 345,
+      "y": 130,
+      "neighbors": [
+        "업",
+        "특",
+        "하북",
+        "남피",
+        "복양",
+        "호관",
+        "계교",
+        "관도"
+      ]
+    },
+    "2": {
+      "id": 2,
+      "name": "허창",
+      "level": "특",
+      "population": 5876,
+      "agriculture": 121,
+      "commerce": 124,
+      "security": 100,
+      "defense": 117,
+      "wall": 125,
+      "region": "중원",
+      "x": 330,
+      "y": 215,
+      "neighbors": [
+        "허창",
+        "특",
+        "중원",
+        "완",
+        "진류",
+        "초",
+        "호로",
+        "사수",
+        "관도"
+      ]
+    },
+    "3": {
+      "id": 3,
+      "name": "낙양",
+      "level": "특",
+      "population": 8357,
+      "agriculture": 117,
+      "commerce": 120,
+      "security": 100,
+      "defense": 121,
+      "wall": 124,
+      "region": "중원",
+      "x": 275,
+      "y": 180,
+      "neighbors": [
+        "낙양",
+        "특",
+        "중원",
+        "호관",
+        "호로",
+        "사곡",
+        "사수"
+      ]
+    },
+    "4": {
+      "id": 4,
+      "name": "장안",
+      "level": "특",
+      "population": 5923,
+      "agriculture": 116,
+      "commerce": 123,
+      "security": 100,
+      "defense": 120,
+      "wall": 118,
+      "region": "서북",
+      "x": 145,
+      "y": 165,
+      "neighbors": [
+        "장안",
+        "특",
+        "서북",
+        "안정",
+        "함곡",
+        "기산"
+      ]
+    },
+    "5": {
+      "id": 5,
+      "name": "성도",
+      "level": "특",
+      "population": 6525,
+      "agriculture": 123,
+      "commerce": 125,
+      "security": 100,
+      "defense": 125,
+      "wall": 123,
+      "region": "서촉",
+      "x": 25,
+      "y": 290,
+      "neighbors": [
+        "성도",
+        "특",
+        "서촉",
+        "덕양",
+        "강주",
+        "면죽"
+      ]
+    },
+    "6": {
+      "id": 6,
+      "name": "양양",
+      "level": "특",
+      "population": 5837,
+      "agriculture": 120,
+      "commerce": 126,
+      "security": 100,
+      "defense": 115,
+      "wall": 117,
+      "region": "초",
+      "x": 255,
+      "y": 290,
+      "neighbors": [
+        "양양",
+        "특",
+        "초",
+        "신야",
+        "장판"
+      ]
+    },
+    "7": {
+      "id": 7,
+      "name": "건업",
+      "level": "특",
+      "population": 6386,
+      "agriculture": 116,
+      "commerce": 123,
+      "security": 100,
+      "defense": 115,
+      "wall": 119,
+      "region": "오월",
+      "x": 505,
+      "y": 305,
+      "neighbors": [
+        "건업",
+        "특",
+        "오월",
+        "오",
+        "합비",
+        "광릉"
+      ]
+    },
+    "8": {
+      "id": 8,
+      "name": "북평",
+      "level": "대",
+      "population": 4862,
+      "agriculture": 102,
+      "commerce": 95,
+      "security": 80,
+      "defense": 103,
+      "wall": 99,
+      "region": "하북",
+      "x": 465,
+      "y": 65,
+      "neighbors": [
+        "북평",
+        "대",
+        "하북",
+        "역경",
+        "백랑"
+      ]
+    },
+    "9": {
+      "id": 9,
+      "name": "남피",
+      "level": "대",
+      "population": 5032,
+      "agriculture": 99,
+      "commerce": 101,
+      "security": 80,
+      "defense": 101,
+      "wall": 105,
+      "region": "하북",
+      "x": 395,
+      "y": 95,
+      "neighbors": [
+        "남피",
+        "대",
+        "하북",
+        "업",
+        "평원",
+        "역경"
+      ]
+    },
+    "10": {
+      "id": 10,
+      "name": "완",
+      "level": "대",
+      "population": 4724,
+      "agriculture": 103,
+      "commerce": 100,
+      "security": 80,
+      "defense": 101,
+      "wall": 99,
+      "region": "중원",
+      "x": 270,
+      "y": 235,
+      "neighbors": [
+        "완",
+        "대",
+        "중원",
+        "허창",
+        "여남",
+        "신야",
+        "호로"
+      ]
+    },
+    "11": {
+      "id": 11,
+      "name": "수춘",
+      "level": "대",
+      "population": 5143,
+      "agriculture": 99,
+      "commerce": 96,
+      "security": 80,
+      "defense": 99,
+      "wall": 95,
+      "region": "중원",
+      "x": 395,
+      "y": 270,
+      "neighbors": [
+        "수춘",
+        "대",
+        "중원",
+        "서주",
+        "여남",
+        "초",
+        "합비"
+      ]
+    },
+    "12": {
+      "id": 12,
+      "name": "서주",
+      "level": "대",
+      "population": 4853,
+      "agriculture": 101,
+      "commerce": 98,
+      "security": 80,
+      "defense": 102,
+      "wall": 97,
+      "region": "중원",
+      "x": 440,
+      "y": 250,
+      "neighbors": [
+        "서주",
+        "대",
+        "중원",
+        "수춘",
+        "하비",
+        "초",
+        "패"
+      ]
+    },
+    "13": {
+      "id": 13,
+      "name": "강릉",
+      "level": "대",
+      "population": 4850,
+      "agriculture": 105,
+      "commerce": 96,
+      "security": 80,
+      "defense": 95,
+      "wall": 96,
+      "region": "초",
+      "x": 245,
+      "y": 335,
+      "neighbors": [
+        "강릉",
+        "대",
+        "초",
+        "장사",
+        "무릉",
+        "이릉",
+        "장판"
+      ]
+    },
+    "14": {
+      "id": 14,
+      "name": "장사",
+      "level": "대",
+      "population": 4710,
+      "agriculture": 97,
+      "commerce": 99,
+      "security": 80,
+      "defense": 100,
+      "wall": 105,
+      "region": "초",
+      "x": 255,
+      "y": 375,
+      "neighbors": [
+        "장사",
+        "대",
+        "초",
+        "강릉",
+        "시상",
+        "계양",
+        "무릉",
+        "영릉"
+      ]
+    },
+    "15": {
+      "id": 15,
+      "name": "시상",
+      "level": "대",
+      "population": 5252,
+      "agriculture": 98,
+      "commerce": 100,
+      "security": 100,
+      "defense": 99,
+      "wall": 96,
+      "region": "오월",
+      "x": 360,
+      "y": 360,
+      "neighbors": [
+        "시상",
+        "대",
+        "오월",
+        "장사",
+        "여강",
+        "고창",
+        "적벽",
+        "파양"
+      ]
+    },
+    "16": {
+      "id": 16,
+      "name": "위례",
+      "level": "대",
+      "population": 4926,
+      "agriculture": 100,
+      "commerce": 93,
+      "security": 80,
+      "defense": 98,
+      "wall": 103,
+      "region": "동이",
+      "x": 620,
+      "y": 145,
+      "neighbors": [
+        "위례",
+        "대",
+        "동이",
+        "평양",
+        "사비",
+        "계림",
+        "안평",
+        "동황"
+      ]
+    },
+    "17": {
+      "id": 17,
+      "name": "계",
+      "level": "중",
+      "population": 3885,
+      "agriculture": 75,
+      "commerce": 80,
+      "security": 60,
+      "defense": 78,
+      "wall": 81,
+      "region": "하북",
+      "x": 365,
+      "y": 35,
+      "neighbors": [
+        "계",
+        "중",
+        "하북",
+        "진양",
+        "역경"
+      ]
+    },
+    "18": {
+      "id": 18,
+      "name": "복양",
+      "level": "중",
+      "population": 4185,
+      "agriculture": 80,
+      "commerce": 83,
+      "security": 60,
+      "defense": 82,
+      "wall": 80,
+      "region": "중원",
+      "x": 410,
+      "y": 170,
+      "neighbors": [
+        "복양",
+        "중",
+        "중원",
+        "업",
+        "진류",
+        "계교",
+        "정도"
+      ]
+    },
+    "19": {
+      "id": 19,
+      "name": "진류",
+      "level": "중",
+      "population": 3957,
+      "agriculture": 82,
+      "commerce": 80,
+      "security": 60,
+      "defense": 80,
+      "wall": 83,
+      "region": "중원",
+      "x": 365,
+      "y": 185,
+      "neighbors": [
+        "진류",
+        "중",
+        "중원",
+        "허창",
+        "복양",
+        "사수",
+        "관도",
+        "정도"
+      ]
+    },
+    "20": {
+      "id": 20,
+      "name": "여남",
+      "level": "중",
+      "population": 3831,
+      "agriculture": 77,
+      "commerce": 81,
+      "security": 60,
+      "defense": 84,
+      "wall": 77,
+      "region": "중원",
+      "x": 330,
+      "y": 260,
+      "neighbors": [
+        "여남",
+        "중",
+        "중원",
+        "완",
+        "수춘",
+        "초"
+      ]
+    },
+    "21": {
+      "id": 21,
+      "name": "하비",
+      "level": "중",
+      "population": 4278,
+      "agriculture": 85,
+      "commerce": 83,
+      "security": 60,
+      "defense": 82,
+      "wall": 78,
+      "region": "중원",
+      "x": 480,
+      "y": 235,
+      "neighbors": [
+        "하비",
+        "중",
+        "중원",
+        "서주",
+        "광릉"
+      ]
+    },
+    "22": {
+      "id": 22,
+      "name": "서량",
+      "level": "중",
+      "population": 3874,
+      "agriculture": 77,
+      "commerce": 79,
+      "security": 60,
+      "defense": 83,
+      "wall": 80,
+      "region": "서북",
+      "x": 25,
+      "y": 50,
+      "neighbors": [
+        "서량",
+        "중",
+        "서북",
+        "천수",
+        "강",
+        "저"
+      ]
+    },
+    "23": {
+      "id": 23,
+      "name": "하내",
+      "level": "중",
+      "population": 3736,
+      "agriculture": 77,
+      "commerce": 81,
+      "security": 60,
+      "defense": 81,
+      "wall": 80,
+      "region": "서북",
+      "x": 230,
+      "y": 150,
+      "neighbors": [
+        "하내",
+        "중",
+        "서북",
+        "진양",
+        "홍농",
+        "흉노",
+        "호관"
+      ]
+    },
+    "24": {
+      "id": 24,
+      "name": "한중",
+      "level": "중",
+      "population": 4027,
+      "agriculture": 77,
+      "commerce": 84,
+      "security": 60,
+      "defense": 80,
+      "wall": 85,
+      "region": "서촉",
+      "x": 135,
+      "y": 205,
+      "neighbors": [
+        "한중",
+        "중",
+        "서촉",
+        "상용",
+        "양평",
+        "기산"
+      ]
+    },
+    "25": {
+      "id": 25,
+      "name": "상용",
+      "level": "중",
+      "population": 3687,
+      "agriculture": 78,
+      "commerce": 76,
+      "security": 60,
+      "defense": 77,
+      "wall": 81,
+      "region": "서촉",
+      "x": 185,
+      "y": 225,
+      "neighbors": [
+        "상용",
+        "중",
+        "서촉",
+        "한중",
+        "신야"
+      ]
+    },
+    "26": {
+      "id": 26,
+      "name": "덕양",
+      "level": "중",
+      "population": 3803,
+      "agriculture": 81,
+      "commerce": 84,
+      "security": 60,
+      "defense": 79,
+      "wall": 77,
+      "region": "서촉",
+      "x": 85,
+      "y": 275,
+      "neighbors": [
+        "덕양",
+        "중",
+        "서촉",
+        "성도",
+        "강주",
+        "자동",
+        "영안"
+      ]
+    },
+    "27": {
+      "id": 27,
+      "name": "강주",
+      "level": "중",
+      "population": 4126,
+      "agriculture": 79,
+      "commerce": 80,
+      "security": 60,
+      "defense": 84,
+      "wall": 81,
+      "region": "서촉",
+      "x": 70,
+      "y": 310,
+      "neighbors": [
+        "강주",
+        "중",
+        "서촉",
+        "성도",
+        "덕양",
+        "영안",
+        "귀양",
+        "주시"
+      ]
+    },
+    "28": {
+      "id": 28,
+      "name": "건녕",
+      "level": "중",
+      "population": 3765,
+      "agriculture": 82,
+      "commerce": 80,
+      "security": 60,
+      "defense": 86,
+      "wall": 81,
+      "region": "남중",
+      "x": 80,
+      "y": 400,
+      "neighbors": [
+        "건녕",
+        "중",
+        "남중",
+        "귀양",
+        "운남",
+        "남영"
+      ]
+    },
+    "29": {
+      "id": 29,
+      "name": "남해",
+      "level": "중",
+      "population": 3803,
+      "agriculture": 82,
+      "commerce": 76,
+      "security": 60,
+      "defense": 80,
+      "wall": 81,
+      "region": "남중",
+      "x": 245,
+      "y": 480,
+      "neighbors": [
+        "남해",
+        "중",
+        "남중",
+        "교지",
+        "상동",
+        "대",
+        "산월"
+      ]
+    },
+    "30": {
+      "id": 30,
+      "name": "계양",
+      "level": "중",
+      "population": 3955,
+      "agriculture": 83,
+      "commerce": 80,
+      "security": 60,
+      "defense": 81,
+      "wall": 77,
+      "region": "초",
+      "x": 230,
+      "y": 400,
+      "neighbors": [
+        "계양",
+        "중",
+        "초",
+        "장사",
+        "영릉",
+        "상동"
+      ]
+    },
+    "31": {
+      "id": 31,
+      "name": "오",
+      "level": "중",
+      "population": 4355,
+      "agriculture": 77,
+      "commerce": 81,
+      "security": 60,
+      "defense": 77,
+      "wall": 76,
+      "region": "오월",
+      "x": 510,
+      "y": 345,
+      "neighbors": [
+        "오",
+        "중",
+        "오월",
+        "건업",
+        "회계",
+        "파양",
+        "탐라"
+      ]
+    },
+    "32": {
+      "id": 32,
+      "name": "평양",
+      "level": "중",
+      "population": 3982,
+      "agriculture": 78,
+      "commerce": 80,
+      "security": 60,
+      "defense": 83,
+      "wall": 78,
+      "region": "동이",
+      "x": 590,
+      "y": 100,
+      "neighbors": [
+        "평양",
+        "중",
+        "동이",
+        "위례",
+        "졸본"
+      ]
+    },
+    "33": {
+      "id": 33,
+      "name": "사비",
+      "level": "중",
+      "population": 4157,
+      "agriculture": 77,
+      "commerce": 79,
+      "security": 60,
+      "defense": 78,
+      "wall": 80,
+      "region": "동이",
+      "x": 605,
+      "y": 205,
+      "neighbors": [
+        "사비",
+        "중",
+        "동이",
+        "위례",
+        "계림",
+        "탐라"
+      ]
+    },
+    "34": {
+      "id": 34,
+      "name": "계림",
+      "level": "중",
+      "population": 3911,
+      "agriculture": 80,
+      "commerce": 74,
+      "security": 60,
+      "defense": 81,
+      "wall": 78,
+      "region": "동이",
+      "x": 655,
+      "y": 200,
+      "neighbors": [
+        "계림",
+        "중",
+        "동이",
+        "위례",
+        "사비",
+        "이도",
+        "탐라"
+      ]
+    },
+    "35": {
+      "id": 35,
+      "name": "진양",
+      "level": "소",
+      "population": 3074,
+      "agriculture": 56,
+      "commerce": 59,
+      "security": 40,
+      "defense": 64,
+      "wall": 59,
+      "region": "하북",
+      "x": 295,
+      "y": 60,
+      "neighbors": [
+        "진양",
+        "소",
+        "하북",
+        "계",
+        "하내",
+        "호관"
+      ]
+    },
+    "36": {
+      "id": 36,
+      "name": "평원",
+      "level": "소",
+      "population": 3074,
+      "agriculture": 62,
+      "commerce": 65,
+      "security": 40,
+      "defense": 61,
+      "wall": 63,
+      "region": "하북",
+      "x": 440,
+      "y": 115,
+      "neighbors": [
+        "평원",
+        "소",
+        "하북",
+        "남피",
+        "북해",
+        "계교"
+      ]
+    },
+    "37": {
+      "id": 37,
+      "name": "북해",
+      "level": "소",
+      "population": 3146,
+      "agriculture": 55,
+      "commerce": 63,
+      "security": 40,
+      "defense": 63,
+      "wall": 58,
+      "region": "하북",
+      "x": 470,
+      "y": 155,
+      "neighbors": [
+        "북해",
+        "소",
+        "하북",
+        "평원",
+        "패",
+        "동황"
+      ]
+    },
+    "38": {
+      "id": 38,
+      "name": "초",
+      "level": "소",
+      "population": 3286,
+      "agriculture": 60,
+      "commerce": 62,
+      "security": 40,
+      "defense": 62,
+      "wall": 57,
+      "region": "중원",
+      "x": 365,
+      "y": 230,
+      "neighbors": [
+        "초",
+        "소",
+        "중원",
+        "허창",
+        "수춘",
+        "서주",
+        "여남",
+        "정도"
+      ]
+    },
+    "39": {
+      "id": 39,
+      "name": "패",
+      "level": "소",
+      "population": 2877,
+      "agriculture": 64,
+      "commerce": 58,
+      "security": 40,
+      "defense": 58,
+      "wall": 59,
+      "region": "중원",
+      "x": 430,
+      "y": 220,
+      "neighbors": [
+        "패",
+        "소",
+        "중원",
+        "서주",
+        "북해",
+        "정도"
+      ]
+    },
+    "40": {
+      "id": 40,
+      "name": "천수",
+      "level": "소",
+      "population": 2985,
+      "agriculture": 59,
+      "commerce": 64,
+      "security": 40,
+      "defense": 60,
+      "wall": 58,
+      "region": "서북",
+      "x": 70,
+      "y": 105,
+      "neighbors": [
+        "천수",
+        "소",
+        "서북",
+        "서량",
+        "안정",
+        "저",
+        "적도"
+      ]
+    },
+    "41": {
+      "id": 41,
+      "name": "안정",
+      "level": "소",
+      "population": 2764,
+      "agriculture": 57,
+      "commerce": 59,
+      "security": 40,
+      "defense": 57,
+      "wall": 62,
+      "region": "서북",
+      "x": 95,
+      "y": 145,
+      "neighbors": [
+        "안정",
+        "소",
+        "서북",
+        "장안",
+        "천수",
+        "가정"
+      ]
+    },
+    "42": {
+      "id": 42,
+      "name": "홍농",
+      "level": "소",
+      "population": 2748,
+      "agriculture": 57,
+      "commerce": 63,
+      "security": 40,
+      "defense": 58,
+      "wall": 63,
+      "region": "서북",
+      "x": 210,
+      "y": 175,
+      "neighbors": [
+        "홍농",
+        "소",
+        "서북",
+        "하내",
+        "사곡",
+        "함곡"
+      ]
+    },
+    "43": {
+      "id": 43,
+      "name": "하변",
+      "level": "소",
+      "population": 2785,
+      "agriculture": 58,
+      "commerce": 62,
+      "security": 40,
+      "defense": 60,
+      "wall": 56,
+      "region": "서촉",
+      "x": 45,
+      "y": 190,
+      "neighbors": [
+        "하변",
+        "소",
+        "서촉",
+        "가맹",
+        "가정"
+      ]
+    },
+    "44": {
+      "id": 44,
+      "name": "자동",
+      "level": "소",
+      "population": 2870,
+      "agriculture": 57,
+      "commerce": 55,
+      "security": 40,
+      "defense": 60,
+      "wall": 58,
+      "region": "서촉",
+      "x": 75,
+      "y": 245,
+      "neighbors": [
+        "자동",
+        "소",
+        "서촉",
+        "덕양",
+        "양평",
+        "가맹",
+        "면죽"
+      ]
+    },
+    "45": {
+      "id": 45,
+      "name": "영안",
+      "level": "소",
+      "population": 3153,
+      "agriculture": 62,
+      "commerce": 59,
+      "security": 40,
+      "defense": 58,
+      "wall": 59,
+      "region": "서촉",
+      "x": 115,
+      "y": 295,
+      "neighbors": [
+        "영안",
+        "소",
+        "서촉",
+        "덕양",
+        "강주",
+        "이릉"
+      ]
+    },
+    "46": {
+      "id": 46,
+      "name": "귀양",
+      "level": "소",
+      "population": 2746,
+      "agriculture": 58,
+      "commerce": 61,
+      "security": 40,
+      "defense": 61,
+      "wall": 58,
+      "region": "남중",
+      "x": 90,
+      "y": 360,
+      "neighbors": [
+        "귀양",
+        "소",
+        "남중",
+        "강주",
+        "건녕",
+        "주시"
+      ]
+    },
+    "47": {
+      "id": 47,
+      "name": "주시",
+      "level": "소",
+      "population": 2828,
+      "agriculture": 60,
+      "commerce": 59,
+      "security": 40,
+      "defense": 58,
+      "wall": 63,
+      "region": "남중",
+      "x": 30,
+      "y": 345,
+      "neighbors": [
+        "주시",
+        "소",
+        "남중",
+        "강주",
+        "귀양",
+        "운남"
+      ]
+    },
+    "48": {
+      "id": 48,
+      "name": "운남",
+      "level": "소",
+      "population": 3258,
+      "agriculture": 62,
+      "commerce": 60,
+      "security": 40,
+      "defense": 64,
+      "wall": 61,
+      "region": "남중",
+      "x": 30,
+      "y": 415,
+      "neighbors": [
+        "운남",
+        "소",
+        "남중",
+        "건녕",
+        "주시",
+        "남만"
+      ]
+    },
+    "49": {
+      "id": 49,
+      "name": "남영",
+      "level": "소",
+      "population": 2853,
+      "agriculture": 59,
+      "commerce": 62,
+      "security": 40,
+      "defense": 58,
+      "wall": 57,
+      "region": "남중",
+      "x": 135,
+      "y": 405,
+      "neighbors": [
+        "남영",
+        "소",
+        "남중",
+        "건녕",
+        "영릉",
+        "남만"
+      ]
+    },
+    "50": {
+      "id": 50,
+      "name": "교지",
+      "level": "소",
+      "population": 3195,
+      "agriculture": 58,
+      "commerce": 59,
+      "security": 40,
+      "defense": 58,
+      "wall": 59,
+      "region": "남중",
+      "x": 130,
+      "y": 480,
+      "neighbors": [
+        "교지",
+        "소",
+        "남중",
+        "남해",
+        "남만"
+      ]
+    },
+    "51": {
+      "id": 51,
+      "name": "신야",
+      "level": "소",
+      "population": 2786,
+      "agriculture": 60,
+      "commerce": 62,
+      "security": 40,
+      "defense": 58,
+      "wall": 55,
+      "region": "초",
+      "x": 250,
+      "y": 260,
+      "neighbors": [
+        "신야",
+        "소",
+        "초",
+        "양양",
+        "완",
+        "상용"
+      ]
+    },
+    "52": {
+      "id": 52,
+      "name": "강하",
+      "level": "소",
+      "population": 3074,
+      "agriculture": 55,
+      "commerce": 56,
+      "security": 40,
+      "defense": 57,
+      "wall": 60,
+      "region": "초",
+      "x": 315,
+      "y": 295,
+      "neighbors": [
+        "강하",
+        "소",
+        "초",
+        "장판",
+        "적벽"
+      ]
+    },
+    "53": {
+      "id": 53,
+      "name": "무릉",
+      "level": "소",
+      "population": 3196,
+      "agriculture": 58,
+      "commerce": 63,
+      "security": 40,
+      "defense": 63,
+      "wall": 58,
+      "region": "초",
+      "x": 195,
+      "y": 355,
+      "neighbors": [
+        "무릉",
+        "소",
+        "초",
+        "강릉",
+        "장사",
+        "영릉"
+      ]
+    },
+    "54": {
+      "id": 54,
+      "name": "영릉",
+      "level": "소",
+      "population": 2849,
+      "agriculture": 62,
+      "commerce": 58,
+      "security": 40,
+      "defense": 62,
+      "wall": 62,
+      "region": "초",
+      "x": 190,
+      "y": 395,
+      "neighbors": [
+        "영릉",
+        "소",
+        "초",
+        "계양",
+        "남영",
+        "무릉",
+        "장사"
+      ]
+    },
+    "55": {
+      "id": 55,
+      "name": "상동",
+      "level": "소",
+      "population": 2767,
+      "agriculture": 58,
+      "commerce": 59,
+      "security": 40,
+      "defense": 62,
+      "wall": 58,
+      "region": "초",
+      "x": 210,
+      "y": 435,
+      "neighbors": [
+        "상동",
+        "소",
+        "초",
+        "남해",
+        "계양",
+        "고창"
+      ]
+    },
+    "56": {
+      "id": 56,
+      "name": "여강",
+      "level": "소",
+      "population": 2905,
+      "agriculture": 56,
+      "commerce": 58,
+      "security": 40,
+      "defense": 60,
+      "wall": 55,
+      "region": "오월",
+      "x": 380,
+      "y": 315,
+      "neighbors": [
+        "여강",
+        "소",
+        "오월",
+        "시상",
+        "합비",
+        "적벽",
+        "파양"
+      ]
+    },
+    "57": {
+      "id": 57,
+      "name": "회계",
+      "level": "소",
+      "population": 3005,
+      "agriculture": 64,
+      "commerce": 59,
+      "security": 40,
+      "defense": 62,
+      "wall": 64,
+      "region": "오월",
+      "x": 480,
+      "y": 395,
+      "neighbors": [
+        "회계",
+        "소",
+        "오월",
+        "오",
+        "산월"
+      ]
+    },
+    "58": {
+      "id": 58,
+      "name": "고창",
+      "level": "소",
+      "population": 2802,
+      "agriculture": 57,
+      "commerce": 62,
+      "security": 40,
+      "defense": 58,
+      "wall": 63,
+      "region": "오월",
+      "x": 350,
+      "y": 405,
+      "neighbors": [
+        "고창",
+        "소",
+        "오월",
+        "시상",
+        "상동",
+        "산월"
+      ]
+    },
+    "59": {
+      "id": 59,
+      "name": "대",
+      "level": "소",
+      "population": 3256,
+      "agriculture": 60,
+      "commerce": 62,
+      "security": 40,
+      "defense": 57,
+      "wall": 60,
+      "region": "오월",
+      "x": 450,
+      "y": 480,
+      "neighbors": [
+        "대",
+        "소",
+        "오월",
+        "남해",
+        "산월",
+        "유구"
+      ]
+    },
+    "60": {
+      "id": 60,
+      "name": "안평",
+      "level": "소",
+      "population": 2937,
+      "agriculture": 63,
+      "commerce": 59,
+      "security": 40,
+      "defense": 59,
+      "wall": 63,
+      "region": "동이",
+      "x": 530,
+      "y": 80,
+      "neighbors": [
+        "안평",
+        "소",
+        "동이",
+        "위례",
+        "졸본",
+        "동황",
+        "백랑"
+      ]
+    },
+    "61": {
+      "id": 61,
+      "name": "졸본",
+      "level": "소",
+      "population": 2939,
+      "agriculture": 55,
+      "commerce": 59,
+      "security": 40,
+      "defense": 60,
+      "wall": 58,
+      "region": "동이",
+      "x": 570,
+      "y": 65,
+      "neighbors": [
+        "졸본",
+        "소",
+        "동이",
+        "평양",
+        "안평",
+        "오환"
+      ]
+    },
+    "62": {
+      "id": 62,
+      "name": "이도",
+      "level": "소",
+      "population": 3174,
+      "agriculture": 58,
+      "commerce": 61,
+      "security": 40,
+      "defense": 58,
+      "wall": 56,
+      "region": "동이",
+      "x": 680,
+      "y": 260,
+      "neighbors": [
+        "이도",
+        "소",
+        "동이",
+        "계림",
+        "왜",
+        "탐라"
+      ]
+    },
+    "63": {
+      "id": 63,
+      "name": "강",
+      "level": "이",
+      "population": 2095,
+      "agriculture": 40,
+      "commerce": 42,
+      "security": 20,
+      "defense": 43,
+      "wall": 40,
+      "region": "서북",
+      "x": 95,
+      "y": 35,
+      "neighbors": [
+        "강",
+        "이",
+        "서북",
+        "서량",
+        "적도"
+      ]
+    },
+    "64": {
+      "id": 64,
+      "name": "저",
+      "level": "이",
+      "population": 1957,
+      "agriculture": 40,
+      "commerce": 42,
+      "security": 20,
+      "defense": 43,
+      "wall": 42,
+      "region": "서북",
+      "x": 25,
+      "y": 120,
+      "neighbors": [
+        "저",
+        "이",
+        "서북",
+        "서량",
+        "천수",
+        "가정"
+      ]
+    },
+    "65": {
+      "id": 65,
+      "name": "흉노",
+      "level": "이",
+      "population": 2064,
+      "agriculture": 40,
+      "commerce": 41,
+      "security": 20,
+      "defense": 40,
+      "wall": 38,
+      "region": "서북",
+      "x": 180,
+      "y": 95,
+      "neighbors": [
+        "흉노",
+        "이",
+        "서북",
+        "하내",
+        "적도"
+      ]
+    },
+    "66": {
+      "id": 66,
+      "name": "남만",
+      "level": "이",
+      "population": 2378,
+      "agriculture": 40,
+      "commerce": 42,
+      "security": 20,
+      "defense": 43,
+      "wall": 45,
+      "region": "남중",
+      "x": 80,
+      "y": 455,
+      "neighbors": [
+        "남만",
+        "이",
+        "남중",
+        "운남",
+        "남영",
+        "교지"
+      ]
+    },
+    "67": {
+      "id": 67,
+      "name": "산월",
+      "level": "이",
+      "population": 2275,
+      "agriculture": 40,
+      "commerce": 37,
+      "security": 20,
+      "defense": 43,
+      "wall": 38,
+      "region": "오월",
+      "x": 425,
+      "y": 430,
+      "neighbors": [
+        "산월",
+        "이",
+        "오월",
+        "남해",
+        "회계",
+        "고창",
+        "대"
+      ]
+    },
+    "68": {
+      "id": 68,
+      "name": "오환",
+      "level": "이",
+      "population": 2153,
+      "agriculture": 42,
+      "commerce": 37,
+      "security": 20,
+      "defense": 43,
+      "wall": 40,
+      "region": "동이",
+      "x": 610,
+      "y": 20,
+      "neighbors": [
+        "오환",
+        "이",
+        "동이",
+        "졸본",
+        "백랑"
+      ]
+    },
+    "69": {
+      "id": 69,
+      "name": "왜",
+      "level": "이",
+      "population": 2065,
+      "agriculture": 39,
+      "commerce": 37,
+      "security": 20,
+      "defense": 43,
+      "wall": 41,
+      "region": "동이",
+      "x": 680,
+      "y": 320,
+      "neighbors": [
+        "왜",
+        "이",
+        "동이",
+        "이도",
+        "유구"
+      ]
+    },
+    "70": {
+      "id": 70,
+      "name": "호관",
+      "level": "관",
+      "population": 887,
+      "agriculture": 19,
+      "commerce": 18,
+      "security": 20,
+      "defense": 95,
+      "wall": 96,
+      "region": "하북",
+      "x": 285,
+      "y": 140,
+      "neighbors": [
+        "호관",
+        "관",
+        "하북",
+        "업",
+        "낙양",
+        "하내",
+        "진양"
+      ]
+    },
+    "71": {
+      "id": 71,
+      "name": "호로",
+      "level": "관",
+      "population": 1112,
+      "agriculture": 22,
+      "commerce": 21,
+      "security": 20,
+      "defense": 103,
+      "wall": 98,
+      "region": "중원",
+      "x": 285,
+      "y": 205,
+      "neighbors": [
+        "호로",
+        "관",
+        "중원",
+        "허창",
+        "낙양",
+        "완"
+      ]
+    },
+    "72": {
+      "id": 72,
+      "name": "사곡",
+      "level": "관",
+      "population": 1008,
+      "agriculture": 21,
+      "commerce": 19,
+      "security": 20,
+      "defense": 99,
+      "wall": 101,
+      "region": "서북",
+      "x": 240,
+      "y": 175,
+      "neighbors": [
+        "사곡",
+        "관",
+        "서북",
+        "낙양",
+        "홍농"
+      ]
+    },
+    "73": {
+      "id": 73,
+      "name": "함곡",
+      "level": "관",
+      "population": 1081,
+      "agriculture": 20,
+      "commerce": 22,
+      "security": 20,
+      "defense": 101,
+      "wall": 102,
+      "region": "서북",
+      "x": 180,
+      "y": 175,
+      "neighbors": [
+        "함곡",
+        "관",
+        "서북",
+        "장안",
+        "홍농"
+      ]
+    },
+    "74": {
+      "id": 74,
+      "name": "사수",
+      "level": "관",
+      "population": 958,
+      "agriculture": 17,
+      "commerce": 19,
+      "security": 20,
+      "defense": 95,
+      "wall": 96,
+      "region": "중원",
+      "x": 310,
+      "y": 185,
+      "neighbors": [
+        "사수",
+        "관",
+        "중원",
+        "허창",
+        "낙양",
+        "진류",
+        "관도"
+      ]
+    },
+    "75": {
+      "id": 75,
+      "name": "양평",
+      "level": "관",
+      "population": 868,
+      "agriculture": 19,
+      "commerce": 19,
+      "security": 20,
+      "defense": 97,
+      "wall": 96,
+      "region": "서촉",
+      "x": 90,
+      "y": 220,
+      "neighbors": [
+        "양평",
+        "관",
+        "서촉",
+        "한중",
+        "자동",
+        "기산"
+      ]
+    },
+    "76": {
+      "id": 76,
+      "name": "가맹",
+      "level": "관",
+      "population": 855,
+      "agriculture": 17,
+      "commerce": 18,
+      "security": 20,
+      "defense": 96,
+      "wall": 95,
+      "region": "서촉",
+      "x": 45,
+      "y": 225,
+      "neighbors": [
+        "가맹",
+        "관",
+        "서촉",
+        "하변",
+        "자동"
+      ]
+    },
+    "77": {
+      "id": 77,
+      "name": "역경",
+      "level": "진",
+      "population": 985,
+      "agriculture": 18,
+      "commerce": 19,
+      "security": 20,
+      "defense": 39,
+      "wall": 41,
+      "region": "하북",
+      "x": 410,
+      "y": 65,
+      "neighbors": [
+        "역경",
+        "진",
+        "하북",
+        "북평",
+        "남피",
+        "계"
+      ]
+    },
+    "78": {
+      "id": 78,
+      "name": "계교",
+      "level": "진",
+      "population": 1012,
+      "agriculture": 21,
+      "commerce": 19,
+      "security": 20,
+      "defense": 40,
+      "wall": 42,
+      "region": "하북",
+      "x": 405,
+      "y": 135,
+      "neighbors": [
+        "계교",
+        "진",
+        "하북",
+        "업",
+        "복양",
+        "평원"
+      ]
+    },
+    "79": {
+      "id": 79,
+      "name": "동황",
+      "level": "진",
+      "population": 992,
+      "agriculture": 19,
+      "commerce": 21,
+      "security": 20,
+      "defense": 38,
+      "wall": 40,
+      "region": "하북",
+      "x": 515,
+      "y": 145,
+      "neighbors": [
+        "동황",
+        "진",
+        "하북",
+        "위례",
+        "북해",
+        "안평"
+      ]
+    },
+    "80": {
+      "id": 80,
+      "name": "관도",
+      "level": "진",
+      "population": 1123,
+      "agriculture": 22,
+      "commerce": 20,
+      "security": 20,
+      "defense": 42,
+      "wall": 43,
+      "region": "중원",
+      "x": 340,
+      "y": 165,
+      "neighbors": [
+        "관도",
+        "진",
+        "중원",
+        "업",
+        "허창",
+        "진류",
+        "사수"
+      ]
+    },
+    "81": {
+      "id": 81,
+      "name": "정도",
+      "level": "진",
+      "population": 1085,
+      "agriculture": 21,
+      "commerce": 21,
+      "security": 20,
+      "defense": 41,
+      "wall": 38,
+      "region": "중원",
+      "x": 400,
+      "y": 210,
+      "neighbors": [
+        "정도",
+        "진",
+        "중원",
+        "복양",
+        "진류",
+        "초",
+        "패"
+      ]
+    },
+    "82": {
+      "id": 82,
+      "name": "합비",
+      "level": "진",
+      "population": 998,
+      "agriculture": 20,
+      "commerce": 19,
+      "security": 20,
+      "defense": 39,
+      "wall": 41,
+      "region": "중원",
+      "x": 435,
+      "y": 285,
+      "neighbors": [
+        "합비",
+        "진",
+        "중원",
+        "건업",
+        "수춘",
+        "여강"
+      ]
+    },
+    "83": {
+      "id": 83,
+      "name": "광릉",
+      "level": "진",
+      "population": 1001,
+      "agriculture": 20,
+      "commerce": 21,
+      "security": 20,
+      "defense": 41,
+      "wall": 40,
+      "region": "중원",
+      "x": 490,
+      "y": 275,
+      "neighbors": [
+        "광릉",
+        "진",
+        "중원",
+        "건업",
+        "하비"
+      ]
+    },
+    "84": {
+      "id": 84,
+      "name": "적도",
+      "level": "진",
+      "population": 952,
+      "agriculture": 18,
+      "commerce": 17,
+      "security": 20,
+      "defense": 38,
+      "wall": 37,
+      "region": "서북",
+      "x": 130,
+      "y": 75,
+      "neighbors": [
+        "적도",
+        "진",
+        "서북",
+        "천수",
+        "강",
+        "흉노"
+      ]
+    },
+    "85": {
+      "id": 85,
+      "name": "가정",
+      "level": "진",
+      "population": 931,
+      "agriculture": 17,
+      "commerce": 17,
+      "security": 20,
+      "defense": 36,
+      "wall": 38,
+      "region": "서북",
+      "x": 40,
+      "y": 160,
+      "neighbors": [
+        "가정",
+        "진",
+        "서북",
+        "안정",
+        "하변",
+        "저"
+      ]
+    },
+    "86": {
+      "id": 86,
+      "name": "기산",
+      "level": "진",
+      "population": 1005,
+      "agriculture": 19,
+      "commerce": 18,
+      "security": 20,
+      "defense": 41,
+      "wall": 40,
+      "region": "서촉",
+      "x": 110,
+      "y": 180,
+      "neighbors": [
+        "기산",
+        "진",
+        "서촉",
+        "장안",
+        "한중",
+        "양평"
+      ]
+    },
+    "87": {
+      "id": 87,
+      "name": "면죽",
+      "level": "관",
+      "population": 1093,
+      "agriculture": 22,
+      "commerce": 21,
+      "security": 20,
+      "defense": 108,
+      "wall": 99,
+      "region": "서촉",
+      "x": 35,
+      "y": 255,
+      "neighbors": [
+        "면죽",
+        "관",
+        "서촉",
+        "성도",
+        "자동"
+      ]
+    },
+    "88": {
+      "id": 88,
+      "name": "이릉",
+      "level": "진",
+      "population": 968,
+      "agriculture": 18,
+      "commerce": 19,
+      "security": 20,
+      "defense": 39,
+      "wall": 41,
+      "region": "초",
+      "x": 215,
+      "y": 295,
+      "neighbors": [
+        "이릉",
+        "진",
+        "초",
+        "강릉",
+        "영안"
+      ]
+    },
+    "89": {
+      "id": 89,
+      "name": "장판",
+      "level": "진",
+      "population": 1032,
+      "agriculture": 21,
+      "commerce": 20,
+      "security": 20,
+      "defense": 40,
+      "wall": 37,
+      "region": "초",
+      "x": 280,
+      "y": 315,
+      "neighbors": [
+        "장판",
+        "진",
+        "초",
+        "양양",
+        "강릉",
+        "강하",
+        "적벽"
+      ]
+    },
+    "90": {
+      "id": 90,
+      "name": "백랑",
+      "level": "진",
+      "population": 1052,
+      "agriculture": 22,
+      "commerce": 19,
+      "security": 20,
+      "defense": 38,
+      "wall": 42,
+      "region": "동이",
+      "x": 530,
+      "y": 30,
+      "neighbors": [
+        "백랑",
+        "진",
+        "동이",
+        "북평",
+        "안평",
+        "오환"
+      ]
+    },
+    "91": {
+      "id": 91,
+      "name": "적벽",
+      "level": "수",
+      "population": 1117,
+      "agriculture": 23,
+      "commerce": 21,
+      "security": 20,
+      "defense": 42,
+      "wall": 41,
+      "region": "오월",
+      "x": 330,
+      "y": 325,
+      "neighbors": [
+        "적벽",
+        "수",
+        "오월",
+        "시상",
+        "강하",
+        "여강",
+        "장판"
+      ]
+    },
+    "92": {
+      "id": 92,
+      "name": "파양",
+      "level": "수",
+      "population": 1037,
+      "agriculture": 20,
+      "commerce": 22,
+      "security": 20,
+      "defense": 38,
+      "wall": 38,
+      "region": "오월",
+      "x": 430,
+      "y": 350,
+      "neighbors": [
+        "파양",
+        "수",
+        "오월",
+        "시상",
+        "오",
+        "여강"
+      ]
+    },
+    "93": {
+      "id": 93,
+      "name": "탐라",
+      "level": "수",
+      "population": 1130,
+      "agriculture": 22,
+      "commerce": 21,
+      "security": 20,
+      "defense": 43,
+      "wall": 41,
+      "region": "동이",
+      "x": 605,
+      "y": 260,
+      "neighbors": [
+        "탐라",
+        "수",
+        "동이",
+        "오",
+        "사비",
+        "계림",
+        "이도"
+      ]
+    },
+    "94": {
+      "id": 94,
+      "name": "유구",
+      "level": "수",
+      "population": 921,
+      "agriculture": 17,
+      "commerce": 18,
+      "security": 20,
+      "defense": 37,
+      "wall": 37,
+      "region": "동이",
+      "x": 625,
+      "y": 435,
+      "neighbors": [
+        "유구",
+        "수",
+        "동이",
+        "대",
+        "왜"
+      ]
+    }
+  },
+  "commands": {
+    "che_NPC능동": {
+      "name": "NPC능동",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "city": "=$destCityID"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_강행": {
+      "name": "강행",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "city": "=$destCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_거병": {
+      "name": "거병",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "belong": "=1",
+          "officer_level": "=12",
+          "officer_city": "=0",
+          "nation": "=$nationID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_건국": {
+      "name": "건국",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "nation": "$general->getNationID()",
+          "conflict": "'{}'"
+        },
+        "nation": {}
+      }
+    },
+    "che_견문": {
+      "name": "견문",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+2",
+          "strength_exp": "+2",
+          "intel_exp": "+2",
+          "gold": "+300",
+          "rice": "+300",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_군량매매": {
+      "name": "군량매매",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_귀환": {
+      "name": "귀환",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "city": "=$destCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_기술연구": {
+      "name": "기술 연구",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_내정특기초기화": {
+      "name": "내정 특기 초기화",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_농지개간": {
+      "name": "농지 개간",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_단련": {
+      "name": "단련",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_등용": {
+      "name": "등용",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_등용수락": {
+      "name": "등용 수락",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "gold": "=GameConst::$defaultGold",
+          "rice": "=GameConst::$defaultRice",
+          "experience": "+{{calculated}}",
+          "dedication": "=$general->getVar('dedication'",
+          "killturn": "=$env['killturn']",
+          "permission": "='normal'",
+          "belong": "=1",
+          "officer_level": "=1",
+          "officer_city": "=0",
+          "nation": "=$destNationID",
+          "city": "=$this->destNation['capital']",
+          "troop": "=0"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_랜덤임관": {
+      "name": "무작위 국가로 임관",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "nation": "=$destNationID",
+          "officer_level": "=1",
+          "officer_city": "=0",
+          "belong": "=1",
+          "city": "=$targetCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_모반시도": {
+      "name": "모반시도",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "officer_level": "=12",
+          "officer_city": "=0"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_모병": {
+      "name": "모병",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_무작위건국": {
+      "name": "무작위 도시 건국",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "nation": "$general->getNationID()",
+          "conflict": "'{}'"
+        },
+        "nation": {}
+      }
+    },
+    "che_물자조달": {
+      "name": "물자조달",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_방랑": {
+      "name": "방랑",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "makelimit": "=12",
+          "officer_city": "=0"
+        },
+        "city": {
+          "nation": "0",
+          "front": "0",
+          "conflict": "'{}'"
+        },
+        "nation": {}
+      }
+    },
+    "che_사기진작": {
+      "name": "사기진작",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "atmos": "+$score",
+          "leadership_exp": "+1",
+          "train": "=$sideEffect",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_상업투자": {
+      "name": "상업 투자",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_선동": {
+      "name": "선동",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_선양": {
+      "name": "선양",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "officer_level": "=1",
+          "officer_city": "=0"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_성벽보수": {
+      "name": "성벽 보수",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_소집해제": {
+      "name": "소집해제",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "crew": "=0",
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "pop": "$db->sqleval('pop + %i'"
+        },
+        "nation": {}
+      }
+    },
+    "che_수비강화": {
+      "name": "수비 강화",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_숙련전환": {
+      "name": "숙련전환",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+2",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_요양": {
+      "name": "요양",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "injury": "=0",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_은퇴": {
+      "name": "은퇴",
+      "enabled": true,
+      "duration": 1,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_이동": {
+      "name": "이동",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "city": "=$destCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_인재탐색": {
+      "name": "인재탐색",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_임관": {
+      "name": "임관",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "nation": "=$destNationID",
+          "officer_level": "=1",
+          "officer_city": "=0",
+          "belong": "=1",
+          "troop": "=0",
+          "city": "=$targetCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_장비매매": {
+      "name": "장비매매",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_장수대상임관": {
+      "name": "장수를 따라 임관",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "nation": "=$destNationID",
+          "officer_level": "=1",
+          "officer_city": "=0",
+          "belong": "=1",
+          "city": "=$targetCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_전투태세": {
+      "name": "전투태세",
+      "enabled": true,
+      "duration": 3,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+3",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_전투특기초기화": {
+      "name": "전투 특기 초기화",
+      "enabled": true,
+      "duration": 61,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_접경귀환": {
+      "name": "접경귀환",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "city": "=$destCityID"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_정착장려": {
+      "name": "정착 장려",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_주민선정": {
+      "name": "주민 선정",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_증여": {
+      "name": "증여",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_집합": {
+      "name": "집합",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_징병": {
+      "name": "징병",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "crew": "=$reqCrew",
+          "leadership_exp": "+1",
+          "train": "=$setTrain",
+          "atmos": "=$setAtmos",
+          "crewtype": "=$reqCrewType->id",
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "trust": "$newTrust",
+          "pop": "$this->city['pop'"
+        },
+        "nation": {}
+      }
+    },
+    "che_첩보": {
+      "name": "첩보",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_출병": {
+      "name": "출병",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {
+          "state": "43",
+          "term": "3"
+        },
+        "nation": {}
+      }
+    },
+    "che_치안강화": {
+      "name": "치안 강화",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_탈취": {
+      "name": "탈취",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "gold": "+$gold",
+          "rice": "+$rice"
+        },
+        "city": {
+          "state": "34"
+        },
+        "nation": {}
+      }
+    },
+    "che_파괴": {
+      "name": "파괴",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_하야": {
+      "name": "하야",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}",
+          "dedication": "=$general->getVar('dedication'",
+          "permission": "='normal'",
+          "gold": "=$newGold",
+          "rice": "=$newRice",
+          "nation": "=0",
+          "officer_level": "=0",
+          "officer_city": "=0",
+          "belong": "=0",
+          "makelimit": "=12",
+          "troop": "=0"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_해산": {
+      "name": "해산",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "makelimit": "=12"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_헌납": {
+      "name": "헌납",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_화계": {
+      "name": "화계",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_훈련": {
+      "name": "훈련",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "train": "+$score",
+          "leadership_exp": "+1",
+          "atmos": "=$sideEffect",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "cr_건국": {
+      "name": "건국",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "nation": "$general->getNationID()",
+          "conflict": "'{}'"
+        },
+        "nation": {}
+      }
+    },
+    "cr_맹훈련": {
+      "name": "맹훈련",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 500
+      },
+      "effects": {
+        "general": {
+          "leadership_exp": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "휴식": {
+      "name": "휴식",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_감축": {
+      "name": "감축",
+      "enabled": true,
+      "duration": 5,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "level": "$db->sqleval('level-1')",
+          "pop": "$db->sqleval('greatest(pop - %i",
+          "agri": "$db->sqleval('greatest(agri - %i",
+          "comm": "$db->sqleval('greatest(comm - %i",
+          "secu": "$db->sqleval('greatest(secu - %i",
+          "def": "$db->sqleval('greatest(def - %i",
+          "wall": "$db->sqleval('greatest(wall - %i",
+          "pop_max": "$db->sqleval('pop_max - %i'",
+          "agri_max": "$db->sqleval('agri_max - %i'",
+          "comm_max": "$db->sqleval('comm_max - %i'",
+          "secu_max": "$db->sqleval('secu_max - %i'",
+          "def_max": "$db->sqleval('def_max - %i'",
+          "wall_max": "$db->sqleval('wall_max - %i'"
+        },
+        "nation": {}
+      }
+    },
+    "che_국기변경": {
+      "name": "국기변경",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_국호변경": {
+      "name": "국호변경",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_급습": {
+      "name": "급습",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_몰수": {
+      "name": "몰수",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_무작위수도이전": {
+      "name": "무작위 수도 이전",
+      "enabled": true,
+      "duration": 1,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "city": "=$destCityID",
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "nation": "$nationID",
+          "conflict": "'{}'"
+        },
+        "nation": {}
+      }
+    },
+    "che_물자원조": {
+      "name": "원조",
+      "enabled": true,
+      "duration": 12,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_발령": {
+      "name": "발령",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_백성동원": {
+      "name": "백성동원",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "def": "$db->sqleval('GREATEST(def_max * 0.8",
+          "wall": "$db->sqleval('GREATEST(wall_max * 0.8"
+        },
+        "nation": {}
+      }
+    },
+    "che_부대탈퇴지시": {
+      "name": "부대 탈퇴 지시",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_불가침수락": {
+      "name": "불가침 수락",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_불가침제의": {
+      "name": "불가침 제의",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_불가침파기수락": {
+      "name": "불가침 파기 수락",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_불가침파기제의": {
+      "name": "불가침 파기 제의",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_선전포고": {
+      "name": "선전포고",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_수몰": {
+      "name": "수몰",
+      "enabled": true,
+      "duration": 4,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "def": "$db->sqleval('def * 0.2')",
+          "wall": "$db->sqleval('wall * 0.2')"
+        },
+        "nation": {}
+      }
+    },
+    "che_의병모집": {
+      "name": "의병모집",
+      "enabled": true,
+      "duration": 4,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_이호경식": {
+      "name": "이호경식",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_종전수락": {
+      "name": "종전 수락",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_종전제의": {
+      "name": "종전 제의",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_증축": {
+      "name": "증축",
+      "enabled": true,
+      "duration": 5,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "level": "$db->sqleval('level+1')",
+          "pop_max": "$db->sqleval('pop_max + %i'",
+          "agri_max": "$db->sqleval('agri_max + %i'",
+          "comm_max": "$db->sqleval('comm_max + %i'",
+          "secu_max": "$db->sqleval('secu_max + %i'",
+          "def_max": "$db->sqleval('def_max + %i'",
+          "wall_max": "$db->sqleval('wall_max + %i'"
+        },
+        "nation": {}
+      }
+    },
+    "che_천도": {
+      "name": "천도",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_초토화": {
+      "name": "초토화",
+      "enabled": true,
+      "duration": 26,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "betray": "+1",
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "trust": "$db->sqleval('greatest(50",
+          "pop": "$db->sqleval('greatest(pop_max*0.1",
+          "agri": "$db->sqleval('greatest(agri_max*0.1",
+          "comm": "$db->sqleval('greatest(comm_max*0.1",
+          "secu": "$db->sqleval('greatest(secu_max*0.1",
+          "def": "$db->sqleval('greatest(def_max*0.1",
+          "wall": "$db->sqleval('greatest(wall_max*0.1",
+          "nation": "0",
+          "front": "0",
+          "conflict": "'{}'"
+        },
+        "nation": {}
+      }
+    },
+    "che_포상": {
+      "name": "포상",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {},
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_피장파장": {
+      "name": "피장파장",
+      "enabled": true,
+      "duration": 2,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_필사즉생": {
+      "name": "필사즉생",
+      "enabled": true,
+      "duration": 4,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "train": "=100",
+          "atmos": "=100",
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "che_허보": {
+      "name": "허보",
+      "enabled": true,
+      "duration": 2,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "cr_인구이동": {
+      "name": "인구이동",
+      "enabled": true,
+      "duration": 0,
+      "cost": {
+        "gold": 0,
+        "rice": 0
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {
+          "pop": "$db->sqleval('pop + %i'"
+        },
+        "nation": {}
+      }
+    },
+    "event_극병연구": {
+      "name": "극병 연구",
+      "enabled": true,
+      "duration": 23,
+      "cost": {
+        "gold": 100000,
+        "rice": 100000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_대검병연구": {
+      "name": "대검병 연구",
+      "enabled": true,
+      "duration": 11,
+      "cost": {
+        "gold": 50000,
+        "rice": 50000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_무희연구": {
+      "name": "무희 연구",
+      "enabled": true,
+      "duration": 23,
+      "cost": {
+        "gold": 100000,
+        "rice": 100000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_산저병연구": {
+      "name": "산저병 연구",
+      "enabled": true,
+      "duration": 11,
+      "cost": {
+        "gold": 50000,
+        "rice": 50000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_상병연구": {
+      "name": "상병 연구",
+      "enabled": true,
+      "duration": 23,
+      "cost": {
+        "gold": 100000,
+        "rice": 100000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_원융노병연구": {
+      "name": "원융노병 연구",
+      "enabled": true,
+      "duration": 23,
+      "cost": {
+        "gold": 100000,
+        "rice": 100000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_음귀병연구": {
+      "name": "음귀병 연구",
+      "enabled": true,
+      "duration": 11,
+      "cost": {
+        "gold": 50000,
+        "rice": 50000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_화륜차연구": {
+      "name": "화륜차 연구",
+      "enabled": true,
+      "duration": 23,
+      "cost": {
+        "gold": 100000,
+        "rice": 100000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    },
+    "event_화시병연구": {
+      "name": "화시병 연구",
+      "enabled": true,
+      "duration": 11,
+      "cost": {
+        "gold": 50000,
+        "rice": 50000
+      },
+      "effects": {
+        "general": {
+          "experience": "+{{calculated}}"
+        },
+        "city": {},
+        "nation": {}
+      }
+    }
+  },
+  "unit_types": {},
+  "scenarios": {
+    "AbsFromUserPool": {
+      "type": "scenario"
+    },
+    "AbsGeneralPool": {
+      "type": "scenario"
+    },
+    "ActionLogger": {
+      "type": "scenario"
+    },
+    "Auction": {
+      "type": "scenario"
+    },
+    "AuctionBasicResource": {
+      "type": "scenario"
+    },
+    "AuctionBuyRice": {
+      "type": "scenario"
+    },
+    "AuctionSellRice": {
+      "type": "scenario"
+    },
+    "AuctionUniqueItem": {
+      "type": "scenario"
+    },
+    "AutorunGeneralPolicy": {
+      "type": "scenario"
+    },
+    "AutorunNationPolicy": {
+      "type": "scenario"
+    },
+    "BaseGeneralTrigger": {
+      "type": "scenario"
+    },
+    "BaseItem": {
+      "type": "scenario"
+    },
+    "BaseNation": {
+      "type": "scenario"
+    },
+    "BaseSpecial": {
+      "type": "scenario"
+    },
+    "BaseStatItem": {
+      "type": "scenario"
+    },
+    "BaseStaticEvent": {
+      "type": "scenario"
+    },
+    "BaseWarUnitTrigger": {
+      "type": "scenario"
+    },
+    "Betting": {
+      "type": "scenario"
+    },
+    "CityConstBase": {
+      "type": "scenario"
+    },
+    "CityHelper": {
+      "type": "scenario"
+    },
+    "CityInitialDetail": {
+      "type": "scenario"
+    },
+    "DefaultAction": {
+      "type": "scenario"
+    },
+    "DiplomaticMessage": {
+      "type": "scenario"
+    },
+    "DummyGeneral": {
+      "type": "scenario"
+    },
+    "DummyGeneralLite": {
+      "type": "scenario"
+    },
+    "GameConstBase": {
+      "type": "scenario"
+    },
+    "GameUnitConstBase": {
+      "type": "scenario"
+    },
+    "GameUnitDetail": {
+      "type": "scenario"
+    },
+    "General": {
+      "type": "scenario"
+    },
+    "GeneralAI": {
+      "type": "scenario"
+    },
+    "GeneralBase": {
+      "type": "scenario"
+    },
+    "GeneralLite": {
+      "type": "scenario"
+    },
+    "GeneralTriggerCaller": {
+      "type": "scenario"
+    },
+    "GlobalMenu": {
+      "type": "scenario"
+    },
+    "InheritancePointManager": {
+      "type": "scenario"
+    },
+    "LastTurn": {
+      "type": "scenario"
+    },
+    "LazyVarAndAuxUpdater": {
+      "type": "scenario"
+    },
+    "LazyVarUpdater": {
+      "type": "scenario"
+    },
+    "Message": {
+      "type": "scenario"
+    },
+    "MessageTarget": {
+      "type": "scenario"
+    },
+    "ObjectTrigger": {
+      "type": "scenario"
+    },
+    "RaiseInvaderMessage": {
+      "type": "scenario"
+    },
+    "ResetHelper": {
+      "type": "scenario"
+    },
+    "": {
+      "type": "scenario"
+    },
+    "ScoutMessage": {
+      "type": "scenario"
+    },
+    "ServerDefaultEnv": {
+      "type": "scenario"
+    },
+    "ServerEnv": {
+      "type": "scenario"
+    },
+    "ServerTool": {
+      "type": "scenario"
+    },
+    "SpecialityHelper": {
+      "type": "scenario"
+    },
+    "StaticEventHandler": {
+      "type": "scenario"
+    },
+    "Target": {
+      "type": "scenario"
+    },
+    "TriggerCaller": {
+      "type": "scenario"
+    },
+    "TriggerInheritBuff": {
+      "type": "scenario"
+    },
+    "TriggerOfficerLevel": {
+      "type": "scenario"
+    },
+    "TurnExecutionHelper": {
+      "type": "scenario"
+    },
+    "UserLogger": {
+      "type": "scenario"
+    },
+    "VersionGitDynamic": {
+      "type": "scenario"
+    },
+    "WarUnit": {
+      "type": "scenario"
+    },
+    "WarUnitCity": {
+      "type": "scenario"
+    },
+    "WarUnitGeneral": {
+      "type": "scenario"
+    },
+    "WarUnitTriggerCaller": {
+      "type": "scenario"
+    },
+    "iAction": {
+      "type": "scenario"
+    },
+    "Action": {
+      "type": "event"
+    },
+    "Condition": {
+      "type": "event"
+    },
+    "Engine": {
+      "type": "event"
+    },
+    "EventHandler": {
+      "type": "event"
+    },
+    "event_부대발령즉시집합": {
+      "type": "event"
+    },
+    "event_부대탑승즉시이동": {
+      "type": "event"
+    }
+  },
+  "game_constants": {},
+  "action_types": {
+    "ActionCrewType": [
+      "None",
+      "che_성벽선제"
+    ],
+    "ActionItem": [
+      "None",
+      "che_간파_노군입산부",
+      "che_격노_구정신단경",
+      "che_계략_삼략",
+      "che_계략_육도",
+      "che_계략_이추",
+      "che_계략_향낭",
+      "che_공성_묵자",
+      "che_내정_납금박산로",
+      "che_농성_위공자병법",
+      "che_농성_주서음부",
+      "che_능력치_무력_두강주",
+      "che_능력치_지력_이강주",
+      "che_능력치_통솔_보령압주",
+      "che_명마_01_노기",
+      "che_명마_02_조랑",
+      "che_명마_03_노새",
+      "che_명마_04_나귀",
+      "che_명마_05_갈색마",
+      "che_명마_06_흑색마",
+      "che_명마_07_기주마",
+      "che_명마_07_백마",
+      "che_명마_07_백상",
+      "che_명마_07_오환마",
+      "che_명마_08_양주마",
+      "che_명마_08_흉노마",
+      "che_명마_09_과하마",
+      "che_명마_09_의남백마",
+      "che_명마_10_대완마",
+      "che_명마_10_옥추마",
+      "che_명마_11_서량마",
+      "che_명마_11_화종마",
+      "che_명마_12_사륜거",
+      "che_명마_12_옥란백용구",
+      "che_명마_13_적로",
+      "che_명마_13_절영",
+      "che_명마_14_적란마",
+      "che_명마_14_조황비전",
+      "che_명마_15_적토마",
+      "che_명마_15_한혈마",
+      "che_명성_구석",
+      "che_무기_01_단도",
+      "che_무기_02_단궁",
+      "che_무기_03_단극",
+      "che_무기_04_목검",
+      "che_무기_05_죽창",
+      "che_무기_06_소부",
+      "che_무기_07_동추",
+      "che_무기_07_맥궁",
+      "che_무기_07_철쇄",
+      "che_무기_07_철편",
+      "che_무기_08_유성추",
+      "che_무기_08_철질여골",
+      "che_무기_09_동호비궁",
+      "che_무기_09_쌍철극",
+      "che_무기_10_대부",
+      "che_무기_10_삼첨도",
+      "che_무기_11_고정도",
+      "che_무기_11_이광궁",
+      "che_무기_12_철척사모",
+      "che_무기_12_칠성검",
+      "che_무기_13_사모",
+      "che_무기_13_양유기궁",
+      "che_무기_14_방천화극",
+      "che_무기_14_언월도",
+      "che_무기_15_의천검",
+      "che_무기_15_청홍검",
+      "che_반계_백우선",
+      "che_반계_파초선",
+      "che_보물_도기",
+      "che_부적_태현청생부",
+      "che_불굴_상편",
+      "che_사기_두강주",
+      "che_사기_보령압주",
+      "che_사기_의적주",
+      "che_사기_초선화",
+      "che_사기_춘화첩",
+      "che_사기_탁주",
+      "che_상성보정_과실주",
+      "che_서적_01_효경전",
+      "che_서적_02_회남자",
+      "che_서적_03_변도론",
+      "che_서적_04_건상역주",
+      "che_서적_05_여씨춘추",
+      "che_서적_06_사민월령",
+      "che_서적_07_논어",
+      "che_서적_07_사마법",
+      "che_서적_07_위료자",
+      "che_서적_07_한서",
+      "che_서적_08_사기",
+      "che_서적_08_전론",
+      "che_서적_09_역경",
+      "che_서적_09_장자",
+      "che_서적_10_구국론",
+      "che_서적_10_시경",
+      "che_서적_11_상군서",
+      "che_서적_11_춘추전",
+      "che_서적_12_맹덕신서",
+      "che_서적_12_산해경",
+      "che_서적_13_관자",
+      "che_서적_13_병법24편",
+      "che_서적_14_오자병법",
+      "che_서적_14_한비자",
+      "che_서적_15_노자",
+      "che_서적_15_손자병법",
+      "che_숙련_동작",
+      "che_약탈_옥벽",
+      "che_위압_조목삭",
+      "che_의술_상한잡병론",
+      "che_의술_정력견혈산",
+      "che_의술_청낭서",
+      "che_의술_태평청령",
+      "che_저격_매화수전",
+      "che_저격_비도",
+      "che_저격_수극",
+      "che_저지_삼황내문",
+      "che_전략_평만지장도",
+      "che_조달_주판",
+      "che_진압_박혁론",
+      "che_집중_전국책",
+      "che_징병_낙주",
+      "che_척사_오악진형도",
+      "che_치료_도소연명",
+      "che_치료_무후행군",
+      "che_치료_오석산",
+      "che_치료_정력견혈",
+      "che_치료_칠엽청점",
+      "che_치료_환약",
+      "che_치트_HideD의_사인검",
+      "che_필살_둔갑천서",
+      "che_행동_서촉지형도",
+      "che_환술_논어집해",
+      "che_회피_둔갑천서",
+      "che_회피_태평요술",
+      "che_훈련_과실주",
+      "che_훈련_단결도",
+      "che_훈련_이강주",
+      "che_훈련_철벽서",
+      "che_훈련_청주",
+      "event_빼빼로",
+      "event_전투특기_격노",
+      "event_전투특기_견고",
+      "event_전투특기_공성",
+      "event_전투특기_궁병",
+      "event_전투특기_귀병",
+      "event_전투특기_기병",
+      "event_전투특기_돌격",
+      "event_전투특기_무쌍",
+      "event_전투특기_반계",
+      "event_전투특기_보병",
+      "event_전투특기_신산",
+      "event_전투특기_신중",
+      "event_전투특기_위압",
+      "event_전투특기_의술",
+      "event_전투특기_저격",
+      "event_전투특기_집중",
+      "event_전투특기_징병",
+      "event_전투특기_척사",
+      "event_전투특기_필살",
+      "event_전투특기_환술",
+      "event_충차"
+    ],
+    "ActionNationType": [
+      "None",
+      "che_덕가",
+      "che_도가",
+      "che_도적",
+      "che_명가",
+      "che_묵가",
+      "che_법가",
+      "che_병가",
+      "che_불가",
+      "che_오두미도",
+      "che_유가",
+      "che_음양가",
+      "che_종횡가",
+      "che_중립",
+      "che_태평도"
+    ],
+    "ActionPersonality": [
+      "None",
+      "che_대의",
+      "che_안전",
+      "che_왕좌",
+      "che_유지",
+      "che_은둔",
+      "che_의협",
+      "che_재간",
+      "che_정복",
+      "che_출세",
+      "che_패권",
+      "che_할거"
+    ],
+    "ActionScenarioEffect": [
+      "None",
+      "event_MoreEffect",
+      "event_StrongAttacker",
+      "event_UnlimitedDefenceThresholdChange"
+    ],
+    "ActionSpecialDomestic": [
+      "None",
+      "che_event_격노",
+      "che_event_견고",
+      "che_event_공성",
+      "che_event_궁병",
+      "che_event_귀병",
+      "che_event_기병",
+      "che_event_돌격",
+      "che_event_무쌍",
+      "che_event_반계",
+      "che_event_보병",
+      "che_event_신산",
+      "che_event_신중",
+      "che_event_위압",
+      "che_event_의술",
+      "che_event_저격",
+      "che_event_집중",
+      "che_event_징병",
+      "che_event_척사",
+      "che_event_필살",
+      "che_event_환술",
+      "che_거상",
+      "che_경작",
+      "che_귀모",
+      "che_발명",
+      "che_상재",
+      "che_수비",
+      "che_인덕",
+      "che_축성",
+      "che_통찰"
+    ],
+    "ActionSpecialWar": [
+      "None",
+      "che_격노",
+      "che_견고",
+      "che_공성",
+      "che_궁병",
+      "che_귀병",
+      "che_기병",
+      "che_돌격",
+      "che_무쌍",
+      "che_반계",
+      "che_보병",
+      "che_신산",
+      "che_신중",
+      "che_위압",
+      "che_의술",
+      "che_저격",
+      "che_집중",
+      "che_징병",
+      "che_척사",
+      "che_필살",
+      "che_환술"
+    ]
+  }
+}

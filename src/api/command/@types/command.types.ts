@@ -86,6 +86,7 @@ export enum CommandType {
 
 export enum CommandStatus {
   PENDING = 'PENDING',
+  SCHEDULED = 'SCHEDULED', // 턴제 모드: 예약됨
   EXECUTING = 'EXECUTING',
   COMPLETED = 'COMPLETED',
   FAILED = 'FAILED',
@@ -98,7 +99,7 @@ export interface ICommand {
   // 게임 세션 (중요!)
   sessionId: string; // GameSession ID - 데이터 격리
   
-  generalId: string;
+  commanderId: string; // generalId → commanderId로 변경
   type: CommandType;
   status: CommandStatus;
   
@@ -108,6 +109,9 @@ export interface ICommand {
   // CP 비용
   cpCost: number;
   cpType: 'PCP' | 'MCP';
+  
+  // 턴제 모드 지원
+  scheduledAt?: Date; // 턴제 모드: 실행 예정 시간
   
   // 실행 시간
   startTime?: Date;
@@ -278,7 +282,7 @@ export interface ChangeNamePayload {
 // DTO 타입 정의
 export interface SubmitCommandDto {
   sessionId?: string; // 게임 세션 ID
-  generalId: string;
+  commanderId: string; // generalId → commanderId로 변경
   type: CommandType;
   payload: Record<string, any>;
   cpCost?: number;

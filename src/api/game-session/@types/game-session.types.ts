@@ -5,13 +5,18 @@
  * - 각 테이블(general, city, nation)은 하나의 GameSession에 종속
  * - 여러 GameSession이 동시에 돌아갈 수 있음
  * - scenario/*.json 파일 하나 = 하나의 GameSession 템플릿
+ * 
+ * Entity 시스템과의 관계:
+ * - scenarioId는 Entity의 scenario 필드와 1:1 매칭
+ * - GameSession 생성 시 Entity들이 초기화됨
+ * - Entity Repository를 통해 General, City, Nation 관리
  */
 
 export interface IGameSession {
   id: string; // server_id에 해당
   
-  // 시나리오 정보
-  scenarioId: string; // scenario_0, scenario_1, scenario_2010 등
+  // 시나리오 정보 (Entity scenario와 매칭)
+  scenarioId: string; // scenario_0, scenario_1, scenario_2010 등 (Entity의 scenario 필드와 동일)
   title: string; // "【공백지】 일반", "【가상모드1a】 영웅 난무" 등
   
   // 게임 설정
@@ -24,6 +29,10 @@ export interface IGameSession {
   
   // 게임 상태
   status: 'waiting' | 'running' | 'paused' | 'finished';
+  
+  // 게임 모드 (CQRS 턴제/실시간 지원)
+  gameMode: 'turnBased' | 'realtime'; // 턴제 또는 실시간
+  turnInterval: number; // 턴 간격 (초), 실시간 모드에서는 0
   
   // 시작/종료 시간
   openDate?: Date; // 게임 오픈 시간
@@ -47,12 +56,12 @@ export interface IGameSession {
     action: any;
   }>;
   
-  // 통계
+  // 통계 (Entity 기반 동적 계산)
   stats: {
-    totalGenerals: number;
-    totalCities: number;
-    totalNations: number;
-    activePlayers: number;
+    totalGenerals: number;   // Entity.role = 'general' 카운트
+    totalCities: number;      // Entity.role = 'city' 카운트
+    totalNations: number;     // Entity.role = 'nation' 카운트
+    activePlayers: number;    // Entity.role = 'commander' 카운트
   };
   
   // 턴 설정
