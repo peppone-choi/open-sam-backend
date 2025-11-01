@@ -92,97 +92,11 @@ export class ScenarioRegistry {
   static has(scenarioId: ScenarioId): boolean {
     return this.scenarios.has(scenarioId);
   }
+
+  /**
+   * 모든 시나리오 초기화 (테스트용)
+   */
+  static clear(): void {
+    this.scenarios.clear();
+  }
 }
-
-// ==================== 삼국지 시나리오 등록 ====================
-ScenarioRegistry.register({
-  id: 'sangokushi',
-  name: '삼국지',
-  description: '후한 말 삼국시대 배경',
-  
-  roles: {
-    [Role.SETTLEMENT]: {
-      collection: 'cities',
-      label: { ko: '도시', en: 'City' }
-    },
-    [Role.COMMANDER]: {
-      collection: 'generals',
-      label: { ko: '장수', en: 'General' }
-    },
-    [Role.FACTION]: {
-      collection: 'nations',
-      label: { ko: '국가', en: 'Nation' }
-    },
-    [Role.FORCE]: {
-      collection: 'forces',
-      label: { ko: '부대', en: 'Force' }
-    },
-    [Role.DIPLOMACY]: {
-      collection: 'diplomacy',
-      label: { ko: '외교', en: 'Diplomacy' }
-    }
-  },
-  
-  relations: {
-    ASSIGNED_SETTLEMENT: {
-      from: Role.COMMANDER,
-      to: Role.SETTLEMENT,
-      viaField: 'city'
-    },
-    MEMBER_OF: {
-      from: Role.COMMANDER,
-      to: Role.FACTION,
-      viaField: 'nation'
-    },
-    OWNS: {
-      from: Role.FACTION,
-      to: Role.SETTLEMENT,
-      viaField: 'nation',
-      inverse: 'cities'
-    }
-  }
-});
-
-// ==================== SF 시나리오 예시 ====================
-ScenarioRegistry.register({
-  id: 'sf',
-  name: 'Space Force',
-  description: '우주 전쟁 배경',
-  
-  roles: {
-    [Role.SETTLEMENT]: {
-      collection: 'planets',
-      label: { ko: '행성', en: 'Planet' }
-    },
-    [Role.COMMANDER]: {
-      collection: 'commanders',
-      label: { ko: '커맨더', en: 'Commander' }
-    },
-    [Role.FACTION]: {
-      collection: 'factions',
-      label: { ko: '세력', en: 'Faction' }
-    },
-    [Role.FORCE]: {
-      collection: 'fleets',
-      label: { ko: '함대', en: 'Fleet' }
-    }
-  },
-  
-  relations: {
-    ASSIGNED_SETTLEMENT: {
-      from: Role.COMMANDER,
-      to: Role.SETTLEMENT,
-      viaField: 'homePlanetId'
-    },
-    MEMBER_OF: {
-      from: Role.COMMANDER,
-      to: Role.FACTION,
-      viaField: 'factionId'
-    },
-    OWNS: {
-      from: Role.FACTION,
-      to: Role.SETTLEMENT,
-      viaField: 'ownerFactionId'
-    }
-  }
-});

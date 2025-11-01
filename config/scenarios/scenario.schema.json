@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Scenario Configuration Schema",
+  "description": "시나리오 메타데이터 및 설정",
+  "type": "object",
+  "required": ["id", "name", "version", "roles", "relations"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "시나리오 고유 ID (예: sangokushi, sf)"
+    },
+    "name": {
+      "type": "string",
+      "description": "시나리오 표시 이름"
+    },
+    "description": {
+      "type": "string",
+      "description": "시나리오 설명"
+    },
+    "version": {
+      "type": "string",
+      "description": "시나리오 버전"
+    },
+    "author": {
+      "type": "string",
+      "description": "제작자"
+    },
+    "roles": {
+      "type": "object",
+      "description": "역할별 엔티티 설정",
+      "patternProperties": {
+        "^[A-Z_]+$": {
+          "type": "object",
+          "required": ["collection", "label"],
+          "properties": {
+            "collection": {
+              "type": "string",
+              "description": "MongoDB 컬렉션 이름"
+            },
+            "label": {
+              "type": "object",
+              "description": "다국어 레이블",
+              "properties": {
+                "ko": { "type": "string" },
+                "en": { "type": "string" }
+              },
+              "required": ["ko", "en"]
+            },
+            "schema": {
+              "type": "object",
+              "description": "속성 및 스키마 정의",
+              "properties": {
+                "attributes": {
+                  "type": "object",
+                  "description": "엔티티 속성 정의",
+                  "patternProperties": {
+                    ".*": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "min": { "type": "number" },
+                        "max": { "type": "number" },
+                        "default": { "type": "number" }
+                      }
+                    }
+                  }
+                },
+                "slots": {
+                  "type": "object",
+                  "description": "슬롯 정의 (SETTLEMENT 등)",
+                  "patternProperties": {
+                    ".*": {
+                      "type": "object",
+                      "properties": {
+                        "label": { "type": "string" },
+                        "icon": { "type": "string" },
+                        "description": { "type": "string" },
+                        "maxLevel": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "object",
+      "description": "관계 매핑",
+      "patternProperties": {
+        "^[A-Z_]+$": {
+          "type": "object",
+          "required": ["from", "to", "viaField"],
+          "properties": {
+            "from": { "type": "string" },
+            "to": { "type": "string" },
+            "viaField": { "type": "string" },
+            "inverse": { "type": "string" }
+          }
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "추가 설정",
+      "properties": {
+        "systems": {
+          "type": "object",
+          "description": "시스템 활성화 여부"
+        },
+        "resources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "사용 가능한 자원 목록"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,453 @@
+{
+  "cityLevels": {
+    "0": {
+      "id": 0,
+      "name": "무",
+      "label": "무",
+      "buildCost": {
+        "population": 100,
+        "agriculture": 0,
+        "commerce": 0,
+        "security": 50,
+        "defense": 50,
+        "wall": 50
+      }
+    },
+    "1": {
+      "id": 1,
+      "name": "향",
+      "label": "향",
+      "buildCost": {
+        "population": 1000,
+        "agriculture": 50,
+        "commerce": 50,
+        "security": 50,
+        "defense": 100,
+        "wall": 100
+      }
+    },
+    "2": {
+      "id": 2,
+      "name": "수",
+      "label": "수",
+      "buildCost": {
+        "population": 5000,
+        "agriculture": 100,
+        "commerce": 100,
+        "security": 100,
+        "defense": 500,
+        "wall": 500
+      }
+    },
+    "3": {
+      "id": 3,
+      "name": "진",
+      "label": "진",
+      "buildCost": {
+        "population": 5000,
+        "agriculture": 100,
+        "commerce": 100,
+        "security": 100,
+        "defense": 500,
+        "wall": 500
+      }
+    },
+    "4": {
+      "id": 4,
+      "name": "관",
+      "label": "관",
+      "buildCost": {
+        "population": 10000,
+        "agriculture": 100,
+        "commerce": 100,
+        "security": 100,
+        "defense": 1000,
+        "wall": 1000
+      }
+    },
+    "5": {
+      "id": 5,
+      "name": "이",
+      "label": "이",
+      "buildCost": {
+        "population": 50000,
+        "agriculture": 1000,
+        "commerce": 1000,
+        "security": 1000,
+        "defense": 1000,
+        "wall": 1000
+      }
+    },
+    "6": {
+      "id": 6,
+      "name": "소",
+      "label": "소",
+      "buildCost": {
+        "population": 100000,
+        "agriculture": 1000,
+        "commerce": 1000,
+        "security": 1000,
+        "defense": 2000,
+        "wall": 2000
+      }
+    },
+    "7": {
+      "id": 7,
+      "name": "중",
+      "label": "중",
+      "buildCost": {
+        "population": 100000,
+        "agriculture": 1000,
+        "commerce": 1000,
+        "security": 1000,
+        "defense": 3000,
+        "wall": 3000
+      }
+    },
+    "8": {
+      "id": 8,
+      "name": "대",
+      "label": "대",
+      "buildCost": {
+        "population": 150000,
+        "agriculture": 1000,
+        "commerce": 1000,
+        "security": 1000,
+        "defense": 4000,
+        "wall": 4000
+      }
+    },
+    "9": {
+      "id": 9,
+      "name": "특",
+      "label": "특",
+      "buildCost": {
+        "population": 150000,
+        "agriculture": 1000,
+        "commerce": 1000,
+        "security": 1000,
+        "defense": 5000,
+        "wall": 5000
+      }
+    },
+    "10": {
+      "id": 10,
+      "name": "경",
+      "label": "경",
+      "buildCost": {
+        "population": 200000,
+        "agriculture": 1500,
+        "commerce": 1500,
+        "security": 1500,
+        "defense": 7000,
+        "wall": 7000
+      }
+    }
+  },
+  "cityDefaults": {
+    "trust": 50,
+    "trade": 100
+  },
+  "gameBalance": {
+    "develrate": 50,
+    "upgradeLimit": 30,
+    "dexLimit": 1000000,
+    "defaultAtmosLow": 40,
+    "defaultTrainLow": 40,
+    "defaultAtmosHigh": 70,
+    "defaultTrainHigh": 70,
+    "maxAtmosByCommand": 100,
+    "maxTrainByCommand": 100,
+    "maxAtmosByWar": 150,
+    "maxTrainByWar": 110,
+    "trainDelta": 30,
+    "atmosDelta": 30,
+    "atmosSideEffectByTraining": 1,
+    "trainSideEffectByAtmosTurn": 1,
+    "sabotageDefaultProb": 0.35,
+    "sabotageProbCoefByStat": 300,
+    "sabotageDefenceCoefByGeneralCnt": 0.04,
+    "sabotageDamageMin": 100,
+    "sabotageDamageMax": 800,
+    "armperphase": 500,
+    "basegold": 0,
+    "baserice": 2000,
+    "minNationalGold": 0,
+    "minNationalRice": 0,
+    "exchangeFee": 0.01,
+    "adultAge": 14,
+    "minPushHallAge": 40,
+    "maxDedLevel": 30,
+    "maxTechLevel": 12,
+    "maxBetrayCnt": 9,
+    "incDefSettingChange": 3,
+    "maxDefSettingChange": 9,
+    "refreshLimitCoef": 10,
+    "maxLevel": 255,
+    "techLevelIncYear": 5,
+    "initialAllowedTechLevel": 1,
+    "basePopIncreaseAmount": 5000,
+    "expandCityPopIncreaseAmount": 100000,
+    "expandCityDevelIncreaseAmount": 2000,
+    "expandCityWallIncreaseAmount": 2000,
+    "expandCityDefaultCost": 60000,
+    "expandCityCostCoef": 500,
+    "minAvailableRecruitPop": 30000,
+    "defaultCityWall": 1000,
+    "initialNationGenLimit": 10,
+    "defaultMaxGeneral": 500,
+    "defaultMaxNation": 55,
+    "defaultMaxGenius": 5,
+    "defaultStartYear": 180,
+    "joinRuinedNPCProp": 0.1,
+    "defaultGold": 1000,
+    "defaultRice": 1000,
+    "coefAidAmount": 10000,
+    "maxResourceActionAmount": 10000,
+    "generalMinimumGold": 0,
+    "generalMinimumRice": 500,
+    "maxTurn": 30,
+    "maxChiefTurn": 12,
+    "statGradeLevel": 5,
+    "openingPartYear": 3,
+    "joinActionLimit": 12,
+    "bornMinStatBonus": 3,
+    "bornMaxStatBonus": 5
+  },
+  "factionTypes": {
+    "available": [
+      "che_도적",
+      "che_명가",
+      "che_음양가",
+      "che_종횡가",
+      "che_불가",
+      "che_오두미도",
+      "che_태평도",
+      "che_도가",
+      "che_묵가",
+      "che_덕가",
+      "che_병가",
+      "che_유가",
+      "che_법가"
+    ],
+    "neutral": "che_중립"
+  },
+  "specialSkills": {
+    "domestic": {
+      "default": "None",
+      "available": [
+        "che_경작",
+        "che_상재",
+        "che_발명",
+        "che_축성",
+        "che_수비",
+        "che_통찰",
+        "che_인덕",
+        "che_귀모"
+      ],
+      "optional": ["None"]
+    },
+    "war": {
+      "default": "None",
+      "available": [
+        "che_귀병",
+        "che_신산",
+        "che_환술",
+        "che_집중",
+        "che_신중",
+        "che_반계",
+        "che_보병",
+        "che_궁병",
+        "che_기병",
+        "che_공성",
+        "che_돌격",
+        "che_무쌍",
+        "che_견고",
+        "che_위압",
+        "che_저격",
+        "che_필살",
+        "che_징병",
+        "che_의술",
+        "che_격노",
+        "che_척사"
+      ],
+      "optional": ["None"]
+    }
+  },
+  "personality": {
+    "neutral": "None",
+    "optional": ["che_은둔", "None"]
+  },
+  "regions": {
+    "1": { "id": 1, "name": "하북", "label": "하북" },
+    "2": { "id": 2, "name": "중원", "label": "중원" },
+    "3": { "id": 3, "name": "서북", "label": "서북" },
+    "4": { "id": 4, "name": "서촉", "label": "서촉" },
+    "5": { "id": 5, "name": "남중", "label": "남중" },
+    "6": { "id": 6, "name": "초", "label": "초" },
+    "7": { "id": 7, "name": "오월", "label": "오월" },
+    "8": { "id": 8, "name": "동이", "label": "동이" }
+  },
+  "colors": {
+    "basecolor": "#000044",
+    "basecolor2": "#225500",
+    "basecolor3": "#660000",
+    "basecolor4": "#330000"
+  },
+  "resourceActionAmountGuide": [
+    100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+    1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
+  ],
+  "nationLevels": {
+    "0": { "level": 0, "name": "방랑군", "chiefCount": 2, "minCities": 0 },
+    "1": { "level": 1, "name": "현", "chiefCount": 2, "minCities": 1 },
+    "2": { "level": 2, "name": "군", "chiefCount": 3, "minCities": 2 },
+    "3": { "level": 3, "name": "자사", "chiefCount": 3, "minCities": 3 },
+    "4": { "level": 4, "name": "주목", "chiefCount": 4, "minCities": 5 },
+    "5": { "level": 5, "name": "후작국", "chiefCount": 5, "minCities": 7 },
+    "6": { "level": 6, "name": "공국", "chiefCount": 6, "minCities": 13 },
+    "7": { "level": 7, "name": "왕국", "chiefCount": 8, "minCities": 17 },
+    "8": { "level": 8, "name": "제국", "chiefCount": 10, "minCities": 24 }
+  },
+  "officerTitles": {
+    "12": {
+      "0": "두목",
+      "1": "현령",
+      "2": "태수",
+      "3": "자사",
+      "4": "주목",
+      "5": "후작",
+      "6": "공",
+      "7": "왕",
+      "8": "황제"
+    },
+    "11": {
+      "0": "부두목",
+      "1": "현승",
+      "2": "군승",
+      "3": "주부",
+      "4": "별가",
+      "5": "공국상",
+      "6": "승상",
+      "7": "상국",
+      "8": "태사"
+    },
+    "10": {
+      "1": "중랑장",
+      "2": "편장군",
+      "3": "아문장군",
+      "4": "사정장군",
+      "5": "표기장군",
+      "6": "거기장군",
+      "7": "대장군",
+      "8": "대사마",
+      "default": "중랑장"
+    },
+    "9": {
+      "1": "교위",
+      "2": "중랑장",
+      "3": "간의대부",
+      "4": "사도",
+      "5": "사공",
+      "6": "태위",
+      "7": "녹상서사",
+      "8": "녹상서사",
+      "default": "교위"
+    },
+    "8": {
+      "1": "현위",
+      "2": "태수",
+      "3": "태수",
+      "4": "호군",
+      "5": "호군",
+      "6": "중서령",
+      "7": "사예교위",
+      "8": "상서령",
+      "default": "군사"
+    },
+    "7": {
+      "1": "군사",
+      "2": "종사중랑",
+      "3": "종사중랑",
+      "4": "종사중랑",
+      "5": "종사중랑",
+      "6": "종사중랑",
+      "7": "종사중랑",
+      "8": "종사중랑",
+      "default": "종사중랑"
+    },
+    "6": {
+      "1": "도위",
+      "2": "도위",
+      "3": "도위",
+      "4": "도위",
+      "5": "도위",
+      "6": "도위",
+      "7": "도위",
+      "8": "도위",
+      "default": "도위"
+    },
+    "5": {
+      "default": "군사"
+    },
+    "4": {
+      "default": "승"
+    },
+    "3": {
+      "default": "교위"
+    },
+    "2": {
+      "default": "종사"
+    },
+    "1": {
+      "default": "일반"
+    },
+    "0": {
+      "default": "재야"
+    }
+  },
+  "dedicationLevels": [
+    { "min": 0, "max": 99, "shortName": "하하", "fullName": "무명" },
+    { "min": 100, "max": 299, "shortName": "하중", "fullName": "무명" },
+    { "min": 300, "max": 599, "shortName": "하상", "fullName": "무명" },
+    { "min": 600, "max": 999, "shortName": "중하", "fullName": "무명" },
+    { "min": 1000, "max": 1499, "shortName": "중중", "fullName": "충성" },
+    { "min": 1500, "max": 2099, "shortName": "중상", "fullName": "충성" },
+    { "min": 2000, "max": 2799, "shortName": "상하", "fullName": "충의" },
+    { "min": 2800, "max": 3599, "shortName": "상중", "fullName": "충의" },
+    { "min": 3600, "max": 4499, "shortName": "상상", "fullName": "충의" },
+    { "min": 4500, "max": 5499, "shortName": "특상", "fullName": "충복" },
+    { "min": 5500, "max": 9999, "shortName": "최상", "fullName": "충복" },
+    { "min": 10000, "max": 999999, "shortName": "최상", "fullName": "충신" }
+  ],
+  "honorLevels": [
+    { "min": 0, "max": 999, "name": "병졸" },
+    { "min": 1000, "max": 1999, "name": "장수" },
+    { "min": 2000, "max": 4999, "name": "맹장" },
+    { "min": 5000, "max": 9999, "name": "용장" },
+    { "min": 10000, "max": 999999, "name": "명장" }
+  ],
+  "militaryRanks": {
+    "0": { "rank": 0, "name": "무작", "shortName": "무작", "crewBonus": 0, "recruitCostDiscount": 0, "trainBonus": 0, "moraleBonus": 0 },
+    "1": { "rank": 1, "name": "공사", "shortName": "공사", "crewBonus": 100, "recruitCostDiscount": 1, "trainBonus": 1, "moraleBonus": 1 },
+    "2": { "rank": 2, "name": "상조", "shortName": "상조", "crewBonus": 200, "recruitCostDiscount": 2, "trainBonus": 1, "moraleBonus": 1 },
+    "3": { "rank": 3, "name": "잠요", "shortName": "잠요", "crewBonus": 300, "recruitCostDiscount": 3, "trainBonus": 2, "moraleBonus": 2 },
+    "4": { "rank": 4, "name": "불경", "shortName": "불경", "crewBonus": 500, "recruitCostDiscount": 4, "trainBonus": 2, "moraleBonus": 2 },
+    "5": { "rank": 5, "name": "대부", "shortName": "대부", "crewBonus": 700, "recruitCostDiscount": 5, "trainBonus": 3, "moraleBonus": 3 },
+    "6": { "rank": 6, "name": "관대부", "shortName": "관대부", "crewBonus": 1000, "recruitCostDiscount": 6, "trainBonus": 3, "moraleBonus": 3 },
+    "7": { "rank": 7, "name": "공대부", "shortName": "공대부", "crewBonus": 1500, "recruitCostDiscount": 7, "trainBonus": 4, "moraleBonus": 4 },
+    "8": { "rank": 8, "name": "공승", "shortName": "공승", "crewBonus": 2000, "recruitCostDiscount": 8, "trainBonus": 4, "moraleBonus": 4 },
+    "9": { "rank": 9, "name": "오대부", "shortName": "오대부", "crewBonus": 3000, "recruitCostDiscount": 9, "trainBonus": 5, "moraleBonus": 5 },
+    "10": { "rank": 10, "name": "좌서장", "shortName": "좌서장", "crewBonus": 4000, "recruitCostDiscount": 10, "trainBonus": 6, "moraleBonus": 6 },
+    "11": { "rank": 11, "name": "우서장", "shortName": "우서장", "crewBonus": 5000, "recruitCostDiscount": 11, "trainBonus": 7, "moraleBonus": 7 },
+    "12": { "rank": 12, "name": "좌경", "shortName": "좌경", "crewBonus": 6000, "recruitCostDiscount": 12, "trainBonus": 8, "moraleBonus": 8 },
+    "13": { "rank": 13, "name": "중경", "shortName": "중경", "crewBonus": 7000, "recruitCostDiscount": 13, "trainBonus": 9, "moraleBonus": 9 },
+    "14": { "rank": 14, "name": "우경", "shortName": "우경", "crewBonus": 8000, "recruitCostDiscount": 14, "trainBonus": 10, "moraleBonus": 10 },
+    "15": { "rank": 15, "name": "소상조", "shortName": "소상조", "crewBonus": 9000, "recruitCostDiscount": 15, "trainBonus": 12, "moraleBonus": 12 },
+    "16": { "rank": 16, "name": "대량조", "shortName": "대량조", "crewBonus": 10000, "recruitCostDiscount": 16, "trainBonus": 14, "moraleBonus": 14 },
+    "17": { "rank": 17, "name": "사거서장", "shortName": "사거서장", "crewBonus": 12000, "recruitCostDiscount": 17, "trainBonus": 16, "moraleBonus": 16 },
+    "18": { "rank": 18, "name": "대서장", "shortName": "대서장", "crewBonus": 15000, "recruitCostDiscount": 18, "trainBonus": 18, "moraleBonus": 18 },
+    "19": { "rank": 19, "name": "관내후", "shortName": "관내후", "crewBonus": 20000, "recruitCostDiscount": 20, "trainBonus": 20, "moraleBonus": 20 },
+    "20": { "rank": 20, "name": "열후", "shortName": "열후", "crewBonus": 30000, "recruitCostDiscount": 25, "trainBonus": 25, "moraleBonus": 25 }
+  }
+}

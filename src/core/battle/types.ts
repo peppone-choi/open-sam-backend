@@ -83,6 +83,7 @@ export interface BattleUnit3D {
   
   morale: number;
   training: number;
+  militaryRank?: number; // 이십등작 등급 (0~20)
   
   canFly?: boolean;
   maxAltitude?: number;

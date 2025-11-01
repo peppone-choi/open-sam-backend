@@ -1,0 +1,2033 @@
+{
+  "units": {
+    "1000": {
+      "id": 1000,
+      "type": "CASTLE",
+      "name": "성벽",
+      "cost": {
+        "gold": 9999,
+        "rice": 9999
+      },
+      "stats": {
+        "tech": 99,
+        "offense": 0,
+        "magic": 0,
+        "attackRange": 99,
+        "defenseRange": 99
+      },
+      "attacks": {},
+      "defenses": {},
+      "description": [
+        "아군 영토를 방어하는 견고한 성벽입니다.",
+        "생성할 수 없습니다. 공성 병기에게 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "impossible"
+        }
+      ]
+    },
+    "1101": {
+      "id": 1101,
+      "type": "FOOTMAN",
+      "name": "향병",
+      "cost": {
+        "gold": 60,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 8,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.7,
+        "SIEGE": 1.0
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.3,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "가장 기본적인 경급 보병입니다. 의복과 경피갑으로 무장하며, 단병기(도)를 사용합니다.",
+        "전선을 유지하고 적의 사격을 일부 막아낼 수 있으나, 기병의 돌격에는 취약합니다."
+      ],
+      "constraints": []
+    },
+    "1102": {
+      "id": 1102,
+      "type": "FOOTMAN",
+      "name": "정병",
+      "cost": {
+        "gold": 100,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.0
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "잘 훈련된 정규 보병입니다. 평피갑과 방패, 그리고 도를 사용합니다.",
+        "균형 잡힌 능력치로 전열 유지에 능하며, 기병의 돌격에 어느 정도 버텨낼 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1103": {
+      "id": 1103,
+      "type": "FOOTMAN",
+      "name": "검병",
+      "cost": {
+        "gold": 150,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.7
+      },
+      "description": [
+        "중피갑과 검, 보병용 대형 방패로 무장한 정예 보병입니다.",
+        "높은 방어력으로 전선을 견고히 유지하며, 관통 피해가 높은 검으로 중장갑 적을 상대합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1104": {
+      "id": 1104,
+      "type": "FOOTMAN",
+      "name": "부월수",
+      "cost": {
+        "gold": 130,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.2,
+        "FOOTMAN_HEAVY": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8,
+        "FOOTMAN_HEAVY": 0.7
+      },
+      "description": [
+        "도끼(월)를 사용하는 정예 공격형 보병입니다. 경철갑을 착용하며 보병용 타원형 방패를 지녔습니다.",
+        "빠른 공격 속도와 높은 관통 피해로 중장갑 보병과 방패를 든 부대에 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1105": {
+      "id": 1105,
+      "type": "FOOTMAN",
+      "name": "등갑군",
+      "cost": {
+        "gold": 100,
+        "rice": 225
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "ARCHER": 1.5,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.0
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "남만 지역(남중)에서 모집 가능한 정규 특수 보병입니다. 중등갑과 보병용 등나무 방패, 도를 사용합니다.",
+        "등나무 갑옷으로 궁병의 사격을 거의 무력화하나, 화염 계략이나 불화살에 매우 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "남중"
+        }
+      ]
+    },
+    "1106": {
+      "id": 1106,
+      "type": "FOOTMAN",
+      "name": "백이병",
+      "cost": {
+        "gold": 175,
+        "rice": 175
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 13,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "성도 지역에서 모집 가능한 최정예 보병입니다. 평철갑과 보병용 대형 방패, 극을 사용합니다.",
+        "뛰어난 사기와 방어력으로 불리한 싸움도 버텨냅니다. 다용도 장병인 극은 기병에게도 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "성도"
+        }
+      ]
+    },
+    "1107": {
+      "id": 1107,
+      "type": "FOOTMAN",
+      "name": "금군",
+      "cost": {
+        "gold": 200,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 16,
+        "magic": 0,
+        "attackRange": 12,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "낙양에서 모집 가능한 최정예 보병입니다. 중철갑과 보병용 직사각 고급 방패, 검을 사용합니다.",
+        "높은 방어력과 사기로 무장한 제국의 핵심 방패입니다. 전신에 걸쳐 철제 찰갑을 단단히 착용합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "낙양"
+        }
+      ]
+    },
+    "1108": {
+      "id": 1108,
+      "type": "FOOTMAN",
+      "name": "황건병",
+      "cost": {
+        "gold": 70,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 11,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "ARCHER": 1.0,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.0
+      },
+      "defenses": {
+        "ARCHER": 1.0,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "태평도 사상을 따르는 광신적인 경급 보병입니다. 의복과 도, 조잡한 방패를 사용합니다.",
+        "장비는 형편없으나, 광신적인 사기로 인해 패주하지 않고 끝까지 싸우는 경향이 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "taiping"
+        }
+      ]
+    },
+    "1109": {
+      "id": 1109,
+      "type": "FOOTMAN",
+      "name": "산적",
+      "cost": {
+        "gold": 120,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "ARCHER": 1.3,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "도적 사상을 가진 국가가 모집하는 공격형 경장 보병입니다. 경피갑과 쌍수 도를 사용합니다.",
+        "방패를 포기한 대신 빠른 공격 속도와 높은 공격력으로 무장했습니다. 숲 지형에서 이동 속도 저하가 적습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "bandits"
+        }
+      ]
+    },
+    "1110": {
+      "id": 1110,
+      "type": "FOOTMAN",
+      "name": "왜구",
+      "cost": {
+        "gold": 110,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "왜(倭) 지역에서 모집 가능한 공격형 보병입니다. 경피갑과 날이 잘 선 왜검을 사용합니다.",
+        "해안 지역 전투에 보너스를 받으며, 사기가 높아 쉽게 패주하지 않습니다. 높은 근접 공격력으로 적을 압박합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "왜"
+        }
+      ]
+    },
+    "1111": {
+      "id": 1111,
+      "type": "FOOTMAN",
+      "name": "저족병",
+      "cost": {
+        "gold": 90,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 11
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.0
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "서북 지역의 저족(氐族) 이민족 보병입니다. 경피갑과 창, 방패를 사용합니다.",
+        "산악 지형에서 이동 속도와 매복 보너스를 받으며, 높은 사기를 지녀 불리한 전투에서도 잘 버팁니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "서북"
+        }
+      ]
+    },
+    "1112": {
+      "id": 1112,
+      "type": "FOOTMAN",
+      "name": "청주병",
+      "cost": {
+        "gold": 160,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 18,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 13
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "청주 지역에서 모집 가능한 정예 보병입니다. 중피갑과 양손 장도를 사용합니다.",
+        "높은 공격력과 사기를 지녀 불리한 전투에서도 맹렬히 싸웁니다. 하지만 방패가 없어 사격에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "하북"
+        }
+      ]
+    },
+    "1113": {
+      "id": 1113,
+      "type": "FOOTMAN",
+      "name": "단병수",
+      "cost": {
+        "gold": 150,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 11
+      },
+      "attacks": {
+        "ARCHER": 1.3,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "잘 훈련된 정예 도보병입니다. 평철갑과 장검, 방패를 사용합니다.",
+        "검의 높은 관통력으로 중장갑 유닛과의 근접전에서 우위를 점하며, 균형 잡힌 공방 능력을 가집니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1114": {
+      "id": 1114,
+      "type": "FOOTMAN",
+      "name": "흑산적",
+      "cost": {
+        "gold": 130,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "도적 사상을 가진 국가가 모집하는 공격형 보병입니다. 경피갑과 쌍수 도끼를 사용합니다.",
+        "숲 지형에서 이동 속도와 매복 보너스를 크게 받습니다. 높은 공격력으로 적을 압도하나, 방어력은 낮습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "bandits"
+        }
+      ]
+    },
+    "1115": {
+      "id": 1115,
+      "type": "FOOTMAN",
+      "name": "가야검사",
+      "cost": {
+        "gold": 140,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "김해(가야) 지역에서 모집 가능한 이민족 보병입니다. 중피갑과 날이 잘 선 도검, 방패를 사용합니다.",
+        "해안 지역 전투에 보너스를 받으며, 뛰어난 근접 공격력과 방어력을 지녔습니다. 사기가 높아 쉽게 무너지지 않습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "김해"
+        }
+      ]
+    },
+    "1116": {
+      "id": 1116,
+      "type": "FOOTMAN",
+      "name": "호위대",
+      "cost": {
+        "gold": 250,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 18,
+        "magic": 0,
+        "attackRange": 12,
+        "defenseRange": 18
+      },
+      "attacks": {
+        "ARCHER": 1.3,
+        "CAVALRY": 1.0,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1.0,
+        "SIEGE": 0.7
+      },
+      "description": [
+        "최정예 중장 보병입니다. 강철찰갑과 대형 방패, 대검을 사용합니다.",
+        "궁극의 방어력과 사기를 자랑하며, 어떠한 적의 공격도 막아내는 데 특화되어 있습니다. 근접 전투력도 준수합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2500
+        }
+      ]
+    },
+    "1201": {
+      "id": 1201,
+      "type": "SPEARMAN",
+      "name": "향용",
+      "cost": {
+        "gold": 70,
+        "rice": 110
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "CAVALRY": 1.5,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.5,
+        "FOOTMAN": 1.2,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "가장 기본적인 경급 창병입니다. 경피갑과 창을 사용합니다.",
+        "기병 돌격 피해를 상당 부분 반사하여 기병을 상대로 매우 효과적입니다. 하지만 보병과 궁병에 취약합니다."
+      ],
+      "constraints": []
+    },
+    "1202": {
+      "id": 1202,
+      "type": "SPEARMAN",
+      "name": "창병",
+      "cost": {
+        "gold": 110,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 11,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "FOOTMAN": 1.2,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "훈련받은 정규 창병입니다. 평피갑과 장창을 사용합니다.",
+        "기병 돌격 피해를 거의 완벽하게 반사하여 기병의 돌격을 무력화하고 큰 피해를 입힙니다. 기병 상대로 맞돌격 시 돌격 방어 능력이 사라지니 주의해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1203": {
+      "id": 1203,
+      "type": "SPEARMAN",
+      "name": "방패용",
+      "cost": {
+        "gold": 130,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "CAVALRY": 1.7,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 1.1,
+        "ARCHER": 0.6
+      },
+      "description": [
+        "평철갑과 보병용 타원형 고급 방패, 장창으로 무장한 정예 창병입니다.",
+        "기병을 막아내는 동시에 방패로 궁병의 사격에도 강합니다. 전열 유지에 더욱 견고합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1204": {
+      "id": 1204,
+      "type": "SPEARMAN",
+      "name": "극병",
+      "cost": {
+        "gold": 140,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 11,
+        "defenseRange": 13
+      },
+      "attacks": {
+        "CAVALRY": 1.6,
+        "FOOTMAN": 1.1,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 0.9,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "양손 무기인 극을 사용하는 정예 창병입니다. 중피갑으로 무장합니다.",
+        "창과 도끼의 장점을 겸비하여 기병과 보병 모두에게 다용도로 대응 가능합니다. 방패가 없어 사격에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1205": {
+      "id": 1205,
+      "type": "SPEARMAN",
+      "name": "무릉만",
+      "cost": {
+        "gold": 160,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "FOOTMAN": 1.1,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "무릉 지역에서 모집 가능한 최정예 특수 창병입니다. 평철갑과 장창을 사용합니다.",
+        "숲 지형에서 이동 속도와 매복 보너스를 받습니다. 기병 저지에 탁월합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "무릉"
+        }
+      ]
+    },
+    "1206": {
+      "id": 1206,
+      "type": "SPEARMAN",
+      "name": "단양병",
+      "cost": {
+        "gold": 170,
+        "rice": 210
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 11,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "CAVALRY": 1.7,
+        "FOOTMAN": 1.0,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 1.0,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "강동 지역에서 모집 가능한 최정예 특수 창병입니다. 평철갑과 극, 보병용 박모양 방패를 사용합니다.",
+        "수전과 육전 모두 능숙하며, 다용도 장병인 극으로 보병과 기병 모두에게 대응할 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "강동"
+        }
+      ]
+    },
+    "1207": {
+      "id": 1207,
+      "type": "SPEARMAN",
+      "name": "강족창",
+      "cost": {
+        "gold": 120,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 13
+      },
+      "attacks": {
+        "CAVALRY": 1.7,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 1.1,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "서북 지역의 강족(羌族) 이민족 창병입니다. 경피갑과 장창을 사용합니다.",
+        "높은 사기와 기병 방어 보너스를 가집니다. 사막 지형에서 이동 속도 저하가 적습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "서북"
+        }
+      ]
+    },
+    "1208": {
+      "id": 1208,
+      "type": "SPEARMAN",
+      "name": "정원병",
+      "cost": {
+        "gold": 160,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 11,
+        "defenseRange": 16
+      },
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 1.0,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "FOOTMAN": 1.0,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "병가 사상을 가진 국가만 모집 가능한 최정예 방어 창병입니다. 평철갑과 장극, 보병용 대형 방패를 사용합니다.",
+        "강력한 돌격 방어와 높은 방어력으로 전열을 견고히 합니다. 사기가 높아 쉽게 무너지지 않습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "militarism"
+        }
+      ]
+    },
+    "1209": {
+      "id": 1209,
+      "type": "SPEARMAN",
+      "name": "동주병",
+      "cost": {
+        "gold": 130,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "CAVALRY": 1.6,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 1.1,
+        "ARCHER": 0.7
+      },
+      "description": [
+        "유표 세력에서 모집 가능한 방어형 창병입니다. 평피갑과 장창, 보병용 대형 방패를 사용합니다.",
+        "높은 방어력으로 전열을 유지하고 기병을 저지하는 데 특화되어 있습니다. 장기적인 방어전에 능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "형주"
+        }
+      ]
+    },
+    "1210": {
+      "id": 1210,
+      "type": "SPEARMAN",
+      "name": "월창병",
+      "cost": {
+        "gold": 140,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "CAVALRY": 1.9,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.2,
+        "FOOTMAN": 1.1,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "오월 지역에서 모집 가능한 정예 창병입니다. 경철갑과 장창, 보병용 타원형 방패를 사용합니다.",
+        "수전 전투에 보너스를 받으며, 특히 기병 돌격 방어에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "오월"
+        }
+      ]
+    },
+    "1211": {
+      "id": 1211,
+      "type": "SPEARMAN",
+      "name": "철추병",
+      "cost": {
+        "gold": 170,
+        "rice": 220
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 16,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "CAVALRY": 1.6,
+        "FOOTMAN_HEAVY": 1.4,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN_HEAVY": 0.6,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "묵가 사상을 가진 국가만 모집 가능한 최정예 창병입니다. 평철갑과 철추를 사용합니다.",
+        "무거운 철추로 적의 장갑을 파괴하는 데 특화되어 있습니다. 기병 돌격 반사 능력과 더불어 중장갑 적에게 치명적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "mohism"
+        }
+      ]
+    },
+    "1301": {
+      "id": 1301,
+      "type": "ARCHER",
+      "name": "향궁수",
+      "cost": {
+        "gold": 80,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 7,
+        "magic": 0,
+        "attackRange": 120,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 0.9,
+        "SIEGE": 0.5,
+        "ARCHER_ARMOR": 0.8
+      },
+      "defenses": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.1,
+        "SIEGE": 1.5,
+        "ARCHER_ARMOR": 1.2
+      },
+      "description": [
+        "가장 기본적인 경급 궁병입니다. 의복을 착용하며 활을 사용합니다.",
+        "원거리에서 적을 견제하고 피해를 누적시키지만, 근접전 능력이 매우 떨어져 보호가 필요합니다."
+      ],
+      "constraints": []
+    },
+    "1302": {
+      "id": 1302,
+      "type": "ARCHER",
+      "name": "정궁수",
+      "cost": {
+        "gold": 120,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 150,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.0,
+        "SIEGE": 0.6,
+        "ARCHER_ARMOR": 0.7
+      },
+      "defenses": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1.0,
+        "SIEGE": 1.4,
+        "ARCHER_ARMOR": 1.1
+      },
+      "description": [
+        "잘 훈련된 정규 궁병입니다. 경피갑을 착용하며 활을 사용합니다.",
+        "향궁수보다 긴 사거리와 높은 명중률을 자랑합니다. 불화살 등 특수 탄약으로 전술적 변수를 창출할 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1303": {
+      "id": 1303,
+      "type": "ARCHER",
+      "name": "노병",
+      "cost": {
+        "gold": 130,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 170,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.3,
+        "CAVALRY_ARMOR": 1.2,
+        "SIEGE": 0.8
+      },
+      "defenses": {
+        "FOOTMAN_HEAVY": 0.7,
+        "CAVALRY_ARMOR": 0.8,
+        "SIEGE": 1.2
+      },
+      "description": [
+        "평피갑을 착용하며 노(석궁)를 사용하는 정예 원거리 병종입니다.",
+        "활보다 느린 공격 속도와 낮은 기본 피해를 가지나, 높은 관통 피해와 긴 사거리로 중장갑 부대에 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1304": {
+      "id": 1304,
+      "type": "ARCHER",
+      "name": "연노병",
+      "cost": {
+        "gold": 150,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 8,
+        "magic": 0,
+        "attackRange": 100,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "FOOTMAN": 1.5,
+        "CAVALRY": 1.3,
+        "SIEGE": 0.5
+      },
+      "defenses": {
+        "FOOTMAN": 0.8,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.5
+      },
+      "description": [
+        "중피갑을 착용하며 연노(연발 석궁)를 사용하는 정예 원거리 병종입니다.",
+        "관통 피해는 전무하지만 빠른 연사력으로 적을 제압하며, 짧은 사거리에서 보병과 기병에게 치명적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1305": {
+      "id": 1305,
+      "type": "ARCHER",
+      "name": "월궁수",
+      "cost": {
+        "gold": 160,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 11,
+        "magic": 0,
+        "attackRange": 160,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.7
+      },
+      "defenses": {
+        "FOOTMAN": 1.0,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.3
+      },
+      "description": [
+        "오월 지역에서 모집 가능한 최정예 특수 궁병입니다. 경철갑을 착용하며 오월 지역 특유의 강력한 활을 사용합니다.",
+        "매우 정확하고 강력한 사격으로 적의 전열을 빠르게 와해시킬 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "오월"
+        }
+      ]
+    },
+    "1306": {
+      "id": 1306,
+      "type": "ARCHER",
+      "name": "강노병",
+      "cost": {
+        "gold": 180,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 180,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.5,
+        "CAVALRY_ARMOR": 1.3,
+        "SIEGE": 1.0
+      },
+      "defenses": {
+        "FOOTMAN_HEAVY": 0.6,
+        "CAVALRY_ARMOR": 0.7,
+        "SIEGE": 1.0
+      },
+      "description": [
+        "병가 사상을 가진 국가만 모집 가능한 최정예 노병입니다. 평철갑을 착용하며 강화된 노를 사용합니다.",
+        "최장 사거리와 최고 관통 피해를 자랑하며, 적의 중장갑 부대와 공성 병기에 치명적인 피해를 입힙니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "militarism"
+        }
+      ]
+    },
+    "1307": {
+      "id": 1307,
+      "type": "ARCHER",
+      "name": "동이궁수",
+      "cost": {
+        "gold": 140,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 160,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.0,
+        "SIEGE": 0.7
+      },
+      "defenses": {
+        "FOOTMAN": 1.0,
+        "CAVALRY": 1.0,
+        "SIEGE": 1.3
+      },
+      "description": [
+        "동이 지역에서 모집 가능한 특수 궁병입니다. 경피갑과 강력한 동이 활을 사용합니다.",
+        "숲 지형에서 매복 보너스를 받으며, 이동 중 사격에 능합니다. 기동전을 통해 적을 교란하는 데 유용합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "동이"
+        }
+      ]
+    },
+    "1308": {
+      "id": 1308,
+      "type": "ARCHER",
+      "name": "투검병",
+      "cost": {
+        "gold": 150,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 50,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1.5,
+        "SIEGE": 0.8,
+        "CAVALRY_HEAVY": 1.1
+      },
+      "defenses": {
+        "FOOTMAN": 0.7,
+        "CAVALRY": 0.5,
+        "SIEGE": 1.2,
+        "CAVALRY_HEAVY": 0.9
+      },
+      "description": [
+        "중피갑과 다량의 투척검을 사용하는 정예 근접/투척 복합 병종입니다.",
+        "근접전 능력도 준수하며, 투척검은 높은 관통 피해를 입힙니다. 기동성이 좋은 기병에게 효과적으로 대응할 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2500
+        }
+      ]
+    },
+    "1309": {
+      "id": 1309,
+      "type": "ARCHER",
+      "name": "강노대",
+      "cost": {
+        "gold": 200,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 190,
+        "defenseRange": 11
+      },
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.6,
+        "CAVALRY_ARMOR": 1.4,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "FOOTMAN_HEAVY": 0.5,
+        "CAVALRY_ARMOR": 0.6,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "최정예 노병대입니다. 평철갑과 고급 노를 사용하며, 사격 통제 능력이 극대화되었습니다.",
+        "매우 긴 사거리에서 압도적인 관통 피해를 가하여 적의 고티어 중장갑 부대를 섬멸하는 데 사용됩니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 3500
+        }
+      ]
+    },
+    "1401": {
+      "id": 1401,
+      "type": "CAVALRY",
+      "name": "경기병",
+      "cost": {
+        "gold": 120,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 7,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "ARCHER": 1.5,
+        "SIEGE": 1.3,
+        "FOOTMAN": 1.1,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "SIEGE": 0.9,
+        "FOOTMAN": 0.9,
+        "SPEARMAN": 2.0
+      },
+      "description": [
+        "경피갑과 도를 사용하는 경급 기병입니다. 기병용 등나무 방패를 지녔습니다.",
+        "빠른 기동력과 높은 돌격 보너스가 특징입니다. 치고 빠지기에 능하며, 창병에게 돌격 피해를 반사당하므로 정면 돌격을 피해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 500
+        }
+      ]
+    },
+    "1402": {
+      "id": 1402,
+      "type": "CAVALRY",
+      "name": "용기병",
+      "cost": {
+        "gold": 180,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SIEGE": 0.8,
+        "FOOTMAN": 0.8,
+        "SPEARMAN": 1.8
+      },
+      "description": [
+        "평피갑과 검, 기병용 박모양 방패로 무장한 정규 기병입니다.",
+        "여전히 빠른 기동력과 강력한 돌격력을 자랑합니다. 창병을 피해 적의 진형을 붕괴시키고 주요 병종을 노리는 데 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1403": {
+      "id": 1403,
+      "type": "CAVALRY",
+      "name": "극기병",
+      "cost": {
+        "gold": 220,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "ARCHER": 1.6,
+        "SIEGE": 1.4,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.7,
+        "CAVALRY_LIGHT": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "SIEGE": 0.9,
+        "FOOTMAN": 0.7,
+        "SPEARMAN": 1.5,
+        "CAVALRY_LIGHT": 0.8
+      },
+      "description": [
+        "중피갑과 극, 기병용 철테 방패 1로 무장한 정예 기병입니다.",
+        "극의 다용도성으로 인해 다른 기병과 보병 모두에게 효과적인 돌격과 전투를 펼칠 수 있습니다. 장시간 근접전은 피해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2500
+        }
+      ]
+    },
+    "1404": {
+      "id": 1404,
+      "type": "CAVALRY",
+      "name": "철갑기병",
+      "cost": {
+        "gold": 280,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 18,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.4,
+        "SPEARMAN": 0.8,
+        "CAVALRY": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SIEGE": 0.7,
+        "FOOTMAN": 0.6,
+        "SPEARMAN": 1.3,
+        "CAVALRY": 0.8
+      },
+      "description": [
+        "강철갑과 구겸도, 기병용 철테 방패 2로 무장한 최정예 중장 기병입니다. 말에게도 중장 마갑을 입혔습니다.",
+        "극강의 방어력과 파괴적인 돌격력을 자랑합니다. 적의 전열을 꿰뚫고 주요 장수를 노리는 데 최적화되어 있습니다. 느린 속도와 높은 피로도에 주의해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 3500
+        }
+      ]
+    },
+    "1405": {
+      "id": 1405,
+      "type": "CAVALRY",
+      "name": "서량철기",
+      "cost": {
+        "gold": 250,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 20,
+        "magic": 0,
+        "attackRange": 11,
+        "defenseRange": 13
+      },
+      "attacks": {
+        "ARCHER": 1.9,
+        "SIEGE": 1.7,
+        "FOOTMAN": 1.5,
+        "SPEARMAN": 0.7,
+        "CAVALRY": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SIEGE": 0.8,
+        "FOOTMAN": 0.7,
+        "SPEARMAN": 1.5,
+        "CAVALRY": 0.7
+      },
+      "description": [
+        "서량 지역에서 모집 가능한 최정예 특수 기병입니다. 평철갑과 구겸도, 기병용 철테 방패 2로 무장합니다.",
+        "중원 최강의 돌격 기병으로, 적에게 막대한 돌격 피해를 입히는 데 특화되어 있습니다. 빠른 기동력으로 전장을 교란합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "서량"
+        }
+      ]
+    },
+    "1406": {
+      "id": 1406,
+      "type": "CAVALRY",
+      "name": "호표기",
+      "cost": {
+        "gold": 300,
+        "rice": 220
+      },
+      "stats": {
+        "tech": 9,
+        "offense": 22,
+        "magic": 0,
+        "attackRange": 12,
+        "defenseRange": 16
+      },
+      "attacks": {
+        "ARCHER": 2.0,
+        "SIEGE": 1.8,
+        "FOOTMAN": 1.6,
+        "SPEARMAN": 0.9,
+        "CAVALRY": 1.4
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SIEGE": 0.7,
+        "FOOTMAN": 0.6,
+        "SPEARMAN": 1.2,
+        "CAVALRY": 0.6
+      },
+      "description": [
+        "병가 사상을 가진 국가만 모집 가능한 최정예 특수 기병입니다. 강철갑과 구겸도, 기병용 철테 방패 2로 무장합니다.",
+        "최강의 공격력과 방어력을 겸비한 기병으로, 어떠한 적이라도 돌파할 수 있는 강력한 충격 병과입니다. 느린 기동력과 높은 피로도를 고려하여 운용해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "militarism"
+        }
+      ]
+    },
+    "1407": {
+      "id": 1407,
+      "type": "CAVALRY",
+      "name": "오환돌기",
+      "cost": {
+        "gold": 190,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SIEGE": 0.8,
+        "FOOTMAN": 0.8,
+        "SPEARMAN": 1.8
+      },
+      "description": [
+        "오환(烏桓)의 특수 기병입니다. 경피갑과 창, 활을 함께 사용합니다.",
+        "매우 빠른 기동력과 사격 능력을 갖춰 치고 빠지는 전술에 능합니다. 기마 사격으로 적을 견제하고 돌격으로 마무리합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "오환"
+        }
+      ]
+    },
+    "1408": {
+      "id": 1408,
+      "type": "CAVALRY",
+      "name": "선비기병",
+      "cost": {
+        "gold": 230,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 17,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "ARCHER": 1.9,
+        "SIEGE": 1.7,
+        "FOOTMAN": 1.4,
+        "SPEARMAN": 0.7,
+        "CAVALRY": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SIEGE": 0.7,
+        "FOOTMAN": 0.7,
+        "SPEARMAN": 1.5,
+        "CAVALRY": 0.7
+      },
+      "description": [
+        "선비(鮮卑)의 최정예 기병입니다. 평철갑과 장도, 활을 사용합니다.",
+        "오환돌기보다 중장갑이며 더욱 강력한 근접 전투력과 돌격력을 자랑합니다. 기마 사격 능력도 여전하여 다재다능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "선비"
+        }
+      ]
+    },
+    "1501": {
+      "id": 1501,
+      "type": "MIXED",
+      "name": "표창병",
+      "cost": {
+        "gold": 100,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 40,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1.2,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.8,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "경피갑을 착용하며 투창과 단병기를 사용하는 경급 복합 병종입니다.",
+        "근접전과 원거리 공격이 모두 가능하나, 보유 탄약량이 적어 지속력은 떨어집니다. 투창은 높은 관통 피해를 가합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 500
+        }
+      ]
+    },
+    "1502": {
+      "id": 1502,
+      "type": "MIXED",
+      "name": "월도병",
+      "cost": {
+        "gold": 150,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 120,
+        "defenseRange": 11
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.0,
+        "ARCHER": 0.9
+      },
+      "defenses": {
+        "FOOTMAN": 0.8,
+        "CAVALRY": 1.0,
+        "ARCHER": 1.1
+      },
+      "description": [
+        "평피갑을 착용하며 활과 도를 사용하는 정규 복합 병종입니다.",
+        "궁병과 보병의 역할을 겸비하며, 전장에서 유연한 대응이 가능합니다. 하지만 전문 병종에 비해 숙련도는 떨어집니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1503": {
+      "id": 1503,
+      "type": "MIXED",
+      "name": "투석병",
+      "cost": {
+        "gold": 80,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 7,
+        "magic": 0,
+        "attackRange": 80,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 0.9,
+        "ARCHER": 1.0
+      },
+      "defenses": {
+        "FOOTMAN": 1.0,
+        "CAVALRY": 1.1,
+        "ARCHER": 0.9
+      },
+      "description": [
+        "의복을 착용하며 투석기(슬링)를 사용하는 경급 원거리 병종입니다.",
+        "빠른 공격 속도와 낮은 관통 피해를 가하며, 짧은 사거리에서 적의 진형을 교란하는 데 사용됩니다. 근접전 능력은 거의 없습니다."
+      ],
+      "constraints": []
+    },
+    "1504": {
+      "id": 1504,
+      "type": "MIXED",
+      "name": "취사병",
+      "cost": {
+        "gold": 120,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 30,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.1,
+        "ARCHER": 0.9
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 1.0,
+        "ARCHER": 1.1
+      },
+      "description": [
+        "남만 지역(남중)에서 모집 가능한 정규 복합 병종입니다. 중등갑을 착용하며 화살총과 단병기를 사용합니다.",
+        "맹독을 바른 독침으로 적에게 지속적인 피해를 입힙니다. 근접전 능력도 어느 정도 갖췄으나, 화염에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "남중"
+        }
+      ]
+    },
+    "1601": {
+      "id": 1601,
+      "type": "SIEGE",
+      "name": "투석차",
+      "cost": {
+        "gold": 200,
+        "rice": 300
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 20,
+        "magic": 0,
+        "attackRange": 300,
+        "defenseRange": 5
+      },
+      "attacks": {
+        "CASTLE": 2.0,
+        "FOOTMAN": 1.5,
+        "ARCHER": 1.5,
+        "CAVALRY": 0.5
+      },
+      "defenses": {
+        "CASTLE": 0.5,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.8,
+        "CAVALRY": 2.0
+      },
+      "description": [
+        "중장갑을 갖춘 공성 병기입니다. 멀리서 거대한 돌덩이를 발사하여 적의 성벽과 병력을 파괴합니다.",
+        "매우 느리고 근접전에 취약하며 기병에게 쉽게 무력화됩니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1602": {
+      "id": 1602,
+      "type": "SIEGE",
+      "name": "강노차",
+      "cost": {
+        "gold": 250,
+        "rice": 350
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 25,
+        "magic": 0,
+        "attackRange": 350,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "CASTLE": 1.5,
+        "FOOTMAN_HEAVY": 1.8,
+        "ARCHER_ARMOR": 1.8,
+        "CAVALRY_ARMOR": 1.5
+      },
+      "defenses": {
+        "CASTLE": 0.8,
+        "FOOTMAN_HEAVY": 0.7,
+        "ARCHER_ARMOR": 0.7,
+        "CAVALRY_ARMOR": 0.8
+      },
+      "description": [
+        "강화된 중장갑을 갖춘 공성 병기입니다. 거대한 화살을 발사하여 적의 중장갑 부대를 효과적으로 제압합니다.",
+        "투석차보다 빠르지만, 여전히 근접전에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 3000
+        }
+      ]
+    },
+    "1701": {
+      "id": 1701,
+      "type": "WIZARD",
+      "name": "책사",
+      "cost": {
+        "gold": 100,
+        "rice": 50
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 5,
+        "magic": 0.7,
+        "attackRange": 100,
+        "defenseRange": 5
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1.1,
+        "ARCHER": 1.1,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.9,
+        "ARCHER": 0.9,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "계략에 능통한 참모진입니다. 사상전을 통해 적의 사기를 꺾거나 혼란을 유발합니다.",
+        "병종 상성에 관계없이 적 부대에 피해를 줄 수 있으나, 근접전에는 매우 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1702": {
+      "id": 1702,
+      "type": "WIZARD",
+      "name": "도사",
+      "cost": {
+        "gold": 150,
+        "rice": 80
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 8,
+        "magic": 0.8,
+        "attackRange": 120,
+        "defenseRange": 6
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.2,
+        "SIEGE": 1.3
+      },
+      "defenses": {
+        "FOOTMAN": 0.8,
+        "CAVALRY": 0.8,
+        "SIEGE": 0.7
+      },
+      "description": [
+        "도가 사상을 가진 국가만 모집 가능한 정예 책사입니다. 자연의 이치를 이용한 계략에 능통합니다.",
+        "특히 병가(militarism) 사상의 유닛에게 추가 피해를 입힐 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "taoism"
+        }
+      ]
+    },
+    "1703": {
+      "id": 1703,
+      "type": "WIZARD",
+      "name": "천사군",
+      "cost": {
+        "gold": 80,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 6,
+        "magic": 0.9,
+        "attackRange": 100,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.1
+      },
+      "defenses": {
+        "SIEGE": 0.5,
+        "FOOTMAN": 0.9
+      },
+      "description": [
+        "오두미도 사상을 가진 국가만 모집 가능한 특수 책사입니다. 종교적 광신으로 적의 사기를 쉽게 꺾습니다.",
+        "전투 능력은 낮으나, 계략의 성공률이 높고 쌀 소모량이 적어 대규모 운용에 적합합니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "taoism_religious"
+        }
+      ]
+    },
+    "1117": {
+    "id": 1117,
+    "type": "FOOTMAN",
+    "name": "묵협",
+    "cost": {
+      "gold": 160,
+      "rice": 200
+    },
+    "stats": {
+      "tech": 5,
+      "offense": 14,
+      "magic": 0,
+      "attackRange": 9,
+      "defenseRange": 16
+    },
+    "attacks": {
+      "ARCHER": 1.3,
+      "SIEGE": 1.1,
+      "FOOTMAN_HEAVY": 1.2,
+      "WIZARD": 1.5
+    },
+    "defenses": {
+      "ARCHER": 0.7,
+      "SIEGE": 0.8,
+      "FOOTMAN_HEAVY": 0.8,
+      "WIZARD": 0.6
+    },
+    "description": [
+      "묵가 사상을 가진 국가만 모집 가능한 정예 방어 보병입니다. 중철갑과 견고한 방패, 도를 사용합니다.",
+      "'겸애'와 '비공'의 정신으로 무장하여 적의 원거리 공격과 책략 유닛(WIZARD)에 대해 높은 방어력을 가집니다."
+    ],
+    "constraints": [
+      {
+        "type": "country_type_unlock",
+        "value": "mohism"
+      }
+    ]
+  },
+  "1310": {
+    "id": 1310,
+    "type": "ARCHER",
+    "name": "진국노병대",
+    "cost": {
+      "gold": 190,
+      "rice": 180
+    },
+    "stats": {
+      "tech": 7,
+      "offense": 13,
+      "magic": 0,
+      "attackRange": 175,
+      "defenseRange": 10
+    },
+    "attacks": {
+      "FOOTMAN_HEAVY": 1.4,
+      "CAVALRY_ARMOR": 1.3,
+      "SIEGE": 0.9,
+      "FOOTMAN": 1.2
+    },
+    "defenses": {
+      "FOOTMAN_HEAVY": 0.6,
+      "CAVALRY_ARMOR": 0.7,
+      "SIEGE": 1.1,
+      "FOOTMAN": 1.0
+    },
+    "description": [
+      "삼국시대 진왕 유총의 근거지에서 모집 가능한 정예 노병입니다. 평철갑과 고급 노를 사용하여 대규모 집중 사격을 가합니다.",
+      "높은 관통 피해로 적의 중장갑 부대에 치명적이며, 대규모 운용 시 화력 집중 능력이 극대화됩니다."
+    ],
+    "constraints": [
+      {
+        "type": "reqCities",
+        "value": "진양"
+      }
+    ]
+  }
+  }
+}

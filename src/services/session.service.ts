@@ -26,14 +26,35 @@ export class SessionService {
   /**
    * JSON 파일로부터 세션 생성
    * 
-   * @param configPath - 세션 설정 JSON 파일 경로
+   * @param scenarioName - 시나리오 이름 (폴더명, 예: 'sangokushi')
+   * @param customSessionId - 커스텀 세션 ID (선택, 없으면 시나리오명_default 사용)
    * @returns 생성된 세션
    */
-  static async createFromConfig(configPath: string): Promise<any> {
+  static async createFromScenario(scenarioName: string, customSessionId?: string): Promise<any> {
+    const configPath = path.join(__dirname, `../../config/scenarios/${scenarioName}/game-config.json`);
+    
+    if (!fs.existsSync(configPath)) {
+      throw new NotFoundError(`시나리오를 찾을 수 없습니다: ${scenarioName}`, { scenarioName });
+    }
+    
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     
-    // 세션 생성 (Repository 사용)
-    const session = await sessionRepository.create(config);
+    // session_id 결정: customSessionId > 환경변수 > 시나리오명_default
+    const sessionId = customSessionId || `${scenarioName}_default`;
+    
+    // 기존 세션이 있으면 에러
+    const existing = await sessionRepository.exists(sessionId);
+    if (existing) {
+      throw new ConflictError(`이미 존재하는 세션 ID입니다: ${sessionId}`, { sessionId });
+    }
+    
+    // 세션 생성 (config의 session_id는 무시하고 새로운 ID 사용)
+    const session = await sessionRepository.create({
+      ...config,
+      session_id: sessionId,
+      template_id: scenarioName,
+      status: 'waiting'
+    });
     
     // 캐시 무효화
     await cacheService.invalidate(
@@ -42,32 +63,12 @@ export class SessionService {
     );
     
     logger.info('세션 생성 완료', {
+      scenarioName,
       sessionId: session.session_id,
       sessionName: session.name,
       gameMode: session.game_mode,
-      resourceCount: Object.keys(config.resources || {}).length,
-      attributeCount: Object.keys(config.attributes || {}).length,
-      commandCount: Object.keys(config.commands || {}).length,
       cityTemplateCount: Object.keys(config.cities || {}).length
     });
-    
-    // DB 저장 검증
-    const dbCommandCount = Object.keys(session.commands || {}).length;
-    const dbCityCount = Object.keys(session.cities || {}).length;
-    
-    if (dbCommandCount !== Object.keys(config.commands || {}).length) {
-      logger.warn('커맨드 저장 불일치', {
-        expected: Object.keys(config.commands || {}).length,
-        actual: dbCommandCount
-      });
-    }
-    
-    if (dbCityCount !== Object.keys(config.cities || {}).length) {
-      logger.warn('도시 템플릿 저장 불일치', {
-        expected: Object.keys(config.cities || {}).length,
-        actual: dbCityCount
-      });
-    }
     
     return session;
   }
@@ -75,11 +76,11 @@ export class SessionService {
   /**
    * 기본 삼국지 세션 생성
    * 
+   * @param sessionId - 세션 ID (선택, 없으면 sangokushi_default 사용)
    * @returns 생성된 세션
    */
-  static async createDefaultSangokushi(): Promise<any> {
-    const configPath = path.join(__dirname, '../../config/session-sangokushi.json');
-    return this.createFromConfig(configPath);
+  static async createDefaultSangokushi(sessionId?: string): Promise<any> {
+    return this.createFromScenario('sangokushi', sessionId);
   }
   
   /**
@@ -110,27 +111,27 @@ export class SessionService {
   }
   
   /**
-   * 템플릿 기반으로 새 세션 인스턴스 생성
+   * 시나리오 기반으로 새 세션 인스턴스 생성
    * 
-   * @param templateId - 템플릿 ID (예: 'sangokushi')
+   * @param scenarioName - 시나리오 이름 (폴더명, 예: 'sangokushi')
    * @param sessionId - 새 세션 ID (예: 'sangokushi_room1')
    * @param sessionName - 세션 이름 (예: '삼국지 방 1')
    * @param autoInit - 자동 초기화 여부 (기본값: true)
    * @returns 생성된 세션
-   * @throws NotFoundError - 템플릿을 찾을 수 없는 경우
+   * @throws NotFoundError - 시나리오를 찾을 수 없는 경우
    * @throws ConflictError - 이미 존재하는 세션 ID인 경우
    */
   static async createSessionFromTemplate(
-    templateId: string,
+    scenarioName: string,
     sessionId: string,
     sessionName: string,
     autoInit: boolean = true
   ) {
-    // 1. 템플릿 설정 파일 로드
-    const configPath = path.join(__dirname, `../../config/session-${templateId}.json`);
+    // 1. 시나리오 설정 파일 로드
+    const configPath = path.join(__dirname, `../../config/scenarios/${scenarioName}/game-config.json`);
     
     if (!fs.existsSync(configPath)) {
-      throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${templateId}`, { templateId });
+      throw new NotFoundError(`시나리오를 찾을 수 없습니다: ${scenarioName}`, { scenarioName });
     }
     
     // 2. 기존 세션이 있으면 에러
@@ -139,7 +140,7 @@ export class SessionService {
       throw new ConflictError(`이미 존재하는 세션 ID입니다: ${sessionId}`, { sessionId });
     }
     
-    // 3. 템플릿 설정 로드
+    // 3. 시나리오 설정 로드
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     
     // 4. 새 세션 생성
@@ -147,7 +148,7 @@ export class SessionService {
       ...config,
       session_id: sessionId,
       name: sessionName,
-      template_id: templateId,
+      template_id: scenarioName,
       status: 'waiting'
     });
     
@@ -160,7 +161,7 @@ export class SessionService {
     logger.info('세션 인스턴스 생성 완료', {
       sessionId,
       sessionName,
-      templateId,
+      scenarioName,
       gameMode: session.game_mode
     });
     
@@ -336,42 +337,44 @@ export class SessionService {
   }
   
   /**
-   * 템플릿으로부터 세션 설정 리로드
+   * 시나리오로부터 세션 설정 리로드
    * 
-   * 게임 데이터는 유지하고 설정만 템플릿 기준으로 다시 로드
+   * 게임 데이터는 유지하고 설정만 시나리오 기준으로 다시 로드
    * 
    * @param sessionId 세션 ID
-   * @param templateId 템플릿 ID (생략시 기존 template_id 사용)
+   * @param scenarioName 시나리오 이름 (생략시 기존 template_id 사용)
    */
-  static async reloadSessionConfig(sessionId: string, templateId?: string) {
+  static async reloadSessionConfig(sessionId: string, scenarioName?: string) {
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
-      throw new Error(`세션을 찾을 수 없습니다: ${sessionId}`);
+      throw new NotFoundError(`세션을 찾을 수 없습니다: ${sessionId}`, { sessionId });
     }
     
-    // 템플릿 ID 결정
-    const targetTemplateId = templateId || session.template_id;
-    if (!targetTemplateId) {
-      throw new Error('템플릿 ID를 지정해야 합니다 (세션에 template_id가 없음)');
+    // 시나리오 이름 결정
+    const targetScenario = scenarioName || session.template_id;
+    if (!targetScenario) {
+      throw new Error('시나리오 이름을 지정해야 합니다 (세션에 template_id가 없음)');
     }
     
-    // 템플릿 파일 로드
-    const configPath = path.join(__dirname, `../../config/session-${targetTemplateId}.json`);
+    // 시나리오 파일 로드
+    const configPath = path.join(__dirname, `../../config/scenarios/${targetScenario}/game-config.json`);
     if (!fs.existsSync(configPath)) {
-      throw new Error(`템플릿을 찾을 수 없습니다: ${targetTemplateId}`);
+      throw new NotFoundError(`시나리오를 찾을 수 없습니다: ${targetScenario}`, { scenarioName: targetScenario });
     }
     
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     
-    // console.log(`🔄 세션 설정 리로드: ${sessionId}`);
-    // console.log(`   - 템플릿: ${targetTemplateId}`);
+    logger.info('세션 설정 리로드', {
+      sessionId,
+      scenarioName: targetScenario
+    });
     
-    // 세션 ID와 이름은 유지, 나머지는 템플릿에서 로드
+    // 세션 ID와 이름은 유지, 나머지는 시나리오에서 로드
     const updateFields = {
       ...config,
       session_id: sessionId,  // 기존 ID 유지
       name: session.name,      // 기존 이름 유지
-      template_id: targetTemplateId,
+      template_id: targetScenario,
       status: session.status,  // 기존 상태 유지
       started_at: session.started_at,
       finished_at: session.finished_at
@@ -380,10 +383,16 @@ export class SessionService {
     // DB 업데이트
     await sessionRepository.updateBySessionId(sessionId, updateFields);
     
-    // console.log(`   ✅ 설정 리로드 완료`);
-    // console.log(`   - 자원: ${Object.keys(config.resources || {}).length}개`);
-    // console.log(`   - 커맨드: ${Object.keys(config.commands || {}).length}개`);
-    // console.log(`   - 도시 템플릿: ${Object.keys(config.cities || {}).length}개`);
+    // 캐시 무효화
+    await cacheService.invalidate(
+      [`session:byId:${sessionId}`],
+      ['sessions:*']
+    );
+    
+    logger.info('설정 리로드 완료', {
+      sessionId,
+      cityCount: Object.keys(config.cities || {}).length
+    });
     
     return await sessionRepository.findBySessionId(sessionId);
   }
@@ -415,14 +424,27 @@ export class SessionService {
   }
   
   /**
-   * 사용 가능한 템플릿 목록
+   * 사용 가능한 시나리오 목록
+   * 
+   * config/scenarios 폴더의 모든 하위 폴더를 스캔하여
+   * game-config.json이 있는 시나리오만 반환
    */
   static getAvailableTemplates(): string[] {
-    const configDir = path.join(__dirname, '../../config');
-    const files = fs.readdirSync(configDir);
+    const scenariosDir = path.join(__dirname, '../../config/scenarios');
     
-    return files
-      .filter(f => f.startsWith('session-') && f.endsWith('.json'))
-      .map(f => f.replace('session-', '').replace('.json', ''));
+    if (!fs.existsSync(scenariosDir)) {
+      logger.warn('시나리오 디렉토리가 없습니다', { scenariosDir });
+      return [];
+    }
+    
+    const folders = fs.readdirSync(scenariosDir, { withFileTypes: true });
+    
+    return folders
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => dirent.name)
+      .filter(folderName => {
+        const configPath = path.join(scenariosDir, folderName, 'game-config.json');
+        return fs.existsSync(configPath);
+      });
   }
 }

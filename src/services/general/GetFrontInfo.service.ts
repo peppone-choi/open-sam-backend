@@ -5,6 +5,7 @@ import { City } from '../../models/city.model';
 import { Nation } from '../../models/nation.model';
 import { GeneralRecord } from '../../models/general_record.model';
 import { WorldHistory } from '../../models/world_history.model';
+import { getOfficerTitle, getDedicationFullName, getHonorLevel } from '../../utils/rank-system';
 
 /**
  * GetFrontInfo Service  
@@ -56,7 +57,8 @@ export class GetFrontInfoService {
         : await this.generateDummyNationInfo();
 
       // 4. 장수 정보 생성
-      const generalInfo = await this.generateGeneralInfo(sessionId, general, nationId);
+      const nationLevel = nationInfo.level || 0;
+      const generalInfo = await this.generateGeneralInfo(sessionId, general, nationId, nationLevel);
 
       // 5. 도시 정보 생성
       const cityInfo = cityId
@@ -276,7 +278,8 @@ export class GetFrontInfoService {
   private static async generateGeneralInfo(
     sessionId: string,
     general: any,
-    nationId: number
+    nationId: number,
+    nationLevel: number = 0
   ) {
     const data = general.data || {};
 
@@ -303,7 +306,7 @@ export class GetFrontInfoService {
       belong: data.belong || 0,
       refreshScoreTotal: 0,
       officerLevel: data.officer_level || 1,
-      officerLevelText: this.getOfficerLevelText(data.officer_level || 1),
+      officerLevelText: this.getOfficerLevelText(data.officer_level || 1, nationLevel),
       lbonus: 0,
       ownerName: data.owner_name || null,
       honorText: this.getHonor(data.experience || 0),
@@ -473,29 +476,16 @@ export class GetFrontInfoService {
     };
   }
 
-  // 헬퍼 함수들
-  private static getOfficerLevelText(level: number): string {
-    const levels: Record<number, string> = {
-      12: '군주', 11: '태사', 10: '대도독', 9: '도독',
-      8: '대장군', 7: '장군', 6: '집금오', 5: '장수',
-      4: '태수', 3: '도위', 2: '현령', 1: '백신'
-    };
-    return levels[level] || '백신';
+  // 헬퍼 함수들 (rank-system.ts 유틸리티 사용)
+  private static getOfficerLevelText(level: number, nationLevel: number = 0): string {
+    return getOfficerTitle(level, nationLevel);
   }
 
   private static getHonor(experience: number): string {
-    if (experience >= 10000) return '명장';
-    if (experience >= 5000) return '용장';
-    if (experience >= 2000) return '맹장';
-    if (experience >= 1000) return '장수';
-    return '병졸';
+    return getHonorLevel(experience);
   }
 
   private static getDed(dedication: number): string {
-    if (dedication >= 10000) return '충신';
-    if (dedication >= 5000) return '충복';
-    if (dedication >= 2000) return '충의';
-    if (dedication >= 1000) return '충성';
-    return '무명';
+    return getDedicationFullName(dedication);
   }
 }

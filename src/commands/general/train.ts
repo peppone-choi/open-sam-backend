@@ -1,6 +1,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { getMilitaryRankTrainBonus } from '../../utils/rank-system';
 
 /**
  * 단련 커맨드
@@ -84,9 +85,16 @@ export class TrainCommand extends GeneralCommand {
     ]);
 
     // 숙련도 증가량 계산
-    const score = Math.round(
+    let score = Math.round(
       general.getVar('crew') * general.getVar('train') * general.getVar('atmos') / 20 / 10000 * multiplier
     );
+
+    // 이십등작 훈련 보너스 적용
+    const militaryRank = general?.data?.military_rank || 0;
+    const trainBonus = getMilitaryRankTrainBonus(militaryRank);
+    if (trainBonus > 0) {
+      score = Math.round(score * (1 + trainBonus / 100));
+    }
 
     const logger = general.getLogger();
     const armTypeText = '병종'; // TODO: GameUnitConst.allType

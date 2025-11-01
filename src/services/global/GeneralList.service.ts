@@ -1,6 +1,7 @@
 import { General } from '../../models/general.model';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
+import { getOfficerTitle, getDedicationShortName } from '../../utils/rank-system';
 
 /**
  * GeneralList Service
@@ -165,39 +166,13 @@ export class GeneralListService {
     return honorTitles[level] || honorTitles[0];
   }
 
-  // Helper function: Get dedication level text
+  // Helper function: Get dedication level text (rank-system.ts 유틸리티 사용)
   private static getDed(dedication: number): string {
-    if (dedication < 100) return '하하';
-    if (dedication < 300) return '하중';
-    if (dedication < 600) return '하상';
-    if (dedication < 1000) return '중하';
-    if (dedication < 1500) return '중중';
-    if (dedication < 2100) return '중상';
-    if (dedication < 2800) return '상하';
-    if (dedication < 3600) return '상중';
-    if (dedication < 4500) return '상상';
-    if (dedication < 5500) return '특상';
-    return '최상';
+    return getDedicationShortName(dedication);
   }
 
-  // Helper function: Get officer level text
+  // Helper function: Get officer level text (rank-system.ts 유틸리티 사용)
   private static getOfficerLevelText(officerLevel: number, nationLevel: number): string {
-    if (officerLevel < 5) return '평민';
-    if (officerLevel < 10) return '하급관리';
-    if (officerLevel < 15) return '중급관리';
-    if (officerLevel < 20) return '상급관리';
-    if (officerLevel < 25) return '부장';
-    if (officerLevel < 30) return '장군';
-    if (officerLevel < 35) return '대장군';
-    if (officerLevel < 40) return '장상';
-    if (officerLevel < 45) return '원로';
-    
-    // Special titles for high level officers
-    if (nationLevel >= 5) {
-      if (officerLevel >= 50) return '재상';
-      if (officerLevel >= 45) return '삼공';
-    }
-    
-    return '중신';
+    return getOfficerTitle(officerLevel, nationLevel);
   }
 }

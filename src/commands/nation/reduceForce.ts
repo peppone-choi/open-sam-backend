@@ -1,6 +1,7 @@
 import { NationCommand } from '../base/NationCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/constraint-helper';
 
 export class ReduceForceCommand extends NationCommand {
   protected static actionName = '감축';
@@ -31,8 +32,16 @@ export class ReduceForceCommand extends NationCommand {
 
     await this.setDestCity(this.nation.capital);
 
-    // TODO: ConstraintHelper - OccupiedCity, BeChief, SuppliedCity, ReqDestCityValue
-    this.fullConditionConstraints = [];
+    this.fullConditionConstraints = [
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.BeChief(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqDestCityValue('level', '규모', '>', 0, '더이상 감축할 수 없습니다.'),
+      ConstraintHelper.ReqDestCityValue('level', '규모', '!=', 2, '수에서는 불가능합니다.'),
+      ConstraintHelper.ReqDestCityValue('level', '규모', '!=', 3, '진에서는 불가능합니다.'),
+      ConstraintHelper.ReqDestCityValue('level', '규모', '!=', 4, '관에서는 불가능합니다.'),
+      ConstraintHelper.ReqDestCityValue('level', '규모', '!=', 5, '이에서는 불가능합니다.')
+    ];
   }
 
   public getCommandDetailTitle(): string {

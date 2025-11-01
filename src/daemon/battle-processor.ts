@@ -1,5 +1,6 @@
 import { Battle, BattleStatus, BattlePhase } from '../models/battle.model';
 import { Session } from '../models/session.model';
+import { promoteMilitaryRank } from '../utils/rank-system';
 
 let io: any;
 try {
@@ -312,6 +313,11 @@ async function finishBattle(battle: any, winner: string | undefined) {
   battle.winner = winner ?? 'draw';
   battle.completedAt = new Date();
   
+  // 이십등작 승급 처리
+  if (winner && winner !== 'draw') {
+    await processMilitaryRankPromotions(battle, winner);
+  }
+  
   await battle.save();
 
   activeBattleTimers.delete(battle.battleId);
@@ -326,6 +332,38 @@ async function finishBattle(battle: any, winner: string | undefined) {
     duration: battle.currentTurn,
     message: `🏆 ${winner === 'attacker' ? '공격군' : winner === 'defender' ? '수비군' : '무승부'} 승리!`
   });
+}
+
+async function processMilitaryRankPromotions(battle: any, winner: string) {
+  const winnerUnits = winner === 'attacker' ? battle.attackerUnits : battle.defenderUnits;
+  const loserUnits = winner === 'attacker' ? battle.defenderUnits : battle.attackerUnits;
+  
+  const totalEnemyKilled = loserUnits.reduce((sum: number, u: any) => {
+    const initialTroops = u.maxTroops || u.troops;
+    const casualties = initialTroops - u.troops;
+    return sum + casualties;
+  }, 0);
+  
+  // 각 승리한 장수의 이십등작 승급 처리
+  for (const unit of winnerUnits) {
+    if (!unit.generalId) continue;
+    
+    const General = require('../models/general.model').General;
+    const general = await General.findOne({ no: unit.generalId });
+    if (!general) continue;
+    
+    const currentRank = general.data?.military_rank || 0;
+    const unitKills = Math.floor(totalEnemyKilled / winnerUnits.length); // 균등 분배
+    const newRank = promoteMilitaryRank(currentRank, unitKills, true);
+    
+    if (newRank > currentRank) {
+      general.data = general.data || {};
+      general.data.military_rank = newRank;
+      await general.save();
+      
+      console.log(`⭐ [${general.name}] 이십등작 승급: ${currentRank} → ${newRank}`);
+    }
+  }
 }
 
 async function startNextTurn(battle: any, timer: BattleTimer) {

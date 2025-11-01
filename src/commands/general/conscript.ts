@@ -2,6 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { GameConst } from '../../constants/GameConst';
+import { getMilitaryRankRecruitDiscount, getMilitaryRankCrewBonus } from '../../utils/rank-system';
 
 /**
  * 징병 커맨드
@@ -78,6 +79,11 @@ export class ConscriptCommand extends GeneralCommand {
     const currCrewType = general.getCrewTypeObj();
     let maxCrew = leadership * 100;
 
+    // 이십등작 병력 상한 보너스 적용
+    const militaryRank = general?.data?.military_rank || 0;
+    const crewBonus = getMilitaryRankCrewBonus(militaryRank);
+    maxCrew += crewBonus;
+
     // TODO: GameUnitConst.byID
     const reqCrewType = { id: this.arg.crewType, name: '병종' }; // placeholder
 
@@ -126,6 +132,15 @@ export class ConscriptCommand extends GeneralCommand {
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     reqGold *= costOffset;
     let reqRice = this.maxCrew / 100;
+
+    // 이십등작 모병 비용 할인 적용
+    const general = this.generalObj;
+    const militaryRank = general?.data?.military_rank || 0;
+    const discount = getMilitaryRankRecruitDiscount(militaryRank);
+    if (discount > 0) {
+      reqGold = Math.floor(reqGold * (1 - discount / 100));
+      reqRice = Math.floor(reqRice * (1 - discount / 100));
+    }
 
     reqGold = Math.round(reqGold);
     reqRice = Math.round(reqRice);
