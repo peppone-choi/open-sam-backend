@@ -110,7 +110,84 @@ export class SessionService {
   }
   
   /**
-   * 템플릿 기반으로 새 세션 인스턴스 생성
+   * 시나리오 기반으로 새 세션 생성 (권장)
+   * 
+   * config/scenarios/{scenarioId}/ 디렉토리에서 데이터를 로드합니다.
+   * 
+   * @param scenarioId - 시나리오 ID (예: 'sangokushi')
+   * @param sessionId - 새 세션 ID (예: 'sangokushi_room1')
+   * @param sessionName - 세션 이름 (예: '삼국지 방 1')
+   * @param autoInit - 자동 초기화 여부 (기본값: true)
+   * @returns 생성된 세션
+   * @throws NotFoundError - 시나리오를 찾을 수 없는 경우
+   * @throws ConflictError - 이미 존재하는 세션 ID인 경우
+   */
+  static async createSessionFromScenario(
+    scenarioId: string,
+    sessionId: string,
+    sessionName: string,
+    autoInit: boolean = true
+  ) {
+    // 1. 시나리오 경로 확인
+    const scenarioPath = path.join(__dirname, `../../config/scenarios/${scenarioId}`);
+    const scenarioFile = path.join(scenarioPath, 'scenario.json');
+    
+    if (!fs.existsSync(scenarioFile)) {
+      throw new NotFoundError(`시나리오를 찾을 수 없습니다: ${scenarioId}`, { scenarioId });
+    }
+    
+    // 2. 기존 세션이 있으면 에러
+    const existing = await sessionRepository.exists(sessionId);
+    if (existing) {
+      throw new ConflictError(`이미 존재하는 세션 ID입니다: ${sessionId}`, { sessionId });
+    }
+    
+    // 3. 시나리오 설정 로드
+    const scenarioConfig = JSON.parse(fs.readFileSync(scenarioFile, 'utf-8'));
+    
+    // 4. 새 세션 생성
+    const session = await sessionRepository.create({
+      session_id: sessionId,
+      name: sessionName,
+      scenario_id: scenarioId,
+      scenario_name: scenarioConfig.name || scenarioId,
+      status: 'waiting',
+      game_mode: 'scenario',
+      data: {
+        scenario: scenarioConfig,
+        turnterm: 10,
+        year: 184,
+        month: 1,
+        startyear: 184
+      }
+    });
+    
+    // 캐시 무효화
+    await cacheService.invalidate(
+      [`session:byId:${sessionId}`],
+      ['sessions:*']
+    );
+    
+    logger.info('시나리오 기반 세션 생성 완료', {
+      sessionId,
+      sessionName,
+      scenarioId,
+      scenarioName: scenarioConfig.name
+    });
+    
+    // 5. 자동 초기화
+    if (autoInit) {
+      await InitService.initializeSession(sessionId);
+      logger.info('세션 자동 초기화 완료', { sessionId });
+    }
+    
+    return session;
+  }
+
+  /**
+   * 템플릿 기반으로 새 세션 인스턴스 생성 (레거시)
+   * 
+   * @deprecated createSessionFromScenario 사용을 권장합니다
    * 
    * @param templateId - 템플릿 ID (예: 'sangokushi')
    * @param sessionId - 새 세션 ID (예: 'sangokushi_room1')
@@ -126,51 +203,8 @@ export class SessionService {
     sessionName: string,
     autoInit: boolean = true
   ) {
-    // 1. 템플릿 설정 파일 로드
-    const configPath = path.join(__dirname, `../../config/session-${templateId}.json`);
-    
-    if (!fs.existsSync(configPath)) {
-      throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${templateId}`, { templateId });
-    }
-    
-    // 2. 기존 세션이 있으면 에러
-    const existing = await sessionRepository.exists(sessionId);
-    if (existing) {
-      throw new ConflictError(`이미 존재하는 세션 ID입니다: ${sessionId}`, { sessionId });
-    }
-    
-    // 3. 템플릿 설정 로드
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    
-    // 4. 새 세션 생성
-    const session = await sessionRepository.create({
-      ...config,
-      session_id: sessionId,
-      name: sessionName,
-      template_id: templateId,
-      status: 'waiting'
-    });
-    
-    // 캐시 무효화
-    await cacheService.invalidate(
-      [`session:byId:${sessionId}`],
-      ['sessions:*']
-    );
-    
-    logger.info('세션 인스턴스 생성 완료', {
-      sessionId,
-      sessionName,
-      templateId,
-      gameMode: session.game_mode
-    });
-    
-    // 5. 자동 초기화
-    if (autoInit) {
-      await InitService.initializeSession(sessionId);
-      logger.info('세션 자동 초기화 완료', { sessionId });
-    }
-    
-    return session;
+    // 새로운 시나리오 기반 메서드로 리다이렉트
+    return this.createSessionFromScenario(templateId, sessionId, sessionName, autoInit);
   }
   
   /**
