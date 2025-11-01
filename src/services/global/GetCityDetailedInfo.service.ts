@@ -35,8 +35,7 @@ export class GetCityDetailedInfoService {
         };
       }
 
-      const cityData = city.data as any || {};
-      const nationId = cityData.nation || 0;
+      const nationId = city.nation || 0;
 
       const generals = await General.find({
         session_id: sessionId,
@@ -54,6 +53,8 @@ export class GetCityDetailedInfoService {
           officer_level: genData.officer_level || 1
         };
       });
+
+      const cityData = city.data as any || {};
 
       return {
         success: true,

@@ -5,26 +5,43 @@ export interface ICity extends Document {
   city: number;
   name: string;
   
-  // 자주 사용되는 필드들 (ai-engine 등에서 직접 접근)
-  front?: number;
-  supply?: number;
-  pop?: number;
-  pop_max?: number;
-  trust?: number;
-  nation?: number;
-  agri?: number;
-  agri_max?: number;
-  comm?: number;
-  comm_max?: number;
-  secu?: number;
-  secu_max?: number;
-  def?: number;
-  def_max?: number;
-  wall?: number;
-  wall_max?: number;
+  // 기본 정보
+  nation: number;           // 소속 국가 (필수)
+  level: number;            // 도시 등급
+  state: number;            // 도시 상태
+  region: string | number;  // 지역 (문자열 또는 숫자)
   
-  // 완전 동적 데이터
-  data: Record<string, any>;
+  // 자원 (현재/최대)
+  pop: number;              // 인구
+  pop_max: number;
+  agri: number;             // 농업
+  agri_max: number;
+  comm: number;             // 상업
+  comm_max: number;
+  secu: number;             // 치안
+  secu_max: number;
+  def: number;              // 방어
+  def_max: number;
+  wall: number;             // 성벽
+  wall_max: number;
+  
+  // 게임 속성
+  trust: number;            // 민심
+  front: number;            // 전선
+  supply: number;           // 보급
+  trade: number;            // 무역
+  
+  // 지리 정보
+  x: number;                // 좌표 X
+  y: number;                // 좌표 Y
+  neighbors: (number | string)[];  // 인접 도시들 (ID 또는 이름)
+  terrain?: string;         // 지형
+  
+  // 전투 관련
+  conflict?: Record<string, any>;  // 분쟁 정보
+  
+  // 완전 동적 데이터 (모든 것이 세션 설정에 따라 다름!)
+  data?: Record<string, any>;
   
   // 헬퍼 메서드
   markModified(path: string): void;
@@ -36,23 +53,42 @@ const CitySchema = new Schema<ICity>({
   city: { type: Number, required: true },
   name: { type: String, required: true },
   
-  front: { type: Number },
-  supply: { type: Number },
-  pop: { type: Number },
-  pop_max: { type: Number },
-  trust: { type: Number },
-  nation: { type: Number },
-  agri: { type: Number },
-  agri_max: { type: Number },
-  comm: { type: Number },
-  comm_max: { type: Number },
-  secu: { type: Number },
-  secu_max: { type: Number },
-  def: { type: Number },
-  def_max: { type: Number },
-  wall: { type: Number },
-  wall_max: { type: Number },
+  // 기본 정보
+  nation: { type: Number, required: true, default: 0 },
+  level: { type: Number, default: 0 },
+  state: { type: Number, default: 0 },
+  region: { type: Schema.Types.Mixed, default: 0 },  // 문자열 또는 숫자
   
+  // 자원
+  pop: { type: Number, default: 100000 },
+  pop_max: { type: Number, default: 1000000 },
+  agri: { type: Number, default: 1000 },
+  agri_max: { type: Number, default: 10000 },
+  comm: { type: Number, default: 1000 },
+  comm_max: { type: Number, default: 10000 },
+  secu: { type: Number, default: 100 },
+  secu_max: { type: Number, default: 1000 },
+  def: { type: Number, default: 100 },
+  def_max: { type: Number, default: 1000 },
+  wall: { type: Number, default: 1000 },
+  wall_max: { type: Number, default: 10000 },
+  
+  // 게임 속성
+  trust: { type: Number, default: 50 },
+  front: { type: Number, default: 0 },
+  supply: { type: Number, default: 0 },
+  trade: { type: Number, default: 0 },
+  
+  // 지리 정보
+  x: { type: Number, default: 0 },
+  y: { type: Number, default: 0 },
+  neighbors: { type: [Schema.Types.Mixed], default: [] },  // ID 또는 이름
+  terrain: { type: String },
+  
+  // 전투 관련
+  conflict: { type: Schema.Types.Mixed, default: {} },
+  
+  // 완전 동적 데이터
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true

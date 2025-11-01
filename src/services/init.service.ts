@@ -11,6 +11,22 @@ import { Nation } from '../models/nation.model';
 
 export class InitService {
   /**
+   * 도시 등급 문자열을 숫자로 변환
+   */
+  private static parseLevelToNumber(level: string | number): number {
+    if (typeof level === 'number') return level;
+    
+    const levelMap: Record<string, number> = {
+      '대': 3,
+      '중': 2,
+      '소': 1,
+      '촌': 0
+    };
+    
+    return levelMap[level] || 2;
+  }
+  
+  /**
    * 세션 초기화 (도시 94개 생성)
    */
   static async initializeSession(sessionId: string) {
@@ -34,27 +50,43 @@ export class InitService {
     for (const [cityId, template] of Object.entries(cityTemplates)) {
       const cityData: any = template;
       
-      // City 문서 생성
+      // City 문서 생성 - 모든 데이터를 스키마 레벨로
       await City.create({
         session_id: sessionId,
         city: parseInt(cityId),
         name: cityData.name,
-        data: {
-          // 초기 데이터
-          nation: 0,  // 처음엔 중립
-          pop: cityData.population || 100000,
-          agri: cityData.agriculture || 1000,
-          comm: cityData.commerce || 1000,
-          secu: cityData.security || 100,
-          def: cityData.defense || 100,
-          wall: cityData.wall || 1000,
-          trust: 50,
-          level: cityData.level || '중',
-          region: cityData.region || '',
-          x: cityData.x || 0,
-          y: cityData.y || 0,
-          neighbors: cityData.neighbors || []
-        }
+        
+        // 기본 정보
+        nation: 0,  // 처음엔 중립 (재야)
+        level: this.parseLevelToNumber(cityData.level || '중'),
+        state: 0,
+        region: cityData.region || 0,  // 문자열("하북") 또는 숫자(0) 모두 허용
+        
+        // 자원
+        pop: cityData.population || 100000,
+        pop_max: (cityData.population || 100000) * 10,
+        agri: cityData.agriculture || 1000,
+        agri_max: (cityData.agriculture || 1000) * 10,
+        comm: cityData.commerce || 1000,
+        comm_max: (cityData.commerce || 1000) * 10,
+        secu: cityData.security || 100,
+        secu_max: (cityData.security || 100) * 10,
+        def: cityData.defense || 100,
+        def_max: (cityData.defense || 100) * 10,
+        wall: cityData.wall || 1000,
+        wall_max: (cityData.wall || 1000) * 10,
+        
+        // 게임 속성
+        trust: 50,
+        front: 0,
+        supply: 0,
+        trade: 0,
+        
+        // 지리 정보
+        x: cityData.x || 0,
+        y: cityData.y || 0,
+        neighbors: cityData.neighbors || [],  // 도시 이름 배열 또는 ID 배열
+        terrain: cityData.terrain
       });
     }
     
