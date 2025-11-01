@@ -1,0 +1,928 @@
+{
+  "domestic": {
+    "event_격노": {
+      "id": "event_격노",
+      "name": "격노",
+      "category": "special_domestic",
+      "description": "[전투] 상대방 필살 시 격노(필살) 발동, 회피 시도시 25% 확률로 격노 발동, 공격 시 일정 확률로 진노(1페이즈 추가), 격노마다 대미지 20% 추가 중첩",
+      "originalId": "che_event_격노",
+      "mechanics": [
+        {
+          "type": "stacking_damage",
+          "skill": "rage",
+          "per_stack": 0.2,
+          "triggers": {
+            "counter_critical": true,
+            "on_avoid_attempt": 0.25,
+            "on_attack": true
+          },
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "event_견고": {
+      "id": "event_견고",
+      "name": "견고",
+      "category": "special_domestic",
+      "description": "[전투] 상대 필살 확률 -20%p, 상대 계략 시도시 성공 확률 -10%p, 부상 없음, 아군 피해 -10%",
+      "originalId": "che_event_견고",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "1",
+          "defense_multiplier": 0.9
+        }
+      ]
+    },
+    "event_공성": {
+      "id": "event_공성",
+      "name": "공성",
+      "category": "special_domestic",
+      "description": "[군사] 차병 계통 징·모병비 -10%<br>[전투] 성벽 공격 시 대미지 +100%,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 차병 숙련을 가산",
+      "originalId": "che_event_공성",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "2",
+          "defense_multiplier": 1
+        }
+      ]
+    },
+    "event_궁병": {
+      "id": "event_궁병",
+      "name": "궁병",
+      "category": "special_domestic",
+      "description": "[군사] 궁병 계통 징·모병비 -10%<br>[전투] 회피 확률 +20%p,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 궁병 숙련을 가산",
+      "originalId": "che_event_궁병",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warAvoidRatio",
+          "operation": "add",
+          "value": 0.2
+        }
+      ]
+    },
+    "event_귀병": {
+      "id": "event_귀병",
+      "name": "귀병",
+      "category": "special_domestic",
+      "description": "[군사] 귀병 계통 징·모병비 -10%<br>[전투] 계략 성공 확률 +20%p,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 귀병 숙련을 가산",
+      "originalId": "che_event_귀병",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 0.2
+        }
+      ]
+    },
+    "event_기병": {
+      "id": "event_기병",
+      "name": "기병",
+      "category": "special_domestic",
+      "description": "[군사] 기병 계통 징·모병비 -10%<br>[전투] 수비 시 대미지 +10%, 공격 시 대미지 +20%,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 기병 숙련을 가산",
+      "originalId": "che_event_기병",
+      "mechanics": [
+        {
+          "type": "war_power_attacker",
+          "attack_multiplier": 1.2,
+          "defense_multiplier": 1
+        }
+      ]
+    },
+    "event_돌격": {
+      "id": "event_돌격",
+      "name": "돌격",
+      "category": "special_domestic",
+      "description": "[전투] 공격 시 대등/유리한 병종에게는 퇴각 전까지 전투, 공격 시 페이즈 + 2, 공격 시 대미지 +5%",
+      "originalId": "che_event_돌격",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "initWarPhase",
+          "operation": "add",
+          "value": 2
+        },
+        {
+          "type": "war_power_attacker",
+          "attack_multiplier": 1.05,
+          "defense_multiplier": 1
+        },
+        {
+          "type": "war_phase",
+          "operation": "add",
+          "value": 2
+        }
+      ]
+    },
+    "event_무쌍": {
+      "id": "event_무쌍",
+      "name": "무쌍",
+      "category": "special_domestic",
+      "description": "[전투] 대미지 +5%, 피해 -2%, 공격 시 필살 확률 +10%p, <br>승리 수의 로그 비례로 대미지 상승(10회 ⇒ +5%, 40회 ⇒ +15%)<br>승리 수의 로그 비례로 피해 감소(10회 ⇒ -2%, 40회 ⇒ -6%)",
+      "originalId": "che_event_무쌍",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "1",
+          "defense_multiplier": 1
+        }
+      ]
+    },
+    "event_반계": {
+      "id": "event_반계",
+      "name": "반계",
+      "category": "special_domestic",
+      "description": "[전투] 상대의 계략 성공 확률 -10%p, 상대의 계략을 40% 확률로 되돌림, 반목 성공시 대미지 추가(+60% → +150%)",
+      "originalId": "che_event_반계",
+      "mechanics": [
+        {
+          "type": "counter_strategy",
+          "operation": "reduce",
+          "value": 0.1,
+          "parsed_from": "description"
+        },
+        {
+          "type": "reflect_strategy",
+          "probability": 0.4,
+          "on_success_damage": {
+            "min": 0.6,
+            "max": 1.5
+          },
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "event_보병": {
+      "id": "event_보병",
+      "name": "보병",
+      "category": "special_domestic",
+      "description": "[군사] 보병 계통 징·모병비 -10%<br>[전투] 공격 시 아군 피해 -10%, 수비 시 아군 피해 -20%,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 보병 숙련을 가산",
+      "originalId": "che_event_보병",
+      "mechanics": [
+        {
+          "type": "war_power_attacker",
+          "attack_multiplier": 1,
+          "defense_multiplier": 0.9
+        }
+      ]
+    },
+    "event_신산": {
+      "id": "event_신산",
+      "name": "신산",
+      "category": "special_domestic",
+      "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +10%p<br>[전투] 계략 시도 확률 +20%p, 계략 성공 확률 +20%p",
+      "originalId": "che_event_신산",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warMagicTrialProb",
+          "operation": "add",
+          "value": 0.2
+        },
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 0.2
+        },
+        {
+          "type": "var_bonus",
+          "target": "success",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "event_신중": {
+      "id": "event_신중",
+      "name": "신중",
+      "category": "special_domestic",
+      "description": "[전투] 계략 성공 확률 100%",
+      "originalId": "che_event_신중",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 1
+        }
+      ]
+    },
+    "event_위압": {
+      "id": "event_위압",
+      "name": "위압",
+      "category": "special_domestic",
+      "description": "[전투] 첫 페이즈 위압 발동(적 공격, 회피 불가, 사기 5 감소)",
+      "originalId": "che_event_위압",
+      "mechanics": [
+        {
+          "type": "war_trigger",
+          "skill": "intimidate",
+          "timing": "first_phase",
+          "effects": {
+            "disable_attack": true,
+            "disable_avoid": true,
+            "reduce_morale": 5
+          },
+          "parsed_from": "description"
+        },
+        {
+          "type": "stat_bonus",
+          "target": "atmos",
+          "operation": "subtract",
+          "value": 5,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "event_의술": {
+      "id": "event_의술",
+      "name": "의술",
+      "category": "special_domestic",
+      "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복<br>[전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+      "originalId": "che_event_의술",
+      "mechanics": [
+        {
+          "type": "turn_heal",
+          "target": "injury",
+          "timing": "every_turn",
+          "self_heal_rate": 1,
+          "city_heal_rate": 0.5,
+          "parsed_from": "description"
+        },
+        {
+          "type": "war_trigger",
+          "skill": "heal",
+          "probability": 0.4,
+          "damage_reduction": 0.3,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "event_저격": {
+      "id": "event_저격",
+      "name": "저격",
+      "category": "special_domestic",
+      "description": "[전투] 새로운 상대와 전투 시 50% 확률로 저격 발동, 성공 시 사기+20",
+      "originalId": "che_event_저격",
+      "mechanics": [
+        {
+          "type": "war_trigger",
+          "skill": "snipe",
+          "probability": 0.5,
+          "morale_bonus": 20,
+          "parsed_from": "description"
+        },
+        {
+          "type": "stat_bonus",
+          "target": "atmos",
+          "operation": "add",
+          "value": 20,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "event_집중": {
+      "id": "event_집중",
+      "name": "집중",
+      "category": "special_domestic",
+      "description": "[전투] 계략 성공 시 대미지 +50%",
+      "originalId": "che_event_집중",
+      "mechanics": [
+        {
+          "type": "stat",
+          "target": "warMagicSuccessDamage",
+          "operation": "multiply",
+          "value": 1.5
+        }
+      ]
+    },
+    "event_징병": {
+      "id": "event_징병",
+      "name": "징병",
+      "category": "special_domestic",
+      "description": "[군사] 징병/모병 시 훈사 70/84 제공<br>[기타] 통솔 순수 능력치 보정 +25%, 징병/모병/소집해제 시 인구 변동 없음",
+      "originalId": "che_event_징병",
+      "mechanics": [
+        {
+          "type": "stat_complex",
+          "target": "leadership",
+          "source": "leadership",
+          "operation": "add_percent_of",
+          "value": 0.25
+        }
+      ]
+    },
+    "event_척사": {
+      "id": "event_척사",
+      "name": "척사",
+      "category": "special_domestic",
+      "description": "[전투] 지역·도시 병종 상대로 대미지 +20%, 아군 피해 -20%",
+      "originalId": "che_event_척사",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "1.2",
+          "defense_multiplier": 0.8
+        }
+      ]
+    },
+    "event_필살": {
+      "id": "event_필살",
+      "name": "필살",
+      "category": "special_domestic",
+      "description": "[전투] 필살 확률 +30%p, 필살 발동시 대상 회피 불가, 필살 계수 향상",
+      "originalId": "che_event_필살",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warCriticalRatio",
+          "operation": "add",
+          "value": 0.3
+        }
+      ]
+    },
+    "event_환술": {
+      "id": "event_환술",
+      "name": "환술",
+      "category": "special_domestic",
+      "description": "[전투] 계략 성공 확률 +10%p, 계략 성공 시 대미지 +30%",
+      "originalId": "che_event_환술",
+      "mechanics": [
+        {
+          "type": "stat",
+          "target": "warMagicSuccessDamage",
+          "operation": "multiply",
+          "value": 1.3
+        },
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "거상": {
+      "id": "거상",
+      "name": "거상",
+      "category": "special_domestic",
+      "description": "<비활성화>",
+      "originalId": "che_거상",
+      "mechanics": []
+    },
+    "경작": {
+      "id": "경작",
+      "name": "경작",
+      "category": "special_domestic",
+      "description": "[내정] 농지 개간 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_경작",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "농업",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "귀모": {
+      "id": "귀모",
+      "name": "귀모",
+      "category": "special_domestic",
+      "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +20%p",
+      "originalId": "che_귀모",
+      "mechanics": [
+        {
+          "type": "var_bonus",
+          "target": "success",
+          "operation": "add",
+          "value": 0.2
+        }
+      ]
+    },
+    "발명": {
+      "id": "발명",
+      "name": "발명",
+      "category": "special_domestic",
+      "description": "[내정] 기술 연구 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_발명",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "기술",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "상재": {
+      "id": "상재",
+      "name": "상재",
+      "category": "special_domestic",
+      "description": "[내정] 상업 투자 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_상재",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "상업",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "수비": {
+      "id": "수비",
+      "name": "수비",
+      "category": "special_domestic",
+      "description": "[내정] 수비 강화 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_수비",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "수비",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "인덕": {
+      "id": "인덕",
+      "name": "인덕",
+      "category": "special_domestic",
+      "description": "[내정] 주민 선정·정착 장려 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_인덕",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "민심",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "축성": {
+      "id": "축성",
+      "name": "축성",
+      "category": "special_domestic",
+      "description": "[내정] 성벽 보수 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_축성",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "성벽",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "통찰": {
+      "id": "통찰",
+      "name": "통찰",
+      "category": "special_domestic",
+      "description": "[내정] 치안 강화 : 기본 보정 +10%, 성공률 +10%p, 비용 -20%",
+      "originalId": "che_통찰",
+      "mechanics": [
+        {
+          "type": "domestic",
+          "target": "치안",
+          "varType": "score",
+          "operation": "multiply",
+          "value": 1.1
+        },
+        {
+          "type": "var_bonus",
+          "target": "score",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    }
+  },
+  "war": {
+    "격노": {
+      "id": "격노",
+      "name": "격노",
+      "category": "special_war",
+      "description": "[전투] 상대방 필살 시 격노(필살) 발동, 회피 시도시 25% 확률로 격노 발동, 공격 시 일정 확률로 진노(1페이즈 추가), 격노마다 대미지 20% 추가 중첩",
+      "originalId": "che_격노",
+      "mechanics": [
+        {
+          "type": "stacking_damage",
+          "skill": "rage",
+          "per_stack": 0.2,
+          "triggers": {
+            "counter_critical": true,
+            "on_avoid_attempt": 0.25,
+            "on_attack": true
+          },
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "견고": {
+      "id": "견고",
+      "name": "견고",
+      "category": "special_war",
+      "description": "[전투] 상대 필살 확률 -20%p, 상대 계략 시도시 성공 확률 -10%p, 부상 없음, 아군 피해 -10%",
+      "originalId": "che_견고",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "1",
+          "defense_multiplier": 0.9
+        }
+      ]
+    },
+    "공성": {
+      "id": "공성",
+      "name": "공성",
+      "category": "special_war",
+      "description": "[군사] 차병 계통 징·모병비 -10%<br>[전투] 성벽 공격 시 대미지 +100%,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 차병 숙련을 가산",
+      "originalId": "che_공성",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "2",
+          "defense_multiplier": 1
+        }
+      ]
+    },
+    "궁병": {
+      "id": "궁병",
+      "name": "궁병",
+      "category": "special_war",
+      "description": "[군사] 궁병 계통 징·모병비 -10%<br>[전투] 회피 확률 +20%p,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 궁병 숙련을 가산",
+      "originalId": "che_궁병",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warAvoidRatio",
+          "operation": "add",
+          "value": 0.2
+        }
+      ]
+    },
+    "귀병": {
+      "id": "귀병",
+      "name": "귀병",
+      "category": "special_war",
+      "description": "[군사] 귀병 계통 징·모병비 -10%<br>[전투] 계략 성공 확률 +20%p,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 귀병 숙련을 가산",
+      "originalId": "che_귀병",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 0.2
+        }
+      ]
+    },
+    "기병": {
+      "id": "기병",
+      "name": "기병",
+      "category": "special_war",
+      "description": "[군사] 기병 계통 징·모병비 -10%<br>[전투] 수비 시 대미지 +10%, 공격 시 대미지 +20%,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 기병 숙련을 가산",
+      "originalId": "che_기병",
+      "mechanics": [
+        {
+          "type": "war_power_attacker",
+          "attack_multiplier": 1.2,
+          "defense_multiplier": 1
+        }
+      ]
+    },
+    "돌격": {
+      "id": "돌격",
+      "name": "돌격",
+      "category": "special_war",
+      "description": "[전투] 공격 시 대등/유리한 병종에게는 퇴각 전까지 전투, 공격 시 페이즈 + 2, 공격 시 대미지 +5%",
+      "originalId": "che_돌격",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "initWarPhase",
+          "operation": "add",
+          "value": 2
+        },
+        {
+          "type": "war_power_attacker",
+          "attack_multiplier": 1.05,
+          "defense_multiplier": 1
+        },
+        {
+          "type": "war_phase",
+          "operation": "add",
+          "value": 2
+        }
+      ]
+    },
+    "무쌍": {
+      "id": "무쌍",
+      "name": "무쌍",
+      "category": "special_war",
+      "description": "[전투] 대미지 +5%, 피해 -2%, 공격 시 필살 확률 +10%p, <br>승리 수의 로그 비례로 대미지 상승(10회 ⇒ +5%, 40회 ⇒ +15%)<br>승리 수의 로그 비례로 피해 감소(10회 ⇒ -2%, 40회 ⇒ -6%)",
+      "originalId": "che_무쌍",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": 1.05,
+          "defense_multiplier": 1,
+          "parsed_from": "description"
+        },
+        {
+          "type": "war_defense",
+          "defense_multiplier": 0.98,
+          "parsed_from": "description"
+        },
+        {
+          "type": "stat_bonus",
+          "target": "warCriticalRatio",
+          "operation": "add",
+          "value": 0.1,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "반계": {
+      "id": "반계",
+      "name": "반계",
+      "category": "special_war",
+      "description": "[전투] 상대의 계략 성공 확률 -10%p, 상대의 계략을 40% 확률로 되돌림, 반목 성공시 대미지 추가(+60% → +150%)",
+      "originalId": "che_반계",
+      "mechanics": [
+        {
+          "type": "counter_strategy",
+          "operation": "reduce",
+          "value": 0.1,
+          "parsed_from": "description"
+        },
+        {
+          "type": "reflect_strategy",
+          "probability": 0.4,
+          "on_success_damage": {
+            "min": 0.6,
+            "max": 1.5
+          },
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "보병": {
+      "id": "보병",
+      "name": "보병",
+      "category": "special_war",
+      "description": "[군사] 보병 계통 징·모병비 -10%<br>[전투] 공격 시 아군 피해 -10%, 수비 시 아군 피해 -20%,<br>공격시 상대 병종에/수비시 자신 병종 숙련에 보병 숙련을 가산",
+      "originalId": "che_보병",
+      "mechanics": [
+        {
+          "type": "war_power_attacker",
+          "attack_multiplier": 1,
+          "defense_multiplier": 0.9
+        }
+      ]
+    },
+    "신산": {
+      "id": "신산",
+      "name": "신산",
+      "category": "special_war",
+      "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +10%p<br>[전투] 계략 시도 확률 +20%p, 계략 성공 확률 +20%p",
+      "originalId": "che_신산",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warMagicTrialProb",
+          "operation": "add",
+          "value": 0.2
+        },
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 0.2
+        },
+        {
+          "type": "var_bonus",
+          "target": "success",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    },
+    "신중": {
+      "id": "신중",
+      "name": "신중",
+      "category": "special_war",
+      "description": "[전투] 계략 성공 확률 100%",
+      "originalId": "che_신중",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 1
+        }
+      ]
+    },
+    "위압": {
+      "id": "위압",
+      "name": "위압",
+      "category": "special_war",
+      "description": "[전투] 첫 페이즈 위압 발동(적 공격, 회피 불가, 사기 5 감소)",
+      "originalId": "che_위압",
+      "mechanics": [
+        {
+          "type": "war_trigger",
+          "skill": "intimidate",
+          "timing": "first_phase",
+          "effects": {
+            "disable_attack": true,
+            "disable_avoid": true,
+            "reduce_morale": 5
+          },
+          "parsed_from": "description"
+        },
+        {
+          "type": "stat_bonus",
+          "target": "atmos",
+          "operation": "subtract",
+          "value": 5,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "의술": {
+      "id": "의술",
+      "name": "의술",
+      "category": "special_war",
+      "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복<br>[전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+      "originalId": "che_의술",
+      "mechanics": [
+        {
+          "type": "turn_heal",
+          "target": "injury",
+          "timing": "every_turn",
+          "self_heal_rate": 1,
+          "city_heal_rate": 0.5,
+          "parsed_from": "description"
+        },
+        {
+          "type": "war_trigger",
+          "skill": "heal",
+          "probability": 0.4,
+          "damage_reduction": 0.3,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "저격": {
+      "id": "저격",
+      "name": "저격",
+      "category": "special_war",
+      "description": "[전투] 새로운 상대와 전투 시 50% 확률로 저격 발동, 성공 시 사기+20",
+      "originalId": "che_저격",
+      "mechanics": [
+        {
+          "type": "war_trigger",
+          "skill": "snipe",
+          "probability": 0.5,
+          "morale_bonus": 20,
+          "parsed_from": "description"
+        },
+        {
+          "type": "stat_bonus",
+          "target": "atmos",
+          "operation": "add",
+          "value": 20,
+          "parsed_from": "description"
+        }
+      ]
+    },
+    "집중": {
+      "id": "집중",
+      "name": "집중",
+      "category": "special_war",
+      "description": "[전투] 계략 성공 시 대미지 +50%",
+      "originalId": "che_집중",
+      "mechanics": [
+        {
+          "type": "stat",
+          "target": "warMagicSuccessDamage",
+          "operation": "multiply",
+          "value": 1.5
+        }
+      ]
+    },
+    "징병": {
+      "id": "징병",
+      "name": "징병",
+      "category": "special_war",
+      "description": "[군사] 징병/모병 시 훈사 70/84 제공<br>[기타] 통솔 순수 능력치 보정 +25%, 징병/모병/소집해제 시 인구 변동 없음",
+      "originalId": "che_징병",
+      "mechanics": [
+        {
+          "type": "stat_complex",
+          "target": "leadership",
+          "source": "leadership",
+          "operation": "add_percent_of",
+          "value": 0.25
+        }
+      ]
+    },
+    "척사": {
+      "id": "척사",
+      "name": "척사",
+      "category": "special_war",
+      "description": "[전투] 지역·도시 병종 상대로 대미지 +20%, 아군 피해 -20%",
+      "originalId": "che_척사",
+      "mechanics": [
+        {
+          "type": "war_power",
+          "attack_multiplier": "1.2",
+          "defense_multiplier": 0.8
+        }
+      ]
+    },
+    "필살": {
+      "id": "필살",
+      "name": "필살",
+      "category": "special_war",
+      "description": "[전투] 필살 확률 +30%p, 필살 발동시 대상 회피 불가, 필살 계수 향상",
+      "originalId": "che_필살",
+      "mechanics": [
+        {
+          "type": "stat_bonus",
+          "target": "warCriticalRatio",
+          "operation": "add",
+          "value": 0.3
+        }
+      ]
+    },
+    "환술": {
+      "id": "환술",
+      "name": "환술",
+      "category": "special_war",
+      "description": "[전투] 계략 성공 확률 +10%p, 계략 성공 시 대미지 +30%",
+      "originalId": "che_환술",
+      "mechanics": [
+        {
+          "type": "stat",
+          "target": "warMagicSuccessDamage",
+          "operation": "multiply",
+          "value": 1.3
+        },
+        {
+          "type": "stat_bonus",
+          "target": "warMagicSuccessProb",
+          "operation": "add",
+          "value": 0.1
+        }
+      ]
+    }
+  }
+}

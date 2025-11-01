@@ -1,0 +1,1930 @@
+[
+  {
+    "id": "che_간파_노군입산부",
+    "name": "노군입산부(간파)",
+    "description": "[전투] 상대 회피 확률 -25%p, 상대 필살 확률 -10%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_격노_구정신단경",
+    "name": "구정신단경(격노)",
+    "description": "[전투] 상대방 필살 시 격노(필살) 발동, 회피 시도시 25% 확률로 격노 발동, 공격 시 일정 확률로 진노(1페이즈 추가), 격노마다 대미지 5% 추가 중첩",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "stackingDamageBonus": {
+          "skill": "격노",
+          "perStack": 0.05
+        },
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_계략_삼략",
+    "name": "삼략(계략)",
+    "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +20%p [전투] 계략 시도 확률 +10%p, 계략 성공 확률 +10%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_계략_육도",
+    "name": "육도(계략)",
+    "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +20%p [전투] 계략 시도 확률 +10%p, 계략 성공 확률 +10%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_계략_이추",
+    "name": "이추(계략)",
+    "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +20%p",
+    "effects": {
+      "cost": 1000,
+      "consumable": true,
+      "buyable": true
+    }
+  },
+  {
+    "id": "che_계략_향낭",
+    "name": "향낭(계략)",
+    "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +50%p",
+    "effects": {
+      "cost": 3000,
+      "consumable": true,
+      "buyable": true
+    }
+  },
+  {
+    "id": "che_공성_묵자",
+    "name": "묵자(공성)",
+    "description": "[전투] 성벽 공격 시 대미지 +50%",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "condition": {
+        "target": "CASTLE"
+      },
+      "combat": {
+        "attackMultiplier": 1.5
+      }
+    }
+  },
+  {
+    "id": "che_내정_납금박산로",
+    "name": "납금박산로(내정)",
+    "description": "[내정] 내정 성공률 +15%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "domestic": {
+        "generalSuccessBonus": 0.15
+      }
+    }
+  },
+  {
+    "id": "che_농성_위공자병법",
+    "name": "위공자병법(농성)",
+    "description": "[계략] 장수 주둔 도시 화계·탈취·파괴·선동 : 성공률 -30%p [전투] 상대 계략 시도 확률 -10%p, 상대 계략 성공 확률 -10%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "statBonus": {
+        "sabotageDefence": 0.3
+      }
+    }
+  },
+  {
+    "id": "che_농성_주서음부",
+    "name": "주서음부(농성)",
+    "description": "[계략] 장수 주둔 도시 화계·탈취·파괴·선동 : 성공률 -30%p [전투] 상대 계략 시도 확률 -10%p, 상대 계략 성공 확률 -10%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "statBonus": {
+        "sabotageDefence": 0.3
+      }
+    }
+  },
+  {
+    "id": "che_능력치_무력_두강주",
+    "name": "두강주(무력)",
+    "description": "[능력치] 무력 +5 +(4년마다 +1)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "statBonus": {
+        "strength": {
+          "base": 5,
+          "yearlyIncrement": {
+            "perYears": 4,
+            "amount": 1
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "che_능력치_지력_이강주",
+    "name": "이강주(지력)",
+    "description": "[능력치] 지력 +5 +(4년마다 +1)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "statBonus": {
+        "intel": {
+          "base": 5,
+          "yearlyIncrement": {
+            "perYears": 4,
+            "amount": 1
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "che_능력치_통솔_보령압주",
+    "name": "보령압주(통솔)",
+    "description": "[능력치] 통솔 +5 +(4년마다 +1)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "statBonus": {
+        "leadership": {
+          "base": 5,
+          "yearlyIncrement": {
+            "perYears": 4,
+            "amount": 1
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "che_명마_01_노기",
+    "name": "노기(+1)",
+    "description": "통솔 +1",
+    "effects": {
+      "cost": 1000,
+      "buyable": true,
+      "statBonus": {
+        "leadership": 1
+      }
+    }
+  },
+  {
+    "id": "che_명마_02_조랑",
+    "name": "조랑(+2)",
+    "description": "통솔 +2",
+    "effects": {
+      "cost": 3000,
+      "buyable": true,
+      "statBonus": {
+        "leadership": 2
+      }
+    }
+  },
+  {
+    "id": "che_명마_03_노새",
+    "name": "노새(+3)",
+    "description": "통솔 +3",
+    "effects": {
+      "cost": 6000,
+      "buyable": true,
+      "statBonus": {
+        "leadership": 3
+      }
+    }
+  },
+  {
+    "id": "che_명마_04_나귀",
+    "name": "나귀(+4)",
+    "description": "통솔 +4",
+    "effects": {
+      "cost": 10000,
+      "buyable": true,
+      "statBonus": {
+        "leadership": 4
+      }
+    }
+  },
+  {
+    "id": "che_명마_05_갈색마",
+    "name": "갈색마(+5)",
+    "description": "통솔 +5",
+    "effects": {
+      "cost": 15000,
+      "buyable": true,
+      "statBonus": {
+        "leadership": 5
+      }
+    }
+  },
+  {
+    "id": "che_명마_06_흑색마",
+    "name": "흑색마(+6)",
+    "description": "통솔 +6",
+    "effects": {
+      "cost": 21000,
+      "buyable": true,
+      "statBonus": {
+        "leadership": 6
+      }
+    }
+  },
+  {
+    "id": "che_명마_07_기주마",
+    "name": "기주마(+7)",
+    "description": "통솔 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 7
+      }
+    }
+  },
+  {
+    "id": "che_명마_07_백마",
+    "name": "백마(+7)",
+    "description": "통솔 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 7
+      },
+      "combat": {
+        "hasBattleInitTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_명마_07_백상",
+    "name": "백상(+7)",
+    "description": "통솔 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 7
+      }
+    }
+  },
+  {
+    "id": "che_명마_07_오환마",
+    "name": "오환마(+7)",
+    "description": "통솔 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 7
+      }
+    }
+  },
+  {
+    "id": "che_명마_08_양주마",
+    "name": "양주마(+8)",
+    "description": "통솔 +8",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 8
+      }
+    }
+  },
+  {
+    "id": "che_명마_08_흉노마",
+    "name": "흉노마(+8)",
+    "description": "통솔 +8",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 8
+      }
+    }
+  },
+  {
+    "id": "che_명마_09_과하마",
+    "name": "과하마(+9)",
+    "description": "통솔 +9",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 9
+      }
+    }
+  },
+  {
+    "id": "che_명마_09_의남백마",
+    "name": "의남백마(+9)",
+    "description": "통솔 +9",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 9
+      }
+    }
+  },
+  {
+    "id": "che_명마_10_대완마",
+    "name": "대완마(+10)",
+    "description": "통솔 +10",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 10
+      }
+    }
+  },
+  {
+    "id": "che_명마_10_옥추마",
+    "name": "옥추마(+10)",
+    "description": "통솔 +10",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 10
+      }
+    }
+  },
+  {
+    "id": "che_명마_11_서량마",
+    "name": "서량마(+11)",
+    "description": "통솔 +11",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 11
+      }
+    }
+  },
+  {
+    "id": "che_명마_11_화종마",
+    "name": "화종마(+11)",
+    "description": "통솔 +11",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 11
+      }
+    }
+  },
+  {
+    "id": "che_명마_12_사륜거",
+    "name": "사륜거(+12)",
+    "description": "통솔 +12",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 12
+      },
+      "combat": {
+        "hasBattleInitTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_명마_12_옥란백용구",
+    "name": "옥란백용구(+12)",
+    "description": "통솔 +12",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 12
+      }
+    }
+  },
+  {
+    "id": "che_명마_13_적로",
+    "name": "적로(+13)",
+    "description": "통솔 +13",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 13
+      }
+    }
+  },
+  {
+    "id": "che_명마_13_절영",
+    "name": "절영(+13)",
+    "description": "통솔 +13",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 13
+      }
+    }
+  },
+  {
+    "id": "che_명마_14_적란마",
+    "name": "적란마(+14)",
+    "description": "통솔 +14",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 14
+      }
+    }
+  },
+  {
+    "id": "che_명마_14_조황비전",
+    "name": "조황비전(+14)",
+    "description": "통솔 +14",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 14
+      }
+    }
+  },
+  {
+    "id": "che_명마_15_적토마",
+    "name": "적토마(+15)",
+    "description": "통솔 +15",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 15
+      }
+    }
+  },
+  {
+    "id": "che_명마_15_한혈마",
+    "name": "한혈마(+15)",
+    "description": "통솔 +15",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "leadership": 15
+      }
+    }
+  },
+  {
+    "id": "che_명성_구석",
+    "name": "구석(명성)",
+    "description": "명성 +20%",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_무기_01_단도",
+    "name": "단도(+1)",
+    "description": "무력 +1",
+    "effects": {
+      "cost": 1000,
+      "buyable": true,
+      "statBonus": {
+        "strength": 1
+      }
+    }
+  },
+  {
+    "id": "che_무기_02_단궁",
+    "name": "단궁(+2)",
+    "description": "무력 +2",
+    "effects": {
+      "cost": 3000,
+      "buyable": true,
+      "statBonus": {
+        "strength": 2
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_무기_03_단극",
+    "name": "단극(+3)",
+    "description": "무력 +3",
+    "effects": {
+      "cost": 6000,
+      "buyable": true,
+      "statBonus": {
+        "strength": 3
+      }
+    }
+  },
+  {
+    "id": "che_무기_04_목검",
+    "name": "목검(+4)",
+    "description": "무력 +4",
+    "effects": {
+      "cost": 10000,
+      "buyable": true,
+      "statBonus": {
+        "strength": 4
+      }
+    }
+  },
+  {
+    "id": "che_무기_05_죽창",
+    "name": "죽창(+5)",
+    "description": "무력 +5",
+    "effects": {
+      "cost": 15000,
+      "buyable": true,
+      "statBonus": {
+        "strength": 5
+      }
+    }
+  },
+  {
+    "id": "che_무기_06_소부",
+    "name": "소부(+6)",
+    "description": "무력 +6",
+    "effects": {
+      "cost": 21000,
+      "buyable": true,
+      "statBonus": {
+        "strength": 6
+      }
+    }
+  },
+  {
+    "id": "che_무기_07_동추",
+    "name": "동추(+7)",
+    "description": "무력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 7
+      }
+    }
+  },
+  {
+    "id": "che_무기_07_맥궁",
+    "name": "맥궁(+7)",
+    "description": "무력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 7
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_무기_07_철쇄",
+    "name": "철쇄(+7)",
+    "description": "무력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 7
+      }
+    }
+  },
+  {
+    "id": "che_무기_07_철편",
+    "name": "철편(+7)",
+    "description": "무력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 7
+      }
+    }
+  },
+  {
+    "id": "che_무기_08_유성추",
+    "name": "유성추(+8)",
+    "description": "무력 +8",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 8
+      }
+    }
+  },
+  {
+    "id": "che_무기_08_철질여골",
+    "name": "철질여골(+8)",
+    "description": "무력 +8",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 8
+      }
+    }
+  },
+  {
+    "id": "che_무기_09_동호비궁",
+    "name": "동호비궁(+9)",
+    "description": "무력 +9",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 9
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_무기_09_쌍철극",
+    "name": "쌍철극(+9)",
+    "description": "무력 +9",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 9
+      }
+    }
+  },
+  {
+    "id": "che_무기_10_대부",
+    "name": "대부(+10)",
+    "description": "무력 +10",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 10
+      }
+    }
+  },
+  {
+    "id": "che_무기_10_삼첨도",
+    "name": "삼첨도(+10)",
+    "description": "무력 +10",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 10
+      }
+    }
+  },
+  {
+    "id": "che_무기_11_고정도",
+    "name": "고정도(+11)",
+    "description": "무력 +11",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 11
+      }
+    }
+  },
+  {
+    "id": "che_무기_11_이광궁",
+    "name": "이광궁(+11)",
+    "description": "무력 +11",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 11
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_무기_12_철척사모",
+    "name": "철척사모(+12)",
+    "description": "무력 +12",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 12
+      }
+    }
+  },
+  {
+    "id": "che_무기_12_칠성검",
+    "name": "칠성검(+12)",
+    "description": "무력 +12",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 12
+      }
+    }
+  },
+  {
+    "id": "che_무기_13_사모",
+    "name": "사모(+13)",
+    "description": "무력 +13",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 13
+      }
+    }
+  },
+  {
+    "id": "che_무기_13_양유기궁",
+    "name": "양유기궁(+13)",
+    "description": "무력 +13",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 13
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_무기_14_방천화극",
+    "name": "방천화극(+14)",
+    "description": "무력 +14",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 14
+      }
+    }
+  },
+  {
+    "id": "che_무기_14_언월도",
+    "name": "언월도(+14)",
+    "description": "무력 +14",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 14
+      }
+    }
+  },
+  {
+    "id": "che_무기_15_의천검",
+    "name": "의천검(+15)",
+    "description": "무력 +15",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 15
+      }
+    }
+  },
+  {
+    "id": "che_무기_15_청홍검",
+    "name": "청홍검(+15)",
+    "description": "무력 +15",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "strength": 15
+      }
+    }
+  },
+  {
+    "id": "che_반계_백우선",
+    "name": "백우선(반계)",
+    "description": "[전투] 상대의 계략 성공 확률 -10%p, 상대의 계략을 30% 확률로 되돌림, 반목 성공시 대미지 추가(+60% → +100%), 소모 군량 +10%",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_반계_파초선",
+    "name": "파초선(반계)",
+    "description": "[전투] 상대의 계략 성공 확률 -10%p, 상대의 계략을 20% 확률로 되돌림",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_보물_도기",
+    "name": "도기(보물)",
+    "description": "[개인] 판매 시 장수 소지금과 국고에 금, 쌀 중 하나를 추가 (총 +10,000, 2년마다 +5,000)",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_부적_태현청생부",
+    "name": "태현청생부(부적)",
+    "description": "[전투] 저격 불가, 부상 없음",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattleInitTrigger": true,
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_불굴_상편",
+    "name": "상편(불굴)",
+    "description": "[전투] 남은 병력이 적을수록 공격력 증가. 최대 +60%",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_사기_두강주",
+    "name": "두강주(사기)",
+    "description": "[전투] 사기 보정 +10",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_사기_보령압주",
+    "name": "보령압주(사기)",
+    "description": "[전투] 사기 보정 +10",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_사기_의적주",
+    "name": "의적주(사기)",
+    "description": "[전투] 사기 보정 +10",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_사기_초선화",
+    "name": "초선화(사기)",
+    "description": "[전투] 사기 보정 +15",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_사기_춘화첩",
+    "name": "춘화첩(사기)",
+    "description": "[전투] 사기 보정 +15",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_사기_탁주",
+    "name": "탁주(사기)",
+    "description": "[전투] 사기 +30(한도 내). 1회용",
+    "effects": {
+      "cost": 1000,
+      "consumable": true,
+      "buyable": true,
+      "combat": {
+        "hasBattleInitTrigger": true,
+        "moraleBonus": 30
+      }
+    }
+  },
+  {
+    "id": "che_상성보정_과실주",
+    "name": "과실주(상성)",
+    "description": "[전투] 대등/유리한 병종 전투시 공격력 +10%, 피해 -10%",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_서적_01_효경전",
+    "name": "효경전(+1)",
+    "description": "지력 +1",
+    "effects": {
+      "cost": 1000,
+      "buyable": true,
+      "statBonus": {
+        "intel": 1
+      }
+    }
+  },
+  {
+    "id": "che_서적_02_회남자",
+    "name": "회남자(+2)",
+    "description": "지력 +2",
+    "effects": {
+      "cost": 3000,
+      "buyable": true,
+      "statBonus": {
+        "intel": 2
+      }
+    }
+  },
+  {
+    "id": "che_서적_03_변도론",
+    "name": "변도론(+3)",
+    "description": "지력 +3",
+    "effects": {
+      "cost": 6000,
+      "buyable": true,
+      "statBonus": {
+        "intel": 3
+      }
+    }
+  },
+  {
+    "id": "che_서적_04_건상역주",
+    "name": "건상역주(+4)",
+    "description": "지력 +4",
+    "effects": {
+      "cost": 10000,
+      "buyable": true,
+      "statBonus": {
+        "intel": 4
+      }
+    }
+  },
+  {
+    "id": "che_서적_05_여씨춘추",
+    "name": "여씨춘추(+5)",
+    "description": "지력 +5",
+    "effects": {
+      "cost": 15000,
+      "buyable": true,
+      "statBonus": {
+        "intel": 5
+      }
+    }
+  },
+  {
+    "id": "che_서적_06_사민월령",
+    "name": "사민월령(+6)",
+    "description": "지력 +6",
+    "effects": {
+      "cost": 21000,
+      "buyable": true,
+      "statBonus": {
+        "intel": 6
+      }
+    }
+  },
+  {
+    "id": "che_서적_07_논어",
+    "name": "논어(+7)",
+    "description": "지력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 7
+      }
+    }
+  },
+  {
+    "id": "che_서적_07_사마법",
+    "name": "사마법(+7)",
+    "description": "지력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 7
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_서적_07_위료자",
+    "name": "위료자(+7)",
+    "description": "지력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 7
+      }
+    }
+  },
+  {
+    "id": "che_서적_07_한서",
+    "name": "한서(+7)",
+    "description": "지력 +7",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 7
+      }
+    }
+  },
+  {
+    "id": "che_서적_08_사기",
+    "name": "사기(+8)",
+    "description": "지력 +8",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 8
+      }
+    }
+  },
+  {
+    "id": "che_서적_08_전론",
+    "name": "전론(+8)",
+    "description": "지력 +8",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 8
+      }
+    }
+  },
+  {
+    "id": "che_서적_09_역경",
+    "name": "역경(+9)",
+    "description": "지력 +9",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 9
+      }
+    }
+  },
+  {
+    "id": "che_서적_09_장자",
+    "name": "장자(+9)",
+    "description": "지력 +9",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 9
+      }
+    }
+  },
+  {
+    "id": "che_서적_10_구국론",
+    "name": "구국론(+10)",
+    "description": "지력 +10",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 10
+      }
+    }
+  },
+  {
+    "id": "che_서적_10_시경",
+    "name": "시경(+10)",
+    "description": "지력 +10",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 10
+      }
+    }
+  },
+  {
+    "id": "che_서적_11_상군서",
+    "name": "상군서(+11)",
+    "description": "지력 +11",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 11
+      }
+    }
+  },
+  {
+    "id": "che_서적_11_춘추전",
+    "name": "춘추전(+11)",
+    "description": "지력 +11",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 11
+      }
+    }
+  },
+  {
+    "id": "che_서적_12_맹덕신서",
+    "name": "맹덕신서(+12)",
+    "description": "지력 +12",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 12
+      }
+    }
+  },
+  {
+    "id": "che_서적_12_산해경",
+    "name": "산해경(+12)",
+    "description": "지력 +12",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 12
+      },
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_서적_13_관자",
+    "name": "관자(+13)",
+    "description": "지력 +13",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 13
+      }
+    }
+  },
+  {
+    "id": "che_서적_13_병법24편",
+    "name": "병법24편(+13)",
+    "description": "지력 +13",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 13
+      }
+    }
+  },
+  {
+    "id": "che_서적_14_오자병법",
+    "name": "오자병법(+14)",
+    "description": "지력 +14",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 14
+      }
+    }
+  },
+  {
+    "id": "che_서적_14_한비자",
+    "name": "한비자(+14)",
+    "description": "지력 +14",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 14
+      }
+    }
+  },
+  {
+    "id": "che_서적_15_노자",
+    "name": "노자(+15)",
+    "description": "지력 +15",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 15
+      }
+    }
+  },
+  {
+    "id": "che_서적_15_손자병법",
+    "name": "손자병법(+15)",
+    "description": "지력 +15",
+    "effects": {
+      "cost": 200,
+      "buyable": false,
+      "statBonus": {
+        "intel": 15
+      }
+    }
+  },
+  {
+    "id": "che_숙련_동작",
+    "name": "동작(숙련)",
+    "description": "숙련 +20%",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_약탈_옥벽",
+    "name": "옥벽(약탈)",
+    "description": "[전투] 새로운 상대와 전투 시 20% 확률로 상대 금, 쌀 10% 약탈",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_위압_조목삭",
+    "name": "조목삭(위압)",
+    "description": "[전투] 첫 페이즈 위압 발동(적 공격, 회피 불가, 사기 5 감소)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_의술_상한잡병론",
+    "name": "상한잡병론(의술)",
+    "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복 [전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      },
+      "general": {
+        "hasPreTurnTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_의술_정력견혈산",
+    "name": "정력견혈산(의술)",
+    "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복 [전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      },
+      "general": {
+        "hasPreTurnTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_의술_청낭서",
+    "name": "청낭서(의술)",
+    "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복 [전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      },
+      "general": {
+        "hasPreTurnTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_의술_태평청령",
+    "name": "태평청령(의술)",
+    "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복 [전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      },
+      "general": {
+        "hasPreTurnTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_저격_매화수전",
+    "name": "매화수전(저격)",
+    "description": "[전투] 새로운 상대와 전투 시 50% 확률로 저격 발동, 성공 시 사기+20",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_저격_비도",
+    "name": "비도(저격)",
+    "description": "[전투] 새로운 상대와 전투 시 50% 확률로 저격 발동, 성공 시 사기+20",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_저격_수극",
+    "name": "수극(저격)",
+    "description": "[전투] 전투 개시 시 저격. 1회용",
+    "effects": {
+      "cost": 1000,
+      "consumable": true,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_저지_삼황내문",
+    "name": "삼황내문(저지)",
+    "description": "[전투] 수비 시 첫 페이즈 저지, 50% 확률로 2 페이즈 저지",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_전략_평만지장도",
+    "name": "평만지장도(전략)",
+    "description": "[전략] 국가전략 사용시 재사용 대기 기간 -20%",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_조달_주판",
+    "name": "주판(조달)",
+    "description": "[내정] 물자조달 성공 확률 +20%p, 물자조달 획득량 +100%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_진압_박혁론",
+    "name": "박혁론(진압)",
+    "description": "[전투] 상대의 계략 되돌림, 격노 불가",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_집중_전국책",
+    "name": "전국책(집중)",
+    "description": "[전투] 계략 성공 시 대미지 +30%",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_징병_낙주",
+    "name": "낙주(징병)",
+    "description": "[군사] 징·모병비 -30% [기타] 통솔 순수 능력치 보정 +15%, 징병/모병/소집해제 시 인구 변동 없음",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_척사_오악진형도",
+    "name": "오악진형도(척사)",
+    "description": "[전투] 지역·도시 병종 상대로 대미지 +15%, 아군 피해 -15%",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_치료_도소연명",
+    "name": "도소연명(치료)",
+    "description": "[군사] 턴 실행 전 부상 회복.",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "general": {
+        "hasPreTurnTrigger": true,
+        "healing": true
+      }
+    }
+  },
+  {
+    "id": "che_치료_무후행군",
+    "name": "무후행군(치료)",
+    "description": "[군사] 턴 실행 전 부상 회복.",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "general": {
+        "hasPreTurnTrigger": true,
+        "healing": true
+      }
+    }
+  },
+  {
+    "id": "che_치료_오석산",
+    "name": "오석산(치료)",
+    "description": "[군사] 턴 실행 전 부상 회복.",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "general": {
+        "hasPreTurnTrigger": true,
+        "healing": true
+      }
+    }
+  },
+  {
+    "id": "che_치료_정력견혈",
+    "name": "정력견혈(치료)",
+    "description": "[군사] 턴 실행 전 부상 회복.",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "general": {
+        "hasPreTurnTrigger": true,
+        "healing": true
+      }
+    }
+  },
+  {
+    "id": "che_치료_칠엽청점",
+    "name": "칠엽청점(치료)",
+    "description": "[군사] 턴 실행 전 부상 회복.",
+    "effects": {
+      "cost": 200,
+      "consumable": false,
+      "general": {
+        "hasPreTurnTrigger": true,
+        "healing": true
+      }
+    }
+  },
+  {
+    "id": "che_치료_환약",
+    "name": "환약(치료)",
+    "description": "[군사] 턴 실행 전 부상 회복. 3회용",
+    "effects": {
+      "cost": 200,
+      "consumable": true,
+      "buyable": true,
+      "general": {
+        "hasPreTurnTrigger": true,
+        "healing": true
+      }
+    }
+  },
+  {
+    "id": "che_치트_HideD의_사인검",
+    "name": "HideD의 사인검(치트)",
+    "description": "",
+    "effects": {
+      "cost": 9000000,
+      "consumable": false,
+      "buyable": false,
+      "combat": {
+        "hasBattleInitTrigger": true,
+        "hasBattlePhaseTrigger": true
+      },
+      "general": {
+        "hasPreTurnTrigger": true
+      }
+    }
+  },
+  {
+    "id": "che_필살_둔갑천서",
+    "name": "둔갑천서(필살)",
+    "description": "[전투] 필살 확률 +20%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_행동_서촉지형도",
+    "name": "서촉지형도(행동)",
+    "description": "[전투] 공격 시 페이즈 + 2",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_환술_논어집해",
+    "name": "논어집해(환술)",
+    "description": "[전투] 계략 성공 확률 +10%p, 계략 성공 시 대미지 +20%",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_회피_둔갑천서",
+    "name": "둔갑천서(회피)",
+    "description": "[전투] 회피 확률 +20%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_회피_태평요술",
+    "name": "태평요술(회피)",
+    "description": "[전투] 회피 확률 +20%p",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_훈련_과실주",
+    "name": "과실주(훈련)",
+    "description": "[전투] 훈련 보정 +10",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_훈련_단결도",
+    "name": "단결도(훈련)",
+    "description": "[전투] 훈련 보정 +15",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_훈련_이강주",
+    "name": "이강주(훈련)",
+    "description": "[전투] 훈련 보정 +10",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_훈련_철벽서",
+    "name": "철벽서(훈련)",
+    "description": "[전투] 훈련 보정 +15",
+    "effects": {
+      "cost": 200,
+      "consumable": false
+    }
+  },
+  {
+    "id": "che_훈련_청주",
+    "name": "청주(훈련)",
+    "description": "[전투] 훈련 +40(한도 내). 1회용",
+    "effects": {
+      "cost": 1000,
+      "consumable": true,
+      "buyable": true,
+      "combat": {
+        "hasBattleInitTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_빼빼로",
+    "name": "빼빼로",
+    "description": "1의 상징입니다. 통솔 +1, 무력 +1, 지력 +1",
+    "effects": {
+      "cost": 1500,
+      "consumable": false,
+      "buyable": true,
+      "statBonus": {
+        "strength": 1,
+        "intel": 1,
+        "leadership": 1
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_격노",
+    "name": "비급(격노)",
+    "description": "[전투] 상대방 필살 시 격노(필살) 발동, 회피 시도시 25% 확률로 격노 발동, 공격 시 일정 확률로 진노(1페이즈 추가), 격노마다 대미지 20% 추가 중첩",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "stackingDamageBonus": {
+          "skill": "격노",
+          "perStack": 0.2
+        },
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_견고",
+    "name": "비급(견고)",
+    "description": "[전투] 상대 필살 확률 -20%p, 상대 계략 시도시 성공 확률 -10%p, 부상 없음, 아군 피해 -10%",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattleInitTrigger": true,
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_공성",
+    "name": "비급(공성)",
+    "description": "[군사] 차병 계통 징·모병비 -10% [전투] 성벽 공격 시 대미지 +100%, 공격시 상대 병종에/수비시 자신 병종 숙련에 차병 숙련을 가산",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "condition": {
+        "target": "CASTLE"
+      },
+      "combat": {
+        "attackMultiplier": 2
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_궁병",
+    "name": "비급(궁병)",
+    "description": "[군사] 궁병 계통 징·모병비 -10% [전투] 회피 확률 +20%p, 공격시 상대 병종에/수비시 자신 병종 숙련에 궁병 숙련을 가산",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_귀병",
+    "name": "비급(귀병)",
+    "description": "[군사] 귀병 계통 징·모병비 -10% [전투] 계략 성공 확률 +20%p, 공격시 상대 병종에/수비시 자신 병종 숙련에 귀병 숙련을 가산",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_기병",
+    "name": "비급(기병)",
+    "description": "[군사] 기병 계통 징·모병비 -10% [전투] 수비 시 대미지 +10%, 공격 시 대미지 +20%, 공격시 상대 병종에/수비시 자신 병종 숙련에 기병 숙련을 가산",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_돌격",
+    "name": "비급(돌격)",
+    "description": "[전투] 공격 시 대등/유리한 병종에게는 퇴각 전까지 전투, 공격 시 페이즈 + 2, 공격 시 대미지 +5%",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_무쌍",
+    "name": "비급(무쌍)",
+    "description": "[전투] 대미지 +5%, 피해 -2%, 공격 시 필살 확률 +10%p,  승리 수의 로그 비례로 대미지 상승(10회 ⇒ +5%, 40회 ⇒ +15%) 승리 수의 로그 비례로 피해 감소(10회 ⇒ -2%, 40회 ⇒ -6%)",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_반계",
+    "name": "비급(반계)",
+    "description": "[전투] 상대의 계략 성공 확률 -10%p, 상대의 계략을 40% 확률로 되돌림, 반목 성공시 대미지 추가(+60% → +150%)",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_보병",
+    "name": "비급(보병)",
+    "description": "[군사] 보병 계통 징·모병비 -10% [전투] 공격 시 아군 피해 -10%, 수비 시 아군 피해 -20%, 공격시 상대 병종에/수비시 자신 병종 숙련에 보병 숙련을 가산",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_신산",
+    "name": "비급(신산)",
+    "description": "[계략] 화계·탈취·파괴·선동 : 성공률 +10%p [전투] 계략 시도 확률 +20%p, 계략 성공 확률 +20%p",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_신중",
+    "name": "비급(신중)",
+    "description": "[전투] 계략 성공 확률 100%",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_위압",
+    "name": "비급(위압)",
+    "description": "[전투] 첫 페이즈 위압 발동(적 공격, 회피 불가, 사기 5 감소)",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_의술",
+    "name": "비급(의술)",
+    "description": "[군사] 매 턴마다 자신(100%)과 소속 도시 장수(적 포함 50%) 부상 회복 [전투] 페이즈마다 40% 확률로 치료 발동(아군 피해 30% 감소, 부상 회복)",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      },
+      "general": {
+        "hasPreTurnTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_저격",
+    "name": "비급(저격)",
+    "description": "[전투] 새로운 상대와 전투 시 50% 확률로 저격 발동, 성공 시 사기+20",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_집중",
+    "name": "비급(집중)",
+    "description": "[전투] 계략 성공 시 대미지 +50%",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_징병",
+    "name": "비급(징병)",
+    "description": "[군사] 징병/모병 시 훈사 70/84 제공 [기타] 통솔 순수 능력치 보정 +25%, 징병/모병/소집해제 시 인구 변동 없음",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_척사",
+    "name": "비급(척사)",
+    "description": "[전투] 지역·도시 병종 상대로 대미지 +20%, 아군 피해 -20%",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_전투특기_필살",
+    "name": "비급(필살)",
+    "description": "[전투] 필살 확률 +30%p, 필살 발동시 대상 회피 불가, 필살 계수 향상",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true,
+      "combat": {
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  },
+  {
+    "id": "event_전투특기_환술",
+    "name": "비급(환술)",
+    "description": "[전투] 계략 성공 확률 +10%p, 계략 성공 시 대미지 +30%",
+    "effects": {
+      "cost": 100,
+      "consumable": false,
+      "buyable": true
+    }
+  },
+  {
+    "id": "event_충차",
+    "name": "충차",
+    "description": "[전투] 성벽 공격 시 대미지 +50%, 2회용",
+    "effects": {
+      "cost": 2000,
+      "consumable": true,
+      "buyable": true,
+      "condition": {
+        "target": "CASTLE"
+      },
+      "combat": {
+        "attackMultiplier": 1.5,
+        "hasBattlePhaseTrigger": true
+      }
+    }
+  }
+]
