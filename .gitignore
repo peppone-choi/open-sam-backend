@@ -36,5 +36,3 @@ coverage/
 *.bak
 *.backup
 *.bak
-config/archive/
-*.backup.json
