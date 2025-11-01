@@ -36,3 +36,4 @@ coverage/
 *.bak
 *.backup
 *.bak
+config/archive/
