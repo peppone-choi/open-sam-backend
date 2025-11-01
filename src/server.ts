@@ -3,17 +3,19 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 import { mongoConnection } from './db/connection';
 import { mountRoutes } from './api';
 import { errorMiddleware } from './common/middleware/error.middleware';
 import { requestLogger } from './common/middleware/request-logger.middleware';
 import { logger } from './common/logger';
 import { CommandRegistry } from './core/command';
+import { swaggerSpec } from './config/swagger';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // 보안 미들웨어
 app.use(helmet());
@@ -25,9 +27,44 @@ app.use(express.urlencoded({ extended: true }));
 // 요청 로깅 미들웨어
 app.use(requestLogger);
 
-// Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: 서버 상태 확인
+ *     tags: [Health]
+ *     description: 서버가 정상적으로 작동하는지 확인합니다.
+ *     responses:
+ *       200:
+ *         description: 서버 정상 작동
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2025-11-01T10:30:00.000Z
+ */
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Swagger API 문서
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'OpenSAM API Documentation'
+}));
+
+// Swagger JSON
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // 기존 도메인 라우터

@@ -1,4 +1,5 @@
 import { Session } from '../models/session.model';
+import { DeleteResult } from 'mongodb';
 
 /**
  * 세션 리포지토리
@@ -59,7 +60,7 @@ class SessionRepository {
    * @param sessionId - 세션 ID
    * @returns 삭제 결과
    */
-  async deleteBySessionId(sessionId: string) {
+  async deleteBySessionId(sessionId: string): Promise<DeleteResult> {
     return Session.deleteOne({ session_id: sessionId });
   }
 

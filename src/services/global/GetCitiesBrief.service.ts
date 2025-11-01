@@ -15,19 +15,18 @@ export class GetCitiesBriefService {
       }
 
       const cities = await City.find({ session_id: sessionId })
-        .select('city name data')
+        .select('city name nation level state region')
         .lean();
 
       const cityList: any[] = [];
       for (const city of cities) {
-        const cityData = city.data as any || {};
         cityList.push({
           city: city.city,
           name: city.name,
-          nation: cityData.nation || 0,
-          level: cityData.level || 0,
-          state: cityData.state || 0,
-          region: cityData.region || 0
+          nation: city.nation || 0,
+          level: city.level || 0,
+          state: city.state || 0,
+          region: city.region || 0
         });
       }
 

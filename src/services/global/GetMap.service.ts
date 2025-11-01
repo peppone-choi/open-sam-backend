@@ -129,19 +129,18 @@ export class GetMapService {
 
       // Get city list
       const cities = await City.find({ session_id: sessionId })
-        .select('city data')
+        .select('city level state nation region supply')
         .lean();
 
       const cityList: any[] = [];
       for (const city of cities) {
-        const cityData = city.data as any || {};
         cityList.push([
           city.city,
-          cityData.level || 0,
-          cityData.state || 0,
-          cityData.nation || 0,
-          cityData.region || 0,
-          cityData.supply || 0
+          city.level || 0,
+          city.state || 0,
+          city.nation || 0,
+          city.region || 0,
+          city.supply || 0
         ]);
       }
 

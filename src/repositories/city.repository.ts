@@ -1,4 +1,5 @@
 import { City } from '../models/city.model';
+import { DeleteResult } from 'mongodb';
 
 /**
  * 도시 리포지토리
@@ -103,7 +104,7 @@ class CityRepository {
    * @param cityId - 도시 ID
    * @returns 삭제 결과
    */
-  async deleteById(cityId: string) {
+  async deleteById(cityId: string): Promise<DeleteResult> {
     return City.deleteOne({ _id: cityId });
   }
 
@@ -112,7 +113,7 @@ class CityRepository {
    * @param sessionId - 세션 ID
    * @returns 삭제 결과
    */
-  async deleteBySession(sessionId: string) {
+  async deleteBySession(sessionId: string): Promise<DeleteResult> {
     return City.deleteMany({ session_id: sessionId });
   }
 

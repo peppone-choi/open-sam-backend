@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: opensam-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: sangokushi
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - opensam-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: opensam-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - opensam-network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  opensam-network:
+    driver: bridge

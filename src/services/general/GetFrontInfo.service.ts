@@ -358,15 +358,14 @@ export class GetFrontInfoService {
   ) {
     const city = await City.findOne({
       session_id: sessionId,
-      'data.id': cityId
+      city: cityId
     });
 
     if (!city) {
       return null;
     }
 
-    const cityData = city.data || {};
-    const cityNationId = cityData.nation || 0;
+    const cityNationId = city.nation || 0;
 
     // 도시 소속 국가 정보
     let nationName = '재야';
@@ -403,21 +402,21 @@ export class GetFrontInfoService {
 
     return {
       id: cityId,
-      name: cityData.name || '무명',
+      name: city.name || '무명',
       nationInfo: {
         id: cityNationId,
         name: nationName,
         color: nationColor
       },
-      level: cityData.level || 0,
-      trust: cityData.trust || 0,
-      pop: [cityData.pop || 0, cityData.pop_max || 10000],
-      agri: [cityData.agri || 0, cityData.agri_max || 10000],
-      comm: [cityData.comm || 0, cityData.comm_max || 10000],
-      secu: [cityData.secu || 0, cityData.secu_max || 10000],
-      def: [cityData.def || 0, cityData.def_max || 10000],
-      wall: [cityData.wall || 0, cityData.wall_max || 10000],
-      trade: cityData.trade || 0,
+      level: city.level || 0,
+      trust: city.trust || 0,
+      pop: [city.pop || 0, city.pop_max || 10000],
+      agri: [city.agri || 0, city.agri_max || 10000],
+      comm: [city.comm || 0, city.comm_max || 10000],
+      secu: [city.secu || 0, city.secu_max || 10000],
+      def: [city.def || 0, city.def_max || 10000],
+      wall: [city.wall || 0, city.wall_max || 10000],
+      trade: city.trade || 0,
       officerList
     };
   }

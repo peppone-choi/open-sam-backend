@@ -98,13 +98,12 @@ export class GetNationListService {
 
       // Get all cities
       const cities = await City.find({ session_id: sessionId })
-        .select('city name data')
+        .select('city name nation')
         .lean();
 
       // Add cities to their nations
       for (const city of cities) {
-        const cityData = city.data as any || {};
-        const nationID = cityData.nation || 0;
+        const nationID = city.nation || 0;
 
         // Initialize cities object if needed
         if (!sortedNations[nationID]) {

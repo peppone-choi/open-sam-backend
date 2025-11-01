@@ -34,3 +34,5 @@ coverage/
 # Temporary
 *.tmp
 *.bak
+*.backup
+*.bak

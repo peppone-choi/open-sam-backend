@@ -15,14 +15,14 @@ export class StartBattleService {
     try {
       const city = await City.findOne({
         session_id: sessionId,
-        'data.city': targetCityId
+        city: targetCityId
       });
 
       if (!city) {
         return { success: false, message: '대상 도시를 찾을 수 없습니다' };
       }
 
-      const terrain = this.getTerrainFromCity(city.data);
+      const terrain = this.getTerrainFromCity(city);
 
       const attackerUnits: IBattleUnit[] = [];
       for (const generalId of attackerGeneralIds) {
@@ -108,12 +108,12 @@ export class StartBattleService {
     }
   }
 
-  private static getTerrainFromCity(cityData: any): TerrainType {
-    const terrain = cityData.terrain;
+  private static getTerrainFromCity(city: any): TerrainType {
+    const terrain = city.terrain;
     if (terrain === 'forest') return TerrainType.FOREST;
     if (terrain === 'mountain') return TerrainType.MOUNTAIN;
     if (terrain === 'water') return TerrainType.WATER;
-    if (cityData.wall > 0) return TerrainType.FORTRESS;
+    if (city.wall > 0) return TerrainType.FORTRESS;
     return TerrainType.PLAINS;
   }
 

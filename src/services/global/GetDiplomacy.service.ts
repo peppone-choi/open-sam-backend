@@ -68,16 +68,15 @@ export class GetDiplomacyService {
 
       // Get cities and build conflict info
       const cities: any = await City.find({ session_id: sessionId })
-        .select('city name data')
+        .select('city name nation conflict')
         .lean();
 
       const realConflict: any[] = [];
       
       for (const city of cities) {
-        const cityData: any = city.data as any || {};
-        const nationID: any = cityData.nation || 0;
+        const nationID: any = city.nation || 0;
         const cityName: any = city.name;
-        const rawConflict: any = cityData.conflict || {};
+        const rawConflict: any = city.conflict || {};
 
         // Add city to nation
         if (nationID !== 0 && sortedNations[nationID]) {

@@ -95,7 +95,7 @@ export class ExecuteCommandService {
         };
       }
 
-      if (city.data.nation !== context.ownerAtQueue) {
+      if (city.nation !== context.ownerAtQueue) {
         return {
           valid: false,
           reason: 'city_ownership_changed',

@@ -110,14 +110,13 @@ export class GetCurrentHistoryService {
 
     const cityList: any[] = [];
     for (const city of cities) {
-      const cityData = city.data as any || {};
       cityList.push([
         city.city,
-        cityData.level || 0,
-        cityData.state || 0,
-        cityData.nation || 0,
-        cityData.region || 0,
-        cityData.supply || 0
+        city.level || 0,
+        city.state || 0,
+        city.nation || 0,
+        city.region || 0,
+        city.supply || 0
       ]);
     }
 
@@ -222,12 +221,11 @@ export class GetCurrentHistoryService {
 
     // Get all cities and add to nations
     const cities = await City.find({ session_id: sessionId })
-      .select('city name data')
+      .select('city name nation')
       .lean();
 
     for (const city of cities) {
-      const cityData = city.data as any || {};
-      const nationId = cityData.nation || 0;
+      const nationId = city.nation || 0;
       
       if (nationMap[nationId]) {
         nationMap[nationId].cities.push(city.name);

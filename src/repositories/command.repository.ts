@@ -1,4 +1,5 @@
 import { Command } from '../models/command.model';
+import { DeleteResult } from 'mongodb';
 
 /**
  * 커맨드 리포지토리
@@ -89,7 +90,7 @@ class CommandRepository {
    * @param commandId - 커맨드 ID
    * @returns 삭제 결과
    */
-  async deleteById(commandId: string) {
+  async deleteById(commandId: string): Promise<DeleteResult> {
     return Command.deleteOne({ _id: commandId });
   }
 
@@ -98,7 +99,7 @@ class CommandRepository {
    * @param sessionId - 세션 ID
    * @returns 삭제 결과
    */
-  async deleteBySession(sessionId: string) {
+  async deleteBySession(sessionId: string): Promise<DeleteResult> {
     return Command.deleteMany({ session_id: sessionId });
   }
 

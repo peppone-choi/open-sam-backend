@@ -1,11 +1,11 @@
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 
-export const redis = createClient({
+export const redis: RedisClientType = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
+}) as RedisClientType;
 
 // Alias for convenience
-export const redisClient = redis;
+export const redisClient: RedisClientType = redis;
 
 export async function connectRedis() {
   try {

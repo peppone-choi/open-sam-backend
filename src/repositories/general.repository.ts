@@ -1,4 +1,5 @@
 import { General } from '../models/general.model';
+import { DeleteResult } from 'mongodb';
 
 /**
  * 장수 리포지토리
@@ -89,7 +90,7 @@ class GeneralRepository {
    * @param generalId - 장수 ID
    * @returns 삭제 결과
    */
-  async deleteById(generalId: string) {
+  async deleteById(generalId: string): Promise<DeleteResult> {
     return General.deleteOne({ _id: generalId });
   }
 

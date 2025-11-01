@@ -5,7 +5,45 @@ import * as jwt from 'jsonwebtoken';
 
 const router = Router();
 
-// 회원가입
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: 회원가입
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: player1
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: 회원가입 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 userId:
+ *                   type: string
+ *       400:
+ *         description: 이미 존재하는 사용자
+ *       500:
+ *         description: 서버 에러
+ */
 router.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -34,7 +72,47 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// 로그인
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: 로그인
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: player1
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: 로그인 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                 userId:
+ *                   type: string
+ *       401:
+ *         description: 인증 실패
+ *       500:
+ *         description: 서버 에러
+ */
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -67,7 +145,20 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 내 정보
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: 내 정보 조회
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 사용자 정보
+ *       401:
+ *         description: 인증 필요
+ */
 router.get('/me', async (req, res) => {
   try {
     // TODO: JWT 미들웨어 추가 후 구현
