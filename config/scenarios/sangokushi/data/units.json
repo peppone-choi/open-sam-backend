@@ -27,6 +27,18 @@
         }
       ]
     },
+    "1100": {
+      "id": 1100,
+      "name": "보병",
+      "cost": 100,
+      "power": 150,
+      "def_bonus": 7,
+      "train_cost": 10,
+      "mobility": 0,
+      "atk_tech": 9,
+      "def_tech": 9,
+      "type": "footman"
+    },
     "1101": {
       "id": 1101,
       "type": "FOOTMAN",
@@ -45,7 +57,7 @@
       "attacks": {
         "ARCHER": 1.1,
         "CAVALRY": 0.7,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "defenses": {
         "ARCHER": 0.9,
@@ -76,7 +88,7 @@
       "attacks": {
         "ARCHER": 1.2,
         "CAVALRY": 0.8,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "defenses": {
         "ARCHER": 0.8,
@@ -186,7 +198,7 @@
       "attacks": {
         "ARCHER": 1.5,
         "CAVALRY": 0.8,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "defenses": {
         "ARCHER": 0.5,
@@ -292,12 +304,12 @@
         "defenseRange": 9
       },
       "attacks": {
-        "ARCHER": 1.0,
+        "ARCHER": 1,
         "CAVALRY": 0.8,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "defenses": {
-        "ARCHER": 1.0,
+        "ARCHER": 1,
         "CAVALRY": 1.2,
         "SIEGE": 0.8
       },
@@ -402,7 +414,7 @@
       "attacks": {
         "ARCHER": 1.1,
         "CAVALRY": 0.8,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "defenses": {
         "ARCHER": 0.9,
@@ -581,12 +593,12 @@
       },
       "attacks": {
         "ARCHER": 1.3,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "SIEGE": 1.2
       },
       "defenses": {
         "ARCHER": 0.7,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "SIEGE": 0.7
       },
       "description": [
@@ -599,6 +611,56 @@
           "value": 2500
         }
       ]
+    },
+    "1117": {
+      "id": 1117,
+      "type": "FOOTMAN",
+      "name": "묵협",
+      "cost": {
+        "gold": 160,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 16
+      },
+      "attacks": {
+        "ARCHER": 1.3,
+        "SIEGE": 1.1,
+        "FOOTMAN_HEAVY": 1.2,
+        "WIZARD": 1.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SIEGE": 0.8,
+        "FOOTMAN_HEAVY": 0.8,
+        "WIZARD": 0.6
+      },
+      "description": [
+        "묵가 사상을 가진 국가만 모집 가능한 정예 방어 보병입니다. 중철갑과 견고한 방패, 도를 사용합니다.",
+        "'겸애'와 '비공'의 정신으로 무장하여 적의 원거리 공격과 책략 유닛(WIZARD)에 대해 높은 방어력을 가집니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "mohism"
+        }
+      ]
+    },
+    "1200": {
+      "id": 1200,
+      "name": "궁병",
+      "cost": 100,
+      "power": 100,
+      "def_bonus": 7,
+      "train_cost": 10,
+      "mobility": 0,
+      "atk_tech": 10,
+      "def_tech": 10,
+      "type": "footman"
     },
     "1201": {
       "id": 1201,
@@ -792,12 +854,12 @@
       },
       "attacks": {
         "CAVALRY": 1.7,
-        "FOOTMAN": 1.0,
+        "FOOTMAN": 1,
         "ARCHER": 0.8
       },
       "defenses": {
         "CAVALRY": 0.4,
-        "FOOTMAN": 1.0,
+        "FOOTMAN": 1,
         "ARCHER": 1.2
       },
       "description": [
@@ -864,12 +926,12 @@
       },
       "attacks": {
         "CAVALRY": 1.8,
-        "FOOTMAN": 1.0,
+        "FOOTMAN": 1,
         "ARCHER": 0.8
       },
       "defenses": {
         "CAVALRY": 0.3,
-        "FOOTMAN": 1.0,
+        "FOOTMAN": 1,
         "ARCHER": 1.2
       },
       "description": [
@@ -991,6 +1053,18 @@
         }
       ]
     },
+    "1300": {
+      "id": 1300,
+      "name": "기병",
+      "cost": 150,
+      "power": 100,
+      "def_bonus": 7,
+      "train_cost": 5,
+      "mobility": 0,
+      "atk_tech": 11,
+      "def_tech": 11,
+      "type": "footman"
+    },
     "1301": {
       "id": 1301,
       "type": "ARCHER",
@@ -1041,13 +1115,13 @@
       },
       "attacks": {
         "FOOTMAN": 1.2,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "SIEGE": 0.6,
         "ARCHER_ARMOR": 0.7
       },
       "defenses": {
         "FOOTMAN": 1.1,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "SIEGE": 1.4,
         "ARCHER_ARMOR": 1.1
       },
@@ -1155,7 +1229,7 @@
         "SIEGE": 0.7
       },
       "defenses": {
-        "FOOTMAN": 1.0,
+        "FOOTMAN": 1,
         "CAVALRY": 0.9,
         "SIEGE": 1.3
       },
@@ -1188,12 +1262,12 @@
       "attacks": {
         "FOOTMAN_HEAVY": 1.5,
         "CAVALRY_ARMOR": 1.3,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "defenses": {
         "FOOTMAN_HEAVY": 0.6,
         "CAVALRY_ARMOR": 0.7,
-        "SIEGE": 1.0
+        "SIEGE": 1
       },
       "description": [
         "병가 사상을 가진 국가만 모집 가능한 최정예 노병입니다. 평철갑을 착용하며 강화된 노를 사용합니다.",
@@ -1223,12 +1297,12 @@
       },
       "attacks": {
         "FOOTMAN": 1.2,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "SIEGE": 0.7
       },
       "defenses": {
-        "FOOTMAN": 1.0,
-        "CAVALRY": 1.0,
+        "FOOTMAN": 1,
+        "CAVALRY": 1,
         "SIEGE": 1.3
       },
       "description": [
@@ -1316,6 +1390,44 @@
         }
       ]
     },
+    "1310": {
+      "id": 1310,
+      "type": "ARCHER",
+      "name": "진국노병대",
+      "cost": {
+        "gold": 190,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 175,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.4,
+        "CAVALRY_ARMOR": 1.3,
+        "SIEGE": 0.9,
+        "FOOTMAN": 1.2
+      },
+      "defenses": {
+        "FOOTMAN_HEAVY": 0.6,
+        "CAVALRY_ARMOR": 0.7,
+        "SIEGE": 1.1,
+        "FOOTMAN": 1
+      },
+      "description": [
+        "삼국시대 진왕 유총의 근거지에서 모집 가능한 정예 노병입니다. 평철갑과 고급 노를 사용하여 대규모 집중 사격을 가합니다.",
+        "높은 관통 피해로 적의 중장갑 부대에 치명적이며, 대규모 운용 시 화력 집중 능력이 극대화됩니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "진양"
+        }
+      ]
+    },
     "1401": {
       "id": 1401,
       "type": "CAVALRY",
@@ -1341,7 +1453,7 @@
         "ARCHER": 0.8,
         "SIEGE": 0.9,
         "FOOTMAN": 0.9,
-        "SPEARMAN": 2.0
+        "SPEARMAN": 2
       },
       "description": [
         "경피갑과 도를 사용하는 경급 기병입니다. 기병용 등나무 방패를 지녔습니다.",
@@ -1528,7 +1640,7 @@
         "defenseRange": 16
       },
       "attacks": {
-        "ARCHER": 2.0,
+        "ARCHER": 2,
         "SIEGE": 1.8,
         "FOOTMAN": 1.6,
         "SPEARMAN": 0.9,
@@ -1630,6 +1742,18 @@
         }
       ]
     },
+    "1500": {
+      "id": 1500,
+      "name": "정란",
+      "cost": 100,
+      "power": 100,
+      "def_bonus": 6,
+      "train_cost": 0,
+      "mobility": 0,
+      "atk_tech": 14,
+      "def_tech": 5,
+      "type": "misc"
+    },
     "1501": {
       "id": 1501,
       "type": "MIXED",
@@ -1683,12 +1807,12 @@
       },
       "attacks": {
         "FOOTMAN": 1.2,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "ARCHER": 0.9
       },
       "defenses": {
         "FOOTMAN": 0.8,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "ARCHER": 1.1
       },
       "description": [
@@ -1720,10 +1844,10 @@
       "attacks": {
         "FOOTMAN": 1.1,
         "CAVALRY": 0.9,
-        "ARCHER": 1.0
+        "ARCHER": 1
       },
       "defenses": {
-        "FOOTMAN": 1.0,
+        "FOOTMAN": 1,
         "CAVALRY": 1.1,
         "ARCHER": 0.9
       },
@@ -1755,7 +1879,7 @@
       },
       "defenses": {
         "FOOTMAN": 0.9,
-        "CAVALRY": 1.0,
+        "CAVALRY": 1,
         "ARCHER": 1.1
       },
       "description": [
@@ -1785,7 +1909,7 @@
         "defenseRange": 5
       },
       "attacks": {
-        "CASTLE": 2.0,
+        "CASTLE": 2,
         "FOOTMAN": 1.5,
         "ARCHER": 1.5,
         "CAVALRY": 0.5
@@ -1794,7 +1918,7 @@
         "CASTLE": 0.5,
         "FOOTMAN": 0.8,
         "ARCHER": 0.8,
-        "CAVALRY": 2.0
+        "CAVALRY": 2
       },
       "description": [
         "중장갑을 갖춘 공성 병기입니다. 멀리서 거대한 돌덩이를 발사하여 적의 성벽과 병력을 파괴합니다.",
@@ -1952,82 +2076,6 @@
           "value": "taoism_religious"
         }
       ]
-    },
-    "1117": {
-    "id": 1117,
-    "type": "FOOTMAN",
-    "name": "묵협",
-    "cost": {
-      "gold": 160,
-      "rice": 200
-    },
-    "stats": {
-      "tech": 5,
-      "offense": 14,
-      "magic": 0,
-      "attackRange": 9,
-      "defenseRange": 16
-    },
-    "attacks": {
-      "ARCHER": 1.3,
-      "SIEGE": 1.1,
-      "FOOTMAN_HEAVY": 1.2,
-      "WIZARD": 1.5
-    },
-    "defenses": {
-      "ARCHER": 0.7,
-      "SIEGE": 0.8,
-      "FOOTMAN_HEAVY": 0.8,
-      "WIZARD": 0.6
-    },
-    "description": [
-      "묵가 사상을 가진 국가만 모집 가능한 정예 방어 보병입니다. 중철갑과 견고한 방패, 도를 사용합니다.",
-      "'겸애'와 '비공'의 정신으로 무장하여 적의 원거리 공격과 책략 유닛(WIZARD)에 대해 높은 방어력을 가집니다."
-    ],
-    "constraints": [
-      {
-        "type": "country_type_unlock",
-        "value": "mohism"
-      }
-    ]
-  },
-  "1310": {
-    "id": 1310,
-    "type": "ARCHER",
-    "name": "진국노병대",
-    "cost": {
-      "gold": 190,
-      "rice": 180
-    },
-    "stats": {
-      "tech": 7,
-      "offense": 13,
-      "magic": 0,
-      "attackRange": 175,
-      "defenseRange": 10
-    },
-    "attacks": {
-      "FOOTMAN_HEAVY": 1.4,
-      "CAVALRY_ARMOR": 1.3,
-      "SIEGE": 0.9,
-      "FOOTMAN": 1.2
-    },
-    "defenses": {
-      "FOOTMAN_HEAVY": 0.6,
-      "CAVALRY_ARMOR": 0.7,
-      "SIEGE": 1.1,
-      "FOOTMAN": 1.0
-    },
-    "description": [
-      "삼국시대 진왕 유총의 근거지에서 모집 가능한 정예 노병입니다. 평철갑과 고급 노를 사용하여 대규모 집중 사격을 가합니다.",
-      "높은 관통 피해로 적의 중장갑 부대에 치명적이며, 대규모 운용 시 화력 집중 능력이 극대화됩니다."
-    ],
-    "constraints": [
-      {
-        "type": "reqCities",
-        "value": "진양"
-      }
-    ]
-  }
+    }
   }
 }
