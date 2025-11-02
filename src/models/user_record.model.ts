@@ -27,4 +27,4 @@ const UserRecordSchema = new Schema<IUserRecord>({
 
 UserRecordSchema.index({ session_id: 1, user_id: 1, created_at: -1 });
 
-export const UserRecord = mongoose.model<IUserRecord>('UserRecord', UserRecordSchema);
+export const UserRecord = mongoose.models.UserRecord || mongoose.model<IUserRecord>('UserRecord', UserRecordSchema);

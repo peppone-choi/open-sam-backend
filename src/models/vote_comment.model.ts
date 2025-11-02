@@ -21,4 +21,4 @@ const VoteCommentSchema = new Schema<IVoteComment>({
 // 복합 인덱스 추가
 VoteCommentSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const VoteComment = mongoose.model<IVoteComment>('VoteComment', VoteCommentSchema);
+export const VoteComment = mongoose.models.VoteComment || mongoose.model<IVoteComment>('VoteComment', VoteCommentSchema);

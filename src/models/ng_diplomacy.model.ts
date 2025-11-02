@@ -20,4 +20,4 @@ const NgDiplomacySchema = new Schema<INgDiplomacy>({
 
 // 복합 인덱스 추가
 
-export const NgDiplomacy = mongoose.model<INgDiplomacy>('NgDiplomacy', NgDiplomacySchema);
+export const NgDiplomacy = mongoose.models.NgDiplomacy || mongoose.model<INgDiplomacy>('NgDiplomacy', NgDiplomacySchema);

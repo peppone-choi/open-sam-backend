@@ -21,4 +21,4 @@ const GeneralTurnSchema = new Schema<IGeneralTurn>({
 // 복합 인덱스 추가
 GeneralTurnSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const GeneralTurn = mongoose.model<IGeneralTurn>('GeneralTurn', GeneralTurnSchema);
+export const GeneralTurn = mongoose.models.GeneralTurn || mongoose.model<IGeneralTurn>('GeneralTurn', GeneralTurnSchema);

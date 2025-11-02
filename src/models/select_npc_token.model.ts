@@ -21,4 +21,4 @@ const SelectNpcTokenSchema = new Schema<ISelectNpcToken>({
 // 복합 인덱스 추가
 SelectNpcTokenSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const SelectNpcToken = mongoose.model<ISelectNpcToken>('SelectNpcToken', SelectNpcTokenSchema);
+export const SelectNpcToken = mongoose.models.SelectNpcToken || mongoose.model<ISelectNpcToken>('SelectNpcToken', SelectNpcTokenSchema);

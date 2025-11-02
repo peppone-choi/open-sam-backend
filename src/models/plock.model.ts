@@ -20,4 +20,4 @@ const PlockSchema = new Schema<IPlock>({
 
 // 복합 인덱스 추가
 
-export const Plock = mongoose.model<IPlock>('Plock', PlockSchema);
+export const Plock = mongoose.models.Plock || mongoose.model<IPlock>('Plock', PlockSchema);

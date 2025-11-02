@@ -21,4 +21,4 @@ const NationTurnSchema = new Schema<INationTurn>({
 // 복합 인덱스 추가
 NationTurnSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const NationTurn = mongoose.model<INationTurn>('NationTurn', NationTurnSchema);
+export const NationTurn = mongoose.models.NationTurn || mongoose.model<INationTurn>('NationTurn', NationTurnSchema);

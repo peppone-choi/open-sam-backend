@@ -20,4 +20,4 @@ const BoardSchema = new Schema<IBoard>({
 
 // 복합 인덱스 추가
 
-export const Board = mongoose.model<IBoard>('Board', BoardSchema);
+export const Board = mongoose.models.Board || mongoose.model<IBoard>('Board', BoardSchema);

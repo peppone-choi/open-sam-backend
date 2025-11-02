@@ -26,4 +26,4 @@ const GeneralLogSchema: Schema = new Schema({
 GeneralLogSchema.index({ session_id: 1, general_id: 1, log_type: 1 });
 GeneralLogSchema.index({ id: -1 });
 
-export const GeneralLog = mongoose.model<IGeneralLog>('GeneralLog', GeneralLogSchema);
+export const GeneralLog = mongoose.models.GeneralLog || mongoose.model<IGeneralLog>('GeneralLog', GeneralLogSchema);

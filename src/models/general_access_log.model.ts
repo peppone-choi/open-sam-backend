@@ -21,4 +21,4 @@ const GeneralAccessLogSchema = new Schema<IGeneralAccessLog>({
 // 복합 인덱스 추가
 GeneralAccessLogSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const GeneralAccessLog = mongoose.model<IGeneralAccessLog>('GeneralAccessLog', GeneralAccessLogSchema);
+export const GeneralAccessLog = mongoose.models.GeneralAccessLog || mongoose.model<IGeneralAccessLog>('GeneralAccessLog', GeneralAccessLogSchema);

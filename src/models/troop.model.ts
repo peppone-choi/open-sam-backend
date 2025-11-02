@@ -20,4 +20,4 @@ const TroopSchema = new Schema<ITroop>({
 
 // 복합 인덱스 추가
 
-export const Troop = mongoose.model<ITroop>('Troop', TroopSchema);
+export const Troop = mongoose.models.Troop || mongoose.model<ITroop>('Troop', TroopSchema);

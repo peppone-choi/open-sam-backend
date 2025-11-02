@@ -21,4 +21,4 @@ const RankDataSchema = new Schema<IRankData>({
 // 복합 인덱스 추가
 RankDataSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const RankData = mongoose.model<IRankData>('RankData', RankDataSchema);
+export const RankData = mongoose.models.RankData || mongoose.model<IRankData>('RankData', RankDataSchema);

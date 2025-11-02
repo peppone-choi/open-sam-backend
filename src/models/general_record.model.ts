@@ -21,4 +21,4 @@ const GeneralRecordSchema = new Schema<IGeneralRecord>({
 // 복합 인덱스 추가
 GeneralRecordSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const GeneralRecord = mongoose.model<IGeneralRecord>('GeneralRecord', GeneralRecordSchema);
+export const GeneralRecord = mongoose.models.GeneralRecord || mongoose.model<IGeneralRecord>('GeneralRecord', GeneralRecordSchema);

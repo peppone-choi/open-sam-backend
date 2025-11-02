@@ -21,4 +21,4 @@ const VoteSchema = new Schema<IVote>({
 // 복합 인덱스 추가
 VoteSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const Vote = mongoose.model<IVote>('Vote', VoteSchema);
+export const Vote = mongoose.models.Vote || mongoose.model<IVote>('Vote', VoteSchema);

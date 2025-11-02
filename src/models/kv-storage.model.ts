@@ -21,4 +21,4 @@ const KVStorageSchema: Schema = new Schema({
 
 KVStorageSchema.index({ session_id: 1, storage_id: 1 }, { unique: true });
 
-export const KVStorage = mongoose.model<IKVStorage>('KVStorage', KVStorageSchema);
+export const KVStorage = mongoose.models.KVStorage || mongoose.model<IKVStorage>('KVStorage', KVStorageSchema);

@@ -39,4 +39,4 @@ const NationSchema = new Schema<INation>({
 // 인덱스: session_id + nation 조합이 유니크
 NationSchema.index({ session_id: 1, nation: 1 }, { unique: true });
 
-export const Nation = mongoose.model<INation>('Nation', NationSchema);
+export const Nation = mongoose.models.Nation || mongoose.model<INation>('Nation', NationSchema);

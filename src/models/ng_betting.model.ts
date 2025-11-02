@@ -21,4 +21,4 @@ const NgBettingSchema = new Schema<INgBetting>({
 // 복합 인덱스 추가
 NgBettingSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const NgBetting = mongoose.model<INgBetting>('NgBetting', NgBettingSchema);
+export const NgBetting = mongoose.models.NgBetting || mongoose.model<INgBetting>('NgBetting', NgBettingSchema);

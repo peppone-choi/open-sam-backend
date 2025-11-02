@@ -37,4 +37,4 @@ const CommandSchema = new Schema<ICommand>({
 CommandSchema.index({ session_id: 1, status: 1, completion_time: 1 });
 CommandSchema.index({ session_id: 1, general_id: 1, status: 1 });
 
-export const Command = mongoose.model<ICommand>('Command', CommandSchema);
+export const Command = mongoose.models.Command || mongoose.model<ICommand>('Command', CommandSchema);

@@ -21,4 +21,4 @@ const SelectPoolSchema = new Schema<ISelectPool>({
 // 복합 인덱스 추가
 SelectPoolSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const SelectPool = mongoose.model<ISelectPool>('SelectPool', SelectPoolSchema);
+export const SelectPool = mongoose.models.SelectPool || mongoose.model<ISelectPool>('SelectPool', SelectPoolSchema);

@@ -75,4 +75,4 @@ const AuctionSchema = new Schema({
 AuctionSchema.index({ session_id: 1, type: 1, finished: 1 });
 AuctionSchema.index({ session_id: 1, target: 1, finished: 1 });
 
-export const Auction = mongoose.model<IAuction>('Auction', AuctionSchema);
+export const Auction = mongoose.models.Auction || mongoose.model<IAuction>('Auction', AuctionSchema);

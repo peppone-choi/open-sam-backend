@@ -20,4 +20,4 @@ const TournamentSchema = new Schema<ITournament>({
 
 // 복합 인덱스 추가
 
-export const Tournament = mongoose.model<ITournament>('Tournament', TournamentSchema);
+export const Tournament = mongoose.models.Tournament || mongoose.model<ITournament>('Tournament', TournamentSchema);

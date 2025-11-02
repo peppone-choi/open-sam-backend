@@ -20,4 +20,4 @@ const StatisticSchema = new Schema<IStatistic>({
 
 // 복합 인덱스 추가
 
-export const Statistic = mongoose.model<IStatistic>('Statistic', StatisticSchema);
+export const Statistic = mongoose.models.Statistic || mongoose.model<IStatistic>('Statistic', StatisticSchema);

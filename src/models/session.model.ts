@@ -151,4 +151,4 @@ const SessionSchema = new Schema<ISession>({
   timestamps: true
 });
 
-export const Session = mongoose.model<ISession>('Session', SessionSchema);
+export const Session = mongoose.models.Session || mongoose.model<ISession>('Session', SessionSchema);

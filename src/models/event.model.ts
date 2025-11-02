@@ -21,4 +21,4 @@ const EventSchema = new Schema<IEvent>({
 // 복합 인덱스 추가
 EventSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const Event = mongoose.model<IEvent>('Event', EventSchema);
+export const Event = mongoose.models.Event || mongoose.model<IEvent>('Event', EventSchema);

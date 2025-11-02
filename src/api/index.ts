@@ -19,6 +19,7 @@ import auctionRoutes from '../routes/auction.routes';
 import bettingRoutes from '../routes/betting.routes';
 import messageRoutes from '../routes/message.routes';
 import voteRoutes from '../routes/vote.routes';
+import legacyRoutes from '../routes/legacy';
 
 // === Advanced Routes (src/api/) ===
 // TEMPORARILY DISABLED - Missing dependencies/implementation
@@ -84,6 +85,9 @@ export const mountRoutes = (app: Express) => {
   app.use('/api/inheritance', inheritanceRoutes);
   app.use('/api/inheritaction', inheritactionRoutes);
   app.use('/api/misc', miscRoutes);
+  
+  // Legacy PHP Compatibility Layer
+  app.use('/api/legacy', legacyRoutes);
   
   // ============================================
   // P3: Low Priority Routes (고급 기능)

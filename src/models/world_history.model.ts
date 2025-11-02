@@ -21,4 +21,4 @@ const WorldHistorySchema = new Schema<IWorldHistory>({
 // 복합 인덱스 추가
 WorldHistorySchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const WorldHistory = mongoose.model<IWorldHistory>('WorldHistory', WorldHistorySchema);
+export const WorldHistory = mongoose.models.WorldHistory || mongoose.model<IWorldHistory>('WorldHistory', WorldHistorySchema);

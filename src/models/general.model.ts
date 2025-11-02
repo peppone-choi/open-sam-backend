@@ -211,4 +211,4 @@ GeneralSchema.methods.applyDB = async function(db: any): Promise<void> {
   await this.save();
 };
 
-export const General = mongoose.model<IGeneral>('General', GeneralSchema);
+export const General = mongoose.models.General || mongoose.model<IGeneral>('General', GeneralSchema);

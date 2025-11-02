@@ -196,4 +196,4 @@ BattleActionSchema.index({ unit_id: 1, turn: 1 });
 BattleActionSchema.index({ general_id: 1, battle_id: 1 });
 BattleActionSchema.index({ submitted_at: 1 });
 
-export const BattleAction = mongoose.model<IBattleAction>('BattleAction', BattleActionSchema);
+export const BattleAction = mongoose.models.BattleAction || mongoose.model<IBattleAction>('BattleAction', BattleActionSchema);

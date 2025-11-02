@@ -20,4 +20,4 @@ const CommentSchema = new Schema<IComment>({
 
 // 복합 인덱스 추가
 
-export const Comment = mongoose.model<IComment>('Comment', CommentSchema);
+export const Comment = mongoose.models.Comment || mongoose.model<IComment>('Comment', CommentSchema);

@@ -21,4 +21,4 @@ const MessageSchema = new Schema<IMessage>({
 // 복합 인덱스 추가
 MessageSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
 
-export const Message = mongoose.model<IMessage>('Message', MessageSchema);
+export const Message = mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);

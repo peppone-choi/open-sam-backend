@@ -136,4 +136,4 @@ BattleInstanceSchema.index({ session_id: 1, status: 1 });
 BattleInstanceSchema.index({ 'attacker.generals': 1 });
 BattleInstanceSchema.index({ 'defender.generals': 1 });
 
-export const BattleInstance = mongoose.model<IBattleInstance>('BattleInstance', BattleInstanceSchema);
+export const BattleInstance = mongoose.models.BattleInstance || mongoose.model<IBattleInstance>('BattleInstance', BattleInstanceSchema);

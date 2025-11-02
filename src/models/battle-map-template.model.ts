@@ -126,4 +126,4 @@ const BattleMapTemplateSchema = new Schema<IBattleMapTemplate>({
 
 BattleMapTemplateSchema.index({ session_id: 1, city_id: 1 }, { unique: true });
 
-export const BattleMapTemplate = mongoose.model<IBattleMapTemplate>('BattleMapTemplate', BattleMapTemplateSchema);
+export const BattleMapTemplate = mongoose.models.BattleMapTemplate || mongoose.model<IBattleMapTemplate>('BattleMapTemplate', BattleMapTemplateSchema);
