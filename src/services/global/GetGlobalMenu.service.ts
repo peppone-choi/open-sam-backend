@@ -5,7 +5,7 @@ export class GetGlobalMenuService {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,

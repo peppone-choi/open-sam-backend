@@ -24,7 +24,7 @@ export class GetContactListService {
 
       const generalNations: { [key: number]: any[] } = {};
 
-      const generals = await General.find({
+      const generals = await (General as any).find({
         session_id: sessionId,
         'data.npc': { $lt: 2 }
       }).select('data.no data.name data.nation data.officer_level data.npc data.permission data.penalty').lean();
@@ -58,7 +58,7 @@ export class GetContactListService {
         generalNations[nationID].push([generalID, generalName, flags]);
       }
 
-      const nations = await Nation.find({ session_id: sessionId })
+      const nations = await (Nation as any).find({ session_id: sessionId })
         .select('data.nation data.name data.color')
         .lean();
 

@@ -15,7 +15,7 @@ export class GetMoreLogService {
         return { success: false, message: '잘못된 lastID 파라미터입니다.' };
       }
       
-      const logs = await UserRecord.find({
+      const logs = await (UserRecord as any).find({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

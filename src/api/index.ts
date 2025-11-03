@@ -24,7 +24,7 @@ import legacyRoutes from '../routes/legacy';
 // === Advanced Routes (src/api/) ===
 // TEMPORARILY DISABLED - Missing dependencies/implementation
 // TODO: Fix these routes after core services are implemented
-// import adminRouter from './admin/router/admin.router';
+import adminRouter from './admin/router/admin.router';
 // import battleRouter from './battle/router/battle.router';
 // import commandRouter from './command/router/command.router';
 import gameSessionRouter from './game-session/router/game-session.router';
@@ -95,16 +95,16 @@ export const mountRoutes = (app: Express) => {
   
   // TEMPORARILY DISABLED - Missing dependencies
   // TODO: Re-enable after fixing:
-  // - src/api/admin (missing services)
   // - src/api/battle (missing StartBattle.service, battle.model)
   // - src/api/command (CommandService method mismatch)
   // - src/api/v2 (missing entity implementation)
   
-  // Admin
-  // app.use('/api/admin', adminRouter);
+  // Admin (Enabled - requires grade >= 5 in JWT)
+  app.use('/api/admin', adminRouter);
   
   // Game Session Management
   app.use('/api/game-sessions', gameSessionRouter);
+  app.use('/api/game-session', gameSessionRouter); // 단수형 별칭 (호환성)
   
   // Advanced Command System
   // app.use('/api/v2/command', commandRouter);
@@ -117,10 +117,11 @@ export const mountRoutes = (app: Express) => {
   app.use('/api/entities', entityUnifiedRouter);
   
   console.log('✅ Core API routes mounted successfully');
-  console.log('📍 Active routes: 20 (18 core + 2 advanced)');
+  console.log('📍 Active routes: 21 (18 core + 3 advanced)');
   console.log('   P0 (Critical): 4 routes');
   console.log('   P1 (High): 7 routes');
   console.log('   P2 (Medium): 7 routes');
-  console.log('   P3 (Low): 2 routes (4 disabled)');
+  console.log('   P3 (Low): 3 routes (3 disabled)');
+  console.log('✅ Admin routes enabled - requires grade >= 5');
   console.log('⚠️  Some advanced routes disabled - see src/api/index.ts for details');
 };

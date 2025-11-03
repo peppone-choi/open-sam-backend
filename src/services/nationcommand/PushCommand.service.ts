@@ -20,7 +20,7 @@ export class PushCommandService {
         throw new Error('범위를 벗어났습니다 (-12 ~ 12)');
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });

@@ -23,7 +23,7 @@ export class GetVoteDetailService {
         throw new Error('유효하지 않은 투표 ID입니다.');
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }
@@ -37,7 +37,7 @@ export class GetVoteDetailService {
 
       const voteInfo: VoteInfo = rawVote as VoteInfo;
 
-      const voteRecords = await Vote.find({ 
+      const voteRecords = await (Vote as any).find({ 
         session_id: sessionId,
         'data.vote_id': voteID 
       });
@@ -56,7 +56,7 @@ export class GetVoteDetailService {
         cnt
       ]);
 
-      const comments = await VoteComment.find({ 
+      const comments = await (VoteComment as any).find({ 
         session_id: sessionId,
         'data.vote_id': voteID 
       }).sort({ 'data.id': 1 });
@@ -65,7 +65,7 @@ export class GetVoteDetailService {
 
       let myVote = null;
       if (user?.generalId) {
-        const myVoteRecord = await Vote.findOne({
+        const myVoteRecord = await (Vote as any).findOne({
           session_id: sessionId,
           'data.vote_id': voteID,
           'data.general_id': user.generalId
@@ -76,7 +76,7 @@ export class GetVoteDetailService {
         }
       }
 
-      const userCnt = await General.countDocuments({
+      const userCnt = await (General as any).countDocuments({
         session_id: sessionId,
         'data.npc': { $lt: 2 }
       });

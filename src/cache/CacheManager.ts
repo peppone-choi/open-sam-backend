@@ -70,36 +70,83 @@ export class CacheManager {
   }
 
   /**
+   * L1 캐시만 조회 (메모리)
+   */
+  async getL1<T>(key: string): Promise<T | null> {
+    const data = this.l1Cache.get<T>(key);
+    return data !== undefined ? data : null;
+  }
+
+  /**
+   * L2 캐시만 조회 (Redis)
+   */
+  async getL2<T>(key: string): Promise<T | null> {
+    if (!this.l2Connected || !this.l2Cache) {
+      return null;
+    }
+
+    try {
+      const l2Data = await this.l2Cache.get(key);
+      if (l2Data && typeof l2Data === 'string') {
+        return JSON.parse(l2Data) as T;
+      }
+    } catch (error) {
+      logger.error('Redis getL2 에러', { 
+        key, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+
+    return null;
+  }
+
+  /**
+   * L1 캐시에 저장
+   */
+  async setL1<T>(key: string, value: T, ttl: number = 10): Promise<void> {
+    this.l1Cache.set(key, value, ttl);
+  }
+
+  /**
+   * L2 캐시에 저장
+   */
+  async setL2<T>(key: string, value: T, ttl: number = 60): Promise<void> {
+    if (!this.l2Connected || !this.l2Cache) {
+      return;
+    }
+
+    try {
+      await this.l2Cache.setEx(key, ttl, JSON.stringify(value));
+    } catch (error) {
+      logger.error('Redis setL2 에러', { 
+        key, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }
+
+  /**
    * 캐시에서 데이터 조회
    * 
-   * L1 → L2 → L3(DB) 순서로 확인합니다.
+   * L1 → L2 순서로 확인합니다.
+   * L2 히트 시 자동으로 L1에도 저장합니다.
    * 
    * @param key - 캐시 키
    * @returns 캐시된 데이터 또는 null
    */
   async get<T>(key: string): Promise<T | null> {
     // L1: 메모리 캐시
-    const l1Data = this.l1Cache.get<T>(key);
-    if (l1Data !== undefined) {
+    const l1Data = await this.getL1<T>(key);
+    if (l1Data !== null) {
       return l1Data;
     }
 
     // L2: Redis 캐시
-    if (this.l2Connected && this.l2Cache) {
-      try {
-        const l2Data = await this.l2Cache.get(key);
-        if (l2Data && typeof l2Data === 'string') {
-          const parsed = JSON.parse(l2Data) as T;
-          // L1에 다시 저장
-          this.l1Cache.set(key, parsed);
-          return parsed;
-        }
-      } catch (error) {
-        logger.error('Redis get 에러', { 
-          key, 
-          error: error instanceof Error ? error.message : String(error) 
-        });
-      }
+    const l2Data = await this.getL2<T>(key);
+    if (l2Data !== null) {
+      // L1에 다시 저장 (다음 요청을 위해)
+      await this.setL1(key, l2Data);
+      return l2Data;
     }
 
     return null;
@@ -112,27 +159,14 @@ export class CacheManager {
    * 
    * @param key - 캐시 키
    * @param value - 저장할 데이터
-   * @param ttl - TTL (초 단위, 기본값: L1=10초, L2=60초)
+   * @param ttl - L2 캐시 TTL (초 단위, 기본값: 60초). L1은 항상 10초
    */
-  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
-    // L1: 메모리 캐시 (10초)
-    this.l1Cache.set(key, value, ttl || 10);
-
-    // L2: Redis 캐시 (60초)
-    if (this.l2Connected && this.l2Cache) {
-      try {
-        await this.l2Cache.setEx(
-          key,
-          ttl || 60,
-          JSON.stringify(value)
-        );
-      } catch (error) {
-        logger.error('Redis set 에러', { 
-          key, 
-          error: error instanceof Error ? error.message : String(error) 
-        });
-      }
-    }
+  async set<T>(key: string, value: T, ttl: number = 60): Promise<void> {
+    // L1과 L2 모두 저장
+    await Promise.all([
+      this.setL1(key, value, 10), // L1은 항상 10초
+      this.setL2(key, value, ttl)  // L2는 지정된 TTL
+    ]);
   }
 
   /**
@@ -208,7 +242,48 @@ export class CacheManager {
       await this.l2Cache.quit();
     }
   }
+
+  /**
+   * Redis 클라이언트 접근 (데몬용 SCAN 등)
+   */
+  getRedisClient(): RedisClientType | null {
+    return this.l2Connected && this.l2Cache ? this.l2Cache : null;
+  }
+
+  /**
+   * Redis SCAN 실행 (패턴 매칭)
+   */
+  async scan(pattern: string, count: number = 100): Promise<string[]> {
+    const redis = this.getRedisClient();
+    if (!redis) {
+      return [];
+    }
+
+    try {
+      const keys: string[] = [];
+      let cursor = '0';
+      
+      do {
+        const result = await redis.scan(cursor, {
+          MATCH: pattern,
+          COUNT: count
+        });
+        
+        cursor = result.cursor;
+        keys.push(...result.keys);
+      } while (cursor !== '0');
+      
+      return keys;
+    } catch (error) {
+      logger.error('Redis SCAN 에러', { 
+        pattern, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+      return [];
+    }
+  }
 }
 
 // 싱글톤 인스턴스 export
 export const cacheManager = CacheManager.getInstance();
+

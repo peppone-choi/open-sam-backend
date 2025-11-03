@@ -14,7 +14,7 @@ export class GetNationListService {
     
     try {
       // Load session
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -23,7 +23,7 @@ export class GetNationListService {
       }
 
       // Get all nations with their static info
-      const nationsData = await Nation.find({ session_id: sessionId }).lean();
+      const nationsData = await (Nation as any).find({ session_id: sessionId }).lean();
       
       // Build nations map
       const nations: Record<number, any> = {};
@@ -46,7 +46,7 @@ export class GetNationListService {
       }
 
       // Get nation 0 (neutral) if exists
-      const neutralNation = await Nation.findOne({ session_id: sessionId, nation: 0 }).lean();
+      const neutralNation = await (Nation as any).findOne({ session_id: sessionId, nation: 0 }).lean();
       if (neutralNation) {
         sortedNations[0] = {
           ...neutralNation.data,
@@ -56,7 +56,7 @@ export class GetNationListService {
       }
 
       // Get all generals ordered by dedication DESC
-      const generals = await General.find({ session_id: sessionId })
+      const generals = await (General as any).find({ session_id: sessionId })
         .select('no name owner data')
         .sort({ 'data.dedication': -1 })
         .lean();
@@ -97,7 +97,7 @@ export class GetNationListService {
       }
 
       // Get all cities
-      const cities = await City.find({ session_id: sessionId })
+      const cities = await (City as any).find({ session_id: sessionId })
         .select('city name nation')
         .lean();
 

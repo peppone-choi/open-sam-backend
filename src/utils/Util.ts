@@ -133,4 +133,47 @@ export class Util {
     }, {});
   }
 
+  static numberFormat(num: number, decimals: number = 0): string {
+    return num.toLocaleString('ko-KR', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  /**
+   * 배열에서 랜덤 선택
+   */
+  static choiceRandom<T>(array: T[]): T | undefined {
+    if (array.length === 0) return undefined;
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  /**
+   * 가중치를 사용한 랜덤 선택
+   * @param items [value, weight][] 형태의 배열
+   * @returns [selectedValue, remainingItems]
+   */
+  static choiceRandomUsingWeightPair<T>(items: [T, number][]): [T, T[]] {
+    if (items.length === 0) {
+      throw new Error('배열이 비어있습니다');
+    }
+
+    const totalWeight = items.reduce((sum, [, weight]) => sum + weight, 0);
+    let random = Math.random() * totalWeight;
+
+    for (let i = 0; i < items.length; i++) {
+      const [value, weight] = items[i];
+      random -= weight;
+      if (random <= 0) {
+        const remaining = items.filter((_, idx) => idx !== i).map(([v]) => v);
+        return [value, remaining];
+      }
+    }
+
+    // Fallback (should not happen)
+    const [value] = items[items.length - 1];
+    const remaining = items.slice(0, -1).map(([v]) => v);
+    return [value, remaining];
+  }
+
 }

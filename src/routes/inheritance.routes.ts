@@ -70,12 +70,12 @@ router.post('/change-turn-time', async (req, res) => {
   try {
     const { generalId, hour, minute } = req.body;
     
-    const general = await General.findOne({ no: generalId });
+    const general = await (General as any).findOne({ no: generalId });
     if (!general) {
       return res.status(404).json({ error: '장수를 찾을 수 없습니다' });
     }
     
-    const session = await Session.findOne({ session_id: general.session_id });
+    const session = await (Session as any).findOne({ session_id: general.session_id });
     if (!session) {
       return res.status(404).json({ error: '세션을 찾을 수 없습니다' });
     }

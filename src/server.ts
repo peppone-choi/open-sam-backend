@@ -19,7 +19,21 @@ const PORT = process.env.PORT || 8080;
 
 // 보안 미들웨어
 app.use(helmet());
-app.use(cors());
+
+// CORS 설정 - 프론트엔드에서 쿠키를 포함한 요청 허용
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    process.env.FRONTEND_URL || 'http://localhost:3000'
+  ],
+  credentials: true, // 쿠키, 인증 헤더 등을 포함한 요청 허용
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie']
+}));
+
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -121,7 +135,7 @@ async function start() {
     const { Session } = await import('./models/session.model');
     
     const sessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
-    let session = await Session.findOne({ session_id: sessionId });
+    let session = await (Session as any).findOne({ session_id: sessionId });
     
     if (!session) {
       logger.info('기본 삼국지 세션 생성 중...');

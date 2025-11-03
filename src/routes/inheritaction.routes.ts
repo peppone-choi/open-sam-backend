@@ -283,7 +283,7 @@ router.post('/check-owner', authenticate, async (req, res) => {
  */
 router.get('/get-more-log', authenticate, async (req, res) => {
   try {
-    const result = await GetMoreLogService.execute(req.body, req.user);
+    const result = await GetMoreLogService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

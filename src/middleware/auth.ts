@@ -6,6 +6,7 @@ export interface JwtPayload {
   userId: string;
   username: string;
   sessionId?: string;
+  grade?: number; // 사용자 등급 (5 이상이 어드민)
 }
 
 // Express Request에 user 속성 추가

@@ -20,7 +20,7 @@ export class TransferNationOwnerService {
         return { success: false, message: '대상 장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -29,7 +29,7 @@ export class TransferNationOwnerService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const targetGeneral = await General.findOne({
+      const targetGeneral = await (General as any).findOne({
         session_id: sessionId,
         'data.no': targetGeneralId
       });
@@ -63,7 +63,7 @@ export class TransferNationOwnerService {
         return { success: false, message: '자기 자신에게는 선양할 수 없습니다' };
       }
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': generalId
@@ -75,7 +75,7 @@ export class TransferNationOwnerService {
         }
       );
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': targetGeneralId

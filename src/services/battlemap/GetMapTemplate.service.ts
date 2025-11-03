@@ -6,7 +6,7 @@ export class GetMapTemplateService {
       const sessionId = data.session_id || 'sangokushi_default';
       
       if (data.city_id !== undefined) {
-        const template = await BattleMapTemplate.findOne({
+        const template = await (BattleMapTemplate as any).findOne({
           session_id: sessionId,
           city_id: data.city_id
         });
@@ -24,7 +24,7 @@ export class GetMapTemplateService {
         };
       }
       
-      const templates = await BattleMapTemplate.find({ session_id: sessionId })
+      const templates = await (BattleMapTemplate as any).find({ session_id: sessionId })
         .sort({ city_id: 1 });
       
       return {

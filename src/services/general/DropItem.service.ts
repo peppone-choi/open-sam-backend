@@ -38,7 +38,7 @@ export class DropItemService {
     }
 
     try {
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -66,17 +66,22 @@ export class DropItemService {
       general.markModified('data');
       await general.save();
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       const gameEnv = session?.data || {};
 
-      await GeneralRecord.create({
+      const { getNextRecordId } = await import('../../utils/record-helpers');
+      const recordId1 = await getNextRecordId(sessionId);
+      await (GeneralRecord as any).create({
         session_id: sessionId,
-        general_id: generalId,
-        year: gameEnv.year || 184,
-        month: gameEnv.month || 1,
-        type: 'action',
-        text: `${itemName}을(를) 버렸습니다.`,
-        date: new Date()
+        data: {
+          id: recordId1,
+          general_id: generalId,
+          year: gameEnv.year || 184,
+          month: gameEnv.month || 1,
+          log_type: 'action',
+          text: `${itemName}을(를) 버렸습니다.`,
+          date: new Date().toISOString()
+        }
       });
 
       const isBuyable = this.isItemBuyable(item);
@@ -85,24 +90,28 @@ export class DropItemService {
         let nationName = '재야';
 
         if (nationId !== 0) {
-          const nation = await Nation.findOne({
+          const nation = await (Nation as any).findOne({
             session_id: sessionId,
             'data.nation': nationId
           });
           nationName = nation?.data?.name || '무명';
         }
 
-        await GeneralRecord.create({
+        const recordId2 = await getNextRecordId(sessionId);
+        await (GeneralRecord as any).create({
           session_id: sessionId,
-          general_id: 0,
-          year: gameEnv.year || 184,
-          month: gameEnv.month || 1,
-          type: 'global',
-          text: `${generalName}이(가) ${itemName}을(를) 잃었습니다!`,
-          date: new Date()
+          data: {
+            id: recordId2,
+            general_id: 0,
+            year: gameEnv.year || 184,
+            month: gameEnv.month || 1,
+            log_type: 'history',
+            text: `${generalName}이(가) ${itemName}을(를) 잃었습니다!`,
+            date: new Date().toISOString()
+          }
         });
 
-        await WorldHistory.create({
+        await (WorldHistory as any).create({
           session_id: sessionId,
           year: gameEnv.year || 184,
           month: gameEnv.month || 1,

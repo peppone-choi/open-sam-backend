@@ -16,7 +16,7 @@ export class CreateMapTemplateService {
     try {
       const sessionId = data.session_id || 'sangokushi_default';
       
-      const existing = await BattleMapTemplate.findOne({
+      const existing = await (BattleMapTemplate as any).findOne({
         session_id: sessionId,
         city_id: data.city_id
       });
@@ -28,7 +28,7 @@ export class CreateMapTemplateService {
         };
       }
       
-      const template = await BattleMapTemplate.create({
+      const template = await (BattleMapTemplate as any).create({
         session_id: sessionId,
         city_id: data.city_id,
         name: data.name,

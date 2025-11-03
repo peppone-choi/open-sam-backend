@@ -24,14 +24,14 @@ export class DieOnPrestartService {
     }
 
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
 
       const gameEnv = session.data || {};
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         owner: userId.toString(),
         'data.npc': 0
@@ -52,7 +52,7 @@ export class DieOnPrestartService {
       const generalNo = general.data?.no;
       const generalName = general.data?.name || '무명';
 
-      await WorldHistory.create({
+      await (WorldHistory as any).create({
         session_id: sessionId,
         year: gameEnv.year || 184,
         month: gameEnv.month || 1,
@@ -63,17 +63,17 @@ export class DieOnPrestartService {
         date: new Date()
       });
 
-      await GeneralTurn.deleteMany({
+      await (GeneralTurn as any).deleteMany({
         session_id: sessionId,
         general_id: generalNo
       });
 
-      await GeneralRecord.deleteMany({
+      await (GeneralRecord as any).deleteMany({
         session_id: sessionId,
         general_id: generalNo
       });
 
-      await General.deleteOne({
+      await (General as any).deleteOne({
         session_id: sessionId,
         'data.no': generalNo
       });

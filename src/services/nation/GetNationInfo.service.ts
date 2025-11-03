@@ -21,7 +21,7 @@ export class GetNationInfoService {
       }
 
       // 장수 정보 조회
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -63,7 +63,7 @@ export class GetNationInfoService {
 
       // 간단한 정보만 필요한 경우
       if (!isFull) {
-        const nation = await Nation.findOne({
+        const nation = await (Nation as any).findOne({
           session_id: sessionId,
           'data.nation': nationId
         });
@@ -90,7 +90,7 @@ export class GetNationInfoService {
       }
 
       // 전체 정보 조회
-      const nation = await Nation.findOne({
+      const nation = await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': nationId
       });
@@ -100,11 +100,11 @@ export class GetNationInfoService {
       }
 
       // 세션 정보 (year, month 등)
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       const sessionData = session?.data || {};
 
       // 부대 정보 조회
-      const troops = await Troop.find({
+      const troops = await (Troop as any).find({
         session_id: sessionId,
         'data.nation': nationId
       });

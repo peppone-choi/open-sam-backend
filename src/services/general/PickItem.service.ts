@@ -28,7 +28,7 @@ export class PickItemService {
     }
 
     try {
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -53,17 +53,22 @@ export class PickItemService {
       general.markModified('data');
       await general.save();
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       const gameEnv = session?.data || {};
 
-      await GeneralRecord.create({
+      const { getNextRecordId } = await import('../../utils/record-helpers');
+      const recordId = await getNextRecordId(sessionId);
+      await (GeneralRecord as any).create({
         session_id: sessionId,
-        general_id: generalId,
-        year: gameEnv.year || 184,
-        month: gameEnv.month || 1,
-        type: 'action',
-        text: `${itemCode}을(를) 주웠습니다.`,
-        date: new Date()
+        data: {
+          id: recordId,
+          general_id: generalId,
+          year: gameEnv.year || 184,
+          month: gameEnv.month || 1,
+          log_type: 'action',
+          text: `${itemCode}을(를) 주웠습니다.`,
+          date: new Date().toISOString()
+        }
       });
 
       return {

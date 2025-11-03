@@ -13,7 +13,7 @@ export class StartBattleService {
     const attackerGeneralIds = data.attackerGeneralIds || [];
 
     try {
-      const city = await City.findOne({
+      const city = await (City as any).findOne({
         session_id: sessionId,
         city: targetCityId
       });
@@ -26,7 +26,7 @@ export class StartBattleService {
 
       const attackerUnits: IBattleUnit[] = [];
       for (const generalId of attackerGeneralIds) {
-        const general = await General.findOne({
+        const general = await (General as any).findOne({
           session_id: sessionId,
           'data.no': generalId
         });
@@ -48,7 +48,7 @@ export class StartBattleService {
         });
       }
 
-      const defenderGenerals = await General.find({
+      const defenderGenerals = await (General as any).find({
         session_id: sessionId,
         'data.nation': defenderNationId,
         'data.city': targetCityId,
@@ -71,7 +71,7 @@ export class StartBattleService {
 
       const battleId = `battle_${randomUUID()}`;
 
-      const battle = await Battle.create({
+      const battle = await (Battle as any).create({
         session_id: sessionId,
         battleId,
         attackerNationId,

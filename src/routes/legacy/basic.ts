@@ -16,7 +16,7 @@ router.get('/basic-info', async (req: Request, res: Response) => {
       });
     }
 
-    const general: any = await General.findOne({ owner: userId })
+    const general: any = await (General as any).findOne({ owner: userId })
       .select('no nation officerLevel belong penalty permission')
       .lean();
 

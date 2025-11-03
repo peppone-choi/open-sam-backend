@@ -8,7 +8,7 @@ export class GetCityDetailedInfoService {
     const cityId = parseInt(data.city_id) || 0;
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -23,7 +23,7 @@ export class GetCityDetailedInfoService {
         };
       }
 
-      const city = await City.findOne({ 
+      const city = await (City as any).findOne({ 
         session_id: sessionId, 
         city: cityId 
       }).lean();
@@ -37,7 +37,7 @@ export class GetCityDetailedInfoService {
 
       const nationId = city.nation || 0;
 
-      const generals = await General.find({
+      const generals = await (General as any).find({
         session_id: sessionId,
         'data.city': cityId
       })

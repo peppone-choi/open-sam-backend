@@ -13,7 +13,7 @@ interface VoteInfo {
 
 export class NewVoteService {
   static async closeOldVote(sessionId: string, voteID: number): Promise<void> {
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     if (!session || !session.data) {
       return;
     }
@@ -65,7 +65,7 @@ export class NewVoteService {
         }
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }
@@ -105,7 +105,7 @@ export class NewVoteService {
       session.markModified('data');
       await session.save();
 
-      await General.updateMany(
+      await (General as any).updateMany(
         { session_id: sessionId },
         { $set: { 'data.newvote': 1 } }
       );

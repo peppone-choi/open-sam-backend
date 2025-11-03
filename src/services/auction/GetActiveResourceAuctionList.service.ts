@@ -6,7 +6,7 @@ export class GetActiveResourceAuctionListService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const auctions = await Auction.find({
+      const auctions = await (Auction as any).find({
         session_id: sessionId,
         type: { $in: ['BuyRice', 'SellRice'] },
         finished: false
@@ -45,7 +45,7 @@ export class GetActiveResourceAuctionListService {
         }
       }
 
-      const recentAuctions = await Auction.find({
+      const recentAuctions = await (Auction as any).find({
         session_id: sessionId,
         type: { $in: ['BuyRice', 'SellRice'] },
         finished: true

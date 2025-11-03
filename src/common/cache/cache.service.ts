@@ -16,12 +16,17 @@ import { logger } from '../logger';
  */
 class CacheService {
   /**
-   * 캐시에서 데이터를 가져오거나, 없으면 로더 함수를 실행하여 캐시에 저장
+   * L1 → L2 → DB 순서로 데이터를 조회하고 캐시에 저장
+   * 
+   * 동작 순서:
+   * 1. L1 (메모리) 캐시 조회 → 히트 시 즉시 반환
+   * 2. L2 (Redis) 캐시 조회 → 히트 시 L1 업데이트 후 반환
+   * 3. DB 조회 → L2와 L1 모두 업데이트 후 반환
    * 
    * @param key - 캐시 키
-   * @param loader - 캐시 미스 시 실행할 데이터 로드 함수
-   * @param ttl - TTL (초 단위, 기본 60초)
-   * @returns 캐시된 데이터 또는 로드된 데이터
+   * @param loader - DB에서 데이터를 로드하는 함수
+   * @param ttl - L2 캐시 TTL (초 단위, 기본 60초). L1은 항상 10초
+   * @returns 캐시된 데이터 또는 DB에서 로드된 데이터
    */
   async getOrLoad<T>(
     key: string,
@@ -29,21 +34,33 @@ class CacheService {
     ttl: number = 60
   ): Promise<T | null> {
     try {
-      // 캐시 조회
-      const cached = await cacheManager.get<T>(key);
-      if (cached !== null && cached !== undefined) {
-        logger.debug('캐시 히트', { key });
-        return cached;
+      // 1. L1 캐시 조회 (메모리)
+      const l1Data = await cacheManager.getL1<T>(key);
+      if (l1Data !== null && l1Data !== undefined) {
+        logger.debug('L1 캐시 히트', { key });
+        return l1Data;
       }
 
-      // 캐시 미스 - 데이터 로드
-      logger.debug('캐시 미스', { key });
+      // 2. L2 캐시 조회 (Redis)
+      const l2Data = await cacheManager.getL2<T>(key);
+      if (l2Data !== null && l2Data !== undefined) {
+        logger.debug('L2 캐시 히트', { key });
+        // L1 캐시 업데이트 (다음 요청을 위해)
+        await cacheManager.setL1(key, l2Data);
+        return l2Data;
+      }
+
+      // 3. DB 조회
+      logger.debug('캐시 미스 - DB 조회', { key });
       const data = await loader();
 
-      // 데이터가 있으면 캐시에 저장
+      // 4. DB 조회 후 L2와 L1 모두 업데이트
       if (data !== null && data !== undefined) {
-        await cacheManager.set(key, data, ttl);
-        logger.debug('캐시 저장', { key, ttl });
+        // L2에 저장 (긴 TTL)
+        await cacheManager.setL2(key, data, ttl);
+        // L1에 저장 (10초 TTL)
+        await cacheManager.setL1(key, data);
+        logger.debug('L1, L2 캐시 저장 완료', { key, ttl });
       }
 
       return data;
@@ -52,8 +69,16 @@ class CacheService {
         key,
         error: error instanceof Error ? error.message : String(error)
       });
-      // 캐시 실패 시에도 데이터는 반환
-      return loader();
+      // 캐시 실패 시에도 DB 조회는 시도
+      try {
+        return await loader();
+      } catch (dbError) {
+        logger.error('DB 조회 실패', {
+          key,
+          error: dbError instanceof Error ? dbError.message : String(dbError)
+        });
+        return null;
+      }
     }
   }
 

@@ -10,7 +10,7 @@ router.post('/setting/save', async (req: Request, res: Response) => {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await General.findOne({ owner: userId });
+    const general = await (General as any).findOne({ owner: userId });
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
@@ -39,7 +39,7 @@ router.get('/setting/get', async (req: Request, res: Response) => {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general: any = await General.findOne({ owner: userId })
+    const general: any = await (General as any).findOne({ owner: userId })
       .select('aux')
       .lean();
 

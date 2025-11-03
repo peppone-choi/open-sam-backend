@@ -16,7 +16,7 @@ export class GetReservedCommandService {
       };
     }
 
-    const rawTurns = await GeneralTurn.find({
+    const rawTurns = await (GeneralTurn as any).find({
       session_id: sessionId,
       'data.general_id': generalId
     }).sort({ 'data.turn_idx': 1 });
@@ -46,7 +46,7 @@ export class GetReservedCommandService {
     }
 
     if (invalidTurnList > 0) {
-      await GeneralTurn.updateMany(
+      await (GeneralTurn as any).updateMany(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -62,7 +62,7 @@ export class GetReservedCommandService {
         }
       );
     } else if (invalidTurnList < 0) {
-      await GeneralTurn.updateMany(
+      await (GeneralTurn as any).updateMany(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -74,7 +74,7 @@ export class GetReservedCommandService {
       );
     }
 
-    const general = await General.findOne({
+    const general = await (General as any).findOne({
       session_id: sessionId,
       'data.no': generalId
     });
@@ -86,7 +86,7 @@ export class GetReservedCommandService {
       };
     }
 
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     if (!session) {
       return {
         success: false,
@@ -94,10 +94,15 @@ export class GetReservedCommandService {
       };
     }
 
-    const turnTerm = session.data?.turnterm || 600;
-    const year = session.data?.year || 180;
-    let month = session.data?.month || 1;
-    const lastExecute = session.data?.turntime || new Date();
+    // session.data 또는 session.data.game_env에서 값 가져오기
+    const sessionData = session.data || {};
+    const gameEnv = sessionData.game_env || {};
+    
+    const turnTermInMinutes = gameEnv.turnterm || sessionData.turnterm || 60; // 분 단위
+    const turnTerm = turnTermInMinutes * 60; // 초 단위로 변환
+    const year = gameEnv.year || sessionData.year || 180;
+    let month = gameEnv.month || sessionData.month || 1;
+    const lastExecute = gameEnv.turntime || sessionData.turntime || new Date();
     const turnTime = general.data?.turntime || new Date();
 
     const cutTurn = (time: Date, term: number) => {
@@ -111,15 +116,61 @@ export class GetReservedCommandService {
       }
     }
 
+    // 빈 턴은 모두 DB에 '휴식' 명령으로 자동 저장
+    const turnArray: any[] = [];
+    const emptyTurns: number[] = [];
+    
+    for (let i = 0; i < MAX_TURN; i++) {
+      if (commandList[i]) {
+        turnArray.push(commandList[i]);
+      } else {
+        // 빈 턴 발견 - DB에 자동으로 휴식 명령 저장
+        emptyTurns.push(i);
+        turnArray.push({
+          action: '휴식',
+          brief: '휴식',
+          arg: {}
+        });
+      }
+    }
+    
+    // 빈 턴이 있으면 DB에 자동으로 휴식 명령 저장 (배치 처리)
+    if (emptyTurns.length > 0) {
+      const bulkOps = emptyTurns.map(turnIdx => ({
+        updateOne: {
+          filter: {
+            session_id: sessionId,
+            'data.general_id': generalId,
+            'data.turn_idx': turnIdx
+          },
+          update: {
+            $set: {
+              session_id: sessionId,
+              'data.general_id': generalId,
+              'data.turn_idx': turnIdx,
+              'data.action': '휴식',
+              'data.brief': '휴식',
+              'data.arg': {}
+            }
+          },
+          upsert: true
+        }
+      }));
+      
+      if (bulkOps.length > 0) {
+        await (GeneralTurn as any).bulkWrite(bulkOps);
+      }
+    }
+
     return {
       success: true,
       result: true,
-      turnTime,
+      turnTime: turnTime instanceof Date ? turnTime.toISOString() : new Date(turnTime).toISOString(),
       turnTerm,
       year,
       month,
-      date: new Date(),
-      turn: commandList,
+      date: new Date().toISOString(),
+      turn: turnArray, // 배열로 변경
       autorun_limit: general.data?.aux?.autorun_limit || null
     };
   }

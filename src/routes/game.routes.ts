@@ -166,7 +166,7 @@ router.get('/session/:sessionId/config', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({ error: '세션을 찾을 수 없습니다' });
     }
@@ -260,7 +260,7 @@ router.get('/session/:sessionId/config', async (req, res) => {
 router.get('/const', async (req, res) => {
   try {
     const sessionId = req.query.sessionId as string || 'sangokushi_default';
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     
     res.json(session?.game_constants || {});
   } catch (error: any) {
@@ -630,7 +630,7 @@ router.get('/cities', async (req, res) => {
   try {
     const sessionId = req.query.session as string || 'sangokushi_default';
     
-    const cities = await City.find({ session_id: sessionId });
+    const cities = await (City as any).find({ session_id: sessionId });
     
     res.json({
       cities: cities.map(c => ({
@@ -772,7 +772,7 @@ router.get('/cities/:id', async (req, res) => {
     const { id } = req.params;
     const sessionId = req.query.session as string || 'sangokushi_default';
     
-    const city = await City.findOne({ session_id: sessionId, city: parseInt(id) });
+    const city = await (City as any).findOne({ session_id: sessionId, city: parseInt(id) });
     if (!city) {
       return res.status(404).json({ error: '도시를 찾을 수 없습니다' });
     }

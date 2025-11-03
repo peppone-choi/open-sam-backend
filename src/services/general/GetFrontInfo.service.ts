@@ -23,25 +23,45 @@ export class GetFrontInfoService {
 
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id || data.user_id;
+    let generalId = user?.generalId || data.general_id;
     
     const lastNationNoticeDate = data.lastNationNoticeDate || '2022-08-19 00:00:00';
     const lastGeneralRecordID = parseInt(data.lastGeneralRecordID) || 0;
     const lastWorldHistoryID = parseInt(data.lastWorldHistoryID) || 0;
 
-    if (!generalId) {
-      return { success: false, message: '장수 ID가 필요합니다' };
-    }
-
     try {
-      // 1. 장수 정보 조회
-      const general = await General.findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      // 1. 장수 정보 조회 (generalId가 없으면 userId로 찾기)
+      let general;
+      
+      if (generalId) {
+        // generalId로 직접 조회
+        general = await (General as any).findOne({
+          session_id: sessionId,
+          'data.no': generalId
+        });
+      } else if (userId) {
+        // userId로 owner 필드를 통해 조회
+        general = await (General as any).findOne({
+          session_id: sessionId,
+          owner: String(userId),
+          'data.npc': { $lt: 2 } // NPC가 아닌 실제 플레이어 장수
+        });
+        
+        if (general) {
+          generalId = general.data?.no || general.no;
+        }
+      }
 
       if (!general) {
-        return { success: false, message: '장수를 찾을 수 없습니다' };
+        return { 
+          success: false, 
+          message: generalId ? '장수를 찾을 수 없습니다' : '장수가 없습니다. 먼저 장수를 생성해주세요.'
+        };
+      }
+      
+      if (!generalId) {
+        generalId = general.data?.no || general.no;
       }
 
       const nationId = general.data?.nation || 0;
@@ -96,7 +116,7 @@ export class GetFrontInfoService {
    * 전역 게임 정보 생성
    */
   private static async generateGlobalInfo(sessionId: string) {
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     if (!session) {
       throw new Error('세션을 찾을 수 없습니다');
     }
@@ -104,7 +124,7 @@ export class GetFrontInfoService {
     const data = session.data || {};
 
     // 장수 통계
-    const genCount = await General.aggregate([
+    const genCount = await (General as any).aggregate([
       { $match: { session_id: sessionId } },
       { $group: { _id: '$data.npc', count: { $sum: 1 } } }
     ]);
@@ -119,7 +139,7 @@ export class GetFrontInfoService {
       year: data.year || 180,
       month: data.month || 1,
       autorunUser: data.autorun_user || 0,
-      turnterm: data.turnterm || 600,
+      turnterm: data.turnterm || 60, // 분 단위
       lastExecuted: data.turntime || new Date(),
       lastVoteID: data.lastVote || null,
       develCost: data.develcost || 100,
@@ -150,7 +170,7 @@ export class GetFrontInfoService {
     nationId: number,
     lastNationNoticeDate: string
   ) {
-    const nation = await Nation.findOne({
+    const nation = await (Nation as any).findOne({
       session_id: sessionId,
       'data.nation': nationId
     });
@@ -162,7 +182,7 @@ export class GetFrontInfoService {
     const nationData = nation.data || {};
 
     // 국가 인구 통계
-    const cityStats = await City.aggregate([
+    const cityStats = await (City as any).aggregate([
       { $match: { session_id: sessionId, 'data.nation': nationId } },
       {
         $group: {
@@ -177,7 +197,7 @@ export class GetFrontInfoService {
     const population = cityStats[0] || { cityCnt: 0, popNow: 0, popMax: 0 };
 
     // 국가 병력 통계
-    const crewStats = await General.aggregate([
+    const crewStats = await (General as any).aggregate([
       { $match: { session_id: sessionId, 'data.nation': nationId, 'data.npc': { $ne: 5 } } },
       {
         $group: {
@@ -192,7 +212,7 @@ export class GetFrontInfoService {
     const crew = crewStats[0] || { generalCnt: 0, crewNow: 0, crewMax: 0 };
 
     // 고위 관직자 조회
-    const topChiefs = await General.find({
+    const topChiefs = await (General as any).find({
       session_id: sessionId,
       'data.nation': nationId,
       'data.officer_level': { $gte: 11 }
@@ -248,20 +268,23 @@ export class GetFrontInfoService {
    * 더미 국가 정보 (소속 없는 경우)
    */
   private static async generateDummyNationInfo() {
+    const { getNationStaticInfo } = await import('../../utils/functions');
+    const staticInfo = await getNationStaticInfo(0);
+    
     return {
       id: 0,
       full: false,
-      name: '재야',
+      name: staticInfo.name || '재야',
       population: { cityCnt: 0, now: 0, max: 0 },
       crew: { generalCnt: 0, now: 0, max: 0 },
-      type: { raw: 'None', name: '-', pros: '', cons: '' },
-      color: 0,
-      level: 0,
-      capital: 0,
-      gold: 0,
-      rice: 0,
-      tech: 0,
-      gennum: 0,
+      type: { raw: staticInfo.type || 'None', name: '-', pros: '', cons: '' },
+      color: staticInfo.color || 0,
+      level: staticInfo.level || 0,
+      capital: staticInfo.capital || 0,  // 재야는 수도 없음
+      gold: staticInfo.gold || 0,
+      rice: staticInfo.rice || 0,
+      tech: staticInfo.tech || 0,
+      gennum: staticInfo.gennum || 0,
       power: {},
       onlineGen: '',
       notice: '',
@@ -281,8 +304,8 @@ export class GetFrontInfoService {
     const data = general.data || {};
 
     return {
-      no: data.no,
-      name: data.name || '무명',
+      no: data.no || general.no,
+      name: general.name || data.name || '무명',
       nation: nationId,
       npc: data.npc || 0,
       injury: data.injury || 0,
@@ -296,7 +319,7 @@ export class GetFrontInfoService {
       killturn: data.killturn || 0,
       picture: data.picture || '',
       imgsvr: data.imgsvr || 0,
-      age: data.age || 20,
+      age: (typeof data.age === 'number' && data.age >= 0 && data.age <= 200) ? data.age : 20,
       specialDomestic: data.special || 'None',
       specialWar: data.special2 || 'None',
       personal: data.personal || 'None',
@@ -309,7 +332,7 @@ export class GetFrontInfoService {
       honorText: this.getHonor(data.experience || 0),
       dedLevelText: this.getDed(data.dedication || 0),
       bill: 0,
-      reservedCommand: null,
+      reservedCommand: await this.getReservedCommand(sessionId, data.no),
       autorun_limit: data.aux?.autorun_limit || 0,
       city: data.city || 0,
       troop: data.troop || 0,
@@ -356,7 +379,7 @@ export class GetFrontInfoService {
     cityId: number,
     currentNationId: number
   ) {
-    const city = await City.findOne({
+    const city = await (City as any).findOne({
       session_id: sessionId,
       city: cityId
     });
@@ -372,7 +395,7 @@ export class GetFrontInfoService {
     let nationColor = 0;
 
     if (cityNationId !== 0) {
-      const nation = await Nation.findOne({
+      const nation = await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': cityNationId
       });
@@ -383,7 +406,7 @@ export class GetFrontInfoService {
     }
 
     // 도시 관리 (태수, 도독 등)
-    const officers = await General.find({
+    const officers = await (General as any).find({
       session_id: sessionId,
       'data.officer_city': cityId,
       'data.officer_level': { $in: [2, 3, 4] }
@@ -431,7 +454,7 @@ export class GetFrontInfoService {
     lastGeneralRecordID: number
   ) {
     // 역사 기록
-    const history = await WorldHistory.find({
+    const history = await (WorldHistory as any).find({
       session_id: sessionId,
       'data.nation_id': 0,
       'data.id': { $gte: lastWorldHistoryID }
@@ -441,7 +464,7 @@ export class GetFrontInfoService {
       .select('data.id data.text');
 
     // 전역 기록
-    const globalRecord = await GeneralRecord.find({
+    const globalRecord = await (GeneralRecord as any).find({
       session_id: sessionId,
       'data.general_id': 0,
       'data.log_type': 'history',
@@ -452,7 +475,7 @@ export class GetFrontInfoService {
       .select('data.id data.text');
 
     // 장수 행동 기록
-    const generalRecord = await GeneralRecord.find({
+    const generalRecord = await (GeneralRecord as any).find({
       session_id: sessionId,
       'data.general_id': generalId,
       'data.log_type': 'action',
@@ -496,5 +519,63 @@ export class GetFrontInfoService {
     if (dedication >= 2000) return '충의';
     if (dedication >= 1000) return '충성';
     return '무명';
+  }
+
+  /**
+   * 예약된 명령 조회
+   */
+  private static async getReservedCommand(sessionId: string, generalId: number): Promise<any[] | null> {
+    try {
+      const GeneralTurn = (await import('../../models/general_turn.model')).GeneralTurn;
+      const rawTurns = await (GeneralTurn as any).find({
+        session_id: sessionId,
+        'data.general_id': generalId
+      }).sort({ 'data.turn_idx': 1 }).limit(30);
+
+      if (!rawTurns || rawTurns.length === 0) {
+        return null;
+      }
+
+      const commandList: any[] = [];
+      for (const turn of rawTurns) {
+        commandList.push({
+          turn: turn.data.turn_idx,
+          commandName: turn.data.action || '',
+          commandText: turn.data.action || '',
+          brief: turn.data.brief || '',
+          arg: typeof turn.data.arg === 'string' ? JSON.parse(turn.data.arg) : (turn.data.arg || {})
+        });
+      }
+
+      return commandList.length > 0 ? commandList : null;
+    } catch (error) {
+      console.error('getReservedCommand error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 권한 계산
+   */
+  private static async calculatePermission(sessionId: string, general: any, nationId: number): Promise<number> {
+    try {
+      const data = general.data || {};
+      const officerLevel = data.officer_level || 0;
+
+      // 수뇌부 권한 (officer_level >= 4)
+      if (officerLevel >= 4 && nationId > 0) {
+        return 4; // 수뇌부 권한
+      }
+
+      // 도시 관리 권한 (officer_level >= 2)
+      if (officerLevel >= 2) {
+        return officerLevel;
+      }
+
+      return 0;
+    } catch (error) {
+      console.error('calculatePermission error:', error);
+      return 0;
+    }
   }
 }

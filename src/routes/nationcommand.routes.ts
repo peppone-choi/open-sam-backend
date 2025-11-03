@@ -64,7 +64,7 @@ const router = Router();
  */
 router.get('/get-reserved-command', authenticate, async (req, res) => {
   try {
-    const result = await GetReservedCommandService.execute(req.body, req.user);
+    const result = await GetReservedCommandService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

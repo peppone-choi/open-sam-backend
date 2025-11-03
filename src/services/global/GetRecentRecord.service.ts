@@ -18,7 +18,7 @@ export class GetRecentRecordService {
     
     try {
       // Load session
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -89,7 +89,7 @@ export class GetRecentRecordService {
    * Get world history records
    */
   private static async getHistory(sessionId: string, lastHistoryID: number): Promise<any[]> {
-    const records = await WorldHistory.find({
+    const records = await (WorldHistory as any).find({
       session_id: sessionId,
       'data.nation_id': 0,
       'data.id': { $gte: lastHistoryID }
@@ -109,7 +109,7 @@ export class GetRecentRecordService {
    * Get global records (general_id = 0, log_type = 'history')
    */
   private static async getGlobalRecord(sessionId: string, lastRecordID: number): Promise<any[]> {
-    const records = await GeneralRecord.find({
+    const records = await (GeneralRecord as any).find({
       session_id: sessionId,
       'data.general_id': 0,
       'data.log_type': 'history',
@@ -134,7 +134,7 @@ export class GetRecentRecordService {
       return [];
     }
 
-    const records = await GeneralRecord.find({
+    const records = await (GeneralRecord as any).find({
       session_id: sessionId,
       'data.general_id': generalId,
       'data.log_type': 'action',

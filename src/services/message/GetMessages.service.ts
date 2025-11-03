@@ -27,7 +27,7 @@ export class GetMessagesService {
         return { success: false, message: '잘못된 메시지 타입입니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -58,7 +58,7 @@ export class GetMessagesService {
         query['data.dest_nation_id'] = nationId;
       }
 
-      const messages = await Message.find(query)
+      const messages = await (Message as any).find(query)
         .sort({ 'data.id': -1 })
         .skip(offset)
         .limit(limit)

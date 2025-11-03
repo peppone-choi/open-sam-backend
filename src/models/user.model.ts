@@ -15,6 +15,10 @@ export interface IUser extends Document {
   
   // 다음 턴 시각 (계산됨)
   next_turn_time?: Date;
+  
+  // 권한 관련 (레거시 호환)
+  grade?: number;        // 사용자 등급 (1-10, 5 이상이 어드민)
+  acl?: Record<string, any>; // 접근 제어 목록 (JSON)
 }
 
 const UserSchema = new Schema<IUser>({
@@ -26,7 +30,10 @@ const UserSchema = new Schema<IUser>({
   game_mode: { type: String, default: 'turn' },
   turn_hour: { type: Number, default: 21 },
   turn_minute: { type: Number, default: 0 },
-  next_turn_time: { type: Date }
+  next_turn_time: { type: Date },
+  
+  grade: { type: Number, default: 1 }, // 기본 등급 1, 5 이상이 어드민
+  acl: { type: Schema.Types.Mixed, default: {} } // 접근 제어 목록
 }, {
   timestamps: true
 });

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticate, optionalAuth } from '../middleware/auth';
 
 import { BuildNationCandidateService } from '../services/general/BuildNationCandidate.service';
 import { DieOnPrestartService } from '../services/general/DieOnPrestart.service';
@@ -7,8 +7,18 @@ import { DropItemService } from '../services/general/DropItem.service';
 import { GetCommandTableService } from '../services/general/GetCommandTable.service';
 import { GetFrontInfoService } from '../services/general/GetFrontInfo.service';
 import { GetGeneralLogService } from '../services/general/GetGeneralLog.service';
+import { GetBossInfoService } from '../services/general/GetBossInfo.service';
+import { AdjustIconService } from '../services/general/AdjustIcon.service';
+import { GetSelectPoolService } from '../services/general/GetSelectPool.service';
+import { SelectPickedGeneralService } from '../services/general/SelectPickedGeneral.service';
+import { UpdatePickedGeneralService } from '../services/general/UpdatePickedGeneral.service';
+import { GetSelectNpcTokenService } from '../services/general/GetSelectNpcToken.service';
+import { SelectNpcService } from '../services/general/SelectNpc.service';
 import { InstantRetreatService } from '../services/general/InstantRetreat.service';
 import { JoinService } from '../services/general/Join.service';
+import { GetJoinInfoService } from '../services/general/GetJoinInfo.service';
+import { VacationService } from '../services/general/Vacation.service';
+import { SetMySettingService } from '../services/general/SetMySetting.service';
 
 const router = Router();
 
@@ -374,9 +384,9 @@ router.post('/drop-item', authenticate, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-command-table', authenticate, async (req, res) => {
+router.get('/get-command-table', optionalAuth, async (req, res) => {
   try {
-    const result = await GetCommandTableService.execute(req.body, req.user);
+    const result = await GetCommandTableService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -436,9 +446,9 @@ router.get('/get-command-table', authenticate, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-front-info', authenticate, async (req, res) => {
+router.get('/get-front-info', optionalAuth, async (req, res) => {
   try {
-    const result = await GetFrontInfoService.execute(req.body, req.user);
+    const result = await GetFrontInfoService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -513,7 +523,7 @@ router.get('/get-front-info', authenticate, async (req, res) => {
  */
 router.get('/get-general-log', async (req, res) => {
   try {
-    const result = await GetGeneralLogService.execute(req.body, req.user);
+    const result = await GetGeneralLogService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -780,9 +790,421 @@ router.post('/instant-retreat', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/join', async (req, res) => {
+router.get('/get-join-info', optionalAuth, async (req, res) => {
+  try {
+    const result = await GetJoinInfoService.execute(req.query, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/join', authenticate, async (req, res) => {
   try {
     const result = await JoinService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/get-boss-info:
+ *   get:
+ *     summary: 상급자 정보 조회
+ *     description: |
+ *       현재 장수의 상급자(부대장, 도시 수뇌, 국가 수뇌) 정보를 조회합니다.
+ *       
+ *       **상급자 우선순위:**
+ *       1. 부대장 (troop_leader) - 부대에 소속되어 있고 본인이 부대장이 아닌 경우
+ *       2. 도시 수뇌 (city_officer) - 도시에 임명된 수뇌
+ *       3. 국가 수뇌 (nation_chief) - 국가 수뇌부 장수
+ *       4. 군주 (emperor) - 본인이 군주인 경우 상급자 없음
+ *       
+ *       **사용 시나리오:**
+ *       - 조직 구조 파악
+ *       - 보고 체계 확인
+ *       - 상급자에게 메시지 전송
+ *       - 계층 구조 표시
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: session_id
+ *         schema:
+ *           type: string
+ *         example: sangokushi_default
+ *     responses:
+ *       200:
+ *         description: 상급자 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 result:
+ *                   type: boolean
+ *                 bossInfo:
+ *                   type: object
+ *                   properties:
+ *                     hasBoss:
+ *                       type: boolean
+ *                       description: 상급자 존재 여부
+ *                     bossType:
+ *                       type: string
+ *                       enum: [troop_leader, city_officer, nation_chief, emperor]
+ *                       description: 상급자 타입
+ *                     bossGeneral:
+ *                       type: object
+ *                       description: 상급자 장수 정보
+ *                       properties:
+ *                         no:
+ *                           type: number
+ *                         name:
+ *                           type: string
+ *                         picture:
+ *                           type: string
+ *                         officer_level:
+ *                           type: number
+ *                         leadership:
+ *                           type: number
+ *                         strength:
+ *                           type: number
+ *                         intel:
+ *                           type: number
+ *                     bossCity:
+ *                       type: object
+ *                       description: 상급자가 있는 도시 정보
+ *                       properties:
+ *                         id:
+ *                           type: number
+ *                         name:
+ *                           type: string
+ *                     bossNation:
+ *                       type: object
+ *                       description: 상급자가 있는 국가 정보
+ *                       properties:
+ *                         nation:
+ *                           type: number
+ *                         name:
+ *                           type: string
+ *                         color:
+ *                           type: number
+ *       400:
+ *         description: 잘못된 요청
+ *       401:
+ *         description: 인증 실패
+ */
+router.get('/get-boss-info', authenticate, async (req, res) => {
+  try {
+    const result = await GetBossInfoService.execute(req.query, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/adjust-icon:
+ *   post:
+ *     summary: 장수 아이콘 조정
+ *     description: |
+ *       회원 정보의 아이콘을 현재 세션의 장수들에게 동기화합니다.
+ *       
+ *       **기능:**
+ *       - 회원 테이블의 picture, imgsvr를 장수에게 적용
+ *       - NPC가 아닌 장수만 업데이트
+ *       
+ *       **사용 시나리오:**
+ *       - 회원이 프로필 사진을 변경했을 때
+ *       - 장수 아이콘을 회원 아이콘과 동기화할 때
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 description: 게임 세션 ID
+ *     responses:
+ *       200:
+ *         description: 아이콘 동기화 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                 reason:
+ *                   type: string
+ *                 affected:
+ *                   type: number
+ *                   description: 업데이트된 장수 수
+ *       400:
+ *         description: 잘못된 요청
+ *       401:
+ *         description: 인증 실패
+ */
+router.post('/adjust-icon', authenticate, async (req, res) => {
+  try {
+    const result = await AdjustIconService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/get-select-pool:
+ *   get:
+ *     summary: 장수 선택 풀 조회 (npcmode==2 전용)
+ *     description: |
+ *       장수 선택 풀을 조회합니다. npcmode가 2인 경우에만 사용 가능합니다.
+ *       
+ *       **기능:**
+ *       - 기존 토큰이 있으면 반환
+ *       - 없으면 새로 생성 (14개 장수)
+ *       - dex 합계로 정렬
+ *       
+ *       **사용 시나리오:**
+ *       - 장수 선택 화면에서 사용 가능한 장수 목록 표시
+ *       - 새로고침으로 다시 뽑기
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: session_id
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 선택 풀 조회 성공
+ */
+router.get('/get-select-pool', authenticate, async (req, res) => {
+  try {
+    const result = await GetSelectPoolService.execute(req.query, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/select-picked-general:
+ *   post:
+ *     summary: 선택된 장수 생성 (npcmode==2 전용)
+ *     description: |
+ *       선택 풀에서 장수를 선택하여 실제 장수를 생성합니다.
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pick:
+ *                 type: string
+ *                 description: 선택한 장수의 unique_name
+ *               leadership:
+ *                 type: number
+ *               strength:
+ *                 type: number
+ *               intel:
+ *                 type: number
+ *               personal:
+ *                 type: string
+ *               use_own_picture:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: 장수 생성 성공
+ */
+router.post('/select-picked-general', authenticate, async (req, res) => {
+  try {
+    const result = await SelectPickedGeneralService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/update-picked-general:
+ *   post:
+ *     summary: 선택된 장수 업데이트 (npcmode==2 전용)
+ *     description: |
+ *       기존 장수를 다른 선택으로 변경합니다.
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pick:
+ *                 type: string
+ *                 description: 새로운 장수의 unique_name
+ *     responses:
+ *       200:
+ *         description: 장수 업데이트 성공
+ */
+router.post('/update-picked-general', authenticate, async (req, res) => {
+  try {
+    const result = await UpdatePickedGeneralService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/get-select-npc-token:
+ *   get:
+ *     summary: NPC 선택 토큰 조회 (npcmode==1 전용)
+ *     description: |
+ *       NPC 선택 토큰을 조회하거나 생성합니다. npcmode가 1인 경우에만 사용 가능합니다.
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: refresh
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: keep
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: number
+ *     responses:
+ *       200:
+ *         description: NPC 토큰 조회 성공
+ */
+router.get('/get-select-npc-token', authenticate, async (req, res) => {
+  try {
+    const result = await GetSelectNpcTokenService.execute(req.query, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/select-npc:
+ *   post:
+ *     summary: NPC 선택 및 빙의 (npcmode==1 전용)
+ *     description: |
+ *       NPC 장수를 선택하여 빙의합니다.
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pick:
+ *                 type: number
+ *                 description: NPC 장수 번호
+ *     responses:
+ *       200:
+ *         description: NPC 선택 성공
+ */
+router.post('/select-npc', authenticate, async (req, res) => {
+  try {
+    const result = await SelectNpcService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/vacation:
+ *   post:
+ *     summary: 휴가 모드 설정
+ *     description: |
+ *       장수의 턴 처리를 3배로 늦추는 휴가 모드 설정
+ *       PHP: j_vacation.php
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 휴가 모드 설정 성공
+ */
+router.post('/vacation', authenticate, async (req, res) => {
+  try {
+    const result = await VacationService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/general/set-my-setting:
+ *   post:
+ *     summary: 사용자 설정 저장
+ *     description: |
+ *       장수의 개인 설정을 저장합니다 (defence_train, use_treatment 등)
+ *       PHP: j_set_my_setting.php
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               defence_train:
+ *                 type: number
+ *                 description: 방어 훈련도 (40-999)
+ *               use_treatment:
+ *                 type: number
+ *                 description: 치료 사용률 (10-100)
+ *               use_auto_nation_turn:
+ *                 type: number
+ *                 description: 자동 국가 턴 사용 여부
+ *               tnmt:
+ *                 type: number
+ *                 description: 토너먼트 참여 여부 (0-1)
+ *     responses:
+ *       200:
+ *         description: 설정 저장 성공
+ */
+router.post('/set-my-setting', authenticate, async (req, res) => {
+  try {
+    const result = await SetMySettingService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

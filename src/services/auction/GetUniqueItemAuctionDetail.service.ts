@@ -13,7 +13,7 @@ export class GetUniqueItemAuctionDetailService {
         throw new Error('auctionID가 필요합니다.');
       }
 
-      const auction = await Auction.findOne({
+      const auction = await (Auction as any).findOne({
         _id: auctionID,
         session_id: sessionId,
         type: 'UniqueItem'
@@ -32,7 +32,7 @@ export class GetUniqueItemAuctionDetailService {
           date: bid.date
         }));
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });

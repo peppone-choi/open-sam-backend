@@ -31,7 +31,7 @@ export class SetBillService {
       }
 
       // 장수 정보 조회
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -63,7 +63,7 @@ export class SetBillService {
       }
 
       // 국가 정보 업데이트
-      const result = await Nation.updateOne(
+      const result = await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': nationId

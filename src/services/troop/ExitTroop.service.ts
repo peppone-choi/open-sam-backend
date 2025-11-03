@@ -13,7 +13,7 @@ export class ExitTroopService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -29,17 +29,17 @@ export class ExitTroopService {
 
       // 부대장이면 부대 해체
       if (troopId === generalId) {
-        await General.updateMany(
+        await (General as any).updateMany(
           { session_id: sessionId, 'data.troop': troopId },
           { $set: { 'data.troop': 0 } }
         );
-        await Troop.deleteOne({
+        await (Troop as any).deleteOne({
           session_id: sessionId,
           'data.troop_leader': troopId
         });
       } else {
         // 일반 부대원이면 탈퇴
-        await General.updateOne(
+        await (General as any).updateOne(
           { session_id: sessionId, 'data.no': generalId },
           { $set: { 'data.troop': 0 } }
         );

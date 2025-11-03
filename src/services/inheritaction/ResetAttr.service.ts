@@ -18,7 +18,7 @@ export class ResetAttrService {
         return { success: false, message: '필수 파라미터가 누락되었습니다.' };
       }
       
-      const general = await General.findOne({ session_id: sessionId, no: generalId });
+      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -27,7 +27,7 @@ export class ResetAttrService {
         return { success: false, message: '로그인 상태가 이상합니다. 다시 로그인해 주세요.' };
       }
       
-      const gameEnv = await KVStorage.findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
@@ -36,7 +36,7 @@ export class ResetAttrService {
       const nextLevel = currentLevel + 1;
       const reqPoint = GameConstants.calcResetAttrPoint(nextLevel);
       
-      const inheritStor = await KVStorage.findOne({ 
+      const inheritStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -47,7 +47,7 @@ export class ResetAttrService {
         return { success: false, message: '충분한 유산 포인트를 가지고 있지 않습니다.' };
       }
       
-      await UserRecord.create({
+      await (UserRecord as any).create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

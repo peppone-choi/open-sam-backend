@@ -17,7 +17,7 @@ export class JoinTroopService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -35,7 +35,7 @@ export class JoinTroopService {
         return { success: false, message: '국가에 소속되어 있지 않습니다' };
       }
 
-      const troop = await Troop.findOne({
+      const troop = await (Troop as any).findOne({
         session_id: sessionId,
         'data.troop_leader': troopID,
         'data.nation': nationId
@@ -45,7 +45,7 @@ export class JoinTroopService {
         return { success: false, message: '부대가 올바르지 않습니다' };
       }
 
-      await General.updateOne(
+      await (General as any).updateOne(
         { session_id: sessionId, 'data.no': generalId },
         { $set: { 'data.troop': troopID } }
       );

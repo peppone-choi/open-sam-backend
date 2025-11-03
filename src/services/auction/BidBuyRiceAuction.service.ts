@@ -13,7 +13,7 @@ export class BidBuyRiceAuctionService {
         throw new Error('필수 파라미터가 누락되었습니다.');
       }
 
-      const auction = await Auction.findOne({
+      const auction = await (Auction as any).findOne({
         _id: auctionID,
         session_id: sessionId,
         type: 'BuyRice'
@@ -36,7 +36,7 @@ export class BidBuyRiceAuctionService {
         throw new Error('자신이 연 경매에 입찰할 수 없습니다.');
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -66,7 +66,7 @@ export class BidBuyRiceAuctionService {
       }
 
       if (highestBid && !myPrevBid) {
-        const oldBidder = await General.findOne({
+        const oldBidder = await (General as any).findOne({
           session_id: sessionId,
           'data.no': highestBid.generalId
         });

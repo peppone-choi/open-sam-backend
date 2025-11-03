@@ -23,7 +23,7 @@ export class GetGeneralLogService {
         return { success: false, message: '대상 장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -32,7 +32,7 @@ export class GetGeneralLogService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const targetGeneral = await General.findOne({
+      const targetGeneral = await (General as any).findOne({
         session_id: sessionId,
         'data.no': targetGeneralId
       });
@@ -88,7 +88,7 @@ export class GetGeneralLogService {
         logQuery.id = { $lt: reqTo };
       }
 
-      const logRecords = await GeneralLog.find(logQuery)
+      const logRecords = await (GeneralLog as any).find(logQuery)
         .sort({ id: -1 })
         .limit(limit);
 

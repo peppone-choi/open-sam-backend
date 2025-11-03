@@ -17,7 +17,7 @@ export class GrantPowerService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -44,7 +44,7 @@ export class GrantPowerService {
         return { success: false, message: '외교권자는 최대 2명까지만 설정 가능합니다' };
       }
 
-      await General.updateMany(
+      await (General as any).updateMany(
         {
           session_id: sessionId,
           'data.nation': nationId,
@@ -65,7 +65,7 @@ export class GrantPowerService {
         };
       }
 
-      const candidates = await General.find({
+      const candidates = await (General as any).find({
         session_id: sessionId,
         'data.nation': nationId,
         'data.no': { $in: genlist },
@@ -88,7 +88,7 @@ export class GrantPowerService {
 
       const candidateIds = realCandidates.map(c => c.data?.no);
 
-      await General.updateMany(
+      await (General as any).updateMany(
         {
           session_id: sessionId,
           'data.no': { $in: candidateIds }

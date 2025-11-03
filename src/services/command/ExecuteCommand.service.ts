@@ -68,7 +68,7 @@ export class ExecuteCommandService {
   }
 
   private static async validateExecution(context: CommandContext): Promise<{ valid: boolean; reason?: string; message?: string }> {
-    const general = await General.findOne({ 
+    const general = await (General as any).findOne({ 
       session_id: context.sessionId, 
       no: context.generalId 
     });
@@ -82,7 +82,7 @@ export class ExecuteCommandService {
     }
 
     if (context.requiresOwnership && context.targetCity && context.ownerAtQueue !== undefined) {
-      const city = await City.findOne({ 
+      const city = await (City as any).findOne({ 
         session_id: context.sessionId, 
         city: context.targetCity 
       });
@@ -141,7 +141,7 @@ export class ExecuteCommandService {
   }
 
   private static async getGeneralStatus(general: any): Promise<string> {
-    const inBattle = await BattleInstance.findOne({
+    const inBattle = await (BattleInstance as any).findOne({
       $or: [
         { 'attacker.generals': general.no },
         { 'defender.generals': general.no }
@@ -205,7 +205,7 @@ export class ExecuteCommandService {
       updateFields['data.crew'] = -context.cost.troops;
     }
 
-    await General.updateOne(
+    await (General as any).updateOne(
       { session_id: context.sessionId, no: context.generalId },
       { $inc: updateFields }
     );
@@ -226,14 +226,14 @@ export class ExecuteCommandService {
       updateFields['data.crew'] = context.cost.troops;
     }
 
-    await General.updateOne(
+    await (General as any).updateOne(
       { session_id: context.sessionId, no: context.generalId },
       { $inc: updateFields }
     );
   }
 
   static async checkAndRefundFailedCommands(sessionId: string, turnIdx: number): Promise<void> {
-    const commands = await GeneralTurn.find({
+    const commands = await (GeneralTurn as any).find({
       session_id: sessionId,
       'data.turn_idx': turnIdx,
       'data.status': { $ne: 'executed' }
@@ -257,7 +257,7 @@ export class ExecuteCommandService {
       if (!result.success && result.refund) {
         await this.refundCommand(context, result.reason || 'unknown');
         
-        await GeneralTurn.updateOne(
+        await (GeneralTurn as any).updateOne(
           { _id: cmd._id },
           {
             $set: {

@@ -5,12 +5,12 @@ const router = Router();
 
 router.get('/vote/list', async (req: Request, res: Response) => {
   try {
-    const votes: any[] = await Vote.find({})
+    const votes: any[] = await (Vote as any).find({})
       .sort({ createdAt: -1 })
       .lean();
 
     for (const vote of votes) {
-      const comments = await VoteComment.find({ voteId: vote._id }).lean();
+      const comments = await (VoteComment as any).find({ voteId: vote._id }).lean();
       vote.comments = comments;
     }
 
@@ -31,7 +31,7 @@ router.post('/vote/:voteId', async (req: Request, res: Response) => {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general: any = await General.findOne({ owner: userId })
+    const general: any = await (General as any).findOne({ owner: userId })
       .select('no nation name')
       .lean();
 
@@ -42,7 +42,7 @@ router.post('/vote/:voteId', async (req: Request, res: Response) => {
     const { voteId } = req.params;
     const { selection } = req.body;
 
-    const existingVote = await Vote.findOne({
+    const existingVote = await (Vote as any).findOne({
       voteId,
       generalId: general.no,
     });

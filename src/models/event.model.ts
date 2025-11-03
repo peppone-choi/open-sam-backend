@@ -1,24 +1,23 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-/**
- * Event - event
- * 동적 필드를 위한 완전히 유연한 스키마
- */
-
 export interface IEvent extends Document {
   session_id: string;
-  data: Record<string, any>;  // 완전 동적!
+  target: 'MONTH' | 'OCCUPY_CITY' | 'DESTROY_NATION' | 'PRE_MONTH' | 'UNITED';
+  priority: number;
+  condition: any; // JSON
+  action: any; // JSON
 }
 
 const EventSchema = new Schema<IEvent>({
   session_id: { type: String, required: true, index: true },
-  data: { type: Schema.Types.Mixed, default: {} }
+  target: { type: String, enum: ['MONTH', 'OCCUPY_CITY', 'DESTROY_NATION', 'PRE_MONTH', 'UNITED'], required: true },
+  priority: { type: Number, default: 1000 },
+  condition: { type: Schema.Types.Mixed, required: true },
+  action: { type: Schema.Types.Mixed, required: true }
 }, {
-  timestamps: true,
   collection: 'events'
 });
 
-// 복합 인덱스 추가
-EventSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
+EventSchema.index({ session_id: 1, target: 1, priority: -1, _id: 1 });
 
-export const Event = mongoose.models.Event || mongoose.model<IEvent>('Event', EventSchema);
+export const Event = mongoose.model<IEvent>('Event', EventSchema);

@@ -24,7 +24,7 @@ export class SetRecentMessageTypeService {
         return { success: false, message: '잘못된 메시지 타입입니다' };
       }
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': generalId

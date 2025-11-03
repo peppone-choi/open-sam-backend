@@ -36,7 +36,7 @@ export class SendMessageService {
       }
 
       // 장수 정보 조회
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -53,7 +53,7 @@ export class SendMessageService {
       const permission = general.data?.permission;
 
       // 국가 정보 조회
-      const nation = nationId !== 0 ? await Nation.findOne({
+      const nation = nationId !== 0 ? await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': nationId
       }) : null;
@@ -140,7 +140,7 @@ export class SendMessageService {
    * 다음 메시지 ID 생성
    */
   private static async getNextMessageId(sessionId: string): Promise<number> {
-    const lastMessage = await Message.findOne({ session_id: sessionId })
+    const lastMessage = await (Message as any).findOne({ session_id: sessionId })
       .sort({ 'data.id': -1 })
       .select('data.id');
     
@@ -162,7 +162,7 @@ export class SendMessageService {
   ) {
     const now = new Date();
 
-    await Message.create({
+    await (Message as any).create({
       session_id: sessionId,
       data: {
         id: messageId,
@@ -203,7 +203,7 @@ export class SendMessageService {
   ) {
     const now = new Date();
 
-    await Message.create({
+    await (Message as any).create({
       session_id: sessionId,
       data: {
         id: messageId,
@@ -246,7 +246,7 @@ export class SendMessageService {
     text: string
   ) {
     // 대상 국가 조회
-    const destNation = await Nation.findOne({
+      const destNation = await (Nation as any).findOne({
       session_id: sessionId,
       'data.nation': destNationId
     });
@@ -262,7 +262,7 @@ export class SendMessageService {
     const destNationColor = destNation.data?.color || 0;
     const now = new Date();
 
-    await Message.create({
+    await (Message as any).create({
       session_id: sessionId,
       data: {
         id: messageId,
@@ -305,7 +305,7 @@ export class SendMessageService {
     text: string
   ) {
     // 대상 장수 조회
-    const destGeneral = await General.findOne({
+      const destGeneral = await (General as any).findOne({
       session_id: sessionId,
       'data.no': destGeneralId
     });
@@ -321,7 +321,7 @@ export class SendMessageService {
     const destNationId = destGeneral.data?.nation || 0;
 
     // 대상 국가 정보
-    const destNation = destNationId !== 0 ? await Nation.findOne({
+      const destNation = destNationId !== 0 ? await (Nation as any).findOne({
       session_id: sessionId,
       'data.nation': destNationId
     }) : null;
@@ -330,7 +330,7 @@ export class SendMessageService {
     const destNationColor = destNation?.data?.color || 0;
     const now = new Date();
 
-    await Message.create({
+    await (Message as any).create({
       session_id: sessionId,
       data: {
         id: messageId,

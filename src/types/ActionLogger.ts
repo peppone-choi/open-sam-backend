@@ -2,6 +2,7 @@ import { DB } from '../config/db';
 
 export class ActionLogger {
   static readonly PLAIN = 1;
+  static readonly NOTICE_YEAR_MONTH = 8;
 
   private generalNo: number;
   private nationID: number;

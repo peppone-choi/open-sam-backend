@@ -49,7 +49,7 @@ router.post('/register', async (req, res) => {
     const { username, password } = req.body;
     
     // 중복 체크
-    const existing = await User.findOne({ username });
+    const existing = await (User as any).findOne({ username });
     if (existing) {
       return res.status(400).json({ error: '이미 존재하는 사용자입니다' });
     }
@@ -58,7 +58,7 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // 사용자 생성
-    const user = await User.create({
+    const user = await (User as any).create({
       username,
       password: hashedPassword
     });
@@ -117,7 +117,12 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    const user = await User.findOne({ username });
+    // 입력값 검증
+    if (!username || !password) {
+      return res.status(400).json({ error: '사용자명과 비밀번호를 입력해주세요' });
+    }
+    
+    const user = await (User as any).findOne({ username });
     if (!user) {
       return res.status(401).json({ error: '사용자를 찾을 수 없습니다' });
     }
@@ -128,9 +133,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '비밀번호가 틀렸습니다' });
     }
     
-    // JWT 생성
+    // JWT 생성 (grade 포함)
     const token = jwt.sign(
-      { userId: user._id, username: user.username },
+      { 
+        userId: user._id, 
+        username: user.username,
+        grade: user.grade || 1
+      },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '7d' }
     );
@@ -138,10 +147,12 @@ router.post('/login', async (req, res) => {
     res.json({ 
       message: '로그인 성공',
       token,
-      userId: user._id
+      userId: user._id,
+      grade: user.grade || 1
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({ error: error.message || '서버 오류가 발생했습니다' });
   }
 });
 
@@ -161,9 +172,33 @@ router.post('/login', async (req, res) => {
  */
 router.get('/me', async (req, res) => {
   try {
-    // TODO: JWT 미들웨어 추가 후 구현
-    res.json({ message: '사용자 정보' });
+    // JWT 토큰에서 사용자 정보 추출
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: '인증 토큰이 없습니다' });
+    }
+
+    const token = authHeader.substring(7);
+    const secret = process.env.JWT_SECRET || 'secret';
+    const decoded = jwt.verify(token, secret) as unknown as { userId: string; username: string; grade?: number };
+    
+    // 사용자 정보 조회
+    const user = await (User as any).findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
+    }
+    
+    res.json({ 
+      userId: user._id,
+      username: user.username,
+      name: user.name,
+      grade: user.grade || 1,
+      game_mode: user.game_mode
+    });
   } catch (error: any) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ error: '유효하지 않은 토큰입니다' });
+    }
     res.status(500).json({ error: error.message });
   }
 });

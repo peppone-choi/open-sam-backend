@@ -27,16 +27,16 @@ export class BattleCreationService {
       entryDirection
     } = params;
 
-    const city = await City.findOne({ session_id: sessionId, city: cityId });
+    const city = await (City as any).findOne({ session_id: sessionId, city: cityId });
     if (!city) {
       throw new Error(`도시를 찾을 수 없습니다: ${cityId}`);
     }
 
-    const attackerNation = await Nation.findOne({ 
+    const attackerNation = await (Nation as any).findOne({ 
       session_id: sessionId, 
       'data.nation': attackerNationId 
     });
-    const defenderNation = await Nation.findOne({ 
+    const defenderNation = await (Nation as any).findOne({ 
       session_id: sessionId, 
       'data.nation': defenderNationId 
     });
@@ -47,13 +47,21 @@ export class BattleCreationService {
 
     const battleId = `battle_${nanoid(12)}`;
 
-    let mapTemplate = await BattleMapTemplate.findOne({ 
+    let mapTemplate = await (BattleMapTemplate as any).findOne({ 
       session_id: sessionId, 
       city_id: cityId 
     });
 
     if (!mapTemplate) {
-      mapTemplate = await this.createDefaultMapTemplate(sessionId, cityId, city.name);
+      const cityLevel = city.level || city.data?.level || 5;
+      const terrainType = city.terrain || city.data?.terrain || 'plain';
+      mapTemplate = await this.createDefaultMapTemplate(
+        sessionId, 
+        cityId, 
+        city.name || city.data?.name || `도시 ${cityId}`,
+        cityLevel,
+        terrainType
+      );
     }
 
     const battleInstance = new BattleInstance({
@@ -104,60 +112,200 @@ export class BattleCreationService {
     };
   }
 
-  private static async createDefaultMapTemplate(sessionId: string, cityId: number, cityName: string) {
+  private static async createDefaultMapTemplate(sessionId: string, cityId: number, cityName: string, cityLevel?: number, terrainType?: string) {
+    const width = 40;
+    const height = 40;
+    const centerX = 20;
+    const centerY = 20;
+    
+    // 도시 레벨에 따른 성벽 반경 조정 (레벨 높을수록 큰 성)
+    const wallRadius = cityLevel ? Math.min(9, 6 + Math.floor(cityLevel / 2)) : 7;
+    const innerRadius = wallRadius - 1;
+    
+    const terrain: any[] = [];
+    const walls: any[] = [];
+    const gates: any[] = [];
+    
+    // 40x40 그리드 생성
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const distFromCenter = Math.sqrt(
+          Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
+        );
+        
+        let type: string = 'plain';
+        let elevation = 0;
+        let heightValue = 0;
+        
+        // 성벽 및 문 생성
+        if (distFromCenter <= wallRadius && distFromCenter >= wallRadius - 0.5) {
+          const isGate = this.isGatePosition(x, y, centerX, centerY, wallRadius);
+          type = isGate ? 'gate' : 'wall';
+          heightValue = isGate ? 0 : 3;
+          
+          if (isGate) {
+            gates.push({ x, y });
+          } else {
+            walls.push({ x, y });
+          }
+        } else if (distFromCenter < innerRadius) {
+          type = 'road';
+        } else {
+          // 외곽 지형 생성
+          if (terrainType === 'mountain' || terrainType === '산') {
+            const roll = Math.random();
+            if (roll < 0.25) {
+              type = 'mountain';
+              elevation = Math.floor(Math.random() * 3) + 2;
+              heightValue = elevation;
+            } else if (roll < 0.5) {
+              type = 'hill';
+              elevation = Math.floor(Math.random() * 2) + 1;
+              heightValue = elevation;
+            } else if (roll < 0.7) {
+              type = 'forest';
+            }
+            
+            // 가장자리는 산으로
+            if (x <= 2 || x >= width - 3 || y <= 2 || y >= height - 3) {
+              type = 'mountain';
+              elevation = 5;
+              heightValue = 5;
+            }
+          } else if (terrainType === 'water' || terrainType === '강' || terrainType === '수') {
+            const roll = Math.random();
+            if (roll < 0.15 && (x <= 8 || y >= height - 8)) {
+              type = 'water';
+              elevation = -1;
+              heightValue = -1;
+            } else if (roll < 0.2) {
+              type = 'forest';
+            }
+          } else {
+            // 평지 기본 지형
+            const roll = Math.random();
+            if (roll < 0.1) {
+              type = 'forest';
+            } else if (roll < 0.15) {
+              type = 'hill';
+              elevation = 1;
+              heightValue = 1;
+            }
+          }
+        }
+        
+        terrain.push({ x, y, type, elevation, height: heightValue });
+      }
+    }
+    
+    // 성벽 위치 보완 (더 정확한 원형 성벽)
+    for (let angle = 0; angle < 360; angle += 3) {
+      const rad = (angle * Math.PI) / 180;
+      const x = Math.round(centerX + (wallRadius - 0.5) * Math.cos(rad));
+      const y = Math.round(centerY + (wallRadius - 0.5) * Math.sin(rad));
+      
+      if (x < 0 || x >= width || y < 0 || y >= height) continue;
+      
+      const isGate = this.isGatePosition(x, y, centerX, centerY, wallRadius);
+      
+      if (isGate && !gates.some(g => g.x === x && g.y === y)) {
+        gates.push({ x, y });
+      } else if (!isGate && !walls.some(w => w.x === x && w.y === y)) {
+        walls.push({ x, y });
+        // terrain 배열도 업데이트
+        const tileIndex = terrain.findIndex(t => t.x === x && t.y === y);
+        if (tileIndex >= 0) {
+          terrain[tileIndex].type = 'wall';
+          terrain[tileIndex].height = 3;
+        }
+      }
+    }
+    
+    // 출구 생성 (8방향)
     const exits: any[] = [
-      { direction: 'north', position: { x: 20, y: 0 }, connectedCity: 0 },
-      { direction: 'east', position: { x: 39, y: 20 }, connectedCity: 0 },
-      { direction: 'south', position: { x: 20, y: 39 }, connectedCity: 0 },
-      { direction: 'west', position: { x: 0, y: 20 }, connectedCity: 0 }
+      { direction: 'north', position: { x: centerX, y: 0 }, connectedCity: 0 },
+      { direction: 'northeast', position: { x: width - 1, y: 0 }, connectedCity: 0 },
+      { direction: 'east', position: { x: width - 1, y: centerY }, connectedCity: 0 },
+      { direction: 'southeast', position: { x: width - 1, y: height - 1 }, connectedCity: 0 },
+      { direction: 'south', position: { x: centerX, y: height - 1 }, connectedCity: 0 },
+      { direction: 'southwest', position: { x: 0, y: height - 1 }, connectedCity: 0 },
+      { direction: 'west', position: { x: 0, y: centerY }, connectedCity: 0 },
+      { direction: 'northwest', position: { x: 0, y: 0 }, connectedCity: 0 }
     ];
-
+    
+    // 배치 지역 생성
+    const deploymentZoneSize = Math.max(5, Math.floor(wallRadius / 2));
+    const attackerDeployment = this.generateDeploymentZone(centerX, Math.max(0, centerY - wallRadius - 3), deploymentZoneSize * 2, deploymentZoneSize);
+    const defenderDeployment = this.generateDeploymentZone(centerX, centerY, deploymentZoneSize, deploymentZoneSize);
+    
+    // 전략적 요점 생성
+    const strategicPoints = [
+      { name: '북문 광장', position: { x: centerX, y: centerY - Math.floor(wallRadius * 1.5) }, bonus: '방어+10%' },
+      { name: '동문 광장', position: { x: centerX + Math.floor(wallRadius * 1.5), y: centerY }, bonus: '방어+10%' },
+      { name: '남문 광장', position: { x: centerX, y: centerY + Math.floor(wallRadius * 1.5) }, bonus: '방어+10%' },
+      { name: '서문 광장', position: { x: centerX - Math.floor(wallRadius * 1.5), y: centerY }, bonus: '방어+10%' }
+    ];
+    
     const mapTemplate = new BattleMapTemplate({
       session_id: sessionId,
       city_id: cityId,
       name: `${cityName} 전투맵`,
-      width: 40,
-      height: 40,
-      
-      terrain: [],
-      
+      width,
+      height,
+      terrain,
       castle: {
-        centerX: 20,
-        centerY: 20,
-        walls: [
-          { x: 18, y: 18 }, { x: 19, y: 18 }, { x: 20, y: 18 }, { x: 21, y: 18 }, { x: 22, y: 18 },
-          { x: 18, y: 22 }, { x: 19, y: 22 }, { x: 20, y: 22 }, { x: 21, y: 22 }, { x: 22, y: 22 },
-          { x: 18, y: 19 }, { x: 18, y: 20 }, { x: 18, y: 21 },
-          { x: 22, y: 19 }, { x: 22, y: 20 }, { x: 22, y: 21 }
-        ],
-        gates: [
-          { x: 20, y: 18 },
-          { x: 20, y: 22 }
-        ],
-        throne: { x: 20, y: 20 }
+        centerX,
+        centerY,
+        walls,
+        gates,
+        throne: { x: centerX, y: centerY }
       },
-      
       exits,
-      
       deployment: {
-        attacker: [],
-        defender: [
-          { x: 19, y: 19 }, { x: 20, y: 19 }, { x: 21, y: 19 },
-          { x: 19, y: 20 }, { x: 21, y: 20 },
-          { x: 19, y: 21 }, { x: 20, y: 21 }, { x: 21, y: 21 }
-        ]
+        attacker: attackerDeployment,
+        defender: defenderDeployment
       },
-      
-      strategicPoints: []
+      strategicPoints
     });
 
     await mapTemplate.save();
     return mapTemplate;
   }
+  
+  private static isGatePosition(x: number, y: number, centerX: number, centerY: number, radius: number): boolean {
+    // 4방향 문 (북, 동, 남, 서)
+    const tolerance = 1;
+    
+    if (Math.abs(x - centerX) <= tolerance && Math.abs(y - (centerY - radius)) <= tolerance) return true; // 북문
+    if (Math.abs(x - (centerX + radius)) <= tolerance && Math.abs(y - centerY) <= tolerance) return true; // 동문
+    if (Math.abs(x - centerX) <= tolerance && Math.abs(y - (centerY + radius)) <= tolerance) return true; // 남문
+    if (Math.abs(x - (centerX - radius)) <= tolerance && Math.abs(y - centerY) <= tolerance) return true; // 서문
+    
+    return false;
+  }
+  
+  private static generateDeploymentZone(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number
+  ): any[] {
+    const positions: any[] = [];
+    
+    for (let dy = -Math.floor(height / 2); dy <= Math.floor(height / 2); dy++) {
+      for (let dx = -Math.floor(width / 2); dx <= Math.floor(width / 2); dx++) {
+        const x = Math.max(0, Math.min(39, centerX + dx));
+        const y = Math.max(0, Math.min(39, centerY + dy));
+        positions.push({ x, y });
+      }
+    }
+    
+    return positions;
+  }
 
   private static async setGeneralsInBattle(sessionId: string, generalIds: number[], battleId: string) {
     for (const generalId of generalIds) {
-      await General.updateOne(
+      await (General as any).updateOne(
         { session_id: sessionId, no: generalId },
         { 
           $set: { 
@@ -170,7 +318,7 @@ export class BattleCreationService {
   }
 
   static async getAvailableEntryDirections(sessionId: string, cityId: number): Promise<Direction[]> {
-    const mapTemplate = await BattleMapTemplate.findOne({ 
+    const mapTemplate = await (BattleMapTemplate as any).findOne({ 
       session_id: sessionId, 
       city_id: cityId 
     });
@@ -183,7 +331,7 @@ export class BattleCreationService {
   }
 
   static async calculateParticipatingForces(sessionId: string, cityId: number, nationId: number) {
-    const generals = await General.find({
+    const generals = await (General as any).find({
       session_id: sessionId,
       'data.nation': nationId,
       'data.city': cityId,

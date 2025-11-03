@@ -60,7 +60,7 @@ export class ReserveBulkCommandService {
         const brief = action;
 
         for (const turnIdx of turnList) {
-          await GeneralTurn.findOneAndUpdate(
+          await (GeneralTurn as any).findOneAndUpdate(
             {
               session_id: sessionId,
               'data.general_id': generalId,

@@ -20,7 +20,7 @@ export class GetMessagePreviewService {
         };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -33,7 +33,7 @@ export class GetMessagePreviewService {
       const latestReadPrivate = general.data?.latest_read_private_msg || 0;
       const latestReadDiplomacy = general.data?.latest_read_diplomacy_msg || 0;
 
-      const unreadPrivateCount = await Message.countDocuments({
+      const unreadPrivateCount = await (Message as any).countDocuments({
         session_id: sessionId,
         'data.type': 'private',
         'data.id': { $gt: latestReadPrivate },
@@ -43,7 +43,7 @@ export class GetMessagePreviewService {
         ]
       });
 
-      const unreadDiplomacyCount = await Message.countDocuments({
+      const unreadDiplomacyCount = await (Message as any).countDocuments({
         session_id: sessionId,
         'data.type': 'diplomacy',
         'data.dest_nation_id': nationId,

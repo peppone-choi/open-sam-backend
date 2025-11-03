@@ -174,14 +174,22 @@ export abstract class BaseCommand {
 
   protected async setCity(): Promise<void> {
     this.resetTestCache();
-    const db = DB.db();
     this.city = this.generalObj.getRawCity?.() || null;
     if (this.city) {
       return;
     }
-    // TODO: DB query implementation
-    // this.city = await db.queryFirstRow('SELECT * FROM city WHERE city=%i', this.generalObj.getVar('city'));
-    // this.generalObj.setRawCity(this.city);
+    
+    const { City } = require('../../models/city.model');
+    const cityId = this.generalObj.getVar('city');
+    const sessionId = this.env.session_id;
+    
+    if (cityId && sessionId) {
+      const cityDoc = await City.findOne({ session_id: sessionId, city: cityId });
+      if (cityDoc) {
+        this.city = cityDoc.toObject();
+        this.generalObj.setRawCity(this.city);
+      }
+    }
   }
 
   protected async setNation(args: string[] | null = null): Promise<void> {
@@ -207,7 +215,15 @@ export abstract class BaseCommand {
       return;
     }
 
-    // TODO: Full implementation with DB queries
+    const { Nation } = require('../../models/nation.model');
+    const sessionId = this.env.session_id;
+    
+    if (sessionId) {
+      const nationDoc = await Nation.findOne({ session_id: sessionId, nation: nationID });
+      if (nationDoc) {
+        this.nation = nationDoc.toObject();
+      }
+    }
   }
 
   protected setDestGeneral(destGeneralObj: any): void {

@@ -56,15 +56,15 @@ export class InitService {
     console.log(`🎬 세션 초기화 시작: ${sessionId}`);
     
     // 1. 세션 설정 조회
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     if (!session) throw new Error('세션을 찾을 수 없습니다');
     
     // 시나리오 ID 결정 (기본: sangokushi)
-    const scenarioId = (session as any).scenario_id || 'sangokushi';
+    const scenarioId = session.scenario_id || 'sangokushi';
     console.log(`   📦 시나리오: ${scenarioId}`);
     
     // 2. 기존 도시 삭제 (재초기화)
-    await City.deleteMany({ session_id: sessionId });
+    await (City as any).deleteMany({ session_id: sessionId });
     console.log(`   🗑️  기존 도시 삭제`);
     
     // 3. 시나리오 데이터 로드
@@ -78,12 +78,14 @@ export class InitService {
     const cities = citiesData.cities;
     console.log(`   📍 도시 데이터: ${cities.length}개 로드됨`);
     
+    const cityCount = cities.length;
+    
     // 4. 도시 생성
     for (const cityTemplate of cities) {
       const initialState = cityTemplate.initialState || {};
       const position = cityTemplate.position || {};
       
-      await City.create({
+      await (City as any).create({
         session_id: sessionId,
         city: cityTemplate.id,
         name: cityTemplate.name,
@@ -125,8 +127,8 @@ export class InitService {
     console.log(`   ✅ 도시 ${cities.length}개 생성 완료`);
     
     // 4. 초기 국가 생성 (재야)
-    await Nation.deleteMany({ session_id: sessionId });
-    await Nation.create({
+    await (Nation as any).deleteMany({ session_id: sessionId });
+    await (Nation as any).create({
       session_id: sessionId,
       nation: 0,
       name: '재야',
@@ -143,7 +145,7 @@ export class InitService {
     
     // 5. 세션 데이터 초기화 (턴 시간, 년/월 등)
     if (!session.data) session.data = {};
-    session.data.turnterm = session.data.turnterm || 10; // 기본 10분턴
+    session.data.turnterm = session.data.turnterm || 60; // 기본 60분턴 (분 단위로 저장)
     session.data.year = session.data.year || 184;
     session.data.month = session.data.month || 1;
     session.data.startyear = session.data.startyear || 184;

@@ -16,7 +16,8 @@ export class CommandController {
    */
   static async getReservedCommand(req: Request, res: Response) {
     try {
-      const result = await GetReservedCommandService.execute(req.body, req.user);
+      // GET 요청이므로 req.query 사용
+      const result = await GetReservedCommandService.execute(req.query, req.user);
       res.json(result);
     } catch (error: any) {
       res.status(500).json({

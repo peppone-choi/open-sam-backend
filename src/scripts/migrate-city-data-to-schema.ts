@@ -17,7 +17,7 @@ async function migrateCityData() {
     await connectDB();
     
     // 모든 City 문서 조회
-    const cities = await City.find({});
+    const cities = await (City as any).find({});
     console.log(`📊 총 ${cities.length}개 도시 발견\n`);
     
     let migratedCount = 0;

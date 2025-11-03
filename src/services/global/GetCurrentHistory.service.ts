@@ -16,7 +16,7 @@ export class GetCurrentHistoryService {
     
     try {
       // Load session
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -79,7 +79,7 @@ export class GetCurrentHistoryService {
    * Get world map info (simplified version for history)
    */
   private static async getWorldMap(sessionId: string, userId: string | null): Promise<any> {
-    const session = await Session.findOne({ session_id: sessionId });
+    const session = await (Session as any).findOne({ session_id: sessionId });
     if (!session) return {};
 
     const sessionData = session.data as any || {};
@@ -88,7 +88,7 @@ export class GetCurrentHistoryService {
     const month = sessionData.month || 1;
 
     // Get nations
-    const nations = await Nation.find({ session_id: sessionId })
+    const nations = await (Nation as any).find({ session_id: sessionId })
       .select('nation name data')
       .lean();
 
@@ -104,7 +104,7 @@ export class GetCurrentHistoryService {
     }
 
     // Get cities
-    const cities = await City.find({ session_id: sessionId })
+    const cities = await (City as any).find({ session_id: sessionId })
       .select('city data')
       .lean();
 
@@ -138,7 +138,7 @@ export class GetCurrentHistoryService {
    * Get global history logs for specific year/month
    */
   private static async getGlobalHistoryLogWithDate(sessionId: string, year: number, month: number): Promise<any[]> {
-    const records = await WorldHistory.find({
+    const records = await (WorldHistory as any).find({
       session_id: sessionId,
       'data.nation_id': 0,
       'data.year': year,
@@ -164,7 +164,7 @@ export class GetCurrentHistoryService {
    * Get global action logs for specific year/month
    */
   private static async getGlobalActionLogWithDate(sessionId: string, year: number, month: number): Promise<any[]> {
-    const records = await GeneralRecord.find({
+    const records = await (GeneralRecord as any).find({
       session_id: sessionId,
       'data.general_id': 0,
       'data.log_type': 'history',
@@ -191,7 +191,7 @@ export class GetCurrentHistoryService {
    * Get all nations with their cities
    */
   private static async getAllNations(sessionId: string): Promise<any[]> {
-    const nations = await Nation.find({ session_id: sessionId })
+    const nations = await (Nation as any).find({ session_id: sessionId })
       .select('nation name data')
       .lean();
 
@@ -208,7 +208,7 @@ export class GetCurrentHistoryService {
     }
 
     // Get nation 0 (neutral)
-    const neutralNation = await Nation.findOne({ session_id: sessionId, nation: 0 }).lean();
+    const neutralNation = await (Nation as any).findOne({ session_id: sessionId, nation: 0 }).lean();
     if (neutralNation) {
       const neutralData = neutralNation.data as any || {};
       nationMap[0] = {
@@ -220,7 +220,7 @@ export class GetCurrentHistoryService {
     }
 
     // Get all cities and add to nations
-    const cities = await City.find({ session_id: sessionId })
+    const cities = await (City as any).find({ session_id: sessionId })
       .select('city name nation')
       .lean();
 

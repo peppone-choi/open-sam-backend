@@ -32,7 +32,7 @@ export class ReadLatestMessageService {
         ? 'data.latest_read_private_msg' 
         : 'data.latest_read_diplomacy_msg';
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': generalId

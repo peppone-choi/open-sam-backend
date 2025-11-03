@@ -2494,6 +2494,31 @@
         32,
         105
       ]
+    },
+    {
+      "id": 108,
+      "name": "소패",
+      "levelId": 5,
+      "regionId": 2,
+      "initialState": {
+        "population": 3140,
+        "agriculture": 40,
+        "commerce": 50,
+        "security": 40,
+        "defense": 51,
+        "wall": 49
+      },
+      "position": {
+        "x": 411,
+        "y": 142
+      },
+      "neighbors": [
+        18,
+        38,
+        37,
+        21,
+        83
+      ]
     }
   ]
 }

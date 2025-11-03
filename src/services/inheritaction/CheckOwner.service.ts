@@ -29,7 +29,7 @@ export class CheckOwnerService {
         return { success: false, message: '자신의 정보는 확인할 수 없습니다.' };
       }
       
-      const general = await General.findOne({ session_id: sessionId, no: generalId });
+      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -38,7 +38,7 @@ export class CheckOwnerService {
         return { success: false, message: '로그인 상태가 이상합니다. 다시 로그인해 주세요.' };
       }
       
-      const destGeneral = await General.findOne({ session_id: sessionId, no: destGeneralID });
+      const destGeneral = await (General as any).findOne({ session_id: sessionId, no: destGeneralID });
       if (!destGeneral) {
         return { success: false, message: '대상 장수가 존재하지 않습니다.' };
       }
@@ -47,14 +47,14 @@ export class CheckOwnerService {
         return { success: false, message: '대상 장수는 NPC입니다.' };
       }
       
-      const gameEnv = await KVStorage.findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
       const reqPoint = GameConstants.INHERIT_CHECK_OWNER_POINT;
       
-      const inheritStor = await KVStorage.findOne({ 
+      const inheritStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -65,7 +65,7 @@ export class CheckOwnerService {
         return { success: false, message: '충분한 유산 포인트를 가지고 있지 않습니다.' };
       }
       
-      await UserRecord.create({
+      await (UserRecord as any).create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',
@@ -75,12 +75,12 @@ export class CheckOwnerService {
         date: new Date().toISOString()
       });
       
-      const destOwner = await User.findOne({ no: destGeneral.owner });
+      const destOwner = await (User as any).findOne({ no: destGeneral.owner });
       const destOwnerName = destGeneral.owner_name || destOwner?.name || '알수없음';
       
-      const srcNation = await Nation.findOne({ session_id: sessionId, nation: general.nation });
+      const srcNation = await (Nation as any).findOne({ session_id: sessionId, nation: general.nation });
       
-      await Message.create({
+      await (Message as any).create({
         session_id: sessionId,
         src_general_id: 0,
         src_general_name: 'System',
@@ -109,9 +109,9 @@ export class CheckOwnerService {
       
       await general.save();
       
-      const destNation = await Nation.findOne({ session_id: sessionId, nation: destGeneral.nation });
+      const destNation = await (Nation as any).findOne({ session_id: sessionId, nation: destGeneral.nation });
       
-      await Message.create({
+      await (Message as any).create({
         session_id: sessionId,
         src_general_id: 0,
         src_general_name: 'System',

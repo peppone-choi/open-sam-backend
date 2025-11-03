@@ -6,7 +6,7 @@ export class GetCitiesBriefService {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -14,7 +14,7 @@ export class GetCitiesBriefService {
         };
       }
 
-      const cities = await City.find({ session_id: sessionId })
+      const cities = await (City as any).find({ session_id: sessionId })
         .select('city name nation level state region')
         .lean();
 

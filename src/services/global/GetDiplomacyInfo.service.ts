@@ -8,7 +8,7 @@ export class GetDiplomacyInfoService {
     const nationId = parseInt(data.nation_id) || 0;
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -23,7 +23,7 @@ export class GetDiplomacyInfoService {
         };
       }
 
-      const nation = await Nation.findOne({
+      const nation = await (Nation as any).findOne({
         session_id: sessionId,
         nation: nationId
       }).lean();
@@ -35,7 +35,7 @@ export class GetDiplomacyInfoService {
         };
       }
 
-      const diplomacyRecords = await NgDiplomacy.find({
+      const diplomacyRecords = await (NgDiplomacy as any).find({
         session_id: sessionId,
         $or: [
           { 'data.me': nationId },

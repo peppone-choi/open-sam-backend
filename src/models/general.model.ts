@@ -19,6 +19,7 @@ export interface IGeneral extends Document {
   rank?: Record<string, any>;
   special2?: string;
   turn_time?: number;
+  turntime?: Date | string;
   npc?: number;
   leadership?: number;
   strength?: number;
@@ -82,10 +83,11 @@ export interface IGeneral extends Document {
   applyDB(db: any): Promise<void>;
   markModified(path: string): void;
   save(): Promise<this>;
+  onCalcDomestic(turnType: string, varType: string, value: number, aux?: any): number;
 }
 
 const GeneralSchema = new Schema<IGeneral>({
-  no: { type: Number, required: true, unique: true },
+  no: { type: Number, required: true },
   session_id: { type: String, required: true },
   owner: { type: String, required: true },
   name: { type: String, required: true },
@@ -98,6 +100,7 @@ const GeneralSchema = new Schema<IGeneral>({
   rank: { type: Schema.Types.Mixed, default: {} },
   special2: { type: String },
   turn_time: { type: Number },
+  turntime: { type: Date },
   npc: { type: Number, default: 0 },
   leadership: { type: Number },
   strength: { type: Number },
@@ -110,9 +113,11 @@ const GeneralSchema = new Schema<IGeneral>({
   timestamps: true
 });
 
+GeneralSchema.index({ session_id: 1, no: 1 }, { unique: true });
+
 // 메서드 추가 (PHP의 General 클래스 메서드들)
 GeneralSchema.methods.getVar = function(key: string): any {
-  return this.data[key];
+  return this.data?.[key];
 };
 
 GeneralSchema.methods.setVar = function(key: string, value: any): void {
@@ -147,6 +152,10 @@ GeneralSchema.methods.getNationID = function(): number {
 
 GeneralSchema.methods.getCityID = function(): number {
   return this.data.city || 0;
+};
+
+GeneralSchema.methods.getSessionID = function(): string {
+  return this.session_id;
 };
 
 GeneralSchema.methods.getLogger = function(): any {
@@ -209,6 +218,24 @@ GeneralSchema.methods.checkStatChange = async function(): Promise<void> {
 
 GeneralSchema.methods.applyDB = async function(db: any): Promise<void> {
   await this.save();
+};
+
+GeneralSchema.methods.onCalcDomestic = function(turnType: string, varType: string, value: number, aux?: any): number {
+  // PHP의 onCalcDomestic과 동일
+  // 특수 아이템/능력의 영향을 계산하는 메서드
+  // 기본적으로는 value를 그대로 반환하지만,
+  // 특수 아이템이나 능력이 있으면 값을 조정
+  
+  // TODO: 특수 아이템/능력 목록을 가져와서 onCalcDomestic을 호출
+  // 현재는 기본값 반환
+  // const actionList = this.getActionList();
+  // for (const iObj of actionList) {
+  //   if (iObj && iObj.onCalcDomestic) {
+  //     value = iObj.onCalcDomestic(turnType, varType, value, aux);
+  //   }
+  // }
+  
+  return value;
 };
 
 export const General = mongoose.models.General || mongoose.model<IGeneral>('General', GeneralSchema);

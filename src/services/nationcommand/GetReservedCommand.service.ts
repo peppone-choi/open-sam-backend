@@ -13,7 +13,7 @@ export class GetReservedCommandService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -37,14 +37,14 @@ export class GetReservedCommandService {
         throw new Error('수뇌부가 아니거나 사관년도가 부족합니다.');
       }
 
-      const nation = await Nation.findOne({
+      const nation = await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': nationId
       });
 
       const nationLevel = nation?.data.level || 0;
 
-      const chiefs = await General.find({
+      const chiefs = await (General as any).find({
         session_id: sessionId,
         'data.nation': nationId,
         'data.officer_level': { $gte: 5 }
@@ -55,7 +55,7 @@ export class GetReservedCommandService {
         generalsByLevel[chief.data.officer_level] = chief.data;
       }
 
-      const nationTurns = await NationTurn.find({
+      const nationTurns = await (NationTurn as any).find({
         session_id: sessionId,
         'data.nation_id': nationId
       }).sort({ 'data.officer_level': -1, 'data.turn_idx': 1 });
@@ -88,7 +88,7 @@ export class GetReservedCommandService {
 
       if (Object.keys(invalidUnderTurnList).length > 0) {
         for (const level of Object.keys(invalidUnderTurnList)) {
-          await NationTurn.updateMany(
+          await (NationTurn as any).updateMany(
             {
               session_id: sessionId,
               'data.nation_id': nationId,
@@ -104,7 +104,7 @@ export class GetReservedCommandService {
 
       if (Object.keys(invalidOverTurnList).length > 0) {
         for (const level of Object.keys(invalidOverTurnList)) {
-          await NationTurn.updateMany(
+          await (NationTurn as any).updateMany(
             {
               session_id: sessionId,
               'data.nation_id': nationId,
@@ -118,7 +118,7 @@ export class GetReservedCommandService {
         }
       }
 
-      const troops = await Troop.find({
+      const troops = await (Troop as any).find({
         session_id: sessionId,
         'data.nation': nationId
       });
@@ -126,6 +126,55 @@ export class GetReservedCommandService {
       const troopList: { [key: number]: string } = {};
       for (const troop of troops) {
         troopList[troop.data.troop_leader] = troop.data.name;
+      }
+
+      // 빈 턴은 모두 DB에 '휴식' 명령으로 자동 저장
+      const CHIEF_LEVELS = [12, 10, 8, 6, 11, 9, 7, 5];
+      const allOfficerLevels = new Set<number>();
+      CHIEF_LEVELS.forEach(level => allOfficerLevels.add(level));
+      Object.keys(nationTurnList).forEach(level => allOfficerLevels.add(parseInt(level)));
+
+      for (const officerLevel of allOfficerLevels) {
+        if (!nationTurnList[officerLevel]) {
+          nationTurnList[officerLevel] = {};
+        }
+        
+        const emptyTurns: number[] = [];
+        for (let i = 0; i < MAX_CHIEF_TURN; i++) {
+          if (!nationTurnList[officerLevel][i]) {
+            emptyTurns.push(i);
+            nationTurnList[officerLevel][i] = {
+              action: '휴식',
+              brief: '휴식',
+              arg: {}
+            };
+          }
+        }
+        
+        // 빈 턴이 있으면 DB에 자동으로 휴식 명령 저장
+        if (emptyTurns.length > 0) {
+          for (const turnIdx of emptyTurns) {
+            await (NationTurn as any).updateOne(
+              {
+                session_id: sessionId,
+                'data.nation_id': nationId,
+                'data.officer_level': officerLevel,
+                'data.turn_idx': turnIdx
+              },
+              {
+                $set: {
+                  'data.nation_id': nationId,
+                  'data.officer_level': officerLevel,
+                  'data.turn_idx': turnIdx,
+                  'data.action': '휴식',
+                  'data.brief': '휴식',
+                  'data.arg': {}
+                }
+              },
+              { upsert: true }
+            );
+          }
+        }
       }
 
       const nationChiefList: { [key: number]: any } = {};
@@ -154,7 +203,7 @@ export class GetReservedCommandService {
         };
       }
 
-      const sessionData = await Session.findOne({ session_id: sessionId });
+      const sessionData = await (Session as any).findOne({ session_id: sessionId });
       const gameEnv = sessionData?.data?.game_env || {};
 
       return {
@@ -163,7 +212,7 @@ export class GetReservedCommandService {
         lastExecute: gameEnv.turntime || new Date(),
         year: gameEnv.year || 184,
         month: gameEnv.month || 1,
-        turnTerm: gameEnv.turnterm || 600,
+        turnTerm: gameEnv.turnterm || 60, // 분 단위
         date: new Date(),
         chiefList: nationChiefList,
         troopList,

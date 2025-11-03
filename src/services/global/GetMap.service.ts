@@ -16,7 +16,7 @@ export class GetMapService {
     
     try {
       // Load session
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -35,7 +35,7 @@ export class GetMapService {
       let myNation: number | null = null;
       
       if (userId) {
-        const general = await General.findOne({ 
+        const general = await (General as any).findOne({ 
           session_id: sessionId, 
           owner: userId 
         }).select('no data').lean();
@@ -58,7 +58,7 @@ export class GetMapService {
       let spyInfo: Record<number, number> = {};
       
       if (myNation) {
-        const nation = await Nation.findOne({ 
+        const nation = await (Nation as any).findOne({ 
           session_id: sessionId, 
           nation: myNation 
         }).select('data').lean();
@@ -94,7 +94,7 @@ export class GetMapService {
       }
 
       // Get nation list
-      const nations = await Nation.find({ session_id: sessionId })
+      const nations = await (Nation as any).find({ session_id: sessionId })
         .select('nation name data')
         .lean();
 
@@ -112,7 +112,7 @@ export class GetMapService {
       // Get cities where my nation's generals are located
       let shownByGeneralList: number[] = [];
       if (myNation) {
-        const generals = await General.find({ 
+        const generals = await (General as any).find({ 
           session_id: sessionId, 
           'data.nation': myNation 
         }).select('data').lean();
@@ -128,8 +128,8 @@ export class GetMapService {
       }
 
       // Get city list
-      const cities = await City.find({ session_id: sessionId })
-        .select('city level state nation region supply')
+      const cities = await (City as any).find({ session_id: sessionId })
+        .select('city name level state nation region supply x y')
         .lean();
 
       const cityList: any[] = [];
@@ -140,7 +140,10 @@ export class GetMapService {
           city.state || 0,
           city.nation || 0,
           city.region || 0,
-          city.supply || 0
+          city.supply || 0,
+          city.name || '',
+          city.x || 0,
+          city.y || 0
         ]);
       }
 
@@ -173,6 +176,7 @@ export class GetMapService {
       console.error('GetMap error:', error);
       return {
         success: false,
+        result: false,
         message: error.message
       };
     }

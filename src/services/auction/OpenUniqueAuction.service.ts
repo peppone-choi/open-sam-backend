@@ -18,7 +18,7 @@ export class OpenUniqueAuctionService {
         throw new Error(`최소 경매 금액은 ${minPoint}입니다.`);
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -27,7 +27,7 @@ export class OpenUniqueAuctionService {
         throw new Error('장수를 찾을 수 없습니다.');
       }
 
-      const existingItemAuction = await Auction.findOne({
+      const existingItemAuction = await (Auction as any).findOne({
         session_id: sessionId,
         type: 'UniqueItem',
         target: itemID,
@@ -38,7 +38,7 @@ export class OpenUniqueAuctionService {
         throw new Error('이미 경매가 진행중입니다.');
       }
 
-      const existingAuction = await Auction.findOne({
+      const existingAuction = await (Auction as any).findOne({
         session_id: sessionId,
         hostGeneralId: generalId,
         type: 'UniqueItem',
@@ -57,7 +57,7 @@ export class OpenUniqueAuctionService {
 
       const obfuscatedName = this.genObfuscatedName(generalId);
 
-      const auction = await Auction.create({
+      const auction = await (Auction as any).create({
         session_id: sessionId,
         type: 'UniqueItem',
         finished: false,

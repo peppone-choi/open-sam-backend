@@ -24,12 +24,12 @@ export class GetInheritPointListService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const general = await General.findOne({ session_id: sessionId, no: generalId });
+      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
       
-      const inheritStor = await KVStorage.findOne({ 
+      const inheritStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });

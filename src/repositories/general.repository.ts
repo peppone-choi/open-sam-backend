@@ -1,10 +1,13 @@
 import { General } from '../models/general.model';
 import { DeleteResult } from 'mongodb';
+import { saveGeneral } from '../common/cache/model-cache.helper';
 
 /**
  * 장수 리포지토리
  * 
- * 장수 데이터의 데이터베이스 접근을 담당합니다.
+ * CQRS 패턴:
+ * - Query: L1 → L2 → DB (model-cache.helper 사용)
+ * - Command: Redis에만 쓰기 (데몬이 주기적으로 DB 동기화)
  */
 class GeneralRepository {
   /**
@@ -13,7 +16,7 @@ class GeneralRepository {
    * @returns 장수 문서 또는 null
    */
   async findById(generalId: string) {
-    return General.findById(generalId);
+    return (General as any).findById(generalId);
   }
 
   /**
@@ -22,7 +25,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findBySession(sessionId: string) {
-    return General.find({ session_id: sessionId });
+    return (General as any).find({ session_id: sessionId });
   }
 
   /**
@@ -32,7 +35,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findByNation(sessionId: string, nationId: number) {
-    return General.find({ 
+    return (General as any).find({ 
       session_id: sessionId, 
       nation: nationId 
     });
@@ -45,7 +48,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findByCity(sessionId: string, cityId: number) {
-    return General.find({ 
+    return (General as any).find({ 
       session_id: sessionId, 
       city: cityId 
     });
@@ -57,32 +60,56 @@ class GeneralRepository {
    * @returns 재야 장수 목록
    */
   async findNeutral(sessionId: string) {
-    return General.find({ 
+    return (General as any).find({ 
       session_id: sessionId, 
       nation: 0 
     });
   }
 
   /**
-   * 장수 생성
+   * 장수 생성 (CQRS Command)
    * @param data - 장수 데이터
-   * @returns 생성된 장수
+   * @returns 생성된 장수 (Redis에만 저장, DB는 데몬이 동기화)
    */
   async create(data: any) {
-    return General.create(data);
+    const sessionId = data.session_id;
+    const generalId = data.no || data.data?.no;
+    
+    if (sessionId && generalId) {
+      await saveGeneral(sessionId, generalId, data);
+      return data;
+    }
+    
+    // session_id나 no가 없으면 예외 (일반적으로는 발생하지 않음)
+    throw new Error('General create requires session_id and no');
   }
 
   /**
-   * 장수 업데이트
-   * @param generalId - 장수 ID
+   * 장수 업데이트 (CQRS Command)
+   * @param generalId - 장수 ID (MongoDB _id)
    * @param update - 업데이트할 데이터
-   * @returns 업데이트 결과
+   * @returns 업데이트 결과 (Redis에만 저장, DB는 데몬이 동기화)
    */
   async updateById(generalId: string, update: any) {
-    return General.updateOne(
-      { _id: generalId },
-      { $set: update }
-    );
+    // MongoDB _id로 조회해서 session_id와 no 확인
+    const existing = await (General as any).findById(generalId).lean();
+    
+    if (!existing) {
+      throw new Error(`General not found: ${generalId}`);
+    }
+    
+    const sessionId = existing.session_id || update.session_id;
+    const no = existing.data?.no || existing.no || update.no || update.data?.no;
+    
+    if (sessionId && no) {
+      // 기존 데이터와 업데이트 병합
+      const merged = { ...existing, ...update };
+      await saveGeneral(sessionId, no, merged);
+      
+      return { modifiedCount: 1, matchedCount: 1 };
+    }
+    
+    throw new Error('Cannot update General: missing session_id or no');
   }
 
   /**
@@ -91,7 +118,7 @@ class GeneralRepository {
    * @returns 삭제 결과
    */
   async deleteById(generalId: string): Promise<DeleteResult> {
-    return General.deleteOne({ _id: generalId });
+    return (General as any).deleteOne({ _id: generalId });
   }
 
   /**
@@ -100,7 +127,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findByFilter(filter: any) {
-    return General.find(filter);
+    return (General as any).find(filter);
   }
 
   /**
@@ -109,7 +136,7 @@ class GeneralRepository {
    * @returns 장수 수
    */
   async count(filter: any): Promise<number> {
-    return General.countDocuments(filter);
+    return (General as any).countDocuments(filter);
   }
 
   /**
@@ -126,7 +153,7 @@ class GeneralRepository {
     limit: number = 20,
     sort: any = { name: 1 }
   ) {
-    return General.find(filter)
+    return (General as any).find(filter)
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);

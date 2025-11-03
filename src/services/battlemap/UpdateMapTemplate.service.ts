@@ -13,7 +13,7 @@ export class UpdateMapTemplateService {
     strategicPoints?: any[];
   }) {
     try {
-      const template = await BattleMapTemplate.findById(data.id);
+      const template = await (BattleMapTemplate as any).findById(data.id);
       
       if (!template) {
         return {
@@ -33,9 +33,9 @@ export class UpdateMapTemplateService {
       if (data.deployment !== undefined) updateFields.deployment = data.deployment;
       if (data.strategicPoints !== undefined) updateFields.strategicPoints = data.strategicPoints;
       
-      await BattleMapTemplate.updateOne({ _id: data.id }, { $set: updateFields });
+      await (BattleMapTemplate as any).updateOne({ _id: data.id }, { $set: updateFields });
       
-      const updated = await BattleMapTemplate.findById(data.id);
+      const updated = await (BattleMapTemplate as any).findById(data.id);
       
       console.log(`✅ 맵 템플릿 수정: ${updated?.name} (city_id=${updated?.city_id})`);
       

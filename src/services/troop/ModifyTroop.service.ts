@@ -21,7 +21,7 @@ export class ModifyTroopService {
         return { success: false, message: '수정할 부대 정보가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -53,7 +53,7 @@ export class ModifyTroopService {
         updateData['data.name'] = troopData.name;
       }
 
-      const result = await Troop.updateOne(
+      const result = await (Troop as any).updateOne(
         { 
           session_id: sessionId, 
           'data.troop_leader': troopId,

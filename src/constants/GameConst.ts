@@ -154,4 +154,8 @@ export class GameConst {
   static readonly initialNationGenLimit = 50;
   
   static readonly allItems: any[] = [];
+
+  static readonly exchangeFee = 0.05; // 5% 수수료
+  static readonly basegold = 1000;
+  static readonly baserice = 2000;
 }

@@ -20,14 +20,14 @@ export class BuildNationCandidateService {
     }
 
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
 
       const gameEnv = session.data || {};
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         owner: userId.toString()
       });
@@ -54,14 +54,19 @@ export class BuildNationCandidateService {
         return { success: false, message: '장수 번호를 찾을 수 없습니다' };
       }
 
-      await GeneralRecord.create({
+      const { getNextRecordId } = await import('../../utils/record-helpers');
+      const recordId = await getNextRecordId(sessionId);
+      await (GeneralRecord as any).create({
         session_id: sessionId,
-        general_id: generalNo,
-        year: gameEnv.year || 184,
-        month: gameEnv.month || 1,
-        type: 'action',
-        text: '거병을 신청하였습니다. 게임 시작 시 자동으로 국가를 세웁니다.',
-        date: new Date()
+        data: {
+          id: recordId,
+          general_id: generalNo,
+          year: gameEnv.year || 184,
+          month: gameEnv.month || 1,
+          log_type: 'action',
+          text: '거병을 신청하였습니다. 게임 시작 시 자동으로 국가를 세웁니다.',
+          date: new Date().toISOString()
+        }
       });
 
       general.data = general.data || {};

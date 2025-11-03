@@ -19,7 +19,7 @@ const activeBattleTimers = new Map<string, BattleTimer>();
 
 export async function processBattles() {
   try {
-    const activeBattles = await Battle.find({ 
+    const activeBattles = await (Battle as any).find({ 
       status: BattleStatus.IN_PROGRESS 
     });
 

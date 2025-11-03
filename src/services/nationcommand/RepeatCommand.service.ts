@@ -19,7 +19,7 @@ export class RepeatCommandService {
         throw new Error('범위를 벗어났습니다 (1 ~ 12)');
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -70,7 +70,7 @@ export class RepeatCommandService {
       reqTurn = MAX_CHIEF_TURN - turnCnt;
     }
 
-    const turnList = await NationTurn.find({
+    const turnList = await (NationTurn as any).find({
       session_id: sessionId,
       'data.nation_id': nationId,
       'data.officer_level': officerLevel,
@@ -92,7 +92,7 @@ export class RepeatCommandService {
         targetIndices.push(i);
       }
 
-      await NationTurn.updateMany(
+      await (NationTurn as any).updateMany(
         {
           session_id: sessionId,
           'data.nation_id': nationId,

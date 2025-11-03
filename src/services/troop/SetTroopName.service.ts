@@ -17,7 +17,7 @@ export class SetTroopNameService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -35,7 +35,7 @@ export class SetTroopNameService {
         return { success: false, message: '부대장만 부대 이름을 변경할 수 있습니다' };
       }
 
-      await Troop.updateOne(
+      await (Troop as any).updateOne(
         { session_id: sessionId, 'data.troop_leader': troopId },
         { $set: { 'data.name': troopName } }
       );

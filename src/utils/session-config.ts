@@ -13,7 +13,7 @@ export async function getSessionConfig(sessionId: string) {
   }
   
   // DB에서 조회
-  const session = await Session.findOne({ session_id: sessionId });
+  const session = await (Session as any).findOne({ session_id: sessionId });
   if (!session) throw new Error('세션을 찾을 수 없습니다');
   
   sessionCache.set(sessionId, session);

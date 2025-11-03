@@ -76,3 +76,6 @@ AuctionSchema.index({ session_id: 1, type: 1, finished: 1 });
 AuctionSchema.index({ session_id: 1, target: 1, finished: 1 });
 
 export const Auction = mongoose.models.Auction || mongoose.model<IAuction>('Auction', AuctionSchema);
+
+// Legacy export names (NgAuction)
+export const NgAuction = Auction;

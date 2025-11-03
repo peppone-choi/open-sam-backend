@@ -50,7 +50,7 @@ export class GetGeneralLogService {
         };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         no: generalId
       });
@@ -104,7 +104,7 @@ export class GetGeneralLogService {
     sessionId: string,
     generalId: number
   ): Promise<any[]> {
-    const logs = await GeneralRecord.find({
+    const logs = await (GeneralRecord as any).find({
       session_id: sessionId,
       general_id: generalId,
       type: 'history'
@@ -142,7 +142,7 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await GeneralRecord.find(query)
+    const logs = await (GeneralRecord as any).find(query)
       .sort({ _id: -1 })
       .limit(limit)
       .lean();
@@ -175,7 +175,7 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await GeneralRecord.find(query)
+    const logs = await (GeneralRecord as any).find(query)
       .sort({ _id: -1 })
       .limit(limit)
       .lean();
@@ -208,7 +208,7 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await GeneralRecord.find(query)
+    const logs = await (GeneralRecord as any).find(query)
       .sort({ _id: -1 })
       .limit(limit)
       .lean();

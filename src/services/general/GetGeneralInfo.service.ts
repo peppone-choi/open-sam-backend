@@ -22,7 +22,7 @@ export class GetGeneralInfoService {
 
     try {
       // 장수 정보 조회
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -36,14 +36,14 @@ export class GetGeneralInfoService {
 
       // 소속 도시 정보
       const cityId = general.data?.city;
-      const city = cityId ? await City.findOne({
+      const city = cityId ? await (City as any).findOne({
         session_id: sessionId,
         'data.id': cityId
       }) : null;
 
       // 소속 국가 정보
       const nationId = general.data?.nation;
-      const nation = nationId && nationId !== 0 ? await Nation.findOne({
+      const nation = nationId && nationId !== 0 ? await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': nationId
       }) : null;

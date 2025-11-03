@@ -9,7 +9,7 @@ export class GetWarLogService {
     const limit = parseInt(data.limit || '50') || 50;
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -34,7 +34,7 @@ export class GetWarLogService {
         query['data.id'] = { $lt: lastId };
       }
 
-      const records = await GeneralRecord.find(query)
+      const records = await (GeneralRecord as any).find(query)
         .select('data')
         .sort({ 'data.id': -1 })
         .limit(limit)

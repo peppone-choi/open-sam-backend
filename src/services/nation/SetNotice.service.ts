@@ -21,7 +21,7 @@ export class SetNoticeService {
         return { success: false, message: '공지는 최대 16384자까지 가능합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -50,13 +50,13 @@ export class SetNoticeService {
         authorID: generalId
       };
 
-      const existingStorage = await KVStorage.findOne({
+      const existingStorage = await (KVStorage as any).findOne({
         session_id: sessionId,
         storage_id: `nation_${nationId}`
       });
 
       if (existingStorage) {
-        await KVStorage.updateOne(
+        await (KVStorage as any).updateOne(
           {
             session_id: sessionId,
             storage_id: `nation_${nationId}`
@@ -68,7 +68,7 @@ export class SetNoticeService {
           }
         );
       } else {
-        await KVStorage.create({
+        await (KVStorage as any).create({
           session_id: sessionId,
           storage_id: `nation_${nationId}`,
           data: {

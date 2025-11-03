@@ -3,7 +3,7 @@ import { BattleMapTemplate } from '../../models/battlemap-template.model';
 export class DeleteMapTemplateService {
   static async execute(data: { id: string }) {
     try {
-      const template = await BattleMapTemplate.findById(data.id);
+      const template = await (BattleMapTemplate as any).findById(data.id);
       
       if (!template) {
         return {
@@ -12,7 +12,7 @@ export class DeleteMapTemplateService {
         };
       }
       
-      await BattleMapTemplate.deleteOne({ _id: data.id });
+      await (BattleMapTemplate as any).deleteOne({ _id: data.id });
       
       console.log(`🗑️  맵 템플릿 삭제: ${template.name} (city_id=${template.city_id})`);
       

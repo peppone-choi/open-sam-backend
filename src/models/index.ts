@@ -44,3 +44,5 @@ export * from './select_npc_token.model';
 export * from './select_pool.model';
 export * from './plock.model';
 export * from './kv-storage.model';
+export * from './auction.model';
+export * from './ng_auction_bid.model';

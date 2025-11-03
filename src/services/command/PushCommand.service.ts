@@ -36,7 +36,7 @@ export class PushCommandService {
 async function pushGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
   if (turnCnt <= 0 || turnCnt >= MAX_TURN) return;
 
-  const turns = await GeneralTurn.find({
+  const turns = await (GeneralTurn as any).find({
     session_id: sessionId,
     'data.general_id': generalId
   }).sort({ 'data.turn_idx': -1 });
@@ -60,7 +60,7 @@ async function pushGeneralCommand(sessionId: string, generalId: number, turnCnt:
 async function pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
   if (turnCnt <= 0 || turnCnt >= MAX_TURN) return;
 
-  const turns = await GeneralTurn.find({
+  const turns = await (GeneralTurn as any).find({
     session_id: sessionId,
     'data.general_id': generalId
   }).sort({ 'data.turn_idx': 1 });

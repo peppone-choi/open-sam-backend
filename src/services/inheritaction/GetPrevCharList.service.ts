@@ -9,14 +9,14 @@ export class GetPrevCharListService {
     const userId = user?.userId || data.user_id;
     
     try {
-      const userStor = await KVStorage.findOne({ 
+      const userStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `user_${userId}` 
       });
       
       const prevCharList = userStor?.value?.prev_char_list || [];
       
-      const generals = await General.find({
+      const generals = await (General as any).find({
         session_id: sessionId,
         no: { $in: prevCharList }
       })

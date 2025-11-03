@@ -20,7 +20,7 @@ export class GetRecentMessageService {
       }
 
       // 장수 정보 조회
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -47,7 +47,7 @@ export class GetRecentMessageService {
           { 'data.dest_general_id': generalId }
         ]
       };
-      const privateMessages = await Message.find(privateQuery)
+      const privateMessages = await (Message as any).find(privateQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
         .lean();
@@ -58,7 +58,7 @@ export class GetRecentMessageService {
         'data.type': 'public',
         'data.id': { $gt: sequence }
       };
-      const publicMessages = await Message.find(publicQuery)
+      const publicMessages = await (Message as any).find(publicQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
         .lean();
@@ -70,7 +70,7 @@ export class GetRecentMessageService {
         'data.dest_nation_id': nationId,
         'data.id': { $gt: sequence }
       };
-      const nationalMessages = await Message.find(nationalQuery)
+      const nationalMessages = await (Message as any).find(nationalQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
         .lean();
@@ -82,7 +82,7 @@ export class GetRecentMessageService {
         'data.dest_nation_id': nationId,
         'data.id': { $gt: sequence }
       };
-      const diplomacyMessages = await Message.find(diplomacyQuery)
+      const diplomacyMessages = await (Message as any).find(diplomacyQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
         .lean();

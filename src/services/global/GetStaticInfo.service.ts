@@ -1,13 +1,15 @@
 import { Session } from '../../models/session.model';
 import { General } from '../../models/general.model';
 import mongoose from 'mongoose';
+import { getSession } from '../../common/cache/model-cache.helper';
 
 export class GetStaticInfoService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      // Load session (L1 → L2 → DB)
+      const session = await getSession(sessionId);
       if (!session) {
         return {
           success: false,
@@ -15,7 +17,7 @@ export class GetStaticInfoService {
         };
       }
 
-      const sessionData = session.data as any || {};
+      const sessionData = (session as any).data || {};
 
       const db = mongoose.connection.db;
       if (!db) {
@@ -31,12 +33,12 @@ export class GetStaticInfoService {
         'data.level': { $gt: 0 }
       });
 
-      const generalCount = await General.countDocuments({
+      const generalCount = await (General as any).countDocuments({
         session_id: sessionId,
         owner: { $ne: 'NPC' }
       });
 
-      const npcCount = await General.countDocuments({
+      const npcCount = await (General as any).countDocuments({
         session_id: sessionId,
         owner: 'NPC'
       });
@@ -49,7 +51,7 @@ export class GetStaticInfoService {
           year: sessionData.year || 180,
           month: sessionData.month || 1,
           startYear: sessionData.startyear || 180,
-          turnTerm: sessionData.turnterm || 600,
+          turnTerm: sessionData.turnterm || 60, // 분 단위
           maxUserCnt: sessionData.maxgeneral || 50,
           userCnt: generalCount,
           npcCnt: npcCount,

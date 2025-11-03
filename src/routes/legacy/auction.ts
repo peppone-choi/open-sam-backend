@@ -12,7 +12,7 @@ router.get('/auction/list', async (req: Request, res: Response) => {
       query.type = type;
     }
 
-    const auctions = await NgAuction.find(query)
+    const auctions = await (NgAuction as any).find(query)
       .sort({ openDate: -1 })
       .lean();
 
@@ -20,7 +20,7 @@ router.get('/auction/list', async (req: Request, res: Response) => {
       const bids = await NgAuctionBid.countDocuments({ auctionId: auction._id });
       (auction as any).bidCount = bids;
       
-      const topBid = await NgAuctionBid.findOne({ auctionId: auction._id })
+      const topBid = await (NgAuctionBid as any).findOne({ auctionId: auction._id })
         .sort({ amount: -1 })
         .lean();
       if (topBid) {
@@ -45,7 +45,7 @@ router.post('/auction/bid', async (req: Request, res: Response) => {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await General.findOne({ owner: userId }).lean();
+    const general = await (General as any).findOne({ owner: userId }).lean();
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }

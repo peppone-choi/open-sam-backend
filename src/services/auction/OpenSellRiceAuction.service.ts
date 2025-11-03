@@ -33,7 +33,7 @@ export class OpenSellRiceAuctionService {
         throw new Error('즉시거래가는 시작판매가의 110% 이상이어야 합니다.');
       }
       
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -47,7 +47,7 @@ export class OpenSellRiceAuctionService {
         throw new Error(`기본 금 ${minimumGold}은 거래할 수 없습니다.`);
       }
 
-      const existingAuction = await Auction.findOne({
+      const existingAuction = await (Auction as any).findOne({
         session_id: sessionId,
         hostGeneralId: generalId,
         type: { $in: ['BuyRice', 'SellRice'] },
@@ -62,7 +62,7 @@ export class OpenSellRiceAuctionService {
       const turnTerm = 10;
       const closeDate = new Date(now.getTime() + closeTurnCnt * turnTerm * 60 * 1000);
 
-      const auction = await Auction.create({
+      const auction = await (Auction as any).create({
         session_id: sessionId,
         type: 'SellRice',
         finished: false,

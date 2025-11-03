@@ -16,7 +16,7 @@ export class GetDiplomacyService {
     
     try {
       // Load session
-      const session: any = await Session.findOne({ session_id: sessionId });
+      const session: any = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -27,7 +27,7 @@ export class GetDiplomacyService {
       // Get user's nation ID
       let myNationID = 0;
       if (userId) {
-        const general: any = await General.findOne({ 
+        const general: any = await (General as any).findOne({ 
           session_id: sessionId, 
           owner: userId 
         }).select('data').lean();
@@ -39,7 +39,7 @@ export class GetDiplomacyService {
       }
 
       // Get all nations (filter by level > 0)
-      const nationsData: any = await Nation.find({ session_id: sessionId }).lean();
+      const nationsData: any = await (Nation as any).find({ session_id: sessionId }).lean();
       
       const nations: Record<number, any> = {};
       for (const nation of nationsData) {
@@ -67,7 +67,7 @@ export class GetDiplomacyService {
       }
 
       // Get cities and build conflict info
-      const cities: any = await City.find({ session_id: sessionId })
+      const cities: any = await (City as any).find({ session_id: sessionId })
         .select('city name nation conflict')
         .lean();
 
@@ -110,7 +110,7 @@ export class GetDiplomacyService {
       };
 
       // Get diplomacy relationships
-      const diplomacyData: any = await NgDiplomacy.find({ session_id: sessionId }).lean();
+      const diplomacyData: any = await (NgDiplomacy as any).find({ session_id: sessionId }).lean();
       
       const diplomacyList: Record<number, Record<number, number>> = {};
       

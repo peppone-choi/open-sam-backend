@@ -10,7 +10,9 @@ export { che_국기변경, che_국기변경 as ChangeFlagCommand } from './chang
 export { che_국호변경, che_국호변경 as ChangeNationNameCommand } from './changeNationName';
 
 // 4. che_급습 - 급습
-export { che_피장파장, che_피장파장 as CounterAttackCommand, che_피장파장 as RaidCommand } from './counterAttack';
+export { RaidCommand } from './raid';
+// 4-1. che_피장파장 - 피장파장
+export { che_피장파장, che_피장파장 as CounterAttackCommand } from './counterAttack';
 
 // 5. che_몰수 - 몰수
 export { che_몰수, che_몰수 as ConfiscateCommand } from './confiscate';

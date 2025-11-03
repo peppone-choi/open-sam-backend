@@ -19,7 +19,7 @@ export class GetItemListService {
     }
 
     try {
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });

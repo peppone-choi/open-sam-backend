@@ -136,30 +136,28 @@ export class che_선전포고 extends NationCommand {
     );
 
     const { Message } = await import('../../models/Message');
-    const { MessageTarget } = await import('../../models/Message');
     const { GetImageURL } = await import('../../func');
+    const { MessageTarget } = await import('../../core/message/MessageTarget');
 
     const text = `【외교】${this.env['year']}년 ${this.env['month']}월:${nationName}에서 ${destNationName}에 선전포고`;
+    const srcTarget = new MessageTarget(
+      general!.getID(),
+      general!.getName(),
+      nationID,
+      nationName,
+      nation['color'],
+      GetImageURL(general!.getVar('imgsvr'), general!.getVar('picture'))
+    );
 
-    const src = {
-      id: general!.getID(),
-      name: general!.getName(),
-      nationID: nationID,
-      nationName: nationName,
-      color: nation['color'],
-      image: GetImageURL(general!.getVar('imgsvr'), general!.getVar('picture'))
-    };
+    const destTarget = new MessageTarget(
+      0,
+      '',
+      destNationID,
+      destNationName,
+      destNation['color']
+    );
 
-    const dest = {
-      id: 0,
-      name: '',
-      nationID: destNationID,
-      nationName: destNationName,
-      color: destNation['color']
-    };
-
-    const msg = new Message();
-    await Message.send(src, dest, text, new Date(general!.getTurnTime()), new Date('9999-12-31'), []);
+    await Message.send(srcTarget, destTarget, text, new Date(general!.getTurnTime()), new Date('9999-12-31'), []);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
     await general!.applyDB(db);

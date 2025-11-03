@@ -18,7 +18,7 @@ export class SetBlockWarService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -39,7 +39,7 @@ export class SetBlockWarService {
         return { success: false, message: '국가에 소속되어 있어야 합니다' };
       }
 
-      const nationStorage = await KVStorage.findOne({
+      const nationStorage = await (KVStorage as any).findOne({
         session_id: sessionId,
         storage_id: `nation_${nationId}`
       });
@@ -50,7 +50,7 @@ export class SetBlockWarService {
         return { success: false, message: '잔여 횟수가 부족합니다' };
       }
 
-      await Nation.updateOne(
+      await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': nationId
@@ -62,7 +62,7 @@ export class SetBlockWarService {
         }
       );
 
-      await KVStorage.updateOne(
+      await (KVStorage as any).updateOne(
         {
           session_id: sessionId,
           storage_id: `nation_${nationId}`

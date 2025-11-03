@@ -15,20 +15,20 @@ export class GenerateDefaultMapsService {
       const results = [];
       
       for (const templateData of templates) {
-        const existing = await BattleMapTemplate.findOne({
+        const existing = await (BattleMapTemplate as any).findOne({
           session_id: sessionId,
           city_id: templateData.city_id
         });
         
         if (existing) {
-          await BattleMapTemplate.updateOne(
+          await (BattleMapTemplate as any).updateOne(
             { _id: existing._id },
             { $set: templateData }
           );
           console.log(`🔄 맵 템플릿 업데이트: ${templateData.name}`);
-          results.push(await BattleMapTemplate.findById(existing._id));
+          results.push(await (BattleMapTemplate as any).findById(existing._id));
         } else {
-          const template = await BattleMapTemplate.create(templateData);
+          const template = await (BattleMapTemplate as any).create(templateData);
           console.log(`✅ 맵 템플릿 생성: ${templateData.name}`);
           results.push(template);
         }

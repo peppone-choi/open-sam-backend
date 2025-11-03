@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 
 import { UploadImageService } from '../services/misc/UploadImage.service';
+import { RaiseEventService } from '../services/misc/RaiseEvent.service';
 
 const router = Router();
 
@@ -78,6 +79,87 @@ const router = Router();
 router.post('/upload-image', authenticate, async (req, res) => {
   try {
     const result = await UploadImageService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/misc/raise-event:
+ *   post:
+ *     summary: 게임 이벤트 발생 (관리자 전용)
+ *     description: |
+ *       관리자가 게임 이벤트를 발생시킵니다. grade >= 6인 관리자만 사용 가능합니다.
+ *       
+ *       **지원 이벤트 타입:**
+ *       - 전투 이벤트
+ *       - 자원 이벤트
+ *       - 특수 이벤트
+ *       - 국가 이벤트
+ *       
+ *       **사용 시나리오:**
+ *       - 테스트 목적 이벤트 발생
+ *       - 특별 이벤트 진행
+ *       - 디버깅 및 개발
+ *     tags: [Misc]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               event:
+ *                 type: string
+ *                 description: 이벤트 이름
+ *                 example: TestEvent
+ *               arg:
+ *                 type: string
+ *                 description: 이벤트 인자 (JSON 문자열)
+ *                 example: '{"param1": "value1", "param2": 123}'
+ *               session_id:
+ *                 type: string
+ *                 description: 게임 세션 ID
+ *                 example: sangokushi_default
+ *     responses:
+ *       200:
+ *         description: 이벤트 발생 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                   example: true
+ *                 reason:
+ *                   type: string
+ *                   example: success
+ *                 eventName:
+ *                   type: string
+ *                 eventArgs:
+ *                   type: array
+ *       400:
+ *         description: 잘못된 요청
+ *       401:
+ *         description: 인증 실패
+ *       403:
+ *         description: 권한 부족 (관리자만 가능)
+ *       500:
+ *         description: 서버 오류
+ */
+router.post('/raise-event', authenticate, async (req, res) => {
+  try {
+    const result = await RaiseEventService.execute(req.body, req.user);
+    
+    if (!result.result) {
+      return res.status(400).json(result);
+    }
+    
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

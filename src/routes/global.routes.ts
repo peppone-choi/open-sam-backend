@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticate, optionalAuth } from '../middleware/auth';
 
 import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
 import { GeneralListService } from '../services/global/GeneralList.service';
@@ -13,6 +13,8 @@ import { GetHistoryService } from '../services/global/GetHistory.service';
 import { GetMapService } from '../services/global/GetMap.service';
 import { GetNationListService } from '../services/global/GetNationList.service';
 import { GetRecentRecordService } from '../services/global/GetRecentRecord.service';
+import { GetCityListService } from '../services/global/GetCityList.service';
+import { GetBasicGeneralListService } from '../services/global/GetBasicGeneralList.service';
 
 const router = Router();
 
@@ -287,7 +289,7 @@ router.post('/general-list-with-token', async (req, res) => {
  */
 router.get('/get-cached-map', async (req, res) => {
   try {
-    const result = await GetCachedMapService.execute(req.body, req.user);
+    const result = await GetCachedMapService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -349,7 +351,7 @@ router.get('/get-cached-map', async (req, res) => {
  */
 router.get('/get-const', async (req, res) => {
   try {
-    const result = await GetConstService.execute(req.body, req.user);
+    const result = await GetConstService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -409,9 +411,9 @@ router.get('/get-const', async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.get('/get-current-history', authenticate, async (req, res) => {
+router.get('/get-current-history', optionalAuth, async (req, res) => {
   try {
-    const result = await GetCurrentHistoryService.execute(req.body, req.user);
+    const result = await GetCurrentHistoryService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -471,9 +473,9 @@ router.get('/get-current-history', authenticate, async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.get('/get-diplomacy', authenticate, async (req, res) => {
+router.get('/get-diplomacy', optionalAuth, async (req, res) => {
   try {
-    const result = await GetDiplomacyService.execute(req.body, req.user);
+    const result = await GetDiplomacyService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -535,7 +537,7 @@ router.get('/get-diplomacy', authenticate, async (req, res) => {
  */
 router.get('/get-global-menu', async (req, res) => {
   try {
-    const result = await GetGlobalMenuService.execute(req.body, req.user);
+    const result = await GetGlobalMenuService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -597,7 +599,7 @@ router.get('/get-global-menu', async (req, res) => {
  */
 router.get('/get-history', async (req, res) => {
   try {
-    const result = await GetHistoryService.execute(req.body, req.user);
+    const result = await GetHistoryService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -659,7 +661,7 @@ router.get('/get-history', async (req, res) => {
  */
 router.get('/get-map', async (req, res) => {
   try {
-    const result = await GetMapService.execute(req.body, req.user);
+    const result = await GetMapService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -721,7 +723,7 @@ router.get('/get-map', async (req, res) => {
  */
 router.get('/get-nation-list', async (req, res) => {
   try {
-    const result = await GetNationListService.execute(req.body, req.user);
+    const result = await GetNationListService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -781,14 +783,76 @@ router.get('/get-nation-list', async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.get('/get-recent-record', authenticate, async (req, res) => {
+router.get('/get-recent-record', optionalAuth, async (req, res) => {
   try {
-    const result = await GetRecentRecordService.execute(req.body, req.user);
+    const result = await GetRecentRecordService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
 });
 
+
+/**
+ * @swagger
+ * /api/global/get-city-list:
+ *   get:
+ *     summary: 도시 목록 조회
+ *     description: |
+ *       국가별로 그룹화된 도시 목록을 조회합니다.
+ *       PHP: j_get_city_list.php
+ *     tags: [Global]
+ *     parameters:
+ *       - in: query
+ *         name: session_id
+ *         schema:
+ *           type: string
+ *         description: 게임 세션 ID
+ *     responses:
+ *       200:
+ *         description: 도시 목록 조회 성공
+ *       500:
+ *         description: 서버 오류
+ */
+router.get('/get-city-list', async (req, res) => {
+  try {
+    const result = await GetCityListService.execute(req.query, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/global/get-basic-general-list:
+ *   get:
+ *     summary: 기본 장수 목록 조회
+ *     description: |
+ *       국가별로 그룹화된 간단한 장수 목록을 조회합니다.
+ *       PHP: j_get_basic_general_list.php
+ *     tags: [Global]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: session_id
+ *         schema:
+ *           type: string
+ *         description: 게임 세션 ID
+ *     responses:
+ *       200:
+ *         description: 장수 목록 조회 성공
+ *       500:
+ *         description: 서버 오류
+ */
+router.get('/get-basic-general-list', optionalAuth, async (req, res) => {
+  try {
+    const result = await GetBasicGeneralListService.execute(req.query, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 export default router;

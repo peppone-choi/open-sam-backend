@@ -20,7 +20,7 @@ export class KickGeneralService {
         return { success: false, message: '대상 장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -29,7 +29,7 @@ export class KickGeneralService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const targetGeneral = await General.findOne({
+      const targetGeneral = await (General as any).findOne({
         session_id: sessionId,
         'data.no': targetGeneralId
       });
@@ -59,7 +59,7 @@ export class KickGeneralService {
         return { success: false, message: '자신보다 직위가 높거나 같은 장수는 추방할 수 없습니다' };
       }
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': targetGeneralId
@@ -75,7 +75,7 @@ export class KickGeneralService {
         }
       );
 
-      await Nation.updateOne(
+      await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': nationId

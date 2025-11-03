@@ -137,20 +137,18 @@ export class che_몰수 extends NationCommand {
       ];
       const text = rng.choice(npcTexts);
 
-      const { Message } = await import('../../models/Message');
-      const { MessageTarget } = await import('../../models/Message');
+      const { Message } = await import('../../core/message/Message');
+      const { MessageTarget } = await import('../../core/message/MessageTarget');
       const { GetImageURL } = await import('../../func');
+      const src = new MessageTarget(
+        destGeneral!.getID(),
+        destGeneral!.getName(),
+        nationID,
+        nation['name'],
+        nation['color'],
+        GetImageURL(destGeneral!.getVar('imgsvr'), destGeneral!.getVar('picture'))
+      );
 
-      const src = {
-        id: destGeneral!.getID(),
-        name: destGeneral!.getName(),
-        nationID: nationID,
-        nationName: nation['name'],
-        color: nation['color'],
-        image: GetImageURL(destGeneral!.getVar('imgsvr'), destGeneral!.getVar('picture'))
-      };
-
-      const msg = new Message();
       await Message.send(src, src, text, new Date(), new Date('9999-12-31'), []);
     }
 

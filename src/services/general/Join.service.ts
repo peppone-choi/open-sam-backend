@@ -13,7 +13,14 @@ import crypto from 'crypto';
 export class JoinService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const userId = user?.userId || data.user_id;
+    const userId = user?.userId || user?.id || data.user_id;
+    
+    if (!userId) {
+      return { 
+        success: false, 
+        message: '로그인이 필요합니다. userId를 찾을 수 없습니다.' 
+      };
+    }
     
     try {
       // 1. 입력 검증
@@ -39,7 +46,7 @@ export class JoinService {
       let name = this.sanitizeName(rawName);
 
       // 3. 세션 및 게임 환경 로드
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
@@ -59,7 +66,7 @@ export class JoinService {
       }
 
       // 6. 장수 수 제한 확인
-      const currentGenCount = await General.countDocuments({ 
+      const currentGenCount = await (General as any).countDocuments({ 
         session_id: sessionId,
         'data.npc': { $lt: 2 }
       });
@@ -181,16 +188,16 @@ export class JoinService {
       }
 
       // 20. 장수 번호 생성 (autoincrement 시뮬레이션)
-      const lastGeneral = await General.findOne({ session_id: sessionId })
+      const lastGeneral = await (General as any).findOne({ session_id: sessionId })
         .sort({ no: -1 })
         .select('no');
       const generalNo = (lastGeneral?.no || 0) + 1;
 
       // 21. 장수 생성
-      const newGeneral = await General.create({
+      const newGeneral = await (General as any).create({
         no: generalNo,
         session_id: sessionId,
-        owner: userId.toString(),
+        owner: String(userId),
         name: name,
         picture: faceResult.picture,
         data: {
@@ -228,20 +235,32 @@ export class JoinService {
         }
       });
 
-      // 22. 턴 슬롯 생성 (30개)
+      // 22. 턴 슬롯 생성 (최대 턴까지 휴식으로 채움)
       const turnRows = [];
       const maxTurn = gameEnv.maxTurn || 30;
       for (let i = 0; i < maxTurn; i++) {
         turnRows.push({
           session_id: sessionId,
-          general_id: generalNo,
-          turn_idx: i,
-          action: '휴식',
-          arg: null,
-          brief: '휴식'
+          data: {
+            general_id: generalNo,
+            turn_idx: i,
+            action: '휴식',
+            arg: {},
+            brief: '휴식'
+          }
         });
       }
-      await GeneralTurn.insertMany(turnRows);
+      if (turnRows.length > 0) {
+        try {
+          await (GeneralTurn as any).insertMany(turnRows, { ordered: false });
+        } catch (error: any) {
+          // 중복 키 에러는 무시 (이미 존재하는 경우)
+          if (error.code !== 11000) {
+            console.error('Failed to insert general turns:', error);
+            throw error;
+          }
+        }
+      }
 
       // 23. 랭크 데이터 생성
       // TODO: rank_data 테이블 구현 시 추가
@@ -356,18 +375,22 @@ export class JoinService {
 
   private static async checkDuplicates(
     sessionId: string,
-    userId: number,
+    userId: number | string | undefined,
     name: string
   ): Promise<string | null> {
-    const existingUser = await General.findOne({
+    if (!userId) {
+      return '사용자 ID가 없습니다';
+    }
+    
+    const existingUser = await (General as any).findOne({
       session_id: sessionId,
-      owner: userId.toString()
+      owner: String(userId)
     });
     if (existingUser) {
       return '이미 등록하셨습니다!';
     }
 
-    const existingName = await General.findOne({
+    const existingName = await (General as any).findOne({
       session_id: sessionId,
       name: name
     });
@@ -379,7 +402,7 @@ export class JoinService {
   }
 
   private static async processInheritance(
-    userId: number,
+    userId: number | string,
     sessionId: string,
     gameEnv: any,
     options: any
@@ -423,7 +446,7 @@ export class JoinService {
     leadership: number,
     strength: number,
     intel: number,
-    userId: number
+    userId: number | string
   ): any {
     if (inheritBonusStat && Array.isArray(inheritBonusStat) && inheritBonusStat.length === 3) {
       const sum = inheritBonusStat.reduce((a, b) => a + b, 0);
@@ -545,12 +568,12 @@ export class JoinService {
     rng: number
   ): Promise<any> {
     if (inheritCity !== null && inheritCity !== undefined) {
-      const city = await City.findOne({ session_id: sessionId, city: inheritCity });
+      const city = await (City as any).findOne({ session_id: sessionId, city: inheritCity });
       return city;
     }
 
     // 공백지(level 5~6, nation 0) 우선
-    let cities = await City.find({
+    let cities = await (City as any).find({
       session_id: sessionId,
       level: { $gte: 5, $lte: 6 },
       nation: 0
@@ -558,7 +581,7 @@ export class JoinService {
 
     if (cities.length === 0) {
       // 공백지 없으면 아무 도시나
-      cities = await City.find({
+      cities = await (City as any).find({
         session_id: sessionId,
         level: { $gte: 5, $lte: 6 }
       }).limit(100);
@@ -581,7 +604,7 @@ export class JoinService {
     }
 
     // 상위 20% 장수의 경험치 평균 * 0.8
-    const generals = await General.find({
+    const generals = await (General as any).find({
       session_id: sessionId,
       'data.nation': { $ne: 0 },
       'data.npc': { $lt: 4 }
@@ -601,12 +624,12 @@ export class JoinService {
     gameEnv: any,
     rng: number
   ): Date {
-    const turnterm = gameEnv.turnterm || 600; // 10분
+    const turnterm = gameEnv.turnterm || 60; // 분 단위 (기본 60분)
     const baseTurntime = new Date(gameEnv.turntime || Date.now());
 
     if (inheritTurntimeZone !== null && inheritTurntimeZone !== undefined) {
-      const inheritMinutes = inheritTurntimeZone * (turnterm / 60);
-      const additionalSeconds = rng % Math.max(turnterm - 1, 1);
+      const inheritMinutes = inheritTurntimeZone * turnterm; // turnterm은 이미 분 단위
+      const additionalSeconds = rng % Math.max(turnterm * 60 - 1, 1); // 분을 초로 변환
       const totalSeconds = inheritMinutes * 60 + additionalSeconds;
       
       const turntime = new Date(baseTurntime.getTime());
@@ -626,7 +649,7 @@ export class JoinService {
   }
 
   private static async determineFace(
-    userId: number,
+    userId: number | string,
     showImgLevel: number,
     usePic: boolean
   ): Promise<any> {
@@ -767,11 +790,11 @@ export class JoinService {
       });
     }
 
-    await GeneralRecord.insertMany(logs);
+    await (GeneralRecord as any).insertMany(logs);
   }
 
-  private static createRNG(userId: number): number {
-    const data = `MakeGeneral-${userId}-${Date.now()}`;
+  private static createRNG(userId: number | string): number {
+    const data = `MakeGeneral-${String(userId)}-${Date.now()}`;
     const hash = crypto.createHash('sha256').update(data).digest();
     return Math.abs(hash.readInt32BE(0));
   }

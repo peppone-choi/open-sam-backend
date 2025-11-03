@@ -10,7 +10,11 @@ export interface ISession extends Document {
   session_id: string;
   name: string;
   
-  // 템플릿 ID (어떤 설정을 기반으로 만들어졌는지)
+  // 시나리오 ID (어떤 시나리오를 사용하는지)
+  scenario_id?: string;
+  scenario_name?: string;  // 시나리오 표시명 (선택적)
+  
+  // 템플릿 ID (레거시, scenario_id 사용 권장)
   template_id?: string;
   
   // 게임 모드 (세션마다 다름!)
@@ -121,6 +125,12 @@ export interface ISession extends Document {
 const SessionSchema = new Schema<ISession>({
   session_id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
+  
+  // 시나리오 정보
+  scenario_id: { type: String, index: true },
+  scenario_name: { type: String },
+  
+  // 템플릿 ID (레거시)
   template_id: { type: String },
   
   game_mode: { type: String, required: true },

@@ -23,7 +23,7 @@ export class InstantRetreatService {
       }
 
       // 1. 게임 환경 설정 로드
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
@@ -40,7 +40,7 @@ export class InstantRetreatService {
       }
 
       // 3. 장수 정보 조회
-      const general = await General.findOne({ no: generalId, session_id: sessionId });
+      const general = await (General as any).findOne({ no: generalId, session_id: sessionId });
       if (!general) {
         return {
           success: false,
@@ -60,7 +60,7 @@ export class InstantRetreatService {
       }
 
       // 5. 가까운 아국 도시 찾기 로직 (PHP의 run() 결과 시뮬레이션)
-      const nearCities = await City.find({
+      const nearCities = await (City as any).find({
         session_id: sessionId,
         nation: nation,
         level: { $gte: 1 }
@@ -88,14 +88,19 @@ export class InstantRetreatService {
       await general.save();
 
       // 8. 로그 기록
-      await GeneralRecord.create({
+      const { getNextRecordId } = await import('../../utils/record-helpers');
+      const recordId = await getNextRecordId(sessionId);
+      await (GeneralRecord as any).create({
         session_id: sessionId,
-        general_id: generalId,
-        year: gameEnv.year || 184,
-        month: gameEnv.month || 1,
-        type: 'action',
-        text: `접경귀환으로 ${selectedCity.name}(으)로 이동하였습니다.`,
-        date: new Date()
+        data: {
+          id: recordId,
+          general_id: generalId,
+          year: gameEnv.year || 184,
+          month: gameEnv.month || 1,
+          log_type: 'action',
+          text: `접경귀환으로 ${selectedCity.name}(으)로 이동하였습니다.`,
+          date: new Date().toISOString()
+        }
       });
 
       return {

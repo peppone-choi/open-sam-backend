@@ -1,6 +1,8 @@
 import { GeneralTurn } from '../../models/general_turn.model';
+import { neutralize, removeSpecialCharacter, getStringWidth } from '../../utils/string-util';
+import GameConstants from '../../utils/game-constants';
 
-const MAX_TURN = 30;
+const MAX_TURN = GameConstants.MAX_TURN;
 
 export class ReserveCommandService {
   static async execute(data: any, user?: any) {
@@ -26,6 +28,18 @@ export class ReserveCommandService {
 
     if (turnList.length === 0) {
       return { success: false, message: '올바른 턴이 아닙니다', result: false };
+    }
+
+    // 인자 검증
+    const argError = checkCommandArg(arg);
+    if (argError !== null) {
+      return {
+        success: false,
+        result: false,
+        reason: argError,
+        test: 'checkCommandArg',
+        target: 'arg'
+      };
     }
 
     const result = await setGeneralCommand(sessionId, generalId, turnList, action, arg);
@@ -71,7 +85,7 @@ async function setGeneralCommand(
     const brief = action;
 
     for (const turnIdx of turnList) {
-      await GeneralTurn.findOneAndUpdate(
+      await (GeneralTurn as any).findOneAndUpdate(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -103,25 +117,109 @@ async function setGeneralCommand(
   }
 }
 
+/**
+ * 인자 정제 (PHP sanitizeArg 함수 변환)
+ */
 function sanitizeArg(arg: any): any {
-  if (!arg || typeof arg !== 'object') return {};
-  
+  if (arg === null || arg === undefined) {
+    return arg;
+  }
+
+  if (typeof arg !== 'object') {
+    return arg;
+  }
+
   const result: any = {};
   
   for (const [key, value] of Object.entries(arg)) {
     if (Array.isArray(value)) {
-      result[key] = value.map(v => sanitizeValue(v));
+      result[key] = sanitizeArg(value);
+    } else if (typeof value === 'string') {
+      result[key] = neutralize(removeSpecialCharacter(value));
     } else {
-      result[key] = sanitizeValue(value);
+      result[key] = value;
     }
   }
   
   return result;
 }
 
-function sanitizeValue(value: any): any {
-  if (typeof value === 'string') {
-    return value.replace(/[<>]/g, '').trim();
+/**
+ * 커맨드 인자 검증 (PHP checkCommandArg 함수 변환)
+ */
+function checkCommandArg(arg: any): string | null {
+  if (arg === null || arg === undefined) {
+    return null;
   }
-  return value;
+
+  // 정수 검증
+  const intFields = [
+    'crewType', 'destGeneralID', 'destCityID', 'destNationID',
+    'amount', 'colorType',
+    'srcArmType', 'destArmType'
+  ];
+  for (const field of intFields) {
+    if (arg[field] !== undefined && !Number.isInteger(arg[field])) {
+      return `${field}는 정수여야 합니다`;
+    }
+  }
+
+  // 불리언 검증
+  const boolFields = ['isGold', 'buyRice'];
+  for (const field of boolFields) {
+    if (arg[field] !== undefined && typeof arg[field] !== 'boolean') {
+      return `${field}는 불리언이어야 합니다`;
+    }
+  }
+
+  // 범위 검증
+  if (arg.month !== undefined) {
+    const month = arg.month;
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      return 'month는 1-12 사이여야 합니다';
+    }
+  }
+
+  // 최소값 검증
+  const minChecks: Array<[string, number]> = [
+    ['year', 0],
+    ['destGeneralID', 1],
+    ['destCityID', 1],
+    ['destNationID', 1],
+    ['amount', 1],
+    ['crewType', 0]
+  ];
+  for (const [field, min] of minChecks) {
+    if (arg[field] !== undefined) {
+      const value = arg[field];
+      if (!Number.isInteger(value) || value < min) {
+        return `${field}는 ${min} 이상이어야 합니다`;
+      }
+    }
+  }
+
+  // 정수 배열 검증
+  const intArrayFields = ['destNationIDList', 'destGeneralIDList', 'amountList'];
+  for (const field of intArrayFields) {
+    if (arg[field] !== undefined) {
+      if (!Array.isArray(arg[field])) {
+        return `${field}는 배열이어야 합니다`;
+      }
+      for (const item of arg[field]) {
+        if (!Number.isInteger(item)) {
+          return `${field}의 모든 항목은 정수여야 합니다`;
+        }
+      }
+    }
+  }
+
+  // 문자열 폭 검증
+  if (arg.nationName !== undefined) {
+    const width = getStringWidth(arg.nationName);
+    if (width < 1 || width > 18) {
+      return 'nationName의 문자열 폭은 1-18 사이여야 합니다';
+    }
+  }
+
+  return null;
 }

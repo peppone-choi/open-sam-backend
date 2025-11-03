@@ -18,7 +18,11 @@ const GeneralRecordSchema = new Schema<IGeneralRecord>({
   collection: 'general_records'
 });
 
-// 복합 인덱스 추가
-GeneralRecordSchema.index({ session_id: 1, 'data.id': 1 }, { unique: true });
+// 인덱스 추가 (조회 성능 향상)
+// 원본 SQL: INDEX `date` (`general_id`, `log_type`, `year`, `month`, `id`)
+// 원본 SQL: INDEX `plain` (`general_id`, `log_type`, `id`)
+GeneralRecordSchema.index({ session_id: 1, 'data.general_id': 1, 'data.log_type': 1, 'data.year': 1, 'data.month': 1 });
+GeneralRecordSchema.index({ session_id: 1, 'data.general_id': 1, 'data.log_type': 1 });
+// 유니크 인덱스는 제거 - 원본 SQL에도 없고, data.id가 null일 수 있음
 
 export const GeneralRecord = mongoose.models.GeneralRecord || mongoose.model<IGeneralRecord>('GeneralRecord', GeneralRecordSchema);

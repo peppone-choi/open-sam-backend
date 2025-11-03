@@ -39,7 +39,7 @@ export class BuyHiddenBuffService {
         return { success: false, message: '잘못된 버프 타입입니다.' };
       }
       
-      const general = await General.findOne({ session_id: sessionId, no: generalId });
+      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -61,12 +61,12 @@ export class BuyHiddenBuffService {
       
       const reqAmount = GameConstants.INHERIT_BUFF_POINTS[level] - GameConstants.INHERIT_BUFF_POINTS[prevLevel];
       
-      const gameEnv = await KVStorage.findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const inheritStor = await KVStorage.findOne({ 
+      const inheritStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -80,7 +80,7 @@ export class BuyHiddenBuffService {
       const buffTypeText = BUFF_KEY_TEXT[type];
       const moreText = prevLevel > 0 ? '추가' : '';
       
-      await UserRecord.create({
+      await (UserRecord as any).create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

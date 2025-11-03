@@ -13,7 +13,7 @@ class CommandRepository {
    * @returns 커맨드 문서 또는 null
    */
   async findById(commandId: string) {
-    return Command.findById(commandId);
+    return (Command as any).findById(commandId);
   }
 
   /**
@@ -22,7 +22,7 @@ class CommandRepository {
    * @returns 커맨드 목록
    */
   async findBySession(sessionId: string) {
-    return Command.find({ session_id: sessionId });
+    return (Command as any).find({ session_id: sessionId });
   }
 
   /**
@@ -32,7 +32,7 @@ class CommandRepository {
    * @returns 커맨드 목록
    */
   async findByGeneral(sessionId: string, generalId: string) {
-    return Command.find({ 
+    return (Command as any).find({ 
       session_id: sessionId, 
       general_id: generalId 
     });
@@ -45,7 +45,7 @@ class CommandRepository {
    * @returns 커맨드 목록
    */
   async findByStatus(sessionId: string, status: string) {
-    return Command.find({ 
+    return (Command as any).find({ 
       session_id: sessionId, 
       status 
     });
@@ -57,7 +57,7 @@ class CommandRepository {
    * @returns 대기 커맨드 목록
    */
   async findPending(sessionId: string) {
-    return Command.find({ 
+    return (Command as any).find({ 
       session_id: sessionId, 
       status: 'pending' 
     }).sort({ created_at: 1 });
@@ -69,7 +69,7 @@ class CommandRepository {
    * @returns 생성된 커맨드
    */
   async create(data: any) {
-    return Command.create(data);
+    return (Command as any).create(data);
   }
 
   /**
@@ -79,7 +79,7 @@ class CommandRepository {
    * @returns 업데이트 결과
    */
   async updateById(commandId: string, update: any) {
-    return Command.updateOne(
+    return (Command as any).updateOne(
       { _id: commandId },
       { $set: update }
     );
@@ -91,7 +91,7 @@ class CommandRepository {
    * @returns 삭제 결과
    */
   async deleteById(commandId: string): Promise<DeleteResult> {
-    return Command.deleteOne({ _id: commandId });
+    return (Command as any).deleteOne({ _id: commandId });
   }
 
   /**
@@ -100,7 +100,7 @@ class CommandRepository {
    * @returns 삭제 결과
    */
   async deleteBySession(sessionId: string): Promise<DeleteResult> {
-    return Command.deleteMany({ session_id: sessionId });
+    return (Command as any).deleteMany({ session_id: sessionId });
   }
 
   /**
@@ -111,7 +111,7 @@ class CommandRepository {
    * @returns 완료된 커맨드 목록
    */
   async findCompletedInRange(sessionId: string, fromDate: Date, toDate: Date) {
-    return Command.find({
+    return (Command as any).find({
       session_id: sessionId,
       status: 'completed',
       completed_at: { $gte: fromDate, $lte: toDate }

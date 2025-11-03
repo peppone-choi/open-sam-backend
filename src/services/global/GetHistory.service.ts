@@ -9,7 +9,7 @@ export class GetHistoryService {
     const serverID = data.serverID || 'sangokushi';
     
     try {
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,

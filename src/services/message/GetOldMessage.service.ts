@@ -30,7 +30,7 @@ export class GetOldMessageService {
       }
 
       // 장수 정보 조회
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -64,7 +64,7 @@ export class GetOldMessageService {
         query['data.dest_nation_id'] = nationId;
       }
 
-      const messages = await Message.find(query)
+      const messages = await (Message as any).find(query)
         .sort({ 'data.id': -1 })
         .limit(15)
         .lean();

@@ -21,7 +21,7 @@ export class SetRateService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -42,7 +42,7 @@ export class SetRateService {
         return { success: false, message: '국가에 소속되어 있어야 합니다' };
       }
 
-      await Nation.updateOne(
+      await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': nationId

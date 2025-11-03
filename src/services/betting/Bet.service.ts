@@ -29,7 +29,7 @@ export class BetService {
         };
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -148,7 +148,7 @@ export class BetService {
         await session.save();
 
       } else {
-        const general = await General.findOne({ session_id: sessionId, no: generalId });
+        const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
         if (!general) {
           return {
             success: false,
@@ -174,7 +174,7 @@ export class BetService {
 
       const bettingTypeKey = JSON.stringify(uniqueBettingType);
 
-      const existingBet = await NgBetting.findOne({
+      const existingBet = await (NgBetting as any).findOne({
         session_id: sessionId,
         'data.betting_id': bettingID,
         'data.general_id': generalId,
@@ -187,7 +187,7 @@ export class BetService {
         existingBet.data = existingData;
         await existingBet.save();
       } else {
-        await NgBetting.create({
+        await (NgBetting as any).create({
           session_id: sessionId,
           data: {
             betting_id: bettingID,

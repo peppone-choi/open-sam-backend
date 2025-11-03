@@ -155,7 +155,7 @@ export class SessionService {
       game_mode: 'scenario',
       data: {
         scenario: scenarioConfig,
-        turnterm: 10,
+        turnterm: 60, // 60분 (분 단위로 저장)
         year: 184,
         month: 1,
         startyear: 184
@@ -224,9 +224,9 @@ export class SessionService {
     logger.info('세션 초기화 시작', { sessionId });
     
     // 게임 데이터 삭제
-    await City.deleteMany({ session_id: sessionId });
-    await Nation.deleteMany({ session_id: sessionId });
-    await General.deleteMany({ session_id: sessionId });
+    await (City as any).deleteMany({ session_id: sessionId });
+    await (Nation as any).deleteMany({ session_id: sessionId });
+    await (General as any).deleteMany({ session_id: sessionId });
     
     logger.info('기존 게임 데이터 삭제 완료', { sessionId });
     
@@ -266,9 +266,9 @@ export class SessionService {
     // console.log(`🗑️  세션 삭제: ${sessionId}`);
     
     // 게임 데이터 삭제
-    await City.deleteMany({ session_id: sessionId });
-    await Nation.deleteMany({ session_id: sessionId });
-    await General.deleteMany({ session_id: sessionId });
+    await (City as any).deleteMany({ session_id: sessionId });
+    await (Nation as any).deleteMany({ session_id: sessionId });
+    await (General as any).deleteMany({ session_id: sessionId });
     
     // 세션 설정 삭제
     await sessionRepository.deleteBySessionId(sessionId);

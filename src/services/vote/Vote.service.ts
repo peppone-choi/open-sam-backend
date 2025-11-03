@@ -32,7 +32,7 @@ export class VoteService {
         throw new Error('게임에 로그인해주세요.');
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }
@@ -63,7 +63,7 @@ export class VoteService {
 
       selection.sort((a, b) => a - b);
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         no: user.generalId
       });
@@ -74,7 +74,7 @@ export class VoteService {
 
       const nationID = general.data?.nation || 0;
 
-      const existingVote = await Vote.findOne({
+      const existingVote = await (Vote as any).findOne({
         session_id: sessionId,
         'data.vote_id': voteID,
         'data.general_id': user.generalId

@@ -33,7 +33,7 @@ async function repeatGeneralCommand(sessionId: string, generalId: number, turnCn
     reqTurn = MAX_TURN - turnCnt;
   }
 
-  const turnList = await GeneralTurn.find({
+  const turnList = await (GeneralTurn as any).find({
     session_id: sessionId,
     'data.general_id': generalId,
     'data.turn_idx': { $lt: reqTurn }
@@ -51,7 +51,7 @@ async function repeatGeneralCommand(sessionId: string, generalId: number, turnCn
     }
 
     if (targetIndices.length > 0) {
-      await GeneralTurn.updateMany(
+      await (GeneralTurn as any).updateMany(
         {
           session_id: sessionId,
           'data.general_id': generalId,

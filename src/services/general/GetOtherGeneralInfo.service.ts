@@ -21,7 +21,7 @@ export class GetOtherGeneralInfoService {
     }
 
     try {
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': targetGeneralId
       });
@@ -55,13 +55,13 @@ export class GetOtherGeneralInfoService {
 
       // 소속 도시/국가 정보
       const cityId = general.data?.city;
-      const city = cityId ? await City.findOne({
+      const city = cityId ? await (City as any).findOne({
         session_id: sessionId,
         'data.id': cityId
       }) : null;
 
       const nationId = general.data?.nation;
-      const nation = nationId && nationId !== 0 ? await Nation.findOne({
+      const nation = nationId && nationId !== 0 ? await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': nationId
       }) : null;

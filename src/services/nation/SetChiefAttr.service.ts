@@ -21,7 +21,7 @@ export class SetChiefAttrService {
         return { success: false, message: '속성 이름이 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -49,7 +49,7 @@ export class SetChiefAttrService {
       const updateData: any = {};
       updateData[`data.${attrName}`] = attrValue;
 
-      await Nation.updateOne(
+      await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': nationId

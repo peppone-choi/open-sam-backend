@@ -6,6 +6,7 @@
 import { GeneralTurn } from '../models/general_turn.model';
 import { NationTurn } from '../models/nation_turn.model';
 import GameConstants from './game-constants';
+import { neutralize, removeSpecialCharacter } from './string-util';
 
 const MAX_TURN = GameConstants.MAX_TURN;
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
@@ -49,7 +50,7 @@ export function expandTurnList(rawTurnList: number[], maxTurn: number = MAX_TURN
 export async function pushGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
   if (turnCnt <= 0 || turnCnt >= MAX_TURN) return;
 
-  const turns = await GeneralTurn.find({
+  const turns = await (GeneralTurn as any).find({
     session_id: sessionId,
     'data.general_id': generalId
   }).sort({ 'data.turn_idx': -1 });
@@ -77,7 +78,7 @@ export async function pushGeneralCommand(sessionId: string, generalId: number, t
 export async function pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
   if (turnCnt <= 0 || turnCnt >= MAX_TURN) return;
 
-  const turns = await GeneralTurn.find({
+  const turns = await (GeneralTurn as any).find({
     session_id: sessionId,
     'data.general_id': generalId
   }).sort({ 'data.turn_idx': 1 });
@@ -110,7 +111,7 @@ export async function repeatGeneralCommand(sessionId: string, generalId: number,
     reqTurn = MAX_TURN - turnCnt;
   }
 
-  const turnList = await GeneralTurn.find({
+  const turnList = await (GeneralTurn as any).find({
     session_id: sessionId,
     'data.general_id': generalId,
     'data.turn_idx': { $lt: reqTurn }
@@ -127,7 +128,7 @@ export async function repeatGeneralCommand(sessionId: string, generalId: number,
       targetIndices.push(i);
     }
 
-    await GeneralTurn.updateMany(
+    await (GeneralTurn as any).updateMany(
       {
         session_id: sessionId,
         'data.general_id': generalId,
@@ -159,7 +160,7 @@ export async function setGeneralCommand(
     const brief = action;
 
     for (const turnIdx of turnList) {
-      await GeneralTurn.findOneAndUpdate(
+      await (GeneralTurn as any).findOneAndUpdate(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -205,7 +206,7 @@ export async function pushNationCommand(
 ) {
   if (nationId === 0 || officerLevel < 5 || turnCnt <= 0 || turnCnt >= MAX_CHIEF_TURN) return;
 
-  const turns = await NationTurn.find({
+  const turns = await (NationTurn as any).find({
     session_id: sessionId,
     'data.nation_id': nationId,
     'data.officer_level': officerLevel
@@ -239,7 +240,7 @@ export async function pullNationCommand(
 ) {
   if (nationId === 0 || officerLevel < 5 || turnCnt <= 0 || turnCnt >= MAX_CHIEF_TURN) return;
 
-  const turns = await NationTurn.find({
+  const turns = await (NationTurn as any).find({
     session_id: sessionId,
     'data.nation_id': nationId,
     'data.officer_level': officerLevel
@@ -260,4 +261,32 @@ export async function pullNationCommand(
     turn.markModified('data');
     await turn.save();
   }
+}
+
+/**
+ * 인자 정제 (PHP sanitizeArg 함수 변환)
+ * 공용 유틸리티로 사용
+ */
+export function sanitizeArg(arg: any): any {
+  if (arg === null || arg === undefined) {
+    return arg;
+  }
+
+  if (typeof arg !== 'object') {
+    return arg;
+  }
+
+  const result: any = {};
+  
+  for (const [key, value] of Object.entries(arg)) {
+    if (Array.isArray(value)) {
+      result[key] = sanitizeArg(value);
+    } else if (typeof value === 'string') {
+      result[key] = neutralize(removeSpecialCharacter(value));
+    } else {
+      result[key] = value;
+    }
+  }
+  
+  return result;
 }

@@ -46,7 +46,7 @@ export class ReserveBulkCommandService {
         }
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -163,7 +163,7 @@ export class ReserveBulkCommandService {
     const brief = this.generateBrief(command, arg);
 
     for (const turnIdx of uniqueTurnList) {
-      await NationTurn.findOneAndUpdate(
+      await (NationTurn as any).findOneAndUpdate(
         {
           session_id: sessionId,
           'data.nation_id': nationId,

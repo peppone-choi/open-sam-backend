@@ -6,7 +6,7 @@ export class GetUniqueItemAuctionListService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const auctions = await Auction.find({
+      const auctions = await (Auction as any).find({
         session_id: sessionId,
         type: 'UniqueItem'
       }).sort({ closeDate: 1 });

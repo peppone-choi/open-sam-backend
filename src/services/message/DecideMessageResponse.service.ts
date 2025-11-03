@@ -22,7 +22,7 @@ export class DecideMessageResponseService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const message = await Message.findOne({
+      const message = await (Message as any).findOne({
         session_id: sessionId,
         'data.id': msgID
       });
@@ -35,7 +35,7 @@ export class DecideMessageResponseService {
         return { success: false, message: '외교 메시지가 아닙니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -60,7 +60,7 @@ export class DecideMessageResponseService {
         return { success: false, message: '이미 응답한 메시지입니다' };
       }
 
-      await Message.updateOne(
+      await (Message as any).updateOne(
         {
           session_id: sessionId,
           'data.id': msgID

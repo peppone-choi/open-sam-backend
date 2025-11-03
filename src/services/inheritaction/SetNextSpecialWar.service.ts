@@ -41,7 +41,7 @@ export class SetNextSpecialWarService {
         return { success: false, message: '잘못된 전투 특기 타입입니다.' };
       }
       
-      const general = await General.findOne({ session_id: sessionId, no: generalId });
+      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -67,12 +67,12 @@ export class SetNextSpecialWarService {
       
       const reqAmount = GameConstants.INHERIT_SPECIFIC_SPECIAL_POINT;
       
-      const gameEnv = await KVStorage.findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const inheritStor = await KVStorage.findOne({ 
+      const inheritStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -85,7 +85,7 @@ export class SetNextSpecialWarService {
       
       const specialWarName = type.replace('che_', '');
       
-      await UserRecord.create({
+      await (UserRecord as any).create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

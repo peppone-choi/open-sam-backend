@@ -17,7 +17,7 @@ export class GetBettingDetailService {
         };
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -95,7 +95,7 @@ export class GetBettingDetailService {
         remainPoint = previous[0];
       } else {
         if (generalId) {
-          const general = await General.findOne({ session_id: sessionId, no: generalId })
+          const general = await (General as any).findOne({ session_id: sessionId, no: generalId })
             .select('data')
             .lean();
           if (general) {

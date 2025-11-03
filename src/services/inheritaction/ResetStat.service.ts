@@ -71,7 +71,7 @@ export class ResetStatService {
         }
       }
       
-      const general = await General.findOne({ session_id: sessionId, no: generalId });
+      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -84,12 +84,12 @@ export class ResetStatService {
         return { success: false, message: 'NPC는 능력치 초기화를 할 수 없습니다.' };
       }
       
-      const gameEnv = await KVStorage.findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const userStor = await KVStorage.findOne({ 
+      const userStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `user_${userId}` 
       });
@@ -101,7 +101,7 @@ export class ResetStatService {
         return { success: false, message: '이번 시즌에 이미 능력치를 초기화하셨습니다.' };
       }
       
-      const inheritStor = await KVStorage.findOne({ 
+      const inheritStor = await (KVStorage as any).findOne({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -177,7 +177,7 @@ export class ResetStatService {
       }
       
       for (const record of userRecords) {
-        await UserRecord.create(record);
+        await (UserRecord as any).create(record);
       }
       
       lastUserStatReset.push(gameSeason);
@@ -189,19 +189,19 @@ export class ResetStatService {
       if (inheritStor) {
         inheritStor.value = inheritStor.value || {};
         inheritStor.value.previous = [previousPoint - reqAmount, null];
-        await inheritStor.save();
+        await (inheritStor as any).save();
       }
       
       if (userStor) {
         userStor.value = userStor.value || {};
         userStor.value.last_stat_reset = lastUserStatReset;
-        await userStor.save();
+        await (userStor as any).save();
       }
       
       general.rank = general.rank || {};
       general.rank.inherit_point_spent_dynamic = (general.rank.inherit_point_spent_dynamic || 0) + reqAmount;
       
-      await general.save();
+      await (general as any).save();
       
       return {
         success: true,

@@ -20,7 +20,7 @@ export class JoinNationService {
         return { success: false, message: '국가 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -35,7 +35,7 @@ export class JoinNationService {
         return { success: false, message: '이미 국가에 소속되어 있습니다' };
       }
 
-      const nation = await Nation.findOne({
+      const nation = await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': targetNationId
       });
@@ -49,7 +49,7 @@ export class JoinNationService {
         return { success: false, message: '해당 국가는 현재 임관을 받지 않습니다' };
       }
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': generalId
@@ -64,7 +64,7 @@ export class JoinNationService {
         }
       );
 
-      await Nation.updateOne(
+      await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': targetNationId

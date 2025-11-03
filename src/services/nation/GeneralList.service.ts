@@ -18,7 +18,7 @@ export class GeneralListService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -36,12 +36,12 @@ export class GeneralListService {
         return { success: false, message: '국가에 소속되어 있지 않습니다' };
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       const sessionData = session?.data || {};
 
       const permission_level = this.checkSecretPermission(officerLevel, permission, penalty, sessionData);
 
-      const nation = await Nation.findOne({
+      const nation = await (Nation as any).findOne({
         session_id: sessionId,
         'data.nation': nationId
       });
@@ -50,12 +50,12 @@ export class GeneralListService {
         return { success: false, message: '국가를 찾을 수 없습니다' };
       }
 
-      const generalList = await General.find({
+      const generalList = await (General as any).find({
         session_id: sessionId,
         'data.nation': nationId
       }).sort({ 'data.turntime': 1 });
 
-      const troops = await Troop.find({
+      const troops = await (Troop as any).find({
         session_id: sessionId,
         'data.nation': nationId
       });

@@ -26,7 +26,7 @@ export class UploadImageService {
         };
       }
 
-      const session = await Session.findOne({ session_id: sessionId });
+      const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
           success: false,
@@ -118,7 +118,7 @@ export class UploadImageService {
 
       const imgKey = `${sessionId}:${userId}`;
       
-      const existingStorage = await KVStorage.findOne({
+      const existingStorage = await (KVStorage as any).findOne({
         session_id: sessionId,
         storage_id: 'img_storage'
       });
@@ -127,7 +127,7 @@ export class UploadImageService {
         const storedStatus = (existingStorage.data && existingStorage.data[imgFullName]) || {};
         if (!storedStatus[imgKey]) {
           storedStatus[imgKey] = new Date();
-          await KVStorage.updateOne(
+          await (KVStorage as any).updateOne(
             {
               session_id: sessionId,
               storage_id: 'img_storage'
@@ -145,7 +145,7 @@ export class UploadImageService {
           [imgKey]: new Date()
         };
         
-        await KVStorage.create({
+        await (KVStorage as any).create({
           session_id: sessionId,
           storage_id: 'img_storage',
           data: newData

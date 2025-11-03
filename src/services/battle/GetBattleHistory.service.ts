@@ -9,7 +9,7 @@ export class GetBattleHistoryService {
         return { success: false, message: 'battleId가 필요합니다' };
       }
 
-      const battle = await Battle.findOne({ battleId });
+      const battle = await (Battle as any).findOne({ battleId });
 
       if (!battle) {
         return { success: false, message: '전투를 찾을 수 없습니다' };

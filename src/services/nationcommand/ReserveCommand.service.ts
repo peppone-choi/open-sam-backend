@@ -36,7 +36,7 @@ export class ReserveCommandService {
         throw new Error('올바른 arg 형태가 아닙니다.');
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -109,7 +109,7 @@ export class ReserveCommandService {
     const brief = this.generateBrief(command, arg);
 
     for (const turnIdx of uniqueTurnList) {
-      await NationTurn.findOneAndUpdate(
+      await (NationTurn as any).findOneAndUpdate(
         {
           session_id: sessionId,
           'data.nation_id': nationId,

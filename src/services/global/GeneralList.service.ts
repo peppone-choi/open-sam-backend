@@ -1,6 +1,8 @@
 import { General } from '../../models/general.model';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
+import { getSession } from '../../common/cache/model-cache.helper';
+import { cacheService } from '../../common/cache/cache.service';
 
 /**
  * GeneralList Service
@@ -12,8 +14,8 @@ export class GeneralListService {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      // Load session
-      const session = await Session.findOne({ session_id: sessionId });
+      // Load session (L1 → L2 → DB)
+      const session = await getSession(sessionId);
       if (!session) {
         return {
           success: false,
@@ -21,13 +23,21 @@ export class GeneralListService {
         };
       }
 
-      // Get all generals with essential fields
-      const generals = await General.find({ session_id: sessionId })
-        .select('no name owner picture data')
-        .lean();
+      // Get all generals with essential fields (캐시 적용 - 목록은 짧은 TTL)
+      const generals: any[] = await cacheService.getOrLoad(
+        `generals:list:${sessionId}`,
+        () => (General as any).find({ session_id: sessionId })
+          .select('no name owner picture data')
+          .lean(),
+        30 // 목록은 30초 TTL
+      ) || [];
 
-      // Get all nations
-      const nations = await Nation.find({ session_id: sessionId }).lean();
+      // Get all nations (캐시 적용)
+      const nations: any[] = await cacheService.getOrLoad(
+        `nations:list:${sessionId}`,
+        () => (Nation as any).find({ session_id: sessionId }).lean(),
+        60 // 1분 TTL
+      ) || [];
       const nationMap: Record<number, any> = {};
       for (const nation of nations) {
         nationMap[nation.nation] = {
@@ -114,9 +124,10 @@ export class GeneralListService {
 
       return {
         success: true,
-        result: 'true',
+        result: true,
         column: resultColumns,
-        list: generalList
+        list: generalList,
+        generals: generalList  // 프론트엔드 호환성
       };
     } catch (error: any) {
       console.error('GeneralList error:', error);
@@ -128,10 +139,15 @@ export class GeneralListService {
   }
 
   // Helper function: Calculate leadership bonus based on officer level and nation level
+  // PHP: calcLeadershipBonus
   private static calcLeadershipBonus(officerLevel: number, nationLevel: number): number {
-    const baseBonus = Math.floor(officerLevel / 5) * 5;
-    const nationBonus = Math.floor(nationLevel / 5) * 2;
-    return baseBonus + nationBonus;
+    if (officerLevel === 12) {
+      return nationLevel * 2;
+    } else if (officerLevel >= 5) {
+      return nationLevel;
+    } else {
+      return 0;
+    }
   }
 
   // Helper function: Get experience level

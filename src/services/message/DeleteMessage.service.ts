@@ -24,7 +24,7 @@ export class DeleteMessageService {
       }
 
       // 메시지 조회
-      const message = await Message.findOne({
+      const message = await (Message as any).findOne({
         session_id: sessionId,
         'data.id': msgID
       });
@@ -42,7 +42,7 @@ export class DeleteMessageService {
       }
 
       // 메시지 삭제
-      await Message.deleteOne({
+      await (Message as any).deleteOne({
         session_id: sessionId,
         'data.id': msgID
       });

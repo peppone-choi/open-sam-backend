@@ -15,7 +15,7 @@ export class WithdrawNationService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await General.findOne({
+      const general = await (General as any).findOne({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -35,7 +35,7 @@ export class WithdrawNationService {
         return { success: false, message: '군주는 탈퇴할 수 없습니다. 먼저 선양하세요' };
       }
 
-      await General.updateOne(
+      await (General as any).updateOne(
         {
           session_id: sessionId,
           'data.no': generalId
@@ -51,7 +51,7 @@ export class WithdrawNationService {
         }
       );
 
-      await Nation.updateOne(
+      await (Nation as any).updateOne(
         {
           session_id: sessionId,
           'data.nation': nationId
