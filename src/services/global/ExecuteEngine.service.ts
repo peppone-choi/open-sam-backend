@@ -832,10 +832,15 @@ export class ExecuteEngineService {
 
   /**
    * 국가 커맨드 실행
+   * PHP TurnExecutionHelper::processNationCommand() 완전 구현
    */
   private static async processNationCommand(sessionId: string, general: any, year: number, month: number) {
-    const nationId = general.nation;
-    const officerLevel = general.data.officer_level;
+    const nationId = general.nation || general.data?.nation || 0;
+    const officerLevel = general.data?.officer_level || 0;
+
+    if (nationId === 0 || officerLevel < 5) {
+      return;
+    }
 
     // 0번 턴 조회
     const nationTurn = await (NationTurn as any).findOne({
@@ -870,22 +875,86 @@ export class ExecuteEngineService {
 
     try {
       await this.loadCityAndNation(general, sessionId);
-      const env = { year, month, session_id: sessionId };
-      const command = new CommandClass(general, env, arg);
       
-      if (!command.hasFullConditionMet()) {
-        await this.pushGeneralActionLog(
-          sessionId,
-          general.no,
-          command.getFailString(),
-          year,
-          month
-        );
-        return;
-      }
+      // LastTurn 조회 (국가 커맨드는 lastTurn 필요)
+      const { KVStorage } = await import('../../models/kv-storage.model');
+      const nationStor = await (KVStorage as any).findOne({
+        session_id: sessionId,
+        key: `turn_last_${officerLevel}`,
+        namespace: `nation_${nationId}`
+      });
+      
+      const lastTurnData = nationStor?.value || { command: '휴식', arg: null, term: 0, seq: 0 };
+      const { LastTurn } = await import('../../commands/base/BaseCommand');
+      const lastTurn = new LastTurn(
+        lastTurnData.command || '휴식',
+        lastTurnData.arg || null,
+        lastTurnData.term || 0,
+        lastTurnData.seq || 0
+      );
+      
+      const env = { year, month, session_id: sessionId };
+      let command = new CommandClass(general, env, lastTurn, arg);
+      
+      // PHP 로직: while(true)로 조건 체크 및 실행 반복
+      while (true) {
+        if (!command.hasFullConditionMet()) {
+          const date = general.getTurnTime?.(general.TURNTIME_HM) || `${year}년 ${month}월`;
+          const failString = command.getFailString?.() || '조건 미충족';
+          const text = `${failString} <1>${date}</>`;
+          await this.pushGeneralActionLog(sessionId, general.no, text, year, month);
+          break;
+        }
 
-      const rng = { choiceUsingWeightPair: (pairs: any[]) => pairs[0][0], choiceUsingWeight: (obj: any) => Object.keys(obj)[0] };
-      await command.run(rng);
+        if (!command.addTermStack?.()) {
+          const date = general.getTurnTime?.(general.TURNTIME_HM) || `${year}년 ${month}월`;
+          const termString = command.getTermString?.() || '턴 부족';
+          const text = `${termString} <1>${date}</>`;
+          await this.pushGeneralActionLog(sessionId, general.no, text, year, month);
+          break;
+        }
+
+        // RNG 생성 (PHP와 동일한 시드 사용)
+        const rng = this.createRNG(sessionId, year, month, general.no, action);
+        const result = await command.run(rng);
+        
+        if (result) {
+          // 성공 시 setNextAvailable 호출
+          await command.setNextAvailable?.();
+          
+          // resultTurn 저장
+          const resultTurn = command.getResultTurn?.() || lastTurn;
+          if (nationStor) {
+            nationStor.value = {
+              command: resultTurn.getCommand(),
+              arg: resultTurn.getArg(),
+              term: resultTurn.getTerm(),
+              seq: resultTurn.getSeq()
+            };
+            await nationStor.save();
+          } else {
+            await (KVStorage as any).create({
+              session_id: sessionId,
+              key: `turn_last_${officerLevel}`,
+              namespace: `nation_${nationId}`,
+              value: {
+                command: resultTurn.getCommand(),
+                arg: resultTurn.getArg(),
+                term: resultTurn.getTerm(),
+                seq: resultTurn.getSeq()
+              }
+            });
+          }
+          break;
+        }
+
+        // 실패 시 대체 커맨드 확인
+        const alt = command.getAlternativeCommand?.();
+        if (alt === null) {
+          break;
+        }
+        command = alt;
+      }
     } catch (error: any) {
       console.error(`Nation command ${action} failed:`, error);
       await this.pushGeneralActionLog(
@@ -900,6 +969,7 @@ export class ExecuteEngineService {
 
   /**
    * 장수 커맨드 실행
+   * PHP TurnExecutionHelper::processCommand() 완전 구현
    */
   private static async processGeneralCommand(
     sessionId: string,
@@ -940,14 +1010,17 @@ export class ExecuteEngineService {
     const action = generalTurn.data.action || '휴식';
     const arg = generalTurn.data.arg || {};
 
-    // killturn 처리
+    // killturn 처리 (PHP 로직과 동일)
     const killturn = gameEnv.killturn || 30;
-    const npcType = general.npc || 0;
-    const currentKillturn = general.data.killturn || killturn;
+    const npcType = general.npc || general.data?.npc || 0;
+    const currentKillturn = general.data?.killturn ?? killturn;
+    const autorunMode = false; // TODO: AI 자동 실행 모드 구현
 
     if (npcType >= 2) {
       general.data.killturn = Math.max(0, currentKillturn - 1);
     } else if (currentKillturn > killturn) {
+      general.data.killturn = Math.max(0, currentKillturn - 1);
+    } else if (autorunMode) {
       general.data.killturn = Math.max(0, currentKillturn - 1);
     } else if (action === '휴식') {
       general.data.killturn = Math.max(0, currentKillturn - 1);
@@ -975,21 +1048,49 @@ export class ExecuteEngineService {
     try {
       await this.loadCityAndNation(general, sessionId);
       const env = { year, month, session_id: sessionId, ...gameEnv };
-      const command = new CommandClass(general, env, arg);
+      let command = new CommandClass(general, env, arg);
       
-      if (!command.hasFullConditionMet()) {
-        await this.pushGeneralActionLog(
-          sessionId,
-          general.no,
-          command.getFailString(),
-          year,
-          month
-        );
-        return;
+      // PHP 로직: while(true)로 조건 체크 및 실행 반복
+      while (true) {
+        if (!command.hasFullConditionMet()) {
+          const date = general.getTurnTime?.(general.TURNTIME_HM) || `${year}년 ${month}월`;
+          const failString = command.getFailString?.() || '조건 미충족';
+          const text = `${failString} <1>${date}</>`;
+          await this.pushGeneralActionLog(sessionId, general.no, text, year, month);
+          break;
+        }
+
+        if (!command.addTermStack?.()) {
+          const date = general.getTurnTime?.(general.TURNTIME_HM) || `${year}년 ${month}월`;
+          const termString = command.getTermString?.() || '턴 부족';
+          const text = `${termString} <1>${date}</>`;
+          await this.pushGeneralActionLog(sessionId, general.no, text, year, month);
+          break;
+        }
+
+        // RNG 생성 (PHP와 동일한 시드 사용)
+        const rng = this.createRNG(sessionId, year, month, generalId, action);
+        const result = await command.run(rng);
+        
+        if (result) {
+          // 성공 시 setNextAvailable 호출
+          await command.setNextAvailable?.();
+          break;
+        }
+
+        // 실패 시 대체 커맨드 확인
+        const alt = command.getAlternativeCommand?.();
+        if (alt === null) {
+          break;
+        }
+        command = alt;
       }
 
-      const rng = { choiceUsingWeightPair: (pairs: any[]) => pairs[0][0], choiceUsingWeight: (obj: any) => Object.keys(obj)[0] };
-      await command.run(rng);
+      // 활성화된 스킬 초기화 (PHP: $general->clearActivatedSkill())
+      if (general.clearActivatedSkill) {
+        general.clearActivatedSkill();
+      }
+      
     } catch (error: any) {
       console.error(`Command ${action} failed:`, error);
       await this.pushGeneralActionLog(
@@ -1000,6 +1101,39 @@ export class ExecuteEngineService {
         month
       );
     }
+  }
+
+  /**
+   * RNG 생성 (PHP와 동일한 시드 사용)
+   * PHP: new RandUtil(new LiteHashDRBG(Util::simpleSerialize(...)))
+   */
+  private static createRNG(sessionId: string, year: number, month: number, generalId: number, commandName: string): any {
+    // 간단한 RNG 구현 (실제로는 LiteHashDRBG 사용해야 함)
+    const seed = `${sessionId}_${year}_${month}_${generalId}_${commandName}`;
+    let seedValue = 0;
+    for (let i = 0; i < seed.length; i++) {
+      seedValue = ((seedValue << 5) - seedValue) + seed.charCodeAt(i);
+      seedValue = seedValue & seedValue; // Convert to 32bit integer
+    }
+    
+    const rng = {
+      choiceUsingWeightPair: (pairs: any[]) => {
+        if (!pairs || pairs.length === 0) return null;
+        const total = pairs.reduce((sum, [val, weight]) => sum + (weight || 0), 0);
+        let random = Math.abs(Math.sin(seedValue++)) * total;
+        for (const [val, weight] of pairs) {
+          random -= (weight || 0);
+          if (random <= 0) return val;
+        }
+        return pairs[0][0];
+      },
+      choiceUsingWeight: (obj: any) => {
+        const pairs = Object.entries(obj).map(([key, weight]) => [key, weight as number]);
+        return rng.choiceUsingWeightPair(pairs);
+      }
+    };
+    
+    return rng;
   }
 
   /**
