@@ -11,6 +11,7 @@ import { ServerBasicInfoService } from '../services/game/ServerBasicInfo.service
 import { SetGeneralPermissionService } from '../services/game/SetGeneralPermission.service';
 import { RaiseEventService } from '../services/game/RaiseEvent.service';
 import { GetMyBossInfoService } from '../services/game/GetMyBossInfo.service';
+import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
 
 const router = Router();
 
@@ -370,11 +371,40 @@ router.get('/const', async (req, res) => {
  */
 router.get('/turn', async (req, res) => {
   try {
-    // TODO: Session에서 실제 턴 정보 조회
+    const sessionId = (req.query.session_id as string) || 'sangokushi_default';
+    const session = await (Session as any).findOne({ session_id: sessionId });
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    const sessionData = session.data || {};
+    const now = new Date();
+    
+    // turntime이 없으면 현재 시간으로 설정
+    const turntime = sessionData.turntime 
+      ? new Date(sessionData.turntime)
+      : now;
+    
+    // turnDate를 호출하여 최신 년/월 계산
+    // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
+    const gameEnvCopy = { ...sessionData };
+    const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+    
+    // 년/월이 변경되었으면 DB에 저장
+    if (gameEnvCopy.year !== sessionData.year || gameEnvCopy.month !== sessionData.month) {
+      sessionData.year = gameEnvCopy.year;
+      sessionData.month = gameEnvCopy.month;
+      session.data = sessionData;
+      await session.save();
+    }
+    
     res.json({
-      turn: 1,
-      year: 184,
-      month: 1
+      turn: turnInfo.turn,
+      year: turnInfo.year,
+      month: turnInfo.month,
+      turntime: turntime.toISOString(),
+      turnterm: sessionData.turnterm || 60
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

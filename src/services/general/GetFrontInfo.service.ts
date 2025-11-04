@@ -128,27 +128,48 @@ export class GetFrontInfoService {
     }
 
     const data = session.data || {};
-
+    
     // 장수 통계
     const genCount = await (General as any).aggregate([
       { $match: { session_id: sessionId } },
       { $group: { _id: '$data.npc', count: { $sum: 1 } } }
     ]);
 
-    const turntime = data.turntime || new Date();
+    const turntime = data.turntime ? new Date(data.turntime) : new Date();
     const lastExecutedStr = turntime instanceof Date 
       ? turntime.toISOString().slice(0, 19).replace('T', ' ')
       : String(turntime);
     
+    // turnDate를 호출하여 최신 년/월 계산
+    // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
+    const { ExecuteEngineService } = await import('../global/ExecuteEngine.service');
+    const gameEnvCopy = { ...data };
+    const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+    
+    // 년/월이 변경되었으면 DB에 저장
+    if (gameEnvCopy.year !== data.year || gameEnvCopy.month !== data.month) {
+      data.year = gameEnvCopy.year;
+      data.month = gameEnvCopy.month;
+      session.data = data;
+      await session.save();
+    }
+    
+    // 세션 이름이 설정되어 있고 기술적 ID와 다를 때만 반환
+    // 그렇지 않으면 null (프론트엔드에서 시나리오 이름 사용)
+    const sessionDisplayName = session.name && session.name !== sessionId 
+      ? session.name 
+      : null;
+    
     return {
+      serverName: sessionDisplayName, // 세션 표시 이름 (없으면 null)
       scenarioText: data.scenario || '삼국지',
       extendedGeneral: (data.extended_general || 0) as 0 | 1,
       isFiction: (data.is_fiction || 0) as 0 | 1,
       npcMode: (data.npcmode || 0) as 0 | 1 | 2,
       joinMode: data.join_mode === 0 ? 'onlyRandom' : 'full',
-      startyear: data.startyear || 180,
-      year: data.year || 180,
-      month: data.month || 1,
+      startyear: data.startyear ?? 180,
+      year: turnInfo.year,
+      month: turnInfo.month,
       autorunUser: {
         limit_minutes: data.autorun_user?.limit_minutes || data.autorun_limit || 0,
         options: data.autorun_user?.options || {}
