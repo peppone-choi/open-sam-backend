@@ -38,9 +38,13 @@ export class JoinService {
         character,
         inheritSpecial,
         inheritTurntimeZone,
-        inheritCity,
-        inheritBonusStat
+        inheritCity: inheritCityParam,
+        inheritBonusStat,
+        city: cityParam
       } = data;
+      
+      // city 파라미터가 있으면 inheritCity로 사용 (도시 선택)
+      const inheritCity = cityParam !== undefined && cityParam !== null ? cityParam : inheritCityParam;
 
       // 2. 이름 정제
       let name = this.sanitizeName(rawName);
@@ -567,23 +571,53 @@ export class JoinService {
     inheritCity: number | null,
     rng: number
   ): Promise<any> {
-    if (inheritCity !== null && inheritCity !== undefined) {
-      const city = await (City as any).findOne({ session_id: sessionId, city: inheritCity });
-      return city;
+    if (inheritCity !== null && inheritCity !== undefined && inheritCity !== 0) {
+      const city = await (City as any).findOne({ 
+        session_id: sessionId, 
+        city: inheritCity 
+      });
+      if (city) {
+        return city;
+      }
     }
 
-    // 공백지(level 5~6, nation 0) 우선
+    // 공백지(level 5~6, nation 0) 우선 - data.nation 또는 nation 필드 모두 확인
     let cities = await (City as any).find({
       session_id: sessionId,
-      level: { $gte: 5, $lte: 6 },
-      nation: 0
+      $or: [
+        { 'data.level': { $gte: 5, $lte: 6 }, 'data.nation': 0 },
+        { level: { $gte: 5, $lte: 6 }, nation: 0 },
+        { 'data.level': { $gte: 5, $lte: 6 }, nation: 0 },
+        { level: { $gte: 5, $lte: 6 }, 'data.nation': 0 }
+      ]
     }).limit(100);
 
     if (cities.length === 0) {
-      // 공백지 없으면 아무 도시나
+      // 공백지 없으면 아무 도시나 (level 5~6)
       cities = await (City as any).find({
         session_id: sessionId,
-        level: { $gte: 5, $lte: 6 }
+        $or: [
+          { 'data.level': { $gte: 5, $lte: 6 } },
+          { level: { $gte: 5, $lte: 6 } }
+        ]
+      }).limit(100);
+    }
+
+    if (cities.length === 0) {
+      // level 조건 없이 nation 0인 도시
+      cities = await (City as any).find({
+        session_id: sessionId,
+        $or: [
+          { 'data.nation': 0 },
+          { nation: 0 }
+        ]
+      }).limit(100);
+    }
+
+    if (cities.length === 0) {
+      // 아무 도시나
+      cities = await (City as any).find({
+        session_id: sessionId
       }).limit(100);
     }
 

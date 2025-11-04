@@ -81,13 +81,13 @@ const router = Router();
  *                 error:
  *                   type: string
  */
+// ExecuteEngine은 데몬에서만 실행되어야 합니다
+// Express 엔드포인트는 비활성화 (데몬과 락 충돌 방지)
 router.post('/execute-engine', async (req, res) => {
-  try {
-    const result = await ExecuteEngineService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
+  res.status(403).json({ 
+    success: false,
+    error: 'ExecuteEngine은 데몬 프로세스에서만 실행됩니다. turn-processor.ts를 사용하세요.' 
+  });
 });
 
 

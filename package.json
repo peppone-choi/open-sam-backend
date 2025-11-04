@@ -12,7 +12,13 @@
     "start:daemon": "node dist/daemon/turn-processor.js",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist node_modules package-lock.json",
-    "create-admin": "node scripts/create-admin.mjs"
+    "create-admin": "ts-node scripts/create-admin.ts",
+    "create-admin:js": "node scripts/create-admin.mjs",
+    "init-cities": "ts-node scripts/init-cities.ts",
+    "check-cities": "ts-node scripts/check-cities.ts",
+    "verify-db-cities": "ts-node scripts/verify-db-cities.ts",
+    "init-general-commands": "ts-node scripts/initialize-general-commands.ts",
+    "check-lock": "ts-node scripts/check-lock.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

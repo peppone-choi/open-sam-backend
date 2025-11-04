@@ -3,6 +3,26 @@
  * PHP 원본: func_process.php, func_gamerule.php
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+
+// 캐시된 상수 데이터 (시나리오별로 캐시)
+const constantsCache: Record<string, any> = {};
+
+function loadConstants(scenarioId: string = 'sangokushi') {
+  if (constantsCache[scenarioId]) {
+    return constantsCache[scenarioId];
+  }
+  
+  const constantsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/constants.json');
+  if (!fs.existsSync(constantsPath)) {
+    throw new Error(`Constants file not found: ${constantsPath}`);
+  }
+  const data = fs.readFileSync(constantsPath, 'utf-8');
+  constantsCache[scenarioId] = JSON.parse(data);
+  return constantsCache[scenarioId];
+}
+
 /**
  * 내정 커맨드 성공 확률 계산
  * PHP: CriticalRatioDomestic
@@ -72,35 +92,48 @@ export function CriticalScoreEx(rng: () => number, type: 'success' | 'fail'): nu
 /**
  * 국가 레벨 목록
  * PHP: getNationLevelList
+ * 시나리오 JSON의 nationLevels에서 로드
  */
-export function getNationLevelList(): Array<[string, number, number]> {
-  return [
-    [0, '방랑군', 2, 0],
-    [1, '호족', 2, 1],
-    [2, '군벌', 4, 2],
-    [3, '주자사', 4, 5],
-    [4, '주목', 6, 8],
-    [5, '공', 6, 11],
-    [6, '왕', 8, 16],
-    [7, '황제', 8, 21],
-  ];
+export function getNationLevelList(scenarioId: string = 'sangokushi'): Array<[number, string, number, number]> {
+  const constants = loadConstants(scenarioId);
+  const nationLevels = constants.nationLevels || {};
+  
+  const result: Array<[number, string, number, number]> = [];
+  for (let level = 0; level <= 8; level++) {
+    const levelData = nationLevels[level.toString()];
+    if (levelData) {
+      // [level, name, chiefCount, minCities]
+      result.push([
+        levelData.level,
+        levelData.name,
+        levelData.chiefCount,
+        levelData.minCities
+      ]);
+    }
+  }
+  
+  return result;
 }
 
 /**
  * 도시 레벨 목록
  * PHP: getCityLevelList
+ * 시나리오 JSON의 cityLevels에서 로드
  */
-export function getCityLevelList(): Record<number, string> {
-  return {
-    1: '수',
-    2: '진',
-    3: '관',
-    4: '이',
-    5: '소',
-    6: '중',
-    7: '대',
-    8: '특'
-  };
+export function getCityLevelList(scenarioId: string = 'sangokushi'): Record<number, string> {
+  const constants = loadConstants(scenarioId);
+  const cityLevels = constants.cityLevels || {};
+  
+  const result: Record<number, string> = {};
+  for (const levelStr in cityLevels) {
+    const level = parseInt(levelStr);
+    if (!isNaN(level)) {
+      const levelData = cityLevels[levelStr];
+      result[level] = levelData.name || levelData.label || '';
+    }
+  }
+  
+  return result;
 }
 
 

@@ -188,6 +188,18 @@ router.get('/get-recent-message', authenticate, async (req, res) => {
   }
 });
 
+// 별칭 (프론트엔드 호환)
+router.post('/get-recent', authenticate, async (req, res) => {
+  try {
+    // POST 요청도 GET과 동일하게 처리 (query 또는 body에서 파라미터 추출)
+    const params = { ...req.query, ...req.body };
+    const result = await GetRecentMessageService.execute(params, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 /**
  * @swagger
  * /api/message/read-latest-message:

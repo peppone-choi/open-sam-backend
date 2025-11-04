@@ -18,7 +18,7 @@ export interface IGameSessionDocument extends Omit<IGameSession, 'id'>, Document
 const GameSessionSchema = new Schema<IGameSessionDocument>(
   {
     // 시나리오 정보 (Entity scenario와 매칭)
-    scenarioId: { type: String, required: true, index: true },
+    scenarioId: { type: String, required: true },
     title: { type: String, required: true },
     
     // 게임 설정

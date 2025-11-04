@@ -23,7 +23,7 @@ export class GetCommandTableService {
     try {
       const general = await (General as any).findOne({
         session_id: sessionId,
-        'data.no': generalId
+        no: generalId
       });
 
       if (!general) {
@@ -61,6 +61,12 @@ export class GetCommandTableService {
     // 세션 설정에서 availableGeneralCommand 가져오기
     const availableGeneralCommand = gameEnv.availableGeneralCommand || this.getDefaultCommandCategories();
     
+    logger.debug('buildCommandTable:', {
+      hasAvailableGeneralCommand: !!gameEnv.availableGeneralCommand,
+      categories: Object.keys(availableGeneralCommand),
+      totalCommands: Object.values(availableGeneralCommand).reduce((sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0), 0)
+    });
+    
     const result: any[] = [];
     
     // 카테고리별로 순회
@@ -92,6 +98,20 @@ export class GetCommandTableService {
             // CommandRegistry에서 직접 가져오기
             const { CommandRegistry } = await import('../../commands');
             const CommandClass = (CommandRegistry as any)[registryKey];
+            
+            if (!CommandClass) {
+              logger.debug(`Command not found in registry: ${registryKey} (original: ${commandClassName})`);
+              // 명령이 없어도 기본 정보로 추가
+              subList.push({
+                value: commandClassName,
+                simpleName: registryKey,
+                reqArg: 0,
+                possible: true,
+                compensation: 0,
+                title: registryKey
+              });
+              continue;
+            }
             
             if (CommandClass) {
               try {

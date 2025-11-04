@@ -7,9 +7,35 @@ const MAX_TURN = GameConstants.MAX_TURN;
 export class ReserveCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
+    // general_id를 숫자로 변환 (문자열일 수도 있음)
+    let generalId = user?.generalId || data.general_id;
+    if (generalId) {
+      generalId = Number(generalId);
+      if (isNaN(generalId) || generalId === 0) {
+        generalId = undefined;
+      }
+    }
+    
+    console.log('ReserveCommand.execute:', {
+      sessionId,
+      generalId,
+      generalIdType: typeof generalId,
+      userGeneralId: user?.generalId,
+      dataGeneralId: data.general_id,
+      dataGeneralIdType: typeof data.general_id,
+      user: user ? { userId: user.userId, id: user.id } : null,
+      data: { action: data.action, turn_idx: data.turn_idx, brief: data.brief }
+    });
+    
     const action = data.action;
-    const rawTurnList = data.turnList || [];
+    const brief = data.brief || action; // brief가 있으면 사용, 없으면 action 사용
+    // turn_idx (단일 턴) 또는 turnList (여러 턴) 지원
+    let rawTurnList: number[] = [];
+    if (data.turn_idx !== undefined) {
+      rawTurnList = [data.turn_idx];
+    } else if (data.turnList) {
+      rawTurnList = data.turnList;
+    }
     const arg = sanitizeArg(data.arg || {});
 
     if (!generalId) {
@@ -42,7 +68,7 @@ export class ReserveCommandService {
       };
     }
 
-    const result = await setGeneralCommand(sessionId, generalId, turnList, action, arg);
+    const result = await setGeneralCommand(sessionId, generalId, turnList, action, arg, brief);
 
     return result;
   }
@@ -79,10 +105,11 @@ async function setGeneralCommand(
   generalId: number,
   turnList: number[],
   action: string,
-  arg: any
+  arg: any,
+  brief?: string
 ): Promise<any> {
   try {
-    const brief = action;
+    const finalBrief = brief || action;
 
     for (const turnIdx of turnList) {
       await (GeneralTurn as any).findOneAndUpdate(
@@ -95,7 +122,7 @@ async function setGeneralCommand(
           $set: {
             'data.action': action,
             'data.arg': arg,
-            'data.brief': brief
+            'data.brief': finalBrief
           }
         },
         { upsert: true }
@@ -105,7 +132,7 @@ async function setGeneralCommand(
     return {
       success: true,
       result: true,
-      brief,
+      brief: finalBrief,
       reason: 'success'
     };
   } catch (error: any) {

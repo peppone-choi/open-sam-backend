@@ -92,6 +92,63 @@ export const optionalAuth = async (
 };
 
 /**
+ * 전역 JWT 토큰 자동 추출 미들웨어
+ * 모든 요청에 대해 토큰이 있으면 자동으로 추출하여 req.user에 저장
+ * Authorization 헤더 또는 쿠키에서 토큰을 찾습니다
+ */
+export const autoExtractToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // 이미 user가 설정되어 있으면 스킵
+    if (req.user) {
+      return next();
+    }
+
+    let token: string | null = null;
+
+    // 1. Authorization 헤더에서 토큰 추출
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+
+    // 2. 쿠키에서 토큰 추출 (Authorization 헤더에 없을 경우)
+    if (!token) {
+      // req.cookies는 cookie-parser가 있어야 사용 가능
+      // 없어도 에러가 나지 않도록 안전하게 처리
+      try {
+        const cookieToken = (req as any).cookies?.token || (req as any).cookies?.authToken;
+        if (cookieToken) {
+          token = cookieToken;
+        }
+      } catch {
+        // 쿠키 파서가 없어도 계속 진행
+      }
+    }
+
+    // 3. 토큰이 있으면 검증하고 req.user에 저장
+    if (token) {
+      try {
+        const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+        req.user = decoded;
+      } catch (error) {
+        // 토큰이 유효하지 않아도 에러를 던지지 않고 계속 진행
+        // (optionalAuth와 동일한 동작)
+      }
+    }
+
+    next();
+  } catch (error) {
+    // 에러가 발생해도 요청은 계속 진행
+    next();
+  }
+};
+
+/**
  * 세션 검증 미들웨어
  * req.user.sessionId가 req.body.sessionId 또는 req.params.sessionId와 일치하는지 확인
  */

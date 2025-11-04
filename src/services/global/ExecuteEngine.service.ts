@@ -43,8 +43,22 @@ export class ExecuteEngineService {
     
     let lockAcquired = false;
     try {
+      // TTL이 0 이하인 락은 만료된 것으로 간주하고 강제 삭제
+      const currentLock = await redis.get(lockKey);
+      if (currentLock) {
+        const ttl = await redis.ttl(lockKey);
+        if (ttl <= 0) {
+          // 만료된 락 강제 삭제
+          console.log(`[${new Date().toISOString()}] Removing expired lock: ${lockKey}, TTL: ${ttl}s`);
+          await redis.del(lockKey);
+        }
+      }
+      
       const lock = await redis.set(lockKey, '1', 'EX', LOCK_TTL, 'NX');
       if (!lock) {
+        const currentValue = await redis.get(lockKey);
+        const ttl = await redis.ttl(lockKey);
+        console.log(`[${new Date().toISOString()}] Lock already exists: ${lockKey}, value: ${currentValue}, TTL: ${ttl}s`);
         return {
           success: true,
           result: false,
@@ -54,6 +68,7 @@ export class ExecuteEngineService {
         };
       }
       lockAcquired = true;
+      console.log(`[${new Date().toISOString()}] Lock acquired: ${lockKey}`);
       const session = await (Session as any).findOne({ session_id: sessionId });
       if (!session) {
         return {
@@ -110,6 +125,7 @@ export class ExecuteEngineService {
     } finally {
       if (lockAcquired) {
         await redis.del(lockKey);
+        console.log(`[${new Date().toISOString()}] Lock released: ${lockKey}`);
       }
     }
   }
@@ -212,10 +228,14 @@ export class ExecuteEngineService {
   ): Promise<[boolean, string | null]> {
     
     // turntime이 date보다 이전인 장수들을 조회
+    // turntime은 data.turntime 또는 top-level turntime일 수 있음
     const generals = await (General as any).find({
       session_id: sessionId,
-      turntime: { $lt: date }
-    }).sort({ turntime: 1, no: 1 });
+      $or: [
+        { 'data.turntime': { $lt: date } },
+        { turntime: { $lt: date } }
+      ]
+    }).sort({ 'data.turntime': 1, no: 1 });
 
     let currentTurn: string | null = null;
 
@@ -228,11 +248,13 @@ export class ExecuteEngineService {
       // 장수 턴 실행
       await this.executeGeneralTurn(sessionId, general, year, month, turnterm, gameEnv);
       
-      currentTurn = general.data.turntime || new Date().toISOString();
+      currentTurn = general.data?.turntime || general.turntime || new Date().toISOString();
       
       // 턴 당기기 (0번 턴 삭제, 1->0, 2->1, ...)
       await this.pullGeneralCommand(sessionId, general.no, 1);
-      await this.pullNationCommand(sessionId, general.data.nation, general.data.officer_level, 1);
+      const nationId = general.nation || general.data?.nation || 0;
+      const officerLevel = general.data?.officer_level || 0;
+      await this.pullNationCommand(sessionId, nationId, officerLevel, 1);
       
       // 턴 시간 업데이트
       await this.updateTurnTime(sessionId, general, turnterm, gameEnv);
@@ -265,7 +287,9 @@ export class ExecuteEngineService {
     }
 
     // 국가 커맨드 실행 (수뇌부만)
-    const hasNationTurn = general.nation && general.data.officer_level >= 5;
+    const nationId = general.nation || general.data?.nation || 0;
+    const officerLevel = general.data?.officer_level || 0;
+    const hasNationTurn = nationId && officerLevel >= 5;
     if (hasNationTurn) {
       await this.processNationCommand(sessionId, general, year, month);
     }
@@ -446,15 +470,37 @@ export class ExecuteEngineService {
     month: number,
     gameEnv: any
   ) {
+    // generalId는 top-level no 또는 data.no일 수 있음
+    const generalId = general.no || general.data?.no;
+    
+    if (!generalId) {
+      console.error('processGeneralCommand: generalId not found', { general: general._id });
+      return;
+    }
+    
     // 0번 턴 조회
-    const generalTurn = await (GeneralTurn as any).findOne({
+    let generalTurn = await (GeneralTurn as any).findOne({
       session_id: sessionId,
-      'data.general_id': general.no,
+      'data.general_id': generalId,
       'data.turn_idx': 0
     });
 
-    const action = generalTurn?.data.action || '휴식';
-    const arg = generalTurn?.data.arg || {};
+    // 명령이 없으면 휴식으로 자동 생성
+    if (!generalTurn) {
+      generalTurn = await (GeneralTurn as any).create({
+        session_id: sessionId,
+        data: {
+          general_id: generalId,
+          turn_idx: 0,
+          action: '휴식',
+          brief: '휴식',
+          arg: {}
+        }
+      });
+    }
+
+    const action = generalTurn.data.action || '휴식';
+    const arg = generalTurn.data.arg || {};
 
     // killturn 처리
     const killturn = gameEnv.killturn || 30;
@@ -559,11 +605,15 @@ export class ExecuteEngineService {
     }
 
     // 턴 시간 증가
-    const currentTurntime = new Date(general.data.turntime || new Date());
+    const currentTurntime = new Date(general.data?.turntime || general.turntime || new Date());
     const newTurntime = this.addTurn(currentTurntime, turnterm);
     
-    general.data.turntime = newTurntime.toISOString();
-    general.markModified('data');
+    if (general.data) {
+      general.data.turntime = newTurntime.toISOString();
+      general.markModified('data');
+    } else {
+      general.turntime = newTurntime;
+    }
   }
 
   /**

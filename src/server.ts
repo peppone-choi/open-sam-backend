@@ -11,6 +11,7 @@ import { requestLogger } from './common/middleware/request-logger.middleware';
 import { logger } from './common/logger';
 import { CommandRegistry } from './core/command';
 import { swaggerSpec } from './config/swagger';
+import { autoExtractToken } from './middleware/auth';
 
 dotenv.config();
 
@@ -38,8 +39,16 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Session 미들웨어 (express-session 또는 기본)
+import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
+app.use(setupSessionMiddleware());
+app.use(sessionMiddleware);
+
 // 요청 로깅 미들웨어
 app.use(requestLogger);
+
+// JWT 토큰 자동 추출 미들웨어 (모든 요청에 대해 토큰이 있으면 자동으로 추출)
+app.use(autoExtractToken);
 
 /**
  * @swagger
@@ -93,6 +102,10 @@ import auctionRoutes from './routes/auction.routes';
 import bettingRoutes from './routes/betting.routes';
 import messageRoutes from './routes/message.routes';
 import voteRoutes from './routes/vote.routes';
+import loginRoutes from './routes/login.routes';
+import gatewayRoutes from './routes/gateway.routes';
+import adminRoutes from './routes/admin.routes';
+import joinRoutes from './routes/join.routes';
 
 app.use('/api/session', sessionRoutes);
 app.use('/api/general', generalRoutes);
@@ -102,6 +115,10 @@ app.use('/api/auction', auctionRoutes);
 app.use('/api/betting', bettingRoutes);
 app.use('/api/message', messageRoutes);
 app.use('/api/vote', voteRoutes);
+app.use('/api/login', loginRoutes);
+app.use('/api/gateway', gatewayRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/join', joinRoutes);
 
 // 에러 핸들링 미들웨어 (맨 마지막)
 app.use(errorMiddleware);
@@ -144,6 +161,15 @@ async function start() {
       logger.info('기본 세션 생성 완료', { sessionId });
     } else {
       logger.info('기본 세션 로드 완료', { sessionId, sessionName: session.name });
+      
+      // 도시가 없으면 초기화
+      const { City } = await import('./models/city.model');
+      const cityCount = await (City as any).countDocuments({ session_id: sessionId });
+      if (cityCount === 0) {
+        logger.info('도시가 없어 초기화를 진행합니다...');
+        await InitService.initializeSession(sessionId);
+        logger.info('도시 초기화 완료');
+      }
     }
     
     app.listen(PORT, () => {

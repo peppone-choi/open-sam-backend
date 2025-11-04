@@ -448,7 +448,12 @@ router.get('/get-command-table', optionalAuth, async (req, res) => {
  */
 router.get('/get-front-info', optionalAuth, async (req, res) => {
   try {
-    const result = await GetFrontInfoService.execute(req.query, req.user);
+    // serverID를 session_id로 매핑 (프론트엔드 호환성)
+    const params = {
+      ...req.query,
+      session_id: req.query.session_id || req.query.serverID || 'sangokushi_default',
+    };
+    const result = await GetFrontInfoService.execute(params, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

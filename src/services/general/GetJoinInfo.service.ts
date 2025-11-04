@@ -29,23 +29,28 @@ export class GetJoinInfoService {
       // 2. 장수 생성 가능 여부 확인
       const blockCreate = gameEnv.block_general_create || 0;
       
-      // 3. 국가 목록 조회 (참가 가능한 국가들)
+      // 3. 국가 목록 조회 (참가 가능한 국가들) - 재야(0) 제외
       const nations = await (Nation as any).find({
         session_id: sessionId
       })
         .sort({ 'data.nation': 1 })
         .lean();
 
-      const nationList = nations.map((nation: any) => {
-        const nationData = nation.data || {};
-        return {
-          nation: nationData.nation || 0,
-          name: nationData.name || '무명',
-          color: nationData.color || '#000000',
-          scout: nationData.scout || 50,
-          scoutmsg: nationData.scoutmsg || ''
-        };
-      });
+      const nationList = nations
+        .map((nation: any) => {
+          const nationData = nation.data || {};
+          const nationId = nationData.nation ?? nation.nation ?? 0;
+          // nation이 0이면 제외 (재야/무명)
+          if (nationId === 0) return null;
+          return {
+            nation: nationId,
+            name: nationData.name || '무명',
+            color: nationData.color || '#000000',
+            scout: nationData.scout || 50,
+            scoutmsg: nationData.scoutmsg || ''
+          };
+        })
+        .filter((nation: any) => nation !== null);
 
       // 4. 상속 포인트 계산
       let inheritPoints = 0;
@@ -73,21 +78,19 @@ export class GetJoinInfoService {
       const defaultStatMax = gameEnv.defaultStatMax || 100;
       const defaultStatTotal = gameEnv.defaultStatTotal || 240;
 
-      // 6. 초기 위치 가능한 도시 목록 (야인 시작 가능 도시)
+      // 6. 초기 위치 가능한 도시 목록 (모든 도시)
       const availableCities = await (City as any).find({
-        session_id: sessionId,
-        'data.nation': 0 // 야인 도시
+        session_id: sessionId
       })
-        .limit(20)
         .lean();
 
       const cityList = availableCities.map((city: any) => {
         const cityData = city.data || {};
         return {
-          id: cityData.id || 0,
-          name: cityData.name || '도시',
-          x: cityData.x || 0,
-          y: cityData.y || 0
+          id: city.city || cityData.id || 0, // city 필드가 실제 도시 ID
+          name: city.name || cityData.name || '도시',
+          x: city.x || cityData.x || 0,
+          y: city.y || cityData.y || 0
         };
       });
 

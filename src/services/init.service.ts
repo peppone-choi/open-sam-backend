@@ -80,12 +80,12 @@ export class InitService {
     
     const cityCount = cities.length;
     
-    // 4. 도시 생성
+    // 4. 도시 생성 - DB에 직접 저장
     for (const cityTemplate of cities) {
       const initialState = cityTemplate.initialState || {};
       const position = cityTemplate.position || {};
       
-      await (City as any).create({
+      const cityData = {
         session_id: sessionId,
         city: cityTemplate.id,
         name: cityTemplate.name,
@@ -121,7 +121,11 @@ export class InitService {
         y: position.y || 0,
         neighbors: cityTemplate.neighbors || [],  // 도시 ID 배열
         terrain: cityTemplate.terrain
-      });
+      };
+      
+      // DB에 직접 저장 (Mongoose create는 DB에 저장함)
+      const city = new (City as any)(cityData);
+      await city.save();
     }
     
     console.log(`   ✅ 도시 ${cities.length}개 생성 완료`);

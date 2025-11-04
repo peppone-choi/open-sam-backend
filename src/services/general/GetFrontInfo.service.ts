@@ -5,6 +5,8 @@ import { City } from '../../models/city.model';
 import { Nation } from '../../models/nation.model';
 import { GeneralRecord } from '../../models/general_record.model';
 import { WorldHistory } from '../../models/world_history.model';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * GetFrontInfo Service  
@@ -77,6 +79,10 @@ export class GetFrontInfoService {
 
       // 4. 장수 정보 생성
       const generalInfo = await this.generateGeneralInfo(sessionId, general, nationId);
+      
+      // 권한 계산
+      const permission = await this.calculatePermission(sessionId, general, nationId);
+      generalInfo.permission = permission;
 
       // 5. 도시 정보 생성
       const cityInfo = cityId
@@ -129,36 +135,44 @@ export class GetFrontInfoService {
       { $group: { _id: '$data.npc', count: { $sum: 1 } } }
     ]);
 
+    const turntime = data.turntime || new Date();
+    const lastExecutedStr = turntime instanceof Date 
+      ? turntime.toISOString().slice(0, 19).replace('T', ' ')
+      : String(turntime);
+    
     return {
       scenarioText: data.scenario || '삼국지',
-      extendedGeneral: false,
-      isFiction: false,
-      npcMode: data.npcmode || 0,
-      joinMode: data.join_mode || 0,
+      extendedGeneral: (data.extended_general || 0) as 0 | 1,
+      isFiction: (data.is_fiction || 0) as 0 | 1,
+      npcMode: (data.npcmode || 0) as 0 | 1 | 2,
+      joinMode: data.join_mode === 0 ? 'onlyRandom' : 'full',
       startyear: data.startyear || 180,
       year: data.year || 180,
       month: data.month || 1,
-      autorunUser: data.autorun_user || 0,
+      autorunUser: {
+        limit_minutes: data.autorun_user?.limit_minutes || data.autorun_limit || 0,
+        options: data.autorun_user?.options || {}
+      },
       turnterm: data.turnterm || 60, // 분 단위
-      lastExecuted: data.turntime || new Date(),
+      lastExecuted: lastExecutedStr,
       lastVoteID: data.lastVote || null,
       develCost: data.develcost || 100,
-      noticeMsg: data.msg || '',
-      onlineNations: data.online_nation || [],
-      onlineUserCnt: data.online_user_cnt || 0,
+      noticeMsg: typeof data.msg === 'number' ? data.msg : (data.msg ? parseInt(String(data.msg)) || 0 : 0),
+      onlineNations: Array.isArray(data.online_nation) ? data.online_nation.join(',') : (data.online_nation || null),
+      onlineUserCnt: data.online_user_cnt || null,
       apiLimit: data.refreshLimit || 1000,
-      auctionCount: 0, // TODO: 경매 구현 시 추가
-      isTournamentActive: false,
-      isTournamentApplicationOpen: false,
-      isBettingActive: false,
-      isLocked: false,
-      tournamentType: null,
-      tournamentState: 0,
-      tournamentTime: null,
-      genCount: genCount.map(g => [g._id, g.count]),
+      auctionCount: data.auction_count || 0,
+      isTournamentActive: data.is_tournament_active || false,
+      isTournamentApplicationOpen: data.is_tournament_application_open || false,
+      isBettingActive: data.is_betting_active || false,
+      isLocked: data.is_locked || false,
+      tournamentType: data.tournament_type || null,
+      tournamentState: data.tournament_state || 0,
+      tournamentTime: data.tournament_time || null,
+      genCount: genCount.map(g => [g._id || 0, g.count || 0]),
       generalCntLimit: data.maxgeneral || 500,
       serverCnt: data.server_cnt || 1,
-      lastVote: null
+      lastVote: data.lastVote_data || null
     };
   }
 
@@ -181,47 +195,90 @@ export class GetFrontInfoService {
 
     const nationData = nation.data || {};
 
-    // 국가 인구 통계
-    const cityStats = await (City as any).aggregate([
-      { $match: { session_id: sessionId, 'data.nation': nationId } },
-      {
-        $group: {
-          _id: null,
-          cityCnt: { $sum: 1 },
-          popNow: { $sum: '$data.pop' },
-          popMax: { $sum: '$data.pop_max' }
+    // 국가 인구 통계 (data.nation 또는 nation 필드 확인)
+    const cities = await (City as any).find({
+      session_id: sessionId,
+      $or: [
+        { 'data.nation': nationId },
+        { nation: nationId }
+      ]
+    }).lean();
+
+    const population = {
+      cityCnt: cities.length,
+      popNow: cities.reduce((sum: number, c: any) => sum + (c.data?.pop ?? c.pop ?? 0), 0),
+      popMax: cities.reduce((sum: number, c: any) => sum + (c.data?.pop_max ?? c.pop_max ?? 0), 0)
+    };
+
+    // 국가 병력 통계 (data.nation 또는 nation 필드 확인, npc가 5가 아닌 것만)
+    const generals = await (General as any).find({
+      session_id: sessionId,
+      $and: [
+        {
+          $or: [
+            { 'data.nation': nationId },
+            { nation: nationId }
+          ]
+        },
+        {
+          $or: [
+            { 'data.npc': { $ne: 5 } },
+            { npc: { $ne: 5 } },
+            { 'data.npc': { $exists: false } },
+            { npc: { $exists: false } }
+          ]
         }
-      }
-    ]);
+      ]
+    }).lean();
 
-    const population = cityStats[0] || { cityCnt: 0, popNow: 0, popMax: 0 };
+    const crew = {
+      generalCnt: generals.length,
+      crewNow: generals.reduce((sum: number, g: any) => sum + (g.data?.crew ?? g.crew ?? 0), 0),
+      crewMax: generals.reduce((sum: number, g: any) => {
+        const leadership = g.data?.leadership ?? g.leadership ?? 50;
+        return sum + (leadership * 100);
+      }, 0)
+    };
 
-    // 국가 병력 통계
-    const crewStats = await (General as any).aggregate([
-      { $match: { session_id: sessionId, 'data.nation': nationId, 'data.npc': { $ne: 5 } } },
-      {
-        $group: {
-          _id: null,
-          generalCnt: { $sum: 1 },
-          crewNow: { $sum: '$data.crew' },
-          crewMax: { $sum: { $multiply: ['$data.leadership', 100] } }
-        }
-      }
-    ]);
-
-    const crew = crewStats[0] || { generalCnt: 0, crewNow: 0, crewMax: 0 };
-
-    // 고위 관직자 조회
+    // 고위 관직자 조회 (군주, 태사)
     const topChiefs = await (General as any).find({
       session_id: sessionId,
       'data.nation': nationId,
-      'data.officer_level': { $gte: 11 }
-    }).select('data.officer_level data.no data.name data.npc');
+      'data.officer_level': { $in: [11, 12] }
+    }).select('data.officer_level data.no data.name data.npc').lean();
+    
+    const topChiefsMap: Record<number, any> = {};
+    topChiefs.forEach((g: any) => {
+      const level = g.data?.officer_level;
+      if (level === 11 || level === 12) {
+        topChiefsMap[level] = {
+          officer_level: level,
+          no: g.data?.no || g.no,
+          name: g.data?.name || g.name || '무명',
+          npc: g.data?.npc || 0
+        };
+      }
+    });
 
+    // 재야(nation 0)는 "재야"로 표시
+    const nationName = nationId === 0 ? '재야' : (nationData.name || '무명');
+    
+    // color를 문자열로 변환 (hex 형식)
+    const nationColor = nationData.color || 0;
+    const colorStr = typeof nationColor === 'string' 
+      ? (nationColor.startsWith('#') ? nationColor : '#' + nationColor)
+      : typeof nationColor === 'number'
+      ? '#' + nationColor.toString(16).padStart(6, '0')
+      : '#000000';
+    
+    // 국가 타입 정보 가져오기
+    const typeRaw = (nationData.type || 'none').toLowerCase();
+    const typeInfo = this.getNationTypeInfo(typeRaw);
+    
     return {
       id: nationId,
       full: true,
-      name: nationData.name || '무명',
+      name: nationName,
       population: {
         cityCnt: population.cityCnt,
         now: population.popNow,
@@ -234,11 +291,11 @@ export class GetFrontInfoService {
       },
       type: {
         raw: nationData.type || 'None',
-        name: '-',
-        pros: '',
-        cons: ''
+        name: typeInfo.name,
+        pros: typeInfo.pros,
+        cons: typeInfo.cons
       },
-      color: nationData.color || 0,
+      color: colorStr,
       level: nationData.level || 0,
       capital: nationData.capital || 0,
       gold: nationData.gold || 0,
@@ -250,12 +307,7 @@ export class GetFrontInfoService {
       taxRate: nationData.rate || 10,
       onlineGen: '', // TODO: 접속자 구현
       notice: null,
-      topChiefs: topChiefs.map(g => ({
-        officer_level: g.data?.officer_level,
-        no: g.data?.no,
-        name: g.data?.name,
-        npc: g.data?.npc
-      })),
+      topChiefs: topChiefsMap,
       diplomaticLimit: nationData.surlimit || 0,
       strategicCmdLimit: nationData.strategic_cmd_limit || {},
       impossibleStrategicCommand: [],
@@ -271,6 +323,13 @@ export class GetFrontInfoService {
     const { getNationStaticInfo } = await import('../../utils/functions');
     const staticInfo = await getNationStaticInfo(0);
     
+    const color = staticInfo.color || 0;
+    const colorStr = typeof color === 'string' 
+      ? (color.startsWith('#') ? color : '#' + color)
+      : typeof color === 'number'
+      ? '#' + color.toString(16).padStart(6, '0')
+      : '#000000';
+    
     return {
       id: 0,
       full: false,
@@ -278,7 +337,7 @@ export class GetFrontInfoService {
       population: { cityCnt: 0, now: 0, max: 0 },
       crew: { generalCnt: 0, now: 0, max: 0 },
       type: { raw: staticInfo.type || 'None', name: '-', pros: '', cons: '' },
-      color: staticInfo.color || 0,
+      color: colorStr,
       level: staticInfo.level || 0,
       capital: staticInfo.capital || 0,  // 재야는 수도 없음
       gold: staticInfo.gold || 0,
@@ -289,7 +348,12 @@ export class GetFrontInfoService {
       onlineGen: '',
       notice: '',
       topChiefs: [],
-      impossibleStrategicCommand: []
+      impossibleStrategicCommand: [],
+      diplomaticLimit: 0,
+      strategicCmdLimit: {},
+      prohibitScout: 0,
+      prohibitWar: 0,
+      taxRate: 10
     };
   }
 
@@ -388,11 +452,12 @@ export class GetFrontInfoService {
       return null;
     }
 
-    const cityNationId = city.nation || 0;
+    const cityData = city.data || {};
+    const cityNationId = cityData.nation ?? city.nation ?? 0;
 
     // 도시 소속 국가 정보
     let nationName = '재야';
-    let nationColor = 0;
+    let nationColor = '#000000';
 
     if (cityNationId !== 0) {
       const nation = await (Nation as any).findOne({
@@ -401,7 +466,12 @@ export class GetFrontInfoService {
       });
       if (nation) {
         nationName = nation.data?.name || '무명';
-        nationColor = nation.data?.color || 0;
+        const color = nation.data?.color || 0;
+        nationColor = typeof color === 'string'
+          ? color.startsWith('#') ? color : '#' + color
+          : typeof color === 'number'
+          ? '#' + color.toString(16).padStart(6, '0')
+          : '#000000';
       }
     }
 
@@ -415,31 +485,52 @@ export class GetFrontInfoService {
     const officerList: any = { 4: null, 3: null, 2: null };
     officers.forEach(officer => {
       const level = officer.data?.officer_level;
-      if (level) {
+      if (level && (level === 2 || level === 3 || level === 4)) {
         officerList[level] = {
-          name: officer.data?.name,
-          npc: officer.data?.npc
+          officer_level: level,
+          name: officer.data?.name || officer.name || '무명',
+          npc: officer.data?.npc || 0
         };
       }
     });
-
+    
+    // 도시 자원 정보 (data 필드 우선, 없으면 상위 필드)
+    const pop = cityData.pop ?? city.pop ?? 0;
+    const popMax = cityData.pop_max ?? city.pop_max ?? 10000;
+    const agri = cityData.agri ?? city.agri ?? 0;
+    const agriMax = cityData.agri_max ?? city.agri_max ?? 10000;
+    const comm = cityData.comm ?? city.comm ?? 0;
+    const commMax = cityData.comm_max ?? city.comm_max ?? 10000;
+    const secu = cityData.secu ?? city.secu ?? 0;
+    const secuMax = cityData.secu_max ?? city.secu_max ?? 10000;
+    const def = cityData.def ?? city.def ?? 0;
+    const defMax = cityData.def_max ?? city.def_max ?? 10000;
+    const wall = cityData.wall ?? city.wall ?? 0;
+    const wallMax = cityData.wall_max ?? city.wall_max ?? 10000;
+    const trade = cityData.trade ?? city.trade ?? null;
+    const level = cityData.level ?? city.level ?? 0;
+    const trust = cityData.trust ?? city.trust ?? 0;
+    
+    const region = cityData.region ?? city.region ?? 0;
+    
     return {
       id: cityId,
-      name: city.name || '무명',
+      name: city.name || cityData.name || '무명',
+      region: region,
       nationInfo: {
         id: cityNationId,
         name: nationName,
         color: nationColor
       },
-      level: city.level || 0,
-      trust: city.trust || 0,
-      pop: [city.pop || 0, city.pop_max || 10000],
-      agri: [city.agri || 0, city.agri_max || 10000],
-      comm: [city.comm || 0, city.comm_max || 10000],
-      secu: [city.secu || 0, city.secu_max || 10000],
-      def: [city.def || 0, city.def_max || 10000],
-      wall: [city.wall || 0, city.wall_max || 10000],
-      trade: city.trade || 0,
+      level: level,
+      trust: trust,
+      pop: [pop, popMax],
+      agri: [agri, agriMax],
+      comm: [comm, commMax],
+      secu: [secu, secuMax],
+      def: [def, defMax],
+      wall: [wall, wallMax],
+      trade: trade,
       officerList
     };
   }
@@ -552,6 +643,40 @@ export class GetFrontInfoService {
       console.error('getReservedCommand error:', error);
       return null;
     }
+  }
+
+  /**
+   * 국가 타입 정보 가져오기
+   */
+  private static getNationTypeInfo(typeRaw: string): { name: string; pros: string; cons: string } {
+    try {
+      const typeFilePath = path.join(__dirname, '../../config/scenarios/sangokushi/data/nation-types.json');
+      if (fs.existsSync(typeFilePath)) {
+        const typeData = JSON.parse(fs.readFileSync(typeFilePath, 'utf-8'));
+        const typeInfo = typeData.nationTypes?.[typeRaw];
+        if (typeInfo) {
+          // description에서 pros/cons 추출 (예: "농상↑ 민심↑ / 쌀수입↓")
+          const description = typeInfo.description || '';
+          const parts = description.split(' / ');
+          const pros = parts[0] || '';
+          const cons = parts[1] || '';
+          
+          return {
+            name: typeInfo.name || '-',
+            pros: pros,
+            cons: cons
+          };
+        }
+      }
+    } catch (error) {
+      console.error('getNationTypeInfo error:', error);
+    }
+    
+    return {
+      name: '-',
+      pros: '',
+      cons: ''
+    };
   }
 
   /**

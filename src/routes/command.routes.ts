@@ -40,6 +40,12 @@ const router = Router();
  *           type: string
  *         description: 게임 세션 ID (생략시 기본 세션)
  *         example: sangokushi_default
+ *       - in: query
+ *         name: general_id
+ *         schema:
+ *           type: number
+ *         description: 장수 ID
+ *         example: 1
  *     responses:
  *       200:
  *         description: 예약 명령 조회 성공
@@ -191,6 +197,7 @@ router.get('/get-reserved-command', authenticate, CommandController.getReservedC
  *         description: 서버 오류
  */
 router.post('/push-command', authenticate, CommandController.pushCommand);
+router.post('/push', authenticate, CommandController.pushCommand); // 별칭 (프론트엔드 호환)
 
 /**
  * @swagger
@@ -467,5 +474,6 @@ router.post('/reserve-bulk-command', authenticate, CommandController.reserveBulk
  *         description: 서버 오류
  */
 router.post('/reserve-command', authenticate, CommandController.reserveCommand);
+router.post('/reserve', authenticate, CommandController.reserveCommand); // 별칭 (프론트엔드 호환)
 
 export default router;
