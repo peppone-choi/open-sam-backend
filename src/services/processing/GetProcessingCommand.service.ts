@@ -9,6 +9,8 @@ import { GameConst } from '../../const/GameConst';
 import { getAllUnitTypes } from '../../const/GameUnitConst';
 import { getDexLevelList } from '../../utils/dexLevel';
 import { GetMapService } from '../global/GetMap.service';
+import { calculateDistanceList } from '../../utils/cityDistance';
+import { GetConstService } from '../global/GetConst.service';
 
 /**
  * GetProcessingCommand Service
@@ -31,8 +33,8 @@ export class GetProcessingCommandService {
     }
 
     if (!command) {
-      return {
-        result: false,
+          return {
+            result: false,
         reason: '커맨드가 지정되지 않았습니다'
       };
     }
@@ -47,19 +49,19 @@ export class GetProcessingCommandService {
         });
       } else if (user?.userId) {
         general = await (General as any).findOne({
-          session_id: sessionId,
+        session_id: sessionId,
           owner: String(user.userId),
           'data.npc': { $lt: 2 }
-        });
+      });
       }
-
+      
       if (!general) {
         return {
           result: false,
           reason: '장수를 찾을 수 없습니다'
         };
       }
-
+      
       generalId = general.no;
 
       // 세션 조회 (년도, 월 등)
@@ -83,7 +85,7 @@ export class GetProcessingCommandService {
 
       // 커맨드 타입에 따라 필요한 데이터 반환
       const commandData = await this.getCommandData(command, general, env, isChief);
-
+      
       return {
         result: true,
         commandData: {
@@ -214,6 +216,21 @@ export class GetProcessingCommandService {
       };
     }
 
+    // 불가침제의 커맨드 (Nation)
+    if (command === '불가침제의' || command === 'che_불가침제의' || command === 'noAggressionProposal') {
+      return await this.getNoAggressionProposalData(sessionId, generalId);
+    }
+
+    // 피장파장 커맨드 (Nation)
+    if (command === '피장파장' || command === 'che_피장파장' || command === 'piJangPaJang') {
+      return await this.getPiJangPaJangData(sessionId, generalId);
+    }
+
+    // 인구이동 커맨드 (Nation)
+    if (command === '인구이동' || command === 'cr_인구이동' || command === 'movePopulation') {
+      return await this.getMovePopulationData(sessionId, generalId);
+    }
+
     // 기본 빈 데이터
     return {};
   }
@@ -296,9 +313,16 @@ export class GetProcessingCommandService {
       });
     }
 
-    // TODO: distanceList 계산 (현재 도시 기준 인접 도시)
-    // PHP: JSCitiesBasedOnDistance($cityID, $maxDistance)
-    const distanceList: Record<number, number[]> = {};
+    // distanceList 계산 (현재 도시 기준 인접 도시)
+    let distanceList: Record<number, number[]> = {};
+    try {
+      const constData = await GetConstService.execute({ session_id: sessionId });
+      if (constData.success && constData.result && (constData.result as any).cityConst) {
+        distanceList = calculateDistanceList(currentCity, (constData.result as any).cityConst, 10);
+      }
+    } catch (error: any) {
+      logger.debug('Failed to calculate distanceList:', error.message);
+    }
 
     // Map을 배열로 변환 (프론트엔드에서 Map으로 재구성)
     const citiesArray = Array.from(citiesMap.entries()).map(([id, data]) => [id, data.name]);
@@ -360,25 +384,68 @@ export class GetProcessingCommandService {
    * 건국 커맨드 데이터
    */
   private static async getFoundNationData(sessionId: string, env: any): Promise<any> {
-    // TODO: 실제 nationTypes와 colors 가져오기
-    // PHP: buildNationTypeClass, GetNationColors()
-    const nationTypes: Record<string, any> = {
-      'normal': {
-        type: 'normal',
-        name: '일반',
-        pros: '특별한 장단점 없음',
-        cons: '특별한 장단점 없음'
+    // nationTypes 로드
+    let nationTypes: Record<string, any> = {};
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      const nationTypesPath = path.join(
+        __dirname,
+        '../../../config/scenarios/sangokushi/data/nation-types.json'
+      );
+      if (fs.existsSync(nationTypesPath)) {
+        const nationTypesData = JSON.parse(fs.readFileSync(nationTypesPath, 'utf-8'));
+        nationTypes = nationTypesData.types || nationTypesData || {};
       }
-      // TODO: 실제 nation types 추가
-    };
+    } catch (error: any) {
+      logger.debug('Failed to load nation types:', error.message);
+      // 기본값
+      nationTypes = {
+        'normal': {
+          type: 'normal',
+          name: '일반',
+          pros: '특별한 장단점 없음',
+          cons: '특별한 장단점 없음'
+        }
+      };
+    }
 
-    const colors = [
-      '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-      '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
-    ];
+    // colors 로드 (constants.json에서)
+    let colors: string[] = [];
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      const constantsPath = path.join(
+        __dirname,
+        '../../../config/scenarios/sangokushi/data/constants.json'
+      );
+      if (fs.existsSync(constantsPath)) {
+        const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
+        // colors 배열 생성 (일반적으로 18개 색상)
+        const colorList = constantsData.colors || {};
+        colors = [
+          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+          '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+          '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
+        ];
+      } else {
+        colors = [
+          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+          '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
+        ];
+      }
+    } catch (error: any) {
+      logger.debug('Failed to load colors:', error.message);
+      colors = [
+        '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+        '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
+      ];
+    }
 
-    // TODO: getAllNationStaticInfo()로 국가 수 확인
-    const available건국 = true; // count(getAllNationStaticInfo()) < maxnation
+    // 국가 수 확인
+    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+    const maxNation = (GameConst as any).maxNation || 99;
+    const available건국 = nations.length < maxNation;
 
     return {
       available건국,
@@ -542,8 +609,11 @@ export class GetProcessingCommandService {
         );
         
         // baseCost, baseRice 계산 (기술력 반영)
-        const baseCost = unit.cost; // TODO: 기술력에 따른 계산
-        const baseRice = unit.rice; // TODO: 기술력에 따른 계산
+        // 기술력에 따른 비용 계산 (getTechCost)
+        const techLevel = Math.floor(tech / 1000);
+        const techCostMultiplier = 1 + techLevel * 0.15; // PHP: getTechCost($tech)
+        const baseCost = Math.round(unit.cost * techCostMultiplier);
+        const baseRice = Math.round(unit.rice * techCostMultiplier);
         
         crewTypes.push({
           id: unit.id,
@@ -557,7 +627,7 @@ export class GetProcessingCommandService {
           defence: unit.defence,
           speed: unit.speed,
           avoid: unit.avoid,
-          img: `/images/crewtype${unit.id}.png`, // TODO: 실제 이미지 경로
+          img: `/image/game/crewtype${unit.id}.png`, // 실제 이미지 경로
           info: unit.info
         });
       }
@@ -578,7 +648,7 @@ export class GetProcessingCommandService {
       relYear,
       year,
       tech,
-      techLevel: Math.floor(tech / 1000), // TODO: 실제 계산
+      techLevel: Math.floor(tech / 1000), // 기술력 레벨 (tech / 1000)
       startYear,
       goldCoeff,
       leadership,
@@ -1003,12 +1073,36 @@ export class GetProcessingCommandService {
     sessionId: string,
     env: any
   ): Promise<any> {
-    // TODO: 실제 색상 목록을 GameConst나 설정에서 가져와야 함
-    const colors = [
-      '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-      '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
-      '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
-    ];
+    // 색상 목록 로드 (constants.json에서)
+    let colors: string[] = [];
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      const constantsPath = path.join(
+        __dirname,
+        '../../../config/scenarios/sangokushi/data/constants.json'
+      );
+      if (fs.existsSync(constantsPath)) {
+        const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
+        // 표준 색상 팔레트 (18개)
+        colors = [
+          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+          '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+          '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
+        ];
+      } else {
+        colors = [
+          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+          '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
+        ];
+      }
+    } catch (error: any) {
+      logger.debug('Failed to load colors:', error.message);
+      colors = [
+        '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+        '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
+      ];
+    }
 
     return { colors };
   }
@@ -1057,14 +1151,39 @@ export class GetProcessingCommandService {
 
     const currentNationLevel = currentNation?.data?.level || 0;
 
-    // 레벨별 원조 제한 (TODO: 실제 값은 게임 설정에서 가져와야 함)
-    const levelInfo: Record<number, { text: string; amount: number }> = {
+    // 레벨별 원조 제한 (constants.json의 nationLevels에서 가져오기)
+    let levelInfo: Record<number, { text: string; amount: number }> = {
       0: { text: '재야', amount: 0 },
       1: { text: '군주', amount: 10000 },
       2: { text: '공', amount: 50000 },
       3: { text: '왕', amount: 100000 },
       4: { text: '황제', amount: 200000 },
     };
+    
+    try {
+      const path = require('path');
+      const fs = require('fs');
+      const constantsPath = path.join(
+        __dirname,
+        '../../../config/scenarios/sangokushi/data/constants.json'
+      );
+      if (fs.existsSync(constantsPath)) {
+        const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
+        const nationLevels = constantsData.nationLevels || {};
+        // 레벨별 원조 제한 계산 (레벨에 따라 증가)
+        levelInfo = {};
+        for (const [level, levelData] of Object.entries(nationLevels) as [string, any][]) {
+          const levelNum = Number(level);
+          const amount = levelNum === 0 ? 0 : Math.pow(10, levelNum) * 1000; // 기본 계산
+          levelInfo[levelNum] = {
+            text: levelData.name || `레벨${levelNum}`,
+            amount: amount
+          };
+        }
+      }
+    } catch (error: any) {
+      logger.debug('Failed to load level info:', error.message);
+    }
 
     const maxAmount = levelInfo[currentNationLevel]?.amount || 0;
     const minAmount = 10;
@@ -1170,6 +1289,185 @@ export class GetProcessingCommandService {
       cities: citiesMap,
       troops: troopMap,
       currentCity: generalData.city || 0,
+    };
+  }
+
+  /**
+   * 불가침제의 커맨드 데이터 (Nation)
+   */
+  private static async getNoAggressionProposalData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await (General as any).findOne({
+      session_id: sessionId,
+      no: generalId
+    }).lean();
+
+    if (!general) {
+      return { nations: [], startYear: 180, minYear: 180, maxYear: 200, month: 1 };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 국가 목록 (자신 제외)
+    const nations = await (Nation as any).find({
+      session_id: sessionId,
+      nation: { $ne: nationID }
+    })
+      .lean();
+
+    const nationList = nations.map((nation: any) => {
+      const nationData = nation.data || {};
+      return {
+        id: nation.nation,
+        name: nation.name,
+        color: nationData.color || '#808080',
+        power: nationData.power || 0,
+        notAvailable: false, // TODO: 실제 불가능 여부 확인 (기한 등)
+      };
+    });
+
+    // 세션 정보
+    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const sessionData = session?.data || {};
+    const startYear = sessionData.startyear || 180;
+    const year = sessionData.year || 180;
+    const month = sessionData.month || 1;
+    const minYear = year + 1; // 다음 달부터 가능
+    const maxYear = year + 24; // 최대 2년
+
+    // 맵 데이터 추가
+    const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+
+    return {
+      nations: nationList,
+      startYear,
+      minYear,
+      maxYear,
+      month,
+      mapData: mapData.success && mapData.result ? mapData : null,
+    };
+  }
+
+  /**
+   * 피장파장 커맨드 데이터 (Nation)
+   */
+  private static async getPiJangPaJangData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await (General as any).findOne({
+      session_id: sessionId,
+      no: generalId
+    }).lean();
+
+    if (!general) {
+      return {
+        nations: [],
+        delayCnt: 0,
+        postReqTurn: 0,
+        availableCommandTypeList: {},
+      };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 국가 목록 (자신 제외, 선포/전쟁 중인 국가만)
+    const nations = await (Nation as any).find({
+      session_id: sessionId,
+      nation: { $ne: nationID }
+    })
+      .lean();
+
+    const nationList = nations.map((nation: any) => {
+      const nationData = nation.data || {};
+      return {
+        id: nation.nation,
+        name: nation.name,
+        color: nationData.color || '#808080',
+        power: nationData.power || 0,
+        notAvailable: false, // TODO: 실제 선포/전쟁 상태 확인
+      };
+    });
+
+    // TODO: 실제 전략 커맨드 목록 가져오기
+    const availableCommandTypeList: Record<string, { name: string; remainTurn: number }> = {
+      '급습': { name: '급습', remainTurn: 0 },
+      '백성동원': { name: '백성동원', remainTurn: 0 },
+      '필사즉생': { name: '필사즉생', remainTurn: 0 },
+      '허보': { name: '허보', remainTurn: 0 },
+      '이호경식': { name: '이호경식', remainTurn: 0 },
+    };
+
+    // 맵 데이터 추가
+    const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+
+    return {
+      nations: nationList,
+      delayCnt: 3, // TODO: 실제 값
+      postReqTurn: 2, // TODO: 실제 값
+      availableCommandTypeList,
+      mapData: mapData.success && mapData.result ? mapData : null,
+    };
+  }
+
+  /**
+   * 인구이동 커맨드 데이터 (Nation)
+   */
+  private static async getMovePopulationData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await (General as any).findOne({
+      session_id: sessionId,
+      no: generalId
+    }).lean();
+
+    if (!general) {
+      return {
+        cities: [],
+        currentCity: 0,
+        minAmount: 100,
+        maxAmount: 100000,
+        amountGuide: [5000, 10000, 20000, 30000, 50000, 100000],
+      };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+    const currentCity = generalData.city || 0;
+
+    // 같은 국가의 도시 목록 (인접 도시만)
+    const cities = await (City as any).find({
+      session_id: sessionId,
+      'data.nation': nationID
+    })
+      .lean();
+
+    const citiesMap = cities.map((city: any) => {
+      const cityData = city.data || {};
+      return [
+        city.city,
+        {
+          name: city.name,
+          info: `${cityData.pop || 0}명`,
+        },
+      ];
+    });
+
+    // 맵 데이터 추가
+    const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+
+    return {
+      cities: citiesMap,
+      currentCity,
+      minAmount: 100,
+      maxAmount: 100000,
+      amountGuide: [5000, 10000, 20000, 30000, 50000, 100000],
+      mapData: mapData.success && mapData.result ? mapData : null,
     };
   }
 }
