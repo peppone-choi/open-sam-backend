@@ -37,10 +37,27 @@ const KVStorageSchema = new Schema<IKVStorage>(
 // 복합 인덱스: namespace + key 조합은 유일해야 함
 KVStorageSchema.index({ namespace: 1, key: 1 }, { unique: true });
 
-export const KVStorageModel: Model<IKVStorage> = mongoose.model<IKVStorage>(
-  'KVStorage',
-  KVStorageSchema
-);
+// 모델이 이미 컴파일되었는지 확인하고, 없을 때만 생성
+// 기존 모델이 있어도 스키마에 namespace 필드가 없으면 재생성
+let KVStorageModel: Model<IKVStorage>;
+
+if (mongoose.models['KVStorage']) {
+  const existingModel = mongoose.models['KVStorage'] as Model<IKVStorage>;
+  // 스키마에 namespace 필드가 있는지 확인
+  const schema = existingModel.schema;
+  if (schema.paths['namespace']) {
+    KVStorageModel = existingModel;
+  } else {
+    // namespace 필드가 없으면 모델 삭제 후 재생성
+    delete mongoose.models['KVStorage'];
+    delete mongoose.connection.models['KVStorage'];
+    KVStorageModel = mongoose.model<IKVStorage>('KVStorage', KVStorageSchema);
+  }
+} else {
+  KVStorageModel = mongoose.model<IKVStorage>('KVStorage', KVStorageSchema);
+}
+
+export { KVStorageModel };
 
 
 

@@ -264,6 +264,35 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'block_create') {
       session.data.block_general_create = data.block_create !== undefined ? data.block_create : 0;
+    } else if (action === 'fix_turntime') {
+      // turntime 수정 (분 단위)
+      const minutes = parseInt(data.minutes || '60', 10);
+      const now = new Date();
+      const newTurntime = new Date(now.getTime() + minutes * 60 * 1000);
+      session.data.turntime = newTurntime.toISOString();
+    } else if (action === 'fix_age') {
+      // 비정상적으로 높은 나이를 수정
+      const maxAge = data?.maxAge || 200;
+      const fixedAge = data?.fixedAge || 30; // 기본값: 30살
+      
+      const result = await (General as any).updateMany(
+        {
+          session_id: sessionId,
+          'data.age': { $gt: maxAge }
+        },
+        {
+          $set: { 
+            'data.age': fixedAge,
+            'data.age_month': 0
+          }
+        }
+      );
+      
+      return res.json({
+        result: true,
+        reason: `${result.modifiedCount}명의 장수 나이를 ${fixedAge}살로 수정했습니다`,
+        modifiedCount: result.modifiedCount
+      });
     }
     
     await session.save();

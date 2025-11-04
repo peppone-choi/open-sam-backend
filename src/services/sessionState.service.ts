@@ -18,8 +18,9 @@ function getRedisClient(): Redis {
     if (url) {
       redisClient = new Redis(url, {
         connectTimeout: 5000,
-        enableOfflineQueue: false,
-        maxRetriesPerRequest: 1,
+        enableOfflineQueue: true,
+        maxRetriesPerRequest: 3,
+        retryStrategy: (times) => Math.min(times * 200, 2000),
       });
     } else {
       redisClient = new Redis({
@@ -28,8 +29,9 @@ function getRedisClient(): Redis {
         password: process.env.REDIS_PASSWORD,
         db: parseInt(process.env.REDIS_DB || '0'),
         connectTimeout: 5000,
-        enableOfflineQueue: false,
-        maxRetriesPerRequest: 1,
+        enableOfflineQueue: true,
+        maxRetriesPerRequest: 3,
+        retryStrategy: (times) => Math.min(times * 200, 2000),
       });
     }
   }
@@ -339,4 +341,5 @@ export class SessionStateService {
     }
   }
 }
+
 

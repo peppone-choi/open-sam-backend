@@ -54,7 +54,7 @@ export class GetOfficerInfoService {
       
       const generalData = general.data || {};
       const nationId = generalData.nation || 0;
-      const actualGeneralId = generalData.no || actualGeneralId;
+      actualGeneralId = generalData.no || actualGeneralId;
       
       if (nationId === 0) {
         return {

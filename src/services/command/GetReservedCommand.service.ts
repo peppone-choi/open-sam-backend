@@ -130,16 +130,52 @@ export class GetReservedCommandService {
     const year = gameEnv.year || sessionData.year || 180;
     let month = gameEnv.month || sessionData.month || 1;
     const lastExecute = gameEnv.turntime || sessionData.turntime || new Date();
-    const turnTime = general.data?.turntime || new Date();
+    
+    // general.data.turntime이 있으면 사용, 없으면 현재 시간 기준으로 계산만 (DB 저장 안 함)
+    let turnTime = general.data?.turntime;
+    if (!turnTime) {
+      // turntime이 없으면 현재 시간 기준으로 다음 턴 시간 계산 (표시용만)
+      const turnTermInSeconds = turnTermInMinutes * 60;
+      
+      const cutTurnFunc = (time: Date, term: number): Date => {
+        const timeInSeconds = Math.floor(time.getTime() / 1000);
+        const cutSeconds = Math.floor(timeInSeconds / term) * term;
+        return new Date(cutSeconds * 1000);
+      };
+      
+      const addTurnFunc = (time: Date, term: number): Date => {
+        return new Date(time.getTime() + term * 1000);
+      };
+      
+      const now = new Date();
+      const cutNow = cutTurnFunc(now, turnTermInSeconds);
+      const nextTurnTime = addTurnFunc(cutNow, turnTermInSeconds);
+      
+      turnTime = nextTurnTime.getTime() <= now.getTime() 
+        ? addTurnFunc(nextTurnTime, turnTermInSeconds)
+        : nextTurnTime;
+      
+      // DB에는 저장하지 않음 (조회 API이므로 읽기 전용)
+      // 실제 turntime은 ExecuteEngine에서만 업데이트
+    } else if (typeof turnTime === 'string') {
+      turnTime = new Date(turnTime);
+    } else if (!(turnTime instanceof Date)) {
+      turnTime = new Date(turnTime);
+    }
+    
+    // turnTime은 그대로 사용 (과거 시간이어도 수정하지 않음)
+    // 실제 턴 시간 업데이트는 ExecuteEngine.updateTurnTime에서만 수행
 
     const cutTurn = (time: Date, term: number) => {
       return Math.floor(new Date(time).getTime() / (term * 1000));
     };
 
     if (cutTurn(turnTime, turnTerm) > cutTurn(lastExecute, turnTerm)) {
+      // 이미 이번달에 실행된 턴이다. (PHP 버전과 동일)
       month++;
       if (month >= 13) {
-        month = 1;
+        month -= 12;
+        year += 1;
       }
     }
 
@@ -200,7 +236,7 @@ export class GetReservedCommandService {
       success: true,
       result: true,
       turnTime: turnTime instanceof Date ? turnTime.toISOString() : new Date(turnTime).toISOString(),
-      turnTerm,
+      turnTerm: turnTermInMinutes, // PHP 버전과 동일하게 분 단위로 반환
       year,
       month,
       date: new Date().toISOString(),
@@ -208,4 +244,5 @@ export class GetReservedCommandService {
       autorun_limit: general.data?.aux?.autorun_limit || null
     };
   }
+
 }

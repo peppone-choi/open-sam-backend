@@ -27,7 +27,7 @@ export class InstallService {
   static async checkInstallation(): Promise<boolean> {
     try {
       // MongoDB 연결 확인
-      if (!mongoConnection.isConnected()) {
+      if (!mongoConnection.getStatus()) {
         return false;
       }
 
@@ -50,7 +50,7 @@ export class InstallService {
   static async testDatabaseConnection(mongodbUri: string): Promise<InstallResult> {
     try {
       // 기존 연결이 있으면 닫기
-      if (mongoConnection.isConnected()) {
+      if (mongoConnection.getStatus()) {
         await mongoose.disconnect();
       }
 
@@ -232,4 +232,5 @@ export class InstallService {
     return require('crypto').randomBytes(16).toString('hex');
   }
 }
+
 

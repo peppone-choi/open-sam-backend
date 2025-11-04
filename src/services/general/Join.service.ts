@@ -46,8 +46,17 @@ export class JoinService {
       // city 파라미터가 있으면 inheritCity로 사용 (도시 선택)
       const inheritCity = cityParam !== undefined && cityParam !== null ? cityParam : inheritCityParam;
 
-      // 2. 이름 정제
+      // 2. 이름 검증 및 정제
+      if (!rawName || typeof rawName !== 'string' || rawName.trim().length === 0) {
+        return { success: false, message: '장수명을 입력해주세요.' };
+      }
+      
       let name = this.sanitizeName(rawName);
+      
+      // sanitizeName 후에도 이름이 비어있으면 에러
+      if (!name || name.trim().length === 0) {
+        return { success: false, message: '유효한 장수명을 입력해주세요. (특수문자만 입력할 수 없습니다)' };
+      }
 
       // 3. 세션 및 게임 환경 로드
       const session = await (Session as any).findOne({ session_id: sessionId });
@@ -198,46 +207,97 @@ export class JoinService {
       const generalNo = (lastGeneral?.no || 0) + 1;
 
       // 21. 장수 생성
-      const newGeneral = await (General as any).create({
-        no: generalNo,
-        session_id: sessionId,
-        owner: String(userId),
-        name: name,
-        picture: faceResult.picture,
-        data: {
-          owner_name: user?.name || 'Unknown',
-          imgsvr: faceResult.imgsvr,
-          nation: 0, // 야인으로 시작
-          city: bornCity.city,
-          troop: 0,
-          affinity: affinity,
-          leadership: finalLeadership,
-          strength: finalStrength,
-          intel: finalIntel,
-          experience: experience,
-          dedication: 0,
-          gold: gameEnv.defaultGold || 1000,
-          rice: gameEnv.defaultRice || 1000,
-          crew: 0,
-          train: 0,
-          atmos: 0,
-          officer_level: 0,
-          turntime: turntime,
-          killturn: 6,
-          crewtype: gameEnv.defaultCrewtype || 0,
-          makelimit: 0,
-          betray: betray,
-          age: age,
-          startage: age,
-          personal: personality,
-          specage: specialResult.specage,
-          special: specialResult.special,
-          specage2: specialResult.specage2,
-          special2: specialResult.special2,
-          penalty: {},
-          npc: 0
+      let newGeneral;
+      try {
+        const generalData = {
+          no: generalNo,
+          session_id: sessionId,
+          owner: String(userId),
+          name: name,
+          picture: faceResult.picture,
+          data: {
+            owner_name: user?.name || 'Unknown',
+            imgsvr: faceResult.imgsvr,
+            nation: 0, // 야인으로 시작
+            city: bornCity.city,
+            troop: 0,
+            affinity: affinity,
+            leadership: finalLeadership,
+            strength: finalStrength,
+            intel: finalIntel,
+            experience: experience,
+            dedication: 0,
+            gold: gameEnv.defaultGold || 1000,
+            rice: gameEnv.defaultRice || 1000,
+            crew: 0,
+            train: 0,
+            atmos: 0,
+            officer_level: 0,
+            turntime: turntime,
+            killturn: 6,
+            crewtype: gameEnv.defaultCrewtype || 0,
+            makelimit: 0,
+            betray: betray,
+            age: age,
+            startage: age,
+            personal: personality,
+            specage: specialResult.specage,
+            special: specialResult.special,
+            specage2: specialResult.specage2,
+            special2: specialResult.special2,
+            penalty: {},
+            npc: 0
+          }
+        };
+        
+        // 최종 name 검증 (빈 문자열이면 에러)
+        if (!name || name.trim().length === 0) {
+          return {
+            success: false,
+            message: '장수명이 비어있습니다. 유효한 이름을 입력해주세요.'
+          };
         }
-      });
+        
+        console.log('[Join] Creating general with data:', {
+          no: generalNo,
+          session_id: sessionId,
+          owner: String(userId),
+          name: name,
+          nameLength: name.length,
+          picture: faceResult.picture,
+          dataKeys: Object.keys(generalData.data)
+        });
+        
+        newGeneral = await (General as any).create(generalData);
+        console.log('[Join] General created successfully:', newGeneral.no);
+      } catch (createError: any) {
+        console.error('[Join] General creation failed:', {
+          error: createError.message,
+          stack: createError.stack,
+          name: createError.name || createError.constructor?.name || 'Unknown',
+          code: createError.code || null,
+          errors: createError.errors || null
+        });
+        
+        // Mongoose ValidationError 처리
+        if (createError.name === 'ValidationError') {
+          const validationErrors = Object.values(createError.errors || {}).map((err: any) => `${err.path}: ${err.message}`);
+          return {
+            success: false,
+            message: `유효성 검사 실패: ${validationErrors.join(', ')}`
+          };
+        }
+        
+        // Unique index 위반 (중복 키)
+        if (createError.code === 11000) {
+          return {
+            success: false,
+            message: `장수 번호 ${generalNo}가 이미 존재합니다. 다시 시도해주세요.`
+          };
+        }
+        
+        throw createError; // 다른 에러는 상위 catch로 전달
+      }
 
       // 22. 턴 슬롯 생성 (최대 턴까지 휴식으로 채움)
       const turnRows = [];
@@ -349,11 +409,19 @@ export class JoinService {
   }
 
   private static sanitizeName(name: string): string {
-    // HTML 특수문자 제거, 공백 정리
-    return name
-      .replace(/<[^>]*>/g, '')
-      .replace(/[^\w\s가-힣]/g, '')
-      .trim();
+    // PHP 버전과 동일한 로직: StringUtil::removeSpecialCharacter + textStrip
+    // 1. HTML 태그 제거 (htmlPurify)
+    let sanitized = name.replace(/<[^>]*>/g, '');
+    
+    // 2. 특정 특수문자 제거 (removeSpecialCharacter)
+    // PHP: ["'ⓝⓜⓖⓞⓧ㉥\\\/`#|\-] 제거
+    sanitized = sanitized.replace(/["'ⓝⓜⓖⓞⓧ㉥\\\/`#|\-]/g, '');
+    
+    // 3. 앞뒤 공백/제어문자 제거 (textStrip)
+    // PHP: preg_replace('/^[\pZ\pC]+|[\pZ\pC]+$/u','',$str)
+    sanitized = sanitized.replace(/^[\p{Z}\p{C}]+|[\p{Z}\p{C}]+$/gu, '');
+    
+    return sanitized;
   }
 
   private static getStringWidth(str: string): number {
@@ -659,25 +727,38 @@ export class JoinService {
     rng: number
   ): Date {
     const turnterm = gameEnv.turnterm || 60; // 분 단위 (기본 60분)
-    const baseTurntime = new Date(gameEnv.turntime || Date.now());
+    const now = new Date();
+    
+    // 현재 시간을 기준으로 다음 턴 시간 계산
+    // 오늘 자정부터 계산
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
     if (inheritTurntimeZone !== null && inheritTurntimeZone !== undefined) {
+      // 유산 턴타임 존 사용
       const inheritMinutes = inheritTurntimeZone * turnterm; // turnterm은 이미 분 단위
       const additionalSeconds = rng % Math.max(turnterm * 60 - 1, 1); // 분을 초로 변환
       const totalSeconds = inheritMinutes * 60 + additionalSeconds;
       
-      const turntime = new Date(baseTurntime.getTime());
-      turntime.setHours(0, 0, 0, 0);
+      let turntime = new Date(todayMidnight.getTime());
       turntime.setSeconds(totalSeconds);
+      
+      // 턴 시간이 현재 시간보다 과거면 다음 날로 설정
+      if (turntime.getTime() < now.getTime()) {
+        turntime = new Date(turntime.getTime() + (24 * 60 * 60 * 1000));
+      }
       
       return turntime;
     }
 
-    // 랜덤 턴타임
+    // 랜덤 턴타임 (오늘 자정부터 24시간 내)
     const randomMinutes = rng % (24 * 60);
-    const turntime = new Date(baseTurntime.getTime());
-    turntime.setHours(0, 0, 0, 0);
+    let turntime = new Date(todayMidnight.getTime());
     turntime.setMinutes(randomMinutes);
+    
+    // 턴 시간이 현재 시간보다 과거면 다음 날로 설정
+    if (turntime.getTime() < now.getTime()) {
+      turntime = new Date(turntime.getTime() + (24 * 60 * 60 * 1000));
+    }
     
     return turntime;
   }

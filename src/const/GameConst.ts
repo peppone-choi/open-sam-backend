@@ -15,4 +15,5 @@ export const GameConst = {
   npcSeizureMessageProb: 0.5,
   initialNationGenLimit: 10,
   coefAidAmount: 10000,
+  minGoldRequiredWhenBetting: 0, // 베팅 시 최소 필요 금액
 };

@@ -95,17 +95,20 @@ export class GetMapService {
 
       // Get nation list
       const nations = await (Nation as any).find({ session_id: sessionId })
-        .select('nation name data')
+        .select('nation name color capital data')
         .lean();
 
       const nationList: any[] = [];
       for (const nation of nations) {
         const nationData = nation.data as any || {};
+        const color = nation.color || nationData.color || '#000000';
+        const capital = nation.capital ?? nationData.capital ?? 0;
+        
         nationList.push([
           nation.nation,
-          nation.name,
-          nationData.color || '#000000',
-          nationData.capital || 0
+          nation.name || nationData.name || '무명',
+          color,
+          capital
         ]);
       }
 
@@ -129,21 +132,32 @@ export class GetMapService {
 
       // Get city list
       const cities = await (City as any).find({ session_id: sessionId })
-        .select('city name level state nation region supply x y')
+        .select('city name level state nation region supply x y data')
         .lean();
 
       const cityList: any[] = [];
       for (const city of cities) {
+        // data 필드 폴백 (MongoDB 스키마 유연성 대응)
+        const d = (city as any).data || {};
+        const level = city.level ?? d.level ?? 0;
+        const state = city.state ?? d.state ?? 0;
+        const nation = city.nation ?? d.nation ?? 0;
+        const region = city.region ?? d.region ?? 0;
+        const supply = city.supply ?? d.supply ?? 0;
+        const name = city.name || d.name || '';
+        const x = city.x ?? d.x ?? 0;
+        const y = city.y ?? d.y ?? 0;
+        
         cityList.push([
           city.city,
-          city.level || 0,
-          city.state || 0,
-          city.nation || 0,
-          city.region || 0,
-          city.supply || 0,
-          city.name || '',
-          city.x || 0,
-          city.y || 0
+          level,
+          state,
+          nation,
+          region,
+          supply,
+          name,
+          x,
+          y
         ]);
       }
 

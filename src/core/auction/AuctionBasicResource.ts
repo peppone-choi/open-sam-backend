@@ -87,8 +87,9 @@ export abstract class AuctionBasicResource extends Auction {
    * 더미 General 생성
    */
   static genDummy(initFullLogger: boolean = true): IGeneral {
-    // TODO: DummyGeneral 구현
-    throw new Error('DummyGeneral 구현 필요');
+    // sessionId는 나중에 설정
+    const { DummyGeneral } = require('./DummyGeneral');
+    return new DummyGeneral('') as any;
   }
 
   /**

@@ -112,3 +112,4 @@ const socket = io('http://localhost:8080', {
 - `battle:{battleId}` - 전투별 이벤트
 - `turn:{sessionId}` - 턴 완료 알림
 
+

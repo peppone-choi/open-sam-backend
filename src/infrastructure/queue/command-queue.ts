@@ -81,9 +81,13 @@ export class CommandQueue {
       await client.xgroup('CREATE', this.streamName, groupName, '0', 'MKSTREAM');
       logger.info('Consumer Group 생성 완료', { groupName, streamName: this.streamName });
     } catch (error: any) {
-      if (!error.message?.includes('BUSYGROUP')) {
-        throw error;
+      // BUSYGROUP 오류는 Consumer Group이 이미 존재하는 경우이므로 무시
+      if (error.message?.includes('BUSYGROUP')) {
+        logger.debug('Consumer Group이 이미 존재함', { groupName, streamName: this.streamName });
+        return; // 정상적으로 진행
       }
+      // 기타 오류는 다시 throw
+      throw error;
     }
 
     const result = await client.xreadgroup(

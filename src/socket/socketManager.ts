@@ -33,7 +33,12 @@ export class SocketManager {
         methods: ['GET', 'POST']
       },
       path: '/socket.io',
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      pingTimeout: 60000, // 60초
+      pingInterval: 25000, // 25초
+      allowEIO3: true, // Engine.IO v3 호환성
+      upgradeTimeout: 30000, // 30초
+      maxHttpBufferSize: 1e6 // 1MB
     });
 
     // 핸들러 초기화
@@ -67,7 +72,7 @@ export class SocketManager {
 
       // JWT 검증
       const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-      const decoded = jwt.verify(token, secret) as JwtPayload;
+      const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
 
       // 소켓에 사용자 정보 저장
       (socket as any).user = decoded;
@@ -104,11 +109,21 @@ export class SocketManager {
     this.nationHandler.handleConnection(socket);
 
     // 연결 해제 처리
-    socket.on('disconnect', (reason) => {
-      console.log(`📡 소켓 연결 해제: ${socket.id} (이유: ${reason})`);
+    socket.on('disconnect', (reason: string) => {
+      // HMR이나 클라이언트 disconnect는 로그만 (정상 동작)
+      if (reason === 'io client disconnect' || reason === 'transport close') {
+        console.log(`📡 소켓 연결 해제 (정상): ${socket.id} (이유: ${reason})`);
+      } else {
+        console.log(`📡 소켓 연결 해제: ${socket.id} (이유: ${reason})`);
+      }
       if (userId) {
         socket.leave(`user:${userId}`);
       }
+    });
+
+    // 에러 처리
+    socket.on('error', (error) => {
+      console.error(`📡 소켓 에러: ${socket.id}`, error);
     });
 
     // 연결 성공 메시지
@@ -230,4 +245,5 @@ export function initializeSocket(httpServer: HTTPServer): SocketManager {
 export function getSocketManager(): SocketManager | null {
   return socketManagerInstance;
 }
+
 

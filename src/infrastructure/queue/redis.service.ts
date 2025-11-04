@@ -30,9 +30,16 @@ export class RedisService {
         return delay;
       },
       reconnectOnError(err) {
+        // BUSYGROUP 오류는 재연결하지 않음 (Consumer Group이 이미 존재하는 경우)
+        if (err.message?.includes('BUSYGROUP')) {
+          logger.debug('Redis BUSYGROUP 오류 (Consumer Group이 이미 존재함)', { error: err.message });
+          return false;
+        }
+        // 기타 오류는 재연결 시도
         logger.warn('Redis reconnect on error', { error: err.message });
         return true;
-      }
+      },
+      enableOfflineQueue: true
     });
 
     this.client.on('connect', () => {

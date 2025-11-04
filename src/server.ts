@@ -15,6 +15,30 @@ import { CommandRegistry } from './core/command';
 import { swaggerSpec } from './config/swagger';
 import { autoExtractToken } from './middleware/auth';
 import { initializeSocket } from './socket/socketManager';
+import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
+import sessionRoutes from './routes/session.routes';
+import generalRoutes from './routes/general.routes';
+import battleRoutes from './routes/battle.routes';
+import battlemapRoutes from './routes/battlemap-editor.routes';
+import auctionRoutes from './routes/auction.routes';
+import bettingRoutes from './routes/betting.routes';
+import messageRoutes from './routes/message.routes';
+import voteRoutes from './routes/vote.routes';
+import loginRoutes from './routes/login.routes';
+import gatewayRoutes from './routes/gateway.routes';
+import adminRoutes from './routes/admin.routes';
+import joinRoutes from './routes/join.routes';
+import boardRoutes from './routes/board.routes';
+import diplomacyRoutes from './routes/diplomacy.routes';
+import infoRoutes from './routes/info.routes';
+import worldRoutes from './routes/world.routes';
+import npcRoutes from './routes/npc.routes';
+import chiefRoutes from './routes/chief.routes';
+import processingRoutes from './routes/processing.routes';
+import installRoutes from './routes/install.routes';
+import oauthRoutes from './routes/oauth.routes';
+import archiveRoutes from './routes/archive.routes';
+import tournamentRoutes from './routes/tournament.routes';
 
 dotenv.config();
 
@@ -48,7 +72,6 @@ export async function createApp(): Promise<Express> {
   app.use(express.urlencoded({ extended: true }));
   
   // Session 미들웨어
-  import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
   app.use(setupSessionMiddleware());
   app.use(sessionMiddleware);
   
@@ -80,26 +103,6 @@ export async function createApp(): Promise<Express> {
   mountRoutes(app);
   
   // 추가 라우트 (테스트용)
-  import sessionRoutes from './routes/session.routes';
-  import generalRoutes from './routes/general.routes';
-  import battleRoutes from './routes/battle.routes';
-  import battlemapRoutes from './routes/battlemap-editor.routes';
-  import auctionRoutes from './routes/auction.routes';
-  import bettingRoutes from './routes/betting.routes';
-  import messageRoutes from './routes/message.routes';
-  import voteRoutes from './routes/vote.routes';
-  import loginRoutes from './routes/login.routes';
-  import gatewayRoutes from './routes/gateway.routes';
-  import adminRoutes from './routes/admin.routes';
-  import joinRoutes from './routes/join.routes';
-  import boardRoutes from './routes/board.routes';
-  import diplomacyRoutes from './routes/diplomacy.routes';
-  import infoRoutes from './routes/info.routes';
-  import worldRoutes from './routes/world.routes';
-  import npcRoutes from './routes/npc.routes';
-  import chiefRoutes from './routes/chief.routes';
-  import processingRoutes from './routes/processing.routes';
-  
   app.use('/api/session', sessionRoutes);
   app.use('/api/general', generalRoutes);
   app.use('/api/battle', battleRoutes);
@@ -155,7 +158,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session 미들웨어 (express-session 또는 기본)
-import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
 app.use(setupSessionMiddleware());
 app.use(sessionMiddleware);
 
@@ -209,30 +211,6 @@ app.get('/api-docs.json', (_req: Request, res: Response) => {
 mountRoutes(app);
 
 // 새로운 라우트 추가
-import sessionRoutes from './routes/session.routes';
-import generalRoutes from './routes/general.routes';
-import battleRoutes from './routes/battle.routes';
-import battlemapRoutes from './routes/battlemap-editor.routes';
-import auctionRoutes from './routes/auction.routes';
-import bettingRoutes from './routes/betting.routes';
-import messageRoutes from './routes/message.routes';
-import voteRoutes from './routes/vote.routes';
-import loginRoutes from './routes/login.routes';
-import gatewayRoutes from './routes/gateway.routes';
-import adminRoutes from './routes/admin.routes';
-import joinRoutes from './routes/join.routes';
-import boardRoutes from './routes/board.routes';
-import diplomacyRoutes from './routes/diplomacy.routes';
-import infoRoutes from './routes/info.routes';
-import worldRoutes from './routes/world.routes';
-import npcRoutes from './routes/npc.routes';
-import chiefRoutes from './routes/chief.routes';
-import processingRoutes from './routes/processing.routes';
-import installRoutes from './routes/install.routes';
-import oauthRoutes from './routes/oauth.routes';
-import archiveRoutes from './routes/archive.routes';
-import tournamentRoutes from './routes/tournament.routes';
-
 app.use('/api/session', sessionRoutes);
 app.use('/api/general', generalRoutes);
 app.use('/api/battle', battleRoutes);
@@ -262,10 +240,17 @@ app.use(errorMiddleware);
 
 async function start() {
   try {
+    // 한국 시간대(Asia/Seoul, UTC+9) 설정
+    if (!process.env.TZ) {
+      process.env.TZ = 'Asia/Seoul';
+    }
+    
     logger.info('서버 시작 중...', {
       nodeEnv: process.env.NODE_ENV || 'development',
       port: PORT,
-      nodeVersion: process.version
+      nodeVersion: process.version,
+      timezone: process.env.TZ,
+      currentTime: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
     });
 
     // MongoDB 연결

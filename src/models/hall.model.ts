@@ -71,3 +71,4 @@ HallSchema.index({ season: 1, scenario: 1, type: 1, value: -1 });
 
 export const Hall = mongoose.model<IHall>('Hall', HallSchema);
 
+

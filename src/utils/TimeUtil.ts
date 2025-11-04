@@ -18,17 +18,25 @@ export class TimeUtil {
    */
   static now(withFraction: boolean = false): string {
     const now = new Date();
+    // 한국 시간대(Asia/Seoul, UTC+9)로 변환
+    // 시스템이 이미 한국 시간대면 로컬 시간 사용, 아니면 UTC+9 적용
+    // process.env.TZ가 설정되어 있으면 Node.js가 자동으로 처리
+    const kstOffset = 9 * 60 * 60 * 1000; // 9시간 (밀리초)
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000); // UTC 기준 시간
+    const kstTime = new Date(utcTime + kstOffset);
+    
+    const year = kstTime.getUTCFullYear();
+    const month = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(kstTime.getUTCDate()).padStart(2, '0');
+    const hours = String(kstTime.getUTCHours()).padStart(2, '0');
+    const minutes = String(kstTime.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(kstTime.getUTCSeconds()).padStart(2, '0');
+    
     if (withFraction) {
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+      const milliseconds = String(kstTime.getUTCMilliseconds()).padStart(3, '0');
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
     }
-    return now.toISOString().slice(0, 19).replace('T', ' ');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
 
   /**
@@ -102,17 +110,22 @@ export class TimeUtil {
    * Date 객체를 문자열로 포맷팅
    */
   static format(dateTime: Date, withFraction: boolean): string {
-    const year = dateTime.getFullYear();
-    const month = String(dateTime.getMonth() + 1).padStart(2, '0');
-    const day = String(dateTime.getDate()).padStart(2, '0');
-    const hours = String(dateTime.getHours()).padStart(2, '0');
-    const minutes = String(dateTime.getMinutes()).padStart(2, '0');
-    const seconds = String(dateTime.getSeconds()).padStart(2, '0');
+    // 한국 시간대(Asia/Seoul, UTC+9)로 변환
+    const kstOffset = 9 * 60 * 60 * 1000; // 9시간 (밀리초)
+    const utcTime = dateTime.getTime() + (dateTime.getTimezoneOffset() * 60 * 1000); // UTC 기준 시간
+    const kstTime = new Date(utcTime + kstOffset);
+    
+    const year = kstTime.getUTCFullYear();
+    const month = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(kstTime.getUTCDate()).padStart(2, '0');
+    const hours = String(kstTime.getUTCHours()).padStart(2, '0');
+    const minutes = String(kstTime.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(kstTime.getUTCSeconds()).padStart(2, '0');
     
     if (!withFraction) {
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
-    const milliseconds = String(dateTime.getMilliseconds()).padStart(3, '0');
+    const milliseconds = String(kstTime.getUTCMilliseconds()).padStart(3, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
   }
 
