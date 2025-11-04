@@ -28,17 +28,25 @@ export function getVirtualPower(...args: any[]): number {
 
 import { Nation } from '../models';
 
+// 국가 정적 정보 캐시 (PHP의 static $nationList와 동일한 역할)
+let nationListCache: Record<number, any> | null = null;
+
 /**
  * 국가의 정적 정보 조회 (PHP func.php의 getNationStaticInfo)
  * nationID가 0이면 재야 정보 반환
  * -1이면 전체 국가 목록 반환
+ * 캐싱을 통해 성능 최적화
  */
-export async function getNationStaticInfo(nationID: number | null): Promise<any> {
+export async function getNationStaticInfo(
+  nationID: number | null,
+  forceRefresh: boolean = false,
+  sessionId?: string
+): Promise<any> {
   if (nationID === null) {
     return null;
   }
   
-  // 재야 (nation 0)
+  // 재야 (nation 0) - 항상 동일한 값 반환
   if (nationID === 0) {
     return {
       nation: 0,
@@ -55,12 +63,27 @@ export async function getNationStaticInfo(nationID: number | null): Promise<any>
     };
   }
   
-  // 전체 목록 요청
-  if (nationID === -1) {
-    const nations = await (Nation as any).find({}).select('nation name color type level capital gennum power');
-    const nationDict: Record<number, any> = {};
+  // 캐시 초기화가 필요한 경우
+  if (forceRefresh) {
+    nationListCache = null;
+  }
+  
+  // 전체 목록 요청 (-1) 또는 캐시가 없을 때 전체 목록 로드
+  if (nationID === -1 || nationListCache === null) {
+    const query: any = {};
+    if (sessionId) {
+      query.session_id = sessionId;
+    }
+    
+    const nations = await (Nation as any)
+      .find(query)
+      .select('nation name color type level capital gennum power session_id')
+      .lean();
+    
+    nationListCache = {};
     nations.forEach((nation: any) => {
-      nationDict[nation.nation] = {
+      // session_id가 있으면 필터링에 사용
+      const nationData = {
         nation: nation.nation,
         name: nation.name,
         color: nation.color,
@@ -70,17 +93,34 @@ export async function getNationStaticInfo(nationID: number | null): Promise<any>
         gennum: nation.gennum,
         power: nation.power
       };
+      
+      // session_id별로 캐싱할 수도 있지만, 일단 전체 캐시로 처리
+      nationListCache![nation.nation] = nationData;
     });
-    return nationDict;
+  }
+  
+  // 전체 목록 반환
+  if (nationID === -1) {
+    return nationListCache;
   }
   
   // 개별 국가 조회
-  const nation = await (Nation as any).findOne({ nation: nationID }).select('nation name color type level capital gennum power');
+  if (nationListCache && nationListCache[nationID]) {
+    return nationListCache[nationID];
+  }
+  
+  // 캐시에 없으면 DB에서 직접 조회 (새로 생성된 국가일 수 있음)
+  const query: any = { nation: nationID };
+  if (sessionId) {
+    query.session_id = sessionId;
+  }
+  
+  const nation = await (Nation as any).findOne(query).select('nation name color type level capital gennum power').lean();
   if (!nation) {
     return null;
   }
   
-  return {
+  const nationData = {
     nation: nation.nation,
     name: nation.name,
     color: nation.color,
@@ -90,9 +130,21 @@ export async function getNationStaticInfo(nationID: number | null): Promise<any>
     gennum: nation.gennum,
     power: nation.power
   };
+  
+  // 캐시에 추가
+  if (nationListCache) {
+    nationListCache[nationID] = nationData;
+  }
+  
+  return nationData;
 }
 
-export function refreshNationStaticInfo(...args: any[]): void {
+/**
+ * getNationStaticInfo() 함수의 국가 캐시를 초기화
+ * PHP func.php의 refreshNationStaticInfo()와 동일한 역할
+ */
+export function refreshNationStaticInfo(): void {
+  nationListCache = null;
 }
 
 export function buildItemClass(...args: any[]): any {
