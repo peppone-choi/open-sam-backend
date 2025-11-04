@@ -1216,4 +1216,24 @@ router.post('/set-my-setting', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/general/get-boss-info:
+ *   post:
+ *     summary: 내 상관 정보 조회
+ *     description: 자신의 상관(상급자) 정보를 조회합니다 (j_myBossInfo.php)
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/get-boss-info', authenticate, async (req, res) => {
+  try {
+    const { GetMyBossInfoService } = await import('../services/game/GetMyBossInfo.service');
+    const result = await GetMyBossInfoService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
 export default router;

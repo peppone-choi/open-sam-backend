@@ -181,8 +181,20 @@ router.post('/get-server-status', async (req, res) => {
  */
 router.post('/logout', authenticate, async (req, res) => {
   try {
-    // TODO: 토큰 무효화 로직 (Redis 블랙리스트 등)
-    // 현재는 클라이언트에서 토큰을 삭제하도록 처리
+    const userId = req.user?.userId;
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (token) {
+      // 토큰을 블랙리스트에 추가
+      const { tokenBlacklist } = await import('../utils/tokenBlacklist');
+      tokenBlacklist.add(token, 7 * 24 * 60 * 60); // 7일간 유지
+    }
+    
+    // 로그 기록 (선택사항)
+    if (userId) {
+      // TODO: member_log 테이블에 로그 기록
+      // await MemberLog.create({ member_no: userId, action_type: 'logout', ... });
+    }
     
     res.json({
       result: true,
@@ -359,9 +371,33 @@ router.post('/delete-me', authenticate, async (req, res) => {
       });
     }
 
-    // 계정 삭제 (소프트 삭제 또는 하드 삭제)
-    // TODO: 관련 데이터 정리 (장수, 게임 기록 등)
-    await (User as any).findByIdAndDelete(userId);
+    // 계정 소프트 삭제 (30일 후 삭제)
+    const deleteAfter = new Date();
+    deleteAfter.setDate(deleteAfter.getDate() + 30);
+    
+    await (User as any).findByIdAndUpdate(userId, {
+      delete_after: deleteAfter,
+      deleted: true
+    });
+    
+    // 관련 데이터 정리 (선택사항 - 소프트 삭제 시에는 유지)
+    // TODO: 필요시 장수 데이터 anonymize 처리
+    // const generals = await (General as any).find({ owner: String(userId) });
+    // for (const general of generals) {
+    //   general.owner = null; // 또는 익명화
+    //   await general.save();
+    // }
+    
+    // 로그 기록
+    // TODO: member_log 테이블에 삭제 로그 기록
+    // await MemberLog.create({ member_no: userId, action_type: 'delete' });
+    
+    // 세션 종료
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) {
+      const { tokenBlacklist } = await import('../utils/tokenBlacklist');
+      tokenBlacklist.add(token, 7 * 24 * 60 * 60);
+    }
 
     res.json({
       result: true,
@@ -376,5 +412,6 @@ router.post('/delete-me', authenticate, async (req, res) => {
 });
 
 export default router;
+
 
 

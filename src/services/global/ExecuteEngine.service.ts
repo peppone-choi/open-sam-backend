@@ -8,6 +8,8 @@ import { getCommand, getNationCommand } from '../../commands';
 import { City } from '../../models/city.model';
 import { Nation } from '../../models/nation.model';
 import Redis from 'ioredis';
+import { GameEventEmitter } from '../gameEventEmitter';
+import { SessionStateService } from '../sessionState.service';
 
 const MAX_TURN = 30;
 const MAX_CHIEF_TURN = 12;
@@ -18,12 +20,26 @@ let redisClient: Redis | null = null;
 
 function getRedisClient(): Redis {
   if (!redisClient) {
-    redisClient = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0'),
-    });
+    const url = process.env.REDIS_URL;
+    if (url) {
+      redisClient = new Redis(url, {
+        connectTimeout: 5000,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 1,
+        retryStrategy: (times) => Math.min(times * 200, 1000),
+      });
+    } else {
+      redisClient = new Redis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_DB || '0'),
+        connectTimeout: 5000,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 1,
+        retryStrategy: (times) => Math.min(times * 200, 1000),
+      });
+    }
   }
   return redisClient;
 }
@@ -183,6 +199,13 @@ export class ExecuteEngineService {
       await this.runEventHandler(sessionId, 'MONTH', sessionData);
       await this.postUpdateMonthly(sessionId, sessionData);
       
+      // Socket.IO로 월 변경 브로드캐스트
+      GameEventEmitter.broadcastGameEvent(sessionId, 'month:changed', {
+        year: sessionData.year,
+        month: sessionData.month,
+        turntime: prevTurn.toISOString()
+      });
+      
       // 다음 달로
       prevTurn = nextTurn;
       nextTurn = this.addTurn(prevTurn, turnterm);
@@ -210,6 +233,26 @@ export class ExecuteEngineService {
 
     session.data = sessionData;
     await session.save();
+
+    // 턴 실행 완료 시 Socket.IO 브로드캐스트 및 상태 업데이트
+    if (executed) {
+      const nextTurnAt = new Date();
+      nextTurnAt.setMinutes(nextTurnAt.getMinutes() + (sessionData.turnterm || 60));
+      
+      // 세션 상태 업데이트
+      await SessionStateService.updateSessionState(sessionId, {
+        year: sessionData.year,
+        month: sessionData.month,
+        turntime: currentTurn ? new Date(currentTurn) : nextTurnAt,
+        lastExecuted: new Date()
+      });
+      
+      GameEventEmitter.broadcastTurnComplete(
+        sessionId,
+        sessionData.year * 12 + sessionData.month,
+        nextTurnAt
+      );
+    }
 
     return { executed, turntime: currentTurn || sessionData.turntime };
   }
@@ -249,6 +292,16 @@ export class ExecuteEngineService {
       await this.executeGeneralTurn(sessionId, general, year, month, turnterm, gameEnv);
       
       currentTurn = general.data?.turntime || general.turntime || new Date().toISOString();
+      
+      // 장수 정보 업데이트 브로드캐스트
+      const generalNo = general.data?.no || general.no;
+      if (generalNo) {
+        GameEventEmitter.broadcastGeneralUpdate(sessionId, generalNo, {
+          turntime: currentTurn,
+          year,
+          month
+        });
+      }
       
       // 턴 당기기 (0번 턴 삭제, 1->0, 2->1, ...)
       await this.pullGeneralCommand(sessionId, general.no, 1);

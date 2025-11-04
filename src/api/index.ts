@@ -20,13 +20,18 @@ import bettingRoutes from '../routes/betting.routes';
 import messageRoutes from '../routes/message.routes';
 import voteRoutes from '../routes/vote.routes';
 import legacyRoutes from '../routes/legacy';
+import infoRoutes from '../routes/info.routes';
+import worldRoutes from '../routes/world.routes';
+import npcRoutes from '../routes/npc.routes';
+import chiefRoutes from '../routes/chief.routes';
+import processingRoutes from '../routes/processing.routes';
+import systemRoutes from '../routes/system.routes';
+import adminSessionRoutes from '../routes/admin-session.routes';
 
 // === Advanced Routes (src/api/) ===
-// TEMPORARILY DISABLED - Missing dependencies/implementation
-// TODO: Fix these routes after core services are implemented
 import adminRouter from './admin/router/admin.router';
 // import battleRouter from './battle/router/battle.router';
-// import commandRouter from './command/router/command.router';
+import commandRouter from './command/router/command.router'; // ✅ CQRS Command Router
 import gameSessionRouter from './game-session/router/game-session.router';
 import entityUnifiedRouter from './unified/router/entity-unified.router';
 // import entityV2Router from './v2/router/entity.router';
@@ -86,6 +91,20 @@ export const mountRoutes = (app: Express) => {
   app.use('/api/inheritaction', inheritactionRoutes);
   app.use('/api/misc', miscRoutes);
   
+  // Info & World
+  app.use('/api/info', infoRoutes);
+  app.use('/api/world', worldRoutes);
+  
+  // NPC & Control
+  app.use('/api/npc', npcRoutes);
+  app.use('/api/chief', chiefRoutes);
+  
+  // Processing
+  app.use('/api/processing', processingRoutes);
+  
+  // System Management
+  app.use('/api/system', systemRoutes);
+  
   // Legacy PHP Compatibility Layer
   app.use('/api/legacy', legacyRoutes);
   
@@ -101,13 +120,14 @@ export const mountRoutes = (app: Express) => {
   
   // Admin (Enabled - requires grade >= 5 in JWT)
   app.use('/api/admin', adminRouter);
+  app.use('/api/admin/session', adminSessionRoutes);
   
   // Game Session Management
   app.use('/api/game-sessions', gameSessionRouter);
   app.use('/api/game-session', gameSessionRouter); // 단수형 별칭 (호환성)
   
-  // Advanced Command System
-  // app.use('/api/v2/command', commandRouter);
+  // Advanced Command System (CQRS)
+  app.use('/api/cqrs/command', commandRouter); // CQRS 기반 커맨드 API
   
   // Advanced Battle System
   // app.use('/api/v2/battle', battleRouter);
@@ -117,10 +137,10 @@ export const mountRoutes = (app: Express) => {
   app.use('/api/entities', entityUnifiedRouter);
   
   console.log('✅ Core API routes mounted successfully');
-  console.log('📍 Active routes: 21 (18 core + 3 advanced)');
+  console.log('📍 Active routes: 26 (18 core + 5 new + 3 advanced)');
   console.log('   P0 (Critical): 4 routes');
   console.log('   P1 (High): 7 routes');
-  console.log('   P2 (Medium): 7 routes');
+  console.log('   P2 (Medium): 12 routes (5 new: info, world, npc, chief, processing)');
   console.log('   P3 (Low): 3 routes (3 disabled)');
   console.log('✅ Admin routes enabled - requires grade >= 5');
   console.log('⚠️  Some advanced routes disabled - see src/api/index.ts for details');

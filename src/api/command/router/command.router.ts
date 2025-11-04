@@ -1,42 +1,51 @@
 import { Router } from 'express';
-import { CommandController } from '../controller/command.controller';
 import { CommandService } from '../../../core/command/CommandService';
-import { CommandRepository } from '../repository/command.repository';
-import { GameSessionRepository } from '../../game-session/repository/game-session.repository';
-import { getCommandQueue } from '../../../container';
+import { authenticate } from '../../../middleware/auth';
 
 const router = Router();
 
-// 의존성 주입
-const repository = new CommandRepository();
-const sessionRepository = new GameSessionRepository();
-const service = new CommandService(repository, getCommandQueue(), sessionRepository);
-const controller = new CommandController(service);
-
 /**
- * 명령 라우터
+ * CQRS 커맨드 라우터
  * 
- * Entity 기반 Controller 연결
- * 기존 API 경로 유지
+ * Redis Streams를 통한 비동기 커맨드 처리
+ * CommandService의 static 메서드 사용
  */
 
-// 목록 조회
-router.get('/', controller.list);
+// 명령 제출 (CQRS)
+router.post('/submit', authenticate, async (req, res, next) => {
+  try {
+    const result = await CommandService.submit({
+      sessionId: req.body.sessionId || req.body.session_id,
+      generalId: req.user?.userId || req.body.generalId,
+      category: req.body.category || 'general',
+      type: req.body.type,
+      arg: req.body.arg || {},
+      priority: req.body.priority,
+    });
+    res.json({ success: true, command: result });
+  } catch (error: any) {
+    next(error);
+  }
+});
 
-// 상세 조회
-router.get('/:id', controller.getById);
-
-// 지휘관별 조회
-router.get('/commander/:commanderId', controller.getByCommanderId);
-
-// 명령 제출
-router.post('/', controller.create);
-router.post('/submit', controller.submit);
-
-// 명령 업데이트 (비활성화)
-router.put('/:id', controller.update);
+// 명령 조회 (ID)
+router.get('/:id', authenticate, async (req, res, next) => {
+  try {
+    const command = await CommandService.getById(req.params.id);
+    res.json({ success: true, command });
+  } catch (error: any) {
+    next(error);
+  }
+});
 
 // 명령 취소
-router.delete('/:id', controller.remove);
+router.delete('/:id', authenticate, async (req, res, next) => {
+  try {
+    await CommandService.cancel(req.params.id);
+    res.json({ success: true, message: '명령이 취소되었습니다' });
+  } catch (error: any) {
+    next(error);
+  }
+});
 
 export default router;

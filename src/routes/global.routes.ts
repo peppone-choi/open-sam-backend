@@ -1,857 +1,221 @@
-import { Router } from 'express';
-import { authenticate, optionalAuth } from '../middleware/auth';
-
-import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
-import { GeneralListService } from '../services/global/GeneralList.service';
-import { GeneralListWithTokenService } from '../services/global/GeneralListWithToken.service';
-import { GetCachedMapService } from '../services/global/GetCachedMap.service';
-import { GetConstService } from '../services/global/GetConst.service';
-import { GetCurrentHistoryService } from '../services/global/GetCurrentHistory.service';
-import { GetDiplomacyService } from '../services/global/GetDiplomacy.service';
-import { GetGlobalMenuService } from '../services/global/GetGlobalMenu.service';
-import { GetHistoryService } from '../services/global/GetHistory.service';
-import { GetMapService } from '../services/global/GetMap.service';
+import { Router, Request, Response, NextFunction } from 'express';
 import { GetNationListService } from '../services/global/GetNationList.service';
-import { GetRecentRecordService } from '../services/global/GetRecentRecord.service';
-import { GetCityListService } from '../services/global/GetCityList.service';
-import { GetBasicGeneralListService } from '../services/global/GetBasicGeneralList.service';
+import { GetMapService } from '../services/global/GetMap.service';
+import { Session } from '../models/session.model';
 
 const router = Router();
 
-
-// ExecuteEngine
-/**
- * @swagger
- * /api/global/execute-engine:
- *   post:
- *     summary: Global 생성
- *     description: |
- *       Global 생성
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *           example:
- *             # 요청 예제를 여기에 추가하세요
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-// ExecuteEngine은 데몬에서만 실행되어야 합니다
-// Express 엔드포인트는 비활성화 (데몬과 락 충돌 방지)
-router.post('/execute-engine', async (req, res) => {
-  res.status(403).json({ 
-    success: false,
-    error: 'ExecuteEngine은 데몬 프로세스에서만 실행됩니다. turn-processor.ts를 사용하세요.' 
-  });
-});
-
-
-// GeneralList
-/**
- * @swagger
- * /api/global/general-list:
- *   post:
- *     summary: Global 생성
- *     description: |
- *       Global 생성
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *           example:
- *             # 요청 예제를 여기에 추가하세요
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.post('/general-list', async (req, res) => {
-  try {
-    const result = await GeneralListService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GeneralListWithToken
-/**
- * @swagger
- * /api/global/general-list-with-token:
- *   post:
- *     summary: Global 생성
- *     description: |
- *       Global 생성
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *           example:
- *             # 요청 예제를 여기에 추가하세요
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.post('/general-list-with-token', async (req, res) => {
-  try {
-    const result = await GeneralListWithTokenService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetCachedMap
-/**
- * @swagger
- * /api/global/get-cached-map:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-cached-map', async (req, res) => {
-  try {
-    const result = await GetCachedMapService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetConst
-/**
- * @swagger
- * /api/global/get-const:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-const', async (req, res) => {
-  try {
-    const result = await GetConstService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetCurrentHistory
-/**
- * @swagger
- * /api/global/get-current-history:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-current-history', optionalAuth, async (req, res) => {
-  try {
-    const result = await GetCurrentHistoryService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetDiplomacy
-/**
- * @swagger
- * /api/global/get-diplomacy:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-diplomacy', optionalAuth, async (req, res) => {
-  try {
-    const result = await GetDiplomacyService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetGlobalMenu
-/**
- * @swagger
- * /api/global/get-global-menu:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-global-menu', async (req, res) => {
-  try {
-    const result = await GetGlobalMenuService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetHistory
-/**
- * @swagger
- * /api/global/get-history:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-history', async (req, res) => {
-  try {
-    const result = await GetHistoryService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetMap
 /**
  * @swagger
  * /api/global/get-map:
  *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
+ *     summary: 맵 정보 조회
  *     tags: [Global]
+ *     parameters:
+ *       - in: query
+ *         name: serverID
+ *         schema:
+ *           type: string
+ *         description: 서버 ID
+ *       - in: query
+ *         name: neutralView
+ *         schema:
+ *           type: integer
+ *           enum: [0, 1]
+ *         description: 중립 시점 여부
+ *       - in: query
+ *         name: showMe
+ *         schema:
+ *           type: integer
+ *           enum: [0, 1]
+ *         description: 내 위치 표시 여부
  *     responses:
  *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
+ *         description: 맵 정보
  */
-router.get('/get-map', async (req, res) => {
+router.get('/get-map', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await GetMapService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    const serverID = req.query.serverID as string;
+    const sessionId = serverID || req.query.session_id as string || 'sangokushi_default';
+    const neutralView = req.query.neutralView === '1' || req.query.neutralView === 1;
+    const showMe = req.query.showMe === '1' || req.query.showMe === 1;
+    
+    const result = await GetMapService.execute({
+      session_id: sessionId,
+      neutralView,
+      showMe
+    }, req.user);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    next(error);
   }
 });
 
+/**
+ * @swagger
+ * /api/global/get-global-menu:
+ *   get:
+ *     summary: 글로벌 메뉴 조회
+ *     tags: [Global]
+ *     parameters:
+ *       - in: query
+ *         name: serverID
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: session_id
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 메뉴 정보
+ */
+router.get('/get-global-menu', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const serverID = req.query.serverID as string;
+    const sessionId = serverID || req.query.session_id as string || 'sangokushi_default';
+    
+    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const sessionData = session?.data || {};
+    
+    // 게임 메뉴 구성 (기본 메뉴)
+    const menu = [
+      { id: 'game', name: '게임', url: '/game', enabled: true },
+      { id: 'info', name: '정보', url: '/info', enabled: true },
+      { id: 'nation', name: '국가', url: '/nation', enabled: true },
+      { id: 'battle', name: '전투', url: '/battle', enabled: true },
+      { id: 'diplomacy', name: '외교', url: '/diplomacy', enabled: true },
+      { id: 'auction', name: '경매', url: '/auction', enabled: sessionData.auction_enabled !== false },
+      { id: 'betting', name: '배팅', url: '/betting', enabled: sessionData.is_betting_active || false },
+      { id: 'vote', name: '투표', url: '/vote', enabled: true }
+    ];
+    
+    res.json({
+      success: true,
+      result: true,
+      menu,
+      version: 1,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-// GetNationList
+/**
+ * @swagger
+ * /api/global/get-const:
+ *   get:
+ *     summary: 글로벌 상수 조회
+ *     tags: [Global]
+ *     responses:
+ *       200:
+ *         description: 상수 정보
+ */
+router.get('/get-const', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { default: GameConstants } = await import('../utils/game-constants');
+    
+    // 게임 상수 반환
+    const constants = {
+      MAX_TURN: GameConstants.MAX_TURN || 30,
+      MAX_GENERAL: GameConstants.MAX_GENERAL || 500,
+      MAX_NATION: GameConstants.MAX_NATION || 55,
+      DEFAULT_STAT_MIN: GameConstants.DEFAULT_STAT_MIN || 30,
+      DEFAULT_STAT_MAX: GameConstants.DEFAULT_STAT_MAX || 100,
+      DEFAULT_STAT_TOTAL: GameConstants.DEFAULT_STAT_TOTAL || 200,
+      DEFAULT_START_YEAR: GameConstants.DEFAULT_START_YEAR || 180,
+      DEFAULT_GOLD: GameConstants.DEFAULT_GOLD || 1000,
+      DEFAULT_RICE: GameConstants.DEFAULT_RICE || 1000,
+      MAX_LEVEL: GameConstants.MAX_LEVEL || 255
+    };
+    
+    res.json({
+      result: true,
+      data: constants,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 /**
  * @swagger
  * /api/global/get-nation-list:
  *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
+ *     summary: 국가 목록 조회
  *     tags: [Global]
  *     responses:
  *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
+ *         description: 국가 목록
  */
-router.get('/get-nation-list', async (req, res) => {
+router.get('/get-nation-list', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await GetNationListService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-// GetRecentRecord
-/**
- * @swagger
- * /api/global/get-recent-record:
- *   get:
- *     summary: Global 조회
- *     description: |
- *       Global 조회
- *       
- *       **주의사항:**
- *       - 인증이 필요한 경우 JWT 토큰을 헤더에 포함해야 합니다
- *       - 요청 본문은 JSON 형식이어야 합니다
- *     tags: [Global]
- *     responses:
- *       200:
- *         description: 요청 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *             example:
- *               success: true
- *               data: {}
- *       401:
- *         description: 인증 실패 - 유효하지 않거나 만료된 토큰
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Invalid or expired token
- *       400:
- *         description: 잘못된 요청 - 필수 파라미터 누락 또는 유효하지 않은 값
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: 서버 내부 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.get('/get-recent-record', optionalAuth, async (req, res) => {
-  try {
-    const result = await GetRecentRecordService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-
-/**
- * @swagger
- * /api/global/get-city-list:
- *   get:
- *     summary: 도시 목록 조회
- *     description: |
- *       국가별로 그룹화된 도시 목록을 조회합니다.
- *       PHP: j_get_city_list.php
- *     tags: [Global]
- *     parameters:
- *       - in: query
- *         name: session_id
- *         schema:
- *           type: string
- *         description: 게임 세션 ID
- *     responses:
- *       200:
- *         description: 도시 목록 조회 성공
- *       500:
- *         description: 서버 오류
- */
-router.get('/get-city-list', async (req, res) => {
-  try {
-    const result = await GetCityListService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    const sessionId = (req.query.session_id || req.query.serverID || 'sangokushi_default') as string;
+    const result = await GetNationListService.execute({ session_id: sessionId }, req.user);
+    if (result.success && result.nations) {
+      res.json({
+        result: true,
+        nationList: result.nations
+      });
+    } else {
+      res.json({
+        result: false,
+        nationList: {},
+        reason: result.message || '국가 목록을 조회할 수 없습니다'
+      });
+    }
+  } catch (error) {
+    next(error);
   }
 });
 
 /**
  * @swagger
- * /api/global/get-basic-general-list:
- *   get:
- *     summary: 기본 장수 목록 조회
- *     description: |
- *       국가별로 그룹화된 간단한 장수 목록을 조회합니다.
- *       PHP: j_get_basic_general_list.php
+ * /api/global/general-list:
+ *   post:
+ *     summary: 전체 장수 목록 조회
  *     tags: [Global]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: session_id
- *         schema:
- *           type: string
- *         description: 게임 세션 ID
  *     responses:
  *       200:
- *         description: 장수 목록 조회 성공
- *       500:
- *         description: 서버 오류
+ *         description: 장수 목록
  */
-router.get('/get-basic-general-list', optionalAuth, async (req, res) => {
+router.post('/general-list', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await GetBasicGeneralListService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    const sessionId = req.body.session_id || req.query.session_id || req.body.serverID || req.query.serverID || 'sangokushi_default';
+    
+    const { General } = await import('../models');
+    const generals = await (General as any).find({ session_id: sessionId })
+      .sort({ 'data.experience': -1 })
+      .limit(1000)
+      .lean();
+    
+    const generalList = generals.map((g: any) => {
+      const genData = g.data || {};
+      return {
+        no: genData.no || g.no,
+        name: g.name || genData.name || '',
+        nation: genData.nation || 0,
+        city: genData.city || 0,
+        leadership: genData.leadership || 0,
+        strength: genData.strength || 0,
+        intel: genData.intel || 0,
+        experience: genData.experience || 0,
+        explevel: genData.explevel || 0,
+        npc: genData.npc || 0
+      };
+    });
+    
+    res.json({
+      result: true,
+      generalList
+    });
+  } catch (error) {
+    next(error);
   }
 });
 

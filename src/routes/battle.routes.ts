@@ -1059,4 +1059,161 @@ router.get('/:battleId/history', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/battle/detail:
+ *   post:
+ *     summary: 전투 상세 정보 조회
+ *     tags: [Battle]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - battleID
+ *             properties:
+ *               battleID:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: 전투 상세 정보
+ */
+router.post('/detail', async (req, res) => {
+  try {
+    const { GetBattleDetailService } = await import('../services/battle/GetBattleDetail.service');
+    const result = await GetBattleDetailService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error in battle/detail:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/battle/center:
+ *   post:
+ *     summary: 전투 센터 (진행 중인 전투 목록)
+ *     tags: [Battle]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 전투 목록
+ */
+router.post('/center', async (req, res) => {
+  try {
+    const { GetBattleCenterService } = await import('../services/battle/GetBattleCenter.service');
+    const result = await GetBattleCenterService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error in battle/center:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/battle/simulate:
+ *   post:
+ *     summary: 전투 시뮬레이션
+ *     description: 공격자와 방어자의 전투력을 계산하여 시뮬레이션 결과 반환
+ *     tags: [Battle]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - attacker
+ *               - defender
+ *             properties:
+ *               attacker:
+ *                 type: object
+ *                 properties:
+ *                   leadership:
+ *                     type: number
+ *                   strength:
+ *                     type: number
+ *                   crew:
+ *                     type: number
+ *                   train:
+ *                     type: number
+ *                   atmos:
+ *                     type: number
+ *               defender:
+ *                 type: object
+ *                 properties:
+ *                   leadership:
+ *                     type: number
+ *                   strength:
+ *                     type: number
+ *                   crew:
+ *                     type: number
+ *                   train:
+ *                     type: number
+ *                   atmos:
+ *                     type: number
+ *               terrain:
+ *                 type: string
+ *                 default: plains
+ *     responses:
+ *       200:
+ *         description: 시뮬레이션 결과
+ */
+router.post('/simulate', async (req, res) => {
+  try {
+    const { attacker, defender, terrain = 'plains' } = req.body;
+
+    if (!attacker || !defender) {
+      return res.status(400).json({ 
+        result: false, 
+        reason: '공격자와 방어자 정보가 필요합니다.' 
+      });
+    }
+
+    const atkPower = 
+      (attacker.leadership + attacker.strength) * 
+      attacker.crew * 
+      (attacker.train / 100) * 
+      (attacker.atmos / 100);
+
+    const defPower = 
+      (defender.leadership + defender.strength) * 
+      defender.crew * 
+      (defender.train / 100) * 
+      (defender.atmos / 100);
+
+    const ratio = defPower > 0 ? atkPower / defPower : 100;
+    const winner = atkPower > defPower ? 'attacker' : 'defender';
+
+    const atkLoss = Math.floor(attacker.crew * (winner === 'attacker' ? 0.2 : 0.5));
+    const defLoss = Math.floor(defender.crew * (winner === 'defender' ? 0.2 : 0.5));
+
+    res.json({
+      result: true,
+      simulation: {
+        winner,
+        ratio,
+        atkPower: Math.round(atkPower),
+        defPower: Math.round(defPower),
+        atkLoss,
+        defLoss,
+        atkRemaining: attacker.crew - atkLoss,
+        defRemaining: defender.crew - defLoss,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error in battle/simulate:', error);
+    res.status(500).json({ result: false, reason: error.message || 'Internal server error' });
+  }
+});
+
 export default router;

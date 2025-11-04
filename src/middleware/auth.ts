@@ -38,6 +38,15 @@ export const authenticate = async (
     // 토큰 추출
     const token = authHeader.substring(7); // 'Bearer ' 이후
     
+    // 토큰 블랙리스트 체크
+    const { tokenBlacklist } = await import('../utils/tokenBlacklist');
+    if (tokenBlacklist.has(token)) {
+      return res.status(401).json({ 
+        success: false,
+        message: '로그아웃된 토큰입니다' 
+      });
+    }
+    
     // JWT 검증
     const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     const decoded = jwt.verify(token, secret) as unknown as JwtPayload;

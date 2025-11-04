@@ -144,6 +144,17 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
     
+    // httpOnly 쿠키 설정 (PHP 세션 방식과 유사)
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      path: '/',
+      sameSite: process.env.COOKIE_SAMESITE as any || 'lax',
+      secure: isProd || process.env.COOKIE_SECURE === 'true',
+      domain: process.env.COOKIE_DOMAIN || undefined,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+    });
+    
     res.json({ 
       message: '로그인 성공',
       token,

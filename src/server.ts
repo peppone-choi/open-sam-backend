@@ -1,7 +1,9 @@
-import express, { Request, Response } from 'express';
+import express, { Express, Request, Response } from 'express';
+import { createServer as createHTTPServer, Server as HTTPServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { mongoConnection } from './db/connection';
@@ -12,11 +14,123 @@ import { logger } from './common/logger';
 import { CommandRegistry } from './core/command';
 import { swaggerSpec } from './config/swagger';
 import { autoExtractToken } from './middleware/auth';
+import { initializeSocket } from './socket/socketManager';
 
 dotenv.config();
 
+// 테스트용 앱 생성 함수
+export async function createApp(): Promise<Express> {
+  const app = express();
+  
+  // 프록시 신뢰 설정
+  app.set('trust proxy', 1);
+  
+  // 보안 미들웨어
+  app.use(helmet());
+  
+  // CORS 설정
+  app.use(cors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      process.env.FRONTEND_URL || 'http://localhost:3000'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie']
+  }));
+  
+  app.use(compression());
+  app.use(cookieParser());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  
+  // Session 미들웨어
+  import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
+  app.use(setupSessionMiddleware());
+  app.use(sessionMiddleware);
+  
+  // 요청 로거
+  app.use(requestLogger);
+  
+  // 토큰 자동 추출
+  app.use(autoExtractToken);
+  
+  // Health check
+  app.get('/health', (_req: Request, res: Response) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+  
+  // Swagger API 문서
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'OpenSAM API Documentation'
+  }));
+  
+  // Swagger JSON
+  app.get('/api-docs.json', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+  
+  // 라우트 마운트
+  mountRoutes(app);
+  
+  // 추가 라우트 (테스트용)
+  import sessionRoutes from './routes/session.routes';
+  import generalRoutes from './routes/general.routes';
+  import battleRoutes from './routes/battle.routes';
+  import battlemapRoutes from './routes/battlemap-editor.routes';
+  import auctionRoutes from './routes/auction.routes';
+  import bettingRoutes from './routes/betting.routes';
+  import messageRoutes from './routes/message.routes';
+  import voteRoutes from './routes/vote.routes';
+  import loginRoutes from './routes/login.routes';
+  import gatewayRoutes from './routes/gateway.routes';
+  import adminRoutes from './routes/admin.routes';
+  import joinRoutes from './routes/join.routes';
+  import boardRoutes from './routes/board.routes';
+  import diplomacyRoutes from './routes/diplomacy.routes';
+  import infoRoutes from './routes/info.routes';
+  import worldRoutes from './routes/world.routes';
+  import npcRoutes from './routes/npc.routes';
+  import chiefRoutes from './routes/chief.routes';
+  import processingRoutes from './routes/processing.routes';
+  
+  app.use('/api/session', sessionRoutes);
+  app.use('/api/general', generalRoutes);
+  app.use('/api/battle', battleRoutes);
+  app.use('/api/battlemap', battlemapRoutes);
+  app.use('/api/auction', auctionRoutes);
+  app.use('/api/betting', bettingRoutes);
+  app.use('/api/message', messageRoutes);
+  app.use('/api/vote', voteRoutes);
+  app.use('/api/login', loginRoutes);
+  app.use('/api/gateway', gatewayRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/join', joinRoutes);
+  app.use('/api/board', boardRoutes);
+  app.use('/api/diplomacy', diplomacyRoutes);
+  app.use('/api/info', infoRoutes);
+  app.use('/api/world', worldRoutes);
+  app.use('/api/npc', npcRoutes);
+  app.use('/api/chief', chiefRoutes);
+  app.use('/api/processing', processingRoutes);
+  
+  // 에러 미들웨어
+  app.use(errorMiddleware);
+  
+  return app;
+}
+
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// 프록시 신뢰 설정 (reverse proxy 환경 대응)
+app.set('trust proxy', 1);
 
 // 보안 미들웨어
 app.use(helmet());
@@ -36,6 +150,7 @@ app.use(cors({
 }));
 
 app.use(compression());
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -106,6 +221,17 @@ import loginRoutes from './routes/login.routes';
 import gatewayRoutes from './routes/gateway.routes';
 import adminRoutes from './routes/admin.routes';
 import joinRoutes from './routes/join.routes';
+import boardRoutes from './routes/board.routes';
+import diplomacyRoutes from './routes/diplomacy.routes';
+import infoRoutes from './routes/info.routes';
+import worldRoutes from './routes/world.routes';
+import npcRoutes from './routes/npc.routes';
+import chiefRoutes from './routes/chief.routes';
+import processingRoutes from './routes/processing.routes';
+import installRoutes from './routes/install.routes';
+import oauthRoutes from './routes/oauth.routes';
+import archiveRoutes from './routes/archive.routes';
+import tournamentRoutes from './routes/tournament.routes';
 
 app.use('/api/session', sessionRoutes);
 app.use('/api/general', generalRoutes);
@@ -119,6 +245,17 @@ app.use('/api/login', loginRoutes);
 app.use('/api/gateway', gatewayRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/join', joinRoutes);
+app.use('/api/board', boardRoutes);
+app.use('/api/diplomacy', diplomacyRoutes);
+app.use('/api/info', infoRoutes);
+app.use('/api/world', worldRoutes);
+app.use('/api/npc', npcRoutes);
+app.use('/api/chief', chiefRoutes);
+app.use('/api/processing', processingRoutes);
+app.use('/api/install', installRoutes);
+app.use('/api/oauth', oauthRoutes);
+app.use('/api/archive', archiveRoutes);
+app.use('/api/tournament', tournamentRoutes);
 
 // 에러 핸들링 미들웨어 (맨 마지막)
 app.use(errorMiddleware);
@@ -172,7 +309,24 @@ async function start() {
       }
     }
     
-    app.listen(PORT, () => {
+    // HTTP 서버 생성 (Socket.IO를 위한)
+    const httpServer = createHTTPServer(app);
+    
+    // Socket.IO 초기화
+    const socketManager = initializeSocket(httpServer);
+    logger.info('Socket.IO 서버 초기화 완료');
+    
+    // 턴 프로세서 데몬 시작 (환경 변수로 제어 가능)
+    if (process.env.ENABLE_TURN_PROCESSOR !== 'false') {
+      const { startTurnProcessor } = await import('./daemon/turn-processor');
+      await startTurnProcessor();
+      logger.info('턴 프로세서 데몬 시작 완료');
+    } else {
+      logger.info('턴 프로세서 데몬 비활성화됨 (ENABLE_TURN_PROCESSOR=false)');
+    }
+    
+    // HTTP 서버 시작
+    httpServer.listen(PORT, () => {
       logger.info('API 서버 시작 완료', {
         port: PORT,
         routes: [
@@ -192,7 +346,8 @@ async function start() {
       console.log('\n🚀 서버가 성공적으로 시작되었습니다!');
       console.log(`📍 포트: ${PORT}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🎮 커맨드: ${commandStats.total}개 (General: ${commandStats.generalCount}, Nation: ${commandStats.nationCount})\n`);
+      console.log(`🎮 커맨드: ${commandStats.total}개 (General: ${commandStats.generalCount}, Nation: ${commandStats.nationCount})`);
+      console.log(`📡 Socket.IO: 활성화됨\n`);
     });
   } catch (error) {
     logger.error('서버 시작 실패', {

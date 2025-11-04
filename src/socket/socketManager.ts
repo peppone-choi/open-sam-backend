@@ -1,0 +1,233 @@
+import { Server as HTTPServer } from 'http';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import { JwtPayload } from '../middleware/auth';
+import { tokenBlacklist } from '../utils/tokenBlacklist';
+import { BattleSocketHandler } from '../handlers/battle.socket';
+import { GameSocketHandler } from './game.socket';
+import { GeneralSocketHandler } from './general.socket';
+import { NationSocketHandler } from './nation.socket';
+
+/**
+ * Socket.IO 서버 관리자
+ * 게임의 모든 실시간 통신을 관리합니다.
+ */
+export class SocketManager {
+  private io: SocketIOServer;
+  private battleHandler: BattleSocketHandler;
+  private gameHandler: GameSocketHandler;
+  private generalHandler: GeneralSocketHandler;
+  private nationHandler: NationSocketHandler;
+
+  constructor(httpServer: HTTPServer) {
+    // Socket.IO 서버 초기화
+    this.io = new SocketIOServer(httpServer, {
+      cors: {
+        origin: [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://127.0.0.1:3000',
+          process.env.FRONTEND_URL || 'http://localhost:3000'
+        ],
+        credentials: true,
+        methods: ['GET', 'POST']
+      },
+      path: '/socket.io',
+      transports: ['websocket', 'polling']
+    });
+
+    // 핸들러 초기화
+    this.battleHandler = new BattleSocketHandler(this.io);
+    this.gameHandler = new GameSocketHandler(this.io);
+    this.generalHandler = new GeneralSocketHandler(this.io);
+    this.nationHandler = new NationSocketHandler(this.io);
+
+    // 연결 처리
+    this.io.use(this.authenticateSocket.bind(this));
+    this.io.on('connection', this.handleConnection.bind(this));
+
+    console.log('✅ Socket.IO 서버 초기화 완료');
+  }
+
+  /**
+   * Socket.IO 인증 미들웨어
+   */
+  private async authenticateSocket(socket: Socket, next: Function) {
+    try {
+      const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
+
+      if (!token) {
+        return next(new Error('인증 토큰이 필요합니다'));
+      }
+
+      // 토큰 블랙리스트 체크
+      if (tokenBlacklist.has(token)) {
+        return next(new Error('로그아웃된 토큰입니다'));
+      }
+
+      // JWT 검증
+      const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+      const decoded = jwt.verify(token, secret) as JwtPayload;
+
+      // 소켓에 사용자 정보 저장
+      (socket as any).user = decoded;
+      next();
+    } catch (error: any) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        return next(new Error('유효하지 않은 토큰입니다'));
+      }
+      if (error instanceof jwt.TokenExpiredError) {
+        return next(new Error('토큰이 만료되었습니다'));
+      }
+      next(new Error('인증 오류가 발생했습니다'));
+    }
+  }
+
+  /**
+   * 소켓 연결 처리
+   */
+  private handleConnection(socket: Socket) {
+    const user = (socket as any).user as JwtPayload;
+    const userId = user?.userId;
+
+    console.log(`📡 소켓 연결: ${socket.id} (사용자: ${userId || 'unknown'})`);
+
+    // 사용자별 룸에 조인
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
+
+    // 핸들러에 연결 전달
+    this.battleHandler.handleConnection(socket);
+    this.gameHandler.handleConnection(socket);
+    this.generalHandler.handleConnection(socket);
+    this.nationHandler.handleConnection(socket);
+
+    // 연결 해제 처리
+    socket.on('disconnect', (reason) => {
+      console.log(`📡 소켓 연결 해제: ${socket.id} (이유: ${reason})`);
+      if (userId) {
+        socket.leave(`user:${userId}`);
+      }
+    });
+
+    // 연결 성공 메시지
+    socket.emit('connected', {
+      socketId: socket.id,
+      userId,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 게임 이벤트 브로드캐스트
+   */
+  broadcastGameEvent(sessionId: string, event: string, data: any) {
+    this.io.to(`session:${sessionId}`).emit(`game:${event}`, {
+      sessionId,
+      ...data,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 특정 사용자에게 이벤트 전송
+   */
+  sendToUser(userId: string, event: string, data: any) {
+    this.io.to(`user:${userId}`).emit(event, {
+      ...data,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 턴 완료 브로드캐스트
+   */
+  broadcastTurnComplete(sessionId: string, turnNumber: number, nextTurnAt: Date) {
+    this.broadcastGameEvent(sessionId, 'turn:complete', {
+      turnNumber,
+      nextTurnAt
+    });
+  }
+
+  /**
+   * 장수 정보 업데이트 브로드캐스트
+   */
+  broadcastGeneralUpdate(sessionId: string, generalId: number, updates: any) {
+    this.io.to(`session:${sessionId}`).emit('general:updated', {
+      sessionId,
+      generalId,
+      updates,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 국가 정보 업데이트 브로드캐스트
+   */
+  broadcastNationUpdate(sessionId: string, nationId: number, updates: any) {
+    this.io.to(`session:${sessionId}`).emit('nation:updated', {
+      sessionId,
+      nationId,
+      updates,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 도시 정보 업데이트 브로드캐스트
+   */
+  broadcastCityUpdate(sessionId: string, cityId: number, updates: any) {
+    this.io.to(`session:${sessionId}`).emit('city:updated', {
+      sessionId,
+      cityId,
+      updates,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 메시지 알림 브로드캐스트
+   */
+  broadcastMessage(sessionId: string, message: any) {
+    this.io.to(`session:${sessionId}`).emit('message:new', {
+      sessionId,
+      message,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 전투 시작 알림
+   */
+  broadcastBattleStart(sessionId: string, battleId: string, participants: number[]) {
+    this.io.to(`session:${sessionId}`).emit('battle:started', {
+      sessionId,
+      battleId,
+      participants,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * Socket.IO 서버 인스턴스 반환
+   */
+  getIO(): SocketIOServer {
+    return this.io;
+  }
+}
+
+// 싱글톤 인스턴스
+let socketManagerInstance: SocketManager | null = null;
+
+export function initializeSocket(httpServer: HTTPServer): SocketManager {
+  if (!socketManagerInstance) {
+    socketManagerInstance = new SocketManager(httpServer);
+  }
+  return socketManagerInstance;
+}
+
+export function getSocketManager(): SocketManager | null {
+  return socketManagerInstance;
+}
+

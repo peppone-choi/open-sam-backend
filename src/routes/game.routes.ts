@@ -1,6 +1,16 @@
 import { Router } from 'express';
 import { Session } from '../models/session.model';
 import { City } from '../models/city.model';
+import { General, Nation } from '../models';
+import { authenticate } from '../middleware/auth';
+import { SelectNpcService } from '../services/general/SelectNpc.service';
+import { SelectPickedGeneralService } from '../services/general/SelectPickedGeneral.service';
+import { SetMySettingService } from '../services/game/SetMySetting.service';
+import { VacationService } from '../services/game/Vacation.service';
+import { ServerBasicInfoService } from '../services/game/ServerBasicInfo.service';
+import { SetGeneralPermissionService } from '../services/game/SetGeneralPermission.service';
+import { RaiseEventService } from '../services/game/RaiseEvent.service';
+import { GetMyBossInfoService } from '../services/game/GetMyBossInfo.service';
 
 const router = Router();
 
@@ -495,9 +505,32 @@ router.get('/turn', async (req, res) => {
  */
 router.get('/ranking', async (req, res) => {
   try {
-    // TODO: 실제 랭킹 로직 구현
+    const sessionId = req.query.session_id as string || req.query.serverID as string || 'sangokushi_default';
+    
+    // 장수 랭킹 (경험치 기준)
+    const generals = await (General as any).find({ session_id: sessionId })
+      .sort({ 'data.experience': -1, 'data.explevel': -1 })
+      .limit(100)
+      .lean();
+    
+    const ranking = generals.map((g: any, index: number) => {
+      const genData = g.data || {};
+      return {
+        rank: index + 1,
+        generalId: genData.no || g.no,
+        name: g.name || genData.name || '',
+        nation: genData.nation || 0,
+        experience: genData.experience || 0,
+        explevel: genData.explevel || 0,
+        leadership: genData.leadership || 0,
+        strength: genData.strength || 0,
+        intel: genData.intel || 0
+      };
+    });
+    
     res.json({
-      ranking: []
+      result: true,
+      ranking
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -784,6 +817,279 @@ router.get('/cities/:id', async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/basic-info', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const userId = req.user?.userId || req.user?.id;
+    
+    if (!userId) {
+      return res.json({
+        generalID: 0,
+        myNationID: 0,
+        isChief: false,
+        officerLevel: 0,
+        permission: 0,
+      });
+    }
+
+    const general: any = await (General as any).findOne({ 
+      session_id: sessionId,
+      owner: String(userId)
+    }).lean();
+
+    if (!general) {
+      return res.json({
+        generalID: 0,
+        myNationID: 0,
+        isChief: false,
+        officerLevel: 0,
+        permission: 0,
+      });
+    }
+
+    const genData = general.data || {};
+    const officerLevel = genData.officer_level || genData.officerLevel || 0;
+    const nation = genData.nation || 0;
+    
+    // 권한 계산 (간단화)
+    let permission = 0;
+    if (officerLevel >= 12) {
+      permission = 2; // 군주
+    } else if (officerLevel >= 5) {
+      permission = 2; // 수뇌
+    } else if (officerLevel >= 1) {
+      permission = 1; // 일반
+    }
+
+    // permission 필드 확인
+    const genPermission = genData.permission || general.permission || 'normal';
+    if (genPermission === 'ambassador') {
+      permission = 4; // 외교권자
+    } else if (genPermission === 'auditor') {
+      permission = 3; // 감찰
+    }
+
+    res.json({
+      generalID: genData.no || general.no,
+      myNationID: nation,
+      isChief: officerLevel === 12,
+      officerLevel,
+      permission,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/general-list', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    
+    const generals = await (General as any).find({ 
+      session_id: sessionId,
+      'data.npc': { $lt: 2 } // NPC가 아닌 장수
+    }).lean();
+
+    const generalList = generals.map((g: any) => {
+      const genData = g.data || {};
+      return {
+        no: genData.no || g.no,
+        name: genData.name || g.name,
+        nation: genData.nation || 0,
+        city: genData.city || 0,
+        leadership: genData.leadership || 0,
+        strength: genData.strength || 0,
+        intel: genData.intel || 0,
+        crew: genData.crew || 0,
+        crewtype: genData.crewtype || 0,
+        officerLevel: genData.officer_level || genData.officerLevel || 0
+      };
+    });
+
+    res.json({
+      result: true,
+      generals: generalList,
+    });
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
+router.post('/map', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const data = req.body.data || {};
+    
+    // GetMapService 사용
+    const { GetMapService } = await import('../services/global/GetMap.service');
+    const result = await GetMapService.execute({
+      session_id: sessionId,
+      ...data
+    }, req.user);
+    
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
+router.post('/city-list', authenticate, async (req, res) => {
+  try {
+    const sessionId = (req.body.session_id as string) || 'sangokushi_default';
+    
+    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+    const nationMap: Record<number, any> = {};
+    nations.forEach((nation: any) => {
+      const nationId = nation.data?.nation || nation.nation;
+      if (nationId) {
+        nationMap[nationId] = {
+          nation: nationId,
+          name: nation.data?.name || nation.name || '이름 없음',
+          color: nation.data?.color || nation.color || 0,
+          capital: nation.data?.capital || nation.capital || 0,
+          level: nation.data?.level || nation.level || 0,
+          type: nation.data?.type || nation.type || 'None'
+        };
+      }
+    });
+
+    const cities = await (City as any).find({ session_id: sessionId }).lean();
+    
+    const cityArgsList = ['city', 'nation', 'name', 'level'];
+    const cityList = cities.map((city: any) => {
+      const cityData = city.data || city;
+      return [
+        cityData.id || cityData.city || 0,
+        cityData.nation || 0,
+        cityData.name || '도시명 없음',
+        cityData.level || 1
+      ];
+    });
+
+    res.json({
+      result: true,
+      nations: nationMap,
+      cityArgsList,
+      cities: cityList
+    });
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
+router.post('/select-npc', authenticate, async (req, res) => {
+  try {
+    const result = await SelectNpcService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/select-picked-general', authenticate, async (req, res) => {
+  try {
+    const result = await SelectPickedGeneralService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/set-my-setting', authenticate, async (req, res) => {
+  try {
+    const result = await SetMySettingService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/vacation', authenticate, async (req, res) => {
+  try {
+    const result = await VacationService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/server-basic-info:
+ *   post:
+ *     summary: 서버 기본 정보 조회
+ *     description: 서버의 기본 정보를 조회합니다 (j_server_basic_info.php)
+ *     tags: [Game]
+ */
+router.post('/server-basic-info', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const userId = req.user?.userId || req.user?.id;
+    
+    const result = await ServerBasicInfoService.execute(sessionId, userId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/set-general-permission:
+ *   post:
+ *     summary: 장수 권한 설정
+ *     description: 군주가 장수에게 외교권자/감찰 권한을 부여합니다 (j_general_set_permission.php)
+ *     tags: [Game]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/set-general-permission', authenticate, async (req, res) => {
+  try {
+    const result = await SetGeneralPermissionService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/raise-event:
+ *   post:
+ *     summary: 이벤트 트리거 (관리자)
+ *     description: 관리자가 게임 이벤트를 트리거합니다 (j_raise_event.php)
+ *     tags: [Game]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/raise-event', authenticate, async (req, res) => {
+  try {
+    const result = await RaiseEventService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/my-boss-info:
+ *   post:
+ *     summary: 내 상관 정보 조회
+ *     description: 자신의 상관(상급자) 정보를 조회합니다 (j_myBossInfo.php)
+ *     tags: [Game]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/my-boss-info', authenticate, async (req, res) => {
+  try {
+    const result = await GetMyBossInfoService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
   }
 });
 

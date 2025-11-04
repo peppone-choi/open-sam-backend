@@ -33,6 +33,16 @@ router.post('/exit-troop', authenticate, async (req, res) => {
   }
 });
 
+// 별칭 (프론트엔드 호환)
+router.post('/exit', authenticate, async (req, res) => {
+  try {
+    const result = await ExitTroopService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 /**
  * @swagger
  * /api/troop/join-troop:
@@ -59,6 +69,17 @@ router.post('/exit-troop', authenticate, async (req, res) => {
 router.post('/join-troop', authenticate, async (req, res) => {
   try {
     const result = await JoinTroopService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 별칭 (프론트엔드 호환) - troopID를 troop_id로 변환
+router.post('/join', authenticate, async (req, res) => {
+  try {
+    const body = { ...req.body, troop_id: req.body.troopID || req.body.troop_id };
+    const result = await JoinTroopService.execute(body, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -156,6 +177,16 @@ router.post('/modify-troop', authenticate, async (req, res) => {
  *         description: 생성 성공
  */
 router.post('/new-troop', authenticate, async (req, res) => {
+  try {
+    const result = await NewTroopService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 별칭 (프론트엔드 호환)
+router.post('/new', authenticate, async (req, res) => {
   try {
     const result = await NewTroopService.execute(req.body, req.user);
     res.json(result);

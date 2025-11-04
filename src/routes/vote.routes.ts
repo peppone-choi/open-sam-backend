@@ -201,4 +201,13 @@ router.post('/vote', authenticate, async (req, res) => {
   }
 });
 
+router.post('/get-list', authenticate, async (req, res) => {
+  try {
+    const result = await GetVoteListService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

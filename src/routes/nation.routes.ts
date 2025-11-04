@@ -1982,4 +1982,179 @@ router.post('/set-troop-name', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/nation/generals:
+ *   post:
+ *     summary: 국가 장수 목록 조회
+ *     description: 국가에 소속된 모든 장수 목록을 조회합니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 example: sangokushi_default
+ *     responses:
+ *       200:
+ *         description: 장수 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                 generals:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ */
+router.post('/generals', authenticate, async (req, res) => {
+  try {
+    // GeneralListService 재사용
+    const result = await GeneralListService.execute(req.body, req.user);
+    if (result.success && result.list) {
+      res.json({
+        result: true,
+        generals: result.list
+      });
+    } else {
+      res.json({
+        result: false,
+        generals: [],
+        reason: result.message || '장수 목록을 조회할 수 없습니다'
+      });
+    }
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/nation/stratfinan:
+ *   post:
+ *     summary: 국가 전략/재정 정보 조회
+ *     description: 국가의 전략 정보와 재정 상태를 조회합니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 example: sangokushi_default
+ *     responses:
+ *       200:
+ *         description: 전략/재정 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                 stratFinan:
+ *                   type: object
+ */
+router.post('/stratfinan', authenticate, async (req, res) => {
+  try {
+    // GetNationInfoService를 사용하여 전략/재정 정보 조회
+    const nationInfo = await GetNationInfoService.execute({ ...req.body, full: true }, req.user);
+    if (nationInfo.success && nationInfo.nation) {
+      const nation = nationInfo.nation;
+      res.json({
+        result: true,
+        stratFinan: {
+          nation: nation.nation,
+          name: nation.name,
+          gold: nation.gold || 0,
+          rice: nation.rice || 0,
+          rate: nation.rate || 10,
+          bill: nation.bill || 0,
+          tech: nation.tech || 0,
+          power: nation.power || {},
+          strategic_cmd_limit: nation.strategic_cmd_limit || {},
+          level: nation.level || 0,
+          gennum: nation.gennum || 0
+        }
+      });
+    } else {
+      res.json({
+        result: false,
+        stratFinan: {},
+        reason: nationInfo.message || '전략/재정 정보를 조회할 수 없습니다'
+      });
+    }
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/nation/betting:
+ *   post:
+ *     summary: 국가 배팅 정보 조회
+ *     description: 국가 관련 배팅 정보를 조회합니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 example: sangokushi_default
+ *     responses:
+ *       200:
+ *         description: 배팅 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                 bettings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ */
+router.post('/betting', authenticate, async (req, res) => {
+  try {
+    // GetBettingListService 재사용
+    const { GetBettingListService } = await import('../services/betting/GetBettingList.service');
+    const result = await GetBettingListService.execute(req.body, req.user);
+    if (result.result && result.bettingList) {
+      // 국가 관련 배팅만 필터링 (선택사항)
+      res.json({
+        result: true,
+        bettings: result.bettingList
+      });
+    } else {
+      res.json({
+        result: false,
+        bettings: [],
+        reason: result.reason || '배팅 정보를 조회할 수 없습니다'
+      });
+    }
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

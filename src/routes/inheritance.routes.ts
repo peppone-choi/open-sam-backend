@@ -90,7 +90,17 @@ router.post('/change-turn-time', async (req, res) => {
       return res.status(400).json({ error: '이 서버는 턴 시각 변경이 불가능합니다' });
     }
     
-    // TODO: 유산 차감 로직
+    // 유산 차감 로직 (유산 포인트 차감)
+    const inheritCost = 1000; // 기본 비용
+    const inheritPoints = general.data?.inherit_points || 0;
+    
+    if (inheritPoints < inheritCost) {
+      return res.status(400).json({ 
+        error: `유산 포인트가 부족합니다. 필요: ${inheritCost}, 보유: ${inheritPoints}` 
+      });
+    }
+    
+    general.data.inherit_points = (general.data.inherit_points || 0) - inheritCost;
     
     // 턴 시각 변경
     general.custom_turn_hour = hour;

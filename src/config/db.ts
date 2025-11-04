@@ -5,7 +5,7 @@ import { Nation, INation } from '../models/nation.model';
 
 export async function connectDB() {
   try {
-    const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/sangokushi';
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/opensam';
     console.log('🔌 MongoDB 연결 시도:', uri.replace(/\/\/.*@/, '//*****@'));
     await mongoose.connect(uri);
     console.log('✅ MongoDB 연결 성공');

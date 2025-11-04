@@ -290,4 +290,49 @@ router.post('/open-unique-auction', authenticate, async (req, res) => {
   }
 });
 
+router.post('/get-unique-list', authenticate, async (req, res) => {
+  try {
+    const result = await GetUniqueItemAuctionListService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/bid-unique', authenticate, async (req, res) => {
+  try {
+    const result = await BidUniqueAuctionService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/get-active-resource-list', authenticate, async (req, res) => {
+  try {
+    const result = await GetActiveResourceAuctionListService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/bid-buy-rice', authenticate, async (req, res) => {
+  try {
+    const result = await BidBuyRiceAuctionService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/bid-sell-rice', authenticate, async (req, res) => {
+  try {
+    const result = await BidSellRiceAuctionService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;
