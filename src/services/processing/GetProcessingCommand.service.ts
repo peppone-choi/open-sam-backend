@@ -2,11 +2,13 @@ import { General } from '../../models/general.model';
 import { City } from '../../models/city.model';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
+import { Troop } from '../../models/troop.model';
 import { CommandFactory } from '../../core/command/CommandFactory';
 import { logger } from '../../common/logger';
 import { GameConst } from '../../const/GameConst';
 import { getAllUnitTypes } from '../../const/GameUnitConst';
 import { getDexLevelList } from '../../utils/dexLevel';
+import { GetMapService } from '../global/GetMap.service';
 
 /**
  * GetProcessingCommand Service
@@ -178,6 +180,38 @@ export class GetProcessingCommandService {
     // 장비매매 커맨드
     if (command === '장비매매' || command === 'che_장비매매' || command === 'tradeEquipment') {
       return await this.getTradeEquipmentData(sessionId, generalId);
+    }
+
+    // 국기변경 커맨드 (Nation)
+    if (command === '국기변경' || command === 'che_국기변경' || command === 'changeNationFlag') {
+      return await this.getChangeNationFlagData(sessionId, env);
+    }
+
+    // 국호변경 커맨드 (Nation)
+    if (command === '국호변경' || command === 'che_국호변경' || command === 'changeNationName') {
+      return {};
+    }
+
+    // 물자원조 커맨드 (Nation)
+    if (command === '물자원조' || command === 'che_물자원조' || command === 'materialAid') {
+      const data = await this.getMaterialAidData(sessionId, generalId);
+      // 맵 데이터 추가
+      const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+      return {
+        ...data,
+        mapData: mapData.success && mapData.result ? mapData : null,
+      };
+    }
+
+    // 발령 커맨드 (Nation)
+    if (command === '발령' || command === 'che_발령' || command === 'appointGeneral') {
+      const data = await this.getAppointGeneralData(sessionId, generalId);
+      // 맵 데이터 추가
+      const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+      return {
+        ...data,
+        mapData: mapData.success && mapData.result ? mapData : null,
+      };
     }
 
     // 기본 빈 데이터
@@ -960,5 +994,182 @@ export class GetProcessingCommandService {
     }
 
     return ownItem;
+  }
+
+  /**
+   * 국기변경 커맨드 데이터 (Nation)
+   */
+  private static async getChangeNationFlagData(
+    sessionId: string,
+    env: any
+  ): Promise<any> {
+    // TODO: 실제 색상 목록을 GameConst나 설정에서 가져와야 함
+    const colors = [
+      '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+      '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+      '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
+    ];
+
+    return { colors };
+  }
+
+  /**
+   * 물자원조 커맨드 데이터 (Nation)
+   */
+  private static async getMaterialAidData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await (General as any).findOne({
+      session_id: sessionId,
+      no: generalId
+    }).lean();
+
+    if (!general) {
+      return { nations: [], currentNationLevel: 0, levelInfo: {}, minAmount: 0, maxAmount: 0, amountGuide: [] };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 국가 목록 (자신 제외)
+    const nations = await (Nation as any).find({
+      session_id: sessionId,
+      nation: { $ne: nationID }
+    })
+      .lean();
+
+    const nationList = nations.map((nation: any) => {
+      const nationData = nation.data || {};
+      return {
+        id: nation.nation,
+        name: nation.name,
+        color: nationData.color || '#808080',
+        power: nationData.power || 0,
+      };
+    });
+
+    // 국가 레벨 정보
+    const currentNation = await (Nation as any).findOne({
+      session_id: sessionId,
+      nation: nationID
+    }).lean();
+
+    const currentNationLevel = currentNation?.data?.level || 0;
+
+    // 레벨별 원조 제한 (TODO: 실제 값은 게임 설정에서 가져와야 함)
+    const levelInfo: Record<number, { text: string; amount: number }> = {
+      0: { text: '재야', amount: 0 },
+      1: { text: '군주', amount: 10000 },
+      2: { text: '공', amount: 50000 },
+      3: { text: '왕', amount: 100000 },
+      4: { text: '황제', amount: 200000 },
+    };
+
+    const maxAmount = levelInfo[currentNationLevel]?.amount || 0;
+    const minAmount = 10;
+    const amountGuide = [10, 100, 1000, 10000, 50000, 100000];
+
+    return {
+      nations: nationList,
+      currentNationLevel,
+      levelInfo,
+      minAmount,
+      maxAmount,
+      amountGuide,
+    };
+  }
+
+  /**
+   * 발령 커맨드 데이터 (Nation)
+   */
+  private static async getAppointGeneralData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await (General as any).findOne({
+      session_id: sessionId,
+      no: generalId
+    }).lean();
+
+    if (!general) {
+      return { generals: [], cities: [], troops: {} };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 같은 국가의 장수 목록
+    const generals = await (General as any).find({
+      session_id: sessionId,
+      'data.nation': nationID
+    })
+      .select('no name data')
+      .sort({ name: 1 })
+      .lean();
+
+    const generalList = generals.map((gen: any) => {
+      const genData = gen.data || {};
+      return {
+        no: gen.no,
+        name: gen.name,
+        nationID: genData.nation || 0,
+        officerLevel: genData.officer_level || 1,
+        npc: genData.npc || 0,
+        leadership: genData.leadership || 0,
+        strength: genData.strength || 0,
+        intel: genData.intel || 0,
+        cityID: genData.city || 0,
+        crew: genData.crew || 0,
+        train: genData.train || 0,
+        atmos: genData.atmos || 0,
+        troopID: genData.troop || null,
+      };
+    });
+
+    // 같은 국가의 도시 목록
+    const cities = await (City as any).find({
+      session_id: sessionId,
+      'data.nation': nationID
+    })
+      .lean();
+
+    const citiesMap = cities.map((city: any) => {
+      const cityData = city.data || {};
+      return [
+        city.city,
+        {
+          name: city.name,
+          info: `${cityData.pop || 0}명`,
+        },
+      ];
+    });
+
+    // 부대 정보
+    const troops = await (Troop as any).find({
+      session_id: sessionId,
+      'data.nation': nationID
+    })
+      .lean();
+
+    const troopMap: Record<number, { troop_leader: number; nation: number; name: string }> = {};
+    for (const troop of troops) {
+      const troopData = troop.data || {};
+      const troopLeader = troopData.troop_leader;
+      if (troopLeader) {
+        troopMap[troopLeader] = {
+          troop_leader: troopLeader,
+          nation: troopData.nation || 0,
+          name: troop.name || '',
+        };
+      }
+    }
+
+    return {
+      generals: generalList,
+      cities: citiesMap,
+      troops: troopMap,
+      currentCity: generalData.city || 0,
+    };
   }
 }
