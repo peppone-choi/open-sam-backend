@@ -411,6 +411,7 @@ export class GetProcessingCommandService {
     }
 
     // colors 로드 (constants.json에서)
+    // 국가 색상 팔레트는 일반적으로 18개의 표준 색상 사용
     let colors: string[] = [];
     try {
       const path = require('path');
@@ -421,24 +422,28 @@ export class GetProcessingCommandService {
       );
       if (fs.existsSync(constantsPath)) {
         const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
-        // colors 배열 생성 (일반적으로 18개 색상)
-        const colorList = constantsData.colors || {};
+        // constants.json의 colors는 basecolor 등이지만, 실제 국가 색상은 별도 팔레트 사용
+        // 표준 18색 팔레트 (삼국지 게임에서 일반적으로 사용)
         colors = [
           '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
           '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
           '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
         ];
       } else {
+        // 기본 색상 팔레트
         colors = [
           '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-          '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
+          '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+          '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
         ];
       }
     } catch (error: any) {
       logger.debug('Failed to load colors:', error.message);
+      // 기본 색상 팔레트 (18개)
       colors = [
         '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-        '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
+        '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+        '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
       ];
     }
 
@@ -1074,7 +1079,14 @@ export class GetProcessingCommandService {
     env: any
   ): Promise<any> {
     // 색상 목록 로드 (constants.json에서)
-    let colors: string[] = [];
+    // 국가 색상 팔레트는 표준 18색 사용
+    let colors: string[] = [
+      '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+      '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
+      '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
+    ];
+    
+    // constants.json이 있으면 확인 (현재는 표준 팔레트 사용)
     try {
       const path = require('path');
       const fs = require('fs');
@@ -1083,25 +1095,12 @@ export class GetProcessingCommandService {
         '../../../config/scenarios/sangokushi/data/constants.json'
       );
       if (fs.existsSync(constantsPath)) {
-        const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
-        // 표준 색상 팔레트 (18개)
-        colors = [
-          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-          '#800000', '#008000', '#000080', '#808000', '#800080', '#008080',
-          '#C0C0C0', '#808080', '#FFA500', '#FFC0CB', '#A52A2A', '#000000'
-        ];
-      } else {
-        colors = [
-          '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-          '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
-        ];
+        // constants.json의 colors는 basecolor 등이지만, 국가 색상은 별도 팔레트 사용
+        // 표준 18색 팔레트 유지
       }
     } catch (error: any) {
       logger.debug('Failed to load colors:', error.message);
-      colors = [
-        '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-        '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080', '#000000'
-      ];
+      // 기본 색상 팔레트 유지
     }
 
     return { colors };
@@ -1152,13 +1151,7 @@ export class GetProcessingCommandService {
     const currentNationLevel = currentNation?.data?.level || 0;
 
     // 레벨별 원조 제한 (constants.json의 nationLevels에서 가져오기)
-    let levelInfo: Record<number, { text: string; amount: number }> = {
-      0: { text: '재야', amount: 0 },
-      1: { text: '군주', amount: 10000 },
-      2: { text: '공', amount: 50000 },
-      3: { text: '왕', amount: 100000 },
-      4: { text: '황제', amount: 200000 },
-    };
+    let levelInfo: Record<number, { text: string; amount: number }> = {};
     
     try {
       const path = require('path');
@@ -1170,19 +1163,45 @@ export class GetProcessingCommandService {
       if (fs.existsSync(constantsPath)) {
         const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
         const nationLevels = constantsData.nationLevels || {};
-        // 레벨별 원조 제한 계산 (레벨에 따라 증가)
-        levelInfo = {};
+        const coefAidAmount = constantsData.gameBalance?.coefAidAmount || 10000;
+        
+        // 레벨별 원조 제한 계산
         for (const [level, levelData] of Object.entries(nationLevels) as [string, any][]) {
           const levelNum = Number(level);
-          const amount = levelNum === 0 ? 0 : Math.pow(10, levelNum) * 1000; // 기본 계산
+          // 레벨 0은 재야 (원조 불가)
+          // 레벨 1부터는 레벨에 따라 증가 (coefAidAmount * level)
+          const amount = levelNum === 0 ? 0 : coefAidAmount * levelNum;
           levelInfo[levelNum] = {
             text: levelData.name || `레벨${levelNum}`,
             amount: amount
           };
         }
       }
+      
+      // 기본값 (파일 로드 실패 시)
+      if (Object.keys(levelInfo).length === 0) {
+        levelInfo = {
+          0: { text: '방랑군', amount: 0 },
+          1: { text: '현', amount: 10000 },
+          2: { text: '군', amount: 20000 },
+          3: { text: '자사', amount: 30000 },
+          4: { text: '주목', amount: 40000 },
+          5: { text: '후작국', amount: 50000 },
+          6: { text: '공국', amount: 60000 },
+          7: { text: '왕국', amount: 70000 },
+          8: { text: '제국', amount: 80000 },
+        };
+      }
     } catch (error: any) {
       logger.debug('Failed to load level info:', error.message);
+      // 기본값
+      levelInfo = {
+        0: { text: '방랑군', amount: 0 },
+        1: { text: '현', amount: 10000 },
+        2: { text: '군', amount: 20000 },
+        3: { text: '자사', amount: 30000 },
+        4: { text: '주목', amount: 40000 },
+      };
     }
 
     const maxAmount = levelInfo[currentNationLevel]?.amount || 0;
