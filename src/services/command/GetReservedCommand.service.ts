@@ -127,7 +127,7 @@ export class GetReservedCommandService {
     
     const turnTermInMinutes = gameEnv.turnterm || sessionData.turnterm || 60; // 분 단위
     const turnTerm = turnTermInMinutes * 60; // 초 단위로 변환
-    const year = gameEnv.year || sessionData.year || 180;
+    let year = gameEnv.year || sessionData.year || 180;
     let month = gameEnv.month || sessionData.month || 1;
     const lastExecute = gameEnv.turntime || sessionData.turntime || new Date();
     
@@ -166,18 +166,34 @@ export class GetReservedCommandService {
     // turnTime은 그대로 사용 (과거 시간이어도 수정하지 않음)
     // 실제 턴 시간 업데이트는 ExecuteEngine.updateTurnTime에서만 수행
 
-    const cutTurn = (time: Date, term: number) => {
-      return Math.floor(new Date(time).getTime() / (term * 1000));
+    // turnTime을 기준으로 정확한 년월 계산 (ExecuteEngine.turnDate와 동일한 로직)
+    // starttime 기준으로 경과한 턴 수를 계산하여 년월 결정
+    const starttime = new Date(sessionData.starttime || sessionData.turntime || new Date());
+    const startyear = sessionData.startyear || 180;
+    
+    // turnTime을 turnterm 단위로 자르기
+    const cutTurnFunc = (time: Date, termInMinutes: number): Date => {
+      const baseDate = new Date(time);
+      baseDate.setDate(baseDate.getDate() - 1);
+      baseDate.setHours(1, 0, 0, 0);
+      
+      const diffMinutes = Math.floor((time.getTime() - baseDate.getTime()) / (1000 * 60));
+      const cutMinutes = Math.floor(diffMinutes / termInMinutes) * termInMinutes;
+      
+      return new Date(baseDate.getTime() + cutMinutes * 60 * 1000);
     };
-
-    if (cutTurn(turnTime, turnTerm) > cutTurn(lastExecute, turnTerm)) {
-      // 이미 이번달에 실행된 턴이다. (PHP 버전과 동일)
-      month++;
-      if (month >= 13) {
-        month -= 12;
-        year += 1;
-      }
-    }
+    
+    const curturn = cutTurnFunc(turnTime, turnTermInMinutes);
+    const starttimeCut = cutTurnFunc(starttime, turnTermInMinutes);
+    
+    // 경과한 턴 수 계산
+    const timeDiffMinutes = (curturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
+    const numTurns = Math.max(0, Math.floor(timeDiffMinutes / turnTermInMinutes));
+    
+    // 년월 계산
+    const date = startyear * 12 + numTurns;
+    year = Math.floor(date / 12);
+    month = (date % 12) + 1;
 
     // 초기 상태(명령이 하나도 없을 때)를 14턴까지 휴식으로 자동 채우기
     // 명령이 있을 때는 그걸 대체
@@ -232,13 +248,24 @@ export class GetReservedCommandService {
       }
     }
 
+    // 세션의 현재 년/월도 함께 반환 (타임라인 표시용)
+    const sessionTurntime = new Date(sessionData.turntime || new Date());
+    const sessionCurturn = cutTurnFunc(sessionTurntime, turnTermInMinutes);
+    const sessionTimeDiffMinutes = (sessionCurturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
+    const sessionNumTurns = Math.max(0, Math.floor(sessionTimeDiffMinutes / turnTermInMinutes));
+    const sessionDate = startyear * 12 + sessionNumTurns;
+    const sessionYear = Math.floor(sessionDate / 12);
+    const sessionMonth = (sessionDate % 12) + 1;
+    
     return {
       success: true,
       result: true,
       turnTime: turnTime instanceof Date ? turnTime.toISOString() : new Date(turnTime).toISOString(),
       turnTerm: turnTermInMinutes, // PHP 버전과 동일하게 분 단위로 반환
-      year,
+      year, // 장수의 다음 turntime 기준 년월
       month,
+      sessionYear, // 세션의 현재 년월
+      sessionMonth,
       date: new Date().toISOString(),
       turn: turnArray, // 배열로 변경
       autorun_limit: general.data?.aux?.autorun_limit || null

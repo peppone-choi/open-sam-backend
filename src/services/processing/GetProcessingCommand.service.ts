@@ -20,7 +20,8 @@ import { GetConstService } from '../global/GetConst.service';
 export class GetProcessingCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const command = data.command || data.action;
+    const rawCommand = data.command || data.action || '';
+    const command = decodeURIComponent(rawCommand);
     const turnList = data.turnList || [0];
     const isChief = data.isChief || false;
     

@@ -48,6 +48,26 @@ export class InitService {
     const content = fs.readFileSync(dataPath, 'utf-8');
     return JSON.parse(content);
   }
+  
+  /**
+   * 시나리오 메타데이터 로드 (scenario.json)
+   */
+  private static loadScenarioMetadata(scenarioId: string): any {
+    const metadataPath = path.join(
+      __dirname, 
+      '../../config/scenarios', 
+      scenarioId, 
+      'scenario.json'
+    );
+    
+    if (!fs.existsSync(metadataPath)) {
+      console.warn(`   ⚠️  시나리오 메타데이터를 찾을 수 없습니다: ${metadataPath}`);
+      return null;
+    }
+    
+    const content = fs.readFileSync(metadataPath, 'utf-8');
+    return JSON.parse(content);
+  }
 
   /**
    * 세션 초기화 (시나리오 데이터 기반)
@@ -63,11 +83,14 @@ export class InitService {
     const scenarioId = session.scenario_id || 'sangokushi';
     console.log(`   📦 시나리오: ${scenarioId}`);
     
-    // 2. 기존 도시 삭제 (재초기화)
+    // 2. 시나리오 메타데이터 로드 (turnterm 등)
+    const scenarioMetadata = this.loadScenarioMetadata(scenarioId);
+    
+    // 3. 기존 도시 삭제 (재초기화)
     await (City as any).deleteMany({ session_id: sessionId });
     console.log(`   🗑️  기존 도시 삭제`);
     
-    // 3. 시나리오 데이터 로드
+    // 4. 시나리오 데이터 로드
     const citiesData = this.loadScenarioData(scenarioId, 'cities');
     
     if (!citiesData || !citiesData.cities) {
@@ -92,9 +115,9 @@ export class InitService {
         
         // 기본 정보
         nation: 0,  // 처음엔 중립 (재야)
-        level: cityTemplate.levelId || 2,
+        level: cityTemplate.levelId !== undefined ? cityTemplate.levelId : 2, // levelId가 0일 수 있으므로 || 대신 !== undefined 사용
         state: 0,
-        region: cityTemplate.regionId || 0,
+        region: cityTemplate.regionId !== undefined ? cityTemplate.regionId : 0,
         
         // 자원
         pop: initialState.population || 100000,
@@ -149,7 +172,11 @@ export class InitService {
     
     // 5. 세션 데이터 초기화 (턴 시간, 년/월 등)
     if (!session.data) session.data = {};
-    session.data.turnterm = session.data.turnterm || 60; // 기본 60분턴 (분 단위로 저장)
+    
+    // 시나리오에서 turnterm 가져오기 (없으면 세션 기본값, 그것도 없으면 60분)
+    const scenarioTurnterm = scenarioMetadata?.gameSettings?.turnterm || scenarioMetadata?.turnterm;
+    session.data.turnterm = session.data.turnterm || scenarioTurnterm || 60; // 분 단위로 저장
+    
     session.data.year = session.data.year || 184;
     session.data.month = session.data.month || 1;
     session.data.startyear = session.data.startyear || 184;
@@ -157,6 +184,7 @@ export class InitService {
     session.data.turntime = session.data.turntime || new Date();
     session.data.starttime = session.data.starttime || new Date();
     
+    session.markModified('data');
     await session.save();
     console.log(`   ✅ 세션 데이터 초기화 (턴: ${session.data.turnterm}분)`);
     console.log(`🎉 세션 초기화 완료!\n`);

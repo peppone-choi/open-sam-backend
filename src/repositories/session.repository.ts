@@ -40,14 +40,19 @@ class SessionRepository {
   /**
    * 세션 생성
    * @param data - 세션 데이터
-   * @returns 생성된 세션 (Redis에 저장, DB는 데몬이 동기화)
+   * @returns 생성된 세션 (MongoDB와 Redis에 저장)
    */
   async create(data: any) {
-    // Redis에만 저장 (DB는 데몬이 동기화)
+    // MongoDB에 직접 저장
+    const session = new (Session as any)(data);
+    await session.save();
+    
+    // Redis에도 저장 (캐시)
     if (data.session_id) {
       await saveSession(data.session_id, data);
     }
-    return data;
+    
+    return session;
   }
 
   /**

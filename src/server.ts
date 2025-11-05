@@ -39,6 +39,7 @@ import installRoutes from './routes/install.routes';
 import oauthRoutes from './routes/oauth.routes';
 import archiveRoutes from './routes/archive.routes';
 import tournamentRoutes from './routes/tournament.routes';
+import { FileWatcherService } from './services/file-watcher.service';
 
 dotenv.config();
 
@@ -279,6 +280,20 @@ async function start() {
     if (!session) {
       logger.info('기본 삼국지 세션 생성 중...');
       session = await SessionService.createDefaultSangokushi();
+      
+      // 세션이 DB에 저장되었는지 확인 (재시도)
+      let retries = 3;
+      while (retries > 0) {
+        session = await (Session as any).findOne({ session_id: sessionId });
+        if (session) break;
+        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms 대기
+        retries--;
+      }
+      
+      if (!session) {
+        throw new Error('세션 생성 후 DB 조회 실패');
+      }
+      
       await InitService.initializeSession(sessionId);
       logger.info('기본 세션 생성 완료', { sessionId });
     } else {
@@ -310,6 +325,15 @@ async function start() {
       logger.info('턴 프로세서 데몬 비활성화됨 (ENABLE_TURN_PROCESSOR=false)');
     }
     
+    // 세션 영속화 데몬 시작 (환경 변수로 제어 가능)
+    if (process.env.ENABLE_SESSION_PERSISTER !== 'false') {
+      const { startSessionPersister } = await import('./daemon/session-persister');
+      await startSessionPersister();
+      logger.info('세션 영속화 데몬 시작 완료');
+    } else {
+      logger.info('세션 영속화 데몬 비활성화됨 (ENABLE_SESSION_PERSISTER=false)');
+    }
+    
     // HTTP 서버 시작
     httpServer.listen(PORT, () => {
       logger.info('API 서버 시작 완료', {
@@ -331,6 +355,13 @@ async function start() {
       console.log('\n🚀 서버가 성공적으로 시작되었습니다!');
       console.log(`📍 포트: ${PORT}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV || 'development'}`);
+      
+      // 개발 모드에서 JSON 파일 감시 시작
+      if (process.env.NODE_ENV !== 'production') {
+        const defaultSessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
+        const defaultScenarioId = process.env.DEFAULT_SCENARIO_ID || 'sangokushi';
+        FileWatcherService.startWatching(defaultScenarioId, defaultSessionId);
+      }
       console.log(`🎮 커맨드: ${commandStats.total}개 (General: ${commandStats.generalCount}, Nation: ${commandStats.nationCount})`);
       console.log(`📡 Socket.IO: 활성화됨\n`);
     });

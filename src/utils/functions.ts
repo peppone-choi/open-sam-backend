@@ -2,28 +2,171 @@ export function getDexLevelList(level: number): any[] {
   return [];
 }
 
-export function tryUniqueItemLottery(...args: any[]): any {
-  return null;
+import { UniqueConst } from '../const/UniqueConst';
+import { ActionLogger } from './ActionLogger';
+
+/**
+ * 유니크 아이템 추첨 시도
+ * @param rng 난수 생성기
+ * @param general 장수 객체
+ */
+export async function tryUniqueItemLottery(rng: any, general: any): Promise<void> {
+  if (!rng || !general) {
+    return;
+  }
+
+  // 1. 추첨 확률 체크 (매우 낮은 확률)
+  const lotteryChance = rng.nextFloat();
+  if (lotteryChance > 0.001) { // 0.1% 확률
+    return;
+  }
+  
+  // 2. 랜덤하게 아이템 선택 (희귀도 가중치 적용)
+  const selectedItem = UniqueConst.getRandomItem(rng);
+  
+  if (!selectedItem) {
+    return;
+  }
+  
+  // 3. 장수에게 아이템 지급
+  try {
+    // 장수의 아이템 목록에 추가
+    if (!general.data.items) {
+      general.data.items = [];
+    }
+    
+    general.data.items.push({
+      id: selectedItem.id,
+      name: selectedItem.name,
+      type: selectedItem.type,
+      acquiredAt: new Date()
+    });
+    
+    general.markModified('data.items');
+    await general.save();
+    
+    // 로그 기록
+    ActionLogger.log(
+      general.no,
+      'unique_item_lottery',
+      `유니크 아이템 획득: ${selectedItem.name}`,
+      ActionLogger.INFO
+    );
+    
+  } catch (error) {
+    console.error('Failed to add unique item to general:', error);
+  }
 }
 
-export function CheckHall(...args: any[]): any {
-  return null;
+/**
+ * 명예의 전당 체크
+ */
+export async function CheckHall(hallType: string, targetValue: number, currentValue: number): Promise<boolean> {
+  // 명예의 전당 조건 체크
+  return currentValue >= targetValue;
 }
 
-export function checkOfficerLevel(...args: any[]): any {
-  return 0;
+/**
+ * 관직 레벨 조회
+ */
+export function checkOfficerLevel(officerLevel: number): number {
+  // 관직 레벨 유효성 체크
+  if (officerLevel < 0) return 0;
+  if (officerLevel > 12) return 12;
+  return officerLevel;
 }
 
-export function getNationType(...args: any[]): any {
-  return 0;
+/**
+ * 국가 타입 조회
+ */
+export function getNationType(type: string | number): string {
+  const typeMap: Record<string | number, string> = {
+    0: 'None',
+    1: 'Wandering',
+    2: 'Normal',
+    3: 'Special',
+    'None': 'None',
+    'Wandering': 'Wandering',
+    'Normal': 'Normal',
+    'Special': 'Special'
+  };
+  
+  return typeMap[type] || 'Normal';
 }
 
-export async function searchDistance(cityId: number, range: number, onlyOccupied: boolean): Promise<Record<number, number>> {
-  return {};
+import { City } from '../models/city.model';
+import { calculateDistanceList } from './cityDistance';
+
+/**
+ * 도시 거리 검색
+ */
+export async function searchDistance(
+  cityId: number, 
+  range: number, 
+  onlyOccupied: boolean,
+  sessionId?: string
+): Promise<Record<number, number>> {
+  const query: any = {};
+  if (sessionId) {
+    query.session_id = sessionId;
+  }
+
+  // 모든 도시 조회
+  const cities = await (City as any).find(query).select('city data').lean();
+  
+  // 도시 경로 정보 구성
+  const cityConst: Record<number, { path?: Record<number, string> }> = {};
+  for (const city of cities) {
+    cityConst[city.city] = {
+      path: city.data?.path || {}
+    };
+  }
+
+  // 거리 목록 계산
+  const distanceList = calculateDistanceList(cityId, cityConst, range);
+  
+  // 결과를 { cityId: distance } 형태로 변환
+  const result: Record<number, number> = {};
+  for (const [distance, cityList] of Object.entries(distanceList)) {
+    const dist = parseInt(distance, 10);
+    for (const cId of cityList) {
+      result[cId] = dist;
+    }
+  }
+
+  // onlyOccupied인 경우 점령된 도시만 필터링
+  if (onlyOccupied) {
+    const occupiedCities = cities.filter((c: any) => c.data?.nation > 0);
+    const occupiedCityIds = new Set(occupiedCities.map((c: any) => c.city));
+    
+    for (const cId in result) {
+      if (!occupiedCityIds.has(parseInt(cId, 10))) {
+        delete result[cId];
+      }
+    }
+  }
+
+  return result;
 }
 
-export function getVirtualPower(...args: any[]): number {
-  return 0;
+/**
+ * 가상 전투력 계산
+ */
+export function getVirtualPower(
+  leadership: number,
+  strength: number,
+  intel: number,
+  crew: number,
+  crewType: number
+): number {
+  // 기본 능력치 합계
+  const statTotal = leadership + strength + intel;
+  
+  // 병사 수와 병종에 따른 보정
+  const crewPower = crew * (crewType / 1000);
+  
+  // 가상 전투력 = (능력치 합계 * 10) + (병사 전투력)
+  return Math.floor(statTotal * 10 + crewPower);
 }
 
 import { Nation } from '../models';
@@ -147,6 +290,18 @@ export function refreshNationStaticInfo(): void {
   nationListCache = null;
 }
 
-export function buildItemClass(...args: any[]): any {
-  return null;
+/**
+ * 아이템 클래스 빌드
+ */
+export function buildItemClass(itemId: number, itemData?: any): any {
+  return {
+    id: itemId,
+    ...itemData,
+    getEffect: function() {
+      return this.effect || {};
+    },
+    getName: function() {
+      return this.name || `Item ${this.id}`;
+    }
+  };
 }

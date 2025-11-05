@@ -300,16 +300,170 @@ export class ConstraintHelper {
     };
   }
 
-  static NotOccupiedDestCity(): IConstraint { return { test: () => null }; }
-  static ReqDestCityValue(...args: any[]): IConstraint { return { test: () => null }; }
-  static ReqNationAuxValue(...args: any[]): IConstraint { return { test: () => null }; }
-  static ReqNationValue(...args: any[]): IConstraint { return { test: () => null }; }
-  static OccupiedDestCity(): IConstraint { return { test: () => null }; }
-  static SuppliedDestCity(): IConstraint { return { test: () => null }; }
-  static AvailableStrategicCommand(...args: any[]): IConstraint { return { test: () => null }; }
-  static AllowDiplomacyWithTerm(...args: any[]): IConstraint { return { test: () => null }; }
-  static AllowDiplomacyBetweenStatus(statuses: number[], message: string): IConstraint { return { test: () => null }; }
-  static DifferentDestNation(): IConstraint { return { test: () => null }; }
-  static ReqDestNationValue(...args: any[]): IConstraint { return { test: () => null }; }
+  static NotOccupiedDestCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const destCity = input.destCity;
+        return destCity?.nation !== input.general?.getNationID() ? null : '아국 도시입니다.';
+      }
+    };
+  }
+
+  static ReqDestCityValue(key: string, operator: string, value: any, message: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const destCity = input.destCity;
+        const cityValue = destCity?.[key];
+        let result = false;
+        switch (operator) {
+          case '>=': result = cityValue >= value; break;
+          case '>': result = cityValue > value; break;
+          case '<=': result = cityValue <= value; break;
+          case '<': result = cityValue < value; break;
+          case '===': result = cityValue === value; break;
+          case '!==': result = cityValue !== value; break;
+        }
+        return result ? null : message;
+      }
+    };
+  }
+
+  static ReqNationAuxValue(key: string, operator: string, value: any, message: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const auxValue = input.nation?.aux?.[key];
+        let result = false;
+        switch (operator) {
+          case '>=': result = auxValue >= value; break;
+          case '>': result = auxValue > value; break;
+          case '<=': result = auxValue <= value; break;
+          case '<': result = auxValue < value; break;
+          case '===': result = auxValue === value; break;
+          case '!==': result = auxValue !== value; break;
+        }
+        return result ? null : message;
+      }
+    };
+  }
+
+  static ReqNationValue(key: string, name: string, operator: string, value: any, message?: string): IConstraint {
+    const actualMessage = message || `국가 ${name} 조건을 만족하지 않습니다.`;
+    return {
+      test: (input: any, env: any) => {
+        const nationValue = input.nation?.[key];
+        let result = false;
+        switch (operator) {
+          case '>=': result = nationValue >= value; break;
+          case '>': result = nationValue > value; break;
+          case '<=': result = nationValue <= value; break;
+          case '<': result = nationValue < value; break;
+          case '===': result = nationValue === value; break;
+          case '!==': result = nationValue !== value; break;
+        }
+        return result ? null : actualMessage;
+      }
+    };
+  }
+
+  static OccupiedDestCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const destCity = input.destCity;
+        return destCity?.nation === input.general?.getNationID() ? null : '아국 도시가 아닙니다.';
+      }
+    };
+  }
+
+  static SuppliedDestCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        return input.destCity?.supply === 1 ? null : '목적지 도시의 보급이 끊겼습니다.';
+      }
+    };
+  }
+
+  static AvailableStrategicCommand(commandKey: string, message?: string): IConstraint {
+    const actualMessage = message || '사용할 수 없는 전략 명령입니다.';
+    return {
+      test: (input: any, env: any) => {
+        const available = input.availableCommandTypeList?.[commandKey];
+        return available ? null : actualMessage;
+      }
+    };
+  }
+
+  static AllowDiplomacyWithTerm(minTerm: number, message?: string): IConstraint {
+    const actualMessage = message || `최소 ${minTerm}개월 이상이어야 합니다.`;
+    return {
+      test: (input: any, env: any) => {
+        const term = input.term || 0;
+        return term >= minTerm ? null : actualMessage;
+      }
+    };
+  }
+
+  static AllowDiplomacyBetweenStatus(statuses: number[], message: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const diplomacyStatus = input.diplomacyStatus;
+        return statuses.includes(diplomacyStatus) ? null : message;
+      }
+    };
+  }
+
+  static DifferentDestNation(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        return input.general?.getNationID() !== input.destNation?.nation 
+          ? null : '자국에는 사용할 수 없습니다.';
+      }
+    };
+  }
+
+  static ReqDestNationValue(key: string, operator: string, value: any, message: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const destNation = input.destNation;
+        const nationValue = destNation?.[key];
+        let result = false;
+        switch (operator) {
+          case '>=': result = nationValue >= value; break;
+          case '>': result = nationValue > value; break;
+          case '<=': result = nationValue <= value; break;
+          case '<': result = nationValue < value; break;
+          case '===': result = nationValue === value; break;
+          case '!==': result = nationValue !== value; break;
+        }
+        return result ? null : message;
+      }
+    };
+  }
+
+  static NeutralCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        return input.city?.nation === 0 ? null : '중립 도시가 아닙니다.';
+      }
+    };
+  }
+
+  static CheckNationNameDuplicate(nationName: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        // This needs to be implemented with actual database check
+        // For now, return null (pass)
+        return null;
+      }
+    };
+  }
+
+  static BeOpeningPart(years: number): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const relYear = env?.year - env?.startyear;
+        return relYear < years ? null : `초반 기간이 지났습니다.`;
+      }
+    };
+  }
 
 }

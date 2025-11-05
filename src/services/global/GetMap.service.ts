@@ -27,8 +27,15 @@ export class GetMapService {
       // Get session info (year, month, startYear)
       const sessionData = session.data as any || {};
       const startYear = sessionData.startyear || 180;
-      const year = sessionData.year || 180;
-      const month = sessionData.month || 1;
+      
+      // turnDate를 호출하여 최신 년/월 계산 (GetFrontInfo와 동일한 방식)
+      const { ExecuteEngineService } = await import('./ExecuteEngine.service');
+      const turntime = sessionData.turntime ? new Date(sessionData.turntime) : new Date();
+      const gameEnvCopy = { ...sessionData };
+      const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+      
+      const year = turnInfo.year;
+      const month = turnInfo.month;
 
       // Find user's general
       let myCity: number | null = null;

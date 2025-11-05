@@ -12,6 +12,11 @@ import { SetRateService } from '../services/nation/SetRate.service';
 import { SetScoutMsgService } from '../services/nation/SetScoutMsg.service';
 import { SetSecretLimitService } from '../services/nation/SetSecretLimit.service';
 import { SetTroopNameService } from '../services/nation/SetTroopName.service';
+import { General } from '../models/general.model';
+import { Nation } from '../models/nation.model';
+import { City } from '../models/city.model';
+import { Diplomacy } from '../models/diplomacy.model';
+import { KVStorage } from '../models/kv-storage.model';
 
 const router = Router();
 
@@ -2069,33 +2074,146 @@ router.post('/generals', authenticate, async (req, res) => {
  */
 router.post('/stratfinan', authenticate, async (req, res) => {
   try {
-    // GetNationInfoService를 사용하여 전략/재정 정보 조회
-    const nationInfo = await GetNationInfoService.execute({ ...req.body, full: true }, req.user);
-    if (nationInfo.success && nationInfo.nation) {
-      const nation = nationInfo.nation;
-      res.json({
-        result: true,
-        stratFinan: {
-          nation: nation.nation,
-          name: nation.name,
-          gold: nation.gold || 0,
-          rice: nation.rice || 0,
-          rate: nation.rate || 10,
-          bill: nation.bill || 0,
-          tech: nation.tech || 0,
-          power: nation.power || {},
-          strategic_cmd_limit: nation.strategic_cmd_limit || {},
-          level: nation.level || 0,
-          gennum: nation.gennum || 0
-        }
-      });
-    } else {
-      res.json({
-        result: false,
-        stratFinan: {},
-        reason: nationInfo.message || '전략/재정 정보를 조회할 수 없습니다'
-      });
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    
+    // 장수 정보 가져오기
+    const general: any = await (General as any).findOne({ owner: req.user.userId, session_id: sessionId });
+    if (!general) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다' });
     }
+
+    const nationId = general.data?.nation || 0;
+    if (nationId === 0) {
+      return res.json({ result: false, reason: '국가에 소속되어있지 않습니다' });
+    }
+
+    const officerLevel = general.data?.officer_level || 0;
+    const permission = general.data?.permission || 0;
+
+    // 권한 확인 (수뇌부 또는 외교권자)
+    if (officerLevel < 5 && permission !== 4) {
+      return res.json({ result: false, reason: '권한이 부족합니다. 수뇌부가 아니거나 사관년도가 부족합니다' });
+    }
+
+    // Nation 조회
+    const nation: any = await (Nation as any).findOne({ session_id: sessionId, nation: nationId });
+    if (!nation) {
+      return res.json({ result: false, reason: '국가를 찾을 수 없습니다' });
+    }
+
+    // Session 환경 조회 (year, month)
+    const sessionKV: any = await (KVStorage as any).findOne({ session_id: sessionId, storage_id: 'game_env' });
+    const year = sessionKV?.data?.year || sessionKV?.value?.year || 0;
+    const month = sessionKV?.data?.month || sessionKV?.value?.month || 0;
+
+    // 모든 국가 정보 조회
+    const allNations: any[] = await (Nation as any).find({ session_id: sessionId });
+
+    // 국가별 도시 수 집계
+    const cityCounts = await (City as any).aggregate([
+      { $match: { session_id: sessionId } },
+      { $group: { _id: '$nation', count: { $sum: 1 } } }
+    ]);
+    const cityCntMap: Record<number, number> = {};
+    cityCounts.forEach((item: any) => {
+      cityCntMap[item._id] = item.count;
+    });
+
+    // 외교 관계 조회
+    const diplomacyList: any[] = await (Diplomacy as any).find({ session_id: sessionId, me: nationId });
+    const dipStateMap: Record<number, { state: number; term: number }> = {};
+    diplomacyList.forEach((dip: any) => {
+      dipStateMap[dip.you] = { state: dip.state, term: dip.term };
+    });
+
+    // 국가 목록 구성
+    const nationsList = allNations.map((n: any) => {
+      const staticNationID = n.nation;
+      const cityCnt = cityCntMap[staticNationID] || 0;
+      let diplomacy;
+      if (staticNationID === nationId) {
+        diplomacy = { state: 7, term: null };
+      } else {
+        const dipState = dipStateMap[staticNationID];
+        diplomacy = {
+          state: dipState?.state || 2,
+          term: dipState?.term || 0
+        };
+      }
+
+      return {
+        nation: n.nation,
+        name: n.name,
+        color: n.color,
+        cityCnt,
+        diplomacy
+      };
+    });
+
+    // 국가 KVStorage 조회
+    const nationKV: any = await (KVStorage as any).findOne({ session_id: sessionId, storage_id: `nation_${nationId}` });
+    const nationMsg = nationKV?.data?.nationNotice?.msg || nationKV?.value?.notice?.msg || '';
+    const scoutMsg = nationKV?.data?.scout_msg || nationKV?.value?.scout_msg || '';
+    const availableWarSettingCnt = nationKV?.data?.available_war_setting_cnt || nationKV?.value?.available_war_setting_cnt || 0;
+
+    // 정책 데이터 구성
+    const policy = {
+      rate: nation.rate || 10,
+      bill: nation.data?.bill || 100,
+      secretLimit: nation.data?.secretlimit || 1,
+      blockScout: (nation.data?.scout || 0) !== 0,
+      blockWar: (nation.data?.war || 0) !== 0
+    };
+
+    // 전쟁 금지 설정 횟수
+    const warSettingCnt = {
+      remain: availableWarSettingCnt,
+      inc: 1,  // TODO: GameConst로 이동
+      max: 3   // TODO: GameConst로 이동
+    };
+
+    // 재정 (우선 0으로, TODO 추가)
+    const income = {
+      gold: { city: 0, war: 0 },  // TODO: getGoldIncome, getWarGoldIncome 포팅 필요
+      rice: { city: 0, wall: 0 }  // TODO: getRiceIncome, getWallIncome 포팅 필요
+    };
+    const outcome = 0;  // TODO: getOutcome 포팅 필요
+
+    // 편집 권한 확인
+    const editable = officerLevel >= 5 || permission === 4;
+
+    res.json({
+      result: true,
+      stratFinan: {
+        // 기본 환경 데이터
+        year,
+        month,
+        nationID: nationId,
+        officerLevel,
+        editable,
+
+        // 외교 관계
+        nationsList,
+
+        // 국가 메시지
+        nationMsg,
+        scoutMsg,
+
+        // 자원
+        gold: nation.gold || 0,
+        rice: nation.rice || 0,
+
+        // 정책
+        policy,
+
+        // 전쟁 금지 설정
+        warSettingCnt,
+
+        // 재정 (TODO)
+        income,
+        outcome
+      }
+    });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

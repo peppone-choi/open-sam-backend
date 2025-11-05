@@ -87,9 +87,10 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
   const data = loadUnitsFromJSON(scenarioId);
   const units = data.units || {};
 
-  for (const [idStr, unitData: any] of Object.entries(units)) {
+  for (const [idStr, unitData] of Object.entries(units)) {
     const id = Number(idStr);
-    const armType = TYPE_MAP[unitData.type] ?? ARM_TYPE.FOOTMAN;
+    const unit = unitData as any;
+    const armType = TYPE_MAP[unit.type] ?? ARM_TYPE.FOOTMAN;
     
     // constraints에서 요구사항 추출
     let reqTech = 0;
@@ -97,8 +98,8 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     const reqRegions: string[] = [];
     const reqCities: string[] = [];
 
-    if (unitData.constraints && Array.isArray(unitData.constraints)) {
-      for (const constraint of unitData.constraints) {
+    if (unit.constraints && Array.isArray(unit.constraints)) {
+      for (const constraint of unit.constraints) {
         if (constraint.type === 'reqTech') {
           reqTech = constraint.value || 0;
         } else if (constraint.type === 'reqMinRelYear') {
@@ -120,7 +121,7 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     }
 
     // stats에서 능력치 추출
-    const stats = unitData.stats || {};
+    const stats = unit.stats || {};
     const attack = stats.offense || 0;
     const defence = stats.defenseRange || stats.defense || 0;
     const speed = stats.attackRange || 7;
@@ -128,13 +129,13 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     const magicCoef = stats.magic || 0;
 
     // cost에서 비용 추출
-    const cost = unitData.cost?.gold || 100;
-    const rice = unitData.cost?.rice || 100;
+    const cost = unit.cost?.gold || 100;
+    const rice = unit.cost?.rice || 100;
 
-    const unit: GameUnitDetail = {
+    const unitDetail: GameUnitDetail = {
       id,
       armType,
-      name: unitData.name || `병종 ${id}`,
+      name: unit.name || `병종 ${id}`,
       attack,
       defence,
       speed,
@@ -146,15 +147,15 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
       reqYear,
       reqRegions: reqRegions.length > 0 ? reqRegions : undefined,
       reqCities: reqCities.length > 0 ? reqCities : undefined,
-      info: Array.isArray(unitData.description) ? unitData.description : [unitData.description || '']
+      info: Array.isArray(unit.description) ? unit.description : [unit.description || '']
     };
 
-    unitCache.set(id, unit);
+    unitCache.set(id, unitDetail);
 
     if (!typeCache.has(armType)) {
       typeCache.set(armType, []);
     }
-    typeCache.get(armType)!.push(unit);
+    typeCache.get(armType)!.push(unitDetail);
   }
 }
 

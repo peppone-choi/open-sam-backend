@@ -6,6 +6,7 @@ import { Session } from '../models/session.model';
 import { Nation } from '../models/nation.model';
 import { City } from '../models/city.model';
 import { SessionStateService } from '../services/sessionState.service';
+import { FileWatcherService } from '../services/file-watcher.service';
 
 const router = Router();
 
@@ -571,7 +572,6 @@ router.post('/force-rehall', async (req, res) => {
     
     // 40세 이상이고 NPC가 아닌 장수들에 대해 CheckHall 실행
     const { CheckHallService } = await import('../services/admin/CheckHall.service');
-    const { InheritancePointManager } = await import('../core/inheritance/InheritancePointManager');
     
     const generals = await (General as any).find({
       session_id: sessionId,
@@ -616,6 +616,263 @@ router.post('/force-rehall', async (req, res) => {
       result: true,
       reason: '처리되었습니다',
       processedCount: processed.length
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/sync-cities:
+ *   post:
+ *     summary: JSON 파일 변경 시 도시 데이터 수동 동기화
+ *     tags: [Admin]
+ */
+router.post('/sync-cities', async (req, res) => {
+  try {
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    
+    await FileWatcherService.syncCities(sessionId);
+    
+    res.json({
+      result: true,
+      reason: '도시 데이터 동기화가 완료되었습니다'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/system-status:
+ *   get:
+ *     summary: 시스템 상태 조회 (turntime, plock 등)
+ *     tags: [Admin]
+ */
+router.get('/system-status', async (req, res) => {
+  try {
+    const sessionId = req.query.session_id || 'sangokushi_default';
+    
+    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    if (!session) {
+      return res.status(404).json({
+        result: false,
+        reason: '세션을 찾을 수 없습니다'
+      });
+    }
+    
+    const { Plock } = await import('../models/plock.model');
+    const plock = await (Plock as any).findOne({ session_id: sessionId }).lean();
+    
+    const sessionData = session.data || {};
+    const plockData = plock?.data || {};
+    
+    res.json({
+      result: true,
+      status: {
+        turntime: sessionData.turntime || null,
+        starttime: sessionData.starttime || null,
+        tnmt_time: sessionData.tnmt_time || null,
+        plock: plockData.plock || 0,
+        turnterm: sessionData.turnterm || 0
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/adjust-time:
+ *   post:
+ *     summary: 시간 조정 (턴 시간/토너먼트 시간 앞당기기/지연)
+ *     tags: [Admin]
+ */
+router.post('/adjust-time', async (req, res) => {
+  try {
+    const { type, minutes } = req.body;
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    
+    if (!type || minutes === undefined) {
+      return res.status(400).json({
+        result: false,
+        reason: 'type과 minutes 파라미터가 필요합니다'
+      });
+    }
+    
+    const minutesNum = parseInt(minutes, 10);
+    if (isNaN(minutesNum)) {
+      return res.status(400).json({
+        result: false,
+        reason: 'minutes는 숫자여야 합니다'
+      });
+    }
+    
+    const session = await (Session as any).findOne({ session_id: sessionId });
+    if (!session) {
+      return res.status(404).json({
+        result: false,
+        reason: '세션을 찾을 수 없습니다'
+      });
+    }
+    
+    session.data = session.data || {};
+    const adjustMs = minutesNum * 60 * 1000;
+    
+    if (type === 'turn_advance') {
+      // 턴 시간 앞당김
+      const currentTurntime = session.data.turntime ? new Date(session.data.turntime) : new Date();
+      session.data.turntime = new Date(currentTurntime.getTime() - adjustMs).toISOString();
+      
+      const currentStarttime = session.data.starttime ? new Date(session.data.starttime) : new Date();
+      session.data.starttime = new Date(currentStarttime.getTime() - adjustMs).toISOString();
+      
+      // General 테이블의 turntime도 조정
+      await (General as any).updateMany(
+        { session_id: sessionId },
+        { $set: { 'data.turntime': session.data.turntime } }
+      );
+      
+      // NgAuction의 close_date도 조정
+      const { NgAuction } = await import('../models');
+      await (NgAuction as any).updateMany(
+        { session_id: sessionId },
+        { $inc: { 'data.close_date': -adjustMs } }
+      );
+      
+    } else if (type === 'turn_delay') {
+      // 턴 시간 지연
+      const currentTurntime = session.data.turntime ? new Date(session.data.turntime) : new Date();
+      session.data.turntime = new Date(currentTurntime.getTime() + adjustMs).toISOString();
+      
+      const currentStarttime = session.data.starttime ? new Date(session.data.starttime) : new Date();
+      session.data.starttime = new Date(currentStarttime.getTime() + adjustMs).toISOString();
+      
+      await (General as any).updateMany(
+        { session_id: sessionId },
+        { $set: { 'data.turntime': session.data.turntime } }
+      );
+      
+      const { NgAuction } = await import('../models');
+      await (NgAuction as any).updateMany(
+        { session_id: sessionId },
+        { $inc: { 'data.close_date': adjustMs } }
+      );
+      
+    } else if (type === 'tournament_advance') {
+      // 토너먼트 시간 앞당김
+      const currentTnmtTime = session.data.tnmt_time ? new Date(session.data.tnmt_time) : new Date();
+      session.data.tnmt_time = new Date(currentTnmtTime.getTime() - adjustMs).toISOString();
+      
+    } else if (type === 'tournament_delay') {
+      // 토너먼트 시간 지연
+      const currentTnmtTime = session.data.tnmt_time ? new Date(session.data.tnmt_time) : new Date();
+      session.data.tnmt_time = new Date(currentTnmtTime.getTime() + adjustMs).toISOString();
+      
+    } else {
+      return res.status(400).json({
+        result: false,
+        reason: '잘못된 type입니다'
+      });
+    }
+    
+    await session.save();
+    
+    res.json({
+      result: true,
+      reason: `${type}: ${minutesNum}분 조정 완료`
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/toggle-lock:
+ *   post:
+ *     summary: 게임 락 제어 (동결/가동)
+ *     tags: [Admin]
+ */
+router.post('/toggle-lock', async (req, res) => {
+  try {
+    const { lock } = req.body;
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    
+    if (lock === undefined) {
+      return res.status(400).json({
+        result: false,
+        reason: 'lock 파라미터가 필요합니다'
+      });
+    }
+    
+    const { Plock } = await import('../models/plock.model');
+    
+    let plock = await (Plock as any).findOne({ session_id: sessionId });
+    if (!plock) {
+      plock = new (Plock as any)({
+        session_id: sessionId,
+        data: {}
+      });
+    }
+    
+    plock.data = plock.data || {};
+    plock.data.plock = lock ? 1 : 0;
+    
+    await plock.save();
+    
+    res.json({
+      result: true,
+      reason: lock ? '게임이 동결되었습니다' : '게임이 가동되었습니다'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/pay-salary:
+ *   post:
+ *     summary: 봉급 즉시 지급 (금/쌀)
+ *     tags: [Admin]
+ */
+router.post('/pay-salary', async (req, res) => {
+  try {
+    const { type } = req.body;
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    
+    if (!type || !['gold', 'rice'].includes(type)) {
+      return res.status(400).json({
+        result: false,
+        reason: 'type은 "gold" 또는 "rice"여야 합니다'
+      });
+    }
+    
+    // TODO: processGoldIncome/processRiceIncome 로직 포팅 필요
+    // 현재는 기본 응답만 반환
+    
+    res.json({
+      result: true,
+      reason: `${type} 지급 기능은 추후 구현 예정입니다 (TODO)`
     });
   } catch (error: any) {
     res.status(500).json({

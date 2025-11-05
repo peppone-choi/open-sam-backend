@@ -132,6 +132,24 @@ export class ExecuteEngineService {
     const sessionData = session.data as any || {};
     const now = new Date();
     
+    // turnterm 유효성 검사 (1분~1440분 사이만 허용)
+    if (sessionData.turnterm && (sessionData.turnterm < 1 || sessionData.turnterm > 1440)) {
+      console.log(`[${new Date().toISOString()}] ⚠️ Invalid turnterm: ${sessionData.turnterm}, resetting to 60`);
+      sessionData.turnterm = 60;
+      session.data = sessionData;
+      session.markModified('data');
+      await session.save();
+    }
+    
+    // turnterm이 없으면 기본값 설정
+    if (!sessionData.turnterm) {
+      console.log(`[${new Date().toISOString()}] ⚠️ Missing turnterm, setting default to 60 minutes`);
+      sessionData.turnterm = 60;
+      session.data = sessionData;
+      session.markModified('data');
+      await session.save();
+    }
+    
     // 턴 시각 이전이면 아무것도 하지 않음
     // 하지만 turntime이 너무 먼 미래라면 (turnterm * 2 이상) 잘못된 설정으로 간주하고 초기화
     const turntime = new Date(sessionData.turntime || now);
@@ -490,6 +508,7 @@ export class ExecuteEngineService {
     sessionData.turntime = nextTurnAt.toISOString();
 
     session.data = sessionData;
+    session.markModified('data'); // Mixed 타입 변경사항 추적
     await session.save();
 
     // 캐시 무효화 (년/월 변경 시)
