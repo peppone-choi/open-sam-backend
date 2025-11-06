@@ -476,4 +476,154 @@ router.post('/reserve-bulk-command', authenticate, CommandController.reserveBulk
 router.post('/reserve-command', authenticate, CommandController.reserveCommand);
 router.post('/reserve', authenticate, CommandController.reserveCommand); // 별칭 (프론트엔드 호환)
 
+/**
+ * @swagger
+ * /api/command/push-command:
+ *   post:
+ *     summary: 명령 미루기 (뒤로 밀기)
+ *     description: 예약된 명령을 지정한 턴 수만큼 뒤로 미룹니다.
+ *     tags: [Command]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - turn_cnt
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               general_id:
+ *                 type: number
+ *               turn_cnt:
+ *                 type: number
+ *                 description: 미룰 턴 수 (1 이상)
+ *     responses:
+ *       200:
+ *         description: 명령 미루기 성공
+ */
+router.post('/push-command', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const generalId = req.user?.generalId || req.body.general_id;
+    const turnCnt = parseInt(req.body.turn_cnt) || 1;
+
+    if (!generalId) {
+      return res.status(400).json({ success: false, message: '장수 ID가 필요합니다' });
+    }
+
+    const { pushGeneralCommand } = await import('../utils/command-helpers');
+    await pushGeneralCommand(sessionId, generalId, turnCnt);
+
+    res.json({ success: true, result: true });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/command/pull-command:
+ *   post:
+ *     summary: 명령 당기기 (앞으로 당기기)
+ *     description: 예약된 명령을 지정한 턴 수만큼 앞으로 당깁니다.
+ *     tags: [Command]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - turn_cnt
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               general_id:
+ *                 type: number
+ *               turn_cnt:
+ *                 type: number
+ *                 description: 당길 턴 수 (1 이상)
+ *     responses:
+ *       200:
+ *         description: 명령 당기기 성공
+ */
+router.post('/pull-command', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const generalId = req.user?.generalId || req.body.general_id;
+    const turnCnt = parseInt(req.body.turn_cnt) || 1;
+
+    if (!generalId) {
+      return res.status(400).json({ success: false, message: '장수 ID가 필요합니다' });
+    }
+
+    const { pullGeneralCommand } = await import('../utils/command-helpers');
+    await pullGeneralCommand(sessionId, generalId, turnCnt);
+
+    res.json({ success: true, result: true });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/command/delete-command:
+ *   post:
+ *     summary: 명령 삭제
+ *     description: 지정한 턴의 명령을 삭제(휴식으로 변경)합니다.
+ *     tags: [Command]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - turn_list
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               general_id:
+ *                 type: number
+ *               turn_list:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 description: 삭제할 턴 인덱스 배열
+ *     responses:
+ *       200:
+ *         description: 명령 삭제 성공
+ */
+router.post('/delete-command', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const generalId = req.user?.generalId || req.body.general_id;
+    const turnList = Array.isArray(req.body.turn_list) ? req.body.turn_list : [req.body.turn_list];
+
+    if (!generalId) {
+      return res.status(400).json({ success: false, message: '장수 ID가 필요합니다' });
+    }
+
+    if (!turnList || turnList.length === 0) {
+      return res.status(400).json({ success: false, message: '턴 목록이 필요합니다' });
+    }
+
+    const { deleteGeneralCommand } = await import('../utils/command-helpers');
+    const result = await deleteGeneralCommand(sessionId, generalId, turnList);
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 export default router;

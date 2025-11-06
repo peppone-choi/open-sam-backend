@@ -1,5 +1,6 @@
 import { Battle, BattleStatus, BattlePhase } from '../models/battle.model';
 import { Session } from '../models/session.model';
+import * as BattleEventHook from '../services/battle/BattleEventHook.service';
 
 let io: any;
 try {
@@ -326,6 +327,40 @@ async function finishBattle(battle: any, winner: string | undefined) {
     duration: battle.currentTurn,
     message: `🏆 ${winner === 'attacker' ? '공격군' : winner === 'defender' ? '수비군' : '무승부'} 승리!`
   });
+
+  // 전투 종료 후 월드 반영 처리
+  await handleBattleEnded(battle, winner);
+}
+
+/**
+ * 전투 종료 후 월드 반영 처리
+ */
+async function handleBattleEnded(battle: any, winner: string | undefined) {
+  try {
+    const sessionId = battle.session_id;
+    const targetCityId = battle.targetCityId;
+    const attackerNationId = battle.attackerNationId;
+    const defenderNationId = battle.defenderNationId;
+
+    // 공격자가 승리하고 도시 공격이면 도시 점령 처리
+    if (winner === 'attacker' && targetCityId) {
+      // 공격자 장수 ID (첫 번째 장수 사용)
+      const attackerGeneralId = battle.attackerUnits?.[0]?.generalId || 0;
+
+      if (attackerGeneralId > 0) {
+        await BattleEventHook.onCityOccupied(
+          sessionId,
+          targetCityId,
+          attackerNationId,
+          attackerGeneralId
+        );
+      }
+    }
+
+    console.log(`[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`);
+  } catch (error: any) {
+    console.error('[BattleEventHook] 전투 종료 처리 중 오류:', error);
+  }
 }
 
 async function startNextTurn(battle: any, timer: BattleTimer) {

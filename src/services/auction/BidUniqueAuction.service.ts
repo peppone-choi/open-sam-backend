@@ -6,7 +6,9 @@ export class BidUniqueAuctionService {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
     
-    const { auctionID, amount, extendCloseDate } = data;
+    const auctionID = data.auctionID || data.auction_id;
+    const amount = data.amount || data.bid_price;
+    const extendCloseDate = data.extendCloseDate || data.try_extend_close_date;
     
     try {
       if (!auctionID || !amount) {

@@ -146,6 +146,47 @@ export async function repeatGeneralCommand(sessionId: string, generalId: number,
 }
 
 /**
+ * 장수 커맨드 삭제 (특정 턴의 명령을 휴식으로 변경)
+ */
+export async function deleteGeneralCommand(
+  sessionId: string,
+  generalId: number,
+  turnList: number[]
+): Promise<any> {
+  try {
+    for (const turnIdx of turnList) {
+      await (GeneralTurn as any).findOneAndUpdate(
+        {
+          session_id: sessionId,
+          'data.general_id': generalId,
+          'data.turn_idx': turnIdx
+        },
+        {
+          $set: {
+            'data.action': '휴식',
+            'data.arg': {},
+            'data.brief': '휴식'
+          }
+        },
+        { upsert: true }
+      );
+    }
+
+    return {
+      success: true,
+      result: true,
+      reason: 'success'
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      result: false,
+      reason: error.message
+    };
+  }
+}
+
+/**
  * 장수 커맨드 설정
  */
 export async function setGeneralCommand(

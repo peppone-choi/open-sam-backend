@@ -131,7 +131,19 @@ export class AbdicateToCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(AbdicateToCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(
+        general,
+        destGeneral,
+        this,
+        this.env,
+        this.arg
+      );
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
 
     general.applyDB(db);
     destGeneral.applyDB(db);

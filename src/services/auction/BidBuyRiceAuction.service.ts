@@ -6,7 +6,8 @@ export class BidBuyRiceAuctionService {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
     
-    const { auctionID, amount } = data;
+    const auctionID = data.auctionID || data.auction_id;
+    const amount = data.amount || data.bid_price;
     
     try {
       if (!auctionID || !amount) {

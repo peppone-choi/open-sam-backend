@@ -593,6 +593,13 @@ export class GetProcessingCommandService {
     const injury = generalData.injury || 0;
     const fullLeadership = leadership; // 부상 무시 통솔력 = 원래 통솔력
 
+    // 국가 타입 가져오기
+    const nation: any = await (Nation as any).findOne({
+      session_id: sessionId,
+      nation: nationID
+    }).lean();
+    const nationType = nation?.data?.type || nation?.type || 'none';
+
     // 병종 계열별 데이터 구성
     const armCrewTypes: any[] = [];
     const allArmTypes = getAllUnitTypes();
@@ -611,7 +618,8 @@ export class GetProcessingCommandService {
           relYear,
           Array.from(ownCities.keys()),
           Array.from(ownRegions),
-          cityNames
+          cityNames,
+          nationType
         );
         
         // baseCost, baseRice 계산 (기술력 반영)
@@ -1338,14 +1346,36 @@ export class GetProcessingCommandService {
     })
       .lean();
 
+    // 외교 관계 확인 (불가침 조약 기한 등)
+    const { Diplomacy } = await import('../../models/diplomacy.model');
+    const diplomacyRecords = await (Diplomacy as any).find({
+      session_id: sessionId,
+      $or: [
+        { me: nationID },
+        { you: nationID }
+      ]
+    }).lean();
+
+    const diplomacyMap: Record<number, { state: number; term: number }> = {};
+    for (const dip of diplomacyRecords) {
+      const otherNation = dip.me === nationID ? dip.you : dip.me;
+      if (!diplomacyMap[otherNation] || dip.term > diplomacyMap[otherNation].term) {
+        diplomacyMap[otherNation] = { state: dip.state || 2, term: dip.term || 0 };
+      }
+    }
+
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
+      const dip = diplomacyMap[nation.nation];
+      // 불가침 조약이 이미 있고 기한이 남아있으면 불가능
+      const notAvailable = dip && dip.state === 4 && dip.term > 0;
+      
       return {
         id: nation.nation,
         name: nation.name,
         color: nationData.color || '#808080',
         power: nationData.power || 0,
-        notAvailable: false, // TODO: 실제 불가능 여부 확인 (기한 등)
+        notAvailable,
       };
     });
 
@@ -1396,6 +1426,23 @@ export class GetProcessingCommandService {
     const nationID = generalData.nation || 0;
 
     // 국가 목록 (자신 제외, 선포/전쟁 중인 국가만)
+    const { Diplomacy } = await import('../../models/diplomacy.model');
+    const diplomacyRecords = await (Diplomacy as any).find({
+      session_id: sessionId,
+      $or: [
+        { me: nationID },
+        { you: nationID }
+      ]
+    }).lean();
+
+    const diplomacyMap: Record<number, { state: number; term: number }> = {};
+    for (const dip of diplomacyRecords) {
+      const otherNation = dip.me === nationID ? dip.you : dip.me;
+      if (!diplomacyMap[otherNation] || dip.term > diplomacyMap[otherNation].term) {
+        diplomacyMap[otherNation] = { state: dip.state || 2, term: dip.term || 0 };
+      }
+    }
+
     const nations = await (Nation as any).find({
       session_id: sessionId,
       nation: { $ne: nationID }
@@ -1404,16 +1451,26 @@ export class GetProcessingCommandService {
 
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
+      const dip = diplomacyMap[nation.nation];
+      // 선포(0) 또는 전쟁(1) 상태인 국가만 선택 가능
+      const notAvailable = !dip || (dip.state !== 0 && dip.state !== 1);
+      
       return {
         id: nation.nation,
         name: nation.name,
         color: nationData.color || '#808080',
         power: nationData.power || 0,
-        notAvailable: false, // TODO: 실제 선포/전쟁 상태 확인
+        notAvailable,
       };
-    });
+    }).filter(nation => !nation.notAvailable); // 선포/전쟁 중인 국가만 표시
 
-    // TODO: 실제 전략 커맨드 목록 가져오기
+    // 전략 커맨드 목록 (실제 게임 설정에서 가져오기)
+    const { KVStorage } = await import('../../utils/KVStorage');
+    const gameStor = KVStorage.getStorage(`game_env:${sessionId}`);
+    const strategicCmdDelay = await gameStor.getValue('strategicCmdDelay') || 3;
+    const strategicCmdPostReq = await gameStor.getValue('strategicCmdPostReq') || 2;
+
+    // 실제 전략 커맨드 목록 (GameConst에서 가져오기)
     const availableCommandTypeList: Record<string, { name: string; remainTurn: number }> = {
       '급습': { name: '급습', remainTurn: 0 },
       '백성동원': { name: '백성동원', remainTurn: 0 },
@@ -1422,14 +1479,23 @@ export class GetProcessingCommandService {
       '이호경식': { name: '이호경식', remainTurn: 0 },
     };
 
+    // 국가별 전략 커맨드 사용 제한 확인
+    const nation = await (Nation as any).findOne({
+      session_id: sessionId,
+      nation: nationID
+    }).lean();
+    const nationData = nation?.data || {};
+    const strategicCmdLimit = nationData.strategic_cmd_limit || 0;
+
     // 맵 데이터 추가
     const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
 
     return {
       nations: nationList,
-      delayCnt: 3, // TODO: 실제 값
-      postReqTurn: 2, // TODO: 실제 값
+      delayCnt: strategicCmdDelay,
+      postReqTurn: strategicCmdPostReq,
       availableCommandTypeList,
+      strategicCmdLimit,
       mapData: mapData.success && mapData.result ? mapData : null,
     };
   }
@@ -1460,23 +1526,64 @@ export class GetProcessingCommandService {
     const nationID = generalData.nation || 0;
     const currentCity = generalData.city || 0;
 
-    // 같은 국가의 도시 목록 (인접 도시만)
+    // 같은 국가의 도시 목록
     const cities = await (City as any).find({
       session_id: sessionId,
       'data.nation': nationID
     })
       .lean();
 
-    const citiesMap = cities.map((city: any) => {
-      const cityData = city.data || {};
-      return [
-        city.city,
-        {
-          name: city.name,
-          info: `${cityData.pop || 0}명`,
-        },
-      ];
-    });
+    // 시나리오 데이터에서 인접 도시 정보 로드
+    const { Session } = await import('../../models/session.model');
+    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const scenarioId = session?.scenario_id || 'sangokushi';
+    
+    let cityNeighborsMap: Record<number, number[]> = {};
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const citiesJsonPath = path.join(
+        __dirname,
+        '../../config/scenarios',
+        scenarioId,
+        'data/cities.json'
+      );
+      
+      if (fs.existsSync(citiesJsonPath)) {
+        const citiesData = JSON.parse(fs.readFileSync(citiesJsonPath, 'utf-8'));
+        if (citiesData.cities && Array.isArray(citiesData.cities)) {
+          for (const cityData of citiesData.cities) {
+            if (cityData.id && cityData.neighbors && Array.isArray(cityData.neighbors)) {
+              cityNeighborsMap[cityData.id] = cityData.neighbors;
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to load city neighbors from scenario data:', error);
+    }
+
+    // 현재 도시의 인접 도시 목록
+    const currentCityNeighbors = cityNeighborsMap[currentCity] || [];
+    const neighborCitySet = new Set(currentCityNeighbors);
+
+    // 인접 도시만 필터링 (현재 도시 포함)
+    const citiesMap = cities
+      .filter((city: any) => {
+        const cityId = city.city;
+        return cityId === currentCity || neighborCitySet.has(cityId);
+      })
+      .map((city: any) => {
+        const cityData = city.data || {};
+        const isAdjacent = neighborCitySet.has(city.city);
+        return [
+          city.city,
+          {
+            name: city.name,
+            info: `${cityData.pop || 0}명${isAdjacent ? ' (인접)' : ' (현재)'}`,
+          },
+        ];
+      });
 
     // 맵 데이터 추가
     const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });

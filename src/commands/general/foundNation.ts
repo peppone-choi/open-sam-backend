@@ -127,8 +127,9 @@ export class FoundNationCommand extends GeneralCommand {
 
     const josaUl = JosaUtil.pick(nationName, '을');
 
-    // TODO: buildNationTypeClass
-    const nationTypeName = '국가'; // placeholder
+    // 국가 타입 이름 가져오기
+    const { getNationTypeName } = await import('../../core/nation-type/NationTypeFactory');
+    const nationTypeName = getNationTypeName(nationType);
 
     logger.pushGeneralActionLog(`<D><b>${nationName}</b></>${josaUl} 건국하였습니다. <1>${date}</>`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>에 국가를 건설하였습니다.`);
@@ -168,8 +169,28 @@ export class FoundNationCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(FoundNationCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler.handleEvent
-    // TODO: tryUniqueItemLottery
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(
+        general,
+        null,
+        this,
+        this.env,
+        this.arg
+      );
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
+
+    // tryUniqueItemLottery 처리 (건국 시 100% 확률)
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env['session_id'] || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '건국');
+    } catch (error: any) {
+      console.error('tryUniqueItemLottery failed:', error);
+    }
 
     general.applyDB(db);
 

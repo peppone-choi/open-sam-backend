@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { Battle, BattleStatus, BattlePhase, ITurnAction } from '../models/battle.model';
 import { BattleCalculator, BattleContext } from '../core/battle-calculator';
+import * as BattleEventHook from '../services/battle/BattleEventHook.service';
 
 export class BattleSocketHandler {
   private io: Server;
@@ -247,6 +248,9 @@ export class BattleSocketHandler {
           timestamp: new Date()
         });
 
+        // 전투 종료 후 월드 반영 처리
+        await this.handleBattleEnded(battle, result);
+
         this.clearBattleTimer(battle.battleId);
       } else {
         battle.currentTurn += 1;
@@ -277,6 +281,38 @@ export class BattleSocketHandler {
     if (timer) {
       clearTimeout(timer);
       this.battleTimers.delete(battleId);
+    }
+  }
+
+  /**
+   * 전투 종료 후 월드 반영 처리
+   */
+  private async handleBattleEnded(battle: any, result: any) {
+    try {
+      const winner = battle.winner;
+      const sessionId = battle.session_id;
+      const targetCityId = battle.targetCityId;
+      const attackerNationId = battle.attackerNationId;
+      const defenderNationId = battle.defenderNationId;
+
+      // 공격자가 승리하고 도시 공격이면 도시 점령 처리
+      if (winner === 'attacker' && targetCityId) {
+        // 공격자 장수 ID (첫 번째 장수 사용)
+        const attackerGeneralId = battle.attackerUnits?.[0]?.generalId || 0;
+
+        if (attackerGeneralId > 0) {
+          await BattleEventHook.onCityOccupied(
+            sessionId,
+            targetCityId,
+            attackerNationId,
+            attackerGeneralId
+          );
+        }
+      }
+
+      console.log(`[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`);
+    } catch (error: any) {
+      console.error('[BattleEventHook] 전투 종료 처리 중 오류:', error);
     }
   }
 }

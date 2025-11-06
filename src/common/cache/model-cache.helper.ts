@@ -180,6 +180,15 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   
   logger.debug('City Redis 저장', { sessionId, cityId });
   
+  // 실시간 브로드캐스트
+  try {
+    const { GameEventEmitter } = await import('../../services/gameEventEmitter');
+    GameEventEmitter.broadcastCityUpdate(sessionId, cityId, data);
+  } catch (error: any) {
+    // 브로드캐스트 실패는 무시 (선택적 기능)
+    logger.debug('City 브로드캐스트 실패', { error: error.message });
+  }
+  
   return data;
 }
 
@@ -206,6 +215,15 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
   });
   
   logger.debug('Nation Redis 저장', { sessionId, nationId });
+  
+  // 실시간 브로드캐스트
+  try {
+    const { GameEventEmitter } = await import('../../services/gameEventEmitter');
+    GameEventEmitter.broadcastNationUpdate(sessionId, nationId, data);
+  } catch (error: any) {
+    // 브로드캐스트 실패는 무시 (선택적 기능)
+    logger.debug('Nation 브로드캐스트 실패', { error: error.message });
+  }
   
   return data;
 }

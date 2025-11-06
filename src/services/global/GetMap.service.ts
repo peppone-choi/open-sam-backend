@@ -169,8 +169,7 @@ export class GetMapService {
       }
 
       // If admin (userGrade >= 5), show all cities in spy info
-      // TODO: Implement user grade check when User model has grade field
-      const userGrade = 0;
+      const userGrade = user?.grade || 0;
 
       if ((showMe || !neutralView) && userGrade >= 5) {
         spyInfo = {};

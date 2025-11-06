@@ -125,8 +125,9 @@ export class CrFoundNationCommand extends GeneralCommand {
 
     const josaUl = JosaUtil.pick(nationName, '을');
 
-    // TODO: buildNationTypeClass
-    const nationTypeName = '국가'; // placeholder
+    // 국가 타입 이름 가져오기
+    const { getNationTypeName } = await import('../../core/nation-type/NationTypeFactory');
+    const nationTypeName = getNationTypeName(nationType);
 
     logger.pushGeneralActionLog(`<D><b>${nationName}</b></>${josaUl} 건국하였습니다. <1>${date}</>`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>에 국가를 건설하였습니다.`);

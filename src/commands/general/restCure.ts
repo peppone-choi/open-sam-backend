@@ -53,7 +53,19 @@ export class RestCureCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(RestCureCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler 처리
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(
+        general,
+        null,
+        this,
+        this.env,
+        this.arg
+      );
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
 
     general.applyDB(db);
 

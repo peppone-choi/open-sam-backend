@@ -49,6 +49,7 @@ export interface GameUnitDetail {
   reqYear: number;
   reqRegions?: string[];
   reqCities?: string[];
+  reqNationType?: string; // 국가 타입 제약 (country_type_unlock)
   info: string[];
 }
 
@@ -98,6 +99,8 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     const reqRegions: string[] = [];
     const reqCities: string[] = [];
 
+    let reqNationType: string | undefined;
+    
     if (unit.constraints && Array.isArray(unit.constraints)) {
       for (const constraint of unit.constraints) {
         if (constraint.type === 'reqTech') {
@@ -116,6 +119,9 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
           } else if (constraint.value) {
             reqCities.push(constraint.value);
           }
+        } else if (constraint.type === 'country_type_unlock') {
+          // 국가 타입 제약 조건
+          reqNationType = constraint.value || undefined;
         }
       }
     }
@@ -147,6 +153,7 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
       reqYear,
       reqRegions: reqRegions.length > 0 ? reqRegions : undefined,
       reqCities: reqCities.length > 0 ? reqCities : undefined,
+      reqNationType,
       info: Array.isArray(unit.description) ? unit.description : [unit.description || '']
     };
 
@@ -187,7 +194,8 @@ export function isUnitAvailable(
   relYear: number,
   ownCities?: number[],
   ownRegions?: string[],
-  ownCityNames?: string[]
+  ownCityNames?: string[],
+  nationType?: string
 ): boolean {
   // 기술력 검증
   if (unit.reqTech > 0 && tech < unit.reqTech) {
@@ -210,6 +218,19 @@ export function isUnitAvailable(
   if (unit.reqCities && unit.reqCities.length > 0 && ownCityNames) {
     if (!unit.reqCities.some(cityName => ownCityNames.includes(cityName))) {
       return false;
+    }
+  }
+
+  // 국가 타입 제약 검증
+  if (unit.reqNationType) {
+    if (!nationType || nationType !== unit.reqNationType) {
+      // 국가 타입 ID 정규화 (che_ 접두사 제거)
+      const normalizedNationType = nationType?.replace(/^che_/, '') || '';
+      const normalizedReqType = unit.reqNationType.replace(/^che_/, '');
+      
+      if (normalizedNationType !== normalizedReqType) {
+        return false;
+      }
     }
   }
 

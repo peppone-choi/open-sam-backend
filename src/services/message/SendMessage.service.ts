@@ -3,6 +3,7 @@ import { General } from '../../models/general.model';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
 import { Message } from '../../models/message.model';
+import { GameEventEmitter } from '../gameEventEmitter';
 
 /**
  * SendMessage Service
@@ -162,23 +163,28 @@ export class SendMessageService {
   ) {
     const now = new Date();
 
+    const messageData = {
+      id: messageId,
+      type: 'public',
+      src_general_id: generalId,
+      src_general_name: generalName,
+      src_nation_id: nationId,
+      src_nation_name: nationName,
+      src_nation_color: nationColor,
+      dest_general_id: 0,
+      dest_nation_id: 0,
+      text: text,
+      date: now,
+      expire_date: new Date('9999-12-31')
+    };
+
     await (Message as any).create({
       session_id: sessionId,
-      data: {
-        id: messageId,
-        type: 'public',
-        src_general_id: generalId,
-        src_general_name: generalName,
-        src_nation_id: nationId,
-        src_nation_name: nationName,
-        src_nation_color: nationColor,
-        dest_general_id: 0,
-        dest_nation_id: 0,
-        text: text,
-        date: now,
-        expire_date: new Date('9999-12-31')
-      }
+      data: messageData
     });
+
+    // 실시간 브로드캐스트
+    GameEventEmitter.broadcastMessage(sessionId, messageData);
 
     return {
       success: true,
@@ -203,24 +209,32 @@ export class SendMessageService {
   ) {
     const now = new Date();
 
+    const messageData = {
+      id: messageId,
+      type: 'national',
+      src_general_id: generalId,
+      src_general_name: generalName,
+      src_nation_id: nationId,
+      src_nation_name: nationName,
+      src_nation_color: nationColor,
+      dest_general_id: 0,
+      dest_nation_id: nationId,
+      dest_nation_name: nationName,
+      dest_nation_color: nationColor,
+      text: text,
+      date: now,
+      expire_date: new Date('9999-12-31')
+    };
+
     await (Message as any).create({
       session_id: sessionId,
-      data: {
-        id: messageId,
-        type: 'national',
-        src_general_id: generalId,
-        src_general_name: generalName,
-        src_nation_id: nationId,
-        src_nation_name: nationName,
-        src_nation_color: nationColor,
-        dest_general_id: 0,
-        dest_nation_id: nationId,
-        dest_nation_name: nationName,
-        dest_nation_color: nationColor,
-        text: text,
-        date: now,
-        expire_date: new Date('9999-12-31')
-      }
+      data: messageData
+    });
+
+    // 실시간 브로드캐스트 (국가 메시지는 해당 국가에만)
+    GameEventEmitter.broadcastGameEvent(sessionId, 'message:national', {
+      nationId,
+      message: messageData
     });
 
     return {
@@ -262,24 +276,33 @@ export class SendMessageService {
     const destNationColor = destNation.data?.color || 0;
     const now = new Date();
 
+    const messageData = {
+      id: messageId,
+      type: 'diplomacy',
+      src_general_id: generalId,
+      src_general_name: generalName,
+      src_nation_id: srcNationId,
+      src_nation_name: srcNationName,
+      src_nation_color: srcNationColor,
+      dest_general_id: 0,
+      dest_nation_id: destNationId,
+      dest_nation_name: destNationName,
+      dest_nation_color: destNationColor,
+      text: text,
+      date: now,
+      expire_date: new Date('9999-12-31')
+    };
+
     await (Message as any).create({
       session_id: sessionId,
-      data: {
-        id: messageId,
-        type: 'diplomacy',
-        src_general_id: generalId,
-        src_general_name: generalName,
-        src_nation_id: srcNationId,
-        src_nation_name: srcNationName,
-        src_nation_color: srcNationColor,
-        dest_general_id: 0,
-        dest_nation_id: destNationId,
-        dest_nation_name: destNationName,
-        dest_nation_color: destNationColor,
-        text: text,
-        date: now,
-        expire_date: new Date('9999-12-31')
-      }
+      data: messageData
+    });
+
+    // 실시간 브로드캐스트 (외교 메시지는 양 국가에만)
+    GameEventEmitter.broadcastGameEvent(sessionId, 'message:diplomacy', {
+      srcNationId,
+      destNationId,
+      message: messageData
     });
 
     return {
@@ -330,26 +353,45 @@ export class SendMessageService {
     const destNationColor = destNation?.data?.color || 0;
     const now = new Date();
 
+    const messageData = {
+      id: messageId,
+      type: 'private',
+      src_general_id: srcGeneralId,
+      src_general_name: srcGeneralName,
+      src_nation_id: srcNationId,
+      src_nation_name: srcNationName,
+      src_nation_color: srcNationColor,
+      dest_general_id: destGeneralId,
+      dest_general_name: destGeneralName,
+      dest_nation_id: destNationId,
+      dest_nation_name: destNationName,
+      dest_nation_color: destNationColor,
+      text: text,
+      date: now,
+      expire_date: new Date('9999-12-31')
+    };
+
     await (Message as any).create({
       session_id: sessionId,
-      data: {
-        id: messageId,
-        type: 'private',
-        src_general_id: srcGeneralId,
-        src_general_name: srcGeneralName,
-        src_nation_id: srcNationId,
-        src_nation_name: srcNationName,
-        src_nation_color: srcNationColor,
-        dest_general_id: destGeneralId,
-        dest_general_name: destGeneralName,
-        dest_nation_id: destNationId,
-        dest_nation_name: destNationName,
-        dest_nation_color: destNationColor,
-        text: text,
-        date: now,
-        expire_date: new Date('9999-12-31')
-      }
+      data: messageData
     });
+
+    // 실시간 브로드캐스트 (개인 메시지는 수신자에게만)
+    const { getSocketManager } = await import('../../socket/socketManager');
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      // 대상 장수의 owner ID 조회
+      const destGeneral = await (General as any).findOne({
+        session_id: sessionId,
+        'data.no': destGeneralId
+      }).select('owner').lean();
+      
+      if (destGeneral?.owner) {
+        socketManager.sendToUser(destGeneral.owner, 'message:private', {
+          message: messageData
+        });
+      }
+    }
 
     return {
       success: true,

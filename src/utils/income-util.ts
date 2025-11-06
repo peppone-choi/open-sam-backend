@@ -1,5 +1,6 @@
 import { City } from '../models/city.model';
 import { General } from '../models/general.model';
+import { buildNationTypeClass } from '../core/nation-type/NationTypeFactory';
 
 /**
  * 수입 계산 유틸리티
@@ -24,8 +25,8 @@ export function getGoldIncome(
     return 0;
   }
 
-  // TODO: nationType을 실제 NationType 클래스로 변환
-  // 현재는 기본 계산만 수행
+  // 국가 타입 클래스 생성
+  const nationTypeClass = buildNationTypeClass(nationType);
   
   let cityIncome = 0;
   for (const rawCity of cityList) {
@@ -33,7 +34,12 @@ export function getGoldIncome(
     const officerCnt = officersCnt?.[cityID] || 0;
     const isCapital = capitalId === cityID;
     
-    cityIncome += calcCityGoldIncome(rawCity, officerCnt, isCapital, nationLevel, nationType);
+    let income = calcCityGoldIncome(rawCity, officerCnt, isCapital, nationLevel, nationType);
+    
+    // 국가 타입 효과 적용
+    income = nationTypeClass.onCalcNationalIncome('gold', income);
+    
+    cityIncome += income;
   }
 
   // PHP: $cityIncome *= ($taxRate / 20);
@@ -75,8 +81,7 @@ function calcCityGoldIncome(
     cityIncome *= 1 + (1 / 3 / nationLevel);
   }
 
-  // TODO: nationType.onCalcNationalIncome('gold', cityIncome) 구현 필요
-  // 현재는 그대로 반환
+  // 국가 타입 효과는 상위 함수에서 적용
   cityIncome = Math.round(cityIncome);
 
   return cityIncome;
@@ -100,13 +105,21 @@ export function getRiceIncome(
     return 0;
   }
 
+  // 국가 타입 클래스 생성
+  const nationTypeClass = buildNationTypeClass(nationType);
+
   let cityIncome = 0;
   for (const rawCity of cityList) {
     const cityID = rawCity.city || rawCity.data?.city || 0;
     const officerCnt = officersCnt?.[cityID] || 0;
     const isCapital = capitalId === cityID;
     
-    cityIncome += calcCityRiceIncome(rawCity, officerCnt, isCapital, nationLevel, nationType);
+    let income = calcCityRiceIncome(rawCity, officerCnt, isCapital, nationLevel, nationType);
+    
+    // 국가 타입 효과 적용
+    income = nationTypeClass.onCalcNationalIncome('rice', income);
+    
+    cityIncome += income;
   }
 
   // PHP: $cityIncome *= ($taxRate / 20);
@@ -148,7 +161,7 @@ function calcCityRiceIncome(
     cityIncome *= 1 + (1 / 3 / nationLevel);
   }
 
-  // TODO: nationType.onCalcNationalIncome('rice', cityIncome) 구현 필요
+  // 국가 타입 효과는 상위 함수에서 적용
   cityIncome = Math.round(cityIncome);
 
   return cityIncome;
@@ -172,13 +185,21 @@ export function getWallIncome(
     return 0;
   }
 
+  // 국가 타입 클래스 생성
+  const nationTypeClass = buildNationTypeClass(nationType);
+
   let cityIncome = 0;
   for (const rawCity of cityList) {
     const cityID = rawCity.city || rawCity.data?.city || 0;
     const officerCnt = officersCnt?.[cityID] || 0;
     const isCapital = capitalId === cityID;
     
-    cityIncome += calcCityWallRiceIncome(rawCity, officerCnt, isCapital, nationLevel, nationType);
+    let income = calcCityWallRiceIncome(rawCity, officerCnt, isCapital, nationLevel, nationType);
+    
+    // 국가 타입 효과 적용 (성벽 수입도 쌀 수입이므로 'rice'로 처리)
+    income = nationTypeClass.onCalcNationalIncome('rice', income);
+    
+    cityIncome += income;
   }
 
   // PHP: $cityIncome *= ($taxRate / 20);
@@ -217,10 +238,46 @@ function calcCityWallRiceIncome(
     wallIncome *= 1 + 1 / (3 * nationLevel);
   }
 
-  // TODO: nationType.onCalcNationalIncome('rice', wallIncome) 구현 필요
+  // 국가 타입 효과는 상위 함수에서 적용
   wallIncome = Math.round(wallIncome);
 
   return wallIncome;
+}
+
+/**
+ * 전쟁 금 수입 계산
+ * PHP getWarGoldIncome과 동일
+ */
+export function getWarGoldIncome(
+  nationType: string,
+  cityList: any[]
+): number {
+  if (!cityList || cityList.length === 0) {
+    return 0;
+  }
+
+  // 국가 타입 클래스 생성
+  const nationTypeClass = buildNationTypeClass(nationType);
+
+  let warIncome = 0;
+  for (const rawCity of cityList) {
+    const dead = rawCity.dead || rawCity.data?.dead || 0;
+    const supply = rawCity.supply || rawCity.data?.supply || 0;
+    
+    if (supply === 0) {
+      continue;
+    }
+
+    // 전쟁 수입 = 사망자 수 / 10
+    let income = dead / 10;
+    
+    // 국가 타입 효과 적용
+    income = nationTypeClass.onCalcNationalIncome('gold', income);
+    
+    warIncome += Math.round(income);
+  }
+
+  return warIncome;
 }
 
 /**

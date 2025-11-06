@@ -187,7 +187,20 @@ export class RaidCommand extends NationCommand {
 
     this.setResultTurn(new LastTurn(RaidCommand.getName(), this.arg));
 
-    // TODO: StaticEventHandler
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(
+        general,
+        null,
+        this,
+        env,
+        this.arg
+      );
+    } catch (error: any) {
+      // StaticEventHandler 실패해도 계속 진행
+      console.error('StaticEventHandler failed:', error);
+    }
 
     general.applyDB(db);
 

@@ -96,8 +96,28 @@ export class SightseeingCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(SightseeingCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(
+        general,
+        null,
+        this,
+        this.env,
+        this.arg
+      );
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
+
+    // tryUniqueItemLottery 처리
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env['session_id'] || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '관광');
+    } catch (error: any) {
+      console.error('tryUniqueItemLottery failed:', error);
+    }
 
     general.applyDB(db);
 

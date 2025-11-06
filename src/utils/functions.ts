@@ -2,61 +2,8 @@ export function getDexLevelList(level: number): any[] {
   return [];
 }
 
-import { UniqueConst } from '../const/UniqueConst';
-import { ActionLogger } from './ActionLogger';
-
-/**
- * 유니크 아이템 추첨 시도
- * @param rng 난수 생성기
- * @param general 장수 객체
- */
-export async function tryUniqueItemLottery(rng: any, general: any): Promise<void> {
-  if (!rng || !general) {
-    return;
-  }
-
-  // 1. 추첨 확률 체크 (매우 낮은 확률)
-  const lotteryChance = rng.nextFloat();
-  if (lotteryChance > 0.001) { // 0.1% 확률
-    return;
-  }
-  
-  // 2. 랜덤하게 아이템 선택 (희귀도 가중치 적용)
-  const selectedItem = UniqueConst.getRandomItem(rng);
-  
-  if (!selectedItem) {
-    return;
-  }
-  
-  // 3. 장수에게 아이템 지급
-  try {
-    // 장수의 아이템 목록에 추가
-    if (!general.data.items) {
-      general.data.items = [];
-    }
-    
-    general.data.items.push({
-      id: selectedItem.id,
-      name: selectedItem.name,
-      type: selectedItem.type,
-      acquiredAt: new Date()
-    });
-    
-    general.markModified('data.items');
-    await general.save();
-    
-    // 로그 기록
-    ActionLogger.log(
-      general.no,
-      'unique_item_lottery',
-      `유니크 아이템 획득: ${selectedItem.name}`,
-      ActionLogger.INFO
-    );
-    
-  } catch (error) {
-    console.error('Failed to add unique item to general:', error);
-  }
-}
+// tryUniqueItemLottery와 giveRandomUniqueItem은 unique-item-lottery.ts로 이동
+export { tryUniqueItemLottery, giveRandomUniqueItem } from './unique-item-lottery';
 
 /**
  * 명예의 전당 체크

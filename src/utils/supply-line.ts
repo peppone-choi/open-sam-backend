@@ -45,6 +45,50 @@ export async function checkSupply(sessionId: string): Promise<void> {
     }
   }
 
+  // 시나리오 데이터에서 도시 경로 정보 로드
+  const { Session } = await import('../models/session.model');
+  const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+  const scenarioId = session?.scenario_id || 'sangokushi';
+  
+  // City neighbors 정보 로드 (시나리오 데이터에서)
+  let cityNeighborsMap: Record<number, number[]> = {};
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const citiesJsonPath = path.join(
+      __dirname,
+      '../../config/scenarios',
+      scenarioId,
+      'data/cities.json'
+    );
+    
+    if (fs.existsSync(citiesJsonPath)) {
+      const citiesData = JSON.parse(fs.readFileSync(citiesJsonPath, 'utf-8'));
+      if (citiesData.cities && Array.isArray(citiesData.cities)) {
+        for (const cityData of citiesData.cities) {
+          if (cityData.id && cityData.neighbors && Array.isArray(cityData.neighbors)) {
+            cityNeighborsMap[cityData.id] = cityData.neighbors;
+          }
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error('Failed to load city neighbors from scenario data:', error);
+    // 경로 정보를 로드할 수 없으면 DB의 neighbors 필드 사용
+    const citiesWithNeighbors = await (City as any).find({ 
+      session_id: sessionId 
+    }).select('city neighbors data.neighbors').lean();
+    
+    for (const city of citiesWithNeighbors) {
+      const neighbors = city.neighbors || city.data?.neighbors || [];
+      if (Array.isArray(neighbors) && neighbors.length > 0) {
+        cityNeighborsMap[city.city] = neighbors.map((n: any) => 
+          typeof n === 'number' ? n : (typeof n === 'string' ? parseInt(n) : 0)
+        ).filter((n: number) => n > 0);
+      }
+    }
+  }
+
   // BFS로 보급선 계산
   const queue: Array<{ id: number; nation: number }> = [];
   for (const [nationId, capitalId] of Object.entries(capitals)) {
@@ -55,9 +99,19 @@ export async function checkSupply(sessionId: string): Promise<void> {
     }
   }
 
-  // TODO: CityConst 경로 정보 필요
-  // 현재는 기본 구현만 제공
-  // 실제로는 CityConst의 path 정보를 사용하여 인접 도시 탐색
+  // BFS로 인접 도시 탐색
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const neighbors = cityNeighborsMap[current.id] || [];
+    
+    for (const neighborId of neighbors) {
+      const neighbor = cityMap[neighborId];
+      if (neighbor && !neighbor.supply && neighbor.nation === current.nation) {
+        neighbor.supply = true;
+        queue.push({ id: neighborId, nation: current.nation });
+      }
+    }
+  }
   
   // 보급 가능 도시 업데이트
   const supplyCities: number[] = [];
@@ -151,9 +205,49 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
     }
   }
 
-  // 전방 레벨 계산
-  // TODO: CityConst의 path 정보를 사용하여 인접 도시 계산
-  // 현재는 기본 구조만 제공
+  // 시나리오 데이터에서 도시 경로 정보 로드
+  const { Session } = await import('../models/session.model');
+  const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+  const scenarioId = session?.scenario_id || 'sangokushi';
+  
+  // City neighbors 정보 로드
+  let cityNeighborsMap: Record<number, number[]> = {};
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const citiesJsonPath = path.join(
+      __dirname,
+      '../../config/scenarios',
+      scenarioId,
+      'data/cities.json'
+    );
+    
+    if (fs.existsSync(citiesJsonPath)) {
+      const citiesData = JSON.parse(fs.readFileSync(citiesJsonPath, 'utf-8'));
+      if (citiesData.cities && Array.isArray(citiesData.cities)) {
+        for (const cityData of citiesData.cities) {
+          if (cityData.id && cityData.neighbors && Array.isArray(cityData.neighbors)) {
+            cityNeighborsMap[cityData.id] = cityData.neighbors;
+          }
+        }
+      }
+    }
+  } catch (error: any) {
+    console.error('Failed to load city neighbors from scenario data:', error);
+    // 경로 정보를 로드할 수 없으면 DB의 neighbors 필드 사용
+    const citiesWithNeighbors = await (City as any).find({ 
+      session_id: sessionId 
+    }).select('city neighbors data.neighbors').lean();
+    
+    for (const city of citiesWithNeighbors) {
+      const neighbors = city.neighbors || city.data?.neighbors || [];
+      if (Array.isArray(neighbors) && neighbors.length > 0) {
+        cityNeighborsMap[city.city] = neighbors.map((n: any) => 
+          typeof n === 'number' ? n : (typeof n === 'string' ? parseInt(n) : 0)
+        ).filter((n: number) => n > 0);
+      }
+    }
+  }
 
   // 모든 도시를 기본 전방 레벨로 설정
   await (City as any).updateMany(
@@ -161,13 +255,30 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
     { $set: { front: 0 } }
   );
 
+  // 인접 도시 계산 헬퍼 함수
+  const getAdjacentCities = (cityIds: number[], targetCities: Set<number>): number[] => {
+    const adjacentCities: number[] = [];
+    for (const cityId of cityIds) {
+      const neighbors = cityNeighborsMap[cityId] || [];
+      for (const neighborId of neighbors) {
+        if (targetCities.has(neighborId)) {
+          adjacentCities.push(cityId);
+          break; // 한 번만 추가
+        }
+      }
+    }
+    return adjacentCities;
+  };
+
   // 전방 레벨 1 (교전 중인 적국 인접)
   if (warCities.size > 0) {
-    // TODO: 인접 도시 계산
-    // await (City as any).updateMany(
-    //   { session_id: sessionId, nation: nationId, city: { $in: adjacentCities } },
-    //   { $set: { front: 1 } }
-    // );
+    const adjacentWarCities = getAdjacentCities(cityIds, warCities);
+    if (adjacentWarCities.length > 0) {
+      await (City as any).updateMany(
+        { session_id: sessionId, city: { $in: adjacentWarCities } },
+        { $set: { front: 1 } }
+      );
+    }
   }
 
   // 전방 레벨 2 (공백지 인접)
@@ -176,21 +287,27 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
     nation: 0
   }).select('city').lean();
   
-  if (neutralCities.length > 0 && warCities.size === 0 && enemyCities.size === 0) {
-    // TODO: 인접 도시 계산
-    // await (City as any).updateMany(
-    //   { session_id: sessionId, nation: nationId, city: { $in: adjacentNeutralCities } },
-    //   { $set: { front: 2 } }
-    // );
+  const neutralCitySet = new Set(neutralCities.map((c: any) => c.city));
+  
+  if (neutralCitySet.size > 0 && warCities.size === 0 && enemyCities.size === 0) {
+    const adjacentNeutralCities = getAdjacentCities(cityIds, neutralCitySet);
+    if (adjacentNeutralCities.length > 0) {
+      await (City as any).updateMany(
+        { session_id: sessionId, city: { $in: adjacentNeutralCities } },
+        { $set: { front: 2 } }
+      );
+    }
   }
 
   // 전방 레벨 3 (선전포고한 적국 인접)
   if (enemyCities.size > 0) {
-    // TODO: 인접 도시 계산
-    // await (City as any).updateMany(
-    //   { session_id: sessionId, nation: nationId, city: { $in: adjacentEnemyCities } },
-    //   { $set: { front: 3 } }
-    // );
+    const adjacentEnemyCities = getAdjacentCities(cityIds, enemyCities);
+    if (adjacentEnemyCities.length > 0) {
+      await (City as any).updateMany(
+        { session_id: sessionId, city: { $in: adjacentEnemyCities } },
+        { $set: { front: 3 } }
+      );
+    }
   }
 }
 

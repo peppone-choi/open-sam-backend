@@ -230,6 +230,60 @@ export class SocketManager {
   getIO(): SocketIOServer {
     return this.io;
   }
+
+  /**
+   * 접속 중인 사용자 수 조회
+   */
+  getOnlineUserCount(sessionId?: string): number {
+    if (sessionId) {
+      const room = this.io.sockets.adapter.rooms.get(`session:${sessionId}`);
+      return room ? room.size : 0;
+    }
+    // 전체 접속자 수
+    return this.io.sockets.sockets.size;
+  }
+
+  /**
+   * 접속 중인 국가 목록 조회
+   */
+  async getOnlineNations(sessionId: string): Promise<number[]> {
+    const sessionRoom = this.io.sockets.adapter.rooms.get(`session:${sessionId}`);
+    if (!sessionRoom) {
+      return [];
+    }
+
+    const { General } = await import('../models/general.model');
+    const nationIds = new Set<number>();
+
+    // 세션 룸에 있는 모든 소켓 확인
+    for (const socketId of sessionRoom) {
+      const socket = this.io.sockets.sockets.get(socketId);
+      if (socket) {
+        const user = (socket as any).user as JwtPayload;
+        const userId = user?.userId;
+        if (userId) {
+          // 해당 사용자의 장수 찾기
+          const general = await (General as any).findOne({
+            session_id: sessionId,
+            owner: String(userId),
+            $or: [
+              { 'data.npc': { $lt: 2 } },
+              { npc: { $lt: 2 } }
+            ]
+          }).lean();
+          
+          if (general) {
+            const nationId = general.data?.nation ?? general.nation ?? 0;
+            if (nationId > 0) {
+              nationIds.add(nationId);
+            }
+          }
+        }
+      }
+    }
+
+    return Array.from(nationIds);
+  }
 }
 
 // 싱글톤 인스턴스

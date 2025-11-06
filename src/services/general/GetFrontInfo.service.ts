@@ -119,6 +119,47 @@ export class GetFrontInfoService {
   }
 
   /**
+   * 접속 중인 국가 목록 조회
+   */
+  private static async getOnlineNations(sessionId: string): Promise<string> {
+    try {
+      const { getSocketManager } = await import('../../socket/socketManager');
+      const socketManager = getSocketManager();
+      if (socketManager) {
+        const nationIds = await socketManager.getOnlineNations(sessionId);
+        return nationIds.length > 0 ? nationIds.join(',') : null;
+      }
+    } catch (error: any) {
+      console.error('getOnlineNations error:', error);
+    }
+    
+    // SocketManager를 사용할 수 없으면 세션 데이터에서 가져오기
+    const session = await (Session as any).findOne({ session_id: sessionId });
+    const data = session?.data || {};
+    return Array.isArray(data.online_nation) ? data.online_nation.join(',') : (data.online_nation || null);
+  }
+
+  /**
+   * 접속 중인 사용자 수 조회
+   */
+  private static async getOnlineUserCount(sessionId: string): Promise<number | null> {
+    try {
+      const { getSocketManager } = await import('../../socket/socketManager');
+      const socketManager = getSocketManager();
+      if (socketManager) {
+        return socketManager.getOnlineUserCount(sessionId);
+      }
+    } catch (error: any) {
+      console.error('getOnlineUserCount error:', error);
+    }
+    
+    // SocketManager를 사용할 수 없으면 세션 데이터에서 가져오기
+    const session = await (Session as any).findOne({ session_id: sessionId });
+    const data = session?.data || {};
+    return data.online_user_cnt || null;
+  }
+
+  /**
    * 전역 게임 정보 생성
    */
   private static async generateGlobalInfo(sessionId: string) {
@@ -179,8 +220,9 @@ export class GetFrontInfoService {
       lastVoteID: data.lastVote || null,
       develCost: data.develcost || 100,
       noticeMsg: typeof data.msg === 'number' ? data.msg : (data.msg ? parseInt(String(data.msg)) || 0 : 0),
-      onlineNations: Array.isArray(data.online_nation) ? data.online_nation.join(',') : (data.online_nation || null),
-      onlineUserCnt: data.online_user_cnt || null,
+      // 접속자 정보 (SocketManager 또는 세션 데이터에서)
+      onlineNations: await this.getOnlineNations(sessionId),
+      onlineUserCnt: await this.getOnlineUserCount(sessionId),
       apiLimit: data.refreshLimit || 1000,
       auctionCount: data.auction_count || 0,
       isTournamentActive: data.is_tournament_active || false,

@@ -42,17 +42,19 @@ export abstract class Auction {
   /**
    * 경매 열기
    */
-  protected static openAuction(info: any, general: IGeneral): number | string {
-    const db = DB.db();
-    if (info.id !== null) {
+  protected static async openAuction(info: any, general: IGeneral): Promise<number | string> {
+    if (info.id !== null && info.id !== undefined) {
       return 'id가 지정되어 있습니다.';
     }
 
-    // TODO: ng_auction 테이블에 삽입
-    // const result = await db.insert('ng_auction', info.toArray());
-    // return result.insertId;
-
-    return 0; // 임시
+    // MongoDB에 경매 생성
+    const { Auction } = await import('../../models/auction.model');
+    try {
+      const auction = await (Auction as any).create(info);
+      return auction._id;
+    } catch (error: any) {
+      return `경매 생성 실패: ${error.message}`;
+    }
   }
 
   /**

@@ -56,31 +56,67 @@ export abstract class AuctionBasicResource extends Auction {
     }
 
     const db = DB.db();
-    // TODO: 이전 경매 확인
-    // const prevAuctionID = await db.queryFirstField(
-    //   'SELECT id FROM ng_auction WHERE host_general_id = ? AND finished = 0 AND type IN (?, ?)',
-    //   [general.getID(), AuctionType.BuyRice, AuctionType.SellRice]
-    // );
-    // if (prevAuctionID !== null) {
-    //   return '아직 경매가 끝나지 않았습니다.';
-    // }
+    const sessionId = general.getSessionID();
+    const generalId = general.getID();
+
+    // 이전 경매 확인
+    const { Auction } = await import('../../models/auction.model');
+    const prevAuction = await (Auction as any).findOne({
+      session_id: sessionId,
+      hostGeneralId: generalId,
+      type: { $in: ['BuyRice', 'SellRice'] },
+      finished: false
+    }).lean();
+
+    if (prevAuction) {
+      return '아직 경매가 끝나지 않았습니다.';
+    }
+
+    // turnTerm 가져오기
+    const { Session } = await import('../../models/session.model');
+    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const turnTerm = session?.data?.game_env?.turnterm || session?.data?.turnterm || 60; // 기본 60분
 
     const now = new Date();
-    // TODO: turnTerm 가져오기
-    const turnTerm = 10; // 임시
     const closeDate = new Date(now.getTime() + closeTurnCnt * turnTerm * 60 * 1000);
 
-    // TODO: AuctionInfo 생성 및 경매 열기
-    // const openResult = await this.openAuction(auctionInfo, general);
-    // if (typeof openResult === 'string') {
-    //   return openResult;
-    // }
+    // AuctionInfo 생성
+    const auctionType = (this as any).auctionType;
+    const obfuscatedName = Auction.genObfuscatedName(generalId);
+    
+    const auctionInfo = {
+      session_id: sessionId,
+      type: auctionType,
+      finished: false,
+      target: String(amount),
+      hostGeneralId: generalId,
+      hostName: obfuscatedName,
+      reqResource: bidderRes.value,
+      openDate: now,
+      closeDate: closeDate,
+      amount: amount,
+      startBidAmount: startBidAmount,
+      finishBidAmount: finishBidAmount,
+      isReverse: false,
+      title: `${hostResName} ${amount} 경매`,
+      bids: []
+    };
 
+    // 경매 열기 (openAuction 메서드 사용)
+    const openResult = await Auction.openAuction(auctionInfo, general);
+    if (typeof openResult === 'string') {
+      // 자원 롤백 (경매 생성 실패 시)
+      general.increaseVarWithLimit(hostRes.value, amount, 0);
+      await general.applyDB(db);
+      return openResult;
+    }
+
+    // 자원 차감 (경매 생성 성공 후)
     general.increaseVarWithLimit(hostRes.value, -amount, 0);
     await general.applyDB(db);
 
-    // return new this(openResult, general);
-    return '경매 열기 기능 구현 중';
+    // AuctionBasicResource 인스턴스 반환을 위해 auctionID 반환
+    return openResult;
   }
 
   /**

@@ -2172,12 +2172,88 @@ router.post('/stratfinan', authenticate, async (req, res) => {
       max: 3   // TODO: GameConst로 이동
     };
 
-    // 재정 (우선 0으로, TODO 추가)
+    // 재정 계산
+    const { getGoldIncome, getRiceIncome, getWallIncome, getWarGoldIncome, getOutcome } = await import('../utils/income-util');
+    
+    // 국가 도시 목록 조회
+    const cityList: any[] = await (City as any).find({
+      session_id: sessionId,
+      nation: nationId
+    }).lean();
+
+    // 관직자 수 집계 (officer_level IN (2,3,4) AND city = officer_city)
+    const officersCnt: Record<number, number> = {};
+    const generalsForOfficers: any[] = await (General as any).find({
+      session_id: sessionId,
+      'data.nation': nationId,
+      'data.officer_level': { $in: [2, 3, 4] }
+    }).select('data').lean();
+    
+    for (const general of generalsForOfficers) {
+      const officerLevel = general.data?.officer_level || 0;
+      const officerCity = general.data?.officer_city || 0;
+      const generalCity = general.data?.city || 0;
+      
+      if (officerLevel >= 2 && officerLevel <= 4 && officerCity === generalCity && officerCity > 0) {
+        officersCnt[officerCity] = (officersCnt[officerCity] || 0) + 1;
+      }
+    }
+
+    // 국가 정보
+    const nationLevel = nation.data?.level || 0;
+    const taxRate = nation.data?.rate_tmp || nation.rate || 10;
+    const capitalId = nation.data?.capital || nation.capital || 0;
+    const nationType = nation.data?.type || nation.type || 'none';
+    const billRate = nation.data?.bill || nation.bill || 100;
+
+    // 금 수입 계산
+    const cityGoldIncome = getGoldIncome(
+      nationId,
+      nationLevel,
+      taxRate,
+      capitalId,
+      nationType,
+      cityList,
+      officersCnt
+    );
+
+    // 전쟁 금 수입 계산
+    const warGoldIncome = getWarGoldIncome(nationType, cityList);
+
+    // 쌀 수입 계산
+    const cityRiceIncome = getRiceIncome(
+      nationId,
+      nationLevel,
+      taxRate,
+      capitalId,
+      nationType,
+      cityList,
+      officersCnt
+    );
+
+    // 성벽 쌀 수입 계산
+    const wallRiceIncome = getWallIncome(
+      nationId,
+      nationLevel,
+      taxRate,
+      capitalId,
+      nationType,
+      cityList,
+      officersCnt
+    );
+
+    // 지출 계산
+    const generalsForOutcome: any[] = await (General as any).find({
+      session_id: sessionId,
+      'data.nation': nationId
+    }).select('data').lean();
+    
+    const outcome = getOutcome(billRate, generalsForOutcome);
+
     const income = {
-      gold: { city: 0, war: 0 },  // TODO: getGoldIncome, getWarGoldIncome 포팅 필요
-      rice: { city: 0, wall: 0 }  // TODO: getRiceIncome, getWallIncome 포팅 필요
+      gold: { city: cityGoldIncome, war: warGoldIncome },
+      rice: { city: cityRiceIncome, wall: wallRiceIncome }
     };
-    const outcome = 0;  // TODO: getOutcome 포팅 필요
 
     // 편집 권한 확인
     const editable = officerLevel >= 5 || permission === 4;

@@ -202,8 +202,30 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(JoinGeneralNationCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler 처리
-    // TODO: tryUniqueItemLottery 처리
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(
+        general,
+        destGeneral,
+        this,
+        this.env,
+        this.arg
+      );
+    } catch (error: any) {
+      // StaticEventHandler 실패해도 계속 진행
+      console.error('StaticEventHandler failed:', error);
+    }
+
+    // tryUniqueItemLottery 처리
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env['session_id'] || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '임관');
+    } catch (error: any) {
+      // tryUniqueItemLottery 실패해도 계속 진행
+      console.error('tryUniqueItemLottery failed:', error);
+    }
 
     general.applyDB(db);
 

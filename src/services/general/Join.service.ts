@@ -4,6 +4,9 @@ import { City } from '../../models/city.model';
 import { GeneralRecord } from '../../models/general_record.model';
 import { GeneralTurn } from '../../models/general_turn.model';
 import { User } from '../../models/user.model';
+import { RankData } from '../../models/rank_data.model';
+import { UserRecord } from '../../models/user_record.model';
+import { KVStorage } from '../../utils/KVStorage';
 import crypto from 'crypto';
 
 /**
@@ -327,7 +330,40 @@ export class JoinService {
       }
 
       // 23. 랭크 데이터 생성
-      // TODO: rank_data 테이블 구현 시 추가
+      const rankColumns = [
+        'firenum', 'warnum', 'killnum', 'deathnum', 'killcrew', 'deathcrew',
+        'ttw', 'ttd', 'ttl', 'ttg', 'ttp',
+        'tlw', 'tld', 'tll', 'tlg', 'tlp',
+        'tsw', 'tsd', 'tsl', 'tsg', 'tsp',
+        'tiw', 'tid', 'til', 'tig', 'tip',
+        'betwin', 'betgold', 'betwingold',
+        'killcrew_person', 'deathcrew_person',
+        'occupied',
+        'inherit_earned', 'inherit_spent', 'inherit_earned_dyn', 'inherit_earned_act', 'inherit_spent_dyn'
+      ];
+
+      const rankDataRows = rankColumns.map(type => ({
+        session_id: sessionId,
+        data: {
+          id: `${generalNo}_${type}`, // unique index를 위한 id
+          general_id: generalNo,
+          nation_id: 0,
+          type: type,
+          value: 0
+        }
+      }));
+
+      if (rankDataRows.length > 0) {
+        try {
+          await (RankData as any).insertMany(rankDataRows, { ordered: false });
+        } catch (error: any) {
+          // 중복 키 에러는 무시 (이미 존재하는 경우)
+          if (error.code !== 11000) {
+            console.error('Failed to insert rank data:', error);
+            throw error;
+          }
+        }
+      }
 
       // 24. 익명 모드면 장수 번호 기반 이름 재생성
       if (blockCustomName) {
@@ -338,7 +374,34 @@ export class JoinService {
 
       // 25. 유산 포인트 소비 기록
       if (inheritResult.requiredPoint > 0) {
-        // TODO: 유산 포인트 로깅
+        try {
+          // KVStorage에서 유산 포인트 차감
+          const gameStor = KVStorage.getStorage(`game_env:${sessionId}`);
+          const inheritStor = KVStorage.getStorage(`inheritance_${userId}:${sessionId}`);
+          
+          const currentPoint = await inheritStor.getValue('previous');
+          const previousPoint = Array.isArray(currentPoint) ? currentPoint[0] : (currentPoint || 0);
+          
+          if (previousPoint >= inheritResult.requiredPoint) {
+            const newPoint = previousPoint - inheritResult.requiredPoint;
+            await inheritStor.setValue('previous', [newPoint, null]);
+            
+            // 유산 포인트 로깅
+            const [year, month] = await gameStor.getValuesAsArray(['year', 'month']);
+            await (UserRecord as any).create({
+              session_id: sessionId,
+              user_id: String(userId),
+              log_type: 'inheritPoint',
+              text: `장수 생성 시 ${inheritResult.requiredPoint} 포인트 소비`,
+              year: year || 0,
+              month: month || 0,
+              date: new Date().toISOString()
+            });
+          }
+        } catch (error: any) {
+          console.error('Failed to log inheritance point:', error);
+          // 유산 포인트 로깅 실패해도 계속 진행
+        }
       }
 
       // 26. 로그 기록
@@ -767,18 +830,35 @@ export class JoinService {
     userId: number | string,
     showImgLevel: number,
     usePic: boolean
-  ): Promise<any> {
-    // TODO: User 모델에서 실제 이미지 정보 가져오기
+  ): Promise<{ picture: string | null; imgsvr: number }> {
+    // 이미지 표시 레벨이 1 이상이고 사용자가 이미지 사용을 원하는 경우
     if (showImgLevel >= 1 && usePic) {
-      // 실제 구현 시 User 테이블에서 가져옴
-      return {
-        picture: 'default.jpg',
-        imgsvr: 0
-      };
+      try {
+        // User 모델에서 이미지 정보 가져오기
+        // RootDB는 별도 연결이 필요하지만, 일단 User 모델에서 시도
+        const user = await (User as any).findById(userId).lean();
+        
+        if (user) {
+          // User 모델에 picture, imgsvr 필드가 있는 경우
+          const picture = user.picture || user.data?.picture || null;
+          const imgsvr = user.imgsvr || user.data?.imgsvr || 0;
+          
+          if (picture) {
+            return {
+              picture: picture,
+              imgsvr: imgsvr || 0
+            };
+          }
+        }
+      } catch (error: any) {
+        // User 조회 실패 시 기본값 사용
+        console.error('Failed to get user image info:', error);
+      }
     }
 
+    // 기본값: 이미지 없음
     return {
-      picture: 'default.jpg',
+      picture: null,
       imgsvr: 0
     };
   }

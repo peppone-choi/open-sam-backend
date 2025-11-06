@@ -8,6 +8,8 @@ import { CommandRegistry } from './core/command';
 import { CommandExecutor } from './core/command/CommandExecutor';
 import { Session } from './models/session.model';
 import { ExecuteEngineService } from './services/global/ExecuteEngine.service';
+import { processAuction } from './services/auction/AuctionEngine.service';
+import { processTournament } from './services/tournament/TournamentEngine.service';
 
 /**
  * 통합 게임 데몬
@@ -49,6 +51,62 @@ async function processTurns() {
     }
   } catch (error: any) {
     logger.error('Fatal error in turn processor', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * 경매 처리 함수 (크론)
+ * closeDate가 지난 경매들을 자동으로 종료 처리
+ */
+async function processAuctions() {
+  try {
+    const sessions = await (Session as any).find({ 'data.isunited': { $nin: [2, 3] } });
+    
+    for (const session of sessions) {
+      const sessionId = session.session_id;
+      
+      try {
+        await processAuction(sessionId);
+      } catch (error: any) {
+        logger.error(`Auction processing error for session ${sessionId}`, {
+          error: error.message,
+          stack: error.stack
+        });
+      }
+    }
+  } catch (error: any) {
+    logger.error('Fatal error in auction processor', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * 토너먼트 처리 함수 (크론)
+ * 토너먼트 자동 진행 처리
+ */
+async function processTournaments() {
+  try {
+    const sessions = await (Session as any).find({ 'data.isunited': { $nin: [2, 3] } });
+    
+    for (const session of sessions) {
+      const sessionId = session.session_id;
+      
+      try {
+        await processTournament(sessionId);
+      } catch (error: any) {
+        logger.error(`Tournament processing error for session ${sessionId}`, {
+          error: error.message,
+          stack: error.stack
+        });
+      }
+    }
+  } catch (error: any) {
+    logger.error('Fatal error in tournament processor', {
       error: error.message,
       stack: error.stack
     });
@@ -98,18 +156,46 @@ async function start() {
     });
     logger.info('✅ 턴 스케줄러 시작', { schedule: CRON_EXPRESSION });
 
+    // 2. 경매 스케줄러 시작 (경매 종료 처리)
+    const AUCTION_CRON_EXPRESSION = '* * * * *'; // 매분
+    cron.schedule(AUCTION_CRON_EXPRESSION, () => {
+      processAuctions().catch(err => {
+        logger.error('경매 처리 크론 작업 실행 중 오류', {
+          error: err.message,
+          stack: err.stack
+        });
+      });
+    });
+    logger.info('✅ 경매 스케줄러 시작', { schedule: AUCTION_CRON_EXPRESSION });
+
+    // 3. 토너먼트 스케줄러 시작 (토너먼트 자동 진행)
+    const TOURNAMENT_CRON_EXPRESSION = '* * * * *'; // 매분
+    cron.schedule(TOURNAMENT_CRON_EXPRESSION, () => {
+      processTournaments().catch(err => {
+        logger.error('토너먼트 처리 크론 작업 실행 중 오류', {
+          error: err.message,
+          stack: err.stack
+        });
+      });
+    });
+    logger.info('✅ 토너먼트 스케줄러 시작', { schedule: TOURNAMENT_CRON_EXPRESSION });
+
     // 2. Redis Streams 커맨드 소비 시작
     const consumerName = process.env.HOSTNAME || 'daemon-unified-1';
     
     logger.info('🎮 통합 게임 데몬 시작 완료!', {
       features: {
         turnScheduler: true,
+        auctionScheduler: true,
+        tournamentScheduler: true,
         commandConsumer: true
       },
       totalCommands: commandStats.total,
       streamName: 'game:commands',
       consumerGroup: 'cmd-group',
-      cronSchedule: CRON_EXPRESSION
+      cronSchedule: CRON_EXPRESSION,
+      auctionCronSchedule: AUCTION_CRON_EXPRESSION,
+      tournamentCronSchedule: TOURNAMENT_CRON_EXPRESSION
     });
 
     // 커맨드 소비 루프
