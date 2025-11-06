@@ -38,8 +38,8 @@ router.get('/get-map', async (req: Request, res: Response, next: NextFunction) =
   try {
     const serverID = req.query.serverID as string;
     const sessionId = serverID || req.query.session_id as string || 'sangokushi_default';
-    const neutralView = req.query.neutralView === '1' || req.query.neutralView === 1;
-    const showMe = req.query.showMe === '1' || req.query.showMe === 1;
+    const neutralView = req.query.neutralView === '1' || false;
+    const showMe = req.query.showMe === '1' || false;
     
     const result = await GetMapService.execute({
       session_id: sessionId,

@@ -290,7 +290,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   const neutralCitySet = new Set(neutralCities.map((c: any) => c.city));
   
   if (neutralCitySet.size > 0 && warCities.size === 0 && enemyCities.size === 0) {
-    const adjacentNeutralCities = getAdjacentCities(cityIds, neutralCitySet);
+    const adjacentNeutralCities = getAdjacentCities(cityIds, neutralCitySet as Set<number>);
     if (adjacentNeutralCities.length > 0) {
       await (City as any).updateMany(
         { session_id: sessionId, city: { $in: adjacentNeutralCities } },

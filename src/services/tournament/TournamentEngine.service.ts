@@ -18,13 +18,13 @@
  */
 
 import { Session } from '../../models/session.model';
+import { logger } from '../../common/logger';
 import { Tournament } from '../../models/tournament.model';
 import { General } from '../../models/general.model';
 import { RankData } from '../../models/rank_data.model';
 import { KVStorage } from '../../utils/KVStorage';
-import { logger } from '../../common/logger';
 import { Util } from '../../utils/Util';
-import { ActionLogger } from '../../types/ActionLogger';
+import { ActionLogger } from '../../utils/ActionLogger';
 import { Betting } from '../../core/betting/Betting';
 import { JosaUtil } from '../../utils/JosaUtil';
 
@@ -211,7 +211,7 @@ export async function processTournament(sessionId: string): Promise<void> {
     await gameStor.setValue('phase', currentPhase);
     await gameStor.setValue('tnmt_time', newTime.toISOString());
 
-    logger.info('[TournamentEngine] Tournament processed', {
+    ActionLogger.info('[TournamentEngine] Tournament processed', {
       sessionId,
       tournament: currentTournament,
       phase: currentPhase,
@@ -310,18 +310,18 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
 
       joinersValues.push({
         session_id: sessionId,
-        no: general.no || 0,
-        npc: general.npc || 0,
-        name: general.name || '무명',
-        leadership: general.leadership || 10,
-        strength: general.strength || 10,
-        intel: general.intel || 10,
+        no: (general as any).no || 0,
+        npc: (general as any).npc || 0,
+        name: (general as any).name || '무명',
+        leadership: (general as any).leadership || 10,
+        strength: (general as any).strength || 10,
+        intel: (general as any).intel || 10,
         lvl: general.explevel || 10,
         grp: grpIdx,
         grp_no: grpCnt,
-        h: general.horse || 'None',
-        w: general.weapon || 'None',
-        b: general.book || 'None',
+        h: (general as any).horse || 'None',
+        w: (general as any).weapon || 'None',
+        b: (general as any).book || 'None',
         win: 0,
         draw: 0,
         lose: 0,
@@ -329,8 +329,8 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
         prmt: 0
       });
 
-      if (general.no) {
-        joinersIdx.push(general.no);
+      if ((general as any).no) {
+        joinersIdx.push((general as any).no);
       }
       grpCount[grpIdx] += 1;
     }
@@ -376,7 +376,7 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
       await (Tournament as any).insertMany(joinersValues);
     }
 
-    logger.info('[TournamentEngine] fillLowGenAll completed', { 
+    ActionLogger.info('[TournamentEngine] fillLowGenAll completed', { 
       sessionId, 
       tnmtType, 
       added: joinersValues.length 
@@ -485,7 +485,7 @@ async function selection(sessionId: string, tnmtType: number, tnmt: number, phas
       .lean();
 
     if (candidates.length === 0) {
-      logger.warn('[TournamentEngine] No candidates for selection', { sessionId, phase, query });
+      ActionLogger.warn('[TournamentEngine] No candidates for selection', { sessionId, phase, query });
       return;
     }
 
@@ -497,18 +497,18 @@ async function selection(sessionId: string, tnmtType: number, tnmt: number, phas
     // 본선에 추가
     await (Tournament as any).create({
       session_id: sessionId,
-      no: general.no,
-      npc: general.npc,
-      name: general.name,
-      leadership: general.leadership,
-      strength: general.strength,
-      intel: general.intel,
-      lvl: general.lvl,
+      no: (general as any).no,
+      npc: (general as any).npc,
+      name: (general as any).name,
+      leadership: (general as any).leadership,
+      strength: (general as any).strength,
+      intel: (general as any).intel,
+      lvl: (general as any).lvl,
       grp: grp,
       grp_no: grp_no,
-      h: general.h || 'None',
-      w: general.w || 'None',
-      b: general.b || 'None',
+      h: (general as any).h || 'None',
+      w: (general as any).w || 'None',
+      b: (general as any).b || 'None',
       win: 0,
       draw: 0,
       lose: 0,
@@ -520,8 +520,8 @@ async function selection(sessionId: string, tnmtType: number, tnmt: number, phas
     await (Tournament as any).updateOne(
       {
         session_id: sessionId,
-        grp: general.grp,
-        grp_no: general.grp_no
+        grp: (general as any).grp,
+        grp_no: (general as any).grp_no
       },
       {
         $set: { prmt: 0 }
@@ -622,7 +622,7 @@ async function final16set(sessionId: string): Promise<void> {
       }).lean();
 
       if (!general) {
-        logger.warn('[TournamentEngine] General not found for final16set', { 
+        ActionLogger.warn('[TournamentEngine] General not found for final16set', { 
           sessionId, 
           grp: grp[i], 
           prmt: prmt[i] 
@@ -636,18 +636,18 @@ async function final16set(sessionId: string): Promise<void> {
 
       await (Tournament as any).create({
         session_id: sessionId,
-        no: general.no,
-        npc: general.npc,
-        name: general.name,
-        leadership: general.leadership,
-        strength: general.strength,
-        intel: general.intel,
-        lvl: general.lvl,
+        no: (general as any).no,
+        npc: (general as any).npc,
+        name: (general as any).name,
+        leadership: (general as any).leadership,
+        strength: (general as any).strength,
+        intel: (general as any).intel,
+        lvl: (general as any).lvl,
         grp: newGrp,
         grp_no: newGrp_no,
-        h: general.h || 'None',
-        w: general.w || 'None',
-        b: general.b || 'None',
+        h: (general as any).h || 'None',
+        w: (general as any).w || 'None',
+        b: (general as any).b || 'None',
         win: 0,
         draw: 0,
         lose: 0,
@@ -709,14 +709,14 @@ async function startBetting(sessionId: string, type: number, unit: number): Prom
       .lean();
 
     for (const general of generalList) {
-      if (general.no <= 0) {
+      if ((general as any).no <= 0) {
         continue;
       }
-      const total = general.leadership + general.strength + general.intel;
+      const total = (general as any).leadership + (general as any).strength + (general as any).intel;
       const statValue = statKey === 'total' ? total : general[statKey];
       
-      candidates[general.no] = {
-        title: general.name,
+      candidates[(general as any).no] = {
+        title: (general as any).name,
         info: `${statName}: ${statValue}`,
         isHtml: null,
         aux: {
@@ -766,7 +766,7 @@ async function startBetting(sessionId: string, type: number, unit: number): Prom
         try {
           await betting.bet(npc.no, null, [target], betGold);
         } catch (error: any) {
-          logger.warn('[TournamentEngine] NPC bet failed', {
+          ActionLogger.warn('[TournamentEngine] NPC bet failed', {
             sessionId,
             npcId: npc.no,
             error: error.message
@@ -775,7 +775,7 @@ async function startBetting(sessionId: string, type: number, unit: number): Prom
       }
     }
 
-    logger.info('[TournamentEngine] startBetting completed', { 
+    ActionLogger.info('[TournamentEngine] startBetting completed', { 
       sessionId, 
       type, 
       bettingID,
@@ -825,7 +825,7 @@ async function finalFight(sessionId: string, tnmtType: number, tnmt: number, pha
     }).lean();
 
     if (!general) {
-      logger.warn('[TournamentEngine] No winner found for finalFight', { sessionId, grp, phase });
+      ActionLogger.warn('[TournamentEngine] No winner found for finalFight', { sessionId, grp, phase });
       return;
     }
 
@@ -835,18 +835,18 @@ async function finalFight(sessionId: string, tnmtType: number, tnmt: number, pha
 
     await (Tournament as any).create({
       session_id: sessionId,
-      no: general.no,
-      npc: general.npc,
-      name: general.name,
-      leadership: general.leadership,
-      strength: general.strength,
-      intel: general.intel,
-      lvl: general.lvl,
+      no: (general as any).no,
+      npc: (general as any).npc,
+      name: (general as any).name,
+      leadership: (general as any).leadership,
+      strength: (general as any).strength,
+      intel: (general as any).intel,
+      lvl: (general as any).lvl,
       grp: newGrp,
       grp_no: newGrp_no,
-      h: general.h || 'None',
-      w: general.w || 'None',
-      b: general.b || 'None',
+      h: (general as any).h || 'None',
+      w: (general as any).w || 'None',
+      b: (general as any).b || 'None',
       win: 0,
       draw: 0,
       lose: 0,
@@ -912,7 +912,7 @@ async function fight(
     }).lean();
 
     if (!gen1 || !gen2) {
-      logger.warn('[TournamentEngine] fight: General not found', { sessionId, group, g1, g2 });
+      ActionLogger.warn('[TournamentEngine] fight: General not found', { sessionId, group, g1, g2 });
       return;
     }
 
@@ -1010,7 +1010,7 @@ async function fight(
       );
       await (Tournament as any).updateOne(
         { session_id: sessionId, grp: group, grp_no: g2 },
-        { $inc: { lose: 1 }, $inc: { gl: -gl } }
+        { $inc: { lose: 1, gl: -gl } }
       );
 
       if (gen1gl > gen2gl) {
@@ -1030,7 +1030,7 @@ async function fight(
       // gen2 승리
       await (Tournament as any).updateOne(
         { session_id: sessionId, grp: group, grp_no: g1 },
-        { $inc: { lose: 1 }, $inc: { gl: -gl } }
+        { $inc: { lose: 1, gl: -gl } }
       );
       await (Tournament as any).updateOne(
         { session_id: sessionId, grp: group, grp_no: g2 },
@@ -1170,7 +1170,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     }).lean();
 
     for (const general of round16Generals) {
-      const generalID = general.no;
+      const generalID = (general as any).no;
       
       await (General as any).updateOne(
         { session_id: sessionId, no: generalID },
@@ -1198,8 +1198,8 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
       const logger = new ActionLogger(generalID, 0, year, month);
       resultHelper[generalID] = {
         id: generalID,
-        grp: general.grp,
-        grp_no: general.grp_no,
+        grp: (general as any).grp,
+        grp_no: (general as any).grp_no,
         reward: cost,
         msg: "<span class='ev_highlight'>16강 진출</span>",
         logger: logger,
@@ -1216,7 +1216,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     }).lean();
 
     for (const general of round8Generals) {
-      const generalID = general.no;
+      const generalID = (general as any).no;
       
       await (General as any).updateOne(
         { session_id: sessionId, no: generalID },
@@ -1255,7 +1255,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     }).lean();
 
     for (const general of round4Generals) {
-      const generalID = general.no;
+      const generalID = (general as any).no;
       
       await (General as any).updateOne(
         { session_id: sessionId, no: generalID },
@@ -1301,7 +1301,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     }).lean();
 
     for (const general of finalGenerals) {
-      const generalID = general.no;
+      const generalID = (general as any).no;
       
       await (General as any).updateOne(
         { session_id: sessionId, no: generalID },
@@ -1346,7 +1346,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     }).lean();
 
     for (const general of winnerGenerals) {
-      const generalID = general.no;
+      const generalID = (general as any).no;
       
       await (General as any).updateOne(
         { session_id: sessionId, no: generalID },
@@ -1392,7 +1392,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     }
 
     if (!winner || !runnerUp) {
-      logger.warn('[TournamentEngine] setGift: Winner or runner-up not found', { sessionId, winner, runnerUp });
+      ActionLogger.warn('[TournamentEngine] setGift: Winner or runner-up not found', { sessionId, winner, runnerUp });
       return;
     }
 
@@ -1447,7 +1447,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
         const betting = new Betting(sessionId, bettingId);
         await betting.giveReward([winner.no]);
       } catch (error: any) {
-        logger.warn('[TournamentEngine] setGift: Betting reward failed', {
+        ActionLogger.warn('[TournamentEngine] setGift: Betting reward failed', {
           sessionId,
           bettingId,
           error: error.message
@@ -1455,7 +1455,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
       }
     }
 
-    logger.info('[TournamentEngine] setGift completed', {
+    ActionLogger.info('[TournamentEngine] setGift completed', {
       sessionId,
       tnmtType,
       winner: winner.no,

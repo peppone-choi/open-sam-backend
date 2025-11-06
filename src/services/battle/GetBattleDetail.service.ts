@@ -59,10 +59,6 @@ export class GetBattleDetailService {
           { 'data.id': battleID },
           { 'data.battle_id': battleID },
           { _id: battleID }
-        ],
-        $or: [
-          { 'data.type': 'battle' },
-          { 'data.text': { $regex: /전투|싸움|공격|방어/i } }
         ]
       }).lean();
       

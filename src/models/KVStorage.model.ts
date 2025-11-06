@@ -50,7 +50,7 @@ if (mongoose.models['KVStorage']) {
   } else {
     // namespace 필드가 없으면 모델 삭제 후 재생성
     delete mongoose.models['KVStorage'];
-    delete mongoose.connection.models['KVStorage'];
+    (mongoose.connection.models as any)['KVStorage'] = undefined;
     KVStorageModel = mongoose.model<IKVStorage>('KVStorage', KVStorageSchema);
   }
 } else {

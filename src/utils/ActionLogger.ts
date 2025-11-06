@@ -18,6 +18,52 @@ export class ActionLogger {
   static WARNING = 'WARNING';
   static ERROR = 'ERROR';
 
+  // Instance properties for PHP compatibility
+  private generalNo?: number;
+  private nationId?: number;
+  private year?: number;
+  private month?: number;
+
+  constructor(generalNo?: number, nationId?: number, year?: number, month?: number) {
+    this.generalNo = generalNo;
+    this.nationId = nationId;
+    this.year = year;
+    this.month = month;
+  }
+
+  pushGeneralActionLog(message: string, type: string = ActionLogger.PLAIN): void {
+    ActionLogger.log(this.generalNo, 'general_action', message, type);
+  }
+
+  pushGeneralHistoryLog(message: string, type: string = ActionLogger.PLAIN): void {
+    ActionLogger.log(this.generalNo, 'general_history', message, type);
+  }
+
+  pushGlobalActionLog(message: string, type: string = ActionLogger.PLAIN): void {
+    if (this.nationId) {
+      ActionLogger.pushNationalHistoryLog(this.nationId, 'global_action', message, type);
+    }
+  }
+
+  pushGlobalHistoryLog(message: string, type: string = ActionLogger.PLAIN): void {
+    if (this.nationId) {
+      ActionLogger.pushNationalHistoryLog(this.nationId, 'global_history', message, type);
+    }
+  }
+
+  async flush(): Promise<void> {
+    return ActionLogger.flush();
+  }
+
+  // Logger method aliases for compatibility
+  static warn(message: string, ...args: any[]): void {
+    logger.warn(message, ...args);
+  }
+
+  static info(message: string, ...args: any[]): void {
+    logger.info(message, ...args);
+  }
+
   /**
    * 일반 액션 로그 기록
    */

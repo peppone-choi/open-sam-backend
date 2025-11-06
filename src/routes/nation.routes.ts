@@ -2343,7 +2343,7 @@ router.post('/betting', authenticate, async (req, res) => {
       res.json({
         result: false,
         bettings: [],
-        reason: result.reason || '배팅 정보를 조회할 수 없습니다'
+        reason: (result as any).reason || '배팅 정보를 조회할 수 없습니다'
       });
     }
   } catch (error: any) {

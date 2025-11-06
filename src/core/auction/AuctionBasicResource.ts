@@ -56,7 +56,7 @@ export abstract class AuctionBasicResource extends Auction {
     }
 
     const db = DB.db();
-    const sessionId = general.getSessionID();
+    const sessionId = general.session_id;
     const generalId = general.getID();
 
     // 이전 경매 확인
@@ -82,7 +82,7 @@ export abstract class AuctionBasicResource extends Auction {
 
     // AuctionInfo 생성
     const auctionType = (this as any).auctionType;
-    const obfuscatedName = Auction.genObfuscatedName(generalId);
+    const obfuscatedName = (Auction as any).genObfuscatedName(generalId);
     
     const auctionInfo = {
       session_id: sessionId,
@@ -103,7 +103,7 @@ export abstract class AuctionBasicResource extends Auction {
     };
 
     // 경매 열기 (openAuction 메서드 사용)
-    const openResult = await Auction.openAuction(auctionInfo, general);
+    const openResult = await (Auction as any).openAuction(auctionInfo, general);
     if (typeof openResult === 'string') {
       // 자원 롤백 (경매 생성 실패 시)
       general.increaseVarWithLimit(hostRes.value, amount, 0);

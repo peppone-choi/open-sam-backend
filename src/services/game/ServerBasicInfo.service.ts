@@ -52,7 +52,7 @@ export class ServerBasicInfoService {
         maxUserCnt: sessionData.maxgeneral || 100,
         turnTerm: sessionData.turnterm || 60,
         opentime: sessionData.opentime || session.createdAt,
-        turntime: sessionData.turntime || new Date(),
+        lastTurnTime: sessionData.turntime || new Date(),
         join_mode: gameEnv.join_mode || 'full',
         fiction: gameEnv.fiction || 0,
         block_general_create: gameEnv.block_general_create || 0,

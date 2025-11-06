@@ -136,7 +136,7 @@ export class DummyGeneral implements Partial<IGeneral> {
     // 더미는 수정 표시가 필요 없음
   }
 
-  async save(): Promise<this> {
+  async save(): Promise<any> {
     return this;
   }
 

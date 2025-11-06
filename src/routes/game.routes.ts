@@ -853,7 +853,7 @@ router.get('/cities/:id', async (req, res) => {
 router.post('/basic-info', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const userId = req.user?.userId || req.user?.id;
+    const userId = (req.user as any)?.userId || (req.user as any)?.id;
     
     if (!userId) {
       return res.json({
@@ -1057,7 +1057,7 @@ router.post('/vacation', authenticate, async (req, res) => {
 router.post('/server-basic-info', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const userId = req.user?.userId || req.user?.id;
+    const userId = (req.user as any)?.userId || (req.user as any)?.id;
     
     const result = await ServerBasicInfoService.execute(sessionId, userId);
     res.json(result);

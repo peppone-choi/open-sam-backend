@@ -514,7 +514,8 @@ export class ExecuteEngineService {
     // 캐시 무효화 (년/월 변경 시)
     try {
       const { cacheManager } = await import('../../cache/CacheManager');
-      await cacheManager.invalidate([`session:state:${sessionId}`, `session:byId:${sessionId}`]);
+      await cacheManager.delete(`session:state:${sessionId}`);
+      await cacheManager.delete(`session:byId:${sessionId}`);
     } catch (error: any) {
       // 캐시 무효화 실패해도 계속 진행
     }

@@ -22,22 +22,22 @@ import '../models/board.model';
 import '../models/comment.model';
 import '../models/event.model';
 import '../models/general-log.model';
-import '../models/general-access-log.model';
-import '../models/general-record.model';
+import '../models/general_access_log.model';
+import '../models/general_record.model';
 import '../models/hall.model';
 import '../models/KVStorage.model';
 import '../models/message.model';
 import '../models/ng_auction_bid.model';
 import '../models/ng_betting.model';
 import '../models/plock.model';
-import '../models/rank-data.model';
-import '../models/select-npc-token.model';
-import '../models/select-pool.model';
+import '../models/rank_data.model';
+import '../models/select_npc_token.model';
+import '../models/select_pool.model';
 import '../models/statistic.model';
 import '../models/user.model';
 import '../models/vote.model';
-import '../models/vote-comment.model';
-import '../models/world-history.model';
+import '../models/vote_comment.model';
+import '../models/world_history.model';
 
 /**
  * 게임 데이터 영속화 데몬

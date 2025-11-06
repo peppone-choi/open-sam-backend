@@ -81,7 +81,7 @@ router.get('/status', async (req, res) => {
 router.post('/pause', authenticate, async (req, res) => {
   try {
     const grade = req.user?.grade || 0;
-    if (grade < 5 && req.user?.acl !== '*') {
+    if (grade < 5 && (req.user as any)?.acl !== '*') {
       return res.status(403).json({
         success: false,
         message: '관리자 권한이 필요합니다'
@@ -123,7 +123,7 @@ router.post('/pause', authenticate, async (req, res) => {
 router.post('/resume', authenticate, async (req, res) => {
   try {
     const grade = req.user?.grade || 0;
-    if (grade < 5 && req.user?.acl !== '*') {
+    if (grade < 5 && (req.user as any)?.acl !== '*') {
       return res.status(403).json({
         success: false,
         message: '관리자 권한이 필요합니다'
@@ -165,7 +165,7 @@ router.post('/resume', authenticate, async (req, res) => {
 router.get('/list', authenticate, async (req, res) => {
   try {
     const grade = req.user?.grade || 0;
-    if (grade < 5 && req.user?.acl !== '*') {
+    if (grade < 5 && (req.user as any)?.acl !== '*') {
       return res.status(403).json({
         success: false,
         message: '관리자 권한이 필요합니다'
