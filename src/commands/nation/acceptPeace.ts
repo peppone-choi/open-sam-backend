@@ -57,7 +57,7 @@ export class che_종전수락 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.ExistsDestGeneral(),
-      ConstraintHelper.ReqDestNationValue('nation', '소속', '==', this.destGeneralObj!.getNationID(), '제의 장수가 국가 소속이 아닙니다'),
+      ConstraintHelper.ReqDestNationValue('nation', '소속', '==', this.destGeneralObj!.getNationID()),
       ConstraintHelper.AllowDiplomacyBetweenStatus([0, 1], '상대국과 선포, 전쟁중이지 않습니다.'),
     ];
   }

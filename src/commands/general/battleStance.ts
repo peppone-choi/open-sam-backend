@@ -114,7 +114,7 @@ export class BattleStanceCommand extends GeneralCommand {
     this.setResultTurn(turnResult);
     general.checkStatChange();
     await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, BattleStanceCommand, this.env, this.arg ?? {});
-    await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general);
+    await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general, general.session_id || '');
     await general.applyDB(db);
 
     return true;

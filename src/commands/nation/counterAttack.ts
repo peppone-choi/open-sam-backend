@@ -81,7 +81,7 @@ export class CounterAttackCommand extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.ExistsDestNation(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 

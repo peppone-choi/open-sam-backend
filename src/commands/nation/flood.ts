@@ -41,7 +41,7 @@ export class FloodCommand extends NationCommand {
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 
@@ -53,7 +53,7 @@ export class FloodCommand extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.NotOccupiedDestCity(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 

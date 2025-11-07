@@ -42,7 +42,7 @@ export class DisinformationCommand extends NationCommand {
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 
@@ -54,7 +54,7 @@ export class DisinformationCommand extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.NotOccupiedDestCity(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 

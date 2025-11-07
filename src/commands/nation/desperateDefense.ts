@@ -34,7 +34,7 @@ export class DesperateDefenseCommand extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 

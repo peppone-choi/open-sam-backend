@@ -15,7 +15,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
   protected static actionName = '장수를 따라 임관';
   public static reqArg = true;
 
-  protected destGeneral: any = null;
+  protected this.destGeneral: any = null;
   protected destNation: any = null;
 
   protected argTest(): boolean {
@@ -207,7 +207,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       const { StaticEventHandler } = await import('../../events/StaticEventHandler');
       await StaticEventHandler.handleEvent(
         general,
-        destGeneral,
+        this.destGeneral,
         this,
         this.env,
         this.arg

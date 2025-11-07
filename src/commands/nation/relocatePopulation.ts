@@ -41,7 +41,7 @@ export class che_이호경식 extends NationCommand {
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 
@@ -57,7 +57,7 @@ export class che_이호경식 extends NationCommand {
         3: '선포, 전쟁중인 상대국에게만 가능합니다.',
         7: '선포, 전쟁중인 상대국에게만 가능합니다.'
       }),
-      ConstraintHelper.AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
 

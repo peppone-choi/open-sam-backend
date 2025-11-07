@@ -57,7 +57,7 @@ export class che_불가침파기수락 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.ExistsDestGeneral(),
-      ConstraintHelper.ReqDestNationValue('nation', '소속', '==', this.destGeneralObj!.getNationID(), '제의 장수가 국가 소속이 아닙니다'),
+      ConstraintHelper.ReqDestNationValue('nation', '소속', '==', this.destGeneralObj!.getNationID()),
       ConstraintHelper.AllowDiplomacyBetweenStatus([7], '불가침 중인 상대국에게만 가능합니다.'),
     ];
   }
