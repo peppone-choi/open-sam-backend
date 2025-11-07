@@ -2,6 +2,7 @@ import { nationRepository } from '../../repositories/nation.repository';
 import { General } from '../../models/general.model';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * SetBill Service
@@ -31,7 +32,7 @@ export class SetBillService {
       }
 
       // 장수 정보 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -63,7 +64,7 @@ export class SetBillService {
       }
 
       // 국가 정보 업데이트
-      const result = await (Nation as any).updateOne(
+      const result = await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId

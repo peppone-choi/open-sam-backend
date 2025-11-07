@@ -1,7 +1,8 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { Vote } from '../../models/vote.model';
 import { VoteComment } from '../../models/vote_comment.model';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { voteRepository } from '../../repositories/vote.repository';
 
 interface VoteInfo {
   id: number;
@@ -23,7 +24,7 @@ export class GetVoteDetailService {
         throw new Error('유효하지 않은 투표 ID입니다.');
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }
@@ -37,7 +38,7 @@ export class GetVoteDetailService {
 
       const voteInfo: VoteInfo = rawVote as VoteInfo;
 
-      const voteRecords = await (Vote as any).find({ 
+      const voteRecords = await voteRepository.findByFilter({ 
         session_id: sessionId,
         'data.vote_id': voteID 
       });
@@ -56,7 +57,7 @@ export class GetVoteDetailService {
         cnt
       ]);
 
-      const comments = await (VoteComment as any).find({ 
+      const comments = await VoteComment.find({ 
         session_id: sessionId,
         'data.vote_id': voteID 
       }).sort({ 'data.id': 1 });
@@ -65,7 +66,7 @@ export class GetVoteDetailService {
 
       let myVote = null;
       if (user?.generalId) {
-        const myVoteRecord = await (Vote as any).findOne({
+        const myVoteRecord = await voteRepository.findOneByFilter({
           session_id: sessionId,
           'data.vote_id': voteID,
           'data.general_id': user.generalId
@@ -76,7 +77,7 @@ export class GetVoteDetailService {
         }
       }
 
-      const userCnt = await (General as any).countDocuments({
+      const userCnt = await generalRepository.count({
         session_id: sessionId,
         'data.npc': { $lt: 2 }
       });

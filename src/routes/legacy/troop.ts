@@ -5,12 +5,12 @@ const router = Router();
 
 router.post('/troop/create', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general: any = await (General as any).findOne({ owner: userId })
+    const general: any = await General.findOne({ owner: userId })
       .select('no nation')
       .lean();
 
@@ -28,7 +28,7 @@ router.post('/troop/create', async (req: Request, res: Response) => {
 
     await troop.save();
 
-    await (General as any).updateOne({ _id: general._id }, { troop: general.no });
+    await General.updateOne({ _id: general._id }, { troop: general.no });
 
     res.json({ result: true, reason: 'success' });
   } catch (error) {
@@ -39,19 +39,19 @@ router.post('/troop/create', async (req: Request, res: Response) => {
 
 router.post('/troop/:troopId/join', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId });
+    const general = await General.findOne({ owner: userId });
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
     const { troopId } = req.params;
 
-    (general as any).troop = parseInt(troopId);
+    general.troop = parseInt(troopId);
     await general.save();
 
     res.json({ result: true, reason: 'success' });
@@ -63,17 +63,17 @@ router.post('/troop/:troopId/join', async (req: Request, res: Response) => {
 
 router.post('/troop/leave', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId });
+    const general = await General.findOne({ owner: userId });
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
-    (general as any).troop = 0;
+    general.troop = 0;
     await general.save();
 
     res.json({ result: true, reason: 'success' });

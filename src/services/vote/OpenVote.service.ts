@@ -1,4 +1,4 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 
 interface VoteInfo {
   id: number;
@@ -25,7 +25,7 @@ export class OpenVoteService {
         throw new Error('권한이 부족합니다.');
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }

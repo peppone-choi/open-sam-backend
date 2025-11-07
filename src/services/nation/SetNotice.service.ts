@@ -1,5 +1,6 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { KVStorage } from '../../models/kv-storage.model';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 /**
  * SetNotice Service
@@ -21,7 +22,7 @@ export class SetNoticeService {
         return { success: false, message: '공지는 최대 16384자까지 가능합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -50,13 +51,13 @@ export class SetNoticeService {
         authorID: generalId
       };
 
-      const existingStorage = await (KVStorage as any).findOne({
+      const existingStorage = await kvStorageRepository.findOneByFilter({
         session_id: sessionId,
         storage_id: `nation_${nationId}`
       });
 
       if (existingStorage) {
-        await (KVStorage as any).updateOne(
+        await kvStorageRepository.updateOneByFilter(
           {
             session_id: sessionId,
             storage_id: `nation_${nationId}`
@@ -68,7 +69,7 @@ export class SetNoticeService {
           }
         );
       } else {
-        await (KVStorage as any).create({
+        await kvStorageRepository.create({
           session_id: sessionId,
           storage_id: `nation_${nationId}`,
           data: {

@@ -58,7 +58,7 @@ export class ReturnCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
     const officerLevel = general.getVar('officer_level');
@@ -91,7 +91,7 @@ export class ReturnCommand extends GeneralCommand {
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

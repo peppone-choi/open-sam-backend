@@ -40,7 +40,7 @@ export class StepDownCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
@@ -75,10 +75,10 @@ export class StepDownCommand extends GeneralCommand {
     general.setVar('gold', newGold);
     general.setVar('rice', newRice);
 
-    await (db as any).update('nation', {
-      gold: (db as any).sqleval('gold + ?', [lostGold]),
-      rice: (db as any).sqleval('rice + ?', [lostRice]),
-      gennum: (db as any).sqleval('gennum - ?', [general.getNPCType() !== 5 ? 1 : 0])
+    await db.update('nation', {
+      gold: db.sqleval('gold + ?', [lostGold]),
+      rice: db.sqleval('rice + ?', [lostRice]),
+      gennum: db.sqleval('gennum - ?', [general.getNPCType() !== 5 ? 1 : 0])
     }, 'nation = ?', [nationID]);
 
     // TODO: refreshNationStaticInfo()
@@ -90,10 +90,10 @@ export class StepDownCommand extends GeneralCommand {
     general.setVar('makelimit', 12);
 
     if (general.getVar('troop') === generalID) {
-      await (db as any).update('general', {
+      await db.update('general', {
         troop: 0
       }, 'troop = ?', [generalID]);
-      await (db as any).delete('troop', 'troop_leader = ?', [generalID]);
+      await db.delete('troop', 'troop_leader = ?', [generalID]);
     }
     general.setVar('troop', 0);
 
@@ -105,7 +105,7 @@ export class StepDownCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler.handleEvent
     
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

@@ -3,8 +3,8 @@
  * 휴가 모드 설정 (j_vacation.php)
  */
 
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { logger } from '../../common/logger';
 
 export class VacationService {
@@ -20,7 +20,7 @@ export class VacationService {
     }
 
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -40,10 +40,7 @@ export class VacationService {
         };
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        owner: String(userId)
-      });
+      const general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
       if (!general) {
         return {

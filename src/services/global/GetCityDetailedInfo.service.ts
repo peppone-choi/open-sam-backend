@@ -1,6 +1,6 @@
-import { City } from '../../models/city.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 export class GetCityDetailedInfoService {
   static async execute(data: any, user?: any) {
@@ -8,7 +8,7 @@ export class GetCityDetailedInfoService {
     const cityId = parseInt(data.city_id) || 0;
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -23,10 +23,10 @@ export class GetCityDetailedInfoService {
         };
       }
 
-      const city = await (City as any).findOne({ 
+      const city = await cityRepository.findOneByFilter({ 
         session_id: sessionId, 
         city: cityId 
-      }).lean();
+      });
 
       if (!city) {
         return {
@@ -37,12 +37,12 @@ export class GetCityDetailedInfoService {
 
       const nationId = city.nation || 0;
 
-      const generals = await (General as any).find({
+      const generals = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.city': cityId
       })
-        .select('no name data')
-        .lean();
+        
+        ;
 
       const generalList = generals.map(gen => {
         const genData = gen.data as any || {};

@@ -30,7 +30,7 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
     }
     
     // 어드민 정보를 req.admin에 저장
-    (req as any).admin = {
+    req.admin = {
       id: decoded.userId,
       username: decoded.username,
       grade: grade,
@@ -55,7 +55,7 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
  */
 export const requirePermission = (permission: AdminPermission) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const admin = (req as any).admin;
+    const admin = req.admin;
     
     if (!admin) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -76,7 +76,7 @@ export const requirePermission = (permission: AdminPermission) => {
  * 슈퍼 관리자만
  */
 export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const admin = (req as any).admin;
+  const admin = req.admin;
   
   if (!admin) {
     return res.status(401).json({ error: 'Unauthorized' });

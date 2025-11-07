@@ -72,7 +72,7 @@ export class DesperateDefenseCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj!;
     const generalID = general.getID();
@@ -93,7 +93,7 @@ export class DesperateDefenseCommand extends NationCommand {
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <M>필사즉생</>을 발동하였습니다.`;
 
     const targetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
-    const createObjListFromDB = (General as any).createObjListFromDB;
+    // TODO: Legacy method - const createObjListFromDB = General.createObjListFromDB;
 
     if (createObjListFromDB) {
       const targetGenerals = await createObjListFromDB(targetGeneralList);
@@ -111,7 +111,7 @@ export class DesperateDefenseCommand extends NationCommand {
           targetGeneral.setVar('atmos', 100);
         }
 
-        await targetGeneral.applyDB(db);
+        await await targetGeneral.save();
       }
     }
 
@@ -135,13 +135,13 @@ export class DesperateDefenseCommand extends NationCommand {
       [nationID]
     );
 
-    const StaticEventHandler = (global as any).StaticEventHandler;
+    const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'DesperateDefenseCommand', this.env, this.arg ?? {});
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

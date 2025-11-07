@@ -49,7 +49,7 @@ export class DisbandCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const logger = general.getLogger();
     const date = general.getTurnTime('HM');
@@ -94,7 +94,7 @@ export class DisbandCommand extends GeneralCommand {
     general.setVar('makelimit', 12);
     
     for (const oldGeneral of nationGenerals) {
-      await oldGeneral.applyDB(db);
+      await await oldGeneral.save();
     }
     
     await StaticEventHandler.handleEvent(
@@ -105,7 +105,7 @@ export class DisbandCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     await runEventHandler(db, null, 'OccupyCity');
 

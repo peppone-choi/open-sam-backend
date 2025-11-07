@@ -13,7 +13,7 @@ export class GeneralSocketHandler {
   }
 
   handleConnection(socket: Socket) {
-    const user = (socket as any).user;
+    const user = socket.user;
     const userId = user?.userId;
 
     if (!userId) {
@@ -28,12 +28,12 @@ export class GeneralSocketHandler {
         // 장수 조회 (generalId가 없으면 사용자의 장수)
         let general;
         if (generalId) {
-          general = await (General as any).findOne({
+          general = await General.findOne({
             session_id: sessionId,
             'data.no': generalId
           });
         } else {
-          general = await (General as any).findOne({
+          general = await General.findOne({
             session_id: sessionId,
             owner: String(userId)
           });

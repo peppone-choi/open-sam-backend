@@ -113,7 +113,7 @@ router.get('/entities/:role/:id/relations/:relationKey', async (req: Request, re
   const scenario = req.query.scenario as ScenarioId || 'sangokushi';
   
   const ref = { role: role as Role, id, scenario };
-  const related = await RelationHelper.getRelated(ref, relationKey as any);
+  const related = await RelationHelper.getRelatedref, relationKey;
   
   if (!related) {
     return res.status(404).json({ error: 'Related entity not found' });

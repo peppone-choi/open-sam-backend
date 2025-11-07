@@ -6,7 +6,7 @@ const router = Router();
 router.get('/server/basic-info', async (req: Request, res: Response) => {
   try {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await Session.findOne({ session_id: sessionId }).lean();
     
     if (!session) {
       return res.json({
@@ -15,8 +15,8 @@ router.get('/server/basic-info', async (req: Request, res: Response) => {
       });
     }
 
-    const sessionData = (session as any).config || session.data || {};
-    const plock: any = await (Plock as any).findOne({ type: 'GAME' }).lean();
+    const sessionData = session.config || session.data || {};
+    const plock: any = await Plock.findOne({ type: 'GAME' }).lean();
     
     // 레거시 형식과 동일하게 반환
     const serverInfo = {
@@ -51,7 +51,7 @@ router.get('/server/status', async (req: Request, res: Response) => {
   try {
     const totalGenerals = await General.countDocuments({ npc: 0 });
     const totalNPC = await General.countDocuments({ npc: 1 });
-    const plock: any = await (Plock as any).findOne({ type: 'GAME' }).lean();
+    const plock: any = await Plock.findOne({ type: 'GAME' }).lean();
 
     res.json({
       result: true,

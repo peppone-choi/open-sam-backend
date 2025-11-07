@@ -175,7 +175,7 @@ const router = Router();
  */
 router.post('/start', async (req, res) => {
   try {
-    const result = await StartBattleService.execute(req.body, (req as any).user);
+    const result = await StartBattleService.execute(req.body, req.user);
     if (result.success) {
       res.json(result);
     } else {
@@ -353,7 +353,7 @@ router.get('/:battleId', async (req, res) => {
   try {
     const result = await GetBattleStateService.execute({
       battleId: req.params.battleId
-    }, (req as any).user);
+    }, req.user);
     
     if (result.success) {
       res.json(result);
@@ -523,7 +523,7 @@ router.post('/:battleId/deploy', async (req, res) => {
     const result = await DeployUnitsService.execute({
       battleId: req.params.battleId,
       ...req.body
-    }, (req as any).user);
+    }, req.user);
     
     if (result.success) {
       res.json(result);
@@ -723,7 +723,7 @@ router.post('/:battleId/action', async (req, res) => {
     const result = await SubmitActionService.execute({
       battleId: req.params.battleId,
       ...req.body
-    }, (req as any).user);
+    }, req.user);
     
     if (result.success) {
       res.json(result);
@@ -892,7 +892,7 @@ router.post('/:battleId/ready', async (req, res) => {
     const result = await ReadyUpService.execute({
       battleId: req.params.battleId,
       ...req.body
-    }, (req as any).user);
+    }, req.user);
     
     if (result.success) {
       res.json(result);
@@ -1047,7 +1047,7 @@ router.get('/:battleId/history', async (req, res) => {
   try {
     const result = await GetBattleHistoryService.execute({
       battleId: req.params.battleId
-    }, (req as any).user);
+    }, req.user);
     
     if (result.success) {
       res.json(result);

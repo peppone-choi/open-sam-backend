@@ -64,7 +64,7 @@ export class WanderCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
 
@@ -145,7 +145,7 @@ export class WanderCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

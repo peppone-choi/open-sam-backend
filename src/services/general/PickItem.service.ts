@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { GeneralRecord } from '../../models/general_record.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
 
 /**
  * PickItem Service (아이템 줍기)
@@ -28,10 +28,7 @@ export class PickItemService {
     }
 
     try {
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {
@@ -50,15 +47,14 @@ export class PickItemService {
 
       general.data = general.data || {};
       general.data[itemType] = itemCode;
-      general.markModified('data');
-      await general.save();
+      await generalRepository.save(general);
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = session?.data || {};
 
       const { getNextRecordId } = await import('../../utils/record-helpers');
       const recordId = await getNextRecordId(sessionId);
-      await (GeneralRecord as any).create({
+      await generalRecordRepository.create({
         session_id: sessionId,
         data: {
           id: recordId,

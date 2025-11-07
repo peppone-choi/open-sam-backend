@@ -66,7 +66,7 @@ export class che_의병모집 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -120,14 +120,14 @@ export class che_의병모집 extends NationCommand {
     }
 
     logger.pushGeneralHistoryLog(`<M>${commandName}</>${josaUl} 발동`);
-    (logger as any).pushNationalHistoryLog(
+    logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <M>${commandName}</>${josaUl} 발동`
     );
 
     general!.addExperience(5 * (this.getPreReqTurn() + 1));
     general!.addDedication(5 * (this.getPreReqTurn() + 1));
 
-    const KVStorage = (global as any).KVStorage;
+    const KVStorage = global.KVStorage;
     const gameStor = KVStorage.getStorage(db, 'game_env');
 
     const avgGenCnt = await db.queryFirstField('SELECT avg(gennum) FROM nation WHERE level > 0');
@@ -144,7 +144,7 @@ export class che_의병모집 extends NationCommand {
       [nationID]
     );
 
-    const pickGeneralFromPool = (global as any).pickGeneralFromPool;
+    const pickGeneralFromPool = global.pickGeneralFromPool;
     const pickedNPCs = pickGeneralFromPool(db, rng, 0, createGenCnt);
 
     for (const pickedNPC of pickedNPCs) {

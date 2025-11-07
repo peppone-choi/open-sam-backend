@@ -1,5 +1,7 @@
 import { Auction } from '../../models/auction.model';
 import { General } from '../../models/general.model';
+import { auctionRepository } from '../../repositories/auction.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 export class GetUniqueItemAuctionDetailService {
   static async execute(data: any, user?: any) {
@@ -13,7 +15,7 @@ export class GetUniqueItemAuctionDetailService {
         throw new Error('auctionID가 필요합니다.');
       }
 
-      const auction = await (Auction as any).findOne({
+      const auction = await auctionRepository.findOneByFilter({
         _id: auctionID,
         session_id: sessionId,
         type: 'UniqueItem'
@@ -32,7 +34,7 @@ export class GetUniqueItemAuctionDetailService {
           date: bid.date
         }));
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });

@@ -1,7 +1,8 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 enum InheritanceKey {
   previous = 'previous',
@@ -24,12 +25,12 @@ export class GetInheritPointListService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId );
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
       
-      const inheritStor = await (KVStorage as any).findOne({ 
+      const inheritStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });

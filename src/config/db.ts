@@ -34,29 +34,29 @@ export class DB {
   async getGeneral(generalId: number, sessionId?: string): Promise<IGeneral | null> {
     const query: any = { 'data.no': generalId };
     if (sessionId) query.session_id = sessionId;
-    return await (General as any).findOne(query);
+    return await General.findOne(query);
   }
 
   async getGenerals(filter: any): Promise<IGeneral[]> {
-    return await (General as any).find(filter);
+    return await General.find(filter);
   }
 
   // City 조회
   async getCity(cityId: number, sessionId: string): Promise<ICity | null> {
-    return await (City as any).findOne({ city: cityId, session_id: sessionId });
+    return await City.findOne({ city: cityId, session_id: sessionId });
   }
 
   async getCities(filter: any): Promise<ICity[]> {
-    return await (City as any).find(filter);
+    return await City.find(filter);
   }
 
   // Nation 조회
   async getNation(nationId: number, sessionId: string): Promise<INation | null> {
-    return await (Nation as any).findOne({ 'data.nation': nationId, session_id: sessionId });
+    return await Nation.findOne({ 'data.nation': nationId, session_id: sessionId });
   }
 
   async getNations(filter: any): Promise<INation[]> {
-    return await (Nation as any).find(filter);
+    return await Nation.find(filter);
   }
 
   // Update 메서드 (동적 필드 지원)
@@ -70,7 +70,7 @@ export class DB {
       setUpdates[`data.${key}`] = value;
     }
     
-    await (General as any).updateOne(query, { $set: setUpdates });
+    await General.updateOne(query, { $set: setUpdates });
   }
 
   async updateCity(cityId: number, sessionId: string, updates: any): Promise<void> {
@@ -79,7 +79,7 @@ export class DB {
       setUpdates[`data.${key}`] = value;
     }
     
-    await (City as any).updateOne(
+    await City.updateOne(
       { city: cityId, session_id: sessionId },
       { $set: setUpdates }
     );
@@ -91,7 +91,7 @@ export class DB {
       setUpdates[`data.${key}`] = value;
     }
     
-    await (Nation as any).updateOne(
+    await Nation.updateOne(
       { 'data.nation': nationId, session_id: sessionId },
       { $set: setUpdates }
     );

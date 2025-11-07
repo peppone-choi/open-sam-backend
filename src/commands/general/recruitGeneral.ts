@@ -107,7 +107,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -141,7 +141,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
     if (this.destGeneralObj !== null) {
       general.setVar('city', this.destGeneralObj.getCityID());
     } else {
-      const targetCityID = await (db as any)('general')
+      const targetCityID = await db('general')
         .where('nation', destNationID)
         .where('officer_level', 12)
         .first()
@@ -149,10 +149,10 @@ export class RecruitGeneralCommand extends GeneralCommand {
       general.setVar('city', targetCityID);
     }
 
-    await (db as any)('nation')
+    await db('nation')
       .where('nation', destNationID)
       .update({
-        gennum: (db as any).raw('gennum + 1'),
+        gennum: db.raw('gennum + 1'),
       });
 
     // TODO: refreshNationStaticInfo
@@ -162,16 +162,16 @@ export class RecruitGeneralCommand extends GeneralCommand {
     general.checkStatChange();
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
-    const destRawGenerals = await (db as any)('general')
+    // TODO: Legacy DB access - const db = DB.db();
+    const destRawGenerals = await db('general')
       .where('no', '!=', this.generalObj.getID())
-      .orderBy(['npc', (db as any).raw('BINARY(name)')])
+      .orderBy(['npc', db.raw('BINARY(name)')])
       .select('no', 'name', 'nation', 'officer_level', 'npc', 'leadership', 'strength', 'intel');
 
     // TODO: 국가 목록 및 스카우트 메시지

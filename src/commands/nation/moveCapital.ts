@@ -97,7 +97,7 @@ export class che_천도 extends NationCommand {
     const destCityID = this.arg['destCityID'];
     const nationID = this.nation['nation'];
 
-    const calcCityDistance = (global as any).calcCityDistance;
+    const calcCityDistance = global.calcCityDistance;
     const distance = calcCityDistance(srcCityID, destCityID, [nationID]) ?? 50;
     this.cachedDist = distance;
 
@@ -119,7 +119,7 @@ export class che_천도 extends NationCommand {
     const general = this.getGeneral();
     const nationID = general!.getNationID();
 
-    const KVStorage = (global as any).KVStorage;
+    const KVStorage = global.KVStorage;
     const nationStor = KVStorage.getStorage(DB.db(), nationID, 'nation_env');
 
     nationStor.last천도Trial = [general!.getVar('officer_level'), general!.getTurnTime()];
@@ -156,7 +156,7 @@ export class che_천도 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalName = general!.getName();
@@ -189,7 +189,7 @@ export class che_천도 extends NationCommand {
       [nationID]
     );
 
-    const refreshNationStaticInfo = (global as any).refreshNationStaticInfo;
+    const refreshNationStaticInfo = global.refreshNationStaticInfo;
     await refreshNationStaticInfo();
 
     general!.increaseInheritancePoint('active_action', 1);
@@ -214,7 +214,7 @@ export class che_천도 extends NationCommand {
   public async exportJSVars(): Promise<any> {
     return {
       procRes: {
-        cities: await (global as any).JSOptionsForCities(),
+        cities: await global.JSOptionsForCities(),
         distanceList: {}
       }
     };

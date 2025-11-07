@@ -129,7 +129,7 @@ export const autoExtractToken = async (
       // req.cookies는 cookie-parser가 있어야 사용 가능
       // 없어도 에러가 나지 않도록 안전하게 처리
       try {
-        const cookieToken = (req as any).cookies?.token || (req as any).cookies?.authToken;
+        const cookieToken = req.cookies?.token || req.cookies?.authToken;
         if (cookieToken) {
           token = cookieToken;
         }

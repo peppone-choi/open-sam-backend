@@ -14,7 +14,7 @@ export class GameSocketHandler {
   }
 
   handleConnection(socket: Socket) {
-    const user = (socket as any).user;
+    const user = socket.user;
 
     // 세션 구독
     socket.on('game:subscribe', async (data: { sessionId: string }) => {
@@ -22,7 +22,7 @@ export class GameSocketHandler {
         const { sessionId } = data;
         
         // 세션 존재 확인
-        const session = await (Session as any).findOne({ session_id: sessionId });
+        const session = await Session.findOne({ session_id: sessionId });
         if (!session) {
           socket.emit('game:error', { message: '세션을 찾을 수 없습니다' });
           return;
@@ -56,7 +56,7 @@ export class GameSocketHandler {
     socket.on('game:status', async (data: { sessionId: string }) => {
       try {
         const { sessionId } = data;
-        const session = await (Session as any).findOne({ session_id: sessionId });
+        const session = await Session.findOne({ session_id: sessionId });
 
         if (!session) {
           socket.emit('game:error', { message: '세션을 찾을 수 없습니다' });

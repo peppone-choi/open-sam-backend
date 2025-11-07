@@ -1,6 +1,6 @@
 import { SelectPool } from '../../models/select_pool.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetSelectPool Service
@@ -21,7 +21,7 @@ export class GetSelectPoolService {
 
     try {
       // 세션 정보 확인
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -29,7 +29,7 @@ export class GetSelectPoolService {
         };
       }
 
-      const sessionData = (session as any).config || session.data || {};
+      const sessionData = session.config || session.data || {};
       const npcmode = sessionData.npcmode || 0;
       const turnterm = sessionData.turnterm || 60; // 분 단위
 
@@ -41,11 +41,11 @@ export class GetSelectPoolService {
       }
 
       // 기존 장수 확인
-      const existingGeneral = await (General as any).findOne({
+      const existingGeneral = await generalRepository.findBySessionAndOwner({
         session_id: sessionId,
         owner: userId.toString(),
         npc: { $ne: 2 }
-      }).lean();
+      });
 
       const now = new Date();
       
@@ -62,11 +62,11 @@ export class GetSelectPoolService {
       }
 
       // 기존 토큰 조회
-      const existingTokens = await (SelectPool as any).find({
+      const existingTokens = await SelectPool.find({
         session_id: sessionId,
         'data.owner': userId.toString(),
         'data.reserved_until': { $gte: now }
-      }).lean();
+      });
 
       if (existingTokens && existingTokens.length > 0) {
         const pick = [];
@@ -167,7 +167,7 @@ export class GetSelectPoolService {
       };
 
       // SelectPool에 저장
-      await (SelectPool as any).create({
+      await SelectPool.create({
         session_id: sessionId,
         data: {
           owner: userId.toString(),

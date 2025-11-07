@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { GeneralRecord } from '../../models/general_record.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
 
 /**
  * BuildNationCandidate Service (사전 거병)
@@ -20,17 +20,17 @@ export class BuildNationCandidateService {
     }
 
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId);
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
 
       const gameEnv = session.data || {};
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        owner: userId.toString()
-      });
+      const general = await generalRepository.findBySessionAndOwner(
+        sessionId,
+        userId.toString()
+      );
 
       if (!general) {
         return { success: false, message: '장수가 없습니다' };
@@ -56,7 +56,7 @@ export class BuildNationCandidateService {
 
       const { getNextRecordId } = await import('../../utils/record-helpers');
       const recordId = await getNextRecordId(sessionId);
-      await (GeneralRecord as any).create({
+      await generalRecordRepository.create({
         session_id: sessionId,
         data: {
           id: recordId,
@@ -71,8 +71,7 @@ export class BuildNationCandidateService {
 
       general.data = general.data || {};
       general.data.killturn = gameEnv.killturn || 6;
-      general.markModified('data');
-      await general.save();
+      await generalRepository.save(general);
 
       return {
         success: true,

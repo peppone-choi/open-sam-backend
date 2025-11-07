@@ -1,6 +1,7 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { Vote } from '../../models/vote.model';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { voteRepository } from '../../repositories/vote.repository';
 
 interface VoteInfo {
   id: number;
@@ -32,7 +33,7 @@ export class VoteService {
         throw new Error('게임에 로그인해주세요.');
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }
@@ -63,7 +64,7 @@ export class VoteService {
 
       selection.sort((a, b) => a - b);
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findOneByFilter({
         session_id: sessionId,
         no: user.generalId
       });
@@ -74,7 +75,7 @@ export class VoteService {
 
       const nationID = general.data?.nation || 0;
 
-      const existingVote = await (Vote as any).findOne({
+      const existingVote = await voteRepository.findOneByFilter({
         session_id: sessionId,
         'data.vote_id': voteID,
         'data.general_id': user.generalId

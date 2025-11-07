@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { pushNationCommand, pullNationCommand } from '../../utils/command-helpers';
 
 export class PushCommandService {
@@ -20,10 +20,7 @@ export class PushCommandService {
         throw new Error('범위를 벗어났습니다 (-12 ~ 12)');
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('올바르지 않은 장수입니다.');

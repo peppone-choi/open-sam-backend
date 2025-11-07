@@ -94,7 +94,7 @@ export class FloodCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj!;
     const generalID = general.getID();
@@ -109,7 +109,7 @@ export class FloodCommand extends NationCommand {
     const destCityName = destCity['name'];
 
     const destNationID = destCity['nation'];
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo ? getNationStaticInfo(destNationID)['name'] : '상대국';
 
     const nationID = general.getNationID();
@@ -127,9 +127,9 @@ export class FloodCommand extends NationCommand {
 
     const targetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
     for (const targetGeneralID of targetGeneralList) {
-      const targetLogger = (ActionLogger as any).create ?
-        (ActionLogger as any).create(targetGeneralID, nationID, year, month) :
-        new (ActionLogger as any)(targetGeneralID, nationID, year, month);
+      const targetLogger = ActionLogger.create ?
+        ActionLogger.create(targetGeneralID, nationID, year, month) :
+        new ActionLogger(targetGeneralID, nationID, year, month);
       if (targetLogger.pushGeneralActionLog) {
         targetLogger.pushGeneralActionLog(broadcastMessage, 0);
       }
@@ -143,9 +143,9 @@ export class FloodCommand extends NationCommand {
     const destTargetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i', [destNationID]);
     let destNationLogged = false;
     for (const targetGeneralID of destTargetGeneralList) {
-      const targetLogger = (ActionLogger as any).create ?
-        (ActionLogger as any).create(targetGeneralID, destNationID, year, month) :
-        new (ActionLogger as any)(targetGeneralID, destNationID, year, month);
+      const targetLogger = ActionLogger.create ?
+        ActionLogger.create(targetGeneralID, destNationID, year, month) :
+        new ActionLogger(targetGeneralID, destNationID, year, month);
       if (targetLogger.pushGeneralActionLog) {
         targetLogger.pushGeneralActionLog(destBroadcastMessage, 0);
       }
@@ -184,19 +184,19 @@ export class FloodCommand extends NationCommand {
       [nationID]
     );
 
-    const StaticEventHandler = (global as any).StaticEventHandler;
+    const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'FloodCommand', this.env, this.arg ?? {});
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const JSOptionsForCities = (global as any).JSOptionsForCities;
+    const JSOptionsForCities = global.JSOptionsForCities;
 
     return {
       procRes: {

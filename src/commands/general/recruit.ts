@@ -133,7 +133,7 @@ export class RecruitCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const destGeneral = this.destGeneralObj;
     const destGeneralName = destGeneral.getName();
@@ -170,7 +170,7 @@ export class RecruitCommand extends GeneralCommand {
       destGeneral.setVar('city', general.getVar('city'));
       destGeneral.setVar('belongs', general.getNationID());
       
-      destGeneral.applyDB(db);
+      await destGeneral.save();
     } else {
       // 등용 실패
       logger.pushGeneralActionLog(`<Y><b>${destGeneralName}</b></>이(가) 등용을 거절했습니다.`);
@@ -189,7 +189,7 @@ export class RecruitCommand extends GeneralCommand {
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

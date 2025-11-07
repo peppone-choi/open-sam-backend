@@ -29,7 +29,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   res.setHeader('x-request-id', requestId);
   
   // req 객체에 requestId 추가 (다른 미들웨어/컨트롤러에서 사용 가능)
-  (req as any).requestId = requestId;
+  req.requestId = requestId;
 
   // 응답 완료 시 로그 출력
   res.on('finish', () => {

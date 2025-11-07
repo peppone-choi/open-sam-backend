@@ -134,7 +134,7 @@ router.post('/by-token', async (req, res) => {
       }
       
       // 사용자 확인
-      const user = await (User as any).findById(payload.userId);
+      const user = await User.findById(payload.userId);
       if (!user) {
         return res.status(401).json({
           result: false,

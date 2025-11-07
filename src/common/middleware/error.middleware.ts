@@ -20,7 +20,7 @@ export const errorMiddleware = (
   res: Response,
   _next: NextFunction
 ): void => {
-  const requestId = (req as any).requestId;
+  const requestId = req.requestId;
   
   let status = 500;
   let code = 'INTERNAL_ERROR';

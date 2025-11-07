@@ -1,7 +1,7 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { City } from '../../models/city.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetNationList Service
@@ -14,7 +14,7 @@ export class GetNationListService {
     
     try {
       // Load session
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -23,7 +23,7 @@ export class GetNationListService {
       }
 
       // Get all nations with their static info
-      const nationsData = await (Nation as any).find({ session_id: sessionId }).lean();
+      const nationsData = await nationRepository.findByFilter({ session_id: sessionId });
       
       // Build nations map
       const nations: Record<number, any> = {};
@@ -46,7 +46,7 @@ export class GetNationListService {
       }
 
       // Get nation 0 (neutral) if exists
-      const neutralNation = await (Nation as any).findOne({ session_id: sessionId, nation: 0 }).lean();
+      const neutralNation = await nationRepository.findByNationNum(sessionId, 0 );
       if (neutralNation) {
         sortedNations[0] = {
           ...neutralNation.data,
@@ -56,10 +56,10 @@ export class GetNationListService {
       }
 
       // Get all generals ordered by dedication DESC
-      const generals = await (General as any).find({ session_id: sessionId })
-        .select('no name owner data')
+      const generals = await generalRepository.findBySession(sessionId )
+        
         .sort({ 'data.dedication': -1 })
-        .lean();
+        ;
 
       // Add generals to their nations
       for (const general of generals) {
@@ -97,9 +97,9 @@ export class GetNationListService {
       }
 
       // Get all cities
-      const cities = await (City as any).find({ session_id: sessionId })
-        .select('city name nation')
-        .lean();
+      const cities = await cityRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       // Add cities to their nations
       for (const city of cities) {

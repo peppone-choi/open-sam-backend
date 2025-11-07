@@ -1,5 +1,7 @@
 import { Auction } from '../../models/auction.model';
 import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { auctionRepository } from '../../repositories/auction.repository';
 
 export class OpenUniqueAuctionService {
   static async execute(data: any, user?: any) {
@@ -18,7 +20,7 @@ export class OpenUniqueAuctionService {
         throw new Error(`최소 경매 금액은 ${minPoint}입니다.`);
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -27,7 +29,7 @@ export class OpenUniqueAuctionService {
         throw new Error('장수를 찾을 수 없습니다.');
       }
 
-      const existingItemAuction = await (Auction as any).findOne({
+      const existingItemAuction = await auctionRepository.findOneByFilter({
         session_id: sessionId,
         type: 'UniqueItem',
         target: itemID,
@@ -38,7 +40,7 @@ export class OpenUniqueAuctionService {
         throw new Error('이미 경매가 진행중입니다.');
       }
 
-      const existingAuction = await (Auction as any).findOne({
+      const existingAuction = await auctionRepository.findOneByFilter({
         session_id: sessionId,
         hostGeneralId: generalId,
         type: 'UniqueItem',
@@ -57,7 +59,7 @@ export class OpenUniqueAuctionService {
 
       const obfuscatedName = this.genObfuscatedName(generalId);
 
-      const auction = await (Auction as any).create({
+      const auction = await auctionRepository.create({
         session_id: sessionId,
         type: 'UniqueItem',
         finished: false,

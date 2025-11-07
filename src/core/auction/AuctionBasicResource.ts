@@ -44,9 +44,9 @@ export abstract class AuctionBasicResource extends Auction {
       return '즉시거래가는 시작판매가의 110% 이상이어야 합니다.';
     }
 
-    const hostRes = (this as any).hostRes;
+    const hostRes = this.hostRes;
     const hostResName = hostRes === ResourceType.rice ? '쌀' : '금';
-    const bidderRes = (this as any).bidderRes;
+    const bidderRes = this.bidderRes;
     const minimumRes = hostRes === ResourceType.rice 
       ? GameConst.baserice 
       : GameConst.basegold;
@@ -61,7 +61,7 @@ export abstract class AuctionBasicResource extends Auction {
 
     // 이전 경매 확인
     const { Auction } = await import('../../models/auction.model');
-    const prevAuction = await (Auction as any).findOne({
+    const prevAuction = await Auction.findOne({
       session_id: sessionId,
       hostGeneralId: generalId,
       type: { $in: ['BuyRice', 'SellRice'] },
@@ -74,15 +74,15 @@ export abstract class AuctionBasicResource extends Auction {
 
     // turnTerm 가져오기
     const { Session } = await import('../../models/session.model');
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await Session.findOne({ session_id: sessionId }).lean();
     const turnTerm = session?.data?.game_env?.turnterm || session?.data?.turnterm || 60; // 기본 60분
 
     const now = new Date();
     const closeDate = new Date(now.getTime() + closeTurnCnt * turnTerm * 60 * 1000);
 
     // AuctionInfo 생성
-    const auctionType = (this as any).auctionType;
-    const obfuscatedName = (Auction as any).genObfuscatedName(generalId);
+    const auctionType = this.auctionType;
+    const obfuscatedName = Auction.genObfuscatedName(generalId);
     
     const auctionInfo = {
       session_id: sessionId,
@@ -103,7 +103,7 @@ export abstract class AuctionBasicResource extends Auction {
     };
 
     // 경매 열기 (openAuction 메서드 사용)
-    const openResult = await (Auction as any).openAuction(auctionInfo, general);
+    const openResult = await Auction.openAuction(auctionInfo, general);
     if (typeof openResult === 'string') {
       // 자원 롤백 (경매 생성 실패 시)
       general.increaseVarWithLimit(hostRes.value, amount, 0);

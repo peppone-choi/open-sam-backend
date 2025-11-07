@@ -1,5 +1,5 @@
-import { GeneralRecord } from '../../models/general_record.model';
-import { WorldHistory } from '../../models/world_history.model';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
 
 /**
  * GetBattleDetail Service
@@ -20,7 +20,7 @@ export class GetBattleDetailService {
       }
       
       // 전투 기록 조회 (GeneralRecord에서 battle 로그 타입으로)
-      const battleRecord = await (GeneralRecord as any).findOne({
+      const battleRecord = await generalRecordRepository.findOne({
         session_id: sessionId,
         $or: [
           { 'data.id': battleID },
@@ -28,7 +28,7 @@ export class GetBattleDetailService {
           { _id: battleID }
         ],
         'data.log_type': 'battle'
-      }).lean();
+      });
       
       if (battleRecord) {
         const recordData = battleRecord.data || {};
@@ -53,14 +53,14 @@ export class GetBattleDetailService {
       }
       
       // WorldHistory에서도 찾기
-      const worldBattle = await (WorldHistory as any).findOne({
+      const worldBattle = await worldHistoryRepository.findOne({
         session_id: sessionId,
         $or: [
           { 'data.id': battleID },
           { 'data.battle_id': battleID },
           { _id: battleID }
         ]
-      }).lean();
+      });
       
       if (worldBattle) {
         const historyData = worldBattle.data || {};

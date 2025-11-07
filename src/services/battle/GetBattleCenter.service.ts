@@ -1,6 +1,7 @@
-import { GeneralRecord } from '../../models/general_record.model';
-import { WorldHistory } from '../../models/world_history.model';
-import { Battle, BattleStatus } from '../../models/battle.model';
+import { BattleStatus } from '../../models/battle.model';
+import { battleRepository } from '../../repositories/battle.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
 
 /**
  * GetBattleCenter Service
@@ -12,34 +13,21 @@ export class GetBattleCenterService {
     
     try {
       // 진행 중인 실제 Battle 조회 (최우선)
-      const activeBattles = await (Battle as any).find({
-        session_id: sessionId,
-        status: { $in: [BattleStatus.PREPARING, BattleStatus.DEPLOYING, BattleStatus.IN_PROGRESS] }
-      })
-        .sort({ startedAt: -1 })
-        .limit(20)
-        .lean();
+      const activeBattles = await battleRepository.findActiveBattles(sessionId);
 
       // 전투 기록 조회 (최근 30개)
-      const battleRecords = await (GeneralRecord as any).find({
-        session_id: sessionId,
+      const battleRecords = await generalRecordRepository.findBySession(sessionId, {
         'data.log_type': 'battle'
-      })
-        .sort({ 'data.id': -1 })
-        .limit(30)
-        .lean();
+      });
       
       // 세계 역사에서 전투 기록 조회
-      const worldBattles = await (WorldHistory as any).find({
+      const worldBattles = await worldHistoryRepository.find({
         session_id: sessionId,
         $or: [
           { 'data.text': { $regex: /전투|싸움|공격|방어/i } },
           { 'data.type': 'battle' }
         ]
-      })
-        .sort({ 'data.id': -1 })
-        .limit(30)
-        .lean();
+      });
       
       // 진행 중인 Battle을 우선 표시
       const activeBattleList = activeBattles.map((battle: any) => ({

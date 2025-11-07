@@ -109,7 +109,7 @@ export class PopulationMoveCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj!;
     const date = general.getTurnTime('HM');
@@ -160,20 +160,20 @@ export class PopulationMoveCommand extends NationCommand {
       `<G><b>${destCityName}</b></>${josaRo} 인구 <C>${amount}</>명을 옮겼습니다. <1>${date}</>`
     );
 
-    const StaticEventHandler = (global as any).StaticEventHandler;
+    const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'PopulationMoveCommand', this.env, this.arg ?? {});
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const JSOptionsForCities = (global as any).JSOptionsForCities;
-    const JSCitiesBasedOnDistance = (global as any).JSCitiesBasedOnDistance;
+    const JSOptionsForCities = global.JSOptionsForCities;
+    const JSCitiesBasedOnDistance = global.JSCitiesBasedOnDistance;
 
     return {
       procRes: {

@@ -1,4 +1,4 @@
-import { GeneralTurn } from '../../models/general_turn.model';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
 const MAX_TURN = 30;
 
@@ -60,7 +60,7 @@ export class ReserveBulkCommandService {
         const brief = action;
 
         for (const turnIdx of turnList) {
-          await (GeneralTurn as any).findOneAndUpdate(
+          await generalTurnRepository.findOneAndUpdate(
             {
               session_id: sessionId,
               'data.general_id': generalId,

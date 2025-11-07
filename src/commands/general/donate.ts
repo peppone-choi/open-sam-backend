@@ -28,7 +28,7 @@ export class DonateCommand extends GeneralCommand {
       return false;
     }
     amount = Util.round(amount, -2);
-    amount = Util.valueFit(amount, 100, (GameConst as any).maxResourceActionAmount);
+    amount = Util.valueFit(amount, 100, GameConst.maxResourceActionAmount);
     if (amount <= 0) {
       return false;
     }
@@ -64,23 +64,23 @@ export class DonateCommand extends GeneralCommand {
     
     if (this.arg.isGold) {
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralGold((GameConst as any).generalMinimumGold)
+        ConstraintHelper.ReqGeneralGold(GameConst.generalMinimumGold)
       );
     } else {
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralRice((GameConst as any).generalMinimumRice)
+        ConstraintHelper.ReqGeneralRice(GameConst.generalMinimumRice)
       );
     }
   }
 
   public getBrief(): string {
     const resText = this.arg.isGold ? '금' : '쌀';
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     return `${resText} ${this.arg.amount}을 ${name}`;
   }
 
   public getCommandDetailTitle(): string {
-    return `${(this.constructor as any).getName()}(통솔경험)`;
+    return `${this.constructor.getName()}(통솔경험)`;
   }
 
   public getCost(): [number, number] {
@@ -100,7 +100,7 @@ export class DonateCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
@@ -116,7 +116,7 @@ export class DonateCommand extends GeneralCommand {
 
     await db.update('nation', {
       [resKey]: db.sqleval(`${resKey} + ?`, [amount])
-    },  'nation=?', [(general as any).getNationID()]);
+    },  'nation=?', [general.getNationID()]);
 
     general.increaseVarWithLimit(resKey, -amount, 0);
 
@@ -140,7 +140,7 @@ export class DonateCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
@@ -149,8 +149,8 @@ export class DonateCommand extends GeneralCommand {
     return {
       procRes: {
         minAmount: 100,
-        maxAmount: (GameConst as any).maxResourceActionAmount,
-        amountGuide: (GameConst as any).resourceActionAmountGuide,
+        maxAmount: GameConst.maxResourceActionAmount,
+        amountGuide: GameConst.resourceActionAmountGuide,
       }
     };
   }

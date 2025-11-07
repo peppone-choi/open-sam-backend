@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Troop } from '../../models/troop.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 
 /**
  * SetTroopName Service
@@ -30,7 +30,7 @@ export class SetTroopNameService {
         return { success: false, message: '부대 이름은 최대 18자까지 가능합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -50,7 +50,7 @@ export class SetTroopNameService {
         return { success: false, message: '권한이 부족합니다. 본인 부대이거나 외교권자만 변경 가능합니다' };
       }
 
-      const result = await (Troop as any).updateOne(
+      const result = await troopRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.troop_leader': troopID,

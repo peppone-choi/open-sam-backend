@@ -508,7 +508,7 @@ router.post('/reserve', authenticate, CommandController.reserveCommand); // ë³„ì
 router.post('/push-command', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const generalId = (req.user as any)?.generalId || req.body.general_id;
+    const generalId = req.user?.generalId || req.body.general_id;
     const turnCnt = parseInt(req.body.turn_cnt) || 1;
 
     if (!generalId) {
@@ -556,7 +556,7 @@ router.post('/push-command', authenticate, async (req, res) => {
 router.post('/pull-command', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const generalId = (req.user as any)?.generalId || req.body.general_id;
+    const generalId = req.user?.generalId || req.body.general_id;
     const turnCnt = parseInt(req.body.turn_cnt) || 1;
 
     if (!generalId) {
@@ -606,7 +606,7 @@ router.post('/pull-command', authenticate, async (req, res) => {
 router.post('/delete-command', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const generalId = (req.user as any)?.generalId || req.body.general_id;
+    const generalId = req.user?.generalId || req.body.general_id;
     const turnList = Array.isArray(req.body.turn_list) ? req.body.turn_list : [req.body.turn_list];
 
     if (!generalId) {

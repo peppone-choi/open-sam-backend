@@ -2,6 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { General } from '../../models/general.model';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * 등용 수락 커맨드
@@ -102,7 +103,7 @@ export class AcceptRecruitCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -120,25 +121,57 @@ export class AcceptRecruitCommand extends GeneralCommand {
     destGeneral.addExperience(100);
     destGeneral.addDedication(100);
 
-    const setOriginalNationValues: any = {
-      gennum: (db as any).raw('gennum - 1'),
-    };
+    // 원래 국가의 장수 수 감소
+    await nationRepository.updateOneByFilter(
+      {
+        session_id: general.getSessionID(),
+        nation: nationID
+      },
+      {
+        $inc: { gennum: -1 }
+      }
+    );
 
-    const setScoutNationValues: any = {
-      gennum: (db as any).raw('gennum + 1'),
-    };
+    // 스카웃 국가의 장수 수 증가  
+    await nationRepository.updateOneByFilter(
+      {
+        session_id: general.getSessionID(),
+        nation: scout.getNationID()
+      },
+      {
+        $inc: { gennum: 1 }
+      }
+    );
 
     if (nationID !== 0) {
       const defaultGold = 1000; // GameConst::$defaultGold
       const defaultRice = 1000; // GameConst::$defaultRice
 
       if (general.getVar('gold') > defaultGold) {
-        setOriginalNationValues.gold = (db as any).raw(`gold + ${general.getVar('gold') - defaultGold}`);
+        const goldDiff = general.getVar('gold') - defaultGold;
+        await nationRepository.updateOneByFilter(
+          {
+            session_id: general.getSessionID(),
+            nation: nationID
+          },
+          {
+            $inc: { gold: goldDiff }
+          }
+        );
         general.setVar('gold', defaultGold);
       }
 
       if (general.getVar('rice') > defaultRice) {
-        setOriginalNationValues.rice = (db as any).raw(`rice + ${general.getVar('rice') - defaultRice}`);
+        const riceDiff = general.getVar('rice') - defaultRice;
+        await nationRepository.updateOneByFilter(
+          {
+            session_id: general.getSessionID(),
+            nation: nationID
+          },
+          {
+            $inc: { rice: riceDiff }
+          }
+        );
         general.setVar('rice', defaultRice);
       }
 
@@ -171,9 +204,9 @@ export class AcceptRecruitCommand extends GeneralCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>이 <D><b>${destNationName}</b></>로 <S>망명</>하였습니다.`);
 
     if (nationID !== 0) {
-      await (db as any)('nation').where('nation', nationID).update(setOriginalNationValues);
+      // TODO: Legacy DB - await db('nation').where('nation', nationID).update(setOriginalNationValues);
     }
-    await (db as any)('nation').where('nation', destNationID).update(setScoutNationValues);
+    // TODO: Legacy DB - await db('nation').where('nation', destNationID).update(setScoutNationValues);
 
     // TODO: InheritancePoint
     // general.increaseInheritancePoint(InheritanceKey::active_action, 1);
@@ -191,13 +224,13 @@ export class AcceptRecruitCommand extends GeneralCommand {
     general.setVar('troop', 0);
 
     if (isTroopLeader) {
-      await (db as any)('general').where('troop_leader', generalID).update({ troop: 0 });
-      await (db as any)('troop').where('troop_leader', generalID).del();
+      // TODO: Legacy DB - await db('general').where('troop_leader', generalID).update({ troop: 0 });
+      // TODO: Legacy DB - await db('troop').where('troop_leader', generalID).del();
     }
 
     // TODO: StaticEventHandler
-    general.applyDB(db);
-    destGeneral.applyDB(db);
+    await general.save();
+    await destGeneral.save();
 
     return true;
   }

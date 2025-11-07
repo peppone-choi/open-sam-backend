@@ -59,7 +59,7 @@ router.post('/get-user-info', authenticate, async (req, res) => {
       });
     }
 
-    const user = await (User as any).findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         result: false,
@@ -124,7 +124,7 @@ router.post('/get-user-info', authenticate, async (req, res) => {
 router.post('/get-server-status', async (req, res) => {
   try {
     // 세션 목록 조회
-    const sessions = await (Session as any).find({}).lean();
+    const sessions = await Session.find({}).lean();
     
     const serverList = sessions.map((session: any) => ({
       color: session.color || '#000000',
@@ -268,7 +268,7 @@ router.post('/change-password', authenticate, async (req, res) => {
       });
     }
 
-    const user = await (User as any).findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         result: false,
@@ -289,7 +289,7 @@ router.post('/change-password', authenticate, async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // 비밀번호 업데이트
-    await (User as any).findByIdAndUpdate(userId, {
+    await User.findByIdAndUpdate(userId, {
       password: hashedNewPassword
     });
 
@@ -354,7 +354,7 @@ router.post('/delete-me', authenticate, async (req, res) => {
       });
     }
 
-    const user = await (User as any).findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         result: false,
@@ -375,14 +375,14 @@ router.post('/delete-me', authenticate, async (req, res) => {
     const deleteAfter = new Date();
     deleteAfter.setDate(deleteAfter.getDate() + 30);
     
-    await (User as any).findByIdAndUpdate(userId, {
+    await User.findByIdAndUpdate(userId, {
       delete_after: deleteAfter,
       deleted: true
     });
     
     // 관련 데이터 정리 (선택사항 - 소프트 삭제 시에는 유지)
     // TODO: 필요시 장수 데이터 anonymize 처리
-    // const generals = await (General as any).find({ owner: String(userId) });
+    // const generals = await General.find({ owner: String(userId) });
     // for (const general of generals) {
     //   general.owner = null; // 또는 익명화
     //   await general.save();

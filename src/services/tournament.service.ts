@@ -7,6 +7,8 @@ import { Tournament } from '../models/tournament.model';
 import { General } from '../models/general.model';
 import { Session } from '../models/session.model';
 import { logger } from '../common/logger';
+import { generalRepository } from '../repositories/general.repository';
+import { tournamentRepository } from '../repositories/tournament.repository';
 
 export type TournamentType = '전력전' | '통솔전' | '일기토' | '설전';
 export type TournamentState = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -58,7 +60,7 @@ export class TournamentService {
    */
   static async getTournamentInfo(sessionId: string) {
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       
       if (!session) {
         return {
@@ -78,10 +80,10 @@ export class TournamentService {
       const tnmtMsg = gameEnv.tnmt_msg || ''; // 메시지
 
       // 참가자 조회
-      const participants = await (Tournament as any)
+      const participants = await Tournament
         .find({ session_id: sessionId })
         .sort({ seq: 1 })
-        .lean();
+        ;
 
       return {
         result: true,
@@ -129,7 +131,7 @@ export class TournamentService {
   static async applyForTournament(sessionId: string, generalNo: number) {
     try {
       // 세션 확인
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -149,7 +151,7 @@ export class TournamentService {
       }
 
       // 이미 신청했는지 확인
-      const existing = await (Tournament as any).findOne({
+      const existing = await tournamentRepository.findOneByFilter({
         session_id: sessionId,
         no: generalNo
       });
@@ -162,7 +164,7 @@ export class TournamentService {
       }
 
       // 장수 정보 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalNo
       });
@@ -177,7 +179,7 @@ export class TournamentService {
       const genData = general.data || {};
 
       // 토너먼트 참가자 추가
-      const participant = new (Tournament as any)({
+      const participant = new Tournament({
         no: generalNo,
         npc: genData.npc || 0,
         name: genData.name || general.name,
@@ -213,7 +215,7 @@ export class TournamentService {
    */
   static async cancelTournamentApplication(sessionId: string, generalNo: number) {
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -233,7 +235,7 @@ export class TournamentService {
       }
 
       // 신청 삭제
-      await (Tournament as any).deleteOne({
+      await tournamentRepository.deleteByFilter({
         session_id: sessionId,
         no: generalNo
       });
@@ -258,10 +260,10 @@ export class TournamentService {
    */
   static async getTournamentBracket(sessionId: string) {
     try {
-      const participants = await (Tournament as any)
+      const participants = await Tournament
         .find({ session_id: sessionId })
         .sort({ grp: 1, grp_no: 1 })
-        .lean();
+        ;
 
       // 그룹별로 정리
       const bracket: any = {};

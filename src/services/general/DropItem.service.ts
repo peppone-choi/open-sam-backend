@@ -1,8 +1,8 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { Nation } from '../../models/nation.model';
-import { GeneralRecord } from '../../models/general_record.model';
-import { WorldHistory } from '../../models/world_history.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
 
 /**
  * DropItem Service (아이템 버리기)
@@ -38,10 +38,7 @@ export class DropItemService {
     }
 
     try {
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {
@@ -63,15 +60,14 @@ export class DropItemService {
 
       general.data = general.data || {};
       general.data[itemType] = 'None';
-      general.markModified('data');
-      await general.save();
+      await generalRepository.save(general);
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = session?.data || {};
 
       const { getNextRecordId } = await import('../../utils/record-helpers');
       const recordId1 = await getNextRecordId(sessionId);
-      await (GeneralRecord as any).create({
+      await generalRecordRepository.create({
         session_id: sessionId,
         data: {
           id: recordId1,
@@ -90,7 +86,7 @@ export class DropItemService {
         let nationName = '재야';
 
         if (nationId !== 0) {
-          const nation = await (Nation as any).findOne({
+          const nation = await nationRepository.findOneByFilter({
             session_id: sessionId,
             'data.nation': nationId
           });
@@ -98,7 +94,7 @@ export class DropItemService {
         }
 
         const recordId2 = await getNextRecordId(sessionId);
-        await (GeneralRecord as any).create({
+        await generalRecordRepository.create({
           session_id: sessionId,
           data: {
             id: recordId2,
@@ -111,7 +107,7 @@ export class DropItemService {
           }
         });
 
-        await (WorldHistory as any).create({
+        await worldHistoryRepository.create({
           session_id: sessionId,
           year: gameEnv.year || 184,
           month: gameEnv.month || 1,

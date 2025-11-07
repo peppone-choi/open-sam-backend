@@ -1,6 +1,6 @@
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
-import { Session } from '../../models/session.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetCityList Service
@@ -13,7 +13,7 @@ export class GetCityListService {
     
     try {
       // 세션 확인
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -22,9 +22,9 @@ export class GetCityListService {
       }
 
       // 국가 정보 조회
-      const nations = await (Nation as any).find({ session_id: sessionId })
-        .select('nation name color data')
-        .lean();
+      const nations = await nationRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const nationMap: Record<number, any> = {};
       for (const nation of nations) {
@@ -36,9 +36,9 @@ export class GetCityListService {
       }
 
       // 도시 목록 조회
-      const cities = await (City as any).find({ session_id: sessionId })
-        .select('city nation name level')
-        .lean();
+      const cities = await cityRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const cityArgsList = ['city', 'nation', 'name', 'level'];
       const cityList = cities.map((city: any) => [

@@ -3,7 +3,7 @@
  * 이벤트 트리거 (j_raise_event.php) - 관리자 전용
  */
 
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { logger } from '../../common/logger';
 
 export class RaiseEventService {
@@ -28,7 +28,7 @@ export class RaiseEventService {
     }
 
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,

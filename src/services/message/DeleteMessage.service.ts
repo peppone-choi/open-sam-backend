@@ -1,6 +1,6 @@
 import { MessageRepository } from '../../repositories/message.repository';
-import { General } from '../../models/general.model';
-import { Message } from '../../models/message.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { messageRepository } from '../../repositories/message.repository';
 import { Session } from '../../models/session.model';
 
 /**
@@ -24,7 +24,7 @@ export class DeleteMessageService {
       }
 
       // 메시지 조회
-      const message = await (Message as any).findOne({
+      const message = await messageRepository.findOneByFilter({
         session_id: sessionId,
         'data.id': msgID
       });
@@ -42,7 +42,7 @@ export class DeleteMessageService {
       }
 
       // 메시지 삭제
-      await (Message as any).deleteOne({
+      await messageRepository.deleteByFilter({
         session_id: sessionId,
         'data.id': msgID
       });

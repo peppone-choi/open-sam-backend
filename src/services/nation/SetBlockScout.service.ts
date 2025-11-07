@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * SetBlockScout Service
@@ -18,7 +18,7 @@ export class SetBlockScoutService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -39,14 +39,14 @@ export class SetBlockScoutService {
         return { success: false, message: '국가에 소속되어 있어야 합니다' };
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       const blockChangeScout = session?.data?.block_change_scout || false;
 
       if (blockChangeScout) {
         return { success: false, message: '임관 설정을 바꿀 수 없도록 설정되어 있습니다' };
       }
 
-      await (Nation as any).updateOne(
+      await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId

@@ -1,5 +1,6 @@
 import { BattleMapTemplate } from '../../models/battlemap-template.model';
 import { ITerrainTile, IPosition } from '../../models/battlemap-template.model';
+import { battleMapTemplateRepository } from '../../repositories/battle-map-template.repository';
 
 export class GenerateDefaultMapsService {
   static async execute(data: { session_id?: string }) {
@@ -15,20 +16,20 @@ export class GenerateDefaultMapsService {
       const results = [];
       
       for (const templateData of templates) {
-        const existing = await (BattleMapTemplate as any).findOne({
+        const existing = await battleMapTemplateRepository.findOneByFilter({
           session_id: sessionId,
           city_id: templateData.city_id
         });
         
         if (existing) {
-          await (BattleMapTemplate as any).updateOne(
+          await battleMapTemplateRepository.updateOneByFilter(
             { _id: existing._id },
             { $set: templateData }
           );
           console.log(`🔄 맵 템플릿 업데이트: ${templateData.name}`);
-          results.push(await (BattleMapTemplate as any).findById(existing._id));
+          results.push(await battleMapTemplateRepository.findByFilterById(existing._id));
         } else {
-          const template = await (BattleMapTemplate as any).create(templateData);
+          const template = await battleMapTemplateRepository.create(templateData);
           console.log(`✅ 맵 템플릿 생성: ${templateData.name}`);
           results.push(template);
         }

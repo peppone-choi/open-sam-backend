@@ -32,7 +32,7 @@ export class ResetBattleSkillCommand extends GeneralCommand {
   }
 
   public getCommandDetailTitle(): string {
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     const reqTurn = this.getPreReqTurn();
     
     let reqTurnText = '';
@@ -69,7 +69,7 @@ export class ResetBattleSkillCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
@@ -86,9 +86,9 @@ export class ResetBattleSkillCommand extends GeneralCommand {
     let oldSpecialList = general.getAuxVar(oldTypeKey) ?? [];
     oldSpecialList.push(general.getVar(specialType));
 
-    if (specialType === 'special' && oldSpecialList.length === (GameConst as any).availableSpecialDomestic?.length) {
+    if (specialType === 'special' && oldSpecialList.length === GameConst.availableSpecialDomestic?.length) {
       oldSpecialList = [general.getVar(specialType)];
-    } else if (specialType === 'special2' && oldSpecialList.length === (GameConst as any).availableSpecialWar?.length) {
+    } else if (specialType === 'special2' && oldSpecialList.length === GameConst.availableSpecialWar?.length) {
       oldSpecialList = [general.getVar(specialType)];
     }
     
@@ -111,7 +111,7 @@ export class ResetBattleSkillCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

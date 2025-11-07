@@ -59,7 +59,7 @@ export async function searchDistance(
   }
 
   // 모든 도시 조회
-  const cities = await (City as any).find(query).select('city data').lean();
+  const cities = await City.find(query).select('city data').lean();
   
   // 도시 경로 정보 구성
   const cityConst: Record<number, { path?: Record<number, string> }> = {};
@@ -165,7 +165,7 @@ export async function getNationStaticInfo(
       query.session_id = sessionId;
     }
     
-    const nations = await (Nation as any)
+    const nations = await Nation
       .find(query)
       .select('nation name color type level capital gennum power session_id')
       .lean();
@@ -205,7 +205,7 @@ export async function getNationStaticInfo(
     query.session_id = sessionId;
   }
   
-  const nation = await (Nation as any).findOne(query).select('nation name color type level capital gennum power').lean();
+  const nation = await Nation.findOne(query).select('nation name color type level capital gennum power').lean();
   if (!nation) {
     return null;
   }

@@ -1,8 +1,8 @@
 import { generalRepository } from '../../repositories/general.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { City } from '../../models/city.model';
-import { GeneralRecord } from '../../models/general_record.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
 import crypto from 'crypto';
 
 /**
@@ -23,7 +23,7 @@ export class InstantRetreatService {
       }
 
       // 1. 게임 환경 설정 로드
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
@@ -40,7 +40,7 @@ export class InstantRetreatService {
       }
 
       // 3. 장수 정보 조회
-      const general = await (General as any).findOne({ no: generalId, session_id: sessionId });
+      const general = await generalRepository.findById({ no: generalId, session_id: sessionId });
       if (!general) {
         return {
           success: false,
@@ -60,7 +60,7 @@ export class InstantRetreatService {
       }
 
       // 5. 가까운 아국 도시 찾기 로직 (PHP의 run() 결과 시뮬레이션)
-      const nearCities = await (City as any).find({
+      const nearCities = await cityRepository.findByFilter({
         session_id: sessionId,
         nation: nation,
         level: { $gte: 1 }
@@ -90,7 +90,7 @@ export class InstantRetreatService {
       // 8. 로그 기록
       const { getNextRecordId } = await import('../../utils/record-helpers');
       const recordId = await getNextRecordId(sessionId);
-      await (GeneralRecord as any).create({
+      await generalRecordRepository.create({
         session_id: sessionId,
         data: {
           id: recordId,

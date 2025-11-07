@@ -1,8 +1,6 @@
 import { generalRepository } from '../../repositories/general.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * GetOtherGeneralInfo Service
@@ -21,10 +19,7 @@ export class GetOtherGeneralInfoService {
     }
 
     try {
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': targetGeneralId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, targetGeneralId);
 
       if (!general) {
         return {
@@ -55,13 +50,13 @@ export class GetOtherGeneralInfoService {
 
       // 소속 도시/국가 정보
       const cityId = general.data?.city;
-      const city = cityId ? await (City as any).findOne({
+      const city = cityId ? await cityRepository.findOneByFilter({
         session_id: sessionId,
         'data.id': cityId
       }) : null;
 
       const nationId = general.data?.nation;
-      const nation = nationId && nationId !== 0 ? await (Nation as any).findOne({
+      const nation = nationId && nationId !== 0 ? await nationRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': nationId
       }) : null;

@@ -22,7 +22,7 @@ export class PlunderCommand extends FireAttackCommand {
     const destCityID = destCity.city;
     const destNationID = destCity.nation;
     const commandName = (this.constructor as typeof PlunderCommand).getName();
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const sabotageDamageMin = 800;
     const sabotageDamageMax = 6400;

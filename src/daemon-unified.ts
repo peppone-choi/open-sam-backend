@@ -27,7 +27,7 @@ let isShuttingDown = false;
  */
 async function processTurns() {
   try {
-    const sessions = await (Session as any).find({ 'data.isunited': { $nin: [2, 3] } });
+    const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
     
     for (const session of sessions) {
       const sessionId = session.session_id;
@@ -63,7 +63,7 @@ async function processTurns() {
  */
 async function processAuctions() {
   try {
-    const sessions = await (Session as any).find({ 'data.isunited': { $nin: [2, 3] } });
+    const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
     
     for (const session of sessions) {
       const sessionId = session.session_id;
@@ -91,7 +91,7 @@ async function processAuctions() {
  */
 async function processTournaments() {
   try {
-    const sessions = await (Session as any).find({ 'data.isunited': { $nin: [2, 3] } });
+    const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
     
     for (const session of sessions) {
       const sessionId = session.session_id;

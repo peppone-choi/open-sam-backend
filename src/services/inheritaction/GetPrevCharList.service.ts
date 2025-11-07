@@ -1,7 +1,8 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 export class GetPrevCharListService {
   static async execute(data: any, user?: any) {
@@ -9,19 +10,19 @@ export class GetPrevCharListService {
     const userId = user?.userId || data.user_id;
     
     try {
-      const userStor = await (KVStorage as any).findOne({ 
+      const userStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `user_${userId}` 
       });
       
       const prevCharList = userStor?.value?.prev_char_list || [];
       
-      const generals = await (General as any).find({
+      const generals = await generalRepository.findByFilter({
         session_id: sessionId,
         no: { $in: prevCharList }
       })
-      .select('no name nation leadership strength intel')
-      .lean();
+      
+      ;
       
       return {
         success: true,

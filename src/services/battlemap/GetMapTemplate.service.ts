@@ -1,4 +1,5 @@
 import { BattleMapTemplate } from '../../models/battlemap-template.model';
+import { battleMapTemplateRepository } from '../../repositories/battle-map-template.repository';
 
 export class GetMapTemplateService {
   static async execute(data: { session_id?: string; city_id?: number }) {
@@ -6,7 +7,7 @@ export class GetMapTemplateService {
       const sessionId = data.session_id || 'sangokushi_default';
       
       if (data.city_id !== undefined) {
-        const template = await (BattleMapTemplate as any).findOne({
+        const template = await battleMapTemplateRepository.findOneByFilter({
           session_id: sessionId,
           city_id: data.city_id
         });
@@ -24,7 +25,7 @@ export class GetMapTemplateService {
         };
       }
       
-      const templates = await (BattleMapTemplate as any).find({ session_id: sessionId })
+      const templates = await battleMapTemplateRepository.findByFilter({ session_id: sessionId })
         .sort({ city_id: 1 });
       
       return {

@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * SetRecentMessageType Service
@@ -24,7 +24,7 @@ export class SetRecentMessageTypeService {
         return { success: false, message: '잘못된 메시지 타입입니다' };
       }
 
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.no': generalId

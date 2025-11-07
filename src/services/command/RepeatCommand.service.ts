@@ -1,4 +1,4 @@
-import { GeneralTurn } from '../../models/general_turn.model';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
 const MAX_TURN = 30;
 
@@ -33,11 +33,13 @@ async function repeatGeneralCommand(sessionId: string, generalId: number, turnCn
     reqTurn = MAX_TURN - turnCnt;
   }
 
-  const turnList = await (GeneralTurn as any).find({
-    session_id: sessionId,
+  const turnList = await generalTurnRepository.findBySession(sessionId, {
     'data.general_id': generalId,
     'data.turn_idx': { $lt: reqTurn }
-  }).sort({ 'data.turn_idx': 1 });
+  });
+  
+  // 정순 정렬
+  turnList.sort((a: any, b: any) => a.data.turn_idx - b.data.turn_idx);
 
   for (const turn of turnList) {
     const turnIdx = turn.data.turn_idx;
@@ -51,7 +53,7 @@ async function repeatGeneralCommand(sessionId: string, generalId: number, turnCn
     }
 
     if (targetIndices.length > 0) {
-      await (GeneralTurn as any).updateMany(
+      await generalTurnRepository.updateMany(
         {
           session_id: sessionId,
           'data.general_id': generalId,

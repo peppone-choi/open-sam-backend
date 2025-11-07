@@ -1,6 +1,6 @@
 import { VoteComment } from '../../models/vote_comment.model';
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 export class AddCommentService {
   static async execute(data: any, user?: any) {
@@ -24,7 +24,7 @@ export class AddCommentService {
 
       text = text.substring(0, 200);
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findOneByFilter({
         session_id: sessionId,
         no: user.generalId
       });
@@ -38,7 +38,7 @@ export class AddCommentService {
 
       let nationName = '재야';
       if (nationID > 0) {
-        const nation = await (Nation as any).findOne({
+        const nation = await nationRepository.findOneByFilter({
           session_id: sessionId,
           no: nationID
         });
@@ -48,7 +48,7 @@ export class AddCommentService {
         }
       }
 
-      const lastComment = await (VoteComment as any).findOne({
+      const lastComment = await VoteComment.findOne({
         session_id: sessionId
       }).sort({ 'data.id': -1 });
 

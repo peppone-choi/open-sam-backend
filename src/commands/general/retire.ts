@@ -24,7 +24,7 @@ export class RetireCommand extends GeneralCommand {
   }
 
   public getCommandDetailTitle(): string {
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     const reqAge = (this.constructor as typeof RetireCommand).reqAge;
     return `${name}(${reqAge}세 이상, 2턴)`;
   }
@@ -46,7 +46,7 @@ export class RetireCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -55,7 +55,7 @@ export class RetireCommand extends GeneralCommand {
     const logger = general.getLogger();
 
     if (env.isunited === 0) {
-      // await (window as any).CheckHall?.(general.getID());
+      // await window.CheckHall?.(general.getID());
     }
 
     await general.rebirth();
@@ -71,7 +71,7 @@ export class RetireCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

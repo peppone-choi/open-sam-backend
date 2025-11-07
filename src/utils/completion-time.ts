@@ -15,11 +15,11 @@ export async function calculateCompletionTime(
   action: string,
   arg?: any
 ): Promise<Date> {
-  const general = await (General as any).findOne({ no: generalId });
+  const general = await General.findOne({ no: generalId });
   if (!general) throw new Error('장수를 찾을 수 없습니다');
   
   const sessionId = general.session_id;
-  const session = await (Session as any).findOne({ session_id: sessionId });
+  const session = await Session.findOne({ session_id: sessionId });
   if (!session) throw new Error('세션을 찾을 수 없습니다');
   
   if (session.game_mode === 'turn') {

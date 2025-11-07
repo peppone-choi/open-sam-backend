@@ -36,14 +36,14 @@ export class ConvertExpCommand extends GeneralCommand {
     if (!Number.isInteger(srcArmType)) {
       return false;
     }
-    if (!(srcArmType in (GameUnitConst as any).allType())) {
+    if (!(srcArmType in GameUnitConst.allType())) {
       return false;
     }
 
     if (!Number.isInteger(destArmType)) {
       return false;
     }
-    if (!(destArmType in (GameUnitConst as any).allType())) {
+    if (!(destArmType in GameUnitConst.allType())) {
       return false;
     }
 
@@ -74,9 +74,9 @@ export class ConvertExpCommand extends GeneralCommand {
 
   protected initWithArg(): void {
     this.srcArmType = this.arg.srcArmType;
-    this.srcArmTypeName = (GameUnitConst as any).allType()[this.srcArmType];
+    this.srcArmTypeName = GameUnitConst.allType()[this.srcArmType];
     this.destArmType = this.arg.destArmType;
-    this.destArmTypeName = (GameUnitConst as any).allType()[this.destArmType];
+    this.destArmTypeName = GameUnitConst.allType()[this.destArmType];
 
     const [reqGold, reqRice] = this.getCost();
 
@@ -93,7 +93,7 @@ export class ConvertExpCommand extends GeneralCommand {
   }
 
   public getCommandDetailTitle(): string {
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     const [reqGold, reqRice] = this.getCost();
 
     let title = `${name}(통솔경험`;
@@ -125,7 +125,7 @@ export class ConvertExpCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
@@ -164,7 +164,7 @@ export class ConvertExpCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
@@ -173,7 +173,7 @@ export class ConvertExpCommand extends GeneralCommand {
     const general = this.generalObj;
     const ownDexList: any[] = [];
     
-    for (const [armType, armName] of Object.entries((GameUnitConst as any).allType())) {
+    for (const [armType, armName] of Object.entries(GameUnitConst.allType())) {
       ownDexList.push({
         armType: Number(armType),
         name: armName,

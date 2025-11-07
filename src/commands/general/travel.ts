@@ -50,10 +50,10 @@ export class TravelCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
-    const [type, text] = (SightseeingMessage as any).pickAction();
+    const [type, text] = SightseeingMessage.pickAction();
 
     let exp = 0;
 
@@ -116,7 +116,7 @@ export class TravelCommand extends GeneralCommand {
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

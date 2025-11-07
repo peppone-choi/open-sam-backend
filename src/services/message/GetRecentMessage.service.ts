@@ -1,6 +1,6 @@
 import { MessageRepository } from '../../repositories/message.repository';
-import { General } from '../../models/general.model';
-import { Message } from '../../models/message.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { messageRepository } from '../../repositories/message.repository';
 import { Session } from '../../models/session.model';
 
 /**
@@ -20,7 +20,7 @@ export class GetRecentMessageService {
       }
 
       // 장수 정보 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -47,10 +47,10 @@ export class GetRecentMessageService {
           { 'data.dest_general_id': generalId }
         ]
       };
-      const privateMessages = await (Message as any).find(privateQuery)
+      const privateMessages = await messageRepository.findByFilter(privateQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
-        .lean();
+        ;
 
       // 공개 메시지
       const publicQuery: any = {
@@ -58,10 +58,10 @@ export class GetRecentMessageService {
         'data.type': 'public',
         'data.id': { $gt: sequence }
       };
-      const publicMessages = await (Message as any).find(publicQuery)
+      const publicMessages = await messageRepository.findByFilter(publicQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
-        .lean();
+        ;
 
       // 국가 메시지
       const nationalQuery: any = {
@@ -70,10 +70,10 @@ export class GetRecentMessageService {
         'data.dest_nation_id': nationId,
         'data.id': { $gt: sequence }
       };
-      const nationalMessages = await (Message as any).find(nationalQuery)
+      const nationalMessages = await messageRepository.findByFilter(nationalQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
-        .lean();
+        ;
 
       // 외교 메시지
       const diplomacyQuery: any = {
@@ -82,10 +82,10 @@ export class GetRecentMessageService {
         'data.dest_nation_id': nationId,
         'data.id': { $gt: sequence }
       };
-      const diplomacyMessages = await (Message as any).find(diplomacyQuery)
+      const diplomacyMessages = await messageRepository.findByFilter(diplomacyQuery)
         .sort({ 'data.id': -1 })
         .limit(15)
-        .lean();
+        ;
 
       const mapMessages = (msgs: any[], msgType: string) => {
         return msgs.map(msg => {

@@ -487,7 +487,7 @@ router.get(
       query['from.role'] = fromRole;
       query['from.id'] = fromId;
       const ref: RoleRef = { role: fromRole, id: fromId, scenario };
-      const edges = await EntityRepository.findEdgesFrom(ref, key as any);
+      const edges = await EntityRepository.findEdgesFromref, key;
       return res.json({ data: edges });
     }
 
@@ -495,7 +495,7 @@ router.get(
       query['to.role'] = toRole;
       query['to.id'] = toId;
       const ref: RoleRef = { role: toRole, id: toId, scenario };
-      const edges = await EntityRepository.findEdgesTo(ref, key as any);
+      const edges = await EntityRepository.findEdgesToref, key;
       return res.json({ data: edges });
     }
 

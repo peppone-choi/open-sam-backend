@@ -1,7 +1,7 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { City } from '../../models/city.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetMap Service
@@ -16,7 +16,7 @@ export class GetMapService {
     
     try {
       // Load session
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -42,10 +42,7 @@ export class GetMapService {
       let myNation: number | null = null;
       
       if (userId) {
-        const general = await (General as any).findOne({ 
-          session_id: sessionId, 
-          owner: userId 
-        }).select('no data').lean();
+        const general = await generalRepository.findBySessionAndOwner(sessionId, userId);
 
         if (general && (showMe || !neutralView)) {
           const genData = general.data as any || {};
@@ -65,10 +62,7 @@ export class GetMapService {
       let spyInfo: Record<number, number> = {};
       
       if (myNation) {
-        const nation = await (Nation as any).findOne({ 
-          session_id: sessionId, 
-          nation: myNation 
-        }).select('data').lean();
+        const nation = await nationRepository.findByNationNum(sessionId, myNation);
 
         if (nation) {
           const nationData = nation.data as any || {};
@@ -101,9 +95,9 @@ export class GetMapService {
       }
 
       // Get nation list
-      const nations = await (Nation as any).find({ session_id: sessionId })
-        .select('nation name color capital data')
-        .lean();
+      const nations = await nationRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const nationList: any[] = [];
       for (const nation of nations) {
@@ -122,10 +116,10 @@ export class GetMapService {
       // Get cities where my nation's generals are located
       let shownByGeneralList: number[] = [];
       if (myNation) {
-        const generals = await (General as any).find({ 
+        const generals = await generalRepository.findByFilter({ 
           session_id: sessionId, 
           'data.nation': myNation 
-        }).select('data').lean();
+        });
 
         const citySet = new Set<number>();
         for (const gen of generals) {
@@ -138,14 +132,14 @@ export class GetMapService {
       }
 
       // Get city list
-      const cities = await (City as any).find({ session_id: sessionId })
-        .select('city name level state nation region supply x y data')
-        .lean();
+      const cities = await cityRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const cityList: any[] = [];
       for (const city of cities) {
         // data 필드 폴백 (MongoDB 스키마 유연성 대응)
-        const d = (city as any).data || {};
+        const d = city.data || {};
         const level = city.level ?? d.level ?? 0;
         const state = city.state ?? d.state ?? 0;
         const nation = city.nation ?? d.nation ?? 0;

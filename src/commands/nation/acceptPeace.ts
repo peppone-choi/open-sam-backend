@@ -1,4 +1,5 @@
 import '../../utils/function-extensions';
+import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
 import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
@@ -48,7 +49,8 @@ export class che_종전수락 extends NationCommand {
   }
 
   protected async initWithArg(): Promise<void> {
-    const destGeneral = await (General as any).createObjFromDB(this.arg['destGeneralID']);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
     this.setDestNation(this.arg['destNationID']);
 
@@ -79,7 +81,7 @@ export class che_종전수락 extends NationCommand {
   }
 
   public getBrief(): string {
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])['name'];
     return `${destNationName}국과 종전 합의`;
   }
@@ -89,7 +91,7 @@ export class che_종전수락 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalName = general!.getName();
@@ -115,7 +117,7 @@ export class che_종전수락 extends NationCommand {
       [nationID, destNationID, nationID, destNationID]
     );
 
-    const SetNationFront = (global as any).SetNationFront;
+    const SetNationFront = global.SetNationFront;
     if (SetNationFront) {
       await SetNationFront(nationID);
       await SetNationFront(destNationID);
@@ -131,12 +133,12 @@ export class che_종전수락 extends NationCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYiGeneral} <D><b>${destNationName}</b></>${josaWa} <M>종전 합의</> 하였습니다.`);
     logger.pushGlobalHistoryLog(`<Y><b>【종전】</b></><D><b>${nationName}</b></>${josaYiNation} <D><b>${destNationName}</b></>${josaWa} <M>종전 합의</> 하였습니다.`);
 
-    (logger as any).pushNationalHistoryLog(`<D><b>${destNationName}</b></>${josaWa} 종전`);
+    logger.pushNationalHistoryLog(`<D><b>${destNationName}</b></>${josaWa} 종전`);
 
     josaWa = JosaUtil.pick(nationName, '와');
     destLogger.pushGeneralActionLog(`<D><b>${nationName}</b></>${josaWa} 종전에 성공했습니다.`, ActionLogger.PLAIN);
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전 성공`);
-    (destLogger as any).pushNationalHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전`);
+    destLogger.pushNationalHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전`);
 
     await general!.applyDB(db);
     await destLogger.flush();

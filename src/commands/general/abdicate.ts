@@ -3,6 +3,7 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { General } from '../../models/General';
+import { generalRepository } from '../../repositories/general.repository';
 
 export class AbdicateCommand extends GeneralCommand {
   protected static actionName = '선양';
@@ -74,7 +75,7 @@ export class AbdicateCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
 
@@ -120,18 +121,31 @@ export class AbdicateCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler.handleEvent
     
-    general.applyDB(db);
-    destGeneral.applyDB(db);
+    // 장수 데이터 저장
+    await general.save();
+    await destGeneral.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
-    const destRawGenerals = await db.queryAllLists(
-      'SELECT no,name,officer_level,npc,leadership,strength,intel FROM general WHERE nation != 0 AND nation = ? AND no != ? ORDER BY npc,binary(name)',
-      [this.generalObj.getNationID(), this.generalObj.getID()]
-    );
+    // 같은 국가의 다른 장수들 조회 (선양 대상 후보)
+    const generals = await generalRepository.findByFilter({
+      session_id: this.generalObj.getSessionID(),
+      'data.nation': this.generalObj.getNationID(),
+      'data.nation': { $ne: 0 },
+      'data.no': { $ne: this.generalObj.getID() }
+    });
+
+    const destRawGenerals = generals.map(g => ({
+      no: g.data?.no || 0,
+      name: g.data?.name || '',
+      officerLevel: g.data?.officer_level || 0,
+      npc: g.data?.npc || 0,
+      leadership: g.data?.leadership || 0,
+      strength: g.data?.strength || 0,
+      intel: g.data?.intel || 0
+    }));
 
     return {
       procRes: {

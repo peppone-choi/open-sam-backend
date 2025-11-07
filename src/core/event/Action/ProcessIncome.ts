@@ -35,9 +35,9 @@ export class ProcessIncome extends Action {
     const year = env['year'] || 180;
     const month = env['month'] || 1;
 
-    const nations = await (Nation as any).find({ session_id: sessionId });
-    const cities = await (City as any).find({ session_id: sessionId });
-    const generals = await (General as any).find({ session_id: sessionId });
+    const nations = await Nation.find({ session_id: sessionId });
+    const cities = await City.find({ session_id: sessionId });
+    const generals = await General.find({ session_id: sessionId });
 
     // 국가별 도시 및 장수 그룹화
     const cityListByNation: Record<number, any[]> = {};
@@ -116,10 +116,10 @@ export class ProcessIncome extends Action {
 
         nation.data.gold = Math.max(nation.data.gold, baseGold);
         nation.markModified('data');
-        await (nation as any).save();
+        await nation.save();
 
       // nation_env에 prev_income_gold 저장
-      await (NationEnv as any).findOneAndUpdate(
+      await NationEnv.findOneAndUpdate(
         {
           session_id: sessionId,
           namespace: nationId,
@@ -144,7 +144,7 @@ export class ProcessIncome extends Action {
         
           general.data.gold = (general.data?.gold || 0) + gold;
           general.markModified('data');
-          await (general as any).save();
+          await general.save();
 
         const generalId = general.data?.no || 0;
         const logger = new ActionLogger(generalId, nationId, year, month);
@@ -170,9 +170,9 @@ export class ProcessIncome extends Action {
     const year = env['year'] || 180;
     const month = env['month'] || 1;
 
-    const nations = await (Nation as any).find({ session_id: sessionId });
-    const cities = await (City as any).find({ session_id: sessionId });
-    const generals = await (General as any).find({ session_id: sessionId });
+    const nations = await Nation.find({ session_id: sessionId });
+    const cities = await City.find({ session_id: sessionId });
+    const generals = await General.find({ session_id: sessionId });
 
     // 국가별 도시 및 장수 그룹화
     const cityListByNation: Record<number, any[]> = {};
@@ -262,10 +262,10 @@ export class ProcessIncome extends Action {
 
       nation.data.rice = Math.max(nation.data.rice, baseRice);
       nation.markModified('data');
-      await (nation as any).save();
+      await nation.save();
 
       // nation_env에 prev_income_rice 저장
-      await (NationEnv as any).findOneAndUpdate(
+      await NationEnv.findOneAndUpdate(
         {
           session_id: sessionId,
           namespace: nationId,
@@ -290,7 +290,7 @@ export class ProcessIncome extends Action {
         
         general.data.rice = (general.data?.rice || 0) + rice;
         general.markModified('data');
-        await (general as any).save();
+        await general.save();
 
         const generalId = general.data?.no || 0;
         const logger = new ActionLogger(generalId, nationId, year, month);

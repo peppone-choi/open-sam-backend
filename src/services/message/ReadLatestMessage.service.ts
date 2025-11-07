@@ -1,5 +1,5 @@
 import { MessageRepository } from '../../repositories/message.repository';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { Session } from '../../models/session.model';
 
 /**
@@ -32,7 +32,7 @@ export class ReadLatestMessageService {
         ? 'data.latest_read_private_msg' 
         : 'data.latest_read_diplomacy_msg';
 
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.no': generalId

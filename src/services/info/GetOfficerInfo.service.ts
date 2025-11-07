@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import { City } from '../../models/city.model';
 
 /**
@@ -24,7 +24,7 @@ export class GetOfficerInfoService {
         }
         
         // 현재 유저의 장수 조회
-        const userGeneral = await (General as any).findOne({
+        const userGeneral = await generalRepository.findBySessionAndOwner({
           session_id: sessionId,
           owner: String(userId),
           'data.npc': { $lt: 2 }
@@ -40,7 +40,7 @@ export class GetOfficerInfoService {
         actualGeneralId = userGeneral.data?.no || userGeneral.no;
       }
       
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': actualGeneralId
       });
@@ -64,7 +64,7 @@ export class GetOfficerInfoService {
       }
       
       // 국가 정보 조회
-      const nation = await (Nation as any).findOne({
+      const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': nationId
       });
@@ -77,7 +77,7 @@ export class GetOfficerInfoService {
       }
       
       // 관직자 조회 (officer_level >= 2)
-      const officers = await (General as any).find({
+      const officers = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationId,
         'data.officer_level': { $gte: 2 }
@@ -107,7 +107,7 @@ export class GetOfficerInfoService {
       });
       
       // 도시 정보 조회
-      const cities = await (City as any).find({
+      const cities = await cityRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationId
       });

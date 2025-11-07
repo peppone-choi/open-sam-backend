@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * SubmitProcessingCommand Service

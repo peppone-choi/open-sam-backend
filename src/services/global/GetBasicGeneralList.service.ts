@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * GetBasicGeneralList Service
@@ -13,14 +13,14 @@ export class GetBasicGeneralListService {
     
     try {
       // 모든 장수 조회 (no, name, npc, nation만)
-      const generals = await (General as any).find({ session_id: sessionId })
-        .select('no name owner data')
-        .lean();
+      const generals = await generalRepository.findBySession(sessionId )
+        
+        ;
 
       // 국가 정보 조회
-      const nations = await (Nation as any).find({ session_id: sessionId })
-        .select('nation name color')
-        .lean();
+      const nations = await nationRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const nationMap: Record<number, any> = {};
       for (const nation of nations) {

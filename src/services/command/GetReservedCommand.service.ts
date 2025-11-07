@@ -1,6 +1,6 @@
-import { GeneralTurn } from '../../models/general_turn.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 const MAX_TURN = 30;
 const FLIPPED_MAX_TURN = 14;
@@ -33,10 +33,7 @@ export class GetReservedCommandService {
       };
     }
 
-    const rawTurns = await (GeneralTurn as any).find({
-      session_id: sessionId,
-      'data.general_id': generalId
-    }).sort({ 'data.turn_idx': 1 });
+    const rawTurns = await generalTurnRepository.findByGeneral(sessionId, generalId);
 
     const commandList: any = {};
     let invalidTurnList = 0;
@@ -63,7 +60,7 @@ export class GetReservedCommandService {
     }
 
     if (invalidTurnList > 0) {
-      await (GeneralTurn as any).updateMany(
+      await generalTurnRepository.updateMany(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -79,7 +76,7 @@ export class GetReservedCommandService {
         }
       );
     } else if (invalidTurnList < 0) {
-      await (GeneralTurn as any).updateMany(
+      await generalTurnRepository.updateMany(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -92,7 +89,7 @@ export class GetReservedCommandService {
     }
 
     // General 모델에서 장수 찾기 (data.no 또는 no 필드 확인)
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findOneByFilter({
       session_id: sessionId,
       $or: [
         { 'data.no': generalId },
@@ -113,7 +110,7 @@ export class GetReservedCommandService {
       };
     }
 
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
       return {
         success: false,
@@ -244,7 +241,7 @@ export class GetReservedCommandService {
       }));
       
       if (bulkOps.length > 0) {
-        await (GeneralTurn as any).bulkWrite(bulkOps);
+        await generalTurnRepository.bulkWrite(bulkOps);
       }
     }
 

@@ -1,5 +1,5 @@
-import { Session } from '../../models/session.model';
-import { General } from '../../models/general.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 interface VoteInfo {
   id: number;
@@ -13,7 +13,7 @@ interface VoteInfo {
 
 export class NewVoteService {
   static async closeOldVote(sessionId: string, voteID: number): Promise<void> {
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId );
     if (!session || !session.data) {
       return;
     }
@@ -65,7 +65,7 @@ export class NewVoteService {
         }
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         throw new Error('세션을 찾을 수 없습니다.');
       }
@@ -105,7 +105,7 @@ export class NewVoteService {
       session.markModified('data');
       await session.save();
 
-      await (General as any).updateMany(
+      await generalRepository.updateManyByFilter(
         { session_id: sessionId },
         { $set: { 'data.newvote': 1 } }
       );

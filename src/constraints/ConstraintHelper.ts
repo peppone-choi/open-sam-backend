@@ -238,9 +238,9 @@ export class ConstraintHelper {
 
   static ReqGeneralValue(key: string, name?: string, operator?: string, value?: any, message?: string): IConstraint {
     // Handle both old (key, operator, value, message) and new (key, name, operator, value, message) signatures
-    const actualOperator = name && operator && value !== undefined && message ? operator : (name as any);
-    const actualValue = name && operator && value !== undefined && message ? value : (operator as any);
-    const actualMessage = name && operator && value !== undefined && message ? message : (value as any);
+    const actualOperator = name && operator && value !== undefined && message ? operator : name;
+    const actualValue = name && operator && value !== undefined && message ? value : operator;
+    const actualMessage = name && operator && value !== undefined && message ? message : value;
     
     return {
       test: (input: any, env: any) => {

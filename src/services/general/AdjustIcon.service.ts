@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import mongoose from 'mongoose';
 
 /**
@@ -49,7 +49,7 @@ export class AdjustIconService {
 
       // 현재 세션의 모든 장수 아이콘 업데이트 (npc=0인 경우만)
       const sessionId = data.session_id || 'sangokushi_default';
-      const updateResult = await (General as any).updateMany(
+      const updateResult = await generalRepository.updateManyByFilter(
         {
           session_id: sessionId,
           owner: userId.toString(),

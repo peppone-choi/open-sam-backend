@@ -40,7 +40,7 @@ export class InciteCommand extends GeneralCommand {
       genScore = general.getIntel();
     }
 
-    let prob = genScore / ((GameConst as any).sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
+    let prob = genScore / (GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
     // TODO: prob = general.onCalcDomestic('계략', 'success', prob);
     return prob;
   }
@@ -74,9 +74,9 @@ export class InciteCommand extends GeneralCommand {
       // TODO: probCorrection = destGeneral.onCalcStat(destGeneral, 'sabotageDefence', probCorrection);
     }
 
-    let prob = maxGenScore / ((GameConst as any).sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
+    let prob = maxGenScore / (GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
     prob += probCorrection;
-    prob += (Math.log2(affectGeneralCount + 1) - 1.25) * ((GameConst as any).sabotageDefenceCoefByGeneralCnt || GameConstCompat.sabotageDefenceCoefByGeneralCnt);
+    prob += (Math.log2(affectGeneralCount + 1) - 1.25) * (GameConst.sabotageDefenceCoefByGeneralCnt || GameConstCompat.sabotageDefenceCoefByGeneralCnt);
 
     prob += (destCity?.secu || 0) / (destCity?.secu_max || 1) / 5;
     prob += (destCity?.supply || false) ? 0.1 : 0;
@@ -221,7 +221,7 @@ export class InciteCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
@@ -243,7 +243,7 @@ export class InciteCommand extends GeneralCommand {
     // TODO: Load generals from destCity
 
     const prob = Util.valueFit(
-      (((GameConst as any).sabotageDefaultProb || GameConstCompat.sabotageDefaultProb) + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList)) / dist,
+      ((GameConst.sabotageDefaultProb || GameConstCompat.sabotageDefaultProb) + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList)) / dist,
       0,
       0.5
     );
@@ -264,7 +264,7 @@ export class InciteCommand extends GeneralCommand {
 
       this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
       general.checkStatChange();
-      general.applyDB(db);
+      await general.save();
       return false;
     }
 
@@ -293,7 +293,7 @@ export class InciteCommand extends GeneralCommand {
     // TODO: StaticEventHandler.handleEvent
     
     general.checkStatChange();
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

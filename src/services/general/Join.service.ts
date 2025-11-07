@@ -1,8 +1,8 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { City } from '../../models/city.model';
-import { GeneralRecord } from '../../models/general_record.model';
-import { GeneralTurn } from '../../models/general_turn.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { User } from '../../models/user.model';
 import { RankData } from '../../models/rank_data.model';
 import { UserRecord } from '../../models/user_record.model';
@@ -62,7 +62,7 @@ export class JoinService {
       }
 
       // 3. 세션 및 게임 환경 로드
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
@@ -82,7 +82,7 @@ export class JoinService {
       }
 
       // 6. 장수 수 제한 확인
-      const currentGenCount = await (General as any).countDocuments({ 
+      const currentGenCount = await generalRepository.count({ 
         session_id: sessionId,
         'data.npc': { $lt: 2 }
       });
@@ -204,9 +204,9 @@ export class JoinService {
       }
 
       // 20. 장수 번호 생성 (autoincrement 시뮬레이션)
-      const lastGeneral = await (General as any).findOne({ session_id: sessionId })
+      const lastGeneral = await generalRepository.findOneByFilter({ session_id: sessionId  })
         .sort({ no: -1 })
-        .select('no');
+        ;
       const generalNo = (lastGeneral?.no || 0) + 1;
 
       // 21. 장수 생성
@@ -271,7 +271,7 @@ export class JoinService {
           dataKeys: Object.keys(generalData.data)
         });
         
-        newGeneral = await (General as any).create(generalData);
+        newGeneral = await generalRepository.create(generalData);
         console.log('[Join] General created successfully:', newGeneral.no);
       } catch (createError: any) {
         console.error('[Join] General creation failed:', {
@@ -319,7 +319,7 @@ export class JoinService {
       }
       if (turnRows.length > 0) {
         try {
-          await (GeneralTurn as any).insertMany(turnRows, { ordered: false });
+          await GeneralTurn.insertMany(turnRows, { ordered: false });
         } catch (error: any) {
           // 중복 키 에러는 무시 (이미 존재하는 경우)
           if (error.code !== 11000) {
@@ -355,7 +355,7 @@ export class JoinService {
 
       if (rankDataRows.length > 0) {
         try {
-          await (RankData as any).insertMany(rankDataRows, { ordered: false });
+          await RankData.insertMany(rankDataRows, { ordered: false });
         } catch (error: any) {
           // 중복 키 에러는 무시 (이미 존재하는 경우)
           if (error.code !== 11000) {
@@ -388,7 +388,7 @@ export class JoinService {
             
             // 유산 포인트 로깅
             const [year, month] = await gameStor.getValuesAsArray(['year', 'month']);
-            await (UserRecord as any).create({
+            await UserRecord.create({
               session_id: sessionId,
               user_id: String(userId),
               log_type: 'inheritPoint',
@@ -517,15 +517,12 @@ export class JoinService {
       return '사용자 ID가 없습니다';
     }
     
-    const existingUser = await (General as any).findOne({
-      session_id: sessionId,
-      owner: String(userId)
-    });
+    const existingUser = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
     if (existingUser) {
       return '이미 등록하셨습니다!';
     }
 
-    const existingName = await (General as any).findOne({
+    const existingName = await generalRepository.findById({
       session_id: sessionId,
       name: name
     });
@@ -703,7 +700,7 @@ export class JoinService {
     rng: number
   ): Promise<any> {
     if (inheritCity !== null && inheritCity !== undefined && inheritCity !== 0) {
-      const city = await (City as any).findOne({ 
+      const city = await cityRepository.findOneByFilter({ 
         session_id: sessionId, 
         city: inheritCity 
       });
@@ -713,7 +710,7 @@ export class JoinService {
     }
 
     // 공백지(level 5~6, nation 0) 우선 - data.nation 또는 nation 필드 모두 확인
-    let cities = await (City as any).find({
+    let cities = await cityRepository.findByFilter({
       session_id: sessionId,
       $or: [
         { 'data.level': { $gte: 5, $lte: 6 }, 'data.nation': 0 },
@@ -725,7 +722,7 @@ export class JoinService {
 
     if (cities.length === 0) {
       // 공백지 없으면 아무 도시나 (level 5~6)
-      cities = await (City as any).find({
+      cities = await cityRepository.findByFilter({
         session_id: sessionId,
         $or: [
           { 'data.level': { $gte: 5, $lte: 6 } },
@@ -736,7 +733,7 @@ export class JoinService {
 
     if (cities.length === 0) {
       // level 조건 없이 nation 0인 도시
-      cities = await (City as any).find({
+      cities = await cityRepository.findByFilter({
         session_id: sessionId,
         $or: [
           { 'data.nation': 0 },
@@ -747,7 +744,7 @@ export class JoinService {
 
     if (cities.length === 0) {
       // 아무 도시나
-      cities = await (City as any).find({
+      cities = await cityRepository.findByFilter({
         session_id: sessionId
       }).limit(100);
     }
@@ -769,11 +766,11 @@ export class JoinService {
     }
 
     // 상위 20% 장수의 경험치 평균 * 0.8
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': { $ne: 0 },
       'data.npc': { $lt: 4 }
-    }).sort({ 'data.experience': 1 }).select('data.experience');
+    }).sort({ 'data.experience': 1 });
 
     if (generals.length === 0) {
       return 0;
@@ -836,7 +833,7 @@ export class JoinService {
       try {
         // User 모델에서 이미지 정보 가져오기
         // RootDB는 별도 연결이 필요하지만, 일단 User 모델에서 시도
-        const user = await (User as any).findById(userId).lean();
+        const user = await User.findById(userId);
         
         if (user) {
           // User 모델에 picture, imgsvr 필드가 있는 경우
@@ -985,7 +982,7 @@ export class JoinService {
       });
     }
 
-    await (GeneralRecord as any).insertMany(logs);
+    await GeneralRecord.insertMany(logs);
   }
 
   private static createRNG(userId: number | string): number {

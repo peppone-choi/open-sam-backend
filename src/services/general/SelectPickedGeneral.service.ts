@@ -1,8 +1,8 @@
 import { SelectPool } from '../../models/select_pool.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { City } from '../../models/city.model';
-import { GeneralTurn } from '../../models/general_turn.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
 /**
  * SelectPickedGeneral Service
@@ -36,7 +36,7 @@ export class SelectPickedGeneralService {
 
     try {
       // 세션 정보 확인
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -44,7 +44,7 @@ export class SelectPickedGeneralService {
         };
       }
 
-      const sessionData = (session as any).config || session.data || {};
+      const sessionData = session.config || session.data || {};
       const npcmode = sessionData.npcmode || 0;
       const maxgeneral = sessionData.maxgeneral || 50;
       const turnterm = sessionData.turnterm || 60; // 분 단위
@@ -57,7 +57,7 @@ export class SelectPickedGeneralService {
       }
 
       // 이미 장수가 있는지 확인
-      const existingGeneral = await (General as any).findOne({
+      const existingGeneral = await generalRepository.findBySessionAndOwner({
         session_id: sessionId,
         owner: userId.toString(),
         npc: { $ne: 2 }
@@ -71,7 +71,7 @@ export class SelectPickedGeneralService {
       }
 
       // 장수 수 확인
-      const generalCount = await (General as any).countDocuments({
+      const generalCount = await generalRepository.count({
         session_id: sessionId,
         npc: { $lt: 2 }
       });
@@ -85,12 +85,12 @@ export class SelectPickedGeneralService {
 
       // 선택 풀에서 정보 가져오기
       const now = new Date();
-      const selectPool = await (SelectPool as any).findOne({
+      const selectPool = await SelectPool.findOne({
         session_id: sessionId,
         'data.owner': userId.toString(),
         'data.reserved_until': { $gte: now },
         'data.unique_name': pick
-      }).lean();
+      });
 
       if (!selectPool || !selectPool.data?.info) {
         return {
@@ -126,12 +126,12 @@ export class SelectPickedGeneralService {
       };
 
       // 장수 생성
-      const lastGeneral = await (General as any).findOne({ session_id: sessionId })
+      const lastGeneral = await generalRepository.findOneByFilter({ session_id: sessionId  })
         .sort({ no: -1 })
-        .select('no')
-        .lean();
+        
+        ;
 
-      const generalNo = ((lastGeneral as any)?.no || 0) + 1;
+      const generalNo = (lastGeneral?.no || 0) + 1;
 
       // 성격 결정
       const availablePersonality = ['brave', 'wise', 'loyal', 'ambitious'];
@@ -191,7 +191,7 @@ export class SelectPickedGeneralService {
       };
 
       // 장수 생성
-      const newGeneral = await (General as any).create({
+      const newGeneral = await generalRepository.create({
         no: generalNo,
         session_id: sessionId,
         owner: userId.toString(),
@@ -218,7 +218,7 @@ export class SelectPickedGeneralService {
       }
       if (turnRows.length > 0) {
         try {
-          await (GeneralTurn as any).insertMany(turnRows, { ordered: false });
+          await GeneralTurn.insertMany(turnRows, { ordered: false });
         } catch (error: any) {
           // 중복 키 에러는 무시 (이미 존재하는 경우)
           if (error.code !== 11000) {
@@ -229,7 +229,7 @@ export class SelectPickedGeneralService {
       }
 
       // 선택 풀 업데이트 (사용된 것 표시)
-      await (SelectPool as any).updateMany(
+      await SelectPool.updateMany(
         {
           session_id: sessionId,
           'data.owner': userId.toString(),
@@ -244,7 +244,7 @@ export class SelectPickedGeneralService {
       );
 
       // 선택된 풀에 general_id 연결
-      await (SelectPool as any).updateOne(
+      await SelectPool.updateOne(
         {
           session_id: sessionId,
           'data.unique_name': pick
@@ -257,12 +257,12 @@ export class SelectPickedGeneralService {
       );
 
       // 도시 정보 가져오기
-      const city = await (City as any).findOne({
+      const city = await cityRepository.findOneByFilter({
         session_id: sessionId,
         'data.id': generalData.city
-      }).lean();
+      });
 
-      const cityName = (city?.data as any)?.name || '도시';
+      const cityName = city?.data?.name || '도시';
 
       // TODO: ActionLogger로 로그 남기기
       console.log(`[SelectPickedGeneral] ${ownerInfo.name}이 ${selectInfo.generalName}으로 등장`);

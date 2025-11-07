@@ -3,7 +3,7 @@
  * 장수 권한 설정 (j_general_set_permission.php)
  */
 
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { logger } from '../../common/logger';
 
 export class SetGeneralPermissionService {
@@ -20,10 +20,7 @@ export class SetGeneralPermissionService {
 
     try {
       // 자신의 장수 조회 (군주인지 확인)
-      const me = await (General as any).findOne({
-        session_id: sessionId,
-        owner: String(userId)
-      });
+      const me = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
       if (!me) {
         return {
@@ -59,7 +56,7 @@ export class SetGeneralPermissionService {
       }
 
       // 기존 권한 제거
-      await (General as any).updateMany(
+      await generalRepository.updateManyByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId,
@@ -79,13 +76,13 @@ export class SetGeneralPermissionService {
       }
 
       // 권한 부여 가능한 장수 조회
-      const candidates = await (General as any).find({
+      const candidates = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationId,
         'data.officer_level': { $ne: 12 }, // 군주 제외
         'data.permission': 'normal',
         'data.no': { $in: genList }
-      }).lean();
+      });
 
       const realCandidates: number[] = [];
       for (const candidate of candidates) {
@@ -99,7 +96,7 @@ export class SetGeneralPermissionService {
 
       // 권한 부여
       if (realCandidates.length > 0) {
-        await (General as any).updateMany(
+        await generalRepository.updateManyByFilter(
           {
             session_id: sessionId,
             'data.no': { $in: realCandidates }

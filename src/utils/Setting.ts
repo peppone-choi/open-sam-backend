@@ -86,7 +86,7 @@ export class Setting {
       if (line.trim().startsWith('//{')) {
         const jsonStr = line.substring(2);
         const versionObj = Json.decode(jsonStr);
-        version = (versionObj as any)?.version || 'noVersionValue';
+        version = versionObj?.version || 'noVersionValue';
         break;
       }
     }

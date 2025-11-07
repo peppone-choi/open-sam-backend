@@ -114,7 +114,7 @@ export class Session {
    * 값 가져오기
    */
   get(name: string): any {
-    const session = (this.req.session as any) as SessionData;
+    const session = this.req.session as SessionData;
     return session[name] ?? null;
   }
 
@@ -126,7 +126,7 @@ export class Session {
       return;
     }
 
-    const session = (this.req.session as any) as SessionData;
+    const session = this.req.session as SessionData;
     if (value === null) {
       delete session[name];
     } else {

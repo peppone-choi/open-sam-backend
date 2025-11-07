@@ -1,0 +1,127 @@
+import { GeneralTurn } from '../models/general_turn.model';
+import { DeleteResult } from 'mongodb';
+
+/**
+ * 장수 턴 리포지토리
+ * 장수의 예약된 명령을 관리
+ */
+class GeneralTurnRepository {
+  /**
+   * 턴 생성
+   * @param data - 턴 데이터
+   * @returns 생성된 턴
+   */
+  async create(data: any) {
+    return (GeneralTurn as any).create(data);
+  }
+
+  /**
+   * 세션별 턴 조회
+   * @param sessionId - 세션 ID
+   * @param filter - 추가 필터 조건
+   * @returns 턴 목록
+   */
+  async findBySession(sessionId: string, filter?: any) {
+    return (GeneralTurn as any).find({ 
+      session_id: sessionId, 
+      ...filter 
+    });
+  }
+
+  /**
+   * 장수별 턴 조회
+   * @param sessionId - 세션 ID
+   * @param generalId - 장수 ID
+   * @returns 턴 목록
+   */
+  async findByGeneral(sessionId: string, generalId: number) {
+    return (GeneralTurn as any).find({
+      session_id: sessionId,
+      'data.general_id': generalId
+    });
+  }
+
+  /**
+   * 조건으로 턴 한 개 조회
+   * @param filter - 검색 조건
+   * @returns 턴 문서 또는 null
+   */
+  async findOne(filter: any) {
+    return (GeneralTurn as any).findOne(filter);
+  }
+
+  /**
+   * 조건으로 턴 한 개 조회 (alias for findOne)
+   * @param filter - 검색 조건
+   * @returns 턴 문서 또는 null
+   */
+  async findOneByFilter(filter: any) {
+    return (GeneralTurn as any).findOne(filter);
+  }
+
+  /**
+   * 조건으로 턴 목록 조회
+   * @param filter - 검색 조건
+   * @returns 턴 목록
+   */
+  async findByFilter(filter: any) {
+    return (GeneralTurn as any).find(filter);
+  }
+
+  /**
+   * 턴 업데이트
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @returns 업데이트 결과
+   */
+  async updateMany(filter: any, update: any) {
+    return (GeneralTurn as any).updateMany(filter, update);
+  }
+
+  /**
+   * 턴 조회 및 업데이트 (upsert 포함)
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @param options - 옵션 (upsert 등)
+   * @returns 업데이트 결과
+   */
+  async findOneAndUpdate(filter: any, update: any, options?: any) {
+    return (GeneralTurn as any).findOneAndUpdate(filter, update, options);
+  }
+
+  /**
+   * 여러 턴 벌크 작업
+   * @param operations - 벌크 작업 배열
+   * @returns 벌크 작업 결과
+   */
+  async bulkWrite(operations: any[]) {
+    return (GeneralTurn as any).bulkWrite(operations);
+  }
+
+  /**
+   * 턴 삭제
+   * @param filter - 삭제 조건
+   * @returns 삭제 결과
+   */
+  async deleteMany(filter: any): Promise<DeleteResult> {
+    return (GeneralTurn as any).deleteMany(filter);
+  }
+
+  /**
+   * 장수의 모든 턴 삭제
+   * @param sessionId - 세션 ID
+   * @param generalId - 장수 ID
+   * @returns 삭제 결과
+   */
+  async deleteByGeneral(sessionId: string, generalId: number): Promise<DeleteResult> {
+    return (GeneralTurn as any).deleteMany({
+      session_id: sessionId,
+      'data.general_id': generalId
+    });
+  }
+}
+
+/**
+ * 장수 턴 리포지토리 싱글톤 인스턴스
+ */
+export const generalTurnRepository = new GeneralTurnRepository();

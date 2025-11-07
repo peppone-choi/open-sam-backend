@@ -94,7 +94,7 @@ export class DisinformationCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj!;
     const generalID = general.getID();
@@ -109,7 +109,7 @@ export class DisinformationCommand extends NationCommand {
     const destCityName = destCity['name'];
 
     const destNationID = destCity['nation'];
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo ? getNationStaticInfo(destNationID)['name'] : '상대국';
 
     const nationID = general.getNationID();
@@ -127,9 +127,9 @@ export class DisinformationCommand extends NationCommand {
 
     const targetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
     for (const targetGeneralID of targetGeneralList) {
-      const targetLogger = (ActionLogger as any).create ?
-        (ActionLogger as any).create(targetGeneralID, nationID, year, month) :
-        new (ActionLogger as any)(targetGeneralID, nationID, year, month);
+      const targetLogger = ActionLogger.create ?
+        ActionLogger.create(targetGeneralID, nationID, year, month) :
+        new ActionLogger(targetGeneralID, nationID, year, month);
       if (targetLogger.pushGeneralActionLog) {
         targetLogger.pushGeneralActionLog(broadcastMessage, 0);
       }
@@ -142,7 +142,7 @@ export class DisinformationCommand extends NationCommand {
     const destNationCityList = await db.queryFirstColumn('SELECT city FROM city WHERE nation = %i AND supply = 1', [destNationID]);
 
     const targetGeneralListInCity = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND city=%i', [destNationID, destCityID]);
-    const createObjListFromDB = (General as any).createObjListFromDB;
+    // TODO: Legacy method - const createObjListFromDB = General.createObjListFromDB;
 
     if (createObjListFromDB) {
       const targetGenerals = await createObjListFromDB(targetGeneralListInCity);
@@ -159,13 +159,13 @@ export class DisinformationCommand extends NationCommand {
         }
 
         targetGeneral.setVar('city', moveCityID);
-        await targetGeneral.applyDB(db);
+        await await targetGeneral.save();
       }
     }
 
-    const destNationLogger = (ActionLogger as any).create ?
-      (ActionLogger as any).create(0, destNationID, year, month) :
-      new (ActionLogger as any)(0, destNationID, year, month);
+    const destNationLogger = ActionLogger.create ?
+      ActionLogger.create(0, destNationID, year, month) :
+      new ActionLogger(0, destNationID, year, month);
     if (destNationLogger.pushNationalHistoryLog) {
       destNationLogger.pushNationalHistoryLog(
         `<D><b>${nationName}</b></>의 <Y>${generalName}</>${josaYi} 아국의 <G><b>${destCityName}</b></>에 <M>허보</>를 발동`,
@@ -189,19 +189,19 @@ export class DisinformationCommand extends NationCommand {
       [nationID]
     );
 
-    const StaticEventHandler = (global as any).StaticEventHandler;
+    const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'DisinformationCommand', this.env, this.arg ?? {});
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const JSOptionsForCities = (global as any).JSOptionsForCities;
+    const JSOptionsForCities = global.JSOptionsForCities;
 
     return {
       procRes: {

@@ -5,12 +5,12 @@ const router = Router();
 
 router.get('/message/list', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general: any = await (General as any).findOne({ owner: userId }).select('no').lean();
+    const general: any = await General.findOne({ owner: userId }).select('no').lean();
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
@@ -23,7 +23,7 @@ router.get('/message/list', async (req: Request, res: Response) => {
       ? { to: general.no }
       : { from: general.no };
 
-    const messages = await (Message as any).find(query)
+    const messages = await Message.find(query)
       .sort({ date: -1 })
       .skip(skip)
       .limit(limit)
@@ -41,12 +41,12 @@ router.get('/message/list', async (req: Request, res: Response) => {
 
 router.post('/message/send', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general: any = await (General as any).findOne({ owner: userId }).select('no name').lean();
+    const general: any = await General.findOne({ owner: userId }).select('no name').lean();
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
@@ -72,14 +72,14 @@ router.post('/message/send', async (req: Request, res: Response) => {
 
 router.delete('/message/:messageId', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
     const { messageId } = req.params;
 
-    await (Message as any).deleteOne({ _id: messageId });
+    await Message.deleteOne({ _id: messageId });
 
     res.json({ result: true, reason: 'success' });
   } catch (error) {

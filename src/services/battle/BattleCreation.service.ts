@@ -1,8 +1,9 @@
 import { BattleInstance, Direction } from '../../models/battle-instance.model';
 import { BattleMapTemplate } from '../../models/battle-map-template.model';
-import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
+import { battleMapTemplateRepository } from '../../repositories/battle.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import { nanoid } from 'nanoid';
 
 export interface CreateBattleParams {
@@ -27,19 +28,13 @@ export class BattleCreationService {
       entryDirection
     } = params;
 
-    const city = await (City as any).findOne({ session_id: sessionId, city: cityId });
+    const city = await cityRepository.findByCityNum(sessionId, cityId);
     if (!city) {
       throw new Error(`도시를 찾을 수 없습니다: ${cityId}`);
     }
 
-    const attackerNation = await (Nation as any).findOne({ 
-      session_id: sessionId, 
-      'data.nation': attackerNationId 
-    });
-    const defenderNation = await (Nation as any).findOne({ 
-      session_id: sessionId, 
-      'data.nation': defenderNationId 
-    });
+    const attackerNation = await nationRepository.findByNationNum(sessionId, attackerNationId);
+    const defenderNation = await nationRepository.findByNationNum(sessionId, defenderNationId);
 
     if (!attackerNation || !defenderNation) {
       throw new Error('국가 정보를 찾을 수 없습니다');
@@ -47,10 +42,7 @@ export class BattleCreationService {
 
     const battleId = `battle_${nanoid(12)}`;
 
-    let mapTemplate = await (BattleMapTemplate as any).findOne({ 
-      session_id: sessionId, 
-      city_id: cityId 
-    });
+    let mapTemplate = await battleMapTemplateRepository.findBySessionAndCity(sessionId, cityId);
 
     if (!mapTemplate) {
       const cityLevel = city.level || city.data?.level || 5;
@@ -305,23 +297,19 @@ export class BattleCreationService {
 
   private static async setGeneralsInBattle(sessionId: string, generalIds: number[], battleId: string) {
     for (const generalId of generalIds) {
-      await (General as any).updateOne(
-        { session_id: sessionId, no: generalId },
+      await generalRepository.updateBySessionAndNo(
+        sessionId,
+        generalId,
         { 
-          $set: { 
-            'data.battle_status': 'in_battle',
-            'data.battle_id': battleId
-          } 
+          'data.battle_status': 'in_battle',
+          'data.battle_id': battleId
         }
       );
     }
   }
 
   static async getAvailableEntryDirections(sessionId: string, cityId: number): Promise<Direction[]> {
-    const mapTemplate = await (BattleMapTemplate as any).findOne({ 
-      session_id: sessionId, 
-      city_id: cityId 
-    });
+    const mapTemplate = await battleMapTemplateRepository.findBySessionAndCity(sessionId, cityId);
 
     if (!mapTemplate) {
       return ['north', 'east', 'south', 'west'];
@@ -331,12 +319,12 @@ export class BattleCreationService {
   }
 
   static async calculateParticipatingForces(sessionId: string, cityId: number, nationId: number) {
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationId,
       'data.city': cityId,
       'data.crew': { $gt: 0 }
-    }).select('no name data.crew data.crewtype data.leadership data.strength data.intel').lean();
+    }, 'no name data.crew data.crewtype data.leadership data.strength data.intel');
 
     const totalCrew = generals.reduce((sum, gen) => sum + (gen.data?.crew || 0), 0);
 

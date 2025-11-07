@@ -37,8 +37,8 @@ export class BattleStanceCommand extends GeneralCommand {
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
-      (ConstraintHelper as any).ReqGeneralTrainMargin((GameConst as any).maxTrainByCommand - 10),
-      (ConstraintHelper as any).ReqGeneralAtmosMargin((GameConst as any).maxAtmosByCommand - 10),
+      ConstraintHelper.ReqGeneralTrainMargin(GameConst.maxTrainByCommand - 10),
+      ConstraintHelper.ReqGeneralAtmosMargin(GameConst.maxAtmosByCommand - 10),
     ];
   }
 
@@ -61,7 +61,7 @@ export class BattleStanceCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
 
@@ -71,31 +71,31 @@ export class BattleStanceCommand extends GeneralCommand {
     const reqTurn = this.getPreReqTurn();
 
     if (lastTurn.getCommand() !== (this.constructor as typeof BattleStanceCommand).getName()) {
-      (turnResult as any).setTerm(1);
-    } else if ((lastTurn as any).getTerm() === reqTurn) {
-      (turnResult as any).setTerm(1);
-    } else if ((lastTurn as any).getTerm() < reqTurn) {
-      (turnResult as any).setTerm((lastTurn as any).getTerm() + 1);
+      turnResult.setTerm(1);
+    } else if (lastTurn.getTerm() === reqTurn) {
+      turnResult.setTerm(1);
+    } else if (lastTurn.getTerm() < reqTurn) {
+      turnResult.setTerm(lastTurn.getTerm() + 1);
     } else {
       throw new Error('전투 태세에 올바른 턴이 아님');
     }
 
-    const term = (turnResult as any).getTerm();
+    const term = turnResult.getTerm();
 
     const logger = general.getLogger();
 
     if (term < 3) {
       logger.pushGeneralActionLog(`병사들을 열심히 훈련중... (${term}/3) <1>${date}</>`);
       this.setResultTurn(turnResult);
-      await general.applyDB(db);
+      await await general.save();
 
       return true;
     }
 
     logger.pushGeneralActionLog(`전투태세 완료! (${term}/3) <1>${date}</>`);
 
-    general.increaseVarWithLimit('train', 0, (GameConst as any).maxTrainByCommand - 5);
-    general.increaseVarWithLimit('atmos', 0, (GameConst as any).maxAtmosByCommand - 5);
+    general.increaseVarWithLimit('train', 0, GameConst.maxTrainByCommand - 5);
+    general.increaseVarWithLimit('atmos', 0, GameConst.maxAtmosByCommand - 5);
 
     const exp = 100 * 3;
     const ded = 70 * 3;
@@ -115,7 +115,7 @@ export class BattleStanceCommand extends GeneralCommand {
     general.checkStatChange();
     await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, BattleStanceCommand, this.env, this.arg ?? {});
     await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general, general.session_id || '');
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

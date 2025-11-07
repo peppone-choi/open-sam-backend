@@ -7,8 +7,8 @@ router.post('/map', async (req: Request, res: Response) => {
   try {
     const { year, month, neutralView, showMe } = req.body;
 
-    const cities = await (City as any).find({}).lean();
-    const nations = await (Nation as any).find({}).lean();
+    const cities = await City.find({}).lean();
+    const nations = await Nation.find({}).lean();
 
     const mapData = {
       cities: cities.map(city => ({
@@ -43,8 +43,8 @@ router.post('/map', async (req: Request, res: Response) => {
 
 router.get('/map', async (req: Request, res: Response) => {
   try {
-    const cities = await (City as any).find({}).lean();
-    const nations = await (Nation as any).find({}).lean();
+    const cities = await City.find({}).lean();
+    const nations = await Nation.find({}).lean();
 
     res.json({
       result: true,
@@ -62,7 +62,7 @@ router.get('/city-list', async (req: Request, res: Response) => {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
     
     // 국가 정보 조회
-    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+    const nations = await Nation.find({ session_id: sessionId }).lean();
     const nationMap: Record<number, any> = {};
     nations.forEach((nation: any) => {
       const nationId = nation.data?.nation || nation.nation;
@@ -79,7 +79,7 @@ router.get('/city-list', async (req: Request, res: Response) => {
     });
 
     // 도시 정보 조회 (레거시와 동일한 형식)
-    const cities = await (City as any).find({ session_id: sessionId }).lean();
+    const cities = await City.find({ session_id: sessionId }).lean();
     
     // 레거시 형식: cityArgsList와 cities 배열
     const cityArgsList = ['city', 'nation', 'name', 'level'];

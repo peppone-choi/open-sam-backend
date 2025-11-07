@@ -29,7 +29,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
     }
     
     const itemCode = this.arg.itemCode ?? null;
-    const allItems = (GameConst as any).allItems;
+    const allItems = GameConst.allItems;
     if (!(itemCode in allItems[itemType]) && itemCode !== 'None') {
       return false;
     }
@@ -129,7 +129,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
@@ -186,14 +186,14 @@ export class TradeEquipmentCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
     const general = this.generalObj;
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     
     const citySecu = await db.queryFirstField(
       'SELECT secu FROM city WHERE city = ?', 
@@ -201,7 +201,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
     );
     
     const itemList: any = {};
-    const allItems = (GameConst as any).allItems;
+    const allItems = GameConst.allItems;
     
     for (const [itemType, itemCategories] of Object.entries(allItems) as [string, any][]) {
       const typeName = TradeEquipmentCommand.itemMap[itemType];
@@ -234,12 +234,12 @@ export class TradeEquipmentCommand extends GeneralCommand {
     const ownItem: any = {};
     for (const [itemType, item] of Object.entries(general.getItems() as any)) {
       ownItem[itemType] = {
-        id: (item as any).getRawClassName?.() || '',
-        name: (item as any).getName?.() || '',
-        reqSecu: (item as any).getReqSecu?.() || 0,
-        cost: (item as any).getCost?.() || 0,
-        info: (item as any).getInfo?.() || '',
-        isBuyable: (item as any).isBuyable?.() || false,
+        id: item.getRawClassName?.() || '',
+        name: item.getName?.() || '',
+        reqSecu: item.getReqSecu?.() || 0,
+        cost: item.getCost?.() || 0,
+        info: item.getInfo?.() || '',
+        isBuyable: item.isBuyable?.() || false,
       };
     }
 
@@ -254,6 +254,6 @@ export class TradeEquipmentCommand extends GeneralCommand {
   }
 
   private buildItemClass(itemCode: string): any {
-    return (global as any).buildItemClass(itemCode);
+    return global.buildItemClass(itemCode);
   }
 }

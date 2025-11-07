@@ -1,8 +1,9 @@
-import { Battle, BattleStatus, BattlePhase, IBattleUnit } from '../../models/battle.model';
-import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
+import { BattleStatus, BattlePhase, IBattleUnit } from '../../models/battle.model';
 import { UnitType, TerrainType } from '../../core/battle-calculator';
 import { randomUUID } from 'crypto';
+import { battleRepository } from '../../repositories/battle.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
 
 export class StartBattleService {
   static async execute(data: any, user?: any) {
@@ -13,10 +14,7 @@ export class StartBattleService {
     const attackerGeneralIds = data.attackerGeneralIds || [];
 
     try {
-      const city = await (City as any).findOne({
-        session_id: sessionId,
-        city: targetCityId
-      });
+      const city = await cityRepository.findByCityNum(sessionId, targetCityId);
 
       if (!city) {
         return { success: false, message: '대상 도시를 찾을 수 없습니다' };
@@ -26,10 +24,7 @@ export class StartBattleService {
 
       const attackerUnits: IBattleUnit[] = [];
       for (const generalId of attackerGeneralIds) {
-        const general = await (General as any).findOne({
-          session_id: sessionId,
-          'data.no': generalId
-        });
+        const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
         if (!general) continue;
 
@@ -48,12 +43,12 @@ export class StartBattleService {
         });
       }
 
-      const defenderGenerals = await (General as any).find({
+      const defenderGenerals = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': defenderNationId,
         'data.city': targetCityId,
         'data.crew': { $gt: 0 }
-      }).limit(10);
+      });
 
       const defenderUnits: IBattleUnit[] = defenderGenerals.map(general => ({
         generalId: general.data.no,
@@ -71,7 +66,7 @@ export class StartBattleService {
 
       const battleId = `battle_${randomUUID()}`;
 
-      const battle = await (Battle as any).create({
+      const battle = await battleRepository.create({
         session_id: sessionId,
         battleId,
         attackerNationId,

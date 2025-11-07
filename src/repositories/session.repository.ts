@@ -1,6 +1,6 @@
 import { Session } from '../models/session.model';
 import { DeleteResult } from 'mongodb';
-import { saveSession } from '../common/cache/model-cache.helper';
+import { saveSession, getSession } from '../common/cache/model-cache.helper';
 
 /**
  * 세션 리포지토리
@@ -9,16 +9,33 @@ import { saveSession } from '../common/cache/model-cache.helper';
  * 쓰기 작업 시 캐시도 함께 업데이트합니다.
  * 
  * 읽기: L1 → L2 → DB (model-cache.helper 사용)
- * 쓰기: DB → L2 → L1 (캐시 업데이트 포함)
+ * 쓰기: Redis → L1 (데몬이 DB 동기화)
  */
 class SessionRepository {
   /**
-   * 세션 ID로 세션 조회
+   * 세션 ID로 세션 조회 (L1 → L2 → DB)
    * @param sessionId - 세션 ID
    * @returns 세션 문서 또는 null
    */
   async findBySessionId(sessionId: string) {
-    return (Session as any).findOne({ session_id: sessionId });
+    // 캐시에서 먼저 조회
+    const cached = await getSession(sessionId);
+    if (cached) {
+      // plain object를 Mongoose Document로 변환
+      const doc = new Session(cached);
+      doc.isNew = false; // 기존 문서임을 표시
+      return doc;
+    }
+    
+    // 캐시 미스 시 DB 조회
+    const session = await Session.findOne({ session_id: sessionId });
+    
+    // DB에서 조회한 결과를 캐시에 저장
+    if (session) {
+      await saveSession(sessionId, session.toObject());
+    }
+    
+    return session;
   }
 
   /**
@@ -26,7 +43,7 @@ class SessionRepository {
    * @returns 활성 세션 목록
    */
   async findAllActive() {
-    return (Session as any).find({ status: { $ne: 'finished' } });
+    return Session.find({ status: { $ne: 'finished' } });
   }
 
   /**
@@ -34,7 +51,16 @@ class SessionRepository {
    * @returns 모든 세션 목록
    */
   async findAll() {
-    return (Session as any).find();
+    return Session.find();
+  }
+
+  /**
+   * MongoDB _id로 세션 조회
+   * @param id - MongoDB _id
+   * @returns 세션 문서 또는 null
+   */
+  async findById(id: string) {
+    return Session.findById(id);
   }
 
   /**
@@ -44,7 +70,7 @@ class SessionRepository {
    */
   async create(data: any) {
     // MongoDB에 직접 저장
-    const session = new (Session as any)(data);
+    const session = new Session(data);
     await session.save();
     
     // Redis에도 저장 (캐시)
@@ -81,7 +107,7 @@ class SessionRepository {
    * @returns 삭제 결과
    */
   async deleteBySessionId(sessionId: string): Promise<DeleteResult> {
-    return (Session as any).deleteOne({ session_id: sessionId });
+    return Session.deleteOne({ session_id: sessionId });
   }
 
   /**
@@ -90,7 +116,7 @@ class SessionRepository {
    * @returns 존재 여부
    */
   async exists(sessionId: string): Promise<boolean> {
-    const count = await (Session as any).countDocuments({ session_id: sessionId });
+    const count = await Session.countDocuments({ session_id: sessionId });
     return count > 0;
   }
 
@@ -100,7 +126,7 @@ class SessionRepository {
    * @returns 해당 시나리오를 사용하는 세션 목록
    */
   async findByScenarioId(scenarioId: string) {
-    return (Session as any).find({ scenario_id: scenarioId });
+    return Session.find({ scenario_id: scenarioId });
   }
 
   /**
@@ -109,7 +135,7 @@ class SessionRepository {
    * @returns 해당 시나리오의 활성 세션 목록
    */
   async findActiveByScenarioId(scenarioId: string) {
-    return (Session as any).find({
+    return Session.find({
       scenario_id: scenarioId,
       status: { $ne: 'finished' }
     });

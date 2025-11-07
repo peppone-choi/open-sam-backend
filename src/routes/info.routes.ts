@@ -176,7 +176,7 @@ router.post('/betting', authenticate, async (req, res) => {
       res.json({
         result: false,
         bettingList: [],
-        reason: (result as any).reason || ''
+        reason: result.reason || ''
       });
     }
   } catch (error: any) {
@@ -228,7 +228,7 @@ router.post('/city', authenticate, async (req, res) => {
     const { Nation } = await import('../models/nation.model');
     const { General } = await import('../models/general.model');
 
-    const city = await (City as any).findOne({ 
+    const city = await City.findOne({ 
       session_id: sessionId, 
       city: parseInt(cityID) 
     }).lean();
@@ -243,7 +243,7 @@ router.post('/city', authenticate, async (req, res) => {
     // 국가 정보 조회
     let nationInfo = null;
     if (city.nation && city.nation > 0) {
-      const nation = await (Nation as any).findOne({ 
+      const nation = await Nation.findOne({ 
         session_id: sessionId, 
         nation: city.nation 
       }).lean();
@@ -260,7 +260,7 @@ router.post('/city', authenticate, async (req, res) => {
     // 관직자 정보 조회
     const officerList: any = {};
     for (const level of [2, 3, 4]) {
-      const general = await (General as any).findOne({
+      const general = await General.findOne({
         session_id: sessionId,
         city: city.city,
         officer_level: level

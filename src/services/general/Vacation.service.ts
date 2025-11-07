@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * Vacation Service
@@ -21,7 +21,7 @@ export class VacationService {
       }
 
       // 세션 확인
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -41,7 +41,7 @@ export class VacationService {
       }
 
       // 장수 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         owner: userId,
         'data.no': generalId
@@ -58,7 +58,7 @@ export class VacationService {
       const killturn = sessionData.killturn || 1;
 
       // killturn을 3배로 증가 (휴가 모드)
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         {
           session_id: sessionId,
           owner: userId,

@@ -75,7 +75,7 @@ export class SocketManager {
       const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
 
       // 소켓에 사용자 정보 저장
-      (socket as any).user = decoded;
+      socket.user = decoded;
       next();
     } catch (error: any) {
       if (error instanceof jwt.JsonWebTokenError) {
@@ -92,7 +92,7 @@ export class SocketManager {
    * 소켓 연결 처리
    */
   private handleConnection(socket: Socket) {
-    const user = (socket as any).user as JwtPayload;
+    const user = socket.user as JwtPayload;
     const userId = user?.userId;
 
     console.log(`📡 소켓 연결: ${socket.id} (사용자: ${userId || 'unknown'})`);
@@ -259,11 +259,11 @@ export class SocketManager {
     for (const socketId of sessionRoom) {
       const socket = this.io.sockets.sockets.get(socketId);
       if (socket) {
-        const user = (socket as any).user as JwtPayload;
+        const user = socket.user as JwtPayload;
         const userId = user?.userId;
         if (userId) {
           // 해당 사용자의 장수 찾기
-          const general = await (General as any).findOne({
+          const general = await General.findOne({
             session_id: sessionId,
             owner: String(userId),
             $or: [

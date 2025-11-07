@@ -11,6 +11,7 @@ import { mongoConnection } from '../db/connection';
 import mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { logger } from '../common/logger';
+import { sessionRepository } from '../repositories/session.repository';
 
 export interface InstallResult {
   success: boolean;
@@ -32,10 +33,10 @@ export class InstallService {
       }
 
       // 관리자 계정 존재 확인
-      const adminCount = await (User as any).countDocuments({ grade: { $gte: 5 } });
+      const adminCount = await User.countDocuments({ grade: { $gte: 5 } });
       
       // 기본 세션 존재 확인
-      const sessionCount = await (Session as any).countDocuments();
+      const sessionCount = await sessionRepository.count();
       
       return adminCount > 0 && sessionCount > 0;
     } catch (error: any) {
@@ -95,7 +96,7 @@ export class InstallService {
   ): Promise<InstallResult> {
     try {
       // 이미 관리자가 있는지 확인
-      const existingAdmin = await (User as any).findOne({ grade: { $gte: 5 } });
+      const existingAdmin = await User.findOne({ grade: { $gte: 5 } });
       if (existingAdmin) {
         return {
           success: false,
@@ -104,7 +105,7 @@ export class InstallService {
       }
 
       // 사용자명 중복 확인
-      const existingUser = await (User as any).findOne({ username });
+      const existingUser = await User.findOne({ username });
       if (existingUser) {
         return {
           success: false,
@@ -116,7 +117,7 @@ export class InstallService {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // 관리자 계정 생성
-      const admin = new (User as any)({
+      const admin = new User({
         username,
         password: hashedPassword,
         name,
@@ -153,7 +154,7 @@ export class InstallService {
   ): Promise<InstallResult> {
     try {
       // 이미 세션이 있는지 확인
-      const existingSession = await (Session as any).findOne({ session_id: sessionId });
+      const existingSession = await sessionRepository.findBySessionId(sessionId );
       if (existingSession) {
         return {
           success: false,
@@ -169,7 +170,7 @@ export class InstallService {
       session.name = sessionName;
       session.scenario_id = scenarioId;
 
-      await (Session as any).create(session);
+      await sessionRepository.create(session);
 
       // 세션 초기화 (도시, 국가 등)
       await InitService.initializeSession(sessionId);

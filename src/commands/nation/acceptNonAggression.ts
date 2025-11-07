@@ -1,4 +1,5 @@
 import '../../utils/function-extensions';
+import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
 import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
@@ -57,7 +58,8 @@ export class che_불가침수락 extends NationCommand {
   protected async initWithArg(): Promise<void> {
     const env = this.env;
 
-    const destGeneral = await (General as any).createObjFromDB(this.arg['destGeneralID']);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
     this.setDestNation(this.arg['destNationID']);
 
@@ -110,7 +112,7 @@ export class che_불가침수락 extends NationCommand {
   }
 
   public getBrief(): string {
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])?.['name'] || '알 수 없음';
     const year = this.arg['year'];
     const month = this.arg['month'];
@@ -122,7 +124,7 @@ export class che_불가침수락 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -135,7 +137,7 @@ export class che_불가침수락 extends NationCommand {
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
 
-    const KVStorage = (global as any).KVStorage;
+    const KVStorage = global.KVStorage;
     const destNationStor = KVStorage.getStorage(db, destNationID, 'nation_env');
     const destRecvAssist = (destNationStor.getValue('recv_assist') as any) ?? {};
     const destRespAssist = (destNationStor.getValue('resp_assist') as any) ?? {};

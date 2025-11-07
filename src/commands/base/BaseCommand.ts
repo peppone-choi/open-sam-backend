@@ -179,15 +179,21 @@ export abstract class BaseCommand {
       return;
     }
     
-    const { City } = require('../../models/city.model');
+    const { cityRepository } = require('../../repositories/city.repository');
     const cityId = this.generalObj.getVar('city');
     const sessionId = this.env.session_id;
     
     if (cityId && sessionId) {
-      const cityDoc = await City.findOne({ session_id: sessionId, city: cityId });
+      const cityDoc = await cityRepository.findOneByFilter({
+        session_id: sessionId,
+        $or: [
+          { 'data.city': cityId },
+          { city: cityId }
+        ]
+      });
       if (cityDoc) {
-        this.city = cityDoc.toObject();
-        this.generalObj.setRawCity(this.city);
+        this.city = cityDoc.data || cityDoc.toObject?.() || cityDoc;
+        this.generalObj.setRawCity?.(this.city);
       }
     }
   }
@@ -215,13 +221,19 @@ export abstract class BaseCommand {
       return;
     }
 
-    const { Nation } = require('../../models/nation.model');
+    const { nationRepository } = require('../../repositories/nation.repository');
     const sessionId = this.env.session_id;
     
     if (sessionId) {
-      const nationDoc = await Nation.findOne({ session_id: sessionId, nation: nationID });
+      const nationDoc = await nationRepository.findOneByFilter({
+        session_id: sessionId,
+        $or: [
+          { 'data.nation': nationID },
+          { nation: nationID }
+        ]
+      });
       if (nationDoc) {
-        this.nation = nationDoc.toObject();
+        this.nation = nationDoc.data || nationDoc.toObject?.() || nationDoc;
       }
     }
   }
@@ -391,7 +403,7 @@ export abstract class BaseCommand {
   public getTermString(): string {
     const commandName = (this.constructor as typeof BaseCommand).getName();
     const resultTurn = this.getResultTurn() as any;
-    const term = resultTurn.getTerm ? (resultTurn as any).getTerm() : resultTurn.term;
+    const term = resultTurn.getTerm ? resultTurn.getTerm() : resultTurn.term;
     const termMax = this.getPreReqTurn() + 1;
     return `${commandName} 수행중... (${term}/${termMax})`;
   }
@@ -412,7 +424,7 @@ export abstract class BaseCommand {
       return false;
     }
 
-    const ltTerm = lastTurn.getTerm ? (lastTurn as any).getTerm() : lastTurn.term;
+    const ltTerm = lastTurn.getTerm ? lastTurn.getTerm() : lastTurn.term;
     if (ltTerm < this.getPreReqTurn()) {
       this.setResultTurn(new LastTurn(commandName, this.arg, ltTerm + 1));
       return false;

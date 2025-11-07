@@ -23,7 +23,7 @@ export abstract class GeneralCommand extends BaseCommand {
       return null;
     }
     
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     // TODO: Implement KVStorage
     // const lastExecuteStor = KVStorage.getStorage(db, 'next_execute');
     // return lastExecuteStor.getValue(this.getNextExecuteKey());
@@ -40,7 +40,7 @@ export abstract class GeneralCommand extends BaseCommand {
         + this.getPostReqTurn() - this.getPreReqTurn();
     }
     
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     // TODO: Implement KVStorage
     // const lastExecuteStor = KVStorage.getStorage(db, 'next_execute');
     // lastExecuteStor.setValue(this.getNextExecuteKey(), yearMonth);

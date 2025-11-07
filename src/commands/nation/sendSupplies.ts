@@ -101,7 +101,7 @@ export class che_물자원조 extends NationCommand {
     const [goldAmount, riceAmount] = this.arg['amountList'];
     const goldAmountText = goldAmount.toLocaleString();
     const riceAmountText = riceAmount.toLocaleString();
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])?.['name'] || '알 수 없음';
     const commandName = this.constructor.getName();
     return `【${destNationName}】에게 국고 ${goldAmountText} 병량 ${riceAmountText} ${commandName}`;
@@ -112,7 +112,7 @@ export class che_물자원조 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalID = general!.getID();
@@ -157,7 +157,7 @@ export class che_물자원조 extends NationCommand {
     logger.pushGeneralHistoryLog(
       `<D><b>${destNationName}</b></>${josaRo} 금<C>${goldAmountText}</> 쌀<C>${riceAmountText}</>${josaUlRiceAmount} 지원`
     );
-    (logger as any).pushNationalHistoryLog(
+    logger.pushNationalHistoryLog(
       `<D><b>${destNationName}</b></>${josaRo} 금<C>${goldAmountText}</> 쌀<C>${riceAmountText}</>${josaUlRiceAmount} 지원`
     );
     logger.pushGlobalHistoryLog(
@@ -182,12 +182,12 @@ export class che_물자원조 extends NationCommand {
 
     const josaRoSrc = JosaUtil.pick(nationName, '로');
     const destNationLogger = new ActionLogger(0, destNationID, year, month);
-    (destNationLogger as any).pushNationalHistoryLog(
+    destNationLogger.pushNationalHistoryLog(
       `<D><b>${nationName}</b></>${josaRoSrc}부터 금<C>${goldAmountText}</> 쌀<C>${riceAmountText}</>${josaUlRiceAmount} 지원 받음`
     );
     await destNationLogger.flush();
 
-    const KVStorage = (global as any).KVStorage;
+    const KVStorage = global.KVStorage;
     const destNationStor = KVStorage.getStorage(db, destNationID, 'nation_env');
     const destRecvAssist = (destNationStor.getValue('recv_assist') as any) ?? {};
     destRecvAssist[`n${nationID}`] = [
@@ -229,8 +229,8 @@ export class che_물자원조 extends NationCommand {
   public async exportJSVars(): Promise<any> {
     const generalObj = this.generalObj;
     const nationList = [];
-    const getAllNationStaticInfo = (global as any).getAllNationStaticInfo;
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getAllNationStaticInfo = global.getAllNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
 
     for (const destNation of getAllNationStaticInfo()) {
       const nationTarget: any = {
@@ -249,7 +249,7 @@ export class che_물자원조 extends NationCommand {
 
     const currentNationLevel = getNationStaticInfo(this.generalObj!.getNationID())['level'];
 
-    const getNationLevelList = (global as any).getNationLevelList;
+    const getNationLevelList = global.getNationLevelList;
     const levelInfo: any = {};
     const nationLevelList = getNationLevelList() as any;
     for (const level in nationLevelList) {

@@ -105,7 +105,7 @@ export class ScorchedEarthCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj!;
     const generalID = general.getID();
@@ -133,7 +133,7 @@ export class ScorchedEarthCommand extends NationCommand {
     const amount = this.calcReturnAmount(destCity);
     const aux = this.nation['aux'] || {};
 
-    const NationAuxKey = (global as any).NationAuxKey;
+    const NationAuxKey = global.NationAuxKey;
     if (destCity['level'] >= 8) {
       const key = NationAuxKey?.did_특성초토화?.value ?? 'did_특성초토화';
       aux[key] = (aux[key] ?? 0) + 1;
@@ -184,13 +184,13 @@ export class ScorchedEarthCommand extends NationCommand {
       [nationID]
     );
 
-    const refreshNationStaticInfo = (global as any).refreshNationStaticInfo;
-    const SetNationFront = (global as any).SetNationFront;
+    const refreshNationStaticInfo = global.refreshNationStaticInfo;
+    const SetNationFront = global.SetNationFront;
 
     if (refreshNationStaticInfo) await refreshNationStaticInfo();
     if (SetNationFront) await SetNationFront(nationID);
 
-    const InheritanceKey = (global as any).InheritanceKey;
+    const InheritanceKey = global.InheritanceKey;
     if (general.increaseInheritancePoint && InheritanceKey?.active_action) {
       general.increaseInheritancePoint(InheritanceKey.active_action, 1);
     }
@@ -201,19 +201,19 @@ export class ScorchedEarthCommand extends NationCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>초토화</>하였습니다.`);
     logger.pushGlobalHistoryLog(`<S><b>【초토화】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>${josaUl} <M>초토화</>하였습니다.`);
 
-    const StaticEventHandler = (global as any).StaticEventHandler;
+    const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'ScorchedEarthCommand', this.env, this.arg ?? {});
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const JSOptionsForCities = (global as any).JSOptionsForCities;
+    const JSOptionsForCities = global.JSOptionsForCities;
 
     return {
       procRes: {

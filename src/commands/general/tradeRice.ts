@@ -81,7 +81,7 @@ export class TradeRiceCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const tradeRate = this.city.trade;
     const date = general.getTurnTime(general.TURNTIME_HM);
@@ -109,7 +109,7 @@ export class TradeRiceCommand extends GeneralCommand {
       buyKey = 'rice';
       sellKey = 'gold';
       sellAmount = Util.valueFit(this.arg.amount * actualTradeRate, null, general.getVar('gold'));
-      tax = sellAmount * (GameConst as any).exchangeFee;
+      tax = sellAmount * GameConst.exchangeFee;
       if (sellAmount + tax > general.getVar('gold')) {
         sellAmount *= general.getVar('gold') / (sellAmount + tax);
         tax = general.getVar('gold') - sellAmount;
@@ -121,7 +121,7 @@ export class TradeRiceCommand extends GeneralCommand {
       sellKey = 'rice';
       sellAmount = Util.valueFit(this.arg.amount, null, general.getVar('rice'));
       buyAmount = sellAmount * actualTradeRate;
-      tax = buyAmount * (GameConst as any).exchangeFee;
+      tax = buyAmount * GameConst.exchangeFee;
       buyAmount -= tax;
     }
 
@@ -190,7 +190,7 @@ export class TradeRiceCommand extends GeneralCommand {
       console.error('tryUniqueItemLottery failed:', error);
     }
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

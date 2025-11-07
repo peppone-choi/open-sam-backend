@@ -37,7 +37,7 @@ export class CounterAttackCommand extends NationCommand {
 
     if (typeof commandType !== 'string') return false;
 
-    const availableStrategicCommands = (global as any).GameConst?.availableChiefCommand?.['전략'] || [];
+    const availableStrategicCommands = global.GameConst?.availableChiefCommand?.['전략'] || [];
     if (!availableStrategicCommands.includes(commandType)) return false;
 
     if (commandType === 'CounterAttackCommand' || commandType === 'che_피장파장') return false;
@@ -64,7 +64,7 @@ export class CounterAttackCommand extends NationCommand {
       return;
     }
 
-    const buildNationCommandClass = (global as any).buildNationCommandClass;
+    const buildNationCommandClass = global.buildNationCommandClass;
     const cmd = buildNationCommandClass && buildNationCommandClass(this.arg['commandType'], this.generalObj, this.env, new LastTurn());
 
     const currYearMonth = Util.joinYearMonth(this.env['year'], this.env['month']);
@@ -117,10 +117,10 @@ export class CounterAttackCommand extends NationCommand {
 
   public getBrief(): string {
     const commandName = this.constructor.getName();
-    const buildNationCommandClass = (global as any).buildNationCommandClass;
+    const buildNationCommandClass = global.buildNationCommandClass;
     const cmd = buildNationCommandClass && buildNationCommandClass(this.arg['commandType'], this.generalObj, this.env, new LastTurn());
     const targetCommandName = cmd?.getName ? cmd.getName() : this.arg['commandType'];
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo ? getNationStaticInfo(this.arg['destNationID'])['name'] : '상대국';
     return `【${destNationName}】에 【${targetCommandName}】 ${commandName}`;
   }
@@ -130,7 +130,7 @@ export class CounterAttackCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj!;
     const generalID = general.getID();
@@ -152,7 +152,7 @@ export class CounterAttackCommand extends NationCommand {
     const commandName = this.constructor.getName();
     const josaUl = JosaUtil.pick(commandName, '을');
 
-    const buildNationCommandClass = (global as any).buildNationCommandClass;
+    const buildNationCommandClass = global.buildNationCommandClass;
     const cmd = buildNationCommandClass(this.arg['commandType'], this.generalObj, this.env, new LastTurn());
 
     const logger = general.getLogger();
@@ -165,9 +165,9 @@ export class CounterAttackCommand extends NationCommand {
 
     const nationGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
     for (const nationGeneralID of nationGeneralList) {
-      const nationGeneralLogger = (ActionLogger as any).create ? 
-        (ActionLogger as any).create(nationGeneralID, nationID, year, month) :
-        new (ActionLogger as any)(nationGeneralID, nationID, year, month);
+      const nationGeneralLogger = ActionLogger.create ? 
+        ActionLogger.create(nationGeneralID, nationID, year, month) :
+        new ActionLogger(nationGeneralID, nationID, year, month);
       if (nationGeneralLogger.pushGeneralActionLog) {
         nationGeneralLogger.pushGeneralActionLog(broadcastMessage, 0);
       }
@@ -181,9 +181,9 @@ export class CounterAttackCommand extends NationCommand {
 
     const destNationGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i', [destNationID]);
     for (const destNationGeneralID of destNationGeneralList) {
-      const destNationGeneralLogger = (ActionLogger as any).create ?
-        (ActionLogger as any).create(destNationGeneralID, destNationID, year, month) :
-        new (ActionLogger as any)(destNationGeneralID, destNationID, year, month);
+      const destNationGeneralLogger = ActionLogger.create ?
+        ActionLogger.create(destNationGeneralID, destNationID, year, month) :
+        new ActionLogger(destNationGeneralID, destNationID, year, month);
       if (destNationGeneralLogger.pushGeneralActionLog) {
         destNationGeneralLogger.pushGeneralActionLog(destBroadcastMessage, 0);
       }
@@ -192,9 +192,9 @@ export class CounterAttackCommand extends NationCommand {
       }
     }
 
-    const destNationLogger = (ActionLogger as any).create ?
-      (ActionLogger as any).create(0, destNationID, year, month) :
-      new (ActionLogger as any)(0, destNationID, year, month);
+    const destNationLogger = ActionLogger.create ?
+      ActionLogger.create(0, destNationID, year, month) :
+      new ActionLogger(0, destNationID, year, month);
     if (destNationLogger.pushNationalHistoryLog) {
       destNationLogger.pushNationalHistoryLog(`<D><b>${nationName}</b></>의 <Y>${generalName}</>${josaYi} 아국에 <G><b>${cmd.getName()}</b></> <M>${commandName}</>${josaUl} 발동`);
     }
@@ -205,7 +205,7 @@ export class CounterAttackCommand extends NationCommand {
     logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 <G><b>${cmd.getName()}</b></> <M>${commandName}</>${josaUl} 발동`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <G><b>${cmd.getName()}</b></> <M>${commandName}</>${josaUl} 발동`);
 
-    const KVStorage = (global as any).KVStorage;
+    const KVStorage = global.KVStorage;
     const nationStor = KVStorage?.getStorage ? KVStorage.getStorage(db, nationID, 'nation_env') : null;
     const destNationStor = KVStorage?.getStorage ? KVStorage.getStorage(db, destNationID, 'nation_env') : null;
 
@@ -219,13 +219,13 @@ export class CounterAttackCommand extends NationCommand {
       destNationStor.setValue(cmd.getNextExecuteKey(), destDelay + CounterAttackCommand.delayCnt);
     }
 
-    const StaticEventHandler = (global as any).StaticEventHandler;
+    const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'CounterAttackCommand', this.env, this.arg ?? {});
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }
@@ -239,8 +239,8 @@ export class CounterAttackCommand extends NationCommand {
 
     let oneAvailableCommandName: string | null = null;
 
-    const availableStrategicCommands = (global as any).GameConst?.availableChiefCommand?.['전략'] || [];
-    const buildNationCommandClass = (global as any).buildNationCommandClass;
+    const availableStrategicCommands = global.GameConst?.availableChiefCommand?.['전략'] || [];
+    const buildNationCommandClass = global.buildNationCommandClass;
 
     for (const commandType of availableStrategicCommands) {
       if (commandType === 'CounterAttackCommand' || commandType === 'che_피장파장') {
@@ -261,7 +261,7 @@ export class CounterAttackCommand extends NationCommand {
     }
 
     const nationList = [];
-    const getAllNationStaticInfo = (global as any).getAllNationStaticInfo;
+    const getAllNationStaticInfo = global.getAllNationStaticInfo;
     const allNations = getAllNationStaticInfo ? getAllNationStaticInfo() : [];
 
     for (const destNation of allNations) {

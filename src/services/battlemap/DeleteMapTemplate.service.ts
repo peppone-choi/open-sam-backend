@@ -1,9 +1,10 @@
 import { BattleMapTemplate } from '../../models/battlemap-template.model';
+import { battleMapTemplateRepository } from '../../repositories/battle-map-template.repository';
 
 export class DeleteMapTemplateService {
   static async execute(data: { id: string }) {
     try {
-      const template = await (BattleMapTemplate as any).findById(data.id);
+      const template = await battleMapTemplateRepository.findByFilterById(data.id);
       
       if (!template) {
         return {
@@ -12,7 +13,7 @@ export class DeleteMapTemplateService {
         };
       }
       
-      await (BattleMapTemplate as any).deleteOne({ _id: data.id });
+      await battleMapTemplateRepository.deleteByFilter({ _id: data.id });
       
       console.log(`🗑️  맵 템플릿 삭제: ${template.name} (city_id=${template.city_id})`);
       

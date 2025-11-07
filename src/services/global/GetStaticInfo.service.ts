@@ -1,5 +1,5 @@
-import { Session } from '../../models/session.model';
-import { General } from '../../models/general.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRepository } from '../../repositories/general.repository';
 import mongoose from 'mongoose';
 import { getSession } from '../../common/cache/model-cache.helper';
 
@@ -17,7 +17,7 @@ export class GetStaticInfoService {
         };
       }
 
-      const sessionData = (session as any).data || {};
+      const sessionData = session.data || {};
 
       const db = mongoose.connection.db;
       if (!db) {
@@ -33,12 +33,12 @@ export class GetStaticInfoService {
         'data.level': { $gt: 0 }
       });
 
-      const generalCount = await (General as any).countDocuments({
+      const generalCount = await generalRepository.count({
         session_id: sessionId,
         owner: { $ne: 'NPC' }
       });
 
-      const npcCount = await (General as any).countDocuments({
+      const npcCount = await generalRepository.count({
         session_id: sessionId,
         owner: 'NPC'
       });

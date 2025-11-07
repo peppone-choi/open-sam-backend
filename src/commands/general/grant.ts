@@ -1,4 +1,5 @@
 import { GeneralCommand } from '../base/GeneralCommand';
+import { generalRepository } from '../../repositories/general.repository';
 import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { GameConst } from '../../constants/GameConst';
@@ -35,7 +36,7 @@ export class GrantCommand extends GeneralCommand {
       return false;
     }
     amount = Util.round(amount, -2);
-    amount = Util.valueFit(amount, 100, (GameConst as any).maxResourceActionAmount);
+    amount = Util.valueFit(amount, 100, GameConst.maxResourceActionAmount);
     if (amount <= 0) {
       return false;
     }
@@ -74,7 +75,8 @@ export class GrantCommand extends GeneralCommand {
   }
 
   protected async initWithArg(): Promise<void> {
-    const destGeneral = await (General as any).createObjFromDB(this.arg.destGeneralID);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg.destGeneralID);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
 
     this.fullConditionConstraints = [
@@ -87,17 +89,17 @@ export class GrantCommand extends GeneralCommand {
     
     if (this.arg.isGold) {
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralGold((GameConst as any).generalMinimumGold)
+        ConstraintHelper.ReqGeneralGold(GameConst.generalMinimumGold)
       );
     } else {
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralRice((GameConst as any).generalMinimumRice)
+        ConstraintHelper.ReqGeneralRice(GameConst.generalMinimumRice)
       );
     }
   }
 
   public getCommandDetailTitle(): string {
-    return `${(this.constructor as any).getName()}(통솔경험)`;
+    return `${this.constructor.getName()}(통솔경험)`;
   }
 
   public getCost(): [number, number] {
@@ -115,7 +117,7 @@ export class GrantCommand extends GeneralCommand {
   public getBrief(): string {
     const destGeneralName = this.destGeneralObj?.getName() || '???';
     const resText = this.arg.isGold ? '금' : '쌀';
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     return `【${destGeneralName}】에게 ${resText} ${this.arg.amount}을 ${name}`;
   }
 
@@ -124,7 +126,7 @@ export class GrantCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
@@ -141,7 +143,7 @@ export class GrantCommand extends GeneralCommand {
     amount = Util.valueFit(
       amount, 
       0, 
-      general.getVar(resKey) - (isGold ? (GameConst as any).generalMinimumGold : (GameConst as any).generalMinimumRice)
+      general.getVar(resKey) - (isGold ? GameConst.generalMinimumGold : GameConst.generalMinimumRice)
     );
     const amountText = amount.toLocaleString();
 
@@ -176,14 +178,14 @@ export class GrantCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
-    await general.applyDB(db);
-    await destGeneral.applyDB(db);
+    await await general.save();
+    await await destGeneral.save();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const nationID = this.getNationID();
     
     const troops = await db.query('SELECT * FROM troop WHERE nation=?', [nationID]);
@@ -199,10 +201,10 @@ export class GrantCommand extends GeneralCommand {
         troops: troopsDict,
         generals: destRawGenerals,
         generalsKey: ['no', 'name', 'officerLevel', 'npc', 'gold', 'rice', 'leadership', 'strength', 'intel', 'cityID', 'crew', 'train', 'atmos', 'troopID'],
-        cities: await (global as any).JSOptionsForCities(),
+        cities: await global.JSOptionsForCities(),
         minAmount: 100,
-        maxAmount: (GameConst as any).maxResourceActionAmount,
-        amountGuide: (GameConst as any).resourceActionAmountGuide,
+        maxAmount: GameConst.maxResourceActionAmount,
+        amountGuide: GameConst.resourceActionAmountGuide,
       }
     };
   }

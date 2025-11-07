@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { GeneralRecord } from '../../models/general_record.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
 
 /**
  * GetGeneralLog Service (장수 로그 조회)
@@ -50,7 +50,7 @@ export class GetGeneralLogService {
         };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findById({
         session_id: sessionId,
         no: generalId
       });
@@ -104,14 +104,14 @@ export class GetGeneralLogService {
     sessionId: string,
     generalId: number
   ): Promise<any[]> {
-    const logs = await (GeneralRecord as any).find({
+    const logs = await generalRecordRepository.findByFilter({
       session_id: sessionId,
       general_id: generalId,
       type: 'history'
     })
       .sort({ _id: -1 })
       .limit(100)
-      .lean();
+      ;
 
     return logs.map((log: any) => ({
       id: log._id,
@@ -142,10 +142,10 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await (GeneralRecord as any).find(query)
+    const logs = await generalRecordRepository.findByFilter(query)
       .sort({ _id: -1 })
       .limit(limit)
-      .lean();
+      ;
 
     return logs.map((log: any) => ({
       id: log._id,
@@ -175,10 +175,10 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await (GeneralRecord as any).find(query)
+    const logs = await generalRecordRepository.findByFilter(query)
       .sort({ _id: -1 })
       .limit(limit)
-      .lean();
+      ;
 
     return logs.map((log: any) => ({
       id: log._id,
@@ -208,10 +208,10 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await (GeneralRecord as any).find(query)
+    const logs = await generalRecordRepository.findByFilter(query)
       .sort({ _id: -1 })
       .limit(limit)
-      .lean();
+      ;
 
     return logs.map((log: any) => ({
       id: log._id,

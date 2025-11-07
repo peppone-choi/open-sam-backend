@@ -1,4 +1,4 @@
-import { GeneralTurn } from '../../models/general_turn.model';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { neutralize, removeSpecialCharacter, getStringWidth } from '../../utils/string-util';
 import GameConstants from '../../utils/game-constants';
 
@@ -112,7 +112,7 @@ async function setGeneralCommand(
     const finalBrief = brief || action;
 
     for (const turnIdx of turnList) {
-      await (GeneralTurn as any).findOneAndUpdate(
+      await generalTurnRepository.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.general_id': generalId,

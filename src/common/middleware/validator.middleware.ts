@@ -62,7 +62,7 @@ export const validate = (schema: DtoSchema) => {
         }));
 
         logger.warn('요청 데이터 검증 실패', {
-          requestId: (req as any).requestId,
+          requestId: req.requestId,
           method: req.method,
           url: req.originalUrl,
           errors

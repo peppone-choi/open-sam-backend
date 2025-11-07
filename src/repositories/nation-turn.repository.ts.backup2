@@ -1,0 +1,116 @@
+import { NationTurn } from '../models/nation_turn.model';
+import { DeleteResult } from 'mongodb';
+
+/**
+ * 국가 턴 리포지토리
+ * 국가 수뇌부의 예약된 명령을 관리
+ */
+class NationTurnRepository {
+  /**
+   * 턴 생성
+   * @param data - 턴 데이터
+   * @returns 생성된 턴
+   */
+  async create(data: any) {
+    return (NationTurn as any).create(data);
+  }
+
+  /**
+   * 세션별 턴 조회
+   * @param sessionId - 세션 ID
+   * @param filter - 추가 필터 조건
+   * @param sort - 정렬 조건
+   * @returns 턴 목록
+   */
+  async findBySession(sessionId: string, filter?: any, sort?: any) {
+    const query = (NationTurn as any).find({ 
+      session_id: sessionId, 
+      ...filter 
+    });
+    
+    if (sort) {
+      query.sort(sort);
+    }
+    
+    return query;
+  }
+
+  /**
+   * 국가별 턴 조회
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 ID
+   * @param sort - 정렬 조건
+   * @returns 턴 목록
+   */
+  async findByNation(sessionId: string, nationId: number, sort?: any) {
+    return this.findBySession(sessionId, { 'data.nation_id': nationId }, sort);
+  }
+
+  /**
+   * 조건으로 턴 한 개 조회
+   * @param filter - 검색 조건
+   * @returns 턴 문서 또는 null
+   */
+  async findOne(filter: any) {
+    return (NationTurn as any).findOne(filter);
+  }
+
+  /**
+   * 턴 업데이트 (단일)
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @param options - 옵션 (upsert 등)
+   * @returns 업데이트 결과
+   */
+  async updateOne(filter: any, update: any, options?: any) {
+    return (NationTurn as any).updateOne(filter, update, options);
+  }
+
+  /**
+   * 턴 조회 및 업데이트 (upsert 포함)
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @param options - 옵션 (upsert 등)
+   * @returns 업데이트 결과
+   */
+  async findOneAndUpdate(filter: any, update: any, options?: any) {
+    return (NationTurn as any).findOneAndUpdate(filter, update, options);
+  }
+
+  /**
+   * 턴 업데이트 (다중)
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @returns 업데이트 결과
+   */
+  async updateMany(filter: any, update: any) {
+    return (NationTurn as any).updateMany(filter, update);
+  }
+
+  /**
+   * 턴 삭제
+   * @param filter - 삭제 조건
+   * @returns 삭제 결과
+   */
+  async deleteMany(filter: any): Promise<DeleteResult> {
+    return (NationTurn as any).deleteMany(filter);
+  }
+
+  /**
+   * 국가의 모든 턴 삭제
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 ID
+   * @returns 삭제 결과
+   */
+  async deleteByNation(sessionId: string, nationId: number): Promise<DeleteResult> {
+    return (NationTurn as any).deleteMany({
+      session_id: sessionId,
+      'data.nation_id': nationId
+    });
+  }
+}
+
+/**
+ * 국가 턴 리포지토리 싱글톤 인스턴스
+ */
+export const nationTurnRepository = new NationTurnRepository();

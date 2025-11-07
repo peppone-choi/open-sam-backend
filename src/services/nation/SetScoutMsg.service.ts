@@ -1,5 +1,6 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { KVStorage } from '../../models/kv-storage.model';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 /**
  * SetScoutMsg Service
@@ -21,7 +22,7 @@ export class SetScoutMsgService {
         return { success: false, message: '임관 메시지는 최대 1000자까지 가능합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -42,13 +43,13 @@ export class SetScoutMsgService {
         return { success: false, message: '국가에 소속되어 있어야 합니다' };
       }
 
-      const existingStorage = await (KVStorage as any).findOne({
+      const existingStorage = await kvStorageRepository.findOneByFilter({
         session_id: sessionId,
         storage_id: `nation_${nationId}`
       });
 
       if (existingStorage) {
-        await (KVStorage as any).updateOne(
+        await kvStorageRepository.updateOneByFilter(
           {
             session_id: sessionId,
             storage_id: `nation_${nationId}`
@@ -60,7 +61,7 @@ export class SetScoutMsgService {
           }
         );
       } else {
-        await (KVStorage as any).create({
+        await kvStorageRepository.create({
           session_id: sessionId,
           storage_id: `nation_${nationId}`,
           data: {

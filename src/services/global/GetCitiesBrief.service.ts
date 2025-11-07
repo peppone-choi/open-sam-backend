@@ -1,12 +1,12 @@
-import { City } from '../../models/city.model';
-import { Session } from '../../models/session.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 export class GetCitiesBriefService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -14,9 +14,9 @@ export class GetCitiesBriefService {
         };
       }
 
-      const cities = await (City as any).find({ session_id: sessionId })
-        .select('city name nation level state region')
-        .lean();
+      const cities = await cityRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const cityList: any[] = [];
       for (const city of cities) {

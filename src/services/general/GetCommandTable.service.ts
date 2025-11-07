@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { CommandFactory } from '../../core/command/CommandFactory';
 import { logger } from '../../common/logger';
 
@@ -21,7 +21,7 @@ export class GetCommandTableService {
     }
 
     try {
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findById({
         session_id: sessionId,
         no: generalId
       });
@@ -33,7 +33,7 @@ export class GetCommandTableService {
         };
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
@@ -97,7 +97,7 @@ export class GetCommandTableService {
             
             // CommandRegistry에서 직접 가져오기
             const { CommandRegistry } = await import('../../commands');
-            const CommandClass = (CommandRegistry as any)[registryKey];
+            const CommandClass = CommandRegistry[registryKey];
             
             if (!CommandClass) {
               logger.debug(`Command not found in registry: ${registryKey} (original: ${commandClassName})`);
@@ -123,13 +123,13 @@ export class GetCommandTableService {
                 hasMinCondition = commandObj.hasMinConditionMet?.() ?? true;
                 commandName = CommandClass.getName?.() ?? commandClassName.replace(/^che_/, '');
                 commandTitle = commandObj.getCommandDetailTitle?.() ?? commandName;
-                reqArg = (CommandClass as any).reqArg ?? false;
+                reqArg = CommandClass.reqArg ?? false;
                 compensation = commandObj.getCompensationStyle?.() ?? 0;
               } catch (err: any) {
                 // 인스턴스 생성 실패 시 정적 메서드만 사용
                 commandName = CommandClass.getName?.() ?? commandClassName.replace(/^che_/, '');
                 commandTitle = commandName;
-                reqArg = (CommandClass as any).reqArg ?? false;
+                reqArg = CommandClass.reqArg ?? false;
               }
             }
           } catch (err: any) {

@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { Nation } from '../../models/nation.model';
 
 /**
@@ -24,10 +24,10 @@ export class GetContactListService {
 
       const generalNations: { [key: number]: any[] } = {};
 
-      const generals = await (General as any).find({
+      const generals = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.npc': { $lt: 2 }
-      }).select('data.no data.name data.nation data.officer_level data.npc data.permission data.penalty').lean();
+      });
 
       for (const general of generals) {
         const generalID = general.data?.no || 0;
@@ -58,9 +58,9 @@ export class GetContactListService {
         generalNations[nationID].push([generalID, generalName, flags]);
       }
 
-      const nations = await (Nation as any).find({ session_id: sessionId })
-        .select('data.nation data.name data.color')
-        .lean();
+      const nations = await nationRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const neutralNation = {
         data: {

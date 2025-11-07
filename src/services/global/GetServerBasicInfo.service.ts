@@ -1,4 +1,4 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetServerBasicInfo Service
@@ -10,7 +10,7 @@ export class GetServerBasicInfoService {
     const sessionId = data.session_id || 'sangokushi_default';
 
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
 
       if (!session) {
         return {

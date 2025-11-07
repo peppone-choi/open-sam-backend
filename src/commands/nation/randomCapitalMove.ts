@@ -59,7 +59,7 @@ export class che_무작위수도이전 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalID = general!.getID();
@@ -101,7 +101,7 @@ export class che_무작위수도이전 extends NationCommand {
     const aux = this.nation['aux'];
     aux['can_무작위수도이전'] -= 1;
 
-    const Json = (global as any).Json;
+    const Json = global.Json;
     await db.update('city', { nation: nationID, conflict: '{}' }, 'city=%i', [destCityID]);
     await db.update(
       'nation',
@@ -134,13 +134,13 @@ export class che_무작위수도이전 extends NationCommand {
       await targetLogger.flush();
     }
 
-    const refreshNationStaticInfo = (global as any).refreshNationStaticInfo;
+    const refreshNationStaticInfo = global.refreshNationStaticInfo;
     await refreshNationStaticInfo();
 
     general!.increaseInheritancePoint('active_action', 1);
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaRo} 국가를 옮겼습니다. <1>${date}</>`);
     logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaRo} <M>무작위 수도 이전</>`);
-    (logger as any).pushNationalHistoryLog(
+    logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaRo} <M>무작위 수도 이전</>`
     );
     logger.pushGlobalActionLog(

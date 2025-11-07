@@ -1,16 +1,17 @@
-import { Session } from '../../models/session.model';
-import { General } from '../../models/general.model';
-import { GeneralTurn } from '../../models/general_turn.model';
-import { NationTurn } from '../../models/nation_turn.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import { GeneralLog } from '../../models/general-log.model';
 import { KVStorage } from '../../models/kv-storage.model';
 import { getCommand, getNationCommand } from '../../commands';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import Redis from 'ioredis';
 import { GameEventEmitter } from '../gameEventEmitter';
 import { SessionStateService } from '../sessionState.service';
 import { logger } from '../../common/logger';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 const MAX_TURN = 30;
 const MAX_CHIEF_TURN = 12;
@@ -113,7 +114,7 @@ export class ExecuteEngineService {
       }
       lockAcquired = true;
       console.log(`[${new Date().toISOString()}] ✅ Lock acquired: ${lockKey} (TTL: ${LOCK_TTL}초)`);
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         // 락을 해제하고 반환
         if (lockAcquired) {
@@ -558,9 +559,9 @@ export class ExecuteEngineService {
     // 세션 turntime을 기본값으로 사용하여 비교
     const sessionTurntime = gameEnv.turntime ? new Date(gameEnv.turntime) : date;
     
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId
-    }).lean();
+    });
     
     // 각 장수의 turntime을 확인하고 date보다 이전인 것만 필터링
     // turntime은 data.turntime에만 존재함
@@ -613,7 +614,7 @@ export class ExecuteEngineService {
       // lean()으로 가져온 문서는 Mongoose 문서가 아니므로 다시 조회
       let generalDoc: any;
       try {
-        generalDoc = await (General as any).findById(general._id);
+        generalDoc = await generalRepository.findById(general._id);
         if (!generalDoc) {
           // 장수가 삭제되었거나 존재하지 않으면 건너뛰기
           continue;
@@ -772,14 +773,14 @@ export class ExecuteEngineService {
     const nationId = general.nation || 0;
 
     if (cityId) {
-      const city = await (City as any).findOne({ session_id: sessionId, city: cityId });
+      const city = await cityRepository.findByCityNum(sessionId, cityId );
       if (city) {
         general.setRawCity(city);
       }
     }
 
     if (nationId) {
-      const nation = await (Nation as any).findOne({ session_id: sessionId, nation: nationId });
+      const nation = await nationRepository.findByNationNum(sessionId, nationId );
       if (nation) {
         general.data._cached_nation = nation;
         general.markModified('data');
@@ -863,7 +864,7 @@ export class ExecuteEngineService {
     }
 
     // 0번 턴 조회
-    const nationTurn = await (NationTurn as any).findOne({
+    const nationTurn = await nationTurnRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation_id': nationId,
       'data.officer_level': officerLevel,
@@ -898,7 +899,7 @@ export class ExecuteEngineService {
       
       // LastTurn 조회 (국가 커맨드는 lastTurn 필요)
       const { KVStorage } = await import('../../models/kv-storage.model');
-      const nationStor = await (KVStorage as any).findOne({
+      const nationStor = await kvStorageRepository.findOneByFilter({
         session_id: sessionId,
         key: `turn_last_${officerLevel}`,
         namespace: `nation_${nationId}`
@@ -953,7 +954,7 @@ export class ExecuteEngineService {
             };
             await nationStor.save();
           } else {
-            await (KVStorage as any).create({
+            await kvStorageRepository.create({
               session_id: sessionId,
               key: `turn_last_${officerLevel}`,
               namespace: `nation_${nationId}`,
@@ -1007,7 +1008,7 @@ export class ExecuteEngineService {
     }
     
     // 0번 턴 조회
-    let generalTurn = await (GeneralTurn as any).findOne({
+    let generalTurn = await generalTurnRepository.findOneByFilter({
       session_id: sessionId,
       'data.general_id': generalId,
       'data.turn_idx': 0
@@ -1015,7 +1016,7 @@ export class ExecuteEngineService {
 
     // 명령이 없으면 휴식으로 자동 생성
     if (!generalTurn) {
-      generalTurn = await (GeneralTurn as any).create({
+      generalTurn = await generalTurnRepository.create({
         session_id: sessionId,
         data: {
           general_id: generalId,
@@ -1250,7 +1251,7 @@ export class ExecuteEngineService {
     }
 
     // turnCnt보다 작은 턴들을 MAX_TURN으로 밀고 휴식으로 변경
-    await (GeneralTurn as any).updateMany(
+    await generalTurnRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.general_id': generalId,
@@ -1267,7 +1268,7 @@ export class ExecuteEngineService {
     );
 
     // 모든 턴을 turnCnt만큼 당김
-    await (GeneralTurn as any).updateMany(
+    await generalTurnRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.general_id': generalId
@@ -1286,7 +1287,7 @@ export class ExecuteEngineService {
       return;
     }
 
-    await (NationTurn as any).updateMany(
+    await nationTurnRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.nation_id': nationId,
@@ -1303,7 +1304,7 @@ export class ExecuteEngineService {
       }
     );
 
-    await (NationTurn as any).updateMany(
+    await nationTurnRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.nation_id': nationId,
@@ -1335,7 +1336,7 @@ export class ExecuteEngineService {
     const dbTarget = targetMap[target] || target;
     
     // 이벤트 조회
-    const events = await (Event as any).find({
+    const events = await Event.find({
       session_id: sessionId,
       target: dbTarget
     }).sort({ priority: -1, _id: 1 });
@@ -1371,7 +1372,7 @@ export class ExecuteEngineService {
    */
   private static async preUpdateMonthly(sessionId: string, gameEnv: any) {
     // penalty 감소 (세션 월 기준)
-    await (General as any).updateMany(
+    await generalRepository.updateManyByFilter(
       { session_id: sessionId },
       {
         $inc: {
@@ -1380,7 +1381,7 @@ export class ExecuteEngineService {
       }
     );
 
-    await (General as any).updateMany(
+    await generalRepository.updateManyByFilter(
       { session_id: sessionId, 'data.penalty': { $lt: 0 } },
       { $set: { 'data.penalty': 0 } }
     );
@@ -1388,7 +1389,7 @@ export class ExecuteEngineService {
     // 나이 증가는 각 장수의 개별 년도가 넘어갈 때 executeGeneralTurn에서 처리
     // (각 장수는 개별적인 게임 내 년/월을 가지므로)
 
-    await (Nation as any).updateMany(
+    await nationRepository.updateManyByFilter(
       { session_id: sessionId },
       {
         $inc: {
@@ -1398,7 +1399,7 @@ export class ExecuteEngineService {
       }
     );
 
-    await (Nation as any).updateMany(
+    await nationRepository.updateManyByFilter(
       { session_id: sessionId, 'data.consecu_turn_count': { $lt: 0 } },
       { $set: { 'data.consecu_turn_count': 0 } }
     );
@@ -1411,7 +1412,7 @@ export class ExecuteEngineService {
     const year = gameEnv.year;
     const month = gameEnv.month;
     
-    const cities = await (City as any).find({ session_id: sessionId });
+    const cities = await cityRepository.findByFilter({ session_id: sessionId });
     
     for (const city of cities) {
       city.pop = Math.min(city.pop + Math.floor(city.agri / 10), city.pop_max);
@@ -1423,7 +1424,7 @@ export class ExecuteEngineService {
       await city.save();
     }
 
-    const nations = await (Nation as any).find({ session_id: sessionId });
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
     for (const nation of nations) {
       if (nation.data.rice) {
         nation.data.rice = Math.max((nation.data.rice || 0) - Math.floor((nation.data.gennum || 0) * 10), 0);
@@ -1594,13 +1595,13 @@ export class ExecuteEngineService {
     const fullMessage = `${message} <1>${date}</>`;
     
     try {
-      const maxId = await (GeneralLog as any).findOne({ session_id: sessionId })
+      const maxId = await GeneralLog.findOne({ session_id: sessionId })
         .sort({ id: -1 })
         .limit(1);
       
       const newId = (maxId?.id || 0) + 1;
 
-      await (GeneralLog as any).create({
+      await GeneralLog.create({
         id: newId,
         session_id: sessionId,
         general_id: generalId,

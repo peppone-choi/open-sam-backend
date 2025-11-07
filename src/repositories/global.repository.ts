@@ -1,3 +1,9 @@
+/**
+ * Global Repository - Instance Export
+ * Auto-generated to support both static and instance methods
+ */
+
+// Re-export the static class for backwards compatibility
 import mongoose from 'mongoose';
 import { General } from '../models';
 import { Nation } from '../models';
@@ -39,3 +45,6 @@ export class GlobalRepository {
     return await model.deleteMany({ session_id: sessionId, ...filter });
   }
 }
+
+// Add instance export
+export const globalRepository = new GlobalRepository();

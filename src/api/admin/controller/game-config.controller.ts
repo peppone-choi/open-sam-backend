@@ -24,7 +24,7 @@ export class GameConfigController {
    */
   async updateUnitAdvantage(req: Request, res: Response) {
     const { advantages } = req.body;
-    const adminId = (req as any).admin.id;
+    const adminId = req.admin.id;
     
     const config = await this.service.updateUnitAdvantage(advantages, adminId);
     
@@ -40,7 +40,7 @@ export class GameConfigController {
    */
   async updateUnits(req: Request, res: Response) {
     const { units } = req.body;
-    const adminId = (req as any).admin.id;
+    const adminId = req.admin.id;
     
     const config = await this.service.updateUnitInfo(units, adminId);
     
@@ -56,7 +56,7 @@ export class GameConfigController {
    */
   async updateBalance(req: Request, res: Response) {
     const balance = req.body;
-    const adminId = (req as any).admin.id;
+    const adminId = req.admin.id;
     
     const config = await this.service.updateBalance(balance, adminId);
     
@@ -72,7 +72,7 @@ export class GameConfigController {
    */
   async updateTurnConfig(req: Request, res: Response) {
     const turnConfig = req.body;
-    const adminId = (req as any).admin.id;
+    const adminId = req.admin.id;
     
     const config = await this.service.updateTurnConfig(turnConfig, adminId);
     
@@ -88,7 +88,7 @@ export class GameConfigController {
    */
   async updateExpConfig(req: Request, res: Response) {
     const expConfig = req.body;
-    const adminId = (req as any).admin.id;
+    const adminId = req.admin.id;
     
     const config = await this.service.updateExpConfig(expConfig, adminId);
     

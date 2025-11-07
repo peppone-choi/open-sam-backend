@@ -1,6 +1,6 @@
 import { SelectNpcToken } from '../../models/select_npc_token.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import mongoose from 'mongoose';
 
 /**
@@ -30,7 +30,7 @@ export class SelectNpcService {
 
     try {
       // 세션 정보 확인
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -38,7 +38,7 @@ export class SelectNpcService {
         };
       }
 
-      const sessionData = (session as any).config || session.data || {};
+      const sessionData = session.config || session.data || {};
       const npcmode = sessionData.npcmode || 0;
       const maxgeneral = sessionData.maxgeneral || 50;
       const year = sessionData.year || 184;
@@ -52,7 +52,7 @@ export class SelectNpcService {
       }
 
       // 장수 수 확인
-      const generalCount = await (General as any).countDocuments({
+      const generalCount = await generalRepository.count({
         session_id: sessionId,
         npc: { $lt: 2 }
       });
@@ -67,11 +67,11 @@ export class SelectNpcService {
       const now = new Date();
 
       // NPC 토큰에서 선택 가능한지 확인
-      const token = await (SelectNpcToken as any).findOne({
+      const token = await SelectNpcToken.findOne({
         session_id: sessionId,
         'data.owner': userId.toString(),
         'data.valid_until': { $gte: now }
-      }).lean();
+      });
 
       if (!token || !token.data?.pick_result) {
         return {
@@ -93,7 +93,7 @@ export class SelectNpcService {
 
       // 선택한 NPC 장수 조회 및 업데이트
       // owner 필드가 없거나 '0' 이하인 NPC 찾기
-      const npcGeneral = await (General as any).findOne({
+      const npcGeneral = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': pick,
         npc: 2,
@@ -141,7 +141,7 @@ export class SelectNpcService {
       // TODO: GeneralAccessLog 모델 구현 후 추가
 
       // 토큰 삭제
-      await (SelectNpcToken as any).deleteMany({
+      await SelectNpcToken.deleteMany({
         session_id: sessionId,
         $or: [
           { 'data.owner': userId.toString() },

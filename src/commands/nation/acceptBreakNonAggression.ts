@@ -1,4 +1,5 @@
 import '../../utils/function-extensions';
+import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
 import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
@@ -48,7 +49,8 @@ export class che_불가침파기수락 extends NationCommand {
   }
 
   protected async initWithArg(): Promise<void> {
-    const destGeneral = await (General as any).createObjFromDB(this.arg['destGeneralID']);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
     this.setDestNation(this.arg['destNationID']);
 
@@ -79,7 +81,7 @@ export class che_불가침파기수락 extends NationCommand {
   }
 
   public getBrief(): string {
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])['name'];
     return `${destNationName}국과 불가침 파기 합의`;
   }
@@ -89,7 +91,7 @@ export class che_불가침파기수락 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalName = general!.getName();

@@ -1,3 +1,9 @@
+/**
+ * Nationcommand Repository - Instance Export
+ * Auto-generated to support both static and instance methods
+ */
+
+// Re-export the static class for backwards compatibility
 import mongoose from 'mongoose';
 import { Command } from '../models';
 import { Nation } from '../models';
@@ -38,3 +44,6 @@ export class NationCommandRepository {
     return await model.deleteMany({ session_id: sessionId, ...filter });
   }
 }
+
+// Add instance export
+export const nationcommandRepository = new NationCommandRepository();

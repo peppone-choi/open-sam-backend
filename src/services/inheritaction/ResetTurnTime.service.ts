@@ -1,9 +1,10 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
 import { UserRecord } from '../../models/user_record.model';
 import GameConstants from '../../utils/game-constants';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 function simpleRandom(seed: string): () => number {
   let h = 0;
@@ -26,7 +27,7 @@ export class ResetTurnTimeService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId );
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -39,12 +40,12 @@ export class ResetTurnTimeService {
       const nextLevel = currentLevel + 1;
       const reqPoint = GameConstants.calcResetAttrPoint(nextLevel);
       
-      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await kvStorageRepository.findOneByFilter({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const inheritStor = await (KVStorage as any).findOne({ 
+      const inheritStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -63,7 +64,7 @@ export class ResetTurnTimeService {
       const hours = Math.floor(afterTurn / 60);
       const minutes = Math.floor(afterTurn % 60);
       
-      await (UserRecord as any).create({
+      await UserRecord.create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

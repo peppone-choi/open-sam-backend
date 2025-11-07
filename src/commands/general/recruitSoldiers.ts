@@ -14,8 +14,8 @@ export class RecruitSoldiersCommand extends ConscriptCommand {
   protected static defaultAtmos: number;
 
   protected static initStatic(): void {
-    this.defaultTrain = (GameConst as any).defaultTrainHigh || 80;
-    this.defaultAtmos = (GameConst as any).defaultAtmosHigh || 80;
+    this.defaultTrain = GameConst.defaultTrainHigh || 80;
+    this.defaultAtmos = GameConst.defaultAtmosHigh || 80;
   }
 
   public getCommandDetailTitle(): string {

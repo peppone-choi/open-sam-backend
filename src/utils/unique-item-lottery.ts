@@ -29,7 +29,7 @@ export async function giveRandomUniqueItem(
     const gameStor = KVStorage.getStorage(`game_env:${sessionId}`);
     
     // buildItemClass 함수 가져오기
-    const buildItemClass = (global as any).buildItemClass;
+    const buildItemClass = global.buildItemClass;
     if (!buildItemClass) {
       logger.warn('buildItemClass function not found');
       return false;
@@ -75,7 +75,7 @@ export async function giveRandomUniqueItem(
     }
 
     // 모든 장수들의 유니크 아이템 사용 현황 조회
-    const generals = await (General as any).find({ session_id: sessionId }).lean();
+    const generals = await General.find({ session_id: sessionId }).lean();
     for (const gen of generals) {
       const genData = gen.data || {};
       for (const itemType of Object.keys(allItems)) {
@@ -97,7 +97,7 @@ export async function giveRandomUniqueItem(
     }
 
     // 경매 진행 중인 유니크 아이템 확인
-    const auctionItems = await (Auction as any).find({
+    const auctionItems = await Auction.find({
       session_id: sessionId,
       type: 'UniqueItem',
       finished: false
@@ -166,7 +166,7 @@ export async function giveRandomUniqueItem(
         await inheritStor.setValue('previous', [previousPoint + inheritItemRandomPoint, null]);
 
         // RankData 업데이트
-        await (RankData as any).updateOne(
+        await RankData.updateOne(
           { session_id: sessionId, 'data.general_id': general.no, 'data.type': 'inherit_point_spent_dyn' },
           { $inc: { 'data.value': -inheritItemRandomPoint } },
           { upsert: true }
@@ -299,7 +299,7 @@ export async function tryUniqueItemLottery(
     let maxCnt = itemTypeCnt;
 
     // 이미 가진 유니크 아이템만큼 시도 횟수 감소
-    const buildItemClass = (global as any).buildItemClass;
+    const buildItemClass = global.buildItemClass;
     for (const itemType of Object.keys(allItems)) {
       const itemCode = generalData[itemType] || 'None';
       if (itemCode !== 'None' && buildItemClass) {
@@ -331,7 +331,7 @@ export async function tryUniqueItemLottery(
         await inheritStor.setValue('previous', [previousPoint + inheritItemRandomPoint, null]);
 
         // RankData 업데이트
-        await (RankData as any).updateOne(
+        await RankData.updateOne(
           { session_id: sessionId, 'data.general_id': general.no, 'data.type': 'inherit_point_spent_dyn' },
           { $inc: { 'data.value': -inheritItemRandomPoint } },
           { upsert: true }
@@ -342,7 +342,7 @@ export async function tryUniqueItemLottery(
 
     // 시나리오 정보
     const scenario = (await gameStor.getValue('scenario')) || 0;
-    const genCount = await (General as any).countDocuments({ session_id: sessionId, 'data.npc': { $lt: 2 } });
+    const genCount = await General.countDocuments({ session_id: sessionId, 'data.npc': { $lt: 2 } });
 
     // 확률 계산
     let prob: number;

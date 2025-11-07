@@ -41,7 +41,7 @@ export class DeployCommand extends GeneralCommand {
     const relYear = this.env.year - this.env.startyear;
 
     this.minConditionConstraints = [
-      (ConstraintHelper as any).NotOpeningPart(relYear + 2),
+      ConstraintHelper.NotOpeningPart(relYear + 2),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
@@ -56,14 +56,14 @@ export class DeployCommand extends GeneralCommand {
     const relYear = this.env.year - this.env.startyear;
 
     this.fullConditionConstraints = [
-      (ConstraintHelper as any).NotOpeningPart(relYear),
-      (ConstraintHelper as any).NotSameDestCity(),
+      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.NotSameDestCity(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralRice(reqRice),
-      (ConstraintHelper as any).AllowWar(),
-      (ConstraintHelper as any).HasRouteWithEnemy(),
+      ConstraintHelper.AllowWar(),
+      ConstraintHelper.HasRouteWithEnemy(),
     ];
   }
 
@@ -107,7 +107,7 @@ export class DeployCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const attackerNationID = general.getNationID();
     const date = general.getTurnTime('HM');
@@ -157,7 +157,7 @@ export class DeployCommand extends GeneralCommand {
     }
 
     this.setResultTurn(new LastTurn((this.constructor as typeof DeployCommand).getName(), this.arg));
-    await general.applyDB(db);
+    await await general.save();
 
     // 전투 처리
     // TODO: processWar 로직 구현
@@ -177,7 +177,7 @@ export class DeployCommand extends GeneralCommand {
       general
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

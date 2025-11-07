@@ -1,6 +1,7 @@
 import { NgDiplomacy } from '../../models/ng_diplomacy.model';
-import { Nation } from '../../models/nation.model';
-import { Session } from '../../models/session.model';
+import { nationRepository } from '../../repositories/nation.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { ngDiplomacyRepository } from '../../repositories/ng-diplomacy.repository';
 
 export class GetDiplomacyInfoService {
   static async execute(data: any, user?: any) {
@@ -8,7 +9,7 @@ export class GetDiplomacyInfoService {
     const nationId = parseInt(data.nation_id) || 0;
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -23,10 +24,10 @@ export class GetDiplomacyInfoService {
         };
       }
 
-      const nation = await (Nation as any).findOne({
+      const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
         nation: nationId
-      }).lean();
+      });
 
       if (!nation) {
         return {
@@ -35,13 +36,13 @@ export class GetDiplomacyInfoService {
         };
       }
 
-      const diplomacyRecords = await (NgDiplomacy as any).find({
+      const diplomacyRecords = await ngDiplomacyRepository.findByFilter({
         session_id: sessionId,
         $or: [
           { 'data.me': nationId },
           { 'data.you': nationId }
         ]
-      }).lean();
+      });
 
       const diplomacyList: any[] = [];
       for (const record of diplomacyRecords) {

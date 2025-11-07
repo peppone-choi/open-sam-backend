@@ -16,7 +16,7 @@ const router = Router();
  */
 router.post('/get-letter', authenticate, async (req, res) => {
   try {
-    const userId = (req as any).user?.userId || (req as any).user?.id;
+    const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
@@ -96,7 +96,7 @@ router.post('/get-letter', authenticate, async (req, res) => {
  */
 router.post('/send-letter', authenticate, async (req, res) => {
   try {
-    const userId = (req as any).user?.userId || (req as any).user?.id;
+    const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
@@ -179,7 +179,7 @@ router.post('/send-letter', authenticate, async (req, res) => {
  */
 router.post('/respond-letter', authenticate, async (req, res) => {
   try {
-    const userId = (req as any).user?.userId || (req as any).user?.id;
+    const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
@@ -267,7 +267,7 @@ router.post('/respond-letter', authenticate, async (req, res) => {
  */
 router.post('/process', authenticate, async (req, res) => {
   try {
-    const userId = (req as any).user?.userId || (req as any).user?.id;
+    const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }

@@ -1,6 +1,4 @@
 import { generalRepository } from '../../repositories/general.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
 
 /**
  * GetItemList Service
@@ -19,10 +17,7 @@ export class GetItemListService {
     }
 
     try {
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {

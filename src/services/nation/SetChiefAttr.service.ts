@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * SetChiefAttr Service
@@ -21,7 +21,7 @@ export class SetChiefAttrService {
         return { success: false, message: '속성 이름이 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -49,7 +49,7 @@ export class SetChiefAttrService {
       const updateData: any = {};
       updateData[`data.${attrName}`] = attrValue;
 
-      await (Nation as any).updateOne(
+      await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId

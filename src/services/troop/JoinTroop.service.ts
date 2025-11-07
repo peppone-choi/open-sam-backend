@@ -2,6 +2,8 @@ import { TroopRepository } from '../../repositories/troop.repository';
 import { General } from '../../models/general.model';
 import { Troop } from '../../models/troop.model';
 import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 
 export class JoinTroopService {
   static async execute(data: any, user?: any) {
@@ -17,7 +19,7 @@ export class JoinTroopService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -35,7 +37,7 @@ export class JoinTroopService {
         return { success: false, message: '국가에 소속되어 있지 않습니다' };
       }
 
-      const troop = await (Troop as any).findOne({
+      const troop = await troopRepository.findOneByFilter({
         session_id: sessionId,
         'data.troop_leader': troopID,
         'data.nation': nationId
@@ -45,7 +47,7 @@ export class JoinTroopService {
         return { success: false, message: '부대가 올바르지 않습니다' };
       }
 
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         { session_id: sessionId, 'data.no': generalId },
         { $set: { 'data.troop': troopID } }
       );

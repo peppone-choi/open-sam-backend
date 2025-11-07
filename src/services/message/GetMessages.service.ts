@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Message } from '../../models/message.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { messageRepository } from '../../repositories/message.repository';
 
 /**
  * GetMessages Service
@@ -27,7 +27,7 @@ export class GetMessagesService {
         return { success: false, message: '잘못된 메시지 타입입니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -58,11 +58,11 @@ export class GetMessagesService {
         query['data.dest_nation_id'] = nationId;
       }
 
-      const messages = await (Message as any).find(query)
+      const messages = await messageRepository.findByFilter(query)
         .sort({ 'data.id': -1 })
         .skip(offset)
         .limit(limit)
-        .lean();
+        ;
 
       const messageList = messages.map(msg => ({
         id: msg.data?.id,

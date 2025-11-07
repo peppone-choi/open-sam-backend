@@ -1,7 +1,7 @@
-import { General } from '../../models/general.model';
-import { GeneralRecord } from '../../models/general_record.model';
-import { WorldHistory } from '../../models/world_history.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetRecentRecord Service
@@ -18,7 +18,7 @@ export class GetRecentRecordService {
     
     try {
       // Load session
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -89,15 +89,15 @@ export class GetRecentRecordService {
    * Get world history records
    */
   private static async getHistory(sessionId: string, lastHistoryID: number): Promise<any[]> {
-    const records = await (WorldHistory as any).find({
+    const records = await worldHistoryRepository.findByFilter({
       session_id: sessionId,
       'data.nation_id': 0,
       'data.id': { $gte: lastHistoryID }
     })
-      .select('data')
+      
       .sort({ 'data.id': -1 })
       .limit(this.ROW_LIMIT + 1)
-      .lean();
+      ;
 
     return records.map(record => {
       const data = record.data as any;
@@ -109,16 +109,16 @@ export class GetRecentRecordService {
    * Get global records (general_id = 0, log_type = 'history')
    */
   private static async getGlobalRecord(sessionId: string, lastRecordID: number): Promise<any[]> {
-    const records = await (GeneralRecord as any).find({
+    const records = await generalRecordRepository.findByFilter({
       session_id: sessionId,
       'data.general_id': 0,
       'data.log_type': 'history',
       'data.id': { $gte: lastRecordID }
     })
-      .select('data')
+      
       .sort({ 'data.id': -1 })
       .limit(this.ROW_LIMIT + 1)
-      .lean();
+      ;
 
     return records.map(record => {
       const data = record.data as any;
@@ -134,16 +134,16 @@ export class GetRecentRecordService {
       return [];
     }
 
-    const records = await (GeneralRecord as any).find({
+    const records = await generalRecordRepository.findByFilter({
       session_id: sessionId,
       'data.general_id': generalId,
       'data.log_type': 'action',
       'data.id': { $gte: lastRecordID }
     })
-      .select('data')
+      
       .sort({ 'data.id': -1 })
       .limit(this.ROW_LIMIT + 1)
-      .lean();
+      ;
 
     return records.map(record => {
       const data = record.data as any;

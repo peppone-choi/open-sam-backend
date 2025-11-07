@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { NationTurn } from '../../models/nation_turn.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import GameConstants from '../../utils/game-constants';
 
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
@@ -46,10 +46,7 @@ export class ReserveBulkCommandService {
         }
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('장수 정보를 찾을 수 없습니다.');
@@ -163,7 +160,7 @@ export class ReserveBulkCommandService {
     const brief = this.generateBrief(command, arg);
 
     for (const turnIdx of uniqueTurnList) {
-      await (NationTurn as any).findOneAndUpdate(
+      await nationTurnRepository.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.nation_id': nationId,

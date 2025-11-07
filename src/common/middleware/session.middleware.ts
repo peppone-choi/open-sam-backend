@@ -51,7 +51,7 @@ export function setupSessionMiddleware() {
  */
 export function sessionMiddleware(req: Request, res: Response, next: NextFunction) {
   // Session 인스턴스를 req에 추가
-  (req as any).sessionInstance = Session.getInstance(req);
+  req.sessionInstance = Session.getInstance(req);
   next();
 }
 

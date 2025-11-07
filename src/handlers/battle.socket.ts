@@ -37,7 +37,7 @@ export class BattleSocketHandler {
     try {
       const { battleId, generalId } = data;
 
-      const battle = await (Battle as any).findOne({ battleId });
+      const battle = await Battle.findOne({ battleId });
       if (!battle) {
         socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
         return;
@@ -87,7 +87,7 @@ export class BattleSocketHandler {
     try {
       const { battleId, generalId, action } = data;
 
-      const battle = await (Battle as any).findOne({ battleId });
+      const battle = await Battle.findOne({ battleId });
       if (!battle) {
         socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
         return;
@@ -121,7 +121,7 @@ export class BattleSocketHandler {
     try {
       const { battleId, generalId } = data;
 
-      const battle = await (Battle as any).findOne({ battleId });
+      const battle = await Battle.findOne({ battleId });
       if (!battle) {
         socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
         return;

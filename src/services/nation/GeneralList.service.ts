@@ -1,7 +1,7 @@
-import { General } from '../../models/general.model';
-import { Troop } from '../../models/troop.model';
-import { Nation } from '../../models/nation.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { troopRepository } from '../../repositories/troop.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GeneralList Service
@@ -18,10 +18,7 @@ export class GeneralListService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -36,29 +33,20 @@ export class GeneralListService {
         return { success: false, message: '국가에 소속되어 있지 않습니다' };
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId);
       const sessionData = session?.data || {};
 
       const permission_level = this.checkSecretPermission(officerLevel, permission, penalty, sessionData);
 
-      const nation = await (Nation as any).findOne({
-        session_id: sessionId,
-        'data.nation': nationId
-      });
+      const nation = await nationRepository.findByNationNum(sessionId, nationId);
 
       if (!nation) {
         return { success: false, message: '국가를 찾을 수 없습니다' };
       }
 
-      const generalList = await (General as any).find({
-        session_id: sessionId,
-        'data.nation': nationId
-      }).sort({ 'data.turntime': 1 });
+      const generalList = await generalRepository.findByNation(sessionId, nationId);
 
-      const troops = await (Troop as any).find({
-        session_id: sessionId,
-        'data.nation': nationId
-      });
+      const troops = await troopRepository.findByNation(sessionId, nationId);
 
       const troopMap: Record<number, any> = {};
       troops.forEach(troop => {

@@ -14,7 +14,7 @@ export class RaiseNPCNation extends Action {
     const month = env['month'] || 1;
 
     // 소, 중 성만 선택 (level 5~6)
-        const allCities = await (City as any).find({
+        const allCities = await City.find({
       session_id: sessionId,
       level: { $gte: 5, $lte: 6 },
       nation: 0 // 빈 도시

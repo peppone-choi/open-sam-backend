@@ -26,7 +26,7 @@ export class che_백성동원 extends NationCommand {
     if (this.arg === null) return false;
     if (!('destCityID' in this.arg)) return false;
 
-    if ((CityConst as any).byID(this.arg['destCityID']) === null) return false;
+    if (CityConst.byID(this.arg['destCityID']) === null) return false;
 
     const destCityID = this.arg['destCityID'];
     this.arg = { destCityID };
@@ -40,7 +40,7 @@ export class che_백성동원 extends NationCommand {
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      (ConstraintHelper as any).AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand()
     ];
   }
 
@@ -52,7 +52,7 @@ export class che_백성동원 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.OccupiedCity(),
-      (ConstraintHelper as any).AvailableStrategicCommand()
+      ConstraintHelper.AvailableStrategicCommand()
     ];
   }
 
@@ -82,7 +82,7 @@ export class che_백성동원 extends NationCommand {
 
   public getBrief(): string {
     const commandName = this.constructor.getName();
-    const destCityName = (CityConst as any).byID(this.arg['destCityID'])?.name || '';
+    const destCityName = CityConst.byID(this.arg['destCityID'])?.name || '';
     return `【${destCityName}】에 ${commandName}`;
   }
 
@@ -91,7 +91,7 @@ export class che_백성동원 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalID = general!.getID();
@@ -105,7 +105,7 @@ export class che_백성동원 extends NationCommand {
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
 
-    const nationID = (general as any).getNationID();
+    const nationID = general.getNationID();
     const nationName = this!.nation['name'];
 
     const logger = general!.getLogger();
@@ -117,7 +117,7 @@ export class che_백성동원 extends NationCommand {
     const josaYi = JosaUtil.pick(generalName, '이');
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>백성동원</>을 하였습니다.`;
 
-    const targetGeneralList = await (db as any).queryFirstColumn(
+    const targetGeneralList = await db.queryFirstColumn(
       'SELECT no FROM general WHERE nation=%i AND no != %i',
       nationID,
       generalID

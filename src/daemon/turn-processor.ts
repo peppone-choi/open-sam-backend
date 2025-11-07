@@ -13,7 +13,7 @@ const PROCESS_INTERVAL_MS = parseInt(process.env.TURN_PROCESSOR_INTERVAL_MS || '
 async function processTurns() {
   try {
     // 활성 세션 조회 (status가 'running'이고 isunited가 2,3이 아닌 경우)
-    const sessions = await (Session as any).find({ 
+    const sessions = await Session.find({ 
       $or: [
         { status: 'running' },
         { 'data.status': { $ne: 'paused' } }

@@ -1,4 +1,5 @@
 import { GeneralCommand } from '../base/GeneralCommand';
+import { generalRepository } from '../../repositories/general.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
@@ -50,7 +51,7 @@ export class AbdicateToCommand extends GeneralCommand {
   protected async initWithArg(): Promise<void> {
     const destGeneralID = this.arg.destGeneralID;
     const sessionId = this.env['session_id'] || 'sangokushi_default';
-    const destGeneral = await (General as any).findOne({ 
+    const destGeneral = await generalRepository.findOneByFilter({ 
       session_id: sessionId,
       'data.no': destGeneralID 
     });
@@ -90,7 +91,7 @@ export class AbdicateToCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime(general.TURNTIME_HM);
 
@@ -145,8 +146,9 @@ export class AbdicateToCommand extends GeneralCommand {
       console.error('StaticEventHandler failed:', error);
     }
 
-    general.applyDB(db);
-    destGeneral.applyDB(db);
+    // 장수 데이터 저장
+    await general.save();
+    await destGeneral.save();
 
     return true;
   }
@@ -156,7 +158,7 @@ export class AbdicateToCommand extends GeneralCommand {
     const nationID = this.generalObj.getNationID();
     const generalID = this.generalObj.getID();
     
-    const destRawGenerals = await (General as any).find({
+    const destRawGenerals = await generalRepository.findByFilter({
       session_id: sessionId,
       nation: nationID,
       'data.no': { $ne: generalID }

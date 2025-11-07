@@ -1,5 +1,5 @@
-import { GeneralRecord } from '../../models/general_record.model';
-import { Session } from '../../models/session.model';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 export class GetWarLogService {
   static async execute(data: any, user?: any) {
@@ -9,7 +9,7 @@ export class GetWarLogService {
     const limit = parseInt(data.limit || '50') || 50;
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -34,11 +34,11 @@ export class GetWarLogService {
         query['data.id'] = { $lt: lastId };
       }
 
-      const records = await (GeneralRecord as any).find(query)
-        .select('data')
+      const records = await generalRecordRepository.findByFilter(query)
+        
         .sort({ 'data.id': -1 })
         .limit(limit)
-        .lean();
+        ;
 
       const logs = records.map(record => {
         const data = record.data as any;

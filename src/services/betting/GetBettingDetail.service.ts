@@ -1,5 +1,6 @@
+import { sessionRepository } from '../repositories/session.repository';
 import { Session } from '../../models/session.model';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../repositories/general.repository';
 import mongoose from 'mongoose';
 
 export class GetBettingDetailService {
@@ -17,7 +18,7 @@ export class GetBettingDetailService {
         };
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -95,9 +96,9 @@ export class GetBettingDetailService {
         remainPoint = previous[0];
       } else {
         if (generalId) {
-          const general = await (General as any).findOne({ session_id: sessionId, no: generalId })
-            .select('data')
-            .lean();
+          const general = await generalRepository.findBySessionAndNo(sessionId, generalId )
+            
+            ;
           if (general) {
             const genData = general.data as any || {};
             remainPoint = genData.gold || 0;

@@ -8,6 +8,9 @@ import { logger } from '../common/logger';
 import { NotFoundError, ConflictError } from '../common/errors/app-error';
 import * as fs from 'fs';
 import * as path from 'path';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
+import { generalRepository } from '../repositories/general.repository';
 
 /**
  * 세션 관리 서비스
@@ -224,9 +227,9 @@ export class SessionService {
     logger.info('세션 초기화 시작', { sessionId });
     
     // 게임 데이터 삭제
-    await (City as any).deleteMany({ session_id: sessionId });
-    await (Nation as any).deleteMany({ session_id: sessionId });
-    await (General as any).deleteMany({ session_id: sessionId });
+    await cityRepository.deleteManyByFilter({ session_id: sessionId });
+    await nationRepository.deleteManyByFilter({ session_id: sessionId });
+    await generalRepository.deleteManyByFilter({ session_id: sessionId });
     
     logger.info('기존 게임 데이터 삭제 완료', { sessionId });
     
@@ -266,9 +269,9 @@ export class SessionService {
     // console.log(`🗑️  세션 삭제: ${sessionId}`);
     
     // 게임 데이터 삭제
-    await (City as any).deleteMany({ session_id: sessionId });
-    await (Nation as any).deleteMany({ session_id: sessionId });
-    await (General as any).deleteMany({ session_id: sessionId });
+    await cityRepository.deleteManyByFilter({ session_id: sessionId });
+    await nationRepository.deleteManyByFilter({ session_id: sessionId });
+    await generalRepository.deleteManyByFilter({ session_id: sessionId });
     
     // 세션 설정 삭제
     await sessionRepository.deleteBySessionId(sessionId);
@@ -434,7 +437,7 @@ export class SessionService {
     // console.log(`🔧 커맨드 업데이트: ${sessionId} / ${commandId}`);
     
     // 기존 commands 가져오기
-    const commands = (session as any).commands || {};
+    const commands = session.commands || {};
     commands[commandId] = commandConfig;
     
     // 업데이트

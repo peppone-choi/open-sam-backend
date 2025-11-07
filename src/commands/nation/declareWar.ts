@@ -82,7 +82,7 @@ export class che_선전포고 extends NationCommand {
 
   public getBrief(): string {
     const commandName = this.constructor.getName();
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])['name'];
     return `【${destNationName}】에 ${commandName}`;
   }
@@ -92,7 +92,7 @@ export class che_선전포고 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalName = general!.getName();
@@ -110,14 +110,14 @@ export class che_선전포고 extends NationCommand {
     const josaYiNation = JosaUtil.pick(nationName, '이');
 
     const logger = general!.getLogger();
-    const destLogger = (ActionLogger as any);
+    const destLogger = ActionLogger;
 
     logger.pushGeneralActionLog(`<D><b>${destNationName}</b></>에 선전 포고 했습니다.<1>${date}</>`);
     logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 선전 포고`);
-    (logger as any).pushNationalHistoryLog(
+    logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 선전 포고`
     );
-    (destLogger as any).pushNationalHistoryLog(
+    destLogger.pushNationalHistoryLog(
       `<D><b>${nationName}</b></>의 <Y>${generalName}</>${josaYi} 아국에 선전 포고`
     );
 
@@ -161,7 +161,7 @@ export class che_선전포고 extends NationCommand {
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
     await general!.applyDB(db);
-    await (ActionLogger as any).flush();
+    await ActionLogger.flush();
 
     return true;
   }
@@ -171,11 +171,11 @@ export class che_선전포고 extends NationCommand {
     const nationID = generalObj!.getNationID();
     const nationList = [];
     const testTurn = new LastTurn(this.constructor.getName(), null, this.getPreReqTurn());
-    const getAllNationStaticInfo = (global as any).getAllNationStaticInfo;
+    const getAllNationStaticInfo = global.getAllNationStaticInfo;
 
     for (const destNation of getAllNationStaticInfo()) {
-      (testTurn as any).setArg({ destNationID: destNation['nation'] });
-      const testCommand = new (this.constructor as any)(
+      testTurn.setArg({ destNationID: destNation['nation'] });
+      const testCommand = new this.constructor(
         generalObj,
         this.env,
         testTurn,

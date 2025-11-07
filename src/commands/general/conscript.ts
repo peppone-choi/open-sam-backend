@@ -22,8 +22,8 @@ export class ConscriptCommand extends GeneralCommand {
   protected currCrewType: any = null;
 
   protected static initStatic(): void {
-    this.defaultTrain = (GameConst as any).defaultTrainLow || 20;
-    this.defaultAtmos = (GameConst as any).defaultAtmosLow || 20;
+    this.defaultTrain = GameConst.defaultTrainLow || 20;
+    this.defaultAtmos = GameConst.defaultAtmosLow || 20;
   }
 
   protected argTest(): boolean {
@@ -145,7 +145,7 @@ export class ConscriptCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
     const reqCrew = this.maxCrew;
@@ -208,7 +208,7 @@ export class ConscriptCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler, tryUniqueItemLottery
     // TODO: general.setAuxVar('armType', reqCrewType.armType)
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

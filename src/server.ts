@@ -275,7 +275,7 @@ async function start() {
     const { Session } = await import('./models/session.model');
     
     const sessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
-    let session = await (Session as any).findOne({ session_id: sessionId });
+    let session = await Session.findOne({ session_id: sessionId });
     
     if (!session) {
       logger.info('기본 삼국지 세션 생성 중...');
@@ -284,7 +284,7 @@ async function start() {
       // 세션이 DB에 저장되었는지 확인 (재시도)
       let retries = 3;
       while (retries > 0) {
-        session = await (Session as any).findOne({ session_id: sessionId });
+        session = await Session.findOne({ session_id: sessionId });
         if (session) break;
         await new Promise(resolve => setTimeout(resolve, 100)); // 100ms 대기
         retries--;
@@ -301,7 +301,7 @@ async function start() {
       
       // 도시가 없으면 초기화
       const { City } = await import('./models/city.model');
-      const cityCount = await (City as any).countDocuments({ session_id: sessionId });
+      const cityCount = await City.countDocuments({ session_id: sessionId });
       if (cityCount === 0) {
         logger.info('도시가 없어 초기화를 진행합니다...');
         await InitService.initializeSession(sessionId);

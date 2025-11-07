@@ -1,3 +1,9 @@
+/**
+ * Misc Repository - Instance Export
+ * Auto-generated to support both static and instance methods
+ */
+
+// Re-export the static class for backwards compatibility
 import mongoose from 'mongoose';
 
 
@@ -37,3 +43,6 @@ export class MiscRepository {
     return await model.deleteMany({ session_id: sessionId, ...filter });
   }
 }
+
+// Add instance export
+export const miscRepository = new MiscRepository();

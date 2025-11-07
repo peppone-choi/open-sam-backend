@@ -1,6 +1,6 @@
 import { SelectNpcToken } from '../../models/select_npc_token.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * GetSelectNpcToken Service
@@ -27,7 +27,7 @@ export class GetSelectNpcTokenService {
 
     try {
       // 세션 정보 확인
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -35,7 +35,7 @@ export class GetSelectNpcTokenService {
         };
       }
 
-      const sessionData = (session as any).config || session.data || {};
+      const sessionData = session.config || session.data || {};
       const npcmode = sessionData.npcmode || 0;
       const turnterm = sessionData.turnterm || 60; // 분 단위
 
@@ -47,10 +47,7 @@ export class GetSelectNpcTokenService {
       }
 
       // 기존 장수 확인
-      const existingGeneral = await (General as any).findOne({
-        session_id: sessionId,
-        owner: userId.toString()
-      });
+      const existingGeneral = await generalRepository.findBySessionAndOwner(sessionId, userId.toString());
 
       if (existingGeneral) {
         return {
@@ -66,11 +63,11 @@ export class GetSelectNpcTokenService {
       const pickMoreFrom = new Date(now.getTime() + pickMoreSecond * 1000);
 
       // 기존 토큰 조회
-      const existingToken = await (SelectNpcToken as any).findOne({
+      const existingToken = await SelectNpcToken.findOne({
         session_id: sessionId,
         'data.owner': userId.toString(),
         'data.valid_until': { $gte: now }
-      }).lean();
+      });
 
       if (existingToken && refresh) {
         const tokenData = existingToken.data || {};
@@ -102,7 +99,7 @@ export class GetSelectNpcTokenService {
           // 새로 뽑기
           const newPick = await this.generateNpcPick(sessionId, userId, pickResult);
           
-          await (SelectNpcToken as any).updateOne(
+          await SelectNpcToken.updateOne(
         {
           session_id: sessionId,
           'data.owner': userId.toString()
@@ -149,13 +146,13 @@ export class GetSelectNpcTokenService {
       const pickResult = await this.generateNpcPick(sessionId, userId, {});
       
       // 만료된 토큰 삭제
-      await (SelectNpcToken as any).deleteMany({
+      await SelectNpcToken.deleteMany({
         session_id: sessionId,
         'data.valid_until': { $lt: now }
       });
 
       // 새 토큰 생성
-      await (SelectNpcToken as any).create({
+      await SelectNpcToken.create({
         session_id: sessionId,
         data: {
           owner: userId.toString(),
@@ -184,20 +181,20 @@ export class GetSelectNpcTokenService {
 
   private static async generateNpcPick(sessionId: string, userId: number, keepPick: any): Promise<any> {
     // NPC 장수 목록 조회 (npc=2인 장수들)
-    const npcGenerals = await (General as any).find({
+    const npcGenerals = await generalRepository.findByFilter({
       session_id: sessionId,
       npc: 2
-    }).limit(100).lean();
+    }).limit(100);
 
     // 다른 사용자가 예약한 NPC 제외
     const reservedNpcs = new Set<number>();
     const now = new Date();
     
-    const otherTokens = await (SelectNpcToken as any).find({
+    const otherTokens = await SelectNpcToken.find({
       session_id: sessionId,
       'data.owner': { $ne: userId.toString() },
       'data.valid_until': { $gte: now }
-    }).lean();
+    });
 
     for (const token of otherTokens) {
       const pickResult = token.data?.pick_result || {};

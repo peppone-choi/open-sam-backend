@@ -1,7 +1,7 @@
-import { Session } from '../../models/session.model';
-import { Nation } from '../../models/nation.model';
-import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * GetJoinInfo Service
@@ -15,7 +15,7 @@ export class GetJoinInfoService {
 
     try {
       // 1. 세션 정보 조회
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -30,11 +30,11 @@ export class GetJoinInfoService {
       const blockCreate = gameEnv.block_general_create || 0;
       
       // 3. 국가 목록 조회 (참가 가능한 국가들) - 재야(0) 제외
-      const nations = await (Nation as any).find({
+      const nations = await nationRepository.findByFilter({
         session_id: sessionId
       })
         .sort({ 'data.nation': 1 })
-        .lean();
+        ;
 
       const nationList = nations
         .map((nation: any) => {
@@ -56,13 +56,13 @@ export class GetJoinInfoService {
       let inheritPoints = 0;
       if (userId) {
         // 이전 장수 조회 (같은 사용자의 이전 장수)
-        const previousGeneral = await (General as any).findOne({
+        const previousGeneral = await generalRepository.findBySessionAndOwner({
           session_id: sessionId,
           owner: String(userId),
           'data.npc': { $lt: 2 }
         })
           .sort({ 'data.die_turn': -1 })
-          .lean();
+          ;
 
         if (previousGeneral && previousGeneral.data) {
           const genData = previousGeneral.data;
@@ -79,10 +79,10 @@ export class GetJoinInfoService {
       const defaultStatTotal = gameEnv.defaultStatTotal || 240;
 
       // 6. 초기 위치 가능한 도시 목록 (모든 도시)
-      const availableCities = await (City as any).find({
+      const availableCities = await cityRepository.findByFilter({
         session_id: sessionId
       })
-        .lean();
+        ;
 
       const cityList = availableCities.map((city: any) => {
         const cityData = city.data || {};

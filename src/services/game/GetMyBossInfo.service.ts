@@ -3,7 +3,7 @@
  * 내 상관 정보 조회 (j_myBossInfo.php)
  */
 
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { logger } from '../../common/logger';
 
 export class GetMyBossInfoService {
@@ -20,10 +20,7 @@ export class GetMyBossInfoService {
 
     try {
       // 자신의 장수 조회
-      const me = await (General as any).findOne({
-        session_id: sessionId,
-        owner: String(userId)
-      }).lean();
+      const me = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
       if (!me) {
         return {
@@ -42,14 +39,14 @@ export class GetMyBossInfoService {
 
       if (myNation > 0) {
         // 국가 상관: 같은 국가, 더 높은 officer_level (군주 제외)
-        const nationBoss = await (General as any)
+        const nationBoss = await General
           .findOne({
             session_id: sessionId,
             'data.nation': myNation,
             'data.officer_level': { $gt: myOfficerLevel, $lt: 12 }
           })
           .sort({ 'data.officer_level': -1 })
-          .lean();
+          ;
 
         if (nationBoss) {
           const bossData = nationBoss.data || {};
@@ -64,14 +61,14 @@ export class GetMyBossInfoService {
 
         // 도시 상관: 같은 도시, 더 높은 officer_level
         if (myCity > 0 && !boss) {
-          const cityBoss = await (General as any)
+          const cityBoss = await General
             .findOne({
               session_id: sessionId,
               'data.city': myCity,
               'data.officer_level': { $gt: myOfficerLevel, $lt: 5 } // 도시 관직 범위
             })
             .sort({ 'data.officer_level': -1 })
-            .lean();
+            ;
 
           if (cityBoss) {
             const bossData = cityBoss.data || {};
@@ -86,13 +83,13 @@ export class GetMyBossInfoService {
         }
 
         // 군주 조회
-        const chief = await (General as any)
+        const chief = await General
           .findOne({
             session_id: sessionId,
             'data.nation': myNation,
             'data.officer_level': 12
           })
-          .lean();
+          ;
 
         if (chief) {
           const chiefData = chief.data || {};

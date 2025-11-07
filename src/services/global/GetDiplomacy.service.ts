@@ -1,8 +1,9 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { City } from '../../models/city.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { cityRepository } from '../../repositories/city.repository';
 import { NgDiplomacy } from '../../models/ng_diplomacy.model';
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { ngDiplomacyRepository } from '../../repositories/ng-diplomacy.repository';
 
 /**
  * GetDiplomacy Service
@@ -16,7 +17,7 @@ export class GetDiplomacyService {
     
     try {
       // Load session
-      const session: any = await (Session as any).findOne({ session_id: sessionId });
+      const session: any = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -27,10 +28,7 @@ export class GetDiplomacyService {
       // Get user's nation ID
       let myNationID = 0;
       if (userId) {
-        const general: any = await (General as any).findOne({ 
-          session_id: sessionId, 
-          owner: userId 
-        }).select('data').lean();
+        const general: any = await generalRepository.findBySessionAndOwner(sessionId, userId);
         
         if (general) {
           const genData: any = general.data as any || {};
@@ -39,7 +37,7 @@ export class GetDiplomacyService {
       }
 
       // Get all nations (filter by level > 0)
-      const nationsData: any = await (Nation as any).find({ session_id: sessionId }).lean();
+      const nationsData: any = await nationRepository.findByFilter({ session_id: sessionId });
       
       const nations: Record<number, any> = {};
       for (const nation of nationsData) {
@@ -67,9 +65,9 @@ export class GetDiplomacyService {
       }
 
       // Get cities and build conflict info
-      const cities: any = await (City as any).find({ session_id: sessionId })
-        .select('city name nation conflict')
-        .lean();
+      const cities: any = await cityRepository.findByFilter({ session_id: sessionId })
+        
+        ;
 
       const realConflict: any[] = [];
       
@@ -110,7 +108,7 @@ export class GetDiplomacyService {
       };
 
       // Get diplomacy relationships
-      const diplomacyData: any = await (NgDiplomacy as any).find({ session_id: sessionId }).lean();
+      const diplomacyData: any = await ngDiplomacyRepository.findByFilter({ session_id: sessionId });
       
       const diplomacyList: Record<number, Record<number, number>> = {};
       

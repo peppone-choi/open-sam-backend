@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * SetNPCControl Service
@@ -14,7 +14,7 @@ export class SetNPCControlService {
     
     try {
       if (!generalId) {
-        const general = await (General as any).findOne({
+        const general = await generalRepository.findBySessionAndOwner({
           session_id: sessionId,
           owner: String(userId),
           'data.npc': { $lt: 2 }
@@ -28,7 +28,7 @@ export class SetNPCControlService {
         }
       }
       
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });

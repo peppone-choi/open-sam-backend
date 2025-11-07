@@ -178,7 +178,7 @@ router.post('/general-list', async (req: Request, res: Response, next: NextFunct
     const sessionId = req.body.session_id || req.query.session_id || req.body.serverID || req.query.serverID || 'sangokushi_default';
     
     const { General } = await import('../models');
-    const generals = await (General as any).find({ session_id: sessionId })
+    const generals = await General.find({ session_id: sessionId })
       .sort({ 'data.experience': -1 })
       .limit(1000)
       .lean();

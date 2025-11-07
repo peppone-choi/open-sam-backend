@@ -1,5 +1,7 @@
 import { Auction } from '../../models/auction.model';
 import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { auctionRepository } from '../../repositories/auction.repository';
 
 export class OpenSellRiceAuctionService {
   static async execute(data: any, user?: any) {
@@ -33,7 +35,7 @@ export class OpenSellRiceAuctionService {
         throw new Error('즉시거래가는 시작판매가의 110% 이상이어야 합니다.');
       }
       
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -47,7 +49,7 @@ export class OpenSellRiceAuctionService {
         throw new Error(`기본 금 ${minimumGold}은 거래할 수 없습니다.`);
       }
 
-      const existingAuction = await (Auction as any).findOne({
+      const existingAuction = await auctionRepository.findOneByFilter({
         session_id: sessionId,
         hostGeneralId: generalId,
         type: { $in: ['BuyRice', 'SellRice'] },
@@ -62,7 +64,7 @@ export class OpenSellRiceAuctionService {
       const turnTerm = 10;
       const closeDate = new Date(now.getTime() + closeTurnCnt * turnTerm * 60 * 1000);
 
-      const auction = await (Auction as any).create({
+      const auction = await auctionRepository.create({
         session_id: sessionId,
         type: 'SellRice',
         finished: false,

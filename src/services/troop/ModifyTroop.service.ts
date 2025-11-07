@@ -2,6 +2,8 @@ import { TroopRepository } from '../../repositories/troop.repository';
 import { General } from '../../models/general.model';
 import { Troop } from '../../models/troop.model';
 import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 
 export class ModifyTroopService {
   static async execute(data: any, user?: any) {
@@ -21,7 +23,7 @@ export class ModifyTroopService {
         return { success: false, message: '수정할 부대 정보가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -53,7 +55,7 @@ export class ModifyTroopService {
         updateData['data.name'] = troopData.name;
       }
 
-      const result = await (Troop as any).updateOne(
+      const result = await troopRepository.updateOneByFilter(
         { 
           session_id: sessionId, 
           'data.troop_leader': troopId,

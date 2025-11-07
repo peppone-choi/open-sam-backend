@@ -5,17 +5,17 @@ const router = Router();
 
 router.get('/command/reserved', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId }).select('no').lean();
+    const general = await General.findOne({ owner: userId }).select('no').lean();
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
-    const commands: any[] = await (GeneralTurn as any).find({ generalId: general.no })
+    const commands: any[] = await GeneralTurn.find({ generalId: general.no })
       .sort({ turnIdx: 1 })
       .lean();
 
@@ -36,19 +36,19 @@ router.get('/command/reserved', async (req: Request, res: Response) => {
 
 router.post('/command/push', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId }).select('no').lean();
+    const general = await General.findOne({ owner: userId }).select('no').lean();
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
     const { action, arg, brief } = req.body;
 
-    const nextTurn: any = await (GeneralTurn as any).findOne({ generalId: general.no })
+    const nextTurn: any = await GeneralTurn.findOne({ generalId: general.no })
       .sort({ turnIdx: -1 })
       .lean();
 
@@ -73,19 +73,19 @@ router.post('/command/push', async (req: Request, res: Response) => {
 
 router.delete('/command/:turnIdx', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId }).select('no').lean();
+    const general = await General.findOne({ owner: userId }).select('no').lean();
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
     const turnIdx = parseInt(req.params.turnIdx);
 
-    await (GeneralTurn as any).deleteOne({
+    await GeneralTurn.deleteOne({
       generalId: general.no,
       turnIdx,
     });

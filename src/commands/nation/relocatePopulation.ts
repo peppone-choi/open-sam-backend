@@ -87,7 +87,7 @@ export class che_이호경식 extends NationCommand {
 
   public getBrief(): string {
     const commandName = che_이호경식.getName();
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])?.['name'] || '알 수 없음';
     return `【${destNationName}】에 ${commandName}`;
   }
@@ -97,7 +97,7 @@ export class che_이호경식 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -153,13 +153,13 @@ export class che_이호경식 extends NationCommand {
     }
 
     const destNationLogger = new ActionLogger(0, destNationID, year, month);
-    (destNationLogger as any).pushNationalHistoryLog(
+    destNationLogger.pushNationalHistoryLog(
       `<D><b>${nationName}</b></>의 <Y>${generalName}</>${josaYi} 아국에 <M>${commandName}</>${josaUl} 발동`
     );
     await destNationLogger.flush();
 
     logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`);
-    (logger as any).pushNationalHistoryLog(
+    logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`
     );
 
@@ -182,7 +182,7 @@ export class che_이호경식 extends NationCommand {
       [nationID, destNationID, nationID, destNationID]
     );
 
-    const SetNationFront = (global as any).SetNationFront;
+    const SetNationFront = global.SetNationFront;
     await SetNationFront(nationID);
     await SetNationFront(destNationID);
 
@@ -197,10 +197,10 @@ export class che_이호경식 extends NationCommand {
     const nationID = generalObj!.getNationID();
     const nationList = [];
     const testTurn = new LastTurn(che_이호경식.getName(), null, this.getPreReqTurn());
-    const getAllNationStaticInfo = (global as any).getAllNationStaticInfo;
+    const getAllNationStaticInfo = global.getAllNationStaticInfo;
 
     for (const destNation of getAllNationStaticInfo()) {
-      (testTurn as any).setArg({ destNationID: destNation['nation'] });
+      testTurn.setArg({ destNationID: destNation['nation'] });
       const testCommand = new che_이호경식(generalObj, this.env, testTurn, {
         destNationID: destNation['nation']
       });

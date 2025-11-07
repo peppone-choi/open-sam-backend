@@ -38,7 +38,7 @@ const TTL = {
 export async function getSession(sessionId: string) {
   return cacheService.getOrLoad(
     cacheKeys.session(sessionId),
-    () => (Session as any).findOne({ session_id: sessionId }).lean(),
+    () => Session.findOne({ session_id: sessionId }).lean(),
     TTL.SESSION
   );
 }
@@ -49,7 +49,7 @@ export async function getSession(sessionId: string) {
 export async function getGeneral(sessionId: string, generalId: number) {
   return cacheService.getOrLoad(
     cacheKeys.general(sessionId, generalId),
-    () => (General as any).findOne({ 
+    () => General.findOne({ 
       session_id: sessionId,
       'data.no': generalId 
     }).lean(),
@@ -63,7 +63,7 @@ export async function getGeneral(sessionId: string, generalId: number) {
 export async function getGeneralByNo(sessionId: string, no: number) {
   return cacheService.getOrLoad(
     cacheKeys.generalByNo(sessionId, no),
-    () => (General as any).findOne({ 
+    () => General.findOne({ 
       session_id: sessionId,
       no: no 
     }).lean(),
@@ -77,7 +77,7 @@ export async function getGeneralByNo(sessionId: string, no: number) {
 export async function getCity(sessionId: string, cityId: number) {
   return cacheService.getOrLoad(
     cacheKeys.city(sessionId, cityId),
-    () => (City as any).findOne({ 
+    () => City.findOne({ 
       session_id: sessionId,
       city: cityId 
     }).lean(),
@@ -91,7 +91,7 @@ export async function getCity(sessionId: string, cityId: number) {
 export async function getNation(sessionId: string, nationId: number) {
   return cacheService.getOrLoad(
     cacheKeys.nation(sessionId, nationId),
-    () => (Nation as any).findOne({ 
+    () => Nation.findOne({ 
       session_id: sessionId,
       nation: nationId 
     }).lean(),

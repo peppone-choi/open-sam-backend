@@ -1,4 +1,5 @@
 import { Auction } from '../../models/auction.model';
+import { auctionRepository } from '../../repositories/auction.repository';
 
 export class GetUniqueItemAuctionListService {
   static async execute(data: any, user?: any) {
@@ -6,7 +7,7 @@ export class GetUniqueItemAuctionListService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const auctions = await (Auction as any).find({
+      const auctions = await auctionRepository.findByFilter({
         session_id: sessionId,
         type: 'UniqueItem'
       }).sort({ closeDate: 1 });

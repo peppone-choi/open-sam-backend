@@ -1,5 +1,5 @@
 import { GlobalRepository } from '../../repositories/global.repository';
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { CacheManager } from '../../cache/CacheManager';
 import { cacheService } from '../../common/cache/cache.service';
 import * as fs from 'fs';

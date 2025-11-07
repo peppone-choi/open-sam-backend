@@ -1,5 +1,4 @@
-import { Battle } from '../../models/battle.model';
-import { BattleMapTemplate } from '../../models/battlemap-template.model';
+import { battleRepository, battleMapTemplateRepository } from '../../repositories/battle.repository';
 
 export class GetBattleStateService {
   static async execute(data: any, user?: any) {
@@ -10,7 +9,7 @@ export class GetBattleStateService {
         return { success: false, message: 'battleId가 필요합니다' };
       }
 
-      const battle = await (Battle as any).findOne({ battleId });
+      const battle = await battleRepository.findByBattleId(battleId);
 
       if (!battle) {
         return { success: false, message: '전투를 찾을 수 없습니다' };
@@ -21,10 +20,10 @@ export class GetBattleStateService {
       let terrainGrid: string[][] = [];
       
       try {
-        mapTemplate = await (BattleMapTemplate as any).findOne({
-          session_id: battle.session_id,
-          city_id: battle.targetCityId
-        });
+        mapTemplate = await battleMapTemplateRepository.findBySessionAndCity(
+          battle.session_id,
+          battle.targetCityId
+        );
 
         if (mapTemplate && mapTemplate.terrain) {
           // 40x40 그리드 초기화

@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * KickGeneral Service
@@ -20,19 +20,13 @@ export class KickGeneralService {
         return { success: false, message: '대상 장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const targetGeneral = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': targetGeneralId
-      });
+      const targetGeneral = await generalRepository.findBySessionAndNo(sessionId, targetGeneralId);
 
       if (!targetGeneral) {
         return { success: false, message: '대상 장수를 찾을 수 없습니다' };
@@ -59,33 +53,15 @@ export class KickGeneralService {
         return { success: false, message: '자신보다 직위가 높거나 같은 장수는 추방할 수 없습니다' };
       }
 
-      await (General as any).updateOne(
-        {
-          session_id: sessionId,
-          'data.no': targetGeneralId
-        },
-        {
-          $set: {
-            'data.nation': 0,
-            'data.officer_level': 1,
-            'data.belong': 0,
-            'data.permission': 'normal',
-            'data.troop': 0
-          }
-        }
-      );
+      await generalRepository.updateBySessionAndNo(sessionId, targetGeneralId, {
+        'data.nation': 0,
+        'data.officer_level': 1,
+        'data.belong': 0,
+        'data.permission': 'normal',
+        'data.troop': 0
+      });
 
-      await (Nation as any).updateOne(
-        {
-          session_id: sessionId,
-          'data.nation': nationId
-        },
-        {
-          $inc: {
-            'data.gennum': -1
-          }
-        }
-      );
+      await nationRepository.incrementGennum(sessionId, nationId, -1);
 
       return {
         success: true,

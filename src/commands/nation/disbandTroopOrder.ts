@@ -1,4 +1,5 @@
 import '../../utils/function-extensions';
+import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
 import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
@@ -50,7 +51,8 @@ export class che_부대탈퇴지시 extends NationCommand {
   }
 
   protected async initWithArg(): Promise<void> {
-    const destGeneral = await (General as any).createObjFromDB(this.arg['destGeneralID']);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
 
     if (this.arg['destGeneralID'] === this.getGeneral()?.getID()) {
@@ -83,7 +85,7 @@ export class che_부대탈퇴지시 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalName = general!.getName();
@@ -120,11 +122,11 @@ export class che_부대탈퇴지시 extends NationCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const nationID = this.getNationID();
     const troops = await db.query('SELECT * FROM troop WHERE nation=%i', [nationID]);
     const troopsDict = Util.convertArrayToDict(troops, 'troop_leader');
-    const destRawGenerals = await (db as any).queryAllLists(
+    const destRawGenerals = await db.queryAllLists(
       'SELECT no,name,officer_level,npc,gold,rice,leadership,strength,intel,city,crew,train,atmos,troop FROM general WHERE nation = %i ORDER BY npc,binary(name)',
       [nationID]
     );
@@ -149,7 +151,7 @@ export class che_부대탈퇴지시 extends NationCommand {
           'atmos',
           'troopID'
         ],
-        cities: await (global as any).JSOptionsForCities()
+        cities: await global.JSOptionsForCities()
       }
     };
   }

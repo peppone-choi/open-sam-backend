@@ -131,7 +131,7 @@ export class RelationHelper {
     if (!fromEntity) return null;
     
     // 관계 필드 값 추출
-    const fieldValue = (fromEntity as any)[relationConfig.viaField];
+    const fieldValue = fromEntity[relationConfig.viaField];
     if (!fieldValue) return null;
     
     // RoleRef 생성
@@ -158,7 +158,7 @@ export class RelationHelper {
     const fromEntity = await RoleRepository.get(fromRef);
     if (!fromEntity) return [];
     
-    const fieldValue = (fromEntity as any)[relationConfig.viaField];
+    const fieldValue = fromEntity[relationConfig.viaField];
     
     if (!fieldValue) return [];
     

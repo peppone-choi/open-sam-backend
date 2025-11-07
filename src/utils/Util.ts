@@ -327,7 +327,7 @@ export class Util {
     const result: Record<string, any> = {};
     for (const [dictKey, value] of Object.entries(dict)) {
       if (typeof value === 'object' && value !== null && key in value) {
-        result[dictKey] = (value as any)[key];
+        result[dictKey] = value[key];
       }
     }
     return result;

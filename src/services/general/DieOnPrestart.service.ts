@@ -1,8 +1,8 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { GeneralRecord } from '../../models/general_record.model';
-import { GeneralTurn } from '../../models/general_turn.model';
-import { WorldHistory } from '../../models/world_history.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
 
 /**
  * DieOnPrestart Service (사전 삭제)
@@ -24,18 +24,18 @@ export class DieOnPrestartService {
     }
 
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId);
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
 
       const gameEnv = session.data || {};
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        owner: userId.toString(),
-        'data.npc': 0
-      });
+      const general = await generalRepository.findBySessionAndOwner(
+        sessionId,
+        userId.toString(),
+        { 'data.npc': 0 }
+      );
 
       if (!general) {
         return { success: false, message: '장수가 없습니다' };
@@ -52,7 +52,7 @@ export class DieOnPrestartService {
       const generalNo = general.data?.no;
       const generalName = general.data?.name || '무명';
 
-      await (WorldHistory as any).create({
+      await worldHistoryRepository.create({
         session_id: sessionId,
         year: gameEnv.year || 184,
         month: gameEnv.month || 1,
@@ -63,17 +63,17 @@ export class DieOnPrestartService {
         date: new Date()
       });
 
-      await (GeneralTurn as any).deleteMany({
+      await generalTurnRepository.deleteMany({
         session_id: sessionId,
         general_id: generalNo
       });
 
-      await (GeneralRecord as any).deleteMany({
+      await generalRecordRepository.deleteMany({
         session_id: sessionId,
         general_id: generalNo
       });
 
-      await (General as any).deleteOne({
+      await generalRepository.deleteByFilter({
         session_id: sessionId,
         'data.no': generalNo
       });

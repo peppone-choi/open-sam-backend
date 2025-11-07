@@ -50,7 +50,7 @@ export abstract class Auction {
     // MongoDB에 경매 생성
     const { Auction } = await import('../../models/auction.model');
     try {
-      const auction = await (Auction as any).create(info);
+      const auction = await Auction.create(info);
       return auction._id;
     } catch (error: any) {
       return `경매 생성 실패: ${error.message}`;

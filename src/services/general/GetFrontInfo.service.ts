@@ -1,12 +1,13 @@
 import { generalRepository } from '../../repositories/general.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
-import { GeneralRecord } from '../../models/general_record.model';
-import { WorldHistory } from '../../models/world_history.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
 import * as fs from 'fs';
 import * as path from 'path';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
 /**
  * GetFrontInfo Service  
@@ -38,13 +39,13 @@ export class GetFrontInfoService {
       
       if (generalId) {
         // generalId로 직접 조회
-        general = await (General as any).findOne({
+        general = await generalRepository.findBySessionAndNo({
           session_id: sessionId,
           'data.no': generalId
         });
       } else if (userId) {
         // userId로 owner 필드를 통해 조회
-        general = await (General as any).findOne({
+        general = await generalRepository.findBySessionAndOwner({
           session_id: sessionId,
           owner: String(userId),
           'data.npc': { $lt: 2 } // NPC가 아닌 실제 플레이어 장수
@@ -134,7 +135,7 @@ export class GetFrontInfoService {
     }
     
     // SocketManager를 사용할 수 없으면 세션 데이터에서 가져오기
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId );
     const data = session?.data || {};
     return Array.isArray(data.online_nation) ? data.online_nation.join(',') : (data.online_nation || null);
   }
@@ -154,7 +155,7 @@ export class GetFrontInfoService {
     }
     
     // SocketManager를 사용할 수 없으면 세션 데이터에서 가져오기
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId );
     const data = session?.data || {};
     return data.online_user_cnt || null;
   }
@@ -163,7 +164,7 @@ export class GetFrontInfoService {
    * 전역 게임 정보 생성
    */
   private static async generateGlobalInfo(sessionId: string) {
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId );
     if (!session) {
       throw new Error('세션을 찾을 수 없습니다');
     }
@@ -171,7 +172,7 @@ export class GetFrontInfoService {
     const data = session.data || {};
     
     // 장수 통계
-    const genCount = await (General as any).aggregate([
+    const genCount = await General.aggregate([
       { $match: { session_id: sessionId } },
       { $group: { _id: '$data.npc', count: { $sum: 1 } } }
     ]);
@@ -247,7 +248,7 @@ export class GetFrontInfoService {
     nationId: number,
     lastNationNoticeDate: string
   ) {
-    const nation = await (Nation as any).findOne({
+    const nation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': nationId
     });
@@ -259,13 +260,13 @@ export class GetFrontInfoService {
     const nationData = nation.data || {};
 
     // 국가 인구 통계 (data.nation 또는 nation 필드 확인)
-    const cities = await (City as any).find({
+    const cities = await cityRepository.findByFilter({
       session_id: sessionId,
       $or: [
         { 'data.nation': nationId },
         { nation: nationId }
       ]
-    }).lean();
+    });
 
     const population = {
       cityCnt: cities.length,
@@ -274,7 +275,7 @@ export class GetFrontInfoService {
     };
 
     // 국가 병력 통계 (data.nation 또는 nation 필드 확인, npc가 5가 아닌 것만)
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       $and: [
         {
@@ -292,7 +293,7 @@ export class GetFrontInfoService {
           ]
         }
       ]
-    }).lean();
+    });
 
     const crew = {
       generalCnt: generals.length,
@@ -304,11 +305,11 @@ export class GetFrontInfoService {
     };
 
     // 고위 관직자 조회 (군주, 태사)
-    const topChiefs = await (General as any).find({
+    const topChiefs = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationId,
       'data.officer_level': { $in: [11, 12] }
-    }).select('data.officer_level data.no data.name data.npc').lean();
+    });
     
     const topChiefsMap: Record<number, any> = {};
     topChiefs.forEach((g: any) => {
@@ -506,7 +507,7 @@ export class GetFrontInfoService {
     cityId: number,
     currentNationId: number
   ) {
-    const city = await (City as any).findOne({
+    const city = await cityRepository.findOneByFilter({
       session_id: sessionId,
       city: cityId
     });
@@ -523,7 +524,7 @@ export class GetFrontInfoService {
     let nationColor = '#000000';
 
     if (cityNationId !== 0) {
-      const nation = await (Nation as any).findOne({
+      const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': cityNationId
       });
@@ -539,11 +540,11 @@ export class GetFrontInfoService {
     }
 
     // 도시 관리 (태수, 도독 등)
-    const officers = await (General as any).find({
+    const officers = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.officer_city': cityId,
       'data.officer_level': { $in: [2, 3, 4] }
-    }).select('data.officer_level data.name data.npc');
+    });
 
     const officerList: any = { 4: null, 3: null, 2: null };
     officers.forEach(officer => {
@@ -608,17 +609,17 @@ export class GetFrontInfoService {
     lastGeneralRecordID: number
   ) {
     // 역사 기록
-    const history = await (WorldHistory as any).find({
+    const history = await worldHistoryRepository.findByFilter({
       session_id: sessionId,
       'data.nation_id': 0,
       'data.id': { $gte: lastWorldHistoryID }
     })
       .sort({ 'data.id': -1 })
       .limit(this.ROW_LIMIT + 1)
-      .select('data.id data.text');
+      ;
 
     // 전역 기록
-    const globalRecord = await (GeneralRecord as any).find({
+    const globalRecord = await generalRecordRepository.findByFilter({
       session_id: sessionId,
       'data.general_id': 0,
       'data.log_type': 'history',
@@ -626,10 +627,10 @@ export class GetFrontInfoService {
     })
       .sort({ 'data.id': -1 })
       .limit(this.ROW_LIMIT + 1)
-      .select('data.id data.text');
+      ;
 
     // 장수 행동 기록
-    const generalRecord = await (GeneralRecord as any).find({
+    const generalRecord = await generalRecordRepository.findByFilter({
       session_id: sessionId,
       'data.general_id': generalId,
       'data.log_type': 'action',
@@ -637,7 +638,7 @@ export class GetFrontInfoService {
     })
       .sort({ 'data.id': -1 })
       .limit(this.ROW_LIMIT + 1)
-      .select('data.id data.text');
+      ;
 
     return {
       history: history.map(h => [h.data?.id, h.data?.text]),
@@ -681,7 +682,7 @@ export class GetFrontInfoService {
   private static async getReservedCommand(sessionId: string, generalId: number): Promise<any[] | null> {
     try {
       const GeneralTurn = (await import('../../models/general_turn.model')).GeneralTurn;
-      const rawTurns = await (GeneralTurn as any).find({
+      const rawTurns = await generalTurnRepository.findByFilter({
         session_id: sessionId,
         'data.general_id': generalId
       }).sort({ 'data.turn_idx': 1 }).limit(30);

@@ -9,6 +9,9 @@ import { Nation } from '../models/nation.model';
 import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
 import { logger } from '../common/logger';
+import { sessionRepository } from '../repositories/session.repository';
+import { generalRepository } from '../repositories/general.repository';
+import { nationRepository } from '../repositories/nation.repository';
 
 export class ArchiveService {
   /**
@@ -20,7 +23,7 @@ export class ArchiveService {
       const scenarioList: any = {};
       
       // 시즌별/시나리오별 그룹화된 세션 조회
-      const sessions = await (Session as any).find({}).lean();
+      const sessions = await sessionRepository.findByFilter({});
       
       for (const session of sessions) {
         const season = session.data?.season || 1;
@@ -74,21 +77,21 @@ export class ArchiveService {
 
       // 각 타입별로 상위 10개 조회
       for (const type of types) {
-        const halls = await (Hall as any)
+        const halls = await Hall
           .find({
             ...filter,
             type: type.name
           })
           .sort({ value: -1 })
           .limit(10)
-          .lean();
+          ;
 
         // 장수 정보 조회
         const hallList = await Promise.all(
           halls.map(async (hall: any) => {
-            const general = await (General as any).findOne({
+            const general = await generalRepository.findOneByFilter({
               'data.no': hall.general_no
-            }).lean();
+            });
 
             if (!general) {
               return null;
@@ -150,11 +153,11 @@ export class ArchiveService {
   static async getEmperorList() {
     try {
       // 통합 완료된 세션 조회 (isunited = 2)
-      const sessions = await (Session as any)
+      const sessions = await Session
         .find({ 'data.isunited': 2 })
         .sort({ 'data.endDate': -1 })
         .limit(100)
-        .lean();
+        ;
 
       const emperorList = await Promise.all(
         sessions.map(async (session: any) => {
@@ -165,10 +168,10 @@ export class ArchiveService {
           let winnerNation = null;
           
           if (winnerNationId) {
-            const nation = await (Nation as any).findOne({
+            const nation = await nationRepository.findOneByFilter({
               session_id: session.session_id,
               'data.nation': winnerNationId
-            }).lean();
+            });
             
             if (nation) {
               winnerNation = {
@@ -210,7 +213,7 @@ export class ArchiveService {
    */
   static async getEmperorDetail(id: string) {
     try {
-      const session = await (Session as any).findById(id).lean();
+      const session = await sessionRepository.findByFilterById(id);
       
       if (!session || session.data?.isunited !== 2) {
         return {
@@ -224,23 +227,23 @@ export class ArchiveService {
       
       let winnerNation = null;
       if (winnerNationId) {
-        const nation = await (Nation as any).findOne({
+        const nation = await nationRepository.findOneByFilter({
           session_id: session.session_id,
           'data.nation': winnerNationId
-        }).lean();
+        });
         
         if (nation) {
           const nationData = nation.data || {};
           
           // 국가 장수 목록
-          const generals = await (General as any)
+          const generals = await General
             .find({
               session_id: session.session_id,
               'data.nation': winnerNationId
             })
             .sort({ 'data.officer_level': -1 })
             .limit(50)
-            .lean();
+            ;
 
           winnerNation = {
             nation: winnerNationId,
@@ -294,17 +297,17 @@ export class ArchiveService {
         query.server_id = sessionId;
       }
 
-      const halls = await (Hall as any)
+      const halls = await Hall
         .find(query)
         .sort({ value: -1 })
         .limit(limit)
-        .lean();
+        ;
 
       const records = await Promise.all(
         halls.map(async (hall: any) => {
-          const general = await (General as any).findOne({
+          const general = await generalRepository.findOneByFilter({
             'data.no': hall.general_no
-          }).lean();
+          });
 
           if (!general) {
             return null;
@@ -351,14 +354,14 @@ export class ArchiveService {
         query.session_id = sessionId;
       }
 
-      const sessions = await (Session as any)
+      const sessions = await Session
         .find({
           ...query,
           'data.isunited': 2 // 통합 완료된 세션만
         })
         .sort({ 'data.endDate': -1 })
         .limit(limit)
-        .lean();
+        ;
 
       const records = await Promise.all(
         sessions.map(async (session: any) => {
@@ -367,10 +370,10 @@ export class ArchiveService {
           
           let winnerNation = null;
           if (winnerNationId) {
-            const nation = await (Nation as any).findOne({
+            const nation = await nationRepository.findOneByFilter({
               session_id: session.session_id,
               'data.nation': winnerNationId
-            }).lean();
+            });
             
             if (nation) {
               winnerNation = {
@@ -419,22 +422,22 @@ export class ArchiveService {
       }
 
       // Hall에서 해당 타입의 상위 장수 조회
-      const halls = await (Hall as any)
+      const halls = await Hall
         .find({
           server_id: sessionId,
           type
         })
         .sort({ value: -1 })
         .limit(100)
-        .lean();
+        ;
 
       const generalList = await Promise.all(
         halls.map(async (hall: any) => {
-          const general = await (General as any).findOne({
+          const general = await generalRepository.findBySessionAndNo({
             session_id: sessionId,
             'data.no': hall.general_no,
             ...userFilter
-          }).lean();
+          });
 
           if (!general) {
             return null;
@@ -475,13 +478,13 @@ export class ArchiveService {
    */
   static async getBestGeneral(sessionId: string, type: string = 'experience') {
     try {
-      const hall = await (Hall as any)
+      const hall = await Hall
         .findOne({
           server_id: sessionId,
           type
         })
         .sort({ value: -1 })
-        .lean();
+        ;
 
       if (!hall) {
         return {
@@ -490,10 +493,10 @@ export class ArchiveService {
         };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': hall.general_no
-      }).lean();
+      });
 
       if (!general) {
         return {
@@ -540,11 +543,11 @@ export class ArchiveService {
         // type에 따른 필터 로직 (PHP 로직 참고 필요)
       }
 
-      const generals = await (General as any)
+      const generals = await General
         .find(query)
         .sort({ 'data.experience': -1 })
         .limit(1000)
-        .lean();
+        ;
 
       const generalList = generals.map((g: any) => {
         const genData = g.data || {};
@@ -580,11 +583,11 @@ export class ArchiveService {
   static async getKingdomList() {
     try {
       // 통합 완료된 세션들을 왕국으로 간주
-      const sessions = await (Session as any)
+      const sessions = await Session
         .find({ 'data.isunited': 2 })
         .sort({ 'data.endDate': -1 })
         .limit(100)
-        .lean();
+        ;
 
       const kingdomList = sessions.map((session: any) => {
         const sessionData = session.data || {};
@@ -617,14 +620,14 @@ export class ArchiveService {
    */
   static async getNPCList(sessionId: string) {
     try {
-      const npcs = await (General as any)
+      const npcs = await General
         .find({
           session_id: sessionId,
           'data.npc': { $gt: 0 }
         })
         .sort({ 'data.experience': -1 })
         .limit(1000)
-        .lean();
+        ;
 
       const npcList = npcs.map((npc: any) => {
         const npcData = npc.data || {};
@@ -665,7 +668,7 @@ export class ArchiveService {
       
       const cities = await require('../models/city.model').City.find({
         session_id: sessionId
-      }).lean();
+      });
 
       const traffic = {
         totalCities: cities.length,
@@ -691,7 +694,7 @@ export class ArchiveService {
    */
   private static async getOwnerName(ownerId: number): Promise<string | null> {
     try {
-      const user = await (User as any).findById(ownerId).lean();
+      const user = await User.findById(ownerId);
       return user ? (user.name || user.username) : null;
     } catch {
       return null;

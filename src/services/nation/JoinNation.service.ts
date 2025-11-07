@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * JoinNation Service
@@ -20,10 +20,7 @@ export class JoinNationService {
         return { success: false, message: '국가 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -35,10 +32,7 @@ export class JoinNationService {
         return { success: false, message: '이미 국가에 소속되어 있습니다' };
       }
 
-      const nation = await (Nation as any).findOne({
-        session_id: sessionId,
-        'data.nation': targetNationId
-      });
+      const nation = await nationRepository.findByNationNum(sessionId, targetNationId);
 
       if (!nation) {
         return { success: false, message: '국가를 찾을 수 없습니다' };
@@ -49,32 +43,14 @@ export class JoinNationService {
         return { success: false, message: '해당 국가는 현재 임관을 받지 않습니다' };
       }
 
-      await (General as any).updateOne(
-        {
-          session_id: sessionId,
-          'data.no': generalId
-        },
-        {
-          $set: {
-            'data.nation': targetNationId,
-            'data.officer_level': 1,
-            'data.belong': targetNationId,
-            'data.permission': 'normal'
-          }
-        }
-      );
+      await generalRepository.updateBySessionAndNo(sessionId, generalId, {
+        'data.nation': targetNationId,
+        'data.officer_level': 1,
+        'data.belong': targetNationId,
+        'data.permission': 'normal'
+      });
 
-      await (Nation as any).updateOne(
-        {
-          session_id: sessionId,
-          'data.nation': targetNationId
-        },
-        {
-          $inc: {
-            'data.gennum': 1
-          }
-        }
-      );
+      await nationRepository.incrementGennum(sessionId, targetNationId, 1);
 
       return {
         success: true,

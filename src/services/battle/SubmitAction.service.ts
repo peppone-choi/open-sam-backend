@@ -1,5 +1,6 @@
-import { Battle, BattleStatus, BattlePhase, ITurnAction } from '../../models/battle.model';
+import { BattleStatus, BattlePhase, ITurnAction } from '../../models/battle.model';
 import { UnitType } from '../../core/battle-calculator';
+import { battleRepository } from '../../repositories/battle.repository';
 
 /**
  * 병종별 이동 거리 (셀 단위)
@@ -39,7 +40,7 @@ export class SubmitActionService {
         return { success: false, message: '필수 파라미터가 누락되었습니다' };
       }
 
-      const battle = await (Battle as any).findOne({ battleId });
+      const battle = await battleRepository.findByBattleId(battleId);
 
       if (!battle) {
         return { success: false, message: '전투를 찾을 수 없습니다' };

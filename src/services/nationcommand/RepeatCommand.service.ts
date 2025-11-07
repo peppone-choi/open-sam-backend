@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { NationTurn } from '../../models/nation_turn.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import GameConstants from '../../utils/game-constants';
 
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
@@ -19,10 +19,7 @@ export class RepeatCommandService {
         throw new Error('범위를 벗어났습니다 (1 ~ 12)');
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('올바르지 않은 장수입니다.');
@@ -70,8 +67,7 @@ export class RepeatCommandService {
       reqTurn = MAX_CHIEF_TURN - turnCnt;
     }
 
-    const turnList = await (NationTurn as any).find({
-      session_id: sessionId,
+    const turnList = await nationTurnRepository.findBySession(sessionId, {
       'data.nation_id': nationId,
       'data.officer_level': officerLevel,
       'data.turn_idx': { $lt: reqTurn }
@@ -92,7 +88,7 @@ export class RepeatCommandService {
         targetIndices.push(i);
       }
 
-      await (NationTurn as any).updateMany(
+      await nationTurnRepository.updateMany(
         {
           session_id: sessionId,
           'data.nation_id': nationId,

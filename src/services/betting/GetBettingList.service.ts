@@ -1,3 +1,4 @@
+import { sessionRepository } from '../repositories/session.repository';
 import { Session } from '../../models/session.model';
 import mongoose from 'mongoose';
 
@@ -7,7 +8,7 @@ export class GetBettingListService {
     const reqType = data.req || null;
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,

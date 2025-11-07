@@ -5,17 +5,17 @@ const router = Router();
 
 router.get('/diplomacy/letters', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId }).select('nation').lean();
+    const general = await General.findOne({ owner: userId }).select('nation').lean();
     if (!general || !general.nation) {
       return res.status(403).json({ result: false, reason: '국가에 소속되어있지 않습니다.' });
     }
 
-    const letters = await (NgDiplomacy as any).find({
+    const letters = await NgDiplomacy.find({
       $or: [
         { srcNationId: general.nation },
         { destNationId: general.nation },
@@ -36,12 +36,12 @@ router.get('/diplomacy/letters', async (req: Request, res: Response) => {
 
 router.post('/diplomacy/send', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general: any = await (General as any).findOne({ owner: userId })
+    const general: any = await General.findOne({ owner: userId })
       .select('nation officerLevel')
       .lean();
 

@@ -122,7 +122,7 @@ TournamentSchema.index({ session_id: 1, no: 1 });
 // seq를 자동 증가시키기 위한 pre-save hook
 TournamentSchema.pre('save', async function (next) {
   if (this.isNew && !this.seq) {
-    const maxSeq = await (Tournament as any)
+    const maxSeq = await Tournament
       .findOne({ session_id: this.session_id })
       .sort({ seq: -1 })
       .lean();

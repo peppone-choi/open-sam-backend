@@ -2,6 +2,8 @@ import { TroopRepository } from '../../repositories/troop.repository';
 import { General } from '../../models/general.model';
 import { Troop } from '../../models/troop.model';
 import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 
 export class SetLeaderCandidateService {
   static async execute(data: any, user?: any) {
@@ -17,7 +19,7 @@ export class SetLeaderCandidateService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -35,7 +37,7 @@ export class SetLeaderCandidateService {
         return { success: false, message: '부대장만 후보를 지정할 수 있습니다' };
       }
 
-      const candidate = await (General as any).findOne({
+      const candidate = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': candidateId
       });
@@ -49,7 +51,7 @@ export class SetLeaderCandidateService {
       }
 
       const nationId = general.data?.nation || 0;
-      const result = await (Troop as any).updateOne(
+      const result = await troopRepository.updateOneByFilter(
         { 
           session_id: sessionId, 
           'data.troop_leader': troopId,

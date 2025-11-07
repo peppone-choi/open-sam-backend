@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * GrantPower Service
@@ -17,10 +17,7 @@ export class GrantPowerService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -44,16 +41,14 @@ export class GrantPowerService {
         return { success: false, message: '외교권자는 최대 2명까지만 설정 가능합니다' };
       }
 
-      await (General as any).updateMany(
+      await generalRepository.updateManyByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId,
           'data.permission': targetType
         },
         {
-          $set: {
-            'data.permission': 'normal'
-          }
+          'data.permission': 'normal'
         }
       );
 
@@ -65,7 +60,7 @@ export class GrantPowerService {
         };
       }
 
-      const candidates = await (General as any).find({
+      const candidates = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationId,
         'data.no': { $in: genlist },
@@ -88,15 +83,13 @@ export class GrantPowerService {
 
       const candidateIds = realCandidates.map(c => c.data?.no);
 
-      await (General as any).updateMany(
+      await generalRepository.updateManyByFilter(
         {
           session_id: sessionId,
           'data.no': { $in: candidateIds }
         },
         {
-          $set: {
-            'data.permission': targetType
-          }
+          'data.permission': targetType
         }
       );
 

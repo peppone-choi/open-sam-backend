@@ -1,4 +1,4 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { GetMapService } from './GetMap.service';
 
 export class GetCachedMapService {
@@ -6,7 +6,7 @@ export class GetCachedMapService {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,

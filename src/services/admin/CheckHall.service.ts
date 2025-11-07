@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { Hall } from '../../models/hall.model';
 
 /**
@@ -10,7 +10,7 @@ import { Hall } from '../../models/hall.model';
 export class CheckHallService {
   static async execute(generalNo: number, sessionId: string) {
     try {
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalNo
       });
@@ -35,7 +35,7 @@ export class CheckHallService {
       const killrate = (genData.deathcrew || 0) > 0 ? killcrew / (genData.deathcrew || 1) : 0;
 
       // 명예의 전당 기록
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       const sessionData = session?.data || {};
       const season = sessionData.season || 1;
       const scenario = sessionData.scenario || 0;
@@ -55,7 +55,7 @@ export class CheckHallService {
 
       // Hall에 기록 (upsert)
       for (const record of hallRecords) {
-        await (Hall as any).findOneAndUpdate(
+        await Hall.findOneAndUpdate(
           {
             server_id: sessionId,
             season,

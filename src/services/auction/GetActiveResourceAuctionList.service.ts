@@ -1,4 +1,5 @@
 import { Auction } from '../../models/auction.model';
+import { auctionRepository } from '../../repositories/auction.repository';
 
 export class GetActiveResourceAuctionListService {
   static async execute(data: any, user?: any) {
@@ -6,7 +7,7 @@ export class GetActiveResourceAuctionListService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const auctions = await (Auction as any).find({
+      const auctions = await auctionRepository.findByFilter({
         session_id: sessionId,
         type: { $in: ['BuyRice', 'SellRice'] },
         finished: false
@@ -45,7 +46,7 @@ export class GetActiveResourceAuctionListService {
         }
       }
 
-      const recentAuctions = await (Auction as any).find({
+      const recentAuctions = await auctionRepository.findByFilter({
         session_id: sessionId,
         type: { $in: ['BuyRice', 'SellRice'] },
         finished: true

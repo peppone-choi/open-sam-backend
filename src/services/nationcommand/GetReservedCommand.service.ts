@@ -1,8 +1,8 @@
-import { NationTurn } from '../../models/nation_turn.model';
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { Troop } from '../../models/troop.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { nationTurnRepository } from '../../repositories/nation-turn.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 import GameConstants from '../../utils/game-constants';
 
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
@@ -13,10 +13,7 @@ export class GetReservedCommandService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('장수 정보를 찾을 수 없습니다.');
@@ -37,14 +34,14 @@ export class GetReservedCommandService {
         throw new Error('수뇌부가 아니거나 사관년도가 부족합니다.');
       }
 
-      const nation = await (Nation as any).findOne({
+      const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': nationId
       });
 
       const nationLevel = nation?.data.level || 0;
 
-      const chiefs = await (General as any).find({
+      const chiefs = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationId,
         'data.officer_level': { $gte: 5 }
@@ -55,10 +52,11 @@ export class GetReservedCommandService {
         generalsByLevel[chief.data.officer_level] = chief.data;
       }
 
-      const nationTurns = await (NationTurn as any).find({
-        session_id: sessionId,
-        'data.nation_id': nationId
-      }).sort({ 'data.officer_level': -1, 'data.turn_idx': 1 });
+      const nationTurns = await nationTurnRepository.findByNation(
+        sessionId,
+        nationId,
+        { 'data.officer_level': -1, 'data.turn_idx': 1 }
+      );
 
       const nationTurnList: { [key: number]: { [key: number]: any } } = {};
       const invalidUnderTurnList: { [key: number]: number } = {};
@@ -88,7 +86,7 @@ export class GetReservedCommandService {
 
       if (Object.keys(invalidUnderTurnList).length > 0) {
         for (const level of Object.keys(invalidUnderTurnList)) {
-          await (NationTurn as any).updateMany(
+          await nationTurnRepository.updateMany(
             {
               session_id: sessionId,
               'data.nation_id': nationId,
@@ -104,7 +102,7 @@ export class GetReservedCommandService {
 
       if (Object.keys(invalidOverTurnList).length > 0) {
         for (const level of Object.keys(invalidOverTurnList)) {
-          await (NationTurn as any).updateMany(
+          await nationTurnRepository.updateMany(
             {
               session_id: sessionId,
               'data.nation_id': nationId,
@@ -118,7 +116,7 @@ export class GetReservedCommandService {
         }
       }
 
-      const troops = await (Troop as any).find({
+      const troops = await troopRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationId
       });
@@ -154,7 +152,7 @@ export class GetReservedCommandService {
         // 빈 턴이 있으면 DB에 자동으로 휴식 명령 저장
         if (emptyTurns.length > 0) {
           for (const turnIdx of emptyTurns) {
-            await (NationTurn as any).updateOne(
+            await nationTurnRepository.updateOne(
               {
                 session_id: sessionId,
                 'data.nation_id': nationId,
@@ -203,7 +201,7 @@ export class GetReservedCommandService {
         };
       }
 
-      const sessionData = await (Session as any).findOne({ session_id: sessionId });
+      const sessionData = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = sessionData?.data?.game_env || {};
 
       return {

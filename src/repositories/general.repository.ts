@@ -1,6 +1,6 @@
 import { General } from '../models/general.model';
 import { DeleteResult } from 'mongodb';
-import { saveGeneral } from '../common/cache/model-cache.helper';
+import { saveGeneral, getGeneral, getGeneralByNo } from '../common/cache/model-cache.helper';
 
 /**
  * 장수 리포지토리
@@ -11,12 +11,12 @@ import { saveGeneral } from '../common/cache/model-cache.helper';
  */
 class GeneralRepository {
   /**
-   * ID로 장수 조회
+   * ID로 장수 조회 (MongoDB _id)
    * @param generalId - 장수 ID
    * @returns 장수 문서 또는 null
    */
   async findById(generalId: string) {
-    return (General as any).findById(generalId);
+    return General.findById(generalId);
   }
 
   /**
@@ -25,7 +25,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findBySession(sessionId: string) {
-    return (General as any).find({ session_id: sessionId });
+    return General.find({ session_id: sessionId });
   }
 
   /**
@@ -35,7 +35,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findByNation(sessionId: string, nationId: number) {
-    return (General as any).find({ 
+    return General.find({ 
       session_id: sessionId, 
       nation: nationId 
     });
@@ -48,7 +48,7 @@ class GeneralRepository {
    * @returns 장수 목록
    */
   async findByCity(sessionId: string, cityId: number) {
-    return (General as any).find({ 
+    return General.find({ 
       session_id: sessionId, 
       city: cityId 
     });
@@ -60,7 +60,7 @@ class GeneralRepository {
    * @returns 재야 장수 목록
    */
   async findNeutral(sessionId: string) {
-    return (General as any).find({ 
+    return General.find({ 
       session_id: sessionId, 
       nation: 0 
     });
@@ -92,7 +92,7 @@ class GeneralRepository {
    */
   async updateById(generalId: string, update: any) {
     // MongoDB _id로 조회해서 session_id와 no 확인
-    const existing = await (General as any).findById(generalId).lean();
+    const existing = await General.findById(generalId).lean();
     
     if (!existing) {
       throw new Error(`General not found: ${generalId}`);
@@ -118,16 +118,134 @@ class GeneralRepository {
    * @returns 삭제 결과
    */
   async deleteById(generalId: string): Promise<DeleteResult> {
-    return (General as any).deleteOne({ _id: generalId });
+    return General.deleteOne({ _id: generalId });
   }
 
   /**
    * 조건으로 장수 조회
    * @param filter - 검색 조건
+   * @param projection - 필드 선택 (optional)
    * @returns 장수 목록
    */
-  async findByFilter(filter: any) {
-    return (General as any).find(filter);
+  async findByFilter(filter: any, projection?: string) {
+    const query = General.find(filter);
+    if (projection) {
+      return query.select(projection).lean();
+    }
+    return query;
+  }
+
+  /**
+   * 조건으로 장수 한 명 조회
+   * @param filter - 검색 조건
+   * @returns 장수 문서 또는 null
+   */
+  async findOneByFilter(filter: any) {
+    return General.findOne(filter);
+  }
+
+  /**
+   * 세션 ID와 장수 번호로 장수 조회 (L1 → L2 → DB)
+   * @param sessionId - 세션 ID
+   * @param generalNo - 장수 번호 (data.no)
+   * @returns 장수 문서 또는 null
+   */
+  async findBySessionAndNo(sessionId: string, generalNo: number) {
+    // 캐시에서 먼저 조회
+    const cached = await getGeneral(sessionId, generalNo);
+    if (cached) {
+      // plain object를 Mongoose Document로 변환
+      const doc = new General(cached);
+      doc.isNew = false; // 기존 문서임을 표시
+      return doc;
+    }
+    
+    // 캐시 미스 시 DB 조회
+    const general = await General.findOne({
+      session_id: sessionId,
+      'data.no': generalNo
+    });
+    
+    // DB에서 조회한 결과를 캐시에 저장
+    if (general) {
+      await saveGeneral(sessionId, generalNo, general.toObject());
+    }
+    
+    return general;
+  }
+
+  /**
+   * 세션 ID와 owner로 장수 조회
+   * @param sessionId - 세션 ID
+   * @param owner - 소유자 ID
+   * @returns 장수 문서 또는 null
+   */
+  async findBySessionAndOwner(sessionId: string, owner: string, additionalFilter?: any) {
+    return General.findOne({
+      session_id: sessionId,
+      owner: owner,
+      ...additionalFilter
+    });
+  }
+
+  /**
+   * 세션 ID와 장수 번호로 업데이트
+   * @param sessionId - 세션 ID
+   * @param generalNo - 장수 번호
+   * @param update - 업데이트할 데이터
+   * @returns 업데이트 결과
+   */
+  async updateBySessionAndNo(sessionId: string, generalNo: number, update: any) {
+    const existing = await this.findBySessionAndNo(sessionId, generalNo);
+    
+    if (!existing) {
+      throw new Error(`General not found: session=${sessionId}, no=${generalNo}`);
+    }
+    
+    // 캐시 업데이트
+    const merged = { ...existing, ...update };
+    await saveGeneral(sessionId, generalNo, merged);
+    
+    return { modifiedCount: 1, matchedCount: 1 };
+  }
+
+  /**
+   * 여러 장수 업데이트 (조건으로)
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @returns 업데이트 결과
+   */
+  async updateManyByFilter(filter: any, update: any) {
+    return General.updateMany(filter, { $set: update });
+  }
+
+  /**
+   * 장수 하나 업데이트 (조건으로)
+   * @param filter - 검색 조건
+   * @param update - 업데이트할 데이터
+   * @returns 업데이트 결과
+   */
+  async updateOneByFilter(filter: any, update: any) {
+    return General.updateOne(filter, { $set: update });
+  }
+
+  /**
+   * 장수 정보 업데이트 (save 방식)
+   * @param general - 장수 문서
+   * @returns 저장된 장수 문서
+   */
+  async save(general: any) {
+    general.markModified('data');
+    return await general.save();
+  }
+
+  /**
+   * 장수 삭제 (조건으로)
+   * @param filter - 삭제 조건
+   * @returns 삭제 결과
+   */
+  async deleteByFilter(filter: any): Promise<DeleteResult> {
+    return General.deleteOne(filter);
   }
 
   /**
@@ -136,27 +254,36 @@ class GeneralRepository {
    * @returns 장수 수
    */
   async count(filter: any): Promise<number> {
-    return (General as any).countDocuments(filter);
+    return General.countDocuments(filter);
   }
 
   /**
-   * 페이지네이션 조회
+   * 페이지네이션으로 장수 조회
    * @param filter - 검색 조건
-   * @param page - 페이지 번호
-   * @param limit - 페이지당 개수
+   * @param page - 페이지 번호 (1부터 시작)
+   * @param limit - 페이지당 항목 수
    * @param sort - 정렬 조건
    * @returns 장수 목록
    */
-  async findPaginated(
+  async findWithPagination(
     filter: any,
     page: number = 1,
     limit: number = 20,
     sort: any = { name: 1 }
   ) {
-    return (General as any).find(filter)
+    return General.find(filter)
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);
+  }
+
+  /**
+   * 조건에 맞는 장수 수 카운트
+   * @param filter - 검색 조건
+   * @returns 카운트 수
+   */
+  async countByFilter(filter: any): Promise<number> {
+    return General.countDocuments(filter);
   }
 }
 

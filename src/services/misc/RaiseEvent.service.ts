@@ -1,4 +1,4 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * RaiseEvent Service
@@ -27,7 +27,7 @@ export class RaiseEventService {
 
     try {
       const sessionId = data.session_id || 'sangokushi_default';
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
 
       if (!session) {
         return {

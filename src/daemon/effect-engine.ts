@@ -88,11 +88,11 @@ async function applyToData(data: Record<string, any>, effects: Record<string, an
     } else if (typeof evaluated === 'object' && evaluated !== null) {
       // 객체면 조건부 처리
       if ('set' in evaluated) {
-        data[key] = (evaluated as any).set;
+        data[key] = evaluated.set;
       } else if ('min' in evaluated || 'max' in evaluated) {
-        let newValue = (data[key] || 0) + ((evaluated as any).add || 0);
-        if ((evaluated as any).min !== undefined) newValue = Math.max(newValue, (evaluated as any).min);
-        if ((evaluated as any).max !== undefined) newValue = Math.min(newValue, (evaluated as any).max);
+        let newValue = (data[key] || 0) + (evaluated.add || 0);
+        if (evaluated.min !== undefined) newValue = Math.maxnewValue, (evaluated.min);
+        if (evaluated.max !== undefined) newValue = Math.minnewValue, (evaluated.max);
         data[key] = newValue;
       }
     } else {

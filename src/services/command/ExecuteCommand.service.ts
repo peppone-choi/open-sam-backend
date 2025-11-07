@@ -1,7 +1,7 @@
-import { GeneralTurn } from '../../models/general_turn.model';
-import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import { BattleInstance } from '../../models/battle-instance.model';
 
 export interface CommandExecution {
@@ -68,9 +68,12 @@ export class ExecuteCommandService {
   }
 
   private static async validateExecution(context: CommandContext): Promise<{ valid: boolean; reason?: string; message?: string }> {
-    const general = await (General as any).findOne({ 
-      session_id: context.sessionId, 
-      no: context.generalId 
+    const general = await generalRepository.findOneByFilter({ 
+      session_id: context.sessionId,
+      $or: [
+        { 'data.no': context.generalId },
+        { no: context.generalId }
+      ]
     });
 
     if (!general) {
@@ -82,9 +85,12 @@ export class ExecuteCommandService {
     }
 
     if (context.requiresOwnership && context.targetCity && context.ownerAtQueue !== undefined) {
-      const city = await (City as any).findOne({ 
-        session_id: context.sessionId, 
-        city: context.targetCity 
+      const city = await cityRepository.findOneByFilter({ 
+        session_id: context.sessionId,
+        $or: [
+          { 'data.city': context.targetCity },
+          { city: context.targetCity }
+        ]
       });
 
       if (!city) {
@@ -95,11 +101,13 @@ export class ExecuteCommandService {
         };
       }
 
-      if (city.nation !== context.ownerAtQueue) {
+      const cityNation = city.data?.nation || city.nation;
+      if (cityNation !== context.ownerAtQueue) {
+        const cityName = city.data?.name || city.name;
         return {
           valid: false,
           reason: 'city_ownership_changed',
-          message: `${city.name}의 소유권이 변경되어 커맨드가 취소되었습니다.`
+          message: `${cityName}의 소유권이 변경되어 커맨드가 취소되었습니다.`
         };
       }
     }
@@ -141,7 +149,7 @@ export class ExecuteCommandService {
   }
 
   private static async getGeneralStatus(general: any): Promise<string> {
-    const inBattle = await (BattleInstance as any).findOne({
+    const inBattle = await BattleInstance.findOne({
       $or: [
         { 'attacker.generals': general.no },
         { 'defender.generals': general.no }
@@ -193,48 +201,57 @@ export class ExecuteCommandService {
   private static async deductCosts(context: CommandContext): Promise<void> {
     if (!context.cost) return;
 
-    const updateFields: any = {};
-    
-    if (context.cost.gold) {
-      updateFields['data.gold'] = -context.cost.gold;
-    }
-    if (context.cost.rice) {
-      updateFields['data.rice'] = -context.cost.rice;
-    }
-    if (context.cost.troops) {
-      updateFields['data.crew'] = -context.cost.troops;
-    }
+    const general = await generalRepository.findOneByFilter({
+      session_id: context.sessionId,
+      $or: [
+        { 'data.no': context.generalId },
+        { no: context.generalId }
+      ]
+    });
 
-    await (General as any).updateOne(
-      { session_id: context.sessionId, no: context.generalId },
-      { $inc: updateFields }
-    );
+    if (general) {
+      general.data = general.data || {};
+      if (context.cost.gold) {
+        general.data.gold = (general.data.gold || 0) - context.cost.gold;
+      }
+      if (context.cost.rice) {
+        general.data.rice = (general.data.rice || 0) - context.cost.rice;
+      }
+      if (context.cost.troops) {
+        general.data.crew = (general.data.crew || 0) - context.cost.troops;
+      }
+      await generalRepository.save(general);
+    }
   }
 
   static async refundCommand(context: CommandContext, reason: string): Promise<void> {
     if (!context.cost) return;
 
-    const updateFields: any = {};
-    
-    if (context.cost.gold) {
-      updateFields['data.gold'] = context.cost.gold;
-    }
-    if (context.cost.rice) {
-      updateFields['data.rice'] = context.cost.rice;
-    }
-    if (context.cost.troops) {
-      updateFields['data.crew'] = context.cost.troops;
-    }
+    const general = await generalRepository.findOneByFilter({
+      session_id: context.sessionId,
+      $or: [
+        { 'data.no': context.generalId },
+        { no: context.generalId }
+      ]
+    });
 
-    await (General as any).updateOne(
-      { session_id: context.sessionId, no: context.generalId },
-      { $inc: updateFields }
-    );
+    if (general) {
+      general.data = general.data || {};
+      if (context.cost.gold) {
+        general.data.gold = (general.data.gold || 0) + context.cost.gold;
+      }
+      if (context.cost.rice) {
+        general.data.rice = (general.data.rice || 0) + context.cost.rice;
+      }
+      if (context.cost.troops) {
+        general.data.crew = (general.data.crew || 0) + context.cost.troops;
+      }
+      await generalRepository.save(general);
+    }
   }
 
   static async checkAndRefundFailedCommands(sessionId: string, turnIdx: number): Promise<void> {
-    const commands = await (GeneralTurn as any).find({
-      session_id: sessionId,
+    const commands = await generalTurnRepository.findBySession(sessionId, {
       'data.turn_idx': turnIdx,
       'data.status': { $ne: 'executed' }
     });
@@ -257,16 +274,10 @@ export class ExecuteCommandService {
       if (!result.success && result.refund) {
         await this.refundCommand(context, result.reason || 'unknown');
         
-        await (GeneralTurn as any).updateOne(
-          { _id: cmd._id },
-          {
-            $set: {
-              'data.status': 'refunded',
-              'data.failure_reason': result.reason,
-              'data.failure_message': result.message
-            }
-          }
-        );
+        cmd.data.status = 'refunded';
+        cmd.data.failure_reason = result.reason;
+        cmd.data.failure_message = result.message;
+        await cmd.save();
       }
     }
   }

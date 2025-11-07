@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { User } from '../../models/user.model';
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * SetMySetting Service
@@ -37,7 +37,7 @@ export class SetMySettingService {
       }
 
       // 장수 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         owner: userId,
         'data.no': generalId
@@ -80,7 +80,7 @@ export class SetMySettingService {
 
       // NPC 분리 처리
       if (genData.npc === 1 && detachNPC) {
-        const session = await (Session as any).findOne({ session_id: sessionId });
+        const session = await sessionRepository.findBySessionId(sessionId );
         const sessionData = session?.data || {};
         const turnterm = sessionData.turnterm || 60;
 
@@ -94,14 +94,14 @@ export class SetMySettingService {
       }
 
       // 사용자 패널티 정보 업데이트
-      const user = await (User as any).findById(userId);
+      const user = await User.findById(userId);
       if (user && user.penalty) {
         const penalty = typeof user.penalty === 'string' ? JSON.parse(user.penalty) : user.penalty;
         updateData['data.penalty'] = JSON.stringify(penalty);
       }
 
       // 업데이트 실행
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         {
           session_id: sessionId,
           owner: userId,

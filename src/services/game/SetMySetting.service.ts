@@ -3,8 +3,8 @@
  * 내 설정 변경 (j_set_my_setting.php)
  */
 
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { logger } from '../../common/logger';
 
 export class SetMySettingService {
@@ -20,10 +20,7 @@ export class SetMySettingService {
     }
 
     try {
-      const general = await (General as any).findOne({
-        session_id: sessionId,
-        owner: String(userId)
-      });
+      const general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
       if (!general) {
         return {

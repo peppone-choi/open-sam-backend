@@ -1,4 +1,5 @@
 import { NationCommand } from '../base/NationCommand';
+import { nationRepository } from '../../repositories/nation.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
@@ -99,7 +100,7 @@ export class RaidCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
     const generalID = general.getID();
@@ -167,14 +168,14 @@ export class RaidCommand extends NationCommand {
     // 전략 명령 사용 제한 설정
     // TODO: generalObj.onCalcStrategic
     const { Nation } = await import('../../models/nation.model');
-    await (Nation as any).updateOne(
+    await nationRepository.updateOneByFilter(
       { session_id: env.session_id, 'data.nation': nationID },
       { $inc: { 'data.strategic_cmd_limit': -9 } }
     );
 
     // 외교 관계에서 선포 기간 3개월 감소
     const { Diplomacy } = await import('../../models/diplomacy.model');
-    await (Diplomacy as any).updateMany(
+    await Diplomacy.updateMany(
       {
         session_id: env.session_id,
         $or: [
@@ -202,7 +203,7 @@ export class RaidCommand extends NationCommand {
       console.error('StaticEventHandler failed:', error);
     }
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

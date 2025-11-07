@@ -27,9 +27,9 @@ export class GatherCommand extends GeneralCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
-      (ConstraintHelper as any).SuppliedCity(),
-      (ConstraintHelper as any).MustBeTroopLeader(),
-      (ConstraintHelper as any).ReqTroopMembers(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.MustBeTroopLeader(),
+      ConstraintHelper.ReqTroopMembers(),
     ];
   }
 
@@ -55,7 +55,7 @@ export class GatherCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
     const cityID = this.city!.city;
@@ -117,7 +117,7 @@ export class GatherCommand extends GeneralCommand {
       general
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

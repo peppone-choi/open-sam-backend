@@ -1,9 +1,10 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
 import { UserRecord } from '../../models/user_record.model';
 import GameConstants from '../../utils/game-constants';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 const AVAILABLE_SPECIAL_WAR = [
   'che_일격',
@@ -41,7 +42,7 @@ export class SetNextSpecialWarService {
         return { success: false, message: '잘못된 전투 특기 타입입니다.' };
       }
       
-      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId );
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -67,12 +68,12 @@ export class SetNextSpecialWarService {
       
       const reqAmount = GameConstants.INHERIT_SPECIFIC_SPECIAL_POINT;
       
-      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await kvStorageRepository.findOneByFilter({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const inheritStor = await (KVStorage as any).findOne({ 
+      const inheritStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -85,7 +86,7 @@ export class SetNextSpecialWarService {
       
       const specialWarName = type.replace('che_', '');
       
-      await (UserRecord as any).create({
+      await UserRecord.create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

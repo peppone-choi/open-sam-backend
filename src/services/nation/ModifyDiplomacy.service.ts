@@ -1,5 +1,6 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { Diplomacy } from '../../models/diplomacy.model';
+import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 
 /**
  * ModifyDiplomacy Service
@@ -26,7 +27,7 @@ export class ModifyDiplomacyService {
         return { success: false, message: '외교 상태가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -51,14 +52,14 @@ export class ModifyDiplomacyService {
         return { success: false, message: '자신의 국가와는 외교 관계를 설정할 수 없습니다' };
       }
 
-      const existingDiplomacy = await (Diplomacy as any).findOne({
+      const existingDiplomacy = await diplomacyRepository.findOneByFilter({
         session_id: sessionId,
         me: nationId,
         you: targetNationId
       });
 
       if (existingDiplomacy) {
-        await (Diplomacy as any).updateOne(
+        await diplomacyRepository.updateOneByFilter(
           {
             session_id: sessionId,
             me: nationId,
@@ -72,7 +73,7 @@ export class ModifyDiplomacyService {
           }
         );
       } else {
-        await (Diplomacy as any).create({
+        await diplomacyRepository.create({
           session_id: sessionId,
           me: nationId,
           you: targetNationId,
@@ -81,14 +82,14 @@ export class ModifyDiplomacyService {
         });
       }
 
-      const reverseDip = await (Diplomacy as any).findOne({
+      const reverseDip = await diplomacyRepository.findOneByFilter({
         session_id: sessionId,
         me: targetNationId,
         you: nationId
       });
 
       if (reverseDip) {
-        await (Diplomacy as any).updateOne(
+        await diplomacyRepository.updateOneByFilter(
           {
             session_id: sessionId,
             me: targetNationId,
@@ -102,7 +103,7 @@ export class ModifyDiplomacyService {
           }
         );
       } else {
-        await (Diplomacy as any).create({
+        await diplomacyRepository.create({
           session_id: sessionId,
           me: targetNationId,
           you: nationId,

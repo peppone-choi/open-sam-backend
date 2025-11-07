@@ -14,7 +14,7 @@ export class NewYear extends Action {
     const month = env['month'] || 1;
 
     // 세션에서 마지막으로 NewYear가 처리된 년도 확인
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       throw new Error('세션을 찾을 수 없습니다');
     }
@@ -32,7 +32,7 @@ export class NewYear extends Action {
       // 모든 장수에게 전달되는 메시지
       // PHP에서는 pushGeneralHistoryLog를 모든 장수에 대해 호출하지만
       // TypeScript에서는 글로벌 메시지로 처리하거나 각 장수별로 호출 필요
-      const allGenerals = await (General as any).find({ session_id: sessionId });
+      const allGenerals = await General.find({ session_id: sessionId });
       for (const general of allGenerals) {
         const generalLogger = new ActionLogger(general.data?.no || 0, general.nation || 0, year, month);
         generalLogger.pushGeneralHistoryLog(`<S>모두들 즐거운 게임 하고 계신가요? ^^ <Y>매너 있는 플레이</> 부탁드리고, 게임보단 <L>건강이 먼저</>란점, 잊지 마세요!</>`);
@@ -44,7 +44,7 @@ export class NewYear extends Action {
 
     // 년도가 실제로 바뀐 경우에만 나이 증가
     if (yearChanged) {
-      const allGeneralsForAge = await (General as any).find({ session_id: sessionId });
+      const allGeneralsForAge = await General.find({ session_id: sessionId });
       for (const general of allGeneralsForAge) {
         const data = general.data || {};
         const currentAge = data.age;
@@ -60,7 +60,7 @@ export class NewYear extends Action {
         } else {
           // 정상적인 경우만 1 증가 (200 초과하지 않도록 제한)
           const newAge = Math.min(currentAge + 1, 200);
-          await (General as any).updateOne(
+          await General.updateOne(
             { _id: general._id },
             { $set: { 'data.age': newAge } }
           );
@@ -75,7 +75,7 @@ export class NewYear extends Action {
 
     // 호봉 증가 (국가 소속 장수만) - 년도가 바뀐 경우에만
     if (yearChanged) {
-      await (General as any).updateMany(
+      await General.updateMany(
         {
           session_id: sessionId,
           nation: { $ne: 0 }

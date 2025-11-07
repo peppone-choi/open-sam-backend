@@ -30,12 +30,12 @@ export class TrainTroopsCommand extends GeneralCommand {
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
-      (ConstraintHelper as any).ReqGeneralTrainMargin((GameConst as any).maxTrainByCommand),
+      ConstraintHelper.ReqGeneralTrainMargin(GameConst.maxTrainByCommand),
     ];
   }
 
   public getCommandDetailTitle(): string {
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     const [reqGold, reqRice] = this.getCost();
 
     let title = `${name}(통솔경험`;
@@ -66,19 +66,19 @@ export class TrainTroopsCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
     const score = Util.clamp(
-      Util.round((general as any).getLeadership() * 100 / general.getVar('crew') * (GameConst as any).trainDelta),
+      Util.round(general.getLeadership() * 100 / general.getVar('crew') * GameConst.trainDelta),
       0,
-      Util.clamp((GameConst as any).maxTrainByCommand - general.getVar('train'), 0)
+      Util.clamp(GameConst.maxTrainByCommand - general.getVar('train'), 0)
     );
     const scoreText = score.toLocaleString();
 
     const sideEffect = Util.valueFit(
-      Math.floor(general.getVar('atmos') * (GameConst as any).atmosSideEffectByTraining),
+      Math.floor(general.getVar('atmos') * GameConst.atmosSideEffectByTraining),
       0
     );
 
@@ -108,7 +108,7 @@ export class TrainTroopsCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

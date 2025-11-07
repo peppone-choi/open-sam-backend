@@ -14,7 +14,7 @@ import { Diplomacy } from '../models/diplomacy.model';
  */
 export async function checkSupply(sessionId: string): Promise<void> {
   // 모든 국가별 도시 정보 수집
-  const cities = await (City as any).find({ session_id: sessionId })
+  const cities = await City.find({ session_id: sessionId })
     .select('city nation')
     .lean();
 
@@ -31,7 +31,7 @@ export async function checkSupply(sessionId: string): Promise<void> {
   }
 
   // 국가별 수도 조회
-  const nations = await (Nation as any).find({ session_id: sessionId })
+  const nations = await Nation.find({ session_id: sessionId })
     .select('nation data')
     .lean();
 
@@ -47,7 +47,7 @@ export async function checkSupply(sessionId: string): Promise<void> {
 
   // 시나리오 데이터에서 도시 경로 정보 로드
   const { Session } = await import('../models/session.model');
-  const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+  const session = await Session.findOne({ session_id: sessionId }).lean();
   const scenarioId = session?.scenario_id || 'sangokushi';
   
   // City neighbors 정보 로드 (시나리오 데이터에서)
@@ -75,7 +75,7 @@ export async function checkSupply(sessionId: string): Promise<void> {
   } catch (error: any) {
     console.error('Failed to load city neighbors from scenario data:', error);
     // 경로 정보를 로드할 수 없으면 DB의 neighbors 필드 사용
-    const citiesWithNeighbors = await (City as any).find({ 
+    const citiesWithNeighbors = await City.find({ 
       session_id: sessionId 
     }).select('city neighbors data.neighbors').lean();
     
@@ -122,7 +122,7 @@ export async function checkSupply(sessionId: string): Promise<void> {
   }
 
   // 공백지 도시는 항상 보급 가능
-  const neutralCities = await (City as any).find({ 
+  const neutralCities = await City.find({ 
     session_id: sessionId, 
     nation: 0 
   }).select('city').lean();
@@ -133,13 +133,13 @@ export async function checkSupply(sessionId: string): Promise<void> {
 
   // DB 업데이트
   if (supplyCities.length > 0) {
-    await (City as any).updateMany(
+    await City.updateMany(
       { session_id: sessionId, city: { $in: supplyCities } },
       { $set: { supply: 1 } }
     );
   }
 
-  await (City as any).updateMany(
+  await City.updateMany(
     { session_id: sessionId, nation: { $ne: 0 }, supply: { $ne: 1 } },
     { $set: { supply: 0 } }
   );
@@ -156,7 +156,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   }
 
   // 해당 국가의 도시들
-  const nationCities = await (City as any).find({ 
+  const nationCities = await City.find({ 
     session_id: sessionId, 
     nation: nationId 
   }).select('city').lean();
@@ -168,7 +168,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   }
 
   // 외교 상태 확인
-  const diplomaties = await (Diplomacy as any).find({
+  const diplomaties = await Diplomacy.find({
     session_id: sessionId,
     $or: [
       { me: nationId },
@@ -186,7 +186,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
     
     if (state === 0) {
       // 선전포고
-      const otherCities = await (City as any).find({
+      const otherCities = await City.find({
         session_id: sessionId,
         nation: otherNation
       }).select('city').lean();
@@ -195,7 +195,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
       }
     } else if (state === 1 && dip.term <= 5) {
       // 교전 중 (5턴 이내)
-      const otherCities = await (City as any).find({
+      const otherCities = await City.find({
         session_id: sessionId,
         nation: otherNation
       }).select('city').lean();
@@ -207,7 +207,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
 
   // 시나리오 데이터에서 도시 경로 정보 로드
   const { Session } = await import('../models/session.model');
-  const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+  const session = await Session.findOne({ session_id: sessionId }).lean();
   const scenarioId = session?.scenario_id || 'sangokushi';
   
   // City neighbors 정보 로드
@@ -235,7 +235,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   } catch (error: any) {
     console.error('Failed to load city neighbors from scenario data:', error);
     // 경로 정보를 로드할 수 없으면 DB의 neighbors 필드 사용
-    const citiesWithNeighbors = await (City as any).find({ 
+    const citiesWithNeighbors = await City.find({ 
       session_id: sessionId 
     }).select('city neighbors data.neighbors').lean();
     
@@ -250,7 +250,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   }
 
   // 모든 도시를 기본 전방 레벨로 설정
-  await (City as any).updateMany(
+  await City.updateMany(
     { session_id: sessionId, city: { $in: cityIds } },
     { $set: { front: 0 } }
   );
@@ -274,7 +274,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   if (warCities.size > 0) {
     const adjacentWarCities = getAdjacentCities(cityIds, warCities);
     if (adjacentWarCities.length > 0) {
-      await (City as any).updateMany(
+      await City.updateMany(
         { session_id: sessionId, city: { $in: adjacentWarCities } },
         { $set: { front: 1 } }
       );
@@ -282,7 +282,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   }
 
   // 전방 레벨 2 (공백지 인접)
-  const neutralCities = await (City as any).find({
+  const neutralCities = await City.find({
     session_id: sessionId,
     nation: 0
   }).select('city').lean();
@@ -292,7 +292,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   if (neutralCitySet.size > 0 && warCities.size === 0 && enemyCities.size === 0) {
     const adjacentNeutralCities = getAdjacentCities(cityIds, neutralCitySet as Set<number>);
     if (adjacentNeutralCities.length > 0) {
-      await (City as any).updateMany(
+      await City.updateMany(
         { session_id: sessionId, city: { $in: adjacentNeutralCities } },
         { $set: { front: 2 } }
       );
@@ -303,7 +303,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   if (enemyCities.size > 0) {
     const adjacentEnemyCities = getAdjacentCities(cityIds, enemyCities);
     if (adjacentEnemyCities.length > 0) {
-      await (City as any).updateMany(
+      await City.updateMany(
         { session_id: sessionId, city: { $in: adjacentEnemyCities } },
         { $set: { front: 3 } }
       );
@@ -318,7 +318,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
 export async function updateGeneralNumber(sessionId: string): Promise<void> {
   const General = require('../models/general.model').General;
   
-  const generalCounts = await (General as any).aggregate([
+  const generalCounts = await General.aggregate([
     {
       $match: {
         session_id: sessionId,
@@ -337,7 +337,7 @@ export async function updateGeneralNumber(sessionId: string): Promise<void> {
     const nationId = count._id || 0;
     if (nationId === 0) continue;
 
-    await (Nation as any).updateOne(
+    await Nation.updateOne(
       { session_id: sessionId, nation: nationId },
       { $set: { 'data.gennum': count.count } }
     );

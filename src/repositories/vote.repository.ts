@@ -1,40 +1,88 @@
-import mongoose from 'mongoose';
-import { Vote } from '../models';
-import { VoteComment } from '../models';
+import { Vote } from '../models/vote.model';
 
 /**
- * Vote Repository
- * 데이터베이스 접근 계층
+ * Vote 리포지토리
  */
-export class VoteRepository {
+class VoteRepository {
   /**
-   * 세션별 데이터 조회
+   * 조건으로 조회
    */
-  static async findBySession(sessionId: string, model: any, filter: any = {}) {
-    return await model.find({ session_id: sessionId, ...filter });
+  async findByFilter(filter: any) {
+    return Vote.find(filter);
   }
-  
+
   /**
-   * 데이터 생성
+   * 조건으로 한 개 조회
    */
-  static async create(sessionId: string, model: any, data: any) {
-    return await model.create({ session_id: sessionId, ...data });
+  async findOneByFilter(filter: any) {
+    return Vote.findOne(filter);
   }
-  
+
   /**
-   * 데이터 업데이트
+   * ID로 조회
    */
-  static async update(sessionId: string, model: any, filter: any, update: any) {
-    return await model.updateMany(
-      { session_id: sessionId, ...filter },
-      { $set: update }
-    );
+  async findById(id: string) {
+    return Vote.findById(id);
   }
-  
+
   /**
-   * 데이터 삭제
+   * 생성
    */
-  static async delete(sessionId: string, model: any, filter: any) {
-    return await model.deleteMany({ session_id: sessionId, ...filter });
+  async create(data: any) {
+    return Vote.create(data);
+  }
+
+  /**
+   * 업데이트
+   */
+  async updateOne(filter: any, update: any) {
+    return Vote.updateOne(filter, update);
+  }
+
+  /**
+   * 여러 개 업데이트
+   */
+  async updateMany(filter: any, update: any) {
+    return Vote.updateMany(filter, update);
+  }
+
+  /**
+   * 업데이트 또는 생성 (upsert)
+   */
+  async findOneAndUpdate(filter: any, update: any, options?: any) {
+    return Vote.findOneAndUpdate(filter, update, options);
+  }
+
+  /**
+   * 삭제
+   */
+  async deleteOne(filter: any) {
+    return Vote.deleteOne(filter);
+  }
+
+  /**
+   * 여러 개 삭제
+   */
+  async deleteMany(filter: any) {
+    return Vote.deleteMany(filter);
+  }
+
+  /**
+   * 개수 세기
+   */
+  async count(filter: any): Promise<number> {
+    return Vote.countDocuments(filter);
+  }
+
+  /**
+   * 벌크 작업
+   */
+  async bulkWrite(operations: any[]) {
+    return Vote.bulkWrite(operations);
   }
 }
+
+/**
+ * Vote 리포지토리 싱글톤
+ */
+export const voteRepository = new VoteRepository();

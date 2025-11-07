@@ -5,18 +5,18 @@ const router = Router();
 
 router.post('/vacation/set', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
     }
 
-    const general = await (General as any).findOne({ owner: userId });
+    const general = await General.findOne({ owner: userId });
     if (!general) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
     const killturn = 30;
-    (general as any).killturn = killturn * 3;
+    general.killturn = killturn * 3;
     await general.save();
 
     res.json({ result: true, reason: 'success' });

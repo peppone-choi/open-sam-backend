@@ -1,6 +1,6 @@
 import { Nation } from '../models/nation.model';
 import { DeleteResult } from 'mongodb';
-import { saveNation } from '../common/cache/model-cache.helper';
+import { saveNation, getNation } from '../common/cache/model-cache.helper';
 
 /**
  * 국가 리포지토리
@@ -11,25 +11,42 @@ import { saveNation } from '../common/cache/model-cache.helper';
  */
 class NationRepository {
   /**
-   * ID로 국가 조회
+   * ID로 국가 조회 (MongoDB _id)
    * @param nationId - 국가 ID
    * @returns 국가 문서 또는 null
    */
   async findById(nationId: string) {
-    return (Nation as any).findById(nationId);
+    return Nation.findById(nationId);
   }
 
   /**
-   * 국가 번호로 조회
+   * 국가 번호로 조회 (L1 → L2 → DB)
    * @param sessionId - 세션 ID
    * @param nationNum - 국가 번호
    * @returns 국가 문서 또는 null
    */
   async findByNationNum(sessionId: string, nationNum: number) {
-    return (Nation as any).findOne({ 
+    // 캐시에서 먼저 조회
+    const cached = await getNation(sessionId, nationNum);
+    if (cached) {
+      // plain object를 Mongoose Document로 변환
+      const doc = new Nation(cached);
+      doc.isNew = false; // 기존 문서임을 표시
+      return doc;
+    }
+    
+    // 캐시 미스 시 DB 조회
+    const nation = await Nation.findOne({ 
       session_id: sessionId, 
       nation: nationNum 
     });
+    
+    // DB에서 조회한 결과를 캐시에 저장
+    if (nation) {
+      await saveNation(sessionId, nationNum, nation.toObject());
+    }
+    
+    return nation;
   }
 
   /**
@@ -38,7 +55,7 @@ class NationRepository {
    * @returns 국가 목록
    */
   async findBySession(sessionId: string) {
-    return (Nation as any).find({ session_id: sessionId });
+    return Nation.find({ session_id: sessionId });
   }
 
   /**
@@ -47,7 +64,7 @@ class NationRepository {
    * @returns 활성 국가 목록
    */
   async findActive(sessionId: string) {
-    return (Nation as any).find({ 
+    return Nation.find({ 
       session_id: sessionId,
       level: { $gt: 0 }
     });
@@ -77,7 +94,7 @@ class NationRepository {
    * @returns 업데이트 결과 (Redis에만 저장, DB는 데몬이 동기화)
    */
   async updateById(nationId: string, update: any) {
-    const existing = await (Nation as any).findById(nationId).lean();
+    const existing = await Nation.findById(nationId).lean();
     
     if (!existing) {
       throw new Error(`Nation not found: ${nationId}`);
@@ -104,7 +121,7 @@ class NationRepository {
    */
   async updateByNationNum(sessionId: string, nationNum: number, update: any) {
     // 기존 국가 데이터 조회
-    const existing = await (Nation as any).findOne({ 
+    const existing = await Nation.findOne({ 
       session_id: sessionId, 
       nation: nationNum 
     }).lean();
@@ -127,7 +144,7 @@ class NationRepository {
    * @returns 삭제 결과
    */
   async deleteById(nationId: string): Promise<DeleteResult> {
-    return (Nation as any).deleteOne({ _id: nationId });
+    return Nation.deleteOne({ _id: nationId });
   }
 
   /**
@@ -136,7 +153,7 @@ class NationRepository {
    * @returns 삭제 결과
    */
   async deleteBySession(sessionId: string): Promise<DeleteResult> {
-    return (Nation as any).deleteMany({ session_id: sessionId });
+    return Nation.deleteMany({ session_id: sessionId });
   }
 
   /**
@@ -145,7 +162,16 @@ class NationRepository {
    * @returns 국가 목록
    */
   async findByFilter(filter: any) {
-    return (Nation as any).find(filter);
+    return Nation.find(filter);
+  }
+
+  /**
+   * 조건으로 국가 한 개 조회
+   * @param filter - 검색 조건
+   * @returns 국가 문서 또는 null
+   */
+  async findOneByFilter(filter: any) {
+    return Nation.findOne(filter);
   }
 
   /**
@@ -154,7 +180,28 @@ class NationRepository {
    * @returns 국가 수
    */
   async count(filter: any): Promise<number> {
-    return (Nation as any).countDocuments(filter);
+    return Nation.countDocuments(filter);
+  }
+
+  /**
+   * 국가의 장수 수 증가/감소 (gennum)
+   * @param sessionId - 세션 ID
+   * @param nationNum - 국가 번호
+   * @param increment - 증가량 (음수면 감소)
+   * @returns 업데이트 결과
+   */
+  async incrementGennum(sessionId: string, nationNum: number, increment: number) {
+    return Nation.updateOne(
+      {
+        session_id: sessionId,
+        'data.nation': nationNum
+      },
+      {
+        $inc: {
+          'data.gennum': increment
+        }
+      }
+    );
   }
 }
 

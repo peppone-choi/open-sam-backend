@@ -95,14 +95,14 @@ router.get('/kakao/callback', async (req, res) => {
     const kakaoUserInfo = userInfoResult.userInfo!;
 
     // 사용자 조회 또는 생성
-    let user = await (User as any).findOne({ 
+    let user = await User.findOne({ 
       oauth_type: 'kakao',
       'oauth_id': String(kakaoUserInfo.id)
     });
 
     if (!user) {
       // 새 사용자 생성
-      user = new (User as any)({
+      user = new User({
         username: `kakao_${kakaoUserInfo.id}`,
         name: kakaoUserInfo.properties?.nickname || kakaoUserInfo.kakao_account?.profile?.nickname || '카카오 사용자',
         oauth_type: 'kakao',
@@ -169,7 +169,7 @@ router.post('/kakao/unlink', async (req, res) => {
     const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     const decoded = jwt.verify(token, secret) as { userId: string };
 
-    const user = await (User as any).findById(decoded.userId);
+    const user = await User.findById(decoded.userId);
     if (!user || user.oauth_type !== 'kakao' || !user.oauth_id) {
       return res.status(400).json({
         success: false,

@@ -177,7 +177,7 @@ router.get('/session/:sessionId/config', async (req, res) => {
   try {
     const { sessionId } = req.params;
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({ error: '세션을 찾을 수 없습니다' });
     }
@@ -271,7 +271,7 @@ router.get('/session/:sessionId/config', async (req, res) => {
 router.get('/const', async (req, res) => {
   try {
     const sessionId = req.query.sessionId as string || 'sangokushi_default';
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     
     res.json(session?.game_constants || {});
   } catch (error: any) {
@@ -372,7 +372,7 @@ router.get('/const', async (req, res) => {
 router.get('/turn', async (req, res) => {
   try {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
@@ -538,7 +538,7 @@ router.get('/ranking', async (req, res) => {
     const sessionId = req.query.session_id as string || req.query.serverID as string || 'sangokushi_default';
     
     // 장수 랭킹 (경험치 기준)
-    const generals = await (General as any).find({ session_id: sessionId })
+    const generals = await General.find({ session_id: sessionId })
       .sort({ 'data.experience': -1, 'data.explevel': -1 })
       .limit(100)
       .lean();
@@ -693,7 +693,7 @@ router.get('/cities', async (req, res) => {
   try {
     const sessionId = req.query.session as string || 'sangokushi_default';
     
-    const cities = await (City as any).find({ session_id: sessionId });
+    const cities = await City.find({ session_id: sessionId });
     
     res.json({
       cities: cities.map(c => ({
@@ -835,7 +835,7 @@ router.get('/cities/:id', async (req, res) => {
     const { id } = req.params;
     const sessionId = req.query.session as string || 'sangokushi_default';
     
-    const city = await (City as any).findOne({ session_id: sessionId, city: parseInt(id) });
+    const city = await City.findOne({ session_id: sessionId, city: parseInt(id) });
     if (!city) {
       return res.status(404).json({ error: '도시를 찾을 수 없습니다' });
     }
@@ -853,7 +853,7 @@ router.get('/cities/:id', async (req, res) => {
 router.post('/basic-info', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const userId = (req.user as any)?.userId || (req.user as any)?.id;
+    const userId = req.user?.userId || req.user?.id;
     
     if (!userId) {
       return res.json({
@@ -865,7 +865,7 @@ router.post('/basic-info', authenticate, async (req, res) => {
       });
     }
 
-    const general: any = await (General as any).findOne({ 
+    const general: any = await General.findOne({ 
       session_id: sessionId,
       owner: String(userId)
     }).lean();
@@ -918,7 +918,7 @@ router.post('/general-list', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     
-    const generals = await (General as any).find({ 
+    const generals = await General.find({ 
       session_id: sessionId,
       'data.npc': { $lt: 2 } // NPC가 아닌 장수
     }).lean();
@@ -970,7 +970,7 @@ router.post('/city-list', authenticate, async (req, res) => {
   try {
     const sessionId = (req.body.session_id as string) || 'sangokushi_default';
     
-    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+    const nations = await Nation.find({ session_id: sessionId }).lean();
     const nationMap: Record<number, any> = {};
     nations.forEach((nation: any) => {
       const nationId = nation.data?.nation || nation.nation;
@@ -986,7 +986,7 @@ router.post('/city-list', authenticate, async (req, res) => {
       }
     });
 
-    const cities = await (City as any).find({ session_id: sessionId }).lean();
+    const cities = await City.find({ session_id: sessionId }).lean();
     
     const cityArgsList = ['city', 'nation', 'name', 'level'];
     const cityList = cities.map((city: any) => {
@@ -1057,7 +1057,7 @@ router.post('/vacation', authenticate, async (req, res) => {
 router.post('/server-basic-info', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const userId = (req.user as any)?.userId || (req.user as any)?.id;
+    const userId = req.user?.userId || req.user?.id;
     
     const result = await ServerBasicInfoService.execute(sessionId, userId);
     res.json(result);

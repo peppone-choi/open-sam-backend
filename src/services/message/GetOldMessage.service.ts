@@ -1,6 +1,6 @@
 import { MessageRepository } from '../../repositories/message.repository';
-import { General } from '../../models/general.model';
-import { Message } from '../../models/message.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { messageRepository } from '../../repositories/message.repository';
 import { Session } from '../../models/session.model';
 
 /**
@@ -30,7 +30,7 @@ export class GetOldMessageService {
       }
 
       // 장수 정보 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -64,10 +64,10 @@ export class GetOldMessageService {
         query['data.dest_nation_id'] = nationId;
       }
 
-      const messages = await (Message as any).find(query)
+      const messages = await messageRepository.findByFilter(query)
         .sort({ 'data.id': -1 })
         .limit(15)
-        .lean();
+        ;
 
       const messageList = messages.map(msg => ({
         id: msg.data?.id,

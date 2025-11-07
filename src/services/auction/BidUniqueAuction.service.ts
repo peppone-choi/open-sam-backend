@@ -1,5 +1,7 @@
 import { Auction } from '../../models/auction.model';
 import { General } from '../../models/general.model';
+import { auctionRepository } from '../../repositories/auction.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 export class BidUniqueAuctionService {
   static async execute(data: any, user?: any) {
@@ -15,7 +17,7 @@ export class BidUniqueAuctionService {
         throw new Error('필수 파라미터가 누락되었습니다.');
       }
 
-      const auction = await (Auction as any).findOne({
+      const auction = await auctionRepository.findOneByFilter({
         _id: auctionID,
         session_id: sessionId,
         type: 'UniqueItem'
@@ -34,7 +36,7 @@ export class BidUniqueAuctionService {
         throw new Error('경매가 이미 끝났습니다.');
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -64,7 +66,7 @@ export class BidUniqueAuctionService {
       }
 
       if (highestBid && !myPrevBid) {
-        const oldBidder = await (General as any).findOne({
+        const oldBidder = await generalRepository.findBySessionAndNo({
           session_id: sessionId,
           'data.no': highestBid.generalId
         });

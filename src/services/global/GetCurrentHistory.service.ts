@@ -1,8 +1,8 @@
-import { Session } from '../../models/session.model';
-import { WorldHistory } from '../../models/world_history.model';
-import { GeneralRecord } from '../../models/general_record.model';
-import { Nation } from '../../models/nation.model';
-import { City } from '../../models/city.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { worldHistoryRepository } from '../../repositories/world-history.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * GetCurrentHistory Service
@@ -16,7 +16,7 @@ export class GetCurrentHistoryService {
     
     try {
       // Load session
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -79,7 +79,7 @@ export class GetCurrentHistoryService {
    * Get world map info (simplified version for history)
    */
   private static async getWorldMap(sessionId: string, userId: string | null): Promise<any> {
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId );
     if (!session) return {};
 
     const sessionData = session.data as any || {};
@@ -88,9 +88,9 @@ export class GetCurrentHistoryService {
     const month = sessionData.month || 1;
 
     // Get nations
-    const nations = await (Nation as any).find({ session_id: sessionId })
-      .select('nation name data')
-      .lean();
+    const nations = await nationRepository.findByFilter({ session_id: sessionId })
+      
+      ;
 
     const nationList: any[] = [];
     for (const nation of nations) {
@@ -104,9 +104,9 @@ export class GetCurrentHistoryService {
     }
 
     // Get cities
-    const cities = await (City as any).find({ session_id: sessionId })
-      .select('city data')
-      .lean();
+    const cities = await cityRepository.findByFilter({ session_id: sessionId })
+      
+      ;
 
     const cityList: any[] = [];
     for (const city of cities) {
@@ -138,16 +138,16 @@ export class GetCurrentHistoryService {
    * Get global history logs for specific year/month
    */
   private static async getGlobalHistoryLogWithDate(sessionId: string, year: number, month: number): Promise<any[]> {
-    const records = await (WorldHistory as any).find({
+    const records = await worldHistoryRepository.findByFilter({
       session_id: sessionId,
       'data.nation_id': 0,
       'data.year': year,
       'data.month': month
     })
-      .select('data')
+      
       .sort({ 'data.id': -1 })
       .limit(100)
-      .lean();
+      ;
 
     return records.map(record => {
       const data = record.data as any;
@@ -164,17 +164,17 @@ export class GetCurrentHistoryService {
    * Get global action logs for specific year/month
    */
   private static async getGlobalActionLogWithDate(sessionId: string, year: number, month: number): Promise<any[]> {
-    const records = await (GeneralRecord as any).find({
+    const records = await generalRecordRepository.findByFilter({
       session_id: sessionId,
       'data.general_id': 0,
       'data.log_type': 'history',
       'data.year': year,
       'data.month': month
     })
-      .select('data')
+      
       .sort({ 'data.id': -1 })
       .limit(100)
-      .lean();
+      ;
 
     return records.map(record => {
       const data = record.data as any;
@@ -191,9 +191,9 @@ export class GetCurrentHistoryService {
    * Get all nations with their cities
    */
   private static async getAllNations(sessionId: string): Promise<any[]> {
-    const nations = await (Nation as any).find({ session_id: sessionId })
-      .select('nation name data')
-      .lean();
+    const nations = await nationRepository.findByFilter({ session_id: sessionId })
+      
+      ;
 
     const nationMap: Record<number, any> = {};
     
@@ -208,7 +208,7 @@ export class GetCurrentHistoryService {
     }
 
     // Get nation 0 (neutral)
-    const neutralNation = await (Nation as any).findOne({ session_id: sessionId, nation: 0 }).lean();
+    const neutralNation = await nationRepository.findByNationNum(sessionId, 0 );
     if (neutralNation) {
       const neutralData = neutralNation.data as any || {};
       nationMap[0] = {
@@ -220,9 +220,9 @@ export class GetCurrentHistoryService {
     }
 
     // Get all cities and add to nations
-    const cities = await (City as any).find({ session_id: sessionId })
-      .select('city name nation')
-      .lean();
+    const cities = await cityRepository.findByFilter({ session_id: sessionId })
+      
+      ;
 
     for (const city of cities) {
       const nationId = city.nation || 0;

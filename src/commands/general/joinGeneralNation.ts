@@ -1,4 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
@@ -70,7 +72,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     const destGeneralID = this.arg['destGeneralID'];
     const sessionId = this.env['session_id'] || 'sangokushi_default';
 
-    const destGeneralDoc = await (General as any).findOne({
+    const destGeneralDoc = await generalRepository.findOneByFilter({
       session_id: sessionId,
       'data.no': destGeneralID
     });
@@ -82,7 +84,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     this.destGeneral = destGeneralDoc;
     const destNationId = destGeneralDoc.nation || 0;
 
-    const destNationDoc = await (Nation as any).findOne({
+    const destNationDoc = await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': destNationId
     });
@@ -139,7 +141,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const sessionId = env['session_id'] || 'sangokushi_default';
 
@@ -163,7 +165,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 임관`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <S>임관</>했습니다.`);
 
-    const initialGenLimit = (GameConst as any).initialNationGenLimit || 10;
+    const initialGenLimit = GameConst.initialNationGenLimit || 10;
     let exp = 100;
     if (gennum < initialGenLimit) {
       exp = 700;
@@ -227,7 +229,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       console.error('tryUniqueItemLottery failed:', error);
     }
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

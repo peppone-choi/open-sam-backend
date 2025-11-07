@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Message } from '../../models/message.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { messageRepository } from '../../repositories/message.repository';
 
 /**
  * DecideMessageResponse Service
@@ -22,7 +22,7 @@ export class DecideMessageResponseService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const message = await (Message as any).findOne({
+      const message = await messageRepository.findOneByFilter({
         session_id: sessionId,
         'data.id': msgID
       });
@@ -35,7 +35,7 @@ export class DecideMessageResponseService {
         return { success: false, message: '외교 메시지가 아닙니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -60,7 +60,7 @@ export class DecideMessageResponseService {
         return { success: false, message: '이미 응답한 메시지입니다' };
       }
 
-      await (Message as any).updateOne(
+      await messageRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.id': msgID

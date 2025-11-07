@@ -1,4 +1,5 @@
-import { Battle, BattleStatus } from '../../models/battle.model';
+import { BattleStatus } from '../../models/battle.model';
+import { battleRepository } from '../../repositories/battle.repository';
 
 export class DeployUnitsService {
   static async execute(data: any, user?: any) {
@@ -9,7 +10,7 @@ export class DeployUnitsService {
         return { success: false, message: '필수 파라미터가 누락되었습니다' };
       }
 
-      const battle = await (Battle as any).findOne({ battleId });
+      const battle = await battleRepository.findByBattleId(battleId);
 
       if (!battle) {
         return { success: false, message: '전투를 찾을 수 없습니다' };

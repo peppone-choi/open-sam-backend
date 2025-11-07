@@ -7,7 +7,7 @@
 
 import { KVStorage } from '../../utils/KVStorage';
 import { GeneralAccessLog } from '../../models/general_access_log.model';
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { logger } from '../../common/logger';
 import { Util } from '../../utils/Util';
 import { GameConst } from '../../const/GameConst';
@@ -82,7 +82,7 @@ export async function updateTraffic(sessionId: string): Promise<void> {
     await gameStor.setValue('recentTraffic', updatedRecentTraffic);
 
     // GeneralAccessLog의 refresh 카운트 리셋
-    await (GeneralAccessLog as any).updateMany(
+    await GeneralAccessLog.updateMany(
       { session_id: sessionId },
       { $set: { 'data.refresh': 0 } }
     );

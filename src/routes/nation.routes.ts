@@ -2077,7 +2077,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     const sessionId = req.body.session_id || 'sangokushi_default';
     
     // 장수 정보 가져오기
-    const general: any = await (General as any).findOne({ owner: req.user.userId, session_id: sessionId });
+    const general: any = await General.findOne({ owner: req.user.userId, session_id: sessionId });
     if (!general) {
       return res.json({ result: false, reason: '장수를 찾을 수 없습니다' });
     }
@@ -2096,21 +2096,21 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     }
 
     // Nation 조회
-    const nation: any = await (Nation as any).findOne({ session_id: sessionId, nation: nationId });
+    const nation: any = await Nation.findOne({ session_id: sessionId, nation: nationId });
     if (!nation) {
       return res.json({ result: false, reason: '국가를 찾을 수 없습니다' });
     }
 
     // Session 환경 조회 (year, month)
-    const sessionKV: any = await (KVStorage as any).findOne({ session_id: sessionId, storage_id: 'game_env' });
+    const sessionKV: any = await KVStorage.findOne({ session_id: sessionId, storage_id: 'game_env' });
     const year = sessionKV?.data?.year || sessionKV?.value?.year || 0;
     const month = sessionKV?.data?.month || sessionKV?.value?.month || 0;
 
     // 모든 국가 정보 조회
-    const allNations: any[] = await (Nation as any).find({ session_id: sessionId });
+    const allNations: any[] = await Nation.find({ session_id: sessionId });
 
     // 국가별 도시 수 집계
-    const cityCounts = await (City as any).aggregate([
+    const cityCounts = await City.aggregate([
       { $match: { session_id: sessionId } },
       { $group: { _id: '$nation', count: { $sum: 1 } } }
     ]);
@@ -2120,7 +2120,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     });
 
     // 외교 관계 조회
-    const diplomacyList: any[] = await (Diplomacy as any).find({ session_id: sessionId, me: nationId });
+    const diplomacyList: any[] = await Diplomacy.find({ session_id: sessionId, me: nationId });
     const dipStateMap: Record<number, { state: number; term: number }> = {};
     diplomacyList.forEach((dip: any) => {
       dipStateMap[dip.you] = { state: dip.state, term: dip.term };
@@ -2151,7 +2151,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     });
 
     // 국가 KVStorage 조회
-    const nationKV: any = await (KVStorage as any).findOne({ session_id: sessionId, storage_id: `nation_${nationId}` });
+    const nationKV: any = await KVStorage.findOne({ session_id: sessionId, storage_id: `nation_${nationId}` });
     const nationMsg = nationKV?.data?.nationNotice?.msg || nationKV?.value?.notice?.msg || '';
     const scoutMsg = nationKV?.data?.scout_msg || nationKV?.value?.scout_msg || '';
     const availableWarSettingCnt = nationKV?.data?.available_war_setting_cnt || nationKV?.value?.available_war_setting_cnt || 0;
@@ -2176,14 +2176,14 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     const { getGoldIncome, getRiceIncome, getWallIncome, getWarGoldIncome, getOutcome } = await import('../utils/income-util');
     
     // 국가 도시 목록 조회
-    const cityList: any[] = await (City as any).find({
+    const cityList: any[] = await City.find({
       session_id: sessionId,
       nation: nationId
     }).lean();
 
     // 관직자 수 집계 (officer_level IN (2,3,4) AND city = officer_city)
     const officersCnt: Record<number, number> = {};
-    const generalsForOfficers: any[] = await (General as any).find({
+    const generalsForOfficers: any[] = await General.find({
       session_id: sessionId,
       'data.nation': nationId,
       'data.officer_level': { $in: [2, 3, 4] }
@@ -2243,7 +2243,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     );
 
     // 지출 계산
-    const generalsForOutcome: any[] = await (General as any).find({
+    const generalsForOutcome: any[] = await General.find({
       session_id: sessionId,
       'data.nation': nationId
     }).select('data').lean();
@@ -2343,7 +2343,7 @@ router.post('/betting', authenticate, async (req, res) => {
       res.json({
         result: false,
         bettings: [],
-        reason: (result as any).reason || '배팅 정보를 조회할 수 없습니다'
+        reason: result.reason || '배팅 정보를 조회할 수 없습니다'
       });
     }
   } catch (error: any) {

@@ -45,7 +45,7 @@ async function syncToDatabase() {
         // 타입별로 DB에 저장
         switch (type) {
           case 'session': {
-            await (Session as any).findOneAndUpdate(
+            await Session.findOneAndUpdate(
               { session_id: data.session_id },
               { $set: data },
               { upsert: true }
@@ -59,7 +59,7 @@ async function syncToDatabase() {
             const generalId = data.generalId || data.no || data.data?.no;
             
             if (sessionId && generalId) {
-              await (General as any).findOneAndUpdate(
+              await General.findOneAndUpdate(
                 { session_id: sessionId, 'data.no': generalId },
                 { $set: data },
                 { upsert: true }
@@ -74,7 +74,7 @@ async function syncToDatabase() {
             const cityId = data.city || data.cityId;
             
             if (sessionId && cityId) {
-              await (City as any).findOneAndUpdate(
+              await City.findOneAndUpdate(
                 { session_id: sessionId, city: cityId },
                 { $set: data },
                 { upsert: true }
@@ -89,7 +89,7 @@ async function syncToDatabase() {
             const nationId = data.nation || data.nationId;
             
             if (sessionId && nationId) {
-              await (Nation as any).findOneAndUpdate(
+              await Nation.findOneAndUpdate(
                 { session_id: sessionId, nation: nationId },
                 { $set: data },
                 { upsert: true }

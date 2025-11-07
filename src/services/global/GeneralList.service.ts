@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { getSession } from '../../common/cache/model-cache.helper';
 import { cacheService } from '../../common/cache/cache.service';
 
@@ -26,16 +26,16 @@ export class GeneralListService {
       // Get all generals with essential fields (캐시 적용 - 목록은 짧은 TTL)
       const generals: any[] = await cacheService.getOrLoad(
         `generals:list:${sessionId}`,
-        () => (General as any).find({ session_id: sessionId })
-          .select('no name owner picture data')
-          .lean(),
+        () => generalRepository.findBySession(sessionId )
+          
+          ,
         30 // 목록은 30초 TTL
       ) || [];
 
       // Get all nations (캐시 적용)
       const nations: any[] = await cacheService.getOrLoad(
         `nations:list:${sessionId}`,
-        () => (Nation as any).find({ session_id: sessionId }).lean(),
+        () => nationRepository.findByFilter({ session_id: sessionId }),
         60 // 1분 TTL
       ) || [];
       const nationMap: Record<number, any> = {};

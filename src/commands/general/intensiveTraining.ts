@@ -30,12 +30,12 @@ export class IntensiveTrainingCommand extends GeneralCommand {
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
-      (ConstraintHelper as any).ReqGeneralTrainMargin((GameConst as any).maxTrainByCommand),
+      ConstraintHelper.ReqGeneralTrainMargin(GameConst.maxTrainByCommand),
     ];
   }
 
   public getCommandDetailTitle(): string {
-    const name = (this.constructor as any).getName();
+    const name = this.constructor.getName();
     const [reqGold, reqRice] = this.getCost();
 
     let title = `${name}(통솔경험`;
@@ -66,12 +66,12 @@ export class IntensiveTrainingCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
     const score = Util.round(
-      (general as any).getLeadership() * 100 / general.getVar('crew') * (GameConst as any).trainDelta * 2 / 3
+      general.getLeadership() * 100 / general.getVar('crew') * GameConst.trainDelta * 2 / 3
     );
     const scoreText = score.toLocaleString();
 
@@ -82,8 +82,8 @@ export class IntensiveTrainingCommand extends GeneralCommand {
     const exp = 150;
     const ded = 100;
 
-    general.increaseVarWithLimit('train', score, 0, (GameConst as any).maxTrainByCommand);
-    general.increaseVarWithLimit('atmos', score, 0, (GameConst as any).maxAtmosByCommand);
+    general.increaseVarWithLimit('train', score, 0, GameConst.maxTrainByCommand);
+    general.increaseVarWithLimit('atmos', score, 0, GameConst.maxAtmosByCommand);
 
     general.addDex(general.getCrewTypeObj(), score * 2, false);
 
@@ -101,7 +101,7 @@ export class IntensiveTrainingCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await general.applyDB(db);
+    await await general.save();
 
     return true;
   }

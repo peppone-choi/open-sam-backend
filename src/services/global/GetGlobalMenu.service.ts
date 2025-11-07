@@ -1,11 +1,11 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 
 export class GetGlobalMenuService {
   static async execute(data: any, _user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,

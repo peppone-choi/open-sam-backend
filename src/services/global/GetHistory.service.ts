@@ -1,4 +1,4 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import mongoose from 'mongoose';
 
 export class GetHistoryService {
@@ -9,7 +9,7 @@ export class GetHistoryService {
     const serverID = data.serverID || 'sangokushi';
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,

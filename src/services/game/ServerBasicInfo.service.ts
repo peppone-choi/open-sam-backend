@@ -3,15 +3,15 @@
  * 서버 기본 정보 조회 (j_server_basic_info.php)
  */
 
-import { Session } from '../../models/session.model';
-import { Nation } from '../../models/nation.model';
-import { General } from '../../models/general.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
 import { logger } from '../../common/logger';
 
 export class ServerBasicInfoService {
   static async execute(sessionId: string, userId?: string) {
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       
       if (!session) {
         return {
@@ -24,19 +24,19 @@ export class ServerBasicInfoService {
       const gameEnv = sessionData.game_env || {};
 
       // 국가 수
-      const nationCount = await (Nation as any).countDocuments({
+      const nationCount = await nationRepository.count({
         session_id: sessionId,
         'data.level': { $gt: 0 }
       });
 
       // 장수 수 (NPC가 아닌)
-      const genCount = await (General as any).countDocuments({
+      const genCount = await generalRepository.count({
         session_id: sessionId,
         'data.npc': { $lt: 2 }
       });
 
       // NPC 수
-      const npcCount = await (General as any).countDocuments({
+      const npcCount = await generalRepository.count({
         session_id: sessionId,
         'data.npc': { $gte: 2 }
       });
@@ -81,10 +81,7 @@ export class ServerBasicInfoService {
       // 사용자 정보 (로그인한 경우)
       let me = null;
       if (userId) {
-        const general = await (General as any).findOne({
-          session_id: sessionId,
-          owner: String(userId)
-        }).lean();
+        const general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
         if (general) {
           const genData = general.data || {};

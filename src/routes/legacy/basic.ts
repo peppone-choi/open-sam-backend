@@ -5,7 +5,7 @@ const router = Router();
 
 router.get('/basic-info', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.json({
         generalID: 0,
@@ -16,7 +16,7 @@ router.get('/basic-info', async (req: Request, res: Response) => {
       });
     }
 
-    const general: any = await (General as any).findOne({ owner: userId })
+    const general: any = await General.findOne({ owner: userId })
       .select('no nation officerLevel belong penalty permission')
       .lean();
 

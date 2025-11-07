@@ -1,6 +1,6 @@
 import { SelectPool } from '../../models/select_pool.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 
 /**
  * UpdatePickedGeneral Service
@@ -29,7 +29,7 @@ export class UpdatePickedGeneralService {
 
     try {
       // 세션 정보 확인
-      const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -37,7 +37,7 @@ export class UpdatePickedGeneralService {
         };
       }
 
-      const sessionData = (session as any).config || session.data || {};
+      const sessionData = session.config || session.data || {};
       const npcmode = sessionData.npcmode || 0;
       const turnterm = sessionData.turnterm || 60; // 분 단위
 
@@ -49,10 +49,7 @@ export class UpdatePickedGeneralService {
       }
 
       // 기존 장수 확인
-      const existingGeneral = await (General as any).findOne({
-        session_id: sessionId,
-        owner: userId.toString()
-      });
+      const existingGeneral = await generalRepository.findBySessionAndOwner(sessionId, userId.toString());
 
       if (!existingGeneral) {
         return {
@@ -64,12 +61,12 @@ export class UpdatePickedGeneralService {
       const now = new Date();
 
       // 선택 풀에서 정보 가져오기
-      const selectPool = await (SelectPool as any).findOne({
+      const selectPool = await SelectPool.findOne({
         session_id: sessionId,
         'data.owner': userId.toString(),
         'data.reserved_until': { $gte: now },
         'data.unique_name': pick
-      }).lean();
+      });
 
       if (!selectPool || !selectPool.data?.info) {
         return {
@@ -89,7 +86,7 @@ export class UpdatePickedGeneralService {
       };
 
       // 기존 선택 풀 정리
-      await (SelectPool as any).updateMany(
+      await SelectPool.updateMany(
         {
           session_id: sessionId,
           'data.unique_name': { $ne: pick },
@@ -105,7 +102,7 @@ export class UpdatePickedGeneralService {
       );
 
       // 선택된 풀 업데이트
-      const updateResult = await (SelectPool as any).updateOne(
+      const updateResult = await SelectPool.updateOne(
         {
           session_id: sessionId,
           'data.unique_name': pick,
@@ -176,7 +173,7 @@ export class UpdatePickedGeneralService {
       await existingGeneral.save();
 
       // 선택 풀 정리
-      await (SelectPool as any).updateMany(
+      await SelectPool.updateMany(
         {
           session_id: sessionId,
           'data.owner': userId.toString(),

@@ -1,7 +1,9 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import { City } from '../../models/city.model';
 import { Troop } from '../../models/troop.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 
 /**
  * GetGeneralInfo Service
@@ -28,7 +30,7 @@ export class GetGeneralInfoService {
         }
         
         // 현재 유저의 장수 조회
-        general = await (General as any).findOne({
+        general = await generalRepository.findBySessionAndOwner({
           session_id: sessionId,
           owner: String(userId),
           'data.npc': { $lt: 2 } // NPC가 아닌 실제 플레이어 장수
@@ -44,7 +46,7 @@ export class GetGeneralInfoService {
         generalId = general.data?.no || general.no;
       } else {
         // 지정된 generalID로 조회
-        general = await (General as any).findOne({
+        general = await generalRepository.findBySessionAndNo({
           session_id: sessionId,
           'data.no': generalId
         });
@@ -64,7 +66,7 @@ export class GetGeneralInfoService {
       // 국가 정보 조회
       let nationInfo = null;
       if (nationId !== 0) {
-        const nation = await (Nation as any).findOne({
+        const nation = await nationRepository.findOneByFilter({
           session_id: sessionId,
           'data.nation': nationId
         });
@@ -83,7 +85,7 @@ export class GetGeneralInfoService {
       // 도시 정보 조회
       let cityInfo = null;
       if (cityId !== 0) {
-        const city = await (City as any).findOne({
+        const city = await cityRepository.findOneByFilter({
           session_id: sessionId,
           'data.id': cityId
         });
@@ -102,7 +104,7 @@ export class GetGeneralInfoService {
       // 부대 정보 조회
       let troopInfo = null;
       if (generalData.troop) {
-        const troop = await (Troop as any).findOne({
+        const troop = await troopRepository.findOneByFilter({
           session_id: sessionId,
           'data.troop': generalData.troop
         });

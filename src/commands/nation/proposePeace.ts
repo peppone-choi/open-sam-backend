@@ -70,7 +70,7 @@ export class che_종전제의 extends NationCommand {
 
   public getBrief(): string {
     const commandName = this.constructor.getName();
-    const getNationStaticInfo = (global as any).getNationStaticInfo;
+    const getNationStaticInfo = global.getNationStaticInfo;
     const destNationName = getNationStaticInfo(this.arg['destNationID'])['name'];
     return `【${destNationName}】에게 ${commandName}`;
   }
@@ -80,7 +80,7 @@ export class che_종전제의 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -97,7 +97,7 @@ export class che_종전제의 extends NationCommand {
     const josaRo = JosaUtil.pick(destNationName, '로');
 
     const logger = general!.getLogger();
-    const destLogger = new (ActionLogger as any)(0, destNationID, env['year'], env['month']);
+    const destLogger = new ActionLogger(0, destNationID, env['year'], env['month']);
 
     logger.pushGeneralActionLog(`<D><b>${destNationName}</b></>${josaRo} 종전 제의 서신을 보냈습니다.<1>${date}</>`);
 
@@ -137,10 +137,10 @@ export class che_종전제의 extends NationCommand {
     const nationID = generalObj!.getNationID();
     const nationList = [];
     const testTurn = new LastTurn(this.constructor.getName(), null, this.getPreReqTurn());
-    const getAllNationStaticInfo = (global as any).getAllNationStaticInfo;
+    const getAllNationStaticInfo = global.getAllNationStaticInfo;
 
     for (const destNation of getAllNationStaticInfo()) {
-      const testCommand = new (this.constructor as any)(
+      const testCommand = new this.constructor(
         generalObj,
         this.env,
         testTurn,

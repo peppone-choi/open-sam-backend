@@ -1,5 +1,6 @@
+import { sessionRepository } from '../repositories/session.repository';
 import { Session } from '../../models/session.model';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../repositories/general.repository';
 import { NgBetting } from '../../models/ng_betting.model';
 
 const MIN_GOLD_REQUIRED_WHEN_BETTING = 500;
@@ -29,7 +30,7 @@ export class BetService {
         };
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -148,7 +149,7 @@ export class BetService {
         await session.save();
 
       } else {
-        const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
+        const general = await generalRepository.findBySessionAndNo(sessionId, generalId );
         if (!general) {
           return {
             success: false,
@@ -174,7 +175,7 @@ export class BetService {
 
       const bettingTypeKey = JSON.stringify(uniqueBettingType);
 
-      const existingBet = await (NgBetting as any).findOne({
+      const existingBet = await NgBetting.findOne({
         session_id: sessionId,
         'data.betting_id': bettingID,
         'data.general_id': generalId,
@@ -187,7 +188,7 @@ export class BetService {
         existingBet.data = existingData;
         await existingBet.save();
       } else {
-        await (NgBetting as any).create({
+        await NgBetting.create({
           session_id: sessionId,
           data: {
             betting_id: bettingID,

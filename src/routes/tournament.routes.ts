@@ -45,7 +45,7 @@ router.post('/info', authenticate, async (req, res) => {
 router.post('/apply', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const generalNo = req.body.generalNo || (req.user as any)?.generalId;
+    const generalNo = req.body.generalNo || req.user?.generalId;
     
     if (!generalNo) {
       return res.status(400).json({
@@ -77,7 +77,7 @@ router.post('/apply', authenticate, async (req, res) => {
 router.post('/cancel', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    const generalNo = req.body.generalNo || (req.user as any)?.generalId;
+    const generalNo = req.body.generalNo || req.user?.generalId;
     
     if (!generalNo) {
       return res.status(400).json({

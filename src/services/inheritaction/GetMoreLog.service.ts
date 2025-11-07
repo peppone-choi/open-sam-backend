@@ -1,6 +1,6 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { UserRecord } from '../../models/user_record.model';
 
 export class GetMoreLogService {
@@ -15,7 +15,7 @@ export class GetMoreLogService {
         return { success: false, message: '잘못된 lastID 파라미터입니다.' };
       }
       
-      const logs = await (UserRecord as any).find({
+      const logs = await UserRecord.find({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',
@@ -23,8 +23,8 @@ export class GetMoreLogService {
       })
       .sort({ id: -1 })
       .limit(30)
-      .select('id server_id year month date text')
-      .lean();
+      
+      ;
       
       return {
         success: true,

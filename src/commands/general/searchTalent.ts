@@ -2,6 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 인재 탐색 커맨드
@@ -29,11 +30,12 @@ export class SearchTalentCommand extends GeneralCommand {
     ];
   }
 
-  public getCommandDetailTitle(): string {
+  public async getCommandDetailTitle(): Promise<string> {
     const maxGenCnt = this.env.maxgeneral;
-    // TODO: DB 쿼리로 실제 장수 수 계산
-    const totalGenCnt = 0;
-    const totalNpcCnt = 0;
+    
+    // 실제 장수 수 계산 (npc <= 2: 플레이어/NPC 장수, npc >= 3 && npc <= 4: 재야 장수)
+    const totalGenCnt = await generalRepository.countByFilter({ npc: { $lte: 2 } });
+    const totalNpcCnt = await generalRepository.countByFilter({ npc: { $gte: 3, $lte: 4 } });
 
     const name = SearchTalentCommand.getName();
     const [reqGold, reqRice] = this.getCost();
@@ -90,7 +92,7 @@ export class SearchTalentCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const relYear = env.year - env.startyear;
 
@@ -99,9 +101,9 @@ export class SearchTalentCommand extends GeneralCommand {
 
     const nationID = general.getNationID();
 
-    // TODO: DB 쿼리로 실제 장수 수 계산
-    const totalGenCnt = await (db as any)('general').where('npc', '<=', 2).count('no as count').first().then((r: any) => r?.count || 0);
-    const totalNpcCnt = await (db as any)('general').where('npc', '>=', 3).where('npc', '<=', 4).count('no as count').first().then((r: any) => r?.count || 0);
+    // 실제 장수 수 계산 (npc <= 2: 플레이어/NPC 장수, npc >= 3 && npc <= 4: 재야 장수)
+    const totalGenCnt = await generalRepository.countByFilter({ npc: { $lte: 2 } });
+    const totalNpcCnt = await generalRepository.countByFilter({ npc: { $gte: 3, $lte: 4 } });
 
     const foundProp = this.calcFoundProp(env.maxgeneral, totalGenCnt, totalNpcCnt);
     const foundNpc = rng.nextBool(foundProp);
@@ -130,7 +132,7 @@ export class SearchTalentCommand extends GeneralCommand {
       this.setResultTurn(new LastTurn(SearchTalentCommand.getName(), this.arg));
       general.checkStatChange();
       // TODO: tryUniqueItemLottery
-      general.applyDB(db);
+      await general.save();
       return true;
     }
 
@@ -163,7 +165,7 @@ export class SearchTalentCommand extends GeneralCommand {
     general.checkStatChange();
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
-    general.applyDB(db);
+    await general.save();
     return true;
   }
 }

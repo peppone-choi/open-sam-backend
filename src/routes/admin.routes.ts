@@ -38,7 +38,7 @@ router.use(requireAdmin);
  */
 router.post('/userlist', async (req, res) => {
   try {
-    const users = await (User as any).find({})
+    const users = await User.find({})
       .select('username name grade picture createdAt')
       .lean()
       .limit(1000);
@@ -79,7 +79,7 @@ router.post('/update-user', async (req, res) => {
       });
     }
     
-    const user = await (User as any).findById(userID);
+    const user = await User.findById(userID);
     if (!user) {
       return res.status(404).json({
         result: false,
@@ -203,7 +203,7 @@ router.post('/game-info', async (req, res) => {
   try {
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await Session.findOne({ session_id: sessionId }).lean();
     const sessionData = session?.data || {};
     
     res.json({
@@ -236,7 +236,7 @@ router.post('/update-game', async (req, res) => {
     const { action, data } = req.body;
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({
         result: false,
@@ -276,7 +276,7 @@ router.post('/update-game', async (req, res) => {
       const maxAge = data?.maxAge || 200;
       const fixedAge = data?.fixedAge || 30; // 기본값: 30살
       
-      const result = await (General as any).updateMany(
+      const result = await General.updateMany(
         {
           session_id: sessionId,
           'data.age': { $gt: maxAge }
@@ -327,10 +327,10 @@ router.post('/info', async (req, res) => {
     // type에 따른 정보 조회
     if (type === 0) {
       // 전체 통계
-      const generalCount = await (General as any).countDocuments({ session_id: sessionId });
-      const nationCount = await (Nation as any).countDocuments({ session_id: sessionId });
-      const cityCount = await (City as any).countDocuments({ session_id: sessionId });
-      const userCount = await (User as any).countDocuments({});
+      const generalCount = await General.countDocuments({ session_id: sessionId });
+      const nationCount = await Nation.countDocuments({ session_id: sessionId });
+      const cityCount = await City.countDocuments({ session_id: sessionId });
+      const userCount = await User.countDocuments({});
       
       infoList = [
         { name: '총 장수', value: generalCount },
@@ -340,7 +340,7 @@ router.post('/info', async (req, res) => {
       ];
     } else if (type === 1) {
       // 장수 정보
-      const generals = await (General as any).find({ session_id: sessionId })
+      const generals = await General.find({ session_id: sessionId })
         .sort({ 'data.turntime': -1 })
         .limit(100)
         .lean();
@@ -353,7 +353,7 @@ router.post('/info', async (req, res) => {
       }));
     } else if (type === 2) {
       // 국가 정보
-      const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+      const nations = await Nation.find({ session_id: sessionId }).lean();
       
       infoList = nations.map((n: any) => ({
         nation: n.data?.nation || n.nation,
@@ -363,7 +363,7 @@ router.post('/info', async (req, res) => {
       }));
     } else if (type === 3) {
       // 도시 정보
-      const cities = await (City as any).find({ session_id: sessionId }).lean();
+      const cities = await City.find({ session_id: sessionId }).lean();
       
       infoList = cities.map((c: any) => ({
         id: c.city || c.data?.id || 0,
@@ -401,7 +401,7 @@ router.post('/general', async (req, res) => {
       query['data.no'] = generalID;
     }
     
-    const generals = await (General as any).find(query)
+    const generals = await General.find(query)
       .sort({ 'data.turntime': -1 })
       .limit(1000)
       .lean();
@@ -444,7 +444,7 @@ router.post('/member', async (req, res) => {
       query._id = memberID;
     }
     
-    const users = await (User as any).find(query)
+    const users = await User.find(query)
       .sort({ createdAt: -1 })
       .limit(1000)
       .lean();
@@ -481,7 +481,7 @@ router.post('/time-control', async (req, res) => {
   try {
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await Session.findOne({ session_id: sessionId }).lean();
     const sessionData = session?.data || {};
     
     res.json({
@@ -512,7 +512,7 @@ router.post('/update-time-control', async (req, res) => {
     const { action, data } = req.body;
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({
         result: false,
@@ -554,7 +554,7 @@ router.post('/force-rehall', async (req, res) => {
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
     // 세션 확인 (천통 여부 체크)
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await Session.findOne({ session_id: sessionId }).lean();
     if (!session) {
       return res.status(404).json({
         result: false,
@@ -573,7 +573,7 @@ router.post('/force-rehall', async (req, res) => {
     // 40세 이상이고 NPC가 아닌 장수들에 대해 CheckHall 실행
     const { CheckHallService } = await import('../services/admin/CheckHall.service');
     
-    const generals = await (General as any).find({
+    const generals = await General.find({
       session_id: sessionId,
       'data.npc': { $lt: 2 },
       'data.age': { $gte: 40 }
@@ -590,7 +590,7 @@ router.post('/force-rehall', async (req, res) => {
     }
     
     // 상속 포인트 계산 (NPC가 아닌 장수들)
-    const playerGenerals = await (General as any).find({
+    const playerGenerals = await General.find({
       session_id: sessionId,
       'data.npc': 0
     });
@@ -661,7 +661,7 @@ router.get('/system-status', async (req, res) => {
   try {
     const sessionId = req.query.session_id || 'sangokushi_default';
     
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await Session.findOne({ session_id: sessionId }).lean();
     if (!session) {
       return res.status(404).json({
         result: false,
@@ -670,7 +670,7 @@ router.get('/system-status', async (req, res) => {
     }
     
     const { Plock } = await import('../models/plock.model');
-    const plock = await (Plock as any).findOne({ session_id: sessionId }).lean();
+    const plock = await Plock.findOne({ session_id: sessionId }).lean();
     
     const sessionData = session.data || {};
     const plockData = plock?.data || {};
@@ -720,7 +720,7 @@ router.post('/adjust-time', async (req, res) => {
       });
     }
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({
         result: false,
@@ -740,14 +740,14 @@ router.post('/adjust-time', async (req, res) => {
       session.data.starttime = new Date(currentStarttime.getTime() - adjustMs).toISOString();
       
       // General 테이블의 turntime도 조정
-      await (General as any).updateMany(
+      await General.updateMany(
         { session_id: sessionId },
         { $set: { 'data.turntime': session.data.turntime } }
       );
       
       // NgAuction의 close_date도 조정
       const { NgAuction } = await import('../models');
-      await (NgAuction as any).updateMany(
+      await NgAuction.updateMany(
         { session_id: sessionId },
         { $inc: { 'data.close_date': -adjustMs } }
       );
@@ -760,13 +760,13 @@ router.post('/adjust-time', async (req, res) => {
       const currentStarttime = session.data.starttime ? new Date(session.data.starttime) : new Date();
       session.data.starttime = new Date(currentStarttime.getTime() + adjustMs).toISOString();
       
-      await (General as any).updateMany(
+      await General.updateMany(
         { session_id: sessionId },
         { $set: { 'data.turntime': session.data.turntime } }
       );
       
       const { NgAuction } = await import('../models');
-      await (NgAuction as any).updateMany(
+      await NgAuction.updateMany(
         { session_id: sessionId },
         { $inc: { 'data.close_date': adjustMs } }
       );
@@ -823,9 +823,9 @@ router.post('/toggle-lock', async (req, res) => {
     
     const { Plock } = await import('../models/plock.model');
     
-    let plock = await (Plock as any).findOne({ session_id: sessionId });
+    let plock = await Plock.findOne({ session_id: sessionId });
     if (!plock) {
-      plock = new (Plock as any)({
+      plock = new Plock({
         session_id: sessionId,
         data: {}
       });

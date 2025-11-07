@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * GetBossInfo Service
@@ -20,7 +20,7 @@ export class GetBossInfoService {
 
     try {
       // 현재 장수 정보 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -50,7 +50,7 @@ export class GetBossInfoService {
 
       // 1. 부대장이 있는 경우 (부대에 소속되어 있고 본인이 부대장이 아닌 경우)
       if (troopId && troopId !== generalId) {
-        const troopLeader = await (General as any).findOne({
+        const troopLeader = await generalRepository.findBySessionAndNo({
           session_id: sessionId,
           'data.no': troopId,
           'data.nation': nationId
@@ -72,7 +72,7 @@ export class GetBossInfoService {
           // 부대장의 도시 정보
           const bossCityId = troopLeader.data?.city || 0;
           if (bossCityId) {
-            const bossCity = await (City as any).findOne({
+            const bossCity = await cityRepository.findOneByFilter({
               session_id: sessionId,
               'data.id': bossCityId
             });
@@ -88,7 +88,7 @@ export class GetBossInfoService {
 
       // 2. 도시 수뇌가 있는 경우 (도시에 임명된 장수가 있고 본인이 도시 수뇌가 아닌 경우)
       if (!bossInfo.hasBoss && officerCity && officerCity !== 0) {
-        const cityOfficer = await (General as any).findOne({
+        const cityOfficer = await generalRepository.findById({
           session_id: sessionId,
           'data.officer_city': officerCity,
           'data.officer_level': { $in: [3, 4] }, // 도시 수뇌 (3: 내정, 4: 군사)
@@ -109,7 +109,7 @@ export class GetBossInfoService {
           };
 
           // 도시 정보
-          const city = await (City as any).findOne({
+          const city = await cityRepository.findOneByFilter({
             session_id: sessionId,
             'data.id': officerCity
           });
@@ -125,7 +125,7 @@ export class GetBossInfoService {
       // 3. 국가 수뇌가 있는 경우 (수뇌부 장수 중 하나)
       if (!bossInfo.hasBoss && nationId && nationId !== 0 && officerLevel >= 5) {
         // 국가 수뇌는 직접적인 상급자가 아니지만 참고용으로 제공
-        const nation = await (Nation as any).findOne({
+        const nation = await nationRepository.findOneByFilter({
           session_id: sessionId,
           'data.nation': nationId
         });
@@ -134,7 +134,7 @@ export class GetBossInfoService {
           const nationData = nation.data || {};
           
           // 국가 수뇌 목록 조회 (officer_level 5-11)
-          const nationChiefs = await (General as any).find({
+          const nationChiefs = await generalRepository.findByFilter({
             session_id: sessionId,
             'data.nation': nationId,
             'data.officer_level': { $gte: 5, $lt: 12 },

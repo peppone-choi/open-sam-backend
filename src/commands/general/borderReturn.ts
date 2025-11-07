@@ -53,7 +53,7 @@ export class BorderReturnCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const cityID = general.getCityID();
     const logger = general.getLogger();
@@ -62,7 +62,7 @@ export class BorderReturnCommand extends GeneralCommand {
     const distanceList = searchDistance(cityID, 3, true);
 
     // 아군 점령 도시 목록
-    const occupiedCityList = await (db as any).queryFirstColumn(
+    const occupiedCityList = await db.queryFirstColumn(
       'SELECT city FROM city WHERE nation = ? AND city IN (?) AND supply = 1',
       general.getNationID(),
       distanceList.flat()
@@ -101,7 +101,7 @@ export class BorderReturnCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

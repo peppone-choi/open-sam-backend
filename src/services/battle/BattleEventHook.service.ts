@@ -9,10 +9,10 @@
  * PHP 참조: hwe/process_war.php (라인 586, 700), func_gamerule.php (라인 755)
  */
 
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { logger } from '../../common/logger';
 import { ExecuteEngineService } from '../global/ExecuteEngine.service';
 
@@ -31,7 +31,7 @@ export async function onCityOccupied(
   attackerGeneralId: number
 ): Promise<void> {
   try {
-    const city = await (City as any).findOne({
+    const city = await cityRepository.findOneByFilter({
       session_id: sessionId,
       'data.id': cityId
     });
@@ -41,7 +41,7 @@ export async function onCityOccupied(
       return;
     }
 
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
       logger.error('[BattleEventHook] Session not found', { sessionId });
       return;
@@ -71,7 +71,7 @@ export async function onCityOccupied(
     });
 
     // OCCUPY_CITY 이벤트 트리거
-    await (ExecuteEngineService as any).runEventHandler(sessionId, 'OCCUPY_CITY', {
+    await ExecuteEngineService.runEventHandler(sessionId, 'OCCUPY_CITY', {
       ...gameEnv,
       cityId,
       cityName: city.data?.name || city.name,
@@ -83,7 +83,7 @@ export async function onCityOccupied(
 
     // 국가 멸망 체크 (해당 국가의 도시가 0개가 되면)
     if (oldNationId && oldNationId !== 0) {
-      const remainingCities = await (City as any).countDocuments({
+      const remainingCities = await cityRepository.count({
         session_id: sessionId,
         'data.nation': oldNationId
       });
@@ -120,7 +120,7 @@ export async function onNationDestroyed(
   attackerGeneralId: number
 ): Promise<void> {
   try {
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
       logger.error('[BattleEventHook] Session not found', { sessionId });
       return;
@@ -133,7 +133,7 @@ export async function onNationDestroyed(
       session_id: sessionId
     };
 
-    const destroyedNation = await (Nation as any).findOne({
+    const destroyedNation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': destroyedNationId
     });
@@ -154,7 +154,7 @@ export async function onNationDestroyed(
     });
 
     // 멸망한 국가의 장수들을 재야로 전환
-    await (General as any).updateMany(
+    await generalRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.nation': destroyedNationId
@@ -169,7 +169,7 @@ export async function onNationDestroyed(
     );
 
     // 멸망한 국가의 관직자들을 일반으로 전환
-    await (General as any).updateMany(
+    await generalRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.nation': destroyedNationId,
@@ -195,7 +195,7 @@ export async function onNationDestroyed(
     const absorbedRice = Math.floor(loseNationRice / 2);
 
     // 공격자 국가에 자원 추가
-    const attackerNation = await (Nation as any).findOne({
+    const attackerNation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': attackerNationId
     });
@@ -209,7 +209,7 @@ export async function onNationDestroyed(
     }
 
     // DESTROY_NATION 이벤트 트리거
-    await (ExecuteEngineService as any).runEventHandler(sessionId, 'DESTROY_NATION', {
+    await ExecuteEngineService.runEventHandler(sessionId, 'DESTROY_NATION', {
       ...gameEnv,
       destroyedNationId,
       destroyedNationName: nationName,
@@ -244,7 +244,7 @@ export async function onNationDestroyed(
  */
 export async function checkUnified(sessionId: string, nationId: number): Promise<void> {
   try {
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
       return;
     }
@@ -257,11 +257,11 @@ export async function checkUnified(sessionId: string, nationId: number): Promise
     }
 
     // 모든 도시가 해당 국가에 속하는지 확인
-    const totalCities = await (City as any).countDocuments({
+    const totalCities = await cityRepository.count({
       session_id: sessionId
     });
 
-    const unifiedCities = await (City as any).countDocuments({
+    const unifiedCities = await cityRepository.count({
       session_id: sessionId,
       'data.nation': nationId
     });
@@ -288,7 +288,7 @@ export async function checkUnified(sessionId: string, nationId: number): Promise
  */
 export async function onUnified(sessionId: string, unifiedNationId: number): Promise<void> {
   try {
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
       logger.error('[BattleEventHook] Session not found', { sessionId });
       return;
@@ -301,7 +301,7 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
       session_id: sessionId
     };
 
-    const unifiedNation = await (Nation as any).findOne({
+    const unifiedNation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': unifiedNationId
     });
@@ -328,7 +328,7 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
     await session.save();
 
     // UNITED 이벤트 트리거
-    await (ExecuteEngineService as any).runEventHandler(sessionId, 'UNITED', {
+    await ExecuteEngineService.runEventHandler(sessionId, 'UNITED', {
       ...gameEnv,
       unifiedNationId,
       unifiedNationName: nationName

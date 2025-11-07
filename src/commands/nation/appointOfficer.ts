@@ -1,4 +1,5 @@
 import '../../utils/function-extensions';
+import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
 import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
@@ -51,7 +52,8 @@ export class che_발령 extends NationCommand {
   protected async initWithArg(): Promise<void> {
     this.setDestCity(this.arg['destCityID']);
 
-    const destGeneral = await (General as any).createObjFromDB(this.arg['destGeneralID']);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
 
     if (this.arg['destGeneralID'] === this.getGeneral()?.getID()) {
@@ -108,7 +110,7 @@ export class che_발령 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const generalName = general!.getName();
@@ -159,7 +161,7 @@ export class che_발령 extends NationCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const nationID = this.getNationID();
     const troops = await db.query('SELECT * FROM troop WHERE nation=%i', [nationID]);
     const troopsDict = Util.convertArrayToDict(troops, 'troop_leader');
@@ -170,11 +172,11 @@ export class che_발령 extends NationCommand {
 
     return {
       procRes: {
-        distanceList: await (global as any).JSCitiesBasedOnDistance(
+        distanceList: await global.JSCitiesBasedOnDistance(
           this.generalObj!.getCityID(),
           1
         ),
-        cities: await (global as any).JSOptionsForCities(),
+        cities: await global.JSOptionsForCities(),
         troops: troopsDict,
         generals: destRawGenerals,
         generalsKey: [

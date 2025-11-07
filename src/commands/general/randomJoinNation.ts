@@ -55,7 +55,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -72,10 +72,10 @@ export class RandomJoinNationCommand extends GeneralCommand {
     // NPC이고 역사 시나리오인 경우
     if (general.getNPCType() >= 2 && !env.fiction && env.scenario >= 1000 && env.scenario < 2000) {
       const genLimit = relYear < 3 ? initialNationGenLimit : defaultMaxGeneral;
-      const nations = await (db as any)('nation')
+      const nations = await db('nation')
         .join('general', function(this: any) {
           this.on('general.nation', '=', 'nation.nation')
-            .andOn('general.officer_level', '=', (db as any).raw('?', [12]));
+            .andOn('general.officer_level', '=', db.raw('?', [12]));
         })
         .where('nation.scout', 0)
         .where('nation.gennum', '<', genLimit)
@@ -107,12 +107,12 @@ export class RandomJoinNationCommand extends GeneralCommand {
       // 일반 장수 - 국력 기반 선택
       const genLimit = relYear < 3 ? initialNationGenLimit : defaultMaxGeneral;
 
-      const rawGeneralsCnt = await (db as any)('general as g')
+      const rawGeneralsCnt = await db('general as g')
         .leftJoin('rank_data as ra', function(this: any) {
-          this.on('g.no', '=', 'ra.general_id').andOn('ra.type', '=', (db as any).raw('?', ['killcrew_person']));
+          this.on('g.no', '=', 'ra.general_id').andOn('ra.type', '=', db.raw('?', ['killcrew_person']));
         })
         .leftJoin('rank_data as rb', function(this: any) {
-          this.on('g.no', '=', 'rb.general_id').andOn('rb.type', '=', (db as any).raw('?', ['deathcrew_person']));
+          this.on('g.no', '=', 'rb.general_id').andOn('rb.type', '=', db.raw('?', ['deathcrew_person']));
         })
         .leftJoin('nation as n', 'g.nation', 'n.nation')
         .whereIn('g.npc', [0, 1, 2, 3, 6])
@@ -124,10 +124,10 @@ export class RandomJoinNationCommand extends GeneralCommand {
           'g.nation',
           'n.gennum',
           'n.name',
-          (db as any).raw(`SUM((COALESCE(ra.value, 0) + 50000)/(COALESCE(rb.value, 0) + 50000) * 
+          db.raw(`SUM((COALESCE(ra.value, 0) + 50000)/(COALESCE(rb.value, 0) + 50000) * 
             (CASE WHEN g.npc < 2 THEN 1.15 ELSE 1 END) * 
             (CASE WHEN g.leadership >= 40 THEN g.leadership ELSE 0 END)) as warpower`),
-          (db as any).raw(`SUM(SQRT(g.intel * g.strength) * 2 + g.leadership / 2)/5 as develpower`)
+          db.raw(`SUM(SQRT(g.intel * g.strength) * 2 + g.leadership / 2)/5 as develpower`)
         );
 
       const generalsCnt: any[] = [];
@@ -192,7 +192,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
     if (this.destGeneralObj !== null) {
       general.setVar('city', this.destGeneralObj.getCityID());
     } else {
-      const targetCityID = await (db as any)('general')
+      const targetCityID = await db('general')
         .where('nation', destNationID)
         .where('officer_level', 12)
         .first()
@@ -200,10 +200,10 @@ export class RandomJoinNationCommand extends GeneralCommand {
       general.setVar('city', targetCityID);
     }
 
-    await (db as any)('nation')
+    await db('nation')
       .where('nation', destNationID)
       .update({
-        gennum: (db as any).raw('gennum + 1'),
+        gennum: db.raw('gennum + 1'),
       });
 
     // TODO: InheritancePoint
@@ -212,7 +212,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
     general.checkStatChange();
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

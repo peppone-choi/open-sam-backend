@@ -1,9 +1,10 @@
 import { MessageRepository } from '../../repositories/message.repository';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
-import { Message } from '../../models/message.model';
+import { messageRepository } from '../../repositories/message.repository';
 import { GameEventEmitter } from '../gameEventEmitter';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * SendMessage Service
@@ -37,7 +38,7 @@ export class SendMessageService {
       }
 
       // 장수 정보 조회
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -54,7 +55,7 @@ export class SendMessageService {
       const permission = general.data?.permission;
 
       // 국가 정보 조회
-      const nation = nationId !== 0 ? await (Nation as any).findOne({
+      const nation = nationId !== 0 ? await nationRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': nationId
       }) : null;
@@ -141,9 +142,9 @@ export class SendMessageService {
    * 다음 메시지 ID 생성
    */
   private static async getNextMessageId(sessionId: string): Promise<number> {
-    const lastMessage = await (Message as any).findOne({ session_id: sessionId })
+    const lastMessage = await messageRepository.findOneByFilter({ session_id: sessionId })
       .sort({ 'data.id': -1 })
-      .select('data.id');
+      ;
     
     return (lastMessage?.data?.id || 0) + 1;
   }
@@ -178,7 +179,7 @@ export class SendMessageService {
       expire_date: new Date('9999-12-31')
     };
 
-    await (Message as any).create({
+    await messageRepository.create({
       session_id: sessionId,
       data: messageData
     });
@@ -226,7 +227,7 @@ export class SendMessageService {
       expire_date: new Date('9999-12-31')
     };
 
-    await (Message as any).create({
+    await messageRepository.create({
       session_id: sessionId,
       data: messageData
     });
@@ -260,7 +261,7 @@ export class SendMessageService {
     text: string
   ) {
     // 대상 국가 조회
-      const destNation = await (Nation as any).findOne({
+      const destNation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': destNationId
     });
@@ -293,7 +294,7 @@ export class SendMessageService {
       expire_date: new Date('9999-12-31')
     };
 
-    await (Message as any).create({
+    await messageRepository.create({
       session_id: sessionId,
       data: messageData
     });
@@ -328,7 +329,7 @@ export class SendMessageService {
     text: string
   ) {
     // 대상 장수 조회
-      const destGeneral = await (General as any).findOne({
+      const destGeneral = await generalRepository.findBySessionAndNo({
       session_id: sessionId,
       'data.no': destGeneralId
     });
@@ -344,7 +345,7 @@ export class SendMessageService {
     const destNationId = destGeneral.data?.nation || 0;
 
     // 대상 국가 정보
-      const destNation = destNationId !== 0 ? await (Nation as any).findOne({
+      const destNation = destNationId !== 0 ? await nationRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation': destNationId
     }) : null;
@@ -371,7 +372,7 @@ export class SendMessageService {
       expire_date: new Date('9999-12-31')
     };
 
-    await (Message as any).create({
+    await messageRepository.create({
       session_id: sessionId,
       data: messageData
     });
@@ -381,10 +382,10 @@ export class SendMessageService {
     const socketManager = getSocketManager();
     if (socketManager) {
       // 대상 장수의 owner ID 조회
-      const destGeneral = await (General as any).findOne({
+      const destGeneral = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': destGeneralId
-      }).select('owner').lean();
+      });
       
       if (destGeneral?.owner) {
         socketManager.sendToUser(destGeneral.owner, 'message:private', {

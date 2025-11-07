@@ -1,5 +1,5 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * SetRate Service
@@ -21,7 +21,7 @@ export class SetRateService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -42,7 +42,7 @@ export class SetRateService {
         return { success: false, message: '국가에 소속되어 있어야 합니다' };
       }
 
-      await (Nation as any).updateOne(
+      await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId

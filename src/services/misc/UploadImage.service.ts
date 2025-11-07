@@ -1,8 +1,9 @@
-import { Session } from '../../models/session.model';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 /**
  * UploadImage 서비스
@@ -26,7 +27,7 @@ export class UploadImageService {
         };
       }
 
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           success: false,
@@ -118,7 +119,7 @@ export class UploadImageService {
 
       const imgKey = `${sessionId}:${userId}`;
       
-      const existingStorage = await (KVStorage as any).findOne({
+      const existingStorage = await kvStorageRepository.findOneByFilter({
         session_id: sessionId,
         storage_id: 'img_storage'
       });
@@ -127,7 +128,7 @@ export class UploadImageService {
         const storedStatus = (existingStorage.data && existingStorage.data[imgFullName]) || {};
         if (!storedStatus[imgKey]) {
           storedStatus[imgKey] = new Date();
-          await (KVStorage as any).updateOne(
+          await kvStorageRepository.updateOneByFilter(
             {
               session_id: sessionId,
               storage_id: 'img_storage'
@@ -145,7 +146,7 @@ export class UploadImageService {
           [imgKey]: new Date()
         };
         
-        await (KVStorage as any).create({
+        await kvStorageRepository.create({
           session_id: sessionId,
           storage_id: 'img_storage',
           data: newData

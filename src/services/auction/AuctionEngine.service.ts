@@ -16,6 +16,8 @@ import { AuctionBasicResource } from '../../core/auction/AuctionBasicResource';
 import { logger } from '../../common/logger';
 import { Util } from '../../utils/Util';
 import { AuctionType } from '../../types/auction.types';
+import { auctionRepository } from '../../repositories/auction.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 경매 마감 처리
@@ -27,7 +29,7 @@ export async function processAuction(sessionId: string): Promise<void> {
     const now = new Date();
     
     // 마감 시간이 지나고 아직 완료되지 않은 경매 조회
-    const auctions = await (Auction as any).find({
+    const auctions = await auctionRepository.findByFilter({
       session_id: sessionId,
       closeDate: { $lte: now },
       finished: false
@@ -111,7 +113,7 @@ export async function registerAuction(sessionId: string, rng?: any): Promise<voi
     };
 
     // 장수들의 평균 금, 쌀 조회
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findBySession({
       session_id: sessionId,
       'data.npc': { $lt: 2 } // NPC 제외
     });
@@ -133,7 +135,7 @@ export async function registerAuction(sessionId: string, rng?: any): Promise<voi
     const avgRice = Util.valueFit(Math.floor(totalRice / generals.length), 1000, 20000);
 
     // 중립 경매 개수 조회 (host_general_id = 0)
-    const neutralAuctions = await (Auction as any).aggregate([
+    const neutralAuctions = await Auction.aggregate([
       {
         $match: {
           session_id: sessionId,

@@ -1,7 +1,8 @@
-import { Session } from '../../models/session.model';
-import { Nation } from '../../models/nation.model';
+import { sessionRepository } from '../../repositories/session.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
 import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
 
 /**
  * GetWorldInfo Service
@@ -12,7 +13,7 @@ export class GetWorldInfoService {
     const sessionId = data.session_id || 'sangokushi_default';
     
     try {
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId);
       
       if (!session) {
         return {
@@ -25,9 +26,7 @@ export class GetWorldInfoService {
       const gameEnv = sessionData.game_env || {};
       
       // 국가 목록 조회
-      const nations = await (Nation as any).find({
-        session_id: sessionId
-      }).sort({ 'data.nation': 1 });
+      const nations = await nationRepository.findBySession(sessionId);
       
       const nationList = nations.map((nation: any) => {
         const nationData = nation.data || {};
@@ -43,7 +42,7 @@ export class GetWorldInfoService {
       });
       
       // 장수 통계
-      const generalStats = await (General as any).aggregate([
+      const generalStats = await General.aggregate([
         { $match: { session_id: sessionId } },
         { $group: { 
           _id: '$data.npc', 
@@ -57,7 +56,7 @@ export class GetWorldInfoService {
       ]);
       
       // 도시 통계
-      const cityCount = await (City as any).countDocuments({
+      const cityCount = await cityRepository.count({
         session_id: sessionId
       });
       

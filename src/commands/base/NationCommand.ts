@@ -48,7 +48,7 @@ export abstract class NationCommand extends BaseCommand {
       return null;
     }
     
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     // TODO: Implement KVStorage
     // const nationStor = KVStorage.getStorage(db, this.getNationID(), 'nation_env');
     // return nationStor.getValue(this.getNextExecuteKey());
@@ -65,7 +65,7 @@ export abstract class NationCommand extends BaseCommand {
         + this.getPostReqTurn() - this.getPreReqTurn();
     }
     
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     // TODO: Implement KVStorage
     // const nationStor = KVStorage.getStorage(db, this.getNationID(), 'nation_env');
     // nationStor.setValue(this.getNextExecuteKey(), yearMonth);

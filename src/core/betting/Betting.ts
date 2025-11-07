@@ -149,7 +149,7 @@ export class Betting {
     const bettingTypeKey = this.convertBettingKey(bettingType);
 
     // 이전 베팅 금액 확인
-    const prevBettings = await (NgBetting as any).find({
+    const prevBettings = await NgBetting.find({
       session_id: this.sessionId,
       'data.betting_id': this.bettingID,
       'data.user_id': userID
@@ -180,7 +180,7 @@ export class Betting {
       await inheritStor.setValue('previous', [remainPoint - amount, previousPoints[1]]);
     } else {
       // 금 확인 및 차감
-      const general = await (General as any).findOne({
+      const general = await General.findOne({
         session_id: this.sessionId,
         no: generalID
       });
@@ -204,7 +204,7 @@ export class Betting {
     }
 
     // 베팅 기록 저장 (upsert)
-    const bettingItem = await (NgBetting as any).findOne({
+    const bettingItem = await NgBetting.findOne({
       session_id: this.sessionId,
       'data.betting_id': this.bettingID,
       'data.general_id': generalID,
@@ -220,7 +220,7 @@ export class Betting {
       await bettingItem.save();
     } else {
       // 새 베팅 생성
-      await (NgBetting as any).create({
+      await NgBetting.create({
         session_id: this.sessionId,
         data: {
           betting_id: this.bettingID,
@@ -254,7 +254,7 @@ export class Betting {
     const bettingTypeKey = this.convertBettingKey(bettingType);
     
     // 전체 베팅 금액 계산
-    const allBettings = await (NgBetting as any).find({
+    const allBettings = await NgBetting.find({
       session_id: this.sessionId,
       'data.betting_id': this.bettingID
     }).lean();
@@ -329,7 +329,7 @@ export class Betting {
       return result;
     };
 
-    const allBettings = await (NgBetting as any).find({
+    const allBettings = await NgBetting.find({
       session_id: this.sessionId,
       'data.betting_id': this.bettingID
     }).lean();
@@ -469,7 +469,7 @@ export class Betting {
     } else {
       // 금 보상
       const generalIds = [...new Set(rewardList.map(r => r.generalID))];
-      const generals = await (General as any).find({
+      const generals = await General.find({
         session_id: this.sessionId,
         no: { $in: generalIds }
       });
@@ -499,7 +499,7 @@ export class Betting {
         const logMessage = `<C>${this.info.name}</>의 ${partialText} 보상으로 <C>${rewardText}</>의 <S>금</> 획득!`;
 
         // GeneralRecord에 로그 저장
-        await (GeneralRecord as any).create({
+        await GeneralRecord.create({
           session_id: this.sessionId,
           data: {
             general_id: general.no,

@@ -14,7 +14,7 @@ export class NationSocketHandler {
   }
 
   handleConnection(socket: Socket) {
-    const user = (socket as any).user;
+    const user = socket.user;
     const userId = user?.userId;
 
     if (!userId) {
@@ -27,7 +27,7 @@ export class NationSocketHandler {
         const { sessionId, nationId } = data;
 
         // 사용자의 장수 조회
-        const general = await (General as any).findOne({
+        const general = await General.findOne({
           session_id: sessionId,
           owner: String(userId)
         });
@@ -45,7 +45,7 @@ export class NationSocketHandler {
         }
 
         // 국가 조회
-        const nation = await (Nation as any).findOne({
+        const nation = await Nation.findOne({
           session_id: sessionId,
           'data.nation': actualNationId
         });

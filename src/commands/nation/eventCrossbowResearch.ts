@@ -25,14 +25,14 @@ export class event_원융노병연구 extends NationCommand {
     this.setCity();
     this.setNation(['gold', 'rice', 'aux']);
 
-    const name = (this.constructor as any).actionName;
+    const name = this.constructor.actionName;
     const [reqGold, reqRice] = this.getCost();
-    const GameConst = (global as any).GameConst;
+    const GameConst = global.GameConst;
 
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.ReqNationAuxValue((this.constructor as any).auxType, 0, '<', 1, `${name}가 이미 완료되었습니다.`),
+      ConstraintHelper.ReqNationAuxValue(this.constructor.auxType, 0, '<', 1, `${name}가 이미 완료되었습니다.`),
       ConstraintHelper.ReqNationGold(GameConst.basegold + reqGold),
       ConstraintHelper.ReqNationRice(GameConst.baserice + reqRice),
     ];
@@ -66,12 +66,12 @@ export class event_원융노병연구 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const nationID = general!.getNationID();
 
-    const actionName = (this.constructor as any).actionName;
-    const auxType = (this.constructor as any).auxType;
+    const actionName = this.constructor.actionName;
+    const auxType = this.constructor.auxType;
 
     const aux = this.nation['aux'];
     aux[auxType] = 1;
@@ -98,9 +98,9 @@ export class event_원융노병연구 extends NationCommand {
 
     logger.pushGeneralActionLog(`<M>${actionName}</> 완료`);
     logger.pushGeneralHistoryLog(`<M>${actionName}</> 완료`);
-    (logger as any).pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <M>${actionName}</> 완료`);
+    logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <M>${actionName}</> 완료`);
 
-    const InheritanceKey = (global as any).InheritanceKey;
+    const InheritanceKey = global.InheritanceKey;
     general!.increaseInheritancePoint(InheritanceKey.active_action, 1);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));

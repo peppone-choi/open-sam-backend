@@ -1,8 +1,8 @@
-import { General } from '../../models/general.model';
-import { City } from '../../models/city.model';
-import { Nation } from '../../models/nation.model';
-import { Session } from '../../models/session.model';
-import { Troop } from '../../models/troop.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { sessionRepository } from '../../repositories/session.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 import { CommandFactory } from '../../core/command/CommandFactory';
 import { logger } from '../../common/logger';
 import { GameConst } from '../../const/GameConst';
@@ -11,6 +11,7 @@ import { getDexLevelList } from '../../utils/dexLevel';
 import { GetMapService } from '../global/GetMap.service';
 import { calculateDistanceList } from '../../utils/cityDistance';
 import { GetConstService } from '../global/GetConst.service';
+import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 
 /**
  * GetProcessingCommand Service
@@ -44,12 +45,12 @@ export class GetProcessingCommandService {
       // 장수 조회
       let general: any = null;
       if (generalId) {
-        general = await (General as any).findOne({
+        general = await generalRepository.findById({
           session_id: sessionId,
           no: generalId
         });
       } else if (user?.userId) {
-        general = await (General as any).findOne({
+        general = await generalRepository.findBySessionAndOwner({
         session_id: sessionId,
           owner: String(user.userId),
           'data.npc': { $lt: 2 }
@@ -66,7 +67,7 @@ export class GetProcessingCommandService {
       generalId = general.no;
 
       // 세션 조회 (년도, 월 등)
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return {
           result: false,
@@ -241,15 +242,15 @@ export class GetProcessingCommandService {
    */
   private static async getRecruitData(sessionId: string, generalId: number): Promise<any> {
     // 등용 가능한 장수 목록 (NPC < 2, officer_level != 12, 자기 자신 제외)
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.npc': { $lt: 2 },
       'data.officer_level': { $ne: 12 },
       no: { $ne: generalId }
     })
-      .select('no name data')
+      
       .sort({ 'data.npc': 1, name: 1 })
-      .lean();
+      ;
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -266,7 +267,7 @@ export class GetProcessingCommandService {
     });
 
     // 국가 목록
-    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
       return {
@@ -303,9 +304,9 @@ export class GetProcessingCommandService {
       serverID: sessionId
     }, undefined);
 
-    const cities = await (City as any).find({ session_id: sessionId })
-      .select('city name')
-      .lean();
+    const cities = await cityRepository.findByFilter({ session_id: sessionId })
+      
+      ;
 
     const citiesMap = new Map<number, { name: string; info?: string }>();
     for (const city of cities) {
@@ -318,8 +319,8 @@ export class GetProcessingCommandService {
     let distanceList: Record<number, number[]> = {};
     try {
       const constData = await GetConstService.execute({ session_id: sessionId });
-      if (constData.success && constData.result && (constData.result as any).cityConst) {
-        distanceList = calculateDistanceList(currentCity, (constData.result as any).cityConst, 10);
+      if (constData.success && constData.result && constData.result.cityConst) {
+        distanceList = calculateDistanceList(currentCity, constData.result.cityConst, 10);
       }
     } catch (error: any) {
       logger.debug('Failed to calculate distanceList:', error.message);
@@ -349,7 +350,7 @@ export class GetProcessingCommandService {
    * 군량매매 커맨드 데이터
    */
   private static async getTradeRiceData(sessionId: string, generalId: number): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
     });
@@ -449,8 +450,8 @@ export class GetProcessingCommandService {
     }
 
     // 국가 수 확인
-    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
-    const maxNation = (GameConst as any).maxNation || 99;
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    const maxNation = GameConst.maxNation || 99;
     const available건국 = nations.length < maxNation;
 
     return {
@@ -474,15 +475,15 @@ export class GetProcessingCommandService {
 
     if (command === '증여' || command === 'che_증여' || command === 'donate') {
       // 증여: 같은 국가의 장수들
-      const generals = await (General as any).find({
+      const generals = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationID,
         no: { $ne: generalId },
         'data.npc': { $lt: 2 }
       })
-        .select('no name data')
+        
         .sort({ 'data.npc': 1, name: 1 })
-        .lean();
+        ;
 
       for (const gen of generals) {
         const genData = gen.data || {};
@@ -501,13 +502,13 @@ export class GetProcessingCommandService {
       }
     } else {
       // 몰수/포상: 국가의 모든 장수
-      const generals = await (General as any).find({
+      const generals = await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationID
       })
-        .select('no name data')
+        
         .sort({ 'data.npc': 1, name: 1 })
-        .lean();
+        ;
 
       for (const gen of generals) {
         const genData = gen.data || {};
@@ -556,7 +557,7 @@ export class GetProcessingCommandService {
     } = await import('../../const/GameUnitConst');
     
     // 세션에서 시나리오 ID 가져오기
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await sessionRepository.findBySessionId(sessionId );
     const scenarioId = session?.scenario_id || 'sangokushi';
     
     const nationID = generalData.nation || 0;
@@ -566,10 +567,10 @@ export class GetProcessingCommandService {
     const relYear = year - startYear;
     
     // 국가의 소유 도시와 지역 정보
-    const cities = await (City as any).find({ 
+    const cities = await cityRepository.findByFilter({ 
       session_id: sessionId,
       nation: nationID 
-    }).select('city region level name').lean();
+    });
     
     const ownCities = new Map<number, { region: string; level: number; name: string }>();
     const ownRegions = new Set<string>();
@@ -594,10 +595,10 @@ export class GetProcessingCommandService {
     const fullLeadership = leadership; // 부상 무시 통솔력 = 원래 통솔력
 
     // 국가 타입 가져오기
-    const nation: any = await (Nation as any).findOne({
+    const nation: any = await nationRepository.findOneByFilter({
       session_id: sessionId,
       nation: nationID
-    }).lean();
+    });
     const nationType = nation?.data?.type || nation?.type || 'none';
 
     // 병종 계열별 데이터 구성
@@ -705,10 +706,10 @@ export class GetProcessingCommandService {
     generalId: number
   ): Promise<any> {
     // 같은 국가의 장수 목록 (자기 자신 제외)
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { generals: [] };
@@ -717,15 +718,15 @@ export class GetProcessingCommandService {
     const generalData = general.data || {};
     const nationID = generalData.nation || 0;
 
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID,
       'data.npc': { $lt: 2 },
       no: { $ne: generalId }
     })
-      .select('no name data')
+      
       .sort({ 'data.officer_level': -1, name: 1 })
-      .lean();
+      ;
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -742,7 +743,7 @@ export class GetProcessingCommandService {
     });
 
     // 국가 목록 (선택 표시용)
-    const nations = await (Nation as any).find({ session_id: sessionId }).lean();
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
       return {
@@ -767,10 +768,10 @@ export class GetProcessingCommandService {
     generalId: number
   ): Promise<any> {
     // 임관 가능한 국가 목록 (이미 임관한 국가 제외)
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { nations: [] };
@@ -780,11 +781,11 @@ export class GetProcessingCommandService {
     const currentNationID = generalData.nation || 0;
 
     // 모든 국가 목록 (현재 국가 제외)
-    const nations = await (Nation as any).find({
+    const nations = await nationRepository.findByFilter({
       session_id: sessionId,
       nation: { $ne: currentNationID }
     })
-      .lean();
+      ;
 
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
@@ -810,10 +811,10 @@ export class GetProcessingCommandService {
     generalId: number
   ): Promise<any> {
     // 임관 가능한 국가의 장수 목록
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { generals: [], nations: [] };
@@ -823,15 +824,15 @@ export class GetProcessingCommandService {
     const currentNationID = generalData.nation || 0;
 
     // 다른 국가의 장수 목록 (현재 국가 제외)
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': { $ne: currentNationID },
       'data.npc': { $lt: 2 },
       'data.officer_level': { $ne: 12 } // 군주 제외
     })
-      .select('no name data')
+      
       .sort({ 'data.officer_level': -1, name: 1 })
-      .lean();
+      ;
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -848,11 +849,11 @@ export class GetProcessingCommandService {
     });
 
     // 국가 목록
-    const nations = await (Nation as any).find({
+    const nations = await nationRepository.findByFilter({
       session_id: sessionId,
       nation: { $ne: currentNationID }
     })
-      .lean();
+      ;
 
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
@@ -878,10 +879,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { ownDexList: [], dexLevelList: [] };
@@ -921,10 +922,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { citySecu: 0, gold: 0, itemList: {}, ownItem: {} };
@@ -934,17 +935,17 @@ export class GetProcessingCommandService {
     const cityID = generalData.city || 0;
 
     // 도시 치안 조회
-    const city = await (City as any).findOne({
+    const city = await cityRepository.findOneByFilter({
       session_id: sessionId,
       city: cityID
-    }).lean();
+    });
 
     const citySecu = city?.data?.secu || 0;
     const gold = generalData.gold || 0;
 
     // 아이템 목록 생성 (TradeEquipmentCommand.exportJSVars() 로직)
     const itemList: any = {};
-    const allItems = (GameConst as any).allItems || {};
+    const allItems = GameConst.allItems || {};
     const itemMap: Record<string, string> = {
       horse: '명마',
       weapon: '무기',
@@ -953,7 +954,7 @@ export class GetProcessingCommandService {
     };
 
     // buildItemClass 함수 가져오기
-    const buildItemClass = (global as any).buildItemClass;
+    const buildItemClass = global.buildItemClass;
     if (!buildItemClass) {
       logger.warn('buildItemClass function not found, returning empty itemList');
       return {
@@ -1122,10 +1123,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { nations: [], currentNationLevel: 0, levelInfo: {}, minAmount: 0, maxAmount: 0, amountGuide: [] };
@@ -1135,11 +1136,11 @@ export class GetProcessingCommandService {
     const nationID = generalData.nation || 0;
 
     // 국가 목록 (자신 제외)
-    const nations = await (Nation as any).find({
+    const nations = await nationRepository.findByFilter({
       session_id: sessionId,
       nation: { $ne: nationID }
     })
-      .lean();
+      ;
 
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
@@ -1152,10 +1153,10 @@ export class GetProcessingCommandService {
     });
 
     // 국가 레벨 정보
-    const currentNation = await (Nation as any).findOne({
+    const currentNation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       nation: nationID
-    }).lean();
+    });
 
     const currentNationLevel = currentNation?.data?.level || 0;
 
@@ -1234,10 +1235,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { generals: [], cities: [], troops: {} };
@@ -1247,13 +1248,13 @@ export class GetProcessingCommandService {
     const nationID = generalData.nation || 0;
 
     // 같은 국가의 장수 목록
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID
     })
-      .select('no name data')
+      
       .sort({ name: 1 })
-      .lean();
+      ;
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -1275,11 +1276,11 @@ export class GetProcessingCommandService {
     });
 
     // 같은 국가의 도시 목록
-    const cities = await (City as any).find({
+    const cities = await cityRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID
     })
-      .lean();
+      ;
 
     const citiesMap = cities.map((city: any) => {
       const cityData = city.data || {};
@@ -1293,11 +1294,11 @@ export class GetProcessingCommandService {
     });
 
     // 부대 정보
-    const troops = await (Troop as any).find({
+    const troops = await troopRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID
     })
-      .lean();
+      ;
 
     const troopMap: Record<number, { troop_leader: number; nation: number; name: string }> = {};
     for (const troop of troops) {
@@ -1327,10 +1328,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return { nations: [], startYear: 180, minYear: 180, maxYear: 200, month: 1 };
@@ -1340,21 +1341,21 @@ export class GetProcessingCommandService {
     const nationID = generalData.nation || 0;
 
     // 국가 목록 (자신 제외)
-    const nations = await (Nation as any).find({
+    const nations = await nationRepository.findByFilter({
       session_id: sessionId,
       nation: { $ne: nationID }
     })
-      .lean();
+      ;
 
     // 외교 관계 확인 (불가침 조약 기한 등)
     const { Diplomacy } = await import('../../models/diplomacy.model');
-    const diplomacyRecords = await (Diplomacy as any).find({
+    const diplomacyRecords = await diplomacyRepository.findByFilter({
       session_id: sessionId,
       $or: [
         { me: nationID },
         { you: nationID }
       ]
-    }).lean();
+    });
 
     const diplomacyMap: Record<number, { state: number; term: number }> = {};
     for (const dip of diplomacyRecords) {
@@ -1380,7 +1381,7 @@ export class GetProcessingCommandService {
     });
 
     // 세션 정보
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await sessionRepository.findBySessionId(sessionId );
     const sessionData = session?.data || {};
     const startYear = sessionData.startyear || 180;
     const year = sessionData.year || 180;
@@ -1408,10 +1409,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return {
@@ -1427,13 +1428,13 @@ export class GetProcessingCommandService {
 
     // 국가 목록 (자신 제외, 선포/전쟁 중인 국가만)
     const { Diplomacy } = await import('../../models/diplomacy.model');
-    const diplomacyRecords = await (Diplomacy as any).find({
+    const diplomacyRecords = await diplomacyRepository.findByFilter({
       session_id: sessionId,
       $or: [
         { me: nationID },
         { you: nationID }
       ]
-    }).lean();
+    });
 
     const diplomacyMap: Record<number, { state: number; term: number }> = {};
     for (const dip of diplomacyRecords) {
@@ -1443,11 +1444,11 @@ export class GetProcessingCommandService {
       }
     }
 
-    const nations = await (Nation as any).find({
+    const nations = await nationRepository.findByFilter({
       session_id: sessionId,
       nation: { $ne: nationID }
     })
-      .lean();
+      ;
 
     const nationList = nations.map((nation: any) => {
       const nationData = nation.data || {};
@@ -1480,10 +1481,10 @@ export class GetProcessingCommandService {
     };
 
     // 국가별 전략 커맨드 사용 제한 확인
-    const nation = await (Nation as any).findOne({
+    const nation = await nationRepository.findOneByFilter({
       session_id: sessionId,
       nation: nationID
-    }).lean();
+    });
     const nationData = nation?.data || {};
     const strategicCmdLimit = nationData.strategic_cmd_limit || 0;
 
@@ -1507,10 +1508,10 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await (General as any).findOne({
+    const general = await generalRepository.findById({
       session_id: sessionId,
       no: generalId
-    }).lean();
+    });
 
     if (!general) {
       return {
@@ -1527,15 +1528,15 @@ export class GetProcessingCommandService {
     const currentCity = generalData.city || 0;
 
     // 같은 국가의 도시 목록
-    const cities = await (City as any).find({
+    const cities = await cityRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID
     })
-      .lean();
+      ;
 
     // 시나리오 데이터에서 인접 도시 정보 로드
     const { Session } = await import('../../models/session.model');
-    const session = await (Session as any).findOne({ session_id: sessionId }).lean();
+    const session = await sessionRepository.findBySessionId(sessionId );
     const scenarioId = session?.scenario_id || 'sangokushi';
     
     let cityNeighborsMap: Record<number, number[]> = {};

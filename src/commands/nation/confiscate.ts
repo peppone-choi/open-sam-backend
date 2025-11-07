@@ -1,4 +1,5 @@
 import '../../utils/function-extensions';
+import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
 import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
@@ -60,7 +61,8 @@ export class che_몰수 extends NationCommand {
   }
 
   protected async initWithArg(): Promise<void> {
-    const destGeneral = await (General as any).createObjFromDB(this.arg['destGeneralID']);
+    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
+    // Use generalRepository.findById() instead
     this.setDestGeneral(destGeneral);
 
     const relYear = this.env['year'] - this.env['startyear'];
@@ -110,7 +112,7 @@ export class che_몰수 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
 
     const general = this.generalObj;
     const date = general!.getTurnTime('HM');
@@ -155,9 +157,9 @@ export class che_몰수 extends NationCommand {
     const logger = general!.getLogger();
 
     destGeneral!.increaseVarWithLimit(resKey, -amount, 0);
-    await (db as any).update(
+    await db.update(
       'nation',
-      { [resKey]: (db as any).sqleval('%b + %i', [resKey, amount]) },
+      { [resKey]: db.sqleval('%b + %i', [resKey, amount]) },
       'nation=%i',
       [nationID]
     );
@@ -179,11 +181,11 @@ export class che_몰수 extends NationCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const nationID = this.getNationID();
-    const troops = await (db as any).query('SELECT * FROM troop WHERE nation=?', [nationID]);
+    const troops = await db.query('SELECT * FROM troop WHERE nation=?', [nationID]);
     const troopsDict = Util.convertArrayToDict(troops, 'troop_leader');
-    const destRawGenerals = await (db as any).queryAllLists(
+    const destRawGenerals = await db.queryAllLists(
       'SELECT no,name,officer_level,npc,gold,rice,leadership,strength,intel,city,crew,train,atmos,troop FROM general WHERE nation = ? ORDER BY npc,binary(name)',
       [nationID]
     );
@@ -208,7 +210,7 @@ export class che_몰수 extends NationCommand {
           'atmos',
           'troopID'
         ],
-        cities: await (global as any).JSOptionsForCities(),
+        cities: await global.JSOptionsForCities(),
         minAmount: 100,
         maxAmount: GameConst.maxResourceActionAmount,
         amountGuide: GameConst.resourceActionAmountGuide

@@ -1,4 +1,5 @@
 import { GeneralCommand } from '../base/GeneralCommand';
+import { cityRepository } from '../../repositories/city.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
@@ -45,7 +46,7 @@ export class DismissTroopsCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime();
 
@@ -61,7 +62,7 @@ export class DismissTroopsCommand extends GeneralCommand {
 
     // MongoDB에서는 $inc를 사용하여 증가시킵니다
     const { City } = await import('../../models/city.model');
-    await (City as any).updateOne(
+    await cityRepository.updateOneByFilter(
       { 
         session_id: general.getSessionID(),
         city: general.getCityID()
@@ -92,7 +93,7 @@ export class DismissTroopsCommand extends GeneralCommand {
       console.error('StaticEventHandler failed:', error);
     }
 
-    general.applyDB(db);
+    await general.save();
 
     return true;
   }

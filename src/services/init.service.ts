@@ -3,6 +3,8 @@ import { City } from '../models/city.model';
 import { Nation } from '../models/nation.model';
 import * as fs from 'fs';
 import * as path from 'path';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
 
 /**
  * 세션 초기화 서비스
@@ -76,7 +78,7 @@ export class InitService {
     console.log(`🎬 세션 초기화 시작: ${sessionId}`);
     
     // 1. 세션 설정 조회
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await sessionRepository.findBySessionId(sessionId );
     if (!session) throw new Error('세션을 찾을 수 없습니다');
     
     // 시나리오 ID 결정 (기본: sangokushi)
@@ -87,7 +89,7 @@ export class InitService {
     const scenarioMetadata = this.loadScenarioMetadata(scenarioId);
     
     // 3. 기존 도시 삭제 (재초기화)
-    await (City as any).deleteMany({ session_id: sessionId });
+    await cityRepository.deleteManyByFilter({ session_id: sessionId });
     console.log(`   🗑️  기존 도시 삭제`);
     
     // 4. 시나리오 데이터 로드
@@ -147,15 +149,15 @@ export class InitService {
       };
       
       // DB에 직접 저장 (Mongoose create는 DB에 저장함)
-      const city = new (City as any)(cityData);
+      const city = new City(cityData);
       await city.save();
     }
     
     console.log(`   ✅ 도시 ${cities.length}개 생성 완료`);
     
     // 4. 초기 국가 생성 (재야)
-    await (Nation as any).deleteMany({ session_id: sessionId });
-    await (Nation as any).create({
+    await nationRepository.deleteManyByFilter({ session_id: sessionId });
+    await nationRepository.create({
       session_id: sessionId,
       nation: 0,
       name: '재야',

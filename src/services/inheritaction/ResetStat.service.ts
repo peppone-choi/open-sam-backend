@@ -1,9 +1,10 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
 import { UserRecord } from '../../models/user_record.model';
 import GameConstants from '../../utils/game-constants';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 function simpleRandom(seed: string): () => number {
   let h = 0;
@@ -71,7 +72,7 @@ export class ResetStatService {
         }
       }
       
-      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId );
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -84,12 +85,12 @@ export class ResetStatService {
         return { success: false, message: 'NPC는 능력치 초기화를 할 수 없습니다.' };
       }
       
-      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await kvStorageRepository.findOneByFilter({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const userStor = await (KVStorage as any).findOne({ 
+      const userStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `user_${userId}` 
       });
@@ -101,7 +102,7 @@ export class ResetStatService {
         return { success: false, message: '이번 시즌에 이미 능력치를 초기화하셨습니다.' };
       }
       
-      const inheritStor = await (KVStorage as any).findOne({ 
+      const inheritStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -177,7 +178,7 @@ export class ResetStatService {
       }
       
       for (const record of userRecords) {
-        await (UserRecord as any).create(record);
+        await UserRecord.create(record);
       }
       
       lastUserStatReset.push(gameSeason);
@@ -189,19 +190,19 @@ export class ResetStatService {
       if (inheritStor) {
         inheritStor.value = inheritStor.value || {};
         inheritStor.value.previous = [previousPoint - reqAmount, null];
-        await (inheritStor as any).save();
+        await inheritStor.save();
       }
       
       if (userStor) {
         userStor.value = userStor.value || {};
         userStor.value.last_stat_reset = lastUserStatReset;
-        await (userStor as any).save();
+        await userStor.save();
       }
       
       general.rank = general.rank || {};
       general.rank.inherit_point_spent_dynamic = (general.rank.inherit_point_spent_dynamic || 0) + reqAmount;
       
-      await (general as any).save();
+      await general.save();
       
       return {
         success: true,

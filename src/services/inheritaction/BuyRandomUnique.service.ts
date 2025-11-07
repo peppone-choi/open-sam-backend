@@ -1,9 +1,10 @@
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
-import { General } from '../../models/general.model';
-import { Session } from '../../models/session.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { KVStorage } from '../../models/kv-storage.model';
 import { UserRecord } from '../../models/user_record.model';
 import GameConstants from '../../utils/game-constants';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 export class BuyRandomUniqueService {
   static async execute(data: any, user?: any) {
@@ -12,7 +13,7 @@ export class BuyRandomUniqueService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      const general = await (General as any).findOne({ session_id: sessionId, no: generalId });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId );
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다.' };
       }
@@ -25,12 +26,12 @@ export class BuyRandomUniqueService {
         return { success: false, message: '이미 구입 명령을 내렸습니다. 다음 턴까지 기다려주세요.' };
       }
       
-      const gameEnv = await (KVStorage as any).findOne({ session_id: sessionId, key: 'game_env' });
+      const gameEnv = await kvStorageRepository.findOneByFilter({ session_id: sessionId, key: 'game_env' });
       if (gameEnv?.value?.isunited) {
         return { success: false, message: '이미 천하가 통일되었습니다.' };
       }
       
-      const inheritStor = await (KVStorage as any).findOne({ 
+      const inheritStor = await kvStorageRepository.findOneByFilter({ 
         session_id: sessionId, 
         key: `inheritance_${userId}` 
       });
@@ -42,7 +43,7 @@ export class BuyRandomUniqueService {
         return { success: false, message: '충분한 유산 포인트를 가지고 있지 않습니다.' };
       }
       
-      await (UserRecord as any).create({
+      await UserRecord.create({
         session_id: sessionId,
         user_id: userId,
         log_type: 'inheritPoint',

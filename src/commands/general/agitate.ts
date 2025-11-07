@@ -1,4 +1,5 @@
 import { FireAttackCommand } from './fireAttack';
+import { cityRepository } from '../../repositories/city.repository';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
@@ -26,8 +27,8 @@ export class AgitateCommand extends FireAttackCommand {
     const commandName = AgitateCommand.getName();
 
     // 선동 최대 10
-    const saboDamageMin = (GameConst as any).sabotageDamageMin || 5;
-    const saboDamageMax = (GameConst as any).sabotageDamageMax || 10;
+    const saboDamageMin = GameConst.sabotageDamageMin || 5;
+    const saboDamageMax = GameConst.sabotageDamageMax || 10;
 
     const secuAmount = Util.valueFit(
       rng.nextRangeInt(saboDamageMin, saboDamageMax),
@@ -45,7 +46,7 @@ export class AgitateCommand extends FireAttackCommand {
     destCity.trust -= trustAmount;
 
     const { City } = await import('../../models/city.model');
-    await (City as any).updateOne(
+    await cityRepository.updateOneByFilter(
       {
         session_id: general.getSessionID(),
         city: destCityID

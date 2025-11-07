@@ -1,4 +1,5 @@
-import { GeneralTurn } from '../../models/general_turn.model';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
 const MAX_TURN = 30;
 
@@ -36,10 +37,12 @@ export class PushCommandService {
 async function pushGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
   if (turnCnt <= 0 || turnCnt >= MAX_TURN) return;
 
-  const turns = await (GeneralTurn as any).find({
-    session_id: sessionId,
+  const turns = await generalTurnRepository.findBySession(sessionId, {
     'data.general_id': generalId
-  }).sort({ 'data.turn_idx': -1 });
+  });
+  
+  // 역순 정렬
+  turns.sort((a: any, b: any) => b.data.turn_idx - a.data.turn_idx);
 
   for (const turn of turns) {
     const newIdx = turn.data.turn_idx + turnCnt;
@@ -60,10 +63,12 @@ async function pushGeneralCommand(sessionId: string, generalId: number, turnCnt:
 async function pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
   if (turnCnt <= 0 || turnCnt >= MAX_TURN) return;
 
-  const turns = await (GeneralTurn as any).find({
-    session_id: sessionId,
+  const turns = await generalTurnRepository.findBySession(sessionId, {
     'data.general_id': generalId
-  }).sort({ 'data.turn_idx': 1 });
+  });
+  
+  // 정순 정렬
+  turns.sort((a: any, b: any) => a.data.turn_idx - b.data.turn_idx);
 
   for (const turn of turns) {
     const oldIdx = turn.data.turn_idx;

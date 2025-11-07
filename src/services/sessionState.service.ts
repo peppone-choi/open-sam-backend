@@ -69,7 +69,7 @@ export class SessionStateService {
       }
 
       // DB에서 조회
-      const session = await (Session as any).findOne({ session_id: sessionId });
+      const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
         return null;
       }
@@ -123,7 +123,7 @@ export class SessionStateService {
 
       try {
         // 세션 조회 및 업데이트
-        const session = await (Session as any).findOne({ session_id: sessionId });
+        const session = await sessionRepository.findBySessionId(sessionId );
         if (!session) {
           return false;
         }
@@ -272,7 +272,7 @@ export class SessionStateService {
    */
   static async getAllSessionStates(): Promise<SessionState[]> {
     try {
-      const sessions = await (Session as any).find({}).lean();
+      const sessions = await sessionRepository.findAll();
       
       const states: SessionState[] = [];
       for (const session of sessions) {

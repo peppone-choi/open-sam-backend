@@ -1,6 +1,6 @@
-import { General } from '../../models/general.model';
-import { Nation } from '../../models/nation.model';
-import { NgDiplomacy } from '../../models';
+import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { ngDiplomacyRepository } from '../../repositories/ng-diplomacy.repository';
 
 /**
  * ProcessDiplomacy Service
@@ -23,17 +23,9 @@ export class ProcessDiplomacyService {
           reason: '필수 파라미터가 누락되었습니다'
         };
       }
-
-      const NgDiplomacyModel = NgDiplomacy as any;
       
       // 외교 서한 조회
-      const letter = await NgDiplomacyModel.findOne({
-        session_id: sessionId,
-        $or: [
-          { 'data.no': letterNo },
-          { _id: letterNo }
-        ]
-      });
+      const letter = await ngDiplomacyRepository.findByLetterNo(sessionId, letterNo);
 
       if (!letter) {
         return {
@@ -56,10 +48,7 @@ export class ProcessDiplomacyService {
       }
 
       // 사용자의 장수 조회
-      const general = await (General as any).findOne({ 
-        session_id: sessionId,
-        owner: String(userId) 
-      }).lean();
+      const general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
       if (!general) {
         return {
@@ -85,15 +74,9 @@ export class ProcessDiplomacyService {
       }
 
       // 국가 정보 조회
-      const srcNation = await (Nation as any).findOne({
-        session_id: sessionId,
-        'data.nation': srcNationId
-      }).lean();
+      const srcNation = await nationRepository.findByNationNum(sessionId, srcNationId);
 
-      const destNation = await (Nation as any).findOne({
-        session_id: sessionId,
-        'data.nation': destNationId
-      }).lean();
+      const destNation = await nationRepository.findByNationNum(sessionId, destNationId);
 
       // 외교 타입에 따른 처리
       let updateData: any = {
@@ -121,15 +104,8 @@ export class ProcessDiplomacyService {
             destAllies.push(srcNationId);
           }
           
-          await (Nation as any).updateOne(
-            { _id: srcNation._id },
-            { $set: { 'data.allies': srcAllies } }
-          );
-          
-          await (Nation as any).updateOne(
-            { _id: destNation._id },
-            { $set: { 'data.allies': destAllies } }
-          );
+          await nationRepository.updateById(srcNation._id, { 'data.allies': srcAllies });
+          await nationRepository.updateById(destNation._id, { 'data.allies': destAllies });
         }
         
         updateData['data.state'] = 'activated';
@@ -146,15 +122,8 @@ export class ProcessDiplomacyService {
           const srcAllies = (srcNationData.allies || []).filter((id: number) => id !== destNationId);
           const destAllies = (destNationData.allies || []).filter((id: number) => id !== srcNationId);
           
-          await (Nation as any).updateOne(
-            { _id: srcNation._id },
-            { $set: { 'data.allies': srcAllies } }
-          );
-          
-          await (Nation as any).updateOne(
-            { _id: destNation._id },
-            { $set: { 'data.allies': destAllies } }
-          );
+          await nationRepository.updateById(srcNation._id, { 'data.allies': srcAllies });
+          await nationRepository.updateById(destNation._id, { 'data.allies': destAllies });
         }
         
         updateData['data.state'] = 'activated';
@@ -171,10 +140,7 @@ export class ProcessDiplomacyService {
       }
 
       // 서한 상태 업데이트
-      await NgDiplomacyModel.updateOne(
-        { _id: letter._id },
-        { $set: updateData }
-      );
+      await ngDiplomacyRepository.updateById(letter._id, updateData);
 
       // 메시지 발송
       const messageText = `외교 서신(#${letterNo})이 ${action === 'alliance' ? '동맹으로' : action === 'war' ? '전쟁으로' : '처리'}되었습니다.`;

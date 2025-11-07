@@ -20,13 +20,14 @@
 import { Session } from '../../models/session.model';
 import { logger } from '../../common/logger';
 import { Tournament } from '../../models/tournament.model';
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { RankData } from '../../models/rank_data.model';
 import { KVStorage } from '../../utils/KVStorage';
 import { Util } from '../../utils/Util';
 import { ActionLogger } from '../../utils/ActionLogger';
 import { Betting } from '../../core/betting/Betting';
 import { JosaUtil } from '../../utils/JosaUtil';
+import { tournamentRepository } from '../../repositories/tournament.repository';
 
 // Helper 함수들
 function getTwo(tournament: number, phase: number): [number, number] {
@@ -235,7 +236,7 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
     const grpCount: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
 
     // 그룹별 참가자 수 계산
-    const tournaments = await (Tournament as any).aggregate([
+    const tournaments = await Tournament.aggregate([
       { $match: { session_id: sessionId } },
       { $group: { _id: '$grp', count: { $sum: 1 } } }
     ]);
@@ -275,13 +276,13 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
     // 자동신청하고, 돈 있고, 아직 참가 안한 장수
     const freeJoinerCandidate: Array<[any, number]> = [];
     
-    const generals = await (General as any).find({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.tnmt': 1,
       'data.tournament': 0
     })
-      .select('no data.name data.npc data.leadership data.strength data.intel data.explevel data.horse data.weapon data.book')
-      .lean();
+      
+      ;
 
     for (const gen of generals) {
       const genData = gen.data || {};
@@ -310,18 +311,18 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
 
       joinersValues.push({
         session_id: sessionId,
-        no: (general as any).no || 0,
-        npc: (general as any).npc || 0,
-        name: (general as any).name || '무명',
-        leadership: (general as any).leadership || 10,
-        strength: (general as any).strength || 10,
-        intel: (general as any).intel || 10,
+        no: general.no || 0,
+        npc: general.npc || 0,
+        name: general.name || '무명',
+        leadership: general.leadership || 10,
+        strength: general.strength || 10,
+        intel: general.intel || 10,
         lvl: general.explevel || 10,
         grp: grpIdx,
         grp_no: grpCnt,
-        h: (general as any).horse || 'None',
-        w: (general as any).weapon || 'None',
-        b: (general as any).book || 'None',
+        h: general.horse || 'None',
+        w: general.weapon || 'None',
+        b: general.book || 'None',
         win: 0,
         draw: 0,
         lose: 0,
@@ -329,8 +330,8 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
         prmt: 0
       });
 
-      if ((general as any).no) {
-        joinersIdx.push((general as any).no);
+      if (general.no) {
+        joinersIdx.push(general.no);
       }
       grpCount[grpIdx] += 1;
     }
@@ -365,7 +366,7 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
 
     // 장수 tournament 플래그 업데이트
     if (joinersIdx.length > 0) {
-      await (General as any).updateMany(
+      await generalRepository.updateManyByFilter(
         { session_id: sessionId, 'data.no': { $in: joinersIdx } },
         { $set: { 'data.tournament': 1 } }
       );
@@ -373,7 +374,7 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
 
     // 토너먼트에 추가
     if (joinersValues.length > 0) {
-      await (Tournament as any).insertMany(joinersValues);
+      await Tournament.insertMany(joinersValues);
     }
 
     ActionLogger.info('[TournamentEngine] fillLowGenAll completed', { 
@@ -412,18 +413,18 @@ async function qualify(sessionId: string, tnmtType: number, tnmt: number, phase:
 
       // 각 그룹에서 상위 4명 진출 처리
       for (let grpIdx = 0; grpIdx < 8; grpIdx++) {
-        const promoters = await (Tournament as any)
+        const promoters = await Tournament
           .find({
             session_id: sessionId,
             grp: grpIdx
           })
           .sort({ gl: -1, win: -1, draw: -1 })
           .limit(4)
-          .lean();
+          ;
 
         for (let grpRank = 0; grpRank < promoters.length; grpRank++) {
           const grpGen = promoters[grpRank];
-          await (Tournament as any).updateOne(
+          await tournamentRepository.updateOneByFilter(
             {
               session_id: sessionId,
               grp: grpIdx,
@@ -480,9 +481,9 @@ async function selection(sessionId: string, tnmtType: number, tnmt: number, phas
     }
 
     // 해당 시드에서 랜덤 선택
-    const candidates = await (Tournament as any)
+    const candidates = await Tournament
       .find(query)
-      .lean();
+      ;
 
     if (candidates.length === 0) {
       ActionLogger.warn('[TournamentEngine] No candidates for selection', { sessionId, phase, query });
@@ -495,20 +496,20 @@ async function selection(sessionId: string, tnmtType: number, tnmt: number, phas
     }
 
     // 본선에 추가
-    await (Tournament as any).create({
+    await tournamentRepository.create({
       session_id: sessionId,
-      no: (general as any).no,
-      npc: (general as any).npc,
-      name: (general as any).name,
-      leadership: (general as any).leadership,
-      strength: (general as any).strength,
-      intel: (general as any).intel,
-      lvl: (general as any).lvl,
+      no: general.no,
+      npc: general.npc,
+      name: general.name,
+      leadership: general.leadership,
+      strength: general.strength,
+      intel: general.intel,
+      lvl: general.lvl,
       grp: grp,
       grp_no: grp_no,
-      h: (general as any).h || 'None',
-      w: (general as any).w || 'None',
-      b: (general as any).b || 'None',
+      h: general.h || 'None',
+      w: general.w || 'None',
+      b: general.b || 'None',
       win: 0,
       draw: 0,
       lose: 0,
@@ -517,11 +518,11 @@ async function selection(sessionId: string, tnmtType: number, tnmt: number, phas
     });
 
     // 시드 삭제
-    await (Tournament as any).updateOne(
+    await tournamentRepository.updateOneByFilter(
       {
         session_id: sessionId,
-        grp: (general as any).grp,
-        grp_no: (general as any).grp_no
+        grp: general.grp,
+        grp_no: general.grp_no
       },
       {
         $set: { prmt: 0 }
@@ -567,18 +568,18 @@ async function finallySingle(sessionId: string, tnmtType: number, tnmt: number, 
 
       // 각 그룹에서 상위 2명 진출 처리
       for (let grpIdx = 10; grpIdx < 18; grpIdx++) {
-        const promoters = await (Tournament as any)
+        const promoters = await Tournament
           .find({
             session_id: sessionId,
             grp: grpIdx
           })
           .sort({ gl: -1, win: -1, draw: -1 })
           .limit(2)
-          .lean();
+          ;
 
         for (let grpRank = 0; grpRank < promoters.length; grpRank++) {
           const grpGen = promoters[grpRank];
-          await (Tournament as any).updateOne(
+          await tournamentRepository.updateOneByFilter(
             {
               session_id: sessionId,
               grp: grpIdx,
@@ -615,11 +616,11 @@ async function final16set(sessionId: string): Promise<void> {
     const prmt = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2];
 
     for (let i = 0; i < 16; i++) {
-      const general = await (Tournament as any).findOne({
+      const general = await tournamentRepository.findOneByFilter({
         session_id: sessionId,
         grp: grp[i],
         prmt: prmt[i]
-      }).lean();
+      });
 
       if (!general) {
         ActionLogger.warn('[TournamentEngine] General not found for final16set', { 
@@ -634,20 +635,20 @@ async function final16set(sessionId: string): Promise<void> {
       const newGrp = 20 + Math.floor(i / 2);
       const newGrp_no = i % 2;
 
-      await (Tournament as any).create({
+      await tournamentRepository.create({
         session_id: sessionId,
-        no: (general as any).no,
-        npc: (general as any).npc,
-        name: (general as any).name,
-        leadership: (general as any).leadership,
-        strength: (general as any).strength,
-        intel: (general as any).intel,
-        lvl: (general as any).lvl,
+        no: general.no,
+        npc: general.npc,
+        name: general.name,
+        leadership: general.leadership,
+        strength: general.strength,
+        intel: general.intel,
+        lvl: general.lvl,
         grp: newGrp,
         grp_no: newGrp_no,
-        h: (general as any).h || 'None',
-        w: (general as any).w || 'None',
-        b: (general as any).b || 'None',
+        h: general.h || 'None',
+        w: general.w || 'None',
+        b: general.b || 'None',
         win: 0,
         draw: 0,
         lose: 0,
@@ -657,7 +658,7 @@ async function final16set(sessionId: string): Promise<void> {
     }
 
     // 모든 prmt 초기화
-    await (Tournament as any).updateMany(
+    await tournamentRepository.updateManyByFilter(
       { session_id: sessionId },
       { $set: { prmt: 0 } }
     );
@@ -699,24 +700,24 @@ async function startBetting(sessionId: string, type: number, unit: number): Prom
 
     const candidates: Record<number, any> = {};
 
-    const generalList = await (Tournament as any)
+    const generalList = await Tournament
       .find({
         session_id: sessionId,
         grp: { $gte: 20, $lt: 30 }
       })
       .sort({ grp: 1, grp_no: 1 })
       .limit(16)
-      .lean();
+      ;
 
     for (const general of generalList) {
-      if ((general as any).no <= 0) {
+      if (general.no <= 0) {
         continue;
       }
-      const total = (general as any).leadership + (general as any).strength + (general as any).intel;
+      const total = general.leadership + general.strength + general.intel;
       const statValue = statKey === 'total' ? total : general[statKey];
       
-      candidates[(general as any).no] = {
-        title: (general as any).name,
+      candidates[general.no] = {
+        title: general.name,
         info: `${statName}: ${statValue}`,
         isHtml: null,
         aux: {
@@ -747,14 +748,14 @@ async function startBetting(sessionId: string, type: number, unit: number): Prom
     const betGold = Util.valueFit(Math.floor((3 + year - startyear) * 0.334) * 10, 10);
 
     // NPC 베팅
-    const npcList = await (General as any)
+    const npcList = await General
       .find({
         session_id: sessionId,
         'data.npc': { $gte: 2 },
         'data.gold': { $gte: 500 + betGold }
       })
-      .select('no data.gold')
-      .lean();
+      
+      ;
 
     const betting = new Betting(sessionId, bettingID);
     const targetList = Object.keys(candidates).map(Number);
@@ -817,12 +818,12 @@ async function finalFight(sessionId: string, tnmtType: number, tnmt: number, pha
     await gameStor.setValue('phase', phase + 1);
 
     // 승자 조회
-    const general = await (Tournament as any).findOne({
+    const general = await tournamentRepository.findOneByFilter({
       session_id: sessionId,
       grp: grp,
       win: { $gt: 0 },
       grp_no: { $in: [0, 1] }
-    }).lean();
+    });
 
     if (!general) {
       ActionLogger.warn('[TournamentEngine] No winner found for finalFight', { sessionId, grp, phase });
@@ -833,20 +834,20 @@ async function finalFight(sessionId: string, tnmtType: number, tnmt: number, pha
     const newGrp = Math.floor(phase / 2) + offset + 10;
     const newGrp_no = phase % 2;
 
-    await (Tournament as any).create({
+    await tournamentRepository.create({
       session_id: sessionId,
-      no: (general as any).no,
-      npc: (general as any).npc,
-      name: (general as any).name,
-      leadership: (general as any).leadership,
-      strength: (general as any).strength,
-      intel: (general as any).intel,
-      lvl: (general as any).lvl,
+      no: general.no,
+      npc: general.npc,
+      name: general.name,
+      leadership: general.leadership,
+      strength: general.strength,
+      intel: general.intel,
+      lvl: general.lvl,
       grp: newGrp,
       grp_no: newGrp_no,
-      h: (general as any).h || 'None',
-      w: (general as any).w || 'None',
-      b: (general as any).b || 'None',
+      h: general.h || 'None',
+      w: general.w || 'None',
+      b: general.b || 'None',
       win: 0,
       draw: 0,
       lose: 0,
@@ -899,17 +900,17 @@ async function fight(
     }
 
     // 장수 조회
-    const gen1 = await (Tournament as any).findOne({
+    const gen1 = await tournamentRepository.findOneByFilter({
       session_id: sessionId,
       grp: group,
       grp_no: g1
-    }).lean();
+    });
 
-    const gen2 = await (Tournament as any).findOne({
+    const gen2 = await tournamentRepository.findOneByFilter({
       session_id: sessionId,
       grp: group,
       grp_no: g2
-    }).lean();
+    });
 
     if (!gen1 || !gen2) {
       ActionLogger.warn('[TournamentEngine] fight: General not found', { sessionId, group, g1, g2 });
@@ -983,16 +984,16 @@ async function fight(
     const gl = Util.round((gd2 - gd1) / 50);
 
     // rank_data 조회
-    const gen1glDoc = await (RankData as any).findOne({
+    const gen1glDoc = await RankData.findOne({
       session_id: sessionId,
       'data.id': gen1.no,
       'data.type': `${tp2}g`
-    }).lean();
-    const gen2glDoc = await (RankData as any).findOne({
+    });
+    const gen2glDoc = await RankData.findOne({
       session_id: sessionId,
       'data.id': gen2.no,
       'data.type': `${tp2}g`
-    }).lean();
+    });
 
     const gen1gl = gen1glDoc?.data?.value || 0;
     const gen2gl = gen2glDoc?.data?.value || 0;
@@ -1004,11 +1005,11 @@ async function fight(
 
     if (sel === 0) {
       // gen1 승리
-      await (Tournament as any).updateOne(
+      await tournamentRepository.updateOneByFilter(
         { session_id: sessionId, grp: group, grp_no: g1 },
         { $inc: { win: 1, gl: gl } }
       );
-      await (Tournament as any).updateOne(
+      await tournamentRepository.updateOneByFilter(
         { session_id: sessionId, grp: group, grp_no: g2 },
         { $inc: { lose: 1, gl: -gl } }
       );
@@ -1028,11 +1029,11 @@ async function fight(
       gen2resKey = 'l';
     } else if (sel === 1) {
       // gen2 승리
-      await (Tournament as any).updateOne(
+      await tournamentRepository.updateOneByFilter(
         { session_id: sessionId, grp: group, grp_no: g1 },
         { $inc: { lose: 1, gl: -gl } }
       );
-      await (Tournament as any).updateOne(
+      await tournamentRepository.updateOneByFilter(
         { session_id: sessionId, grp: group, grp_no: g2 },
         { $inc: { win: 1, gl: gl } }
       );
@@ -1052,7 +1053,7 @@ async function fight(
       gen2resKey = 'w';
     } else {
       // 무승부
-      await (Tournament as any).updateMany(
+      await tournamentRepository.updateManyByFilter(
         { session_id: sessionId, grp: group, grp_no: { $in: [g1, g2] } },
         { $inc: { draw: 1 } }
       );
@@ -1074,7 +1075,7 @@ async function fight(
 
     // rank_data 업데이트
     if (gen1.no > 0) {
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': gen1.no,
@@ -1086,7 +1087,7 @@ async function fight(
         { upsert: true }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': gen1.no,
@@ -1100,7 +1101,7 @@ async function fight(
     }
 
     if (gen2.no > 0) {
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': gen2.no,
@@ -1112,7 +1113,7 @@ async function fight(
         { upsert: true }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': gen2.no,
@@ -1163,16 +1164,16 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
 
     // 16강자 명성 돈
     let cost = develcost || 100;
-    const round16Generals = await (Tournament as any).find({
+    const round16Generals = await tournamentRepository.findByFilter({
       session_id: sessionId,
       grp: { $gte: 20, $lt: 30 },
       no: { $gt: 0 }
-    }).lean();
+    });
 
     for (const general of round16Generals) {
-      const generalID = (general as any).no;
+      const generalID = general.no;
       
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         { session_id: sessionId, no: generalID },
         { 
           $inc: { 
@@ -1183,7 +1184,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
       );
 
       // rank_data 업데이트
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': generalID,
@@ -1198,8 +1199,8 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
       const logger = new ActionLogger(generalID, 0, year, month);
       resultHelper[generalID] = {
         id: generalID,
-        grp: (general as any).grp,
-        grp_no: (general as any).grp_no,
+        grp: general.grp,
+        grp_no: general.grp_no,
         reward: cost,
         msg: "<span class='ev_highlight'>16강 진출</span>",
         logger: logger,
@@ -1209,16 +1210,16 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
 
     // 8강자 명성 돈
     cost = (develcost || 100) * 2;
-    const round8Generals = await (Tournament as any).find({
+    const round8Generals = await tournamentRepository.findByFilter({
       session_id: sessionId,
       grp: { $gte: 30, $lt: 40 },
       no: { $gt: 0 }
-    }).lean();
+    });
 
     for (const general of round8Generals) {
-      const generalID = (general as any).no;
+      const generalID = general.no;
       
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         { session_id: sessionId, no: generalID },
         { 
           $inc: { 
@@ -1228,7 +1229,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
         }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': generalID,
@@ -1248,16 +1249,16 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
 
     // 4강자 명성 돈
     cost = (develcost || 100) * 3;
-    const round4Generals = await (Tournament as any).find({
+    const round4Generals = await tournamentRepository.findByFilter({
       session_id: sessionId,
       grp: { $gte: 40, $lt: 50 },
       no: { $gt: 0 }
-    }).lean();
+    });
 
     for (const general of round4Generals) {
-      const generalID = (general as any).no;
+      const generalID = general.no;
       
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         { session_id: sessionId, no: generalID },
         { 
           $inc: { 
@@ -1267,7 +1268,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
         }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': generalID,
@@ -1294,16 +1295,16 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     // 결승자 명성 돈
     cost = (develcost || 100) * 6;
     let runnerUp: any = null;
-    const finalGenerals = await (Tournament as any).find({
+    const finalGenerals = await tournamentRepository.findByFilter({
       session_id: sessionId,
       grp: { $gte: 50, $lt: 60 },
       no: { $gt: 0 }
-    }).lean();
+    });
 
     for (const general of finalGenerals) {
-      const generalID = (general as any).no;
+      const generalID = general.no;
       
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         { session_id: sessionId, no: generalID },
         { 
           $inc: { 
@@ -1313,7 +1314,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
         }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': generalID,
@@ -1339,16 +1340,16 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
     // 우승자 명성 돈
     cost = (develcost || 100) * 8;
     let winner: any = null;
-    const winnerGenerals = await (Tournament as any).find({
+    const winnerGenerals = await tournamentRepository.findByFilter({
       session_id: sessionId,
       grp: { $gte: 60 },
       no: { $gt: 0 }
-    }).lean();
+    });
 
     for (const general of winnerGenerals) {
-      const generalID = (general as any).no;
+      const generalID = general.no;
       
-      await (General as any).updateOne(
+      await generalRepository.updateOneByFilter(
         { session_id: sessionId, no: generalID },
         { 
           $inc: { 
@@ -1358,7 +1359,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
         }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': generalID,
@@ -1370,7 +1371,7 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
         { upsert: true }
       );
 
-      await (RankData as any).findOneAndUpdate(
+      await RankData.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.id': generalID,

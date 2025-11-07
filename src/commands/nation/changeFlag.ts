@@ -42,7 +42,7 @@ export class che_국기변경 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.SuppliedCity(),
-      (ConstraintHelper as any).ReqNationAuxValue(`can_${actionName}`, 0,  '>', [0, '더이상 변경이 불가능합니다.'])
+      ConstraintHelper.ReqNationAuxValue(`can_${actionName}`, 0,  '>', [0, '더이상 변경이 불가능합니다.'])
     ];
   }
 
@@ -53,7 +53,7 @@ export class che_국기변경 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.SuppliedCity(),
-      (ConstraintHelper as any).ReqNationAuxValue(`can_${actionName}`, 0,  '>', [0, '더이상 변경이 불가능합니다.'])
+      ConstraintHelper.ReqNationAuxValue(`can_${actionName}`, 0,  '>', [0, '더이상 변경이 불가능합니다.'])
     ];
   }
 
@@ -80,7 +80,7 @@ export class che_국기변경 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    // TODO: Legacy DB access - const db = DB.db();
     const actionName = this.constructor.getName();
 
     const general = this.generalObj;
@@ -91,7 +91,7 @@ export class che_국기변경 extends NationCommand {
     const nationColors = this.getNationColors();
     const color = nationColors[colorType];
 
-    const nationID = (general as any).getNationID();
+    const nationID = general.getNationID();
     const nationName = this!.nation['name'];
 
     const logger = general!.getLogger();

@@ -17,7 +17,7 @@ async function migrateCityData() {
     await connectDB();
     
     // 모든 City 문서 조회
-    const cities = await (City as any).find({});
+    const cities = await City.find({});
     console.log(`📊 총 ${cities.length}개 도시 발견\n`);
     
     let migratedCount = 0;
@@ -68,9 +68,9 @@ async function migrateCityData() {
       ];
       
       for (const field of resourceFields) {
-        if (data[field] !== undefined && (city as any)[field] !== data[field]) {
-          migrations.push({ field, oldValue: (city as any)[field], newValue: data[field] });
-          (city as any)[field] = data[field];
+        if (data[field] !== undefined && city[field] !== data[field]) {
+          migrations.push({ field, oldValue: city[field], newValue: data[field] });
+          city[field] = data[field];
           hasChanges = true;
         }
       }

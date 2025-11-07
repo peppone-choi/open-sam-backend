@@ -30,7 +30,7 @@ const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
  */
 router.get('/list', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const sessions = await (Session as any).find({}, {
+    const sessions = await Session.find({}, {
       session_id: 1,
       'data.scenario': 1,
       'data.year': 1,
@@ -82,7 +82,7 @@ router.post('/create', authenticate, requireAdmin, async (req: Request, res: Res
     }
     
     // 중복 확인
-    const existing = await (Session as any).findOne({ session_id: sessionId });
+    const existing = await Session.findOne({ session_id: sessionId });
     if (existing) {
       return res.status(400).json({ success: false, message: '이미 존재하는 세션 ID입니다' });
     }
@@ -125,7 +125,7 @@ router.post('/create', authenticate, requireAdmin, async (req: Request, res: Res
       updated_at: new Date(),
     };
     
-    const session = await (Session as any).create(sessionData);
+    const session = await Session.create(sessionData);
     
     res.json({
       success: true,
@@ -153,7 +153,7 @@ router.post('/open', authenticate, requireAdmin, async (req: Request, res: Respo
   try {
     const { sessionId } = req.body;
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({ success: false, message: '세션을 찾을 수 없습니다' });
     }
@@ -190,7 +190,7 @@ router.post('/close', authenticate, requireAdmin, async (req: Request, res: Resp
   try {
     const { sessionId } = req.body;
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({ success: false, message: '세션을 찾을 수 없습니다' });
     }
@@ -229,17 +229,17 @@ router.post('/reset', authenticate, requireAdmin, async (req: Request, res: Resp
       return res.status(403).json({ success: false, message: '세션 리셋은 최고 관리자만 가능합니다 (grade >= 6)' });
     }
     
-    const session = await (Session as any).findOne({ session_id: sessionId });
+    const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({ success: false, message: '세션을 찾을 수 없습니다' });
     }
     
     // 모든 관련 데이터 삭제
-    await (General as any).deleteMany({ session_id: sessionId });
-    await (Nation as any).deleteMany({ session_id: sessionId });
-    await (City as any).deleteMany({ session_id: sessionId });
-    await (GeneralTurn as any).deleteMany({ session_id: sessionId });
-    await (NationTurn as any).deleteMany({ session_id: sessionId });
+    await General.deleteMany({ session_id: sessionId });
+    await Nation.deleteMany({ session_id: sessionId });
+    await City.deleteMany({ session_id: sessionId });
+    await GeneralTurn.deleteMany({ session_id: sessionId });
+    await NationTurn.deleteMany({ session_id: sessionId });
     
     // 세션 초기화
     const startyear = session.data?.startyear || 200;
@@ -361,13 +361,13 @@ router.post('/init-default', authenticate, requireAdmin, async (req: Request, re
     const skipped: string[] = [];
     
     for (const sessionData of defaultSessions) {
-      const existing = await (Session as any).findOne({ session_id: sessionData.session_id });
+      const existing = await Session.findOne({ session_id: sessionData.session_id });
       if (existing) {
         skipped.push(sessionData.session_id);
         continue;
       }
       
-      await (Session as any).create({
+      await Session.create({
         ...sessionData,
         created_at: new Date(),
         updated_at: new Date(),

@@ -1,4 +1,4 @@
-import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
 import { GeneralLog } from '../../models/general-log.model';
 
 /**
@@ -23,7 +23,7 @@ export class GetGeneralLogService {
         return { success: false, message: '대상 장수 ID가 필요합니다' };
       }
 
-      const general = await (General as any).findOne({
+      const general = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': generalId
       });
@@ -32,7 +32,7 @@ export class GetGeneralLogService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const targetGeneral = await (General as any).findOne({
+      const targetGeneral = await generalRepository.findBySessionAndNo({
         session_id: sessionId,
         'data.no': targetGeneralId
       });
@@ -88,7 +88,7 @@ export class GetGeneralLogService {
         logQuery.id = { $lt: reqTo };
       }
 
-      const logRecords = await (GeneralLog as any).find(logQuery)
+      const logRecords = await GeneralLog.find(logQuery)
         .sort({ id: -1 })
         .limit(limit);
 
