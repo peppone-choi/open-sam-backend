@@ -15,7 +15,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
   protected static actionName = '장수를 따라 임관';
   public static reqArg = true;
 
-  protected this.destGeneral: any = null;
+  protected destGeneral: any = null;
   protected destNation: any = null;
 
   protected argTest(): boolean {

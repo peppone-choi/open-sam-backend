@@ -1,6 +1,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+import { RaiseArmyCommandService } from '../../services/command/RaiseArmyCommand.service';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 거병 커맨드
@@ -24,11 +25,10 @@ export class RaiseArmyCommand extends GeneralCommand {
     const relYear = env.year - env.startyear;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeNeutral(),
-      // BeOpeningPart(relYear+1),
-      // AllowJoinAction(),
-      // NoPenalty(PenaltyKey::NoFoundNation),
+      ConstraintHelper.BeNeutral(),
+      ConstraintHelper.BeOpeningPart(relYear + 1),
+      ConstraintHelper.AllowJoinAction(),
+      ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }
 
@@ -49,114 +49,33 @@ export class RaiseArmyCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
-    const env = this.env;
     const general = this.generalObj;
-    const date = general.getTurnTime('HM');
+    const sessionId = general.session_id;
 
-    const generalName = general.getName();
-    const cityName = this.city.name;
+    // 서비스 레이어를 통해 거병 실행
+    await RaiseArmyCommandService.execute(general, sessionId);
+
+    // 결과 턴 설정
+    this.setResultTurn(new LastTurn(RaiseArmyCommand.getName(), this.arg));
+
+    // 로그 (서비스에서 처리 또는 여기서 처리)
     const logger = general.getLogger();
-
-    let nationName = generalName;
-
-    const nationNameExistsCnt = await db.queryFirstField(
-      'SELECT count(*) FROM nation WHERE name = ?',
-      [nationName]
-    );
+    const cityName = this.city.name;
+    const generalName = general.name;
     
-    if (nationNameExistsCnt) {
-      nationName = '㉥' + nationName.substring(0, 16);
-    }
-
-    const nationNameExistsCnt2 = await db.queryFirstField(
-      'SELECT count(*) FROM nation WHERE name = ?',
-      [nationName]
-    );
-
-    if (nationNameExistsCnt2) {
-      nationName = '㉥' + nationName;
-    }
-
-    const secretlimit = env.scenario >= 1000 ? 1 : 3;
-    const baserice = 50000;
-
-    await db.insert('nation', {
-      name: nationName,
-      color: '#330000',
-      gold: 0,
-      rice: baserice,
-      rate: 20,
-      bill: 100,
-      strategic_cmd_limit: 12,
-      surlimit: 72,
-      secretlimit: secretlimit,
-      type: 0,
-      gennum: 1
-    });
-
-    const nationID = (db as any).insertId();
-
-    const allNations = await db.query('SELECT nation FROM nation WHERE nation != ?', [nationID]);
-    const diplomacyInit: any[] = [];
-
-    for (const destNation of allNations) {
-      const destNationID = destNation.nation;
-
-      diplomacyInit.push({
-        me: destNationID,
-        you: nationID,
-        state: 2,
-        term: 0,
-      });
-
-      diplomacyInit.push({
-        me: nationID,
-        you: destNationID,
-        state: 2,
-        term: 0,
-      });
-    }
-
-    if (diplomacyInit.length > 0) {
-      await db.insert('diplomacy', diplomacyInit);
-    }
-
-    const turnRows: any[] = [];
-    for (const chiefLevel of [12, 11]) {
-      for (let turnIdx = 0; turnIdx < 12; turnIdx++) {
-        turnRows.push({
-          nation_id: nationID,
-          officer_level: chiefLevel,
-          turn_idx: turnIdx,
-          action: '휴식',
-          arg: null,
-          brief: '휴식',
-        });
-      }
-    }
-    await db.insert('nation_turn', turnRows);
-
-    logger.pushGeneralActionLog(`거병에 성공하였습니다. <1>${date}</>`);
+    logger.pushGeneralActionLog(`거병에 성공하였습니다.`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>이(가) <G><b>${cityName}</b></>에 거병하였습니다.`);
     logger.pushGlobalHistoryLog(`<Y><b>【거병】</b></><D><b>${generalName}</b></>이(가) 세력을 결성하였습니다.`);
     logger.pushGeneralHistoryLog(`<G><b>${cityName}</b></>에서 거병`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>이(가) <G><b>${cityName}</b></>에서 거병`);
 
-    const exp = 100;
-    const ded = 100;
-
-    general.addExperience(exp);
-    general.addDedication(ded);
-    general.setVar('belong', 1);
-    general.setVar('officer_level', 12);
-    general.setVar('officer_city', 0);
-    general.setVar('nation', nationID);
-
-    this.setResultTurn(new LastTurn(RaiseArmyCommand.getName(), this.arg));
-    general.checkStatChange();
-
-    general.applyDB(db);
+    // tryUniqueItemLottery
+    const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+    await tryUniqueItemLottery(
+      general.genGenericUniqueRNG(RaiseArmyCommand.actionName),
+      general,
+      sessionId
+    );
 
     return true;
   }
