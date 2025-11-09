@@ -37,26 +37,26 @@ export class GetReservedCommandService {
 
       const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
-        'data.nation': nationId
+        nation: nationId
       });
 
-      const nationLevel = nation?.data.level || 0;
+      const nationLevel = nation?.level || 0;
 
       const chiefs = await generalRepository.findByFilter({
         session_id: sessionId,
-        'data.nation': nationId,
-        'data.officer_level': { $gte: 5 }
+        nation: nationId,
+        officer_level: { $gte: 5 }
       });
 
       const generalsByLevel: { [key: number]: any } = {};
       for (const chief of chiefs) {
-        generalsByLevel[chief.data.officer_level] = chief.data;
+        generalsByLevel[chief.officer_level] = chief;
       }
 
       const nationTurns = await nationTurnRepository.findByNation(
         sessionId,
         nationId,
-        { 'data.officer_level': -1, 'data.turn_idx': 1 }
+        { officer_level: -1, turn_idx: 1 }
       );
 
       const nationTurnList: { [key: number]: { [key: number]: any } } = {};
@@ -64,7 +64,7 @@ export class GetReservedCommandService {
       const invalidOverTurnList: { [key: number]: number } = {};
 
       for (const turn of nationTurns) {
-        let { officer_level, turn_idx, action, arg, brief } = turn.data;
+        let { officer_level, turn_idx, action, arg, brief } = turn;
 
         if (!nationTurnList[officer_level]) {
           nationTurnList[officer_level] = {};
@@ -119,12 +119,12 @@ export class GetReservedCommandService {
 
       const troops = await troopRepository.findByFilter({
         session_id: sessionId,
-        'data.nation': nationId
+        nation: nationId
       });
 
       const troopList: { [key: number]: string } = {};
       for (const troop of troops) {
-        troopList[troop.data.troop_leader] = troop.data.name;
+        troopList[troop.troop_leader] = troop.name;
       }
 
       // 빈 턴은 모두 DB에 '휴식' 명령으로 자동 저장

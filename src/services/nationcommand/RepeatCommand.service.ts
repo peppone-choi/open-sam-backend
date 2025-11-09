@@ -79,10 +79,10 @@ export class RepeatCommandService {
     }
 
     for (const turn of turnList) {
-      const turnIdx = turn.data.turn_idx;
-      const action = turn.data.action;
-      const arg = turn.data.arg;
-      const brief = turn.data.brief;
+      const turnIdx = turn.turn_idx;
+      const action = turn.action;
+      const arg = turn.arg;
+      const brief = turn.brief;
 
       const targetIndices: number[] = [];
       for (let i = turnIdx + turnCnt; i < MAX_CHIEF_TURN; i += turnCnt) {
