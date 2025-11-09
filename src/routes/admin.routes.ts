@@ -1203,5 +1203,46 @@ router.get('/server/status/:sessionId', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/admin/nation/stats:
+ *   get:
+ *     summary: 국가 통계 조회
+ *     tags: [Admin - Nation]
+ */
+router.get('/nation/stats', async (req, res) => {
+  try {
+    const { AdminNationStatsService } = await import('../services/admin/AdminNationStats.service');
+    const sessionId = req.query.session_id || 'sangokushi_default';
+    const sortType = parseInt(req.query.sort_type as string) || 0;
+    
+    const result = await AdminNationStatsService.getNationStats(sessionId as string, sortType);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/nation/change-general:
+ *   post:
+ *     summary: 장수 국가 변경
+ *     tags: [Admin - Nation]
+ */
+router.post('/nation/change-general', async (req, res) => {
+  try {
+    const { AdminNationStatsService } = await import('../services/admin/AdminNationStats.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const generalNo = parseInt(req.body.generalNo || req.body.general_id);
+    const nationId = parseInt(req.body.nationId || req.body.nation);
+    
+    const result = await AdminNationStatsService.changeGeneralNation(sessionId, generalNo, nationId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;
 

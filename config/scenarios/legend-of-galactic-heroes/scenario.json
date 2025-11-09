@@ -92,29 +92,61 @@
       },
       "schema": {
         "attributes": {
-          "command": {
-            "label": "지휘력",
+          "leadership": {
+            "label": "통솔",
             "min": 1,
             "max": 100,
-            "default": 50
-          },
-          "tactics": {
-            "label": "전술",
-            "min": 1,
-            "max": 100,
-            "default": 50
-          },
-          "strategy": {
-            "label": "전략",
-            "min": 1,
-            "max": 100,
-            "default": 50
+            "default": 50,
+            "description": "인재활용능력, 함대사기, 항복권고 성공률"
           },
           "politics": {
-            "label": "정치력",
+            "label": "정치",
             "min": 1,
             "max": 100,
-            "default": 50
+            "default": 50,
+            "description": "정치력, 시민 지지율"
+          },
+          "operations": {
+            "label": "운영",
+            "min": 1,
+            "max": 100,
+            "default": 50,
+            "description": "사무관리능력, 행성 통치"
+          },
+          "intelligence": {
+            "label": "정보",
+            "min": 1,
+            "max": 100,
+            "default": 50,
+            "description": "정보수집 및 분석, 스파이 활동, 색적능력"
+          },
+          "command": {
+            "label": "지휘",
+            "min": 1,
+            "max": 100,
+            "default": 50,
+            "description": "부대 지휘능력, 함선 행동 속도"
+          },
+          "maneuver": {
+            "label": "기동",
+            "min": 1,
+            "max": 100,
+            "default": 50,
+            "description": "함대 이동 지휘능력, 기민한 조함"
+          },
+          "attack": {
+            "label": "공격",
+            "min": 1,
+            "max": 100,
+            "default": 50,
+            "description": "공격 지휘능력, 함대/행성 공격력"
+          },
+          "defense": {
+            "label": "방어",
+            "min": 1,
+            "max": 100,
+            "default": 50,
+            "description": "방어 지휘능력, 함대/행성 방어력"
           },
           "age": {
             "label": "나이",
@@ -122,35 +154,33 @@
             "max": 100,
             "default": 30
           },
-          "injury": {
-            "label": "부상도",
-            "min": 0,
-            "max": 100,
-            "default": 0
-          },
-          "loyalty": {
-            "label": "충성도",
-            "min": 0,
-            "max": 100,
-            "default": 70
-          },
-          "morale": {
-            "label": "사기",
-            "min": 0,
-            "max": 100,
-            "default": 70
-          },
-          "experience": {
-            "label": "경험치",
-            "min": 0,
-            "max": 999999,
-            "default": 0
-          },
           "rank": {
             "label": "계급",
             "min": 1,
-            "max": 10,
-            "default": 1
+            "max": 12,
+            "default": 1,
+            "description": "1=이등병, 12=원수"
+          },
+          "merit": {
+            "label": "공적",
+            "min": 0,
+            "max": 999999,
+            "default": 0,
+            "description": "현재 계급의 공적 포인트"
+          },
+          "evaluation": {
+            "label": "평가포인트",
+            "min": 0,
+            "max": 999999,
+            "default": 0,
+            "description": "세션 내 평가"
+          },
+          "fame": {
+            "label": "명성포인트",
+            "min": 0,
+            "max": 999999,
+            "default": 0,
+            "description": "게임 전체 평가"
           }
         }
       }

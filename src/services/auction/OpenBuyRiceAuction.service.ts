@@ -1,43 +1,55 @@
 // @ts-nocheck - Argument count mismatches need review
 import { generalRepository } from '../../repositories/general.repository';
 import { auctionRepository } from '../../repositories/auction.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 export class OpenBuyRiceAuctionService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
-    
+    const userId = user?.userId || user?.id;
+
     const { amount, closeTurnCnt, startBidAmount, finishBidAmount } = data;
-    
+
     try {
       if (!amount || !closeTurnCnt || !startBidAmount || !finishBidAmount) {
         throw new Error('필수 파라미터가 누락되었습니다.');
       }
-      
+
+      if (!generalId) {
+        throw new Error('장수 ID가 필요합니다.');
+      }
+
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      // 🔒 보안: 장수 소유권 검증
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '권한이 없습니다.');
+      }
+
+      const general = ownershipCheck.general;
+
       if (closeTurnCnt < 1 || closeTurnCnt > 24) {
         throw new Error('종료기한은 1 ~ 24 턴 이어야 합니다.');
       }
-      
+
       if (amount < 100 || amount > 10000) {
         throw new Error('거래량은 100 ~ 10000 이어야 합니다.');
       }
-      
+
       if (startBidAmount < amount * 0.5 || amount * 2 < startBidAmount) {
         throw new Error('시작거래가는 50% ~ 200% 이어야 합니다.');
       }
-      
+
       if (finishBidAmount < amount * 1.1 || amount * 2 < finishBidAmount) {
         throw new Error('즉시거래가는 110% ~ 200% 이어야 합니다.');
       }
-      
+
       if (finishBidAmount < startBidAmount * 1.1) {
         throw new Error('즉시거래가는 시작판매가의 110% 이상이어야 합니다.');
-      }
-      
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
-      
-      if (!general) {
-        throw new Error('장수를 찾을 수 없습니다.');
       }
 
       const minimumRice = 5000;

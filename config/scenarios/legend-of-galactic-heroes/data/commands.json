@@ -1,0 +1,596 @@
+{
+  "commandGroups": [
+    {
+      "id": "operation",
+      "name": "작전 커맨드군",
+      "nameEn": "Operation Commands",
+      "nameJa": "作戦コマンド群",
+      "description": "모든 캐릭터가 공통으로 보유. 주로 기함 조작 관련. 대부분 함장 카드에 포함",
+      "descriptionJa": "全てのキャラクターが共通して保有しているコマンド群です。主に旗艦ユニットの操作に関連しており、ほとんどが［艦長カード］に収められています",
+      "commands": [
+        {
+          "id": "warp",
+          "name": "워프 항행",
+          "nameEn": "Warp Navigation",
+          "nameJa": "ワープ航行",
+          "cpType": "MCP",
+          "cpCost": 10,
+          "description": "그리드 간 이동. 별계 그리드는 인접 그리드를 통해서만 진입 가능",
+          "descriptionJa": "グリッド間を移動するためにワープ航行を行います",
+          "executionDelay": 0,
+          "executionDuration": "variable",
+          "restrictions": "항속 100 이상 필요"
+        },
+        {
+          "id": "port",
+          "name": "기항",
+          "nameEn": "Port",
+          "nameJa": "寄港",
+          "cpType": "MCP",
+          "cpCost": 5,
+          "description": "동일 별계 내 행성 간 이동",
+          "descriptionJa": "同じ星系の中にある惑星間を移動するために星系間航行を行う",
+          "executionDelay": 0,
+          "executionDuration": 10
+        },
+        {
+          "id": "fuel_supply",
+          "name": "연료 보급",
+          "nameEn": "Fuel Supply",
+          "nameJa": "燃料補給",
+          "cpType": "MCP",
+          "cpCost": 0,
+          "description": "행성/요새에서 연료 보급",
+          "executionDelay": 0,
+          "executionDuration": 30
+        },
+        {
+          "id": "strategic_reconnaissance",
+          "name": "전략 색적",
+          "nameEn": "Strategic Reconnaissance",
+          "nameJa": "戦略索敵",
+          "cpType": "MCP",
+          "cpCost": 15,
+          "description": "주변 그리드의 적 정보 수집",
+          "executionDelay": 0,
+          "executionDuration": "continuous"
+        }
+      ]
+    },
+    {
+      "id": "personal",
+      "name": "개인 커맨드군",
+      "nameEn": "Personal Commands",
+      "nameJa": "個人コマンド群",
+      "description": "모든 캐릭터가 공통으로 보유. 별계 내 이동 및 개인 행동. 대부분 개인 카드에 포함",
+      "descriptionJa": "全てのキャラクターが共通して保有しているコマンド群です。主に星系内での移動やキャラクター個人単位で実行するコマンドとなっています",
+      "commands": [
+        {
+          "id": "long_distance_move",
+          "name": "원거리 이동",
+          "nameEn": "Long Distance Movement",
+          "nameJa": "遠距離移動",
+          "cpType": "PCP",
+          "cpCost": 5,
+          "description": "행성 내 시설 간 이동",
+          "descriptionJa": "惑星内の施設間を移動する",
+          "executionDelay": 0,
+          "executionDuration": 5
+        },
+        {
+          "id": "short_distance_move",
+          "name": "근거리 이동",
+          "nameEn": "Short Distance Movement",
+          "nameJa": "近距離移動",
+          "cpType": "PCP",
+          "cpCost": 0,
+          "description": "시설 내 방 간 이동",
+          "descriptionJa": "同じ施設内の部屋を移動する",
+          "executionDelay": 0,
+          "executionDuration": 1
+        },
+        {
+          "id": "rest",
+          "name": "휴식",
+          "nameEn": "Rest",
+          "nameJa": "休息",
+          "cpType": "PCP",
+          "cpCost": 0,
+          "description": "자택/호텔/거주구에서 휴식",
+          "executionDelay": 0,
+          "executionDuration": 60
+        }
+      ]
+    },
+    {
+      "id": "command",
+      "name": "지휘 커맨드군",
+      "nameEn": "Command Commands",
+      "nameJa": "指揮コマンド群",
+      "description": "군사 작전 입안, 함대 결성 등 함대 전반을 지휘. 군사 작전을 담당하는 직무권한 카드에 포함",
+      "descriptionJa": "軍事作戦の立案や艦隊の結成など、艦隊個別の行動以外の全般を指揮するコマンド群です",
+      "commands": [
+        {
+          "id": "operation_plan",
+          "name": "작전 계획",
+          "nameEn": "Operation Planning",
+          "nameJa": "作戦計画",
+          "cpType": "PCP",
+          "cpCost": "variable",
+          "description": "점령/방어/소탕 작전 계획 수립",
+          "descriptionJa": "陣営の戦略的な目標を策定するため、新たな作戦目的（占領/防衛/掃討）を定める",
+          "executionDelay": "variable",
+          "executionDuration": 0,
+          "subtypes": [
+            {
+              "id": "occupation",
+              "name": "점령 작전",
+              "nameJa": "占領作戦",
+              "description": "적 별계 점령"
+            },
+            {
+              "id": "defense",
+              "name": "방어 작전",
+              "nameJa": "防衛作戦",
+              "description": "아군 별계 방어"
+            },
+            {
+              "id": "sweep",
+              "name": "소탕 작전",
+              "nameJa": "掃討作戦",
+              "description": "그리드 내 적 함선 격파"
+            }
+          ],
+          "restrictions": "발동 예정 시기에 따라 CP 비용 변동. 작전 기간 30일"
+        },
+        {
+          "id": "issue_order",
+          "name": "발령",
+          "nameEn": "Issue Order",
+          "nameJa": "発令",
+          "cpType": "PCP",
+          "cpCost": 20,
+          "description": "작전 계획에 부대 할당",
+          "descriptionJa": "作戦計画によって決められた参加ユニット数に基づいて、具体的にどの部隊を作戦に参加させるのかを決める",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "withdraw_operation",
+          "name": "작전 철회",
+          "nameEn": "Withdraw Operation",
+          "nameJa": "作戦撤回",
+          "cpType": "PCP",
+          "cpCost": 10,
+          "description": "발령된 작전 즉시 종료",
+          "descriptionJa": "計画策定者によって作戦を即時撤回する",
+          "executionDelay": 0,
+          "executionDuration": 0
+        }
+      ]
+    },
+    {
+      "id": "logistics",
+      "name": "병참 커맨드군",
+      "nameEn": "Logistics Commands",
+      "nameJa": "兵站コマンド群",
+      "description": "군수물자의 함대 투입, 부대 재편성 등 함대 유지 활동. 함대사령관 카드 등에 포함",
+      "descriptionJa": "軍需物資の艦隊への投入や部隊の再結成など、艦隊の維持活動に関わるコマンド群です",
+      "commands": [
+        {
+          "id": "production",
+          "name": "생산",
+          "nameEn": "Production",
+          "nameJa": "生産",
+          "cpType": "MCP",
+          "cpCost": 0,
+          "description": "함정 건조 및 병사 모병 (자동)",
+          "descriptionJa": "艦艇ユニットと兵士は自動的に生産される",
+          "executionDelay": 0,
+          "executionDuration": "automatic",
+          "note": "현재 버전에서는 자동 생산. 설정 변경 불가"
+        },
+        {
+          "id": "allocation",
+          "name": "할당",
+          "nameEn": "Allocation",
+          "nameJa": "割当",
+          "cpType": "MCP",
+          "cpCost": 15,
+          "description": "행성 창고에서 부대 창고로 유닛/물자 할당",
+          "descriptionJa": "惑星/要塞に保管されている各ユニット（艦艇、陸戦隊、乗組員）および軍需物資を特定の部隊に与える",
+          "executionDelay": 30,
+          "executionDuration": 60,
+          "restrictions": "재편성/보충 실행 중 불가"
+        },
+        {
+          "id": "reorganization",
+          "name": "재편성",
+          "nameEn": "Reorganization",
+          "nameJa": "再編成",
+          "cpType": "MCP",
+          "cpCost": 20,
+          "description": "부대와 부대 창고 간 유닛 이동",
+          "descriptionJa": "自らが率いている部隊のユニットを、惑星/要塞内の部隊倉庫との間で移動させる",
+          "executionDelay": 60,
+          "executionDuration": 120,
+          "restrictions": "행성/요새에 정박 중이어야 함"
+        },
+        {
+          "id": "replenishment",
+          "name": "보충",
+          "nameEn": "Replenishment",
+          "nameJa": "補充",
+          "cpType": "MCP",
+          "cpCost": 15,
+          "description": "전투로 손상된 유닛 수리/보충",
+          "descriptionJa": "戦闘によって員数が減った艦艇ユニットや乗組員ユニットに補充を行う",
+          "executionDelay": 30,
+          "executionDuration": 90,
+          "restrictions": "행성/요새에 정박 중이어야 함. 동일 함종만 보충 가능"
+        },
+        {
+          "id": "transport",
+          "name": "수송",
+          "nameEn": "Transport",
+          "nameJa": "搬出入",
+          "cpType": "MCP",
+          "cpCost": 10,
+          "description": "행성 창고 간 물자 이동",
+          "executionDelay": 0,
+          "executionDuration": "variable"
+        }
+      ]
+    },
+    {
+      "id": "personnel",
+      "name": "인사 커맨드군",
+      "nameEn": "Personnel Commands",
+      "nameJa": "人事コマンド群",
+      "description": "승진, 강등, 직무 임명 등 캐릭터 인사 수행",
+      "descriptionJa": "昇進や降格、職務への任命といった、キャラクターの人事を行うコマンド群です",
+      "commands": [
+        {
+          "id": "promotion",
+          "name": "승진",
+          "nameEn": "Promotion",
+          "nameJa": "昇進",
+          "cpType": "PCP",
+          "cpCost": 30,
+          "description": "캐릭터를 1계급 승진",
+          "descriptionJa": "指定されたキャラクターは一階級上のラダーの最下位に編入される",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "note": "공적 포인트 0으로 초기화. 개인/함장/봉토를 제외한 직무권한 카드 상실"
+        },
+        {
+          "id": "demotion",
+          "name": "강등",
+          "nameEn": "Demotion",
+          "nameJa": "降等",
+          "cpType": "PCP",
+          "cpCost": 20,
+          "description": "캐릭터를 1계급 강등",
+          "descriptionJa": "指定されたキャラクターは一階級下のラダーの最下位に編入される",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "note": "공적 포인트 100으로 설정. 개인/함장/봉토를 제외한 직무권한 카드 상실"
+        },
+        {
+          "id": "appointment",
+          "name": "임명",
+          "nameEn": "Appointment",
+          "nameJa": "任命",
+          "cpType": "PCP",
+          "cpCost": 25,
+          "description": "직책에 캐릭터 임명",
+          "descriptionJa": "役職にキャラクターを任命する",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "restrictions": "임명 가능 계급 범위 내여야 함. 자신과 동등/이상 계급은 임명 불가"
+        },
+        {
+          "id": "dismissal",
+          "name": "파면",
+          "nameEn": "Dismissal",
+          "nameJa": "罷免",
+          "cpType": "PCP",
+          "cpCost": 20,
+          "description": "직책에서 캐릭터 해임",
+          "descriptionJa": "役職からキャラクターを罷免する",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "flagship_change",
+          "name": "기함 변경",
+          "nameEn": "Flagship Change",
+          "nameJa": "旗艦変更",
+          "cpType": "MCP",
+          "cpCost": 10,
+          "description": "기함 함종 변경",
+          "descriptionJa": "乗艦となる旗艦の種類を変更する",
+          "executionDelay": 60,
+          "executionDuration": 120,
+          "note": "계급에 따라 사용 가능 기함 결정"
+        }
+      ]
+    },
+    {
+      "id": "political",
+      "name": "정치 커맨드군",
+      "nameEn": "Political Commands",
+      "nameJa": "政治コマンド群",
+      "description": "국가 전체 예산 관리, 국가 목표 설정 등 진영 근간 관련. 국가 중추 직무권한 카드에 포함",
+      "descriptionJa": "国家全体の予算管理や国家目標の設定など、陣営の根幹に関わる群です",
+      "commands": [
+        {
+          "id": "budget_management",
+          "name": "예산 관리",
+          "nameEn": "Budget Management",
+          "nameJa": "予算管理",
+          "cpType": "PCP",
+          "cpCost": 50,
+          "description": "국가 예산 편성 및 배분",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "note": "경제 시스템 현재 미구현"
+        },
+        {
+          "id": "national_goal",
+          "name": "국가 목표",
+          "nameEn": "National Goal",
+          "nameJa": "国家目標",
+          "cpType": "PCP",
+          "cpCost": 40,
+          "description": "진영의 전략적 목표 설정",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "diplomacy",
+          "name": "외교",
+          "nameEn": "Diplomacy",
+          "nameJa": "外交",
+          "cpType": "PCP",
+          "cpCost": 30,
+          "description": "다른 진영과의 협상 및 조약",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "coup",
+          "name": "쿠데타",
+          "nameEn": "Coup d'état",
+          "nameJa": "クーデター",
+          "cpType": "PCP",
+          "cpCost": 100,
+          "description": "정부 전복 시도",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "restrictions": "특정 조건 충족 시에만 가능"
+        }
+      ]
+    },
+    {
+      "id": "intelligence",
+      "name": "첩보 커맨드군",
+      "nameEn": "Intelligence Commands",
+      "nameJa": "諜報コマンド群",
+      "description": "일제 수색, 체포 등 군기 유지 및 잠입 공작 등 첩보 활동",
+      "descriptionJa": "一斉捜査や逮捕といった軍紀維持に関するものと、潜入工作といった諜報活動に関わるコマンド群です",
+      "commands": [
+        {
+          "id": "mass_search",
+          "name": "일제 수색",
+          "nameEn": "Mass Search",
+          "nameJa": "一斉捜査",
+          "cpType": "PCP",
+          "cpCost": 40,
+          "description": "특정 지역 대규모 수색",
+          "executionDelay": 30,
+          "executionDuration": 60
+        },
+        {
+          "id": "arrest",
+          "name": "체포",
+          "nameEn": "Arrest",
+          "nameJa": "逮捕",
+          "cpType": "PCP",
+          "cpCost": 30,
+          "description": "특정 캐릭터 체포",
+          "executionDelay": 0,
+          "executionDuration": 30,
+          "restrictions": "헌병 조직 필요"
+        },
+        {
+          "id": "infiltration",
+          "name": "잠입 공작",
+          "nameEn": "Infiltration",
+          "nameJa": "潜入工作",
+          "cpType": "PCP",
+          "cpCost": 50,
+          "description": "적 진영에 스파이 파견",
+          "executionDelay": 60,
+          "executionDuration": "continuous",
+          "note": "정보 능력에 따라 성공률 변동"
+        },
+        {
+          "id": "sabotage",
+          "name": "파괴 공작",
+          "nameEn": "Sabotage",
+          "nameJa": "破壊工作",
+          "cpType": "PCP",
+          "cpCost": 60,
+          "description": "적 시설 또는 함선 파괴",
+          "executionDelay": 120,
+          "executionDuration": 60
+        },
+        {
+          "id": "espionage",
+          "name": "정보 수집",
+          "nameEn": "Espionage",
+          "nameJa": "諜報活動",
+          "cpType": "PCP",
+          "cpCost": 35,
+          "description": "적 정보 수집 및 분석",
+          "executionDelay": 60,
+          "executionDuration": 120
+        }
+      ]
+    }
+  ],
+  "commandPointSystem": {
+    "types": [
+      {
+        "id": "PCP",
+        "name": "정략 커맨드 포인트",
+        "nameEn": "Political Command Points",
+        "nameJa": "政略コマンドポイント",
+        "description": "정치, 운영 능력에 따라 회복량 결정",
+        "recoveryInterval": "2 게임시간 (실시간 5분)",
+        "affectedBy": ["politics", "operations"]
+      },
+      {
+        "id": "MCP",
+        "name": "군사 커맨드 포인트",
+        "nameEn": "Military Command Points",
+        "nameJa": "軍事コマンドポイント",
+        "description": "지휘, 기동, 공격, 방어 능력에 따라 회복량 결정",
+        "recoveryInterval": "2 게임시간 (실시간 5분)",
+        "affectedBy": ["command", "maneuver", "attack", "defense"]
+      }
+    ],
+    "substitution": {
+      "enabled": true,
+      "cost": "2x",
+      "description": "부족한 CP는 다른 종류 CP로 대체 가능 (2배 소비)"
+    },
+    "recovery": {
+      "interval": "2 game hours (5 real minutes)",
+      "condition": "전술 게임 중에는 회복 중단"
+    }
+  },
+  "rankSystem": {
+    "ranks": [
+      {
+        "id": 12,
+        "name": "원수",
+        "nameEn": "Marshal",
+        "nameJa": "元帥",
+        "limit": 5,
+        "autoPromotion": false
+      },
+      {
+        "id": 11,
+        "name": "상급대장",
+        "nameEn": "Senior General",
+        "nameJa": "上級大将",
+        "limit": 5,
+        "autoPromotion": false,
+        "factions": ["empire"]
+      },
+      {
+        "id": 10,
+        "name": "대장",
+        "nameEn": "General",
+        "nameJa": "大将",
+        "limit": 10,
+        "autoPromotion": false
+      },
+      {
+        "id": 9,
+        "name": "중장",
+        "nameEn": "Lieutenant General",
+        "nameJa": "中将",
+        "limit": 20,
+        "autoPromotion": false
+      },
+      {
+        "id": 8,
+        "name": "소장",
+        "nameEn": "Major General",
+        "nameJa": "少将",
+        "limit": 40,
+        "autoPromotion": false
+      },
+      {
+        "id": 7,
+        "name": "준장",
+        "nameEn": "Brigadier General",
+        "nameJa": "准将",
+        "limit": 80,
+        "autoPromotion": false
+      },
+      {
+        "id": 6,
+        "name": "대좌",
+        "nameEn": "Colonel",
+        "nameJa": "大佐",
+        "limit": null,
+        "autoPromotion": true,
+        "autoPromotionInterval": "30 days"
+      },
+      {
+        "id": 5,
+        "name": "중좌",
+        "nameEn": "Lieutenant Colonel",
+        "nameJa": "中佐",
+        "limit": null,
+        "autoPromotion": true,
+        "autoPromotionInterval": "30 days"
+      },
+      {
+        "id": 4,
+        "name": "소좌",
+        "nameEn": "Major",
+        "nameJa": "少佐",
+        "limit": null,
+        "autoPromotion": true,
+        "autoPromotionInterval": "30 days"
+      },
+      {
+        "id": 3,
+        "name": "대위",
+        "nameEn": "Captain",
+        "nameJa": "大尉",
+        "limit": null,
+        "autoPromotion": true,
+        "autoPromotionInterval": "30 days"
+      },
+      {
+        "id": 2,
+        "name": "중위",
+        "nameEn": "Lieutenant",
+        "nameJa": "中尉",
+        "limit": null,
+        "autoPromotion": true,
+        "autoPromotionInterval": "30 days"
+      },
+      {
+        "id": 1,
+        "name": "소위",
+        "nameEn": "Second Lieutenant",
+        "nameJa": "少尉",
+        "limit": null,
+        "autoPromotion": true,
+        "autoPromotionInterval": "30 days"
+      }
+    ],
+    "promotionRules": {
+      "meritReset": "0 on promotion",
+      "cardLoss": "개인, 함장, 봉토를 제외한 전직 상실",
+      "autorityByRank": {
+        "empire": {
+          "marshal": "황제",
+          "seniorGeneral_to_brigadierGeneral": "군무상서",
+          "colonel_and_below": "군무성인사국장"
+        },
+        "alliance": {
+          "marshal_to_brigadierGeneral": "국방위원장",
+          "colonel_and_below": "국방위원회인사국장"
+        }
+      }
+    }
+  }
+}

@@ -1,28 +1,40 @@
 // @ts-nocheck - Argument count mismatches need review
 import { generalRepository } from '../../repositories/general.repository';
 import { auctionRepository } from '../../repositories/auction.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 export class OpenUniqueAuctionService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
-    
+    const userId = user?.userId || user?.id;
+
     const { itemID, amount } = data;
-    
+
     try {
       if (!itemID || !amount) {
         throw new Error('필수 파라미터가 누락되었습니다.');
       }
 
+      if (!generalId) {
+        throw new Error('장수 ID가 필요합니다.');
+      }
+
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      // 🔒 보안: 장수 소유권 검증
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '권한이 없습니다.');
+      }
+
+      const general = ownershipCheck.general;
+
       const minPoint = 100;
       if (amount < minPoint) {
         throw new Error(`최소 경매 금액은 ${minPoint}입니다.`);
-      }
-
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
-
-      if (!general) {
-        throw new Error('장수를 찾을 수 없습니다.');
       }
 
       const existingItemAuction = await auctionRepository.findOneByFilter({
