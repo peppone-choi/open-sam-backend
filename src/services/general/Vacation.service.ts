@@ -42,11 +42,7 @@ export class VacationService {
       }
 
       // 장수 조회
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        owner: userId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {
@@ -55,21 +51,21 @@ export class VacationService {
         };
       }
 
-      const genData = general.data || {};
+      // 소유권 확인
+      if (String(general.owner) !== String(userId)) {
+        return {
+          result: false,
+          reason: '권한이 없습니다'
+        };
+      }
+
       const killturn = sessionData.killturn || 1;
 
       // killturn을 3배로 증가 (휴가 모드)
-      await generalRepository.updateOneByFilter(
-        {
-          session_id: sessionId,
-          owner: userId,
-          'data.no': generalId
-        },
-        {
-          $set: {
-            'data.killturn': killturn * 3
-          }
-        }
+      await generalRepository.updateBySessionAndNo(
+        sessionId,
+        generalId,
+        { killturn: killturn * 3 }
       );
 
       return {

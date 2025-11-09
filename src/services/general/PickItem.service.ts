@@ -37,7 +37,7 @@ export class PickItemService {
         };
       }
 
-      const currentItem = general.data?.[itemType];
+      const currentItem = general[itemType];
       if (currentItem && currentItem !== 'None') {
         return {
           success: false,
@@ -45,9 +45,9 @@ export class PickItemService {
         };
       }
 
-      general.data = general.data || {};
-      general.data[itemType] = itemCode;
-      await generalRepository.save(general);
+      await generalRepository.updateBySessionAndNo(sessionId, generalId, {
+        [itemType]: itemCode
+      });
 
       const session = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = session?.data || {};

@@ -36,26 +36,24 @@ export class SetItemsService {
         };
       }
 
-      general.data = general.data || {};
-
       const validItemSlots = ['item0', 'item1', 'item2', 'item3', 'item4'];
-      const updatedSlots: string[] = [];
+      const updates: any = {};
 
       for (const [slot, itemCode] of Object.entries(items)) {
         if (validItemSlots.includes(slot)) {
-          general.data[slot] = itemCode || 'None';
-          updatedSlots.push(slot);
+          updates[slot] = itemCode || 'None';
         }
       }
 
-      if (updatedSlots.length === 0) {
+      if (Object.keys(updates).length === 0) {
         return {
           success: false,
           message: '유효한 아이템 슬롯이 없습니다'
         };
       }
 
-      await generalRepository.save(general);
+      await generalRepository.updateBySessionAndNo(sessionId, generalId, updates);
+      const updatedSlots = Object.keys(updates);
 
       const session = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = session?.data || {};
