@@ -50,23 +50,23 @@ export class GetFrontInfoService {
         );
         
         if (general) {
-          generalId = general.data?.no || general.no;
+          generalId = general.no;
         }
       }
 
       if (!general) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: generalId ? '장수를 찾을 수 없습니다' : '장수가 없습니다. 먼저 장수를 생성해주세요.'
         };
       }
-      
+
       if (!generalId) {
-        generalId = general.data?.no || general.no;
+        generalId = general.no;
       }
 
-      const nationId = general.data?.nation || 0;
-      const cityId = general.data?.city;
+      const nationId = general.nation || 0;
+      const cityId = general.city;
 
       // 2. 전역 정보 생성
       const globalInfo = await this.generateGlobalInfo(sessionId);

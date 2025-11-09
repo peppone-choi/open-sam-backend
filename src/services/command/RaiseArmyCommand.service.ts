@@ -31,10 +31,10 @@ export class RaiseArmyCommandService {
       }
     }
 
-    // 새 국가 번호 생성 - 직접 쿼리 필요 (Repository에 sort/select 메서드 없음)
+    // 새 국가 번호 생성
     const allNations = await nationRepository.findBySession(sessionId);
     const maxNationNum = allNations.reduce((max: number, nation: any) => {
-      const nationNum = nation.nation || nation.data?.nation || 0;
+      const nationNum = nation.nation || 0;
       return Math.max(max, nationNum);
     }, 0);
     const nationID = maxNationNum + 1;
@@ -61,15 +61,12 @@ export class RaiseArmyCommandService {
     });
 
     // 다른 모든 국가와 외교 관계 초기화 (전쟁 상태)
-    const otherNations = allNations.filter((n: any) => {
-      const nId = n.nation || n.data?.nation;
-      return nId !== nationID;
-    });
+    const otherNations = allNations.filter((n: any) => n.nation !== nationID);
 
     const diplomacyDocs = [];
     for (const destNation of otherNations) {
-      const destNationId = destNation.nation || destNation.data?.nation;
-      
+      const destNationId = destNation.nation;
+
       // destNationId가 유효한 경우에만 추가
       if (destNationId && typeof destNationId === 'number') {
         diplomacyDocs.push({
@@ -115,25 +112,18 @@ export class RaiseArmyCommandService {
     // NationTurn.insertMany 직접 호출 (대량 삽입)
     await NationTurn.insertMany(turnDocs);
 
-    // 장수 정보 업데이트 - Repository에 updateOne이 없으므로 직접 쿼리
-    const targetGeneral = await generalRepository.findOneByFilter({
-      session_id: sessionId,
-      $or: [
-        { 'data.no': general.no },
-        { no: general.no }
-      ]
-    });
+    // 장수 정보 업데이트
+    const targetGeneral = await generalRepository.findBySessionAndNo(sessionId, general.no);
 
     if (targetGeneral) {
-      targetGeneral.data = targetGeneral.data || {};
-      targetGeneral.data.belong = 1;
-      targetGeneral.data.officer_level = 12;
-      targetGeneral.data.officer_city = 0;
-      targetGeneral.data.nation = nationID;
-      targetGeneral.data.experience = (targetGeneral.data.experience || 0) + 100;
-      targetGeneral.data.dedication = (targetGeneral.data.dedication || 0) + 100;
-      
-      await generalRepository.save(targetGeneral);
+      await generalRepository.updateBySessionAndNo(sessionId, general.no, {
+        belong: 1,
+        officer_level: 12,
+        officer_city: 0,
+        nation: nationID,
+        experience: (targetGeneral.experience || 0) + 100,
+        dedication: (targetGeneral.dedication || 0) + 100
+      });
     }
   }
 }
