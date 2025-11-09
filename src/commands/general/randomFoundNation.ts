@@ -187,7 +187,7 @@ export class RandomFoundNationCommand extends GeneralCommand {
     // TODO: StaticEventHandler.handleEvent
     // TODO: tryUniqueItemLottery
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

@@ -264,7 +264,7 @@ export class InciteCommand extends GeneralCommand {
 
       this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
       general.checkStatChange();
-      await general.save();
+      await this.saveGeneral();
       return false;
     }
 
@@ -293,7 +293,7 @@ export class InciteCommand extends GeneralCommand {
     // TODO: StaticEventHandler.handleEvent
     
     general.checkStatChange();
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

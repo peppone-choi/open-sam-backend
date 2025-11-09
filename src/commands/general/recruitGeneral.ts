@@ -163,7 +163,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
     general.checkStatChange();
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

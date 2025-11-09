@@ -134,7 +134,7 @@ export class ReduceForceCommand extends NationCommand {
 
     general.increaseInheritancePoint('active_action', 1);
     this.setResultTurn(new LastTurn(ReduceForceCommand.getName(), this.arg, 0));
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }

@@ -147,7 +147,7 @@ export class AbdicateToCommand extends GeneralCommand {
     }
 
     // 장수 데이터 저장
-    await general.save();
+    await this.saveGeneral();
     await destGeneral.save();
 
     return true;

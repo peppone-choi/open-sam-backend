@@ -93,7 +93,7 @@ export class DismissTroopsCommand extends GeneralCommand {
       console.error('StaticEventHandler failed:', error);
     }
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

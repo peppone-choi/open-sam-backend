@@ -117,7 +117,7 @@ export class TravelCommand extends GeneralCommand {
     // TODO: StaticEventHandler
     // TODO: tryUniqueItemLottery
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

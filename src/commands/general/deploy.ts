@@ -158,7 +158,7 @@ export class DeployCommand extends GeneralCommand {
     }
 
     this.setResultTurn(new LastTurn((this.constructor as typeof DeployCommand).getName(), this.arg));
-    await await general.save();
+    await await this.saveGeneral();
 
     // 전투 처리
     // TODO: processWar 로직 구현
@@ -178,7 +178,7 @@ export class DeployCommand extends GeneralCommand {
       general
     );
     
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }

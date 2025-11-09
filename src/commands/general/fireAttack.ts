@@ -254,7 +254,7 @@ export class FireAttackCommand extends GeneralCommand {
 
       this.setResultTurn(new LastTurn(FireAttackCommand.getName(), this.arg));
       general.checkStatChange();
-      await general.save();
+      await this.saveGeneral();
       return false;
     }
 
@@ -274,7 +274,7 @@ export class FireAttackCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn(FireAttackCommand.getName(), this.arg));
     general.checkStatChange();
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

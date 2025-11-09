@@ -87,7 +87,7 @@ export class BattleStanceCommand extends GeneralCommand {
     if (term < 3) {
       logger.pushGeneralActionLog(`병사들을 열심히 훈련중... (${term}/3) <1>${date}</>`);
       this.setResultTurn(turnResult);
-      await await general.save();
+      await await this.saveGeneral();
 
       return true;
     }
@@ -115,7 +115,7 @@ export class BattleStanceCommand extends GeneralCommand {
     general.checkStatChange();
     await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, BattleStanceCommand, this.env, this.arg ?? {});
     await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general, general.session_id || '');
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }

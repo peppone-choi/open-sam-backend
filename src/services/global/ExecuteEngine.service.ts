@@ -635,10 +635,13 @@ export class ExecuteEngineService {
         const now = new Date();
         if (generalTurntimeDate > now && generalTurntimeDate > date) {
           // turntime이 현재 시간과 월턴 모두보다 미래면 월턴 시점으로 리셋
+          const generalNo = generalDoc.data?.no || generalDoc.no;
+          await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+            'data.turntime': date.toISOString()
+          });
+          // 로컬 객체도 업데이트
           generalDoc.data = generalDoc.data || {};
           generalDoc.data.turntime = date.toISOString();
-          generalDoc.markModified('data');
-          await generalDoc.save();
         }
       }
       
@@ -676,7 +679,9 @@ export class ExecuteEngineService {
       }
       
       try {
-        await generalDoc.save();
+        // 레포지토리를 통한 저장
+        const generalNo = generalDoc.data?.no || generalDoc.no;
+        await generalRepository.updateBySessionAndNo(sessionId, generalNo, generalDoc.data || generalDoc.toObject());
       } catch (error: any) {
         // save() 실패 시 (장수가 삭제됨) 건너뛰기
         if (error.name === 'DocumentNotFoundError' || error.message?.includes('No document found')) {

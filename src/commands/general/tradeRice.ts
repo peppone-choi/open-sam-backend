@@ -191,7 +191,7 @@ export class TradeRiceCommand extends GeneralCommand {
       console.error('tryUniqueItemLottery failed:', error);
     }
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

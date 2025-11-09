@@ -229,7 +229,7 @@ export class AcceptRecruitCommand extends GeneralCommand {
     }
 
     // TODO: StaticEventHandler
-    await general.save();
+    await this.saveGeneral();
     await destGeneral.save();
 
     return true;

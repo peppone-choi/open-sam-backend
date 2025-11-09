@@ -142,7 +142,7 @@ export class DesperateDefenseCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }

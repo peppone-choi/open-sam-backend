@@ -118,7 +118,7 @@ export class GatherCommand extends GeneralCommand {
       general
     );
     
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }

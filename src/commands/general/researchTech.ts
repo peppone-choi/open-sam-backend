@@ -117,7 +117,7 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
     // TODO: StaticEventHandler, tryUniqueItemLottery
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

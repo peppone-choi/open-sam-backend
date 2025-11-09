@@ -178,7 +178,7 @@ export class GrantCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
-    await await general.save();
+    await await this.saveGeneral();
     await await destGeneral.save();
 
     return true;

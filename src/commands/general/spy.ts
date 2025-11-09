@@ -187,7 +187,7 @@ export class SpyCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn(SpyCommand.getName(), this.arg));
     general.checkStatChange();
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

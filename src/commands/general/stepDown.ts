@@ -106,7 +106,7 @@ export class StepDownCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler.handleEvent
     
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

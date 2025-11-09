@@ -106,7 +106,7 @@ export class DisbandCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await general.save();
+    await await this.saveGeneral();
 
     await runEventHandler(db, null, 'OccupyCity');
 

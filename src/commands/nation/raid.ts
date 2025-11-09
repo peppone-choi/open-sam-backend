@@ -204,7 +204,7 @@ export class RaidCommand extends NationCommand {
       console.error('StaticEventHandler failed:', error);
     }
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

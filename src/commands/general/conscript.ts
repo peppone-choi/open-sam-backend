@@ -208,7 +208,7 @@ export class ConscriptCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler, tryUniqueItemLottery
     // TODO: general.setAuxVar('armType', reqCrewType.armType)
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

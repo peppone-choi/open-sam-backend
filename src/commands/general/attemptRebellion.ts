@@ -90,7 +90,7 @@ export class AttemptRebellionCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler.handleEvent
     
-    await general.save();
+    await this.saveGeneral();
     lordGeneral?.applyDB(db);
 
     return true;

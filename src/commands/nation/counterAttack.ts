@@ -226,7 +226,7 @@ export class CounterAttackCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }

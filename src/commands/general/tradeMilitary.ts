@@ -172,7 +172,7 @@ export class TradeMilitaryCommand extends GeneralCommand {
 
     // TODO: StaticEventHandler, tryUniqueItemLottery
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

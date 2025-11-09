@@ -486,4 +486,23 @@ export abstract class BaseCommand {
   public getResultTurn(): LastTurn | ExternalLastTurn {
     return this.generalObj.getResultTurn();
   }
+
+  /**
+   * 장수 정보를 레포지토리를 통해 저장
+   * generalObj.save() 대신 사용
+   */
+  protected async saveGeneral(): Promise<void> {
+    const { generalRepository } = require('../../repositories/general.repository');
+    const sessionId = this.env.session_id;
+    const generalNo = this.generalObj.getID();
+    
+    // generalObj가 Mongoose 문서인 경우
+    if (this.generalObj.save && typeof this.generalObj.save === 'function') {
+      await this.generalObj.save();
+    } else {
+      // 일반 객체인 경우 레포지토리 사용
+      const updateData = this.generalObj.data || this.generalObj.toObject?.() || this.generalObj;
+      await generalRepository.updateBySessionAndNo(sessionId, generalNo, updateData);
+    }
+  }
 }

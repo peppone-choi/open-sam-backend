@@ -139,7 +139,7 @@ export class ForceMarchCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(ForceMarchCommand.getName(), this.arg));
     general.checkStatChange();
 
-    await general.save();
+    await this.saveGeneral();
 
     return true;
   }

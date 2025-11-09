@@ -108,7 +108,7 @@ export class TrainTroopsCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await general.save();
+    await await this.saveGeneral();
 
     return true;
   }
