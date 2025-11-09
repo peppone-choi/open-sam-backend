@@ -27,15 +27,15 @@ export class GetContactListService {
 
       const generals = await generalRepository.findByFilter({
         session_id: sessionId,
-        'data.npc': { $lt: 2 }
+        npc: { $lt: 2 }
       });
 
       for (const general of generals) {
-        const generalID = general.data?.no || 0;
-        const generalName = general.data?.name || '무명';
-        const nationID = general.data?.nation || 0;
-        const officerLevel = general.data?.officer_level || 0;
-        const npc = general.data?.npc || 0;
+        const generalID = general.no || 0;
+        const generalName = general.name || '무명';
+        const nationID = general.nation || 0;
+        const officerLevel = general.officer_level || 0;
+        const npc = general.npc || 0;
 
         if (!generalNations[nationID]) {
           generalNations[nationID] = [];
@@ -64,20 +64,18 @@ export class GetContactListService {
         ;
 
       const neutralNation = {
-        data: {
-          nation: 0,
-          name: '재야',
-          color: 0
-        }
+        nation: 0,
+        name: '재야',
+        color: 0
       };
 
       const allNations = [neutralNation, ...nations];
 
       const result = allNations.map(nation => {
-        const nationID = nation.data?.nation || 0;
+        const nationID = nation.nation || 0;
         const mailbox = nationID + this.MAILBOX_NATIONAL;
-        const nationName = nation.data?.name || '무명';
-        const color = nation.data?.color || 0;
+        const nationName = nation.name || '무명';
+        const color = nation.color || 0;
         const generals = generalNations[nationID] || [];
 
         return {
@@ -102,12 +100,12 @@ export class GetContactListService {
   }
 
   private static checkSecretPermission(general: any): number {
-    const permission = general.data?.permission;
-    
+    const permission = general.permission;
+
     if (permission === 'strategic') {
       return 4;
     }
-    
+
     return 0;
   }
 }

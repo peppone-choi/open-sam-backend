@@ -21,18 +21,15 @@ export class GetMessagePreviewService {
         };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const nationId = general.data?.nation || 0;
-      const latestReadPrivate = general.data?.latest_read_private_msg || 0;
-      const latestReadDiplomacy = general.data?.latest_read_diplomacy_msg || 0;
+      const nationId = general.nation || 0;
+      const latestReadPrivate = general.latest_read_private_msg || 0;
+      const latestReadDiplomacy = general.latest_read_diplomacy_msg || 0;
 
       const unreadPrivateCount = await messageRepository.count({
         session_id: sessionId,

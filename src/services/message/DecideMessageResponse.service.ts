@@ -36,23 +36,20 @@ export class DecideMessageResponseService {
         return { success: false, message: '외교 메시지가 아닙니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const nationId = general.data?.nation || 0;
+      const nationId = general.nation || 0;
       const destNationId = message.data?.dest_nation_id;
 
       if (destNationId !== nationId) {
         return { success: false, message: '메시지를 처리할 권한이 없습니다' };
       }
 
-      const permission = general.data?.permission;
+      const permission = general.permission;
       if (permission !== 'strategic') {
         return { success: false, message: '외교권이 없습니다' };
       }
@@ -71,7 +68,7 @@ export class DecideMessageResponseService {
             'data.response': response ? 'agree' : 'decline',
             'data.response_date': new Date(),
             'data.response_general_id': generalId,
-            'data.response_general_name': general.data?.name || '무명'
+            'data.response_general_name': general.name || '무명'
           }
         }
       );
