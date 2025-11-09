@@ -603,8 +603,8 @@ export class ExecuteEngineService {
     
     // 정렬
     eligibleGenerals.sort((a: any, b: any) => {
-      const aTime = a.data?.turntime ? new Date(a.data.turntime) : sessionTurntime;
-      const bTime = b.data?.turntime ? new Date(b.data.turntime) : sessionTurntime;
+      const aTime = a.turntime ? new Date(a.turntime) : sessionTurntime;
+      const bTime = b.turntime ? new Date(b.turntime) : sessionTurntime;
       return aTime.getTime() - bTime.getTime();
     });
     
@@ -708,11 +708,9 @@ export class ExecuteEngineService {
     gameEnv: any
   ) {
     // 전역 게임 년/월 사용 (모든 장수가 공유)
-    general.data = general.data || {};
-    
     // 장수별 턴 카운터 초기화 (없으면 0)
-    if (general.data.turn_count === undefined || general.data.turn_count === null) {
-      general.data.turn_count = 0;
+    if (general.turn_count === undefined || general.turn_count === null) {
+      general.turn_count = 0;
     }
     
     // 전역 년/월 사용
@@ -730,8 +728,8 @@ export class ExecuteEngineService {
     }
 
     // 국가 커맨드 실행 (수뇌부만)
-    const nationId = general.nation || general.data?.nation || 0;
-    const officerLevel = general.data?.officer_level || 0;
+    const nationId = general.nation || 0;
+    const officerLevel = general.officer_level || 0;
     const hasNationTurn = nationId && officerLevel >= 5;
     if (hasNationTurn) {
       await this.processNationCommand(sessionId, general, generalYear, generalMonth);
@@ -739,44 +737,42 @@ export class ExecuteEngineService {
 
     // 장수 커맨드 실행 (0번 턴) - 휴식 포함
     await this.processGeneralCommand(sessionId, general, generalYear, generalMonth, gameEnv);
-    
+
     // 계승 포인트 증가
-    if (!general.data.inheritance) general.data.inheritance = {};
-    if (!general.data.inheritance.lived_month) general.data.inheritance.lived_month = 0;
-    general.data.inheritance.lived_month += 1;
-    
+    if (!general.inheritance) general.inheritance = {};
+    if (!general.inheritance.lived_month) general.inheritance.lived_month = 0;
+    general.inheritance.lived_month += 1;
+
     // 장수별 턴 카운터 증가 (매 턴마다)
-    general.data.turn_count = (general.data.turn_count || 0) + 1;
-    
+    general.turn_count = (general.turn_count || 0) + 1;
+
     // age_month 증가 (매 턴마다)
-    if (!general.data.age_month) general.data.age_month = 0;
-    general.data.age_month += 1;
-    
+    if (!general.age_month) general.age_month = 0;
+    general.age_month += 1;
+
     // 장수별 턴 카운터가 12턴에 도달하면 나이 증가 (1년 경과)
-    if (general.data.turn_count >= 12) {
+    if (general.turn_count >= 12) {
       // 나이 증가 (12턴 = 1년)
-      if (general.data.age === undefined || general.data.age === null) {
-        general.data.age = 20; // 기본값
+      if (general.age === undefined || general.age === null) {
+        general.age = 20; // 기본값
       }
-      if (general.data.age < 200) {
-        general.data.age += 1;
+      if (general.age < 200) {
+        general.age += 1;
       }
-      general.data.age_month = 0; // 1년 경과 시 age_month 리셋
-      general.data.turn_count = 0; // 턴 카운터 리셋
+      general.age_month = 0; // 1년 경과 시 age_month 리셋
+      general.turn_count = 0; // 턴 카운터 리셋
     }
-    
-    general.markModified('data');
   }
 
   /**
    * 도시와 국가 정보 로드
    */
   private static async loadCityAndNation(general: any, sessionId: string) {
-    if (general.data._cached_city && general.data._cached_nation) {
+    if (general._cached_city && general._cached_nation) {
       return;
     }
 
-    const cityId = general.data.city || 0;
+    const cityId = general.city || 0;
     const nationId = general.nation || 0;
 
     if (cityId) {
@@ -789,8 +785,7 @@ export class ExecuteEngineService {
     if (nationId) {
       const nation = await nationRepository.findByNationNum(sessionId, nationId );
       if (nation) {
-        general.data._cached_nation = nation;
-        general.markModified('data');
+        general._cached_nation = nation;
       }
     }
   }
@@ -800,24 +795,21 @@ export class ExecuteEngineService {
    */
   private static async preprocessCommand(sessionId: string, general: any, year: number, month: number) {
     // 부상 경감
-    if (general.data.injury > 0) {
-      const reduction = Math.min(3, general.data.injury);
-      general.data.injury = Math.max(0, general.data.injury - reduction);
-      general.markModified('data');
+    if (general.injury > 0) {
+      const reduction = Math.min(3, general.injury);
+      general.injury = Math.max(0, general.injury - reduction);
     }
 
     // 병력 군량 소모
-    const crew = general.data.crew || 0;
+    const crew = general.crew || 0;
     if (crew > 0) {
       const consumption = Math.ceil(crew / 500); // 500명당 군량 1
-      general.data.rice = Math.max(0, (general.data.rice || 0) - consumption);
-      general.markModified('data');
-      
+      general.rice = Math.max(0, (general.rice || 0) - consumption);
+
       // 군량 부족시 병력 감소
-      if (general.data.rice <= 0) {
+      if (general.rice <= 0) {
         const crewLoss = Math.ceil(crew * 0.05); // 5% 손실
-        general.data.crew = Math.max(0, crew - crewLoss);
-        general.markModified('data');
+        general.crew = Math.max(0, crew - crewLoss);
         
         await this.pushGeneralActionLog(
           sessionId,
@@ -834,7 +826,7 @@ export class ExecuteEngineService {
    * 블럭 처리
    */
   private static async processBlocked(sessionId: string, general: any, year: number, month: number): Promise<boolean> {
-    const blocked = general.data.block || 0;
+    const blocked = general.block || 0;
     if (blocked < 2) {
       return false;
     }
@@ -849,10 +841,8 @@ export class ExecuteEngineService {
     }
 
     // 블럭된 경우에만 killturn 감소
-    const killturn = general.data?.killturn || 0;
-    general.data = general.data || {};
-    general.data.killturn = Math.max(0, killturn - 1);
-    general.markModified('data');
+    const killturn = general.killturn || 0;
+    general.killturn = Math.max(0, killturn - 1);
 
     await this.pushGeneralActionLog(sessionId, general.no, message, year, month);
     return true;
