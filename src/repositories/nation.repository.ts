@@ -198,6 +198,15 @@ class NationRepository {
   }
 
   /**
+   * 조건에 맞는 국가 수 조회
+   * @param filter - 검색 조건
+   * @returns 국가 수
+   */
+  async countByFilter(filter: any): Promise<number> {
+    return Nation.countDocuments(filter);
+  }
+
+  /**
    * 조건으로 국가 한 개 조회
    * @param filter - 검색 조건
    * @returns 국가 문서 또는 null

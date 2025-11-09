@@ -941,5 +941,267 @@ router.post('/test/delete-npcs', async (req, res) => {
   }
 });
 
+// ============================================================
+// Admin API - 새로운 구조화된 엔드포인트 (AdminService 사용)
+// ============================================================
+
+/**
+ * @swagger
+ * /api/admin/game/set-message:
+ *   post:
+ *     summary: 운영자 메시지 설정
+ *     tags: [Admin - Game]
+ */
+router.post('/game/set-message', async (req, res) => {
+  try {
+    const { AdminGameSettingsService } = await import('../services/admin/AdminGameSettings.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const message = req.body.message || req.body.msg || '';
+    
+    const result = await AdminGameSettingsService.setAdminMessage(sessionId, message);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/game/add-global-log:
+ *   post:
+ *     summary: 중원정세 추가
+ *     tags: [Admin - Game]
+ */
+router.post('/game/add-global-log', async (req, res) => {
+  try {
+    const { AdminGameSettingsService } = await import('../services/admin/AdminGameSettings.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const logText = req.body.log || req.body.text || '';
+    
+    const result = await AdminGameSettingsService.addGlobalLog(sessionId, logText, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/game/send-notice:
+ *   post:
+ *     summary: 전체 공지 전송
+ *     tags: [Admin - Game]
+ */
+router.post('/game/send-notice', async (req, res) => {
+  try {
+    const { AdminGameSettingsService } = await import('../services/admin/AdminGameSettings.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const text = req.body.text || req.body.message || '';
+    
+    const result = await AdminGameSettingsService.sendNoticeToAll(sessionId, text);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/game/set-turnterm:
+ *   post:
+ *     summary: 턴 기간 변경
+ *     tags: [Admin - Game]
+ */
+router.post('/game/set-turnterm', async (req, res) => {
+  try {
+    const { AdminGameSettingsService } = await import('../services/admin/AdminGameSettings.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const turnTerm = parseInt(req.body.turnterm || req.body.turnTerm);
+    
+    const result = await AdminGameSettingsService.setTurnTerm(sessionId, turnTerm);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/game/settings:
+ *   get:
+ *     summary: 게임 설정 조회
+ *     tags: [Admin - Game]
+ */
+router.get('/game/settings', async (req, res) => {
+  try {
+    const { AdminGameSettingsService } = await import('../services/admin/AdminGameSettings.service');
+    const sessionId = req.query.session_id || 'sangokushi_default';
+    
+    const result = await AdminGameSettingsService.getSettings(sessionId as string);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/generals:
+ *   get:
+ *     summary: 장수 목록 조회
+ *     tags: [Admin - User]
+ */
+router.get('/user/generals', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || 'sangokushi_default';
+    
+    const result = await AdminUserManagementService.getGeneralList(sessionId as string);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/set-block:
+ *   post:
+ *     summary: 장수 블럭 설정
+ *     tags: [Admin - User]
+ */
+router.post('/user/set-block', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const generalNo = parseInt(req.body.generalNo || req.body.general_id);
+    const penaltyLevel = parseInt(req.body.penaltyLevel || req.body.block);
+    
+    const result = await AdminUserManagementService.setGeneralBlock(sessionId, generalNo, penaltyLevel);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/force-death:
+ *   post:
+ *     summary: 장수 강제 사망
+ *     tags: [Admin - User]
+ */
+router.post('/user/force-death', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const generalNo = parseInt(req.body.generalNo || req.body.general_id);
+    
+    const result = await AdminUserManagementService.forceGeneralDeath(sessionId, generalNo);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/grant-skill:
+ *   post:
+ *     summary: 병종 숙련도 부여
+ *     tags: [Admin - User]
+ */
+router.post('/user/grant-skill', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const generalNo = parseInt(req.body.generalNo || req.body.general_id);
+    const crewType = parseInt(req.body.crewType);
+    const amount = parseInt(req.body.amount || '10000');
+    
+    const result = await AdminUserManagementService.grantCrewSkill(sessionId, generalNo, crewType, amount);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/send-message:
+ *   post:
+ *     summary: 개인 메시지 전달
+ *     tags: [Admin - User]
+ */
+router.post('/user/send-message', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const generalNo = parseInt(req.body.generalNo || req.body.general_id);
+    const text = req.body.text || req.body.message || '';
+    
+    const result = await AdminUserManagementService.sendMessageToGeneral(sessionId, generalNo, text);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/stats:
+ *   get:
+ *     summary: 장수 통계 조회
+ *     tags: [Admin - User]
+ */
+router.get('/user/stats', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || 'sangokushi_default';
+    
+    const result = await AdminUserManagementService.getGeneralStats(sessionId as string);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/server/list:
+ *   get:
+ *     summary: 서버 목록 조회
+ *     tags: [Admin - Server]
+ */
+router.get('/server/list', async (req, res) => {
+  try {
+    const { AdminServerManagementService } = await import('../services/admin/AdminServerManagement.service');
+    
+    const result = await AdminServerManagementService.getServerList();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/server/status:
+ *   get:
+ *     summary: 서버 상태 조회
+ *     tags: [Admin - Server]
+ */
+router.get('/server/status/:sessionId', async (req, res) => {
+  try {
+    const { AdminServerManagementService } = await import('../services/admin/AdminServerManagement.service');
+    const sessionId = req.params.sessionId;
+    
+    const result = await AdminServerManagementService.getServerStatus(sessionId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;
 

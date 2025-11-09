@@ -54,10 +54,21 @@ class GeneralRecordRepository {
   /**
    * 조건으로 기록 조회
    * @param filter - 검색 조건
+   * @param options - 쿼리 옵션 (sort, limit 등)
    * @returns 기록 목록
    */
-  findByFilter(filter: any) {
-    return GeneralRecord.find(filter);
+  async findByFilter(filter: any, options?: { sort?: any; limit?: number }) {
+    let query = GeneralRecord.find(filter);
+    
+    if (options?.sort) {
+      query = query.sort(options.sort);
+    }
+    
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    return query.lean();
   }
 
   /**

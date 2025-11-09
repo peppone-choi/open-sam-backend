@@ -1,5 +1,5 @@
-import { GeneralRecord } from '../../models/general_record.model';
 import { generalRepository } from '../../repositories/general.repository';
+import { generalRecordRepository } from '../../repositories/general-record.repository';
 
 /**
  * GetGeneralLogs Service
@@ -56,11 +56,11 @@ export class GetGeneralLogsService {
         query.month = month;
       }
 
-      // 로그 조회 (최신순)
-      const logs = await GeneralRecord.find(query)
-        .sort({ created_at: -1, _id: -1 })
-        .limit(limit)
-        .lean();
+      // 로그 조회 (최신순) - Repository 사용
+      const logs = await generalRecordRepository.findByFilter(query, {
+        sort: { created_at: -1, _id: -1 },
+        limit: limit
+      });
 
       return {
         success: true,

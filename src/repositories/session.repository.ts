@@ -90,7 +90,6 @@ class SessionRepository {
    */
   async updateBySessionId(sessionId: string, update: any) {
     // 기존 세션 데이터 조회 (L1 → L2 → DB)
-    const { getSession } = require('../common/cache/model-cache.helper');
     const existing = await getSession(sessionId) || {};
     
     // 업데이트된 데이터 병합
@@ -158,6 +157,15 @@ class SessionRepository {
       scenario_id: scenarioId,
       status: { $ne: 'finished' }
     });
+  }
+
+  /**
+   * 세션 삭제 (AdminServerManagement용)
+   * @param sessionId - 세션 ID
+   * @returns 삭제 결과
+   */
+  async delete(sessionId: string): Promise<DeleteResult> {
+    return this.deleteBySessionId(sessionId);
   }
 }
 
