@@ -74,14 +74,14 @@ export class SelectNpcService {
         'data.valid_until': { $gte: now }
       });
 
-      if (!token || !token.data?.pick_result) {
+      if (!token || !token.pick_result) {
         return {
           result: false,
           reason: '유효한 장수 목록이 없습니다.'
         };
       }
 
-      const pickResult = token.data.pick_result;
+      const pickResult = token.pick_result;
       
       if (!pickResult[pick]) {
         return {

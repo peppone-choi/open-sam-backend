@@ -69,14 +69,14 @@ export class UpdatePickedGeneralService {
         'data.unique_name': pick
       });
 
-      if (!selectPool || !selectPool.data?.info) {
+      if (!selectPool || !selectPool.info) {
         return {
           result: false,
           reason: '유효한 장수 목록이 없습니다.'
         };
       }
 
-      const selectInfo = selectPool.data.info;
+      const selectInfo = selectPool.info;
       const oldGeneralName = existingGeneral.name;
 
       // 회원 정보 가져오기

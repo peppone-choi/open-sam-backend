@@ -274,7 +274,7 @@ export class GetFrontInfoService {
   ) {
     const nation = await nationRepository.findOneByFilter({
       session_id: sessionId,
-      'data.nation': nationId
+      nation: nationId
     });
 
     if (!nation) {
@@ -283,47 +283,33 @@ export class GetFrontInfoService {
 
     const nationData = nation;
 
-    // 국가 인구 통계 (data.nation 또는 nation 필드 확인)
+    // 국가 인구 통계
     const cities = await cityRepository.findByFilter({
       session_id: sessionId,
-      $or: [
-        { 'data.nation': nationId },
-        { nation: nationId }
-      ]
+      nation: nationId
     });
 
     const population = {
       cityCnt: cities.length,
-      popNow: cities.reduce((sum: number, c: any) => sum + (c.data?.pop ?? c.pop ?? 0), 0),
-      popMax: cities.reduce((sum: number, c: any) => sum + (c.data?.pop_max ?? c.pop_max ?? 0), 0)
+      popNow: cities.reduce((sum: number, c: any) => sum + (c.pop ?? 0), 0),
+      popMax: cities.reduce((sum: number, c: any) => sum + (c.pop_max ?? 0), 0)
     };
 
-    // 국가 병력 통계 (data.nation 또는 nation 필드 확인, npc가 5가 아닌 것만)
+    // 국가 병력 통계 (npc가 5가 아닌 것만)
     const generals = await generalRepository.findByFilter({
       session_id: sessionId,
-      $and: [
-        {
-          $or: [
-            { 'data.nation': nationId },
-            { nation: nationId }
-          ]
-        },
-        {
-          $or: [
-            { 'data.npc': { $ne: 5 } },
-            { npc: { $ne: 5 } },
-            { 'data.npc': { $exists: false } },
-            { npc: { $exists: false } }
-          ]
-        }
+      nation: nationId,
+      $or: [
+        { npc: { $ne: 5 } },
+        { npc: { $exists: false } }
       ]
     });
 
     const crew = {
       generalCnt: generals.length,
-      crewNow: generals.reduce((sum: number, g: any) => sum + (g.data?.crew ?? g.crew ?? 0), 0),
+      crewNow: generals.reduce((sum: number, g: any) => sum + (g.crew ?? 0), 0),
       crewMax: generals.reduce((sum: number, g: any) => {
-        const leadership = g.data?.leadership ?? g.leadership ?? 50;
+        const leadership = g.leadership ?? 50;
         return sum + (leadership * 100);
       }, 0)
     };
@@ -331,19 +317,19 @@ export class GetFrontInfoService {
     // 고위 관직자 조회 (군주, 태사)
     const topChiefs = await generalRepository.findByFilter({
       session_id: sessionId,
-      'data.nation': nationId,
-      'data.officer_level': { $in: [11, 12] }
+      nation: nationId,
+      officer_level: { $in: [11, 12] }
     });
-    
+
     const topChiefsMap: Record<number, any> = {};
     topChiefs.forEach((g: any) => {
-      const level = g.data?.officer_level;
+      const level = g.officer_level;
       if (level === 11 || level === 12) {
         topChiefsMap[level] = {
           officer_level: level,
-          no: g.data?.no || g.no,
-          name: g.data?.name || g.name || '무명',
-          npc: g.data?.npc || 0
+          no: g.no,
+          name: g.name || '무명',
+          npc: g.npc || 0
         };
       }
     });
@@ -587,8 +573,7 @@ export class GetFrontInfoService {
       return null;
     }
 
-    const cityData = city.data || {};
-    const cityNationId = cityData.nation ?? city.nation ?? 0;
+    const cityNationId = city.nation ?? 0;
 
     // 도시 소속 국가 정보
     let nationName = '재야';
@@ -597,11 +582,11 @@ export class GetFrontInfoService {
     if (cityNationId !== 0) {
       const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
-        'data.nation': cityNationId
+        nation: cityNationId
       });
       if (nation) {
-        nationName = nation.data?.name || '무명';
-        const color = nation.data?.color || 0;
+        nationName = nation.name || '무명';
+        const color = nation.color || 0;
         nationColor = typeof color === 'string'
           ? color.startsWith('#') ? color : '#' + color
           : typeof color === 'number'
@@ -613,44 +598,44 @@ export class GetFrontInfoService {
     // 도시 관리 (태수, 도독 등)
     const officers = await generalRepository.findByFilter({
       session_id: sessionId,
-      'data.officer_city': cityId,
-      'data.officer_level': { $in: [2, 3, 4] }
+      officer_city: cityId,
+      officer_level: { $in: [2, 3, 4] }
     });
 
     const officerList: any = { 4: null, 3: null, 2: null };
     officers.forEach(officer => {
-      const level = officer.data?.officer_level;
+      const level = officer.officer_level;
       if (level && (level === 2 || level === 3 || level === 4)) {
         officerList[level] = {
           officer_level: level,
-          name: officer.data?.name || officer.name || '무명',
-          npc: officer.data?.npc || 0
+          name: officer.name || '무명',
+          npc: officer.npc || 0
         };
       }
     });
     
-    // 도시 자원 정보 (data 필드 우선, 없으면 상위 필드)
-    const pop = cityData.pop ?? city.pop ?? 0;
-    const popMax = cityData.pop_max ?? city.pop_max ?? 10000;
-    const agri = cityData.agri ?? city.agri ?? 0;
-    const agriMax = cityData.agri_max ?? city.agri_max ?? 10000;
-    const comm = cityData.comm ?? city.comm ?? 0;
-    const commMax = cityData.comm_max ?? city.comm_max ?? 10000;
-    const secu = cityData.secu ?? city.secu ?? 0;
-    const secuMax = cityData.secu_max ?? city.secu_max ?? 10000;
-    const def = cityData.def ?? city.def ?? 0;
-    const defMax = cityData.def_max ?? city.def_max ?? 10000;
-    const wall = cityData.wall ?? city.wall ?? 0;
-    const wallMax = cityData.wall_max ?? city.wall_max ?? 10000;
-    const trade = cityData.trade ?? city.trade ?? null;
-    const level = cityData.level ?? city.level ?? 0;
-    const trust = cityData.trust ?? city.trust ?? 0;
-    
-    const region = cityData.region ?? city.region ?? 0;
-    
+    // 도시 자원 정보
+    const pop = city.pop ?? 0;
+    const popMax = city.pop_max ?? 10000;
+    const agri = city.agri ?? 0;
+    const agriMax = city.agri_max ?? 10000;
+    const comm = city.comm ?? 0;
+    const commMax = city.comm_max ?? 10000;
+    const secu = city.secu ?? 0;
+    const secuMax = city.secu_max ?? 10000;
+    const def = city.def ?? 0;
+    const defMax = city.def_max ?? 10000;
+    const wall = city.wall ?? 0;
+    const wallMax = city.wall_max ?? 10000;
+    const trade = city.trade ?? null;
+    const level = city.level ?? 0;
+    const trust = city.trust ?? 0;
+
+    const region = city.region ?? 0;
+
     return {
       id: cityId,
-      name: city.name || cityData.name || '무명',
+      name: city.name || '무명',
       region: region,
       nationInfo: {
         id: cityNationId,
@@ -682,39 +667,36 @@ export class GetFrontInfoService {
     // 역사 기록
     const history = await worldHistoryRepository.findByFilter({
       session_id: sessionId,
-      'data.nation_id': 0,
-      'data.id': { $gte: lastWorldHistoryID }
+      nation_id: 0,
+      id: { $gte: lastWorldHistoryID }
     })
-      .sort({ 'data.id': -1 })
-      .limit(this.ROW_LIMIT + 1)
-      ;
+      .sort({ id: -1 })
+      .limit(this.ROW_LIMIT + 1);
 
     // 전역 기록
     const globalRecord = await generalRecordRepository.findByFilter({
       session_id: sessionId,
-      'data.general_id': 0,
-      'data.log_type': 'history',
-      'data.id': { $gte: lastGeneralRecordID }
+      general_id: 0,
+      log_type: 'history',
+      id: { $gte: lastGeneralRecordID }
     })
-      .sort({ 'data.id': -1 })
-      .limit(this.ROW_LIMIT + 1)
-      ;
+      .sort({ id: -1 })
+      .limit(this.ROW_LIMIT + 1);
 
     // 장수 행동 기록
     const generalRecord = await generalRecordRepository.findByFilter({
       session_id: sessionId,
-      'data.general_id': generalId,
-      'data.log_type': 'action',
-      'data.id': { $gte: lastGeneralRecordID }
+      general_id: generalId,
+      log_type: 'action',
+      id: { $gte: lastGeneralRecordID }
     })
-      .sort({ 'data.id': -1 })
-      .limit(this.ROW_LIMIT + 1)
-      ;
+      .sort({ id: -1 })
+      .limit(this.ROW_LIMIT + 1);
 
     return {
-      history: history.map(h => [h.data?.id, h.data?.text]),
-      global: globalRecord.map(g => [g.data?.id, g.data?.text]),
-      general: generalRecord.map(g => [g.data?.id, g.data?.text]),
+      history: history.map(h => [h.id, h.text]),
+      global: globalRecord.map(g => [g.id, g.text]),
+      general: generalRecord.map(g => [g.id, g.text]),
       flushHistory: history.length > this.ROW_LIMIT ? 1 : 0,
       flushGlobal: globalRecord.length > this.ROW_LIMIT ? 1 : 0,
       flushGeneral: generalRecord.length > this.ROW_LIMIT ? 1 : 0
@@ -755,8 +737,8 @@ export class GetFrontInfoService {
       const GeneralTurn = (await import('../../models/general_turn.model')).GeneralTurn;
       const rawTurns = await generalTurnRepository.findByFilter({
         session_id: sessionId,
-        'data.general_id': generalId
-      }).sort({ 'data.turn_idx': 1 }).limit(30);
+        general_id: generalId
+      }).sort({ turn_idx: 1 }).limit(30);
 
       if (!rawTurns || rawTurns.length === 0) {
         return null;
@@ -765,11 +747,11 @@ export class GetFrontInfoService {
       const commandList: any[] = [];
       for (const turn of rawTurns) {
         commandList.push({
-          turn: turn.data.turn_idx,
-          commandName: turn.data.action || '',
-          commandText: turn.data.action || '',
-          brief: turn.data.brief || '',
-          arg: typeof turn.data.arg === 'string' ? JSON.parse(turn.data.arg) : (turn.data.arg || {})
+          turn: turn.turn_idx,
+          commandName: turn.action || '',
+          commandText: turn.action || '',
+          brief: turn.brief || '',
+          arg: typeof turn.arg === 'string' ? JSON.parse(turn.arg) : (turn.arg || {})
         });
       }
 
@@ -819,8 +801,7 @@ export class GetFrontInfoService {
    */
   private static async calculatePermission(sessionId: string, general: any, nationId: number): Promise<number> {
     try {
-      const data = general.data || {};
-      const officerLevel = data.officer_level || 0;
+      const officerLevel = general.officer_level || 0;
 
       // 수뇌부 권한 (officer_level >= 4)
       if (officerLevel >= 4 && nationId > 0) {
