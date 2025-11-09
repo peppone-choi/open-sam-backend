@@ -114,11 +114,10 @@ export class GetRecentRecordService {
       'data.general_id': 0,
       'data.log_type': 'history',
       'data.id': { $gte: lastRecordID }
-    })
-      
-      .sort({ 'data.id': -1 })
-      .limit(this.ROW_LIMIT + 1)
-      ;
+    }, {
+      sort: { 'data.id': -1 },
+      limit: this.ROW_LIMIT + 1
+    });
 
     return records.map(record => {
       const data = record.data as any;
@@ -139,11 +138,10 @@ export class GetRecentRecordService {
       'data.general_id': generalId,
       'data.log_type': 'action',
       'data.id': { $gte: lastRecordID }
-    })
-      
-      .sort({ 'data.id': -1 })
-      .limit(this.ROW_LIMIT + 1)
-      ;
+    }, {
+      sort: { 'data.id': -1 },
+      limit: this.ROW_LIMIT + 1
+    });
 
     return records.map(record => {
       const data = record.data as any;

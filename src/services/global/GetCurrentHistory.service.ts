@@ -170,11 +170,10 @@ export class GetCurrentHistoryService {
       'data.log_type': 'history',
       'data.year': year,
       'data.month': month
-    })
-      
-      .sort({ 'data.id': -1 })
-      .limit(100)
-      ;
+    }, {
+      sort: { 'data.id': -1 },
+      limit: 100
+    });
 
     return records.map(record => {
       const data = record.data as any;

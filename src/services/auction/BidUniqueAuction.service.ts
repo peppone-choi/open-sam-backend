@@ -1,20 +1,38 @@
 // @ts-nocheck - Argument count mismatches need review
 import { auctionRepository } from '../../repositories/auction.repository';
 import { generalRepository } from '../../repositories/general.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 export class BidUniqueAuctionService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
-    
+    const userId = user?.userId || user?.id;
+
     const auctionID = data.auctionID || data.auction_id;
     const amount = data.amount || data.bid_price;
     const extendCloseDate = data.extendCloseDate || data.try_extend_close_date;
-    
+
     try {
       if (!auctionID || !amount) {
         throw new Error('필수 파라미터가 누락되었습니다.');
       }
+
+      if (!generalId) {
+        throw new Error('장수 ID가 필요합니다.');
+      }
+
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      // 🔒 보안: 장수 소유권 검증
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '권한이 없습니다.');
+      }
+
+      const general = ownershipCheck.general;
 
       const auction = await auctionRepository.findOneByFilter({
         _id: auctionID,
@@ -33,12 +51,6 @@ export class BidUniqueAuctionService {
       const now = new Date();
       if (auction.closeDate < now) {
         throw new Error('경매가 이미 끝났습니다.');
-      }
-
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
-
-      if (!general) {
-        throw new Error('장수를 찾을 수 없습니다.');
       }
 
       const highestBid = auction.bids.length > 0

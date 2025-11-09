@@ -94,8 +94,8 @@ export class GetGeneralLogService {
   }
 
   /**
-   * 장수 역사 로그 (History) 조회
-   * 장수의 중요한 역사적 이벤트
+   * 장수 열전 (History) 조회
+   * 탄생/사망 등 주요 이벤트 이력
    */
   private static async getGeneralHistoryLog(
     sessionId: string,
@@ -105,10 +105,10 @@ export class GetGeneralLogService {
       session_id: sessionId,
       general_id: generalId,
       type: 'history'
-    })
-      .sort({ _id: -1 })
-      .limit(100)
-      ;
+    }, {
+      sort: { _id: -1 },
+      limit: 100
+    });
 
     return logs.map((log: any) => ({
       id: log._id,
@@ -139,10 +139,10 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await generalRecordRepository.findByFilter(query)
-      .sort({ _id: -1 })
-      .limit(limit)
-      ;
+    const logs = await generalRecordRepository.findByFilter(query, {
+      sort: { _id: -1 },
+      limit
+    });
 
     return logs.map((log: any) => ({
       id: log._id,
@@ -172,10 +172,10 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await generalRecordRepository.findByFilter(query)
-      .sort({ _id: -1 })
-      .limit(limit)
-      ;
+    const logs = await generalRecordRepository.findByFilter(query, {
+      sort: { _id: -1 },
+      limit
+    });
 
     return logs.map((log: any) => ({
       id: log._id,
@@ -205,10 +205,10 @@ export class GetGeneralLogService {
       query._id = { $lt: reqTo };
     }
 
-    const logs = await generalRecordRepository.findByFilter(query)
-      .sort({ _id: -1 })
-      .limit(limit)
-      ;
+    const logs = await generalRecordRepository.findByFilter(query, {
+      sort: { _id: -1 },
+      limit
+    });
 
     return logs.map((log: any) => ({
       id: log._id,

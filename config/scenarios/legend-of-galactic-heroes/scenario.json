@@ -1,0 +1,349 @@
+{
+  "id": "legend-of-galactic-heroes",
+  "name": "은하영웅전설",
+  "description": "우주력 796년, 은하제국과 자유행성동맹의 끝없는 전쟁",
+  "version": "1.0.0",
+  "author": "open-sam-backend",
+  "roles": {
+    "SETTLEMENT": {
+      "collection": "star_systems",
+      "label": {
+        "ko": "항성계",
+        "en": "Star System"
+      },
+      "schema": {
+        "attributes": {
+          "population": {
+            "label": "인구",
+            "min": 0,
+            "max": 999999999,
+            "default": 1000000
+          },
+          "defense": {
+            "label": "방어력",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          },
+          "loyalty": {
+            "label": "충성도",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          },
+          "industry": {
+            "label": "공업도",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "technology": {
+            "label": "기술력",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "resources": {
+            "label": "자원 생산",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          }
+        },
+        "slots": {
+          "industry": {
+            "label": "조선소",
+            "icon": "🚀",
+            "description": "함선 건조 시설",
+            "maxLevel": 10
+          },
+          "research": {
+            "label": "연구소",
+            "icon": "🔬",
+            "description": "기술 연구 시설",
+            "maxLevel": 10
+          },
+          "resources": {
+            "label": "자원 채굴",
+            "icon": "⛏️",
+            "description": "자원 생산 시설",
+            "maxLevel": 10
+          },
+          "defense": {
+            "label": "요새",
+            "icon": "🛡️",
+            "description": "방어 시설 및 이제르론 요새",
+            "maxLevel": 10
+          },
+          "garrison": {
+            "label": "주둔 함대",
+            "icon": "⚔️",
+            "description": "방어 함대 배치",
+            "maxLevel": 10
+          }
+        }
+      }
+    },
+    "COMMANDER": {
+      "collection": "admirals",
+      "label": {
+        "ko": "제독",
+        "en": "Admiral"
+      },
+      "schema": {
+        "attributes": {
+          "command": {
+            "label": "지휘력",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "tactics": {
+            "label": "전술",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "strategy": {
+            "label": "전략",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "politics": {
+            "label": "정치력",
+            "min": 1,
+            "max": 100,
+            "default": 50
+          },
+          "age": {
+            "label": "나이",
+            "min": 18,
+            "max": 100,
+            "default": 30
+          },
+          "injury": {
+            "label": "부상도",
+            "min": 0,
+            "max": 100,
+            "default": 0
+          },
+          "loyalty": {
+            "label": "충성도",
+            "min": 0,
+            "max": 100,
+            "default": 70
+          },
+          "morale": {
+            "label": "사기",
+            "min": 0,
+            "max": 100,
+            "default": 70
+          },
+          "experience": {
+            "label": "경험치",
+            "min": 0,
+            "max": 999999,
+            "default": 0
+          },
+          "rank": {
+            "label": "계급",
+            "min": 1,
+            "max": 10,
+            "default": 1
+          }
+        }
+      }
+    },
+    "FACTION": {
+      "collection": "factions",
+      "label": {
+        "ko": "세력",
+        "en": "Faction"
+      },
+      "schema": {
+        "attributes": {
+          "technology": {
+            "label": "기술 수준",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          },
+          "prestige": {
+            "label": "명성",
+            "min": 0,
+            "max": 100,
+            "default": 30
+          },
+          "legitimacy": {
+            "label": "정통성",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          },
+          "public_support": {
+            "label": "민심",
+            "min": 0,
+            "max": 100,
+            "default": 50
+          }
+        }
+      }
+    },
+    "FLEET": {
+      "collection": "fleets",
+      "label": {
+        "ko": "함대",
+        "en": "Fleet"
+      }
+    },
+    "DIPLOMACY": {
+      "collection": "diplomacy",
+      "label": {
+        "ko": "외교",
+        "en": "Diplomacy"
+      }
+    }
+  },
+  "relations": {
+    "ASSIGNED_SYSTEM": {
+      "from": "COMMANDER",
+      "to": "SETTLEMENT",
+      "viaField": "star_system"
+    },
+    "MEMBER_OF": {
+      "from": "COMMANDER",
+      "to": "FACTION",
+      "viaField": "faction"
+    },
+    "CONTROLS": {
+      "from": "FACTION",
+      "to": "SETTLEMENT",
+      "viaField": "faction",
+      "inverse": "systems"
+    },
+    "COMMANDS": {
+      "from": "COMMANDER",
+      "to": "FLEET",
+      "viaField": "admiral",
+      "inverse": "fleet"
+    }
+  },
+  "data": {
+    "collections": {
+      "star_systems": {
+        "file": "data/star-systems.json",
+        "root": "systems",
+        "idField": "id"
+      },
+      "admirals": {
+        "file": "data/admirals.json",
+        "root": "admirals",
+        "idField": "id"
+      },
+      "factions": {
+        "file": "data/factions.json",
+        "root": "factions",
+        "idField": "id"
+      },
+      "fleets": {
+        "file": "data/fleets.json",
+        "root": "fleets",
+        "idField": "id"
+      },
+      "diplomacy": {
+        "file": "data/diplomacy.json",
+        "root": "relations"
+      }
+    },
+    "assets": {
+      "constants": {
+        "file": "data/constants.json"
+      },
+      "ship_classes": {
+        "file": "data/ship-classes.json",
+        "root": "shipClasses",
+        "defaultKey": "defaultShip"
+      },
+      "technologies": {
+        "file": "data/technologies.json"
+      },
+      "map": {
+        "file": "data/galaxy-map.json"
+      }
+    }
+  },
+  "config": {
+    "systems": {
+      "economy": {
+        "id": "economy",
+        "label": "경제 시스템",
+        "description": "자원 생산, 무역, 조선소 관리",
+        "enabled": true
+      },
+      "diplomacy": {
+        "id": "diplomacy",
+        "label": "외교 시스템",
+        "description": "동맹, 전쟁, 협상, 불가침 조약",
+        "enabled": true
+      },
+      "warfare": {
+        "id": "warfare",
+        "label": "함대전 시스템",
+        "description": "우주 함대전, 항성계 점령, 요새 공방전",
+        "enabled": true
+      },
+      "politics": {
+        "id": "politics",
+        "label": "정치 시스템",
+        "description": "정치적 책략, 쿠데타, 체제 변화",
+        "enabled": true
+      }
+    },
+    "resources": ["military_budget", "resources", "manpower"]
+  },
+  "metadata": {
+    "baseYear": 796,
+    "yearLabel": "우주력",
+    "mapName": "galaxy",
+    "unitSet": "imperial_alliance",
+    "totalSystems": 50,
+    "totalSectors": 8,
+    "gameMode": "turn",
+    "turnConfig": {
+      "defaultHour": 21,
+      "defaultMinute": 0,
+      "allowCustom": true,
+      "maxTurnsPerCycle": 30
+    },
+    "factions": [
+      {
+        "id": 1,
+        "name": "은하제국",
+        "nameEn": "Galactic Empire",
+        "color": "#8B0000",
+        "capital": "오딘",
+        "leader": "라인하르트 폰 로엔그람",
+        "description": "골덴바움 왕조를 무너뜨리고 새로운 제국을 건설한 로엔그람 왕조"
+      },
+      {
+        "id": 2,
+        "name": "자유행성동맹",
+        "nameEn": "Free Planets Alliance",
+        "color": "#000080",
+        "capital": "하이네센",
+        "leader": "양 웬리",
+        "description": "민주주의와 자유를 수호하는 자유행성동맹"
+      },
+      {
+        "id": 3,
+        "name": "페잔자치령",
+        "nameEn": "Phezzan Dominion",
+        "color": "#FFD700",
+        "capital": "페잔",
+        "leader": "아드리안 루빈스키",
+        "description": "제국과 동맹 사이에서 중립을 유지하며 경제적 이익을 추구하는 상업국가"
+      }
+    ]
+  }
+}

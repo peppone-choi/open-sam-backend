@@ -1,4 +1,5 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 const MAX_TURN = 30;
 
@@ -6,10 +7,21 @@ export class PushCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const amount = parseInt(data.amount);
 
     if (!generalId) {
       return { success: false, message: '장수 ID가 필요합니다' };
+    }
+
+    if (!userId) {
+      return { success: false, message: '사용자 인증이 필요합니다' };
+    }
+
+    // 🔒 보안: 장수 소유권 검증
+    const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+    if (!ownershipCheck.valid) {
+      return { success: false, message: ownershipCheck.error };
     }
 
     if (isNaN(amount) || amount < -12 || amount > 12) {

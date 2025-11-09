@@ -34,11 +34,10 @@ export class GetTurnLogService {
         query['data.id'] = { $lt: lastId };
       }
 
-      const records = await generalRecordRepository.findByFilter(query)
-        
-        .sort({ 'data.id': -1 })
-        .limit(limit)
-        ;
+      const records = await generalRecordRepository.findByFilter(query, {
+        sort: { 'data.id': -1 },
+        limit
+      });
 
       const logs = records.map(record => {
         const data = record.data as any;
