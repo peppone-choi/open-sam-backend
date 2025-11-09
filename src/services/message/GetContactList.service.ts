@@ -1,4 +1,5 @@
 import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 import { Nation } from '../../models/nation.model';
 
 /**

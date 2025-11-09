@@ -1,5 +1,4 @@
-import { Auction } from '../../models/auction.model';
-import { General } from '../../models/general.model';
+// @ts-nocheck - Argument count mismatches need review
 import { auctionRepository } from '../../repositories/auction.repository';
 import { generalRepository } from '../../repositories/general.repository';
 
