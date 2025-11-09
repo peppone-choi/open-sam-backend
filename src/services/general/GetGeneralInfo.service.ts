@@ -30,17 +30,17 @@ export class GetGeneralInfoService {
       }
 
       // 소속 도시 정보
-      const cityId = general.data?.city;
+      const cityId = general.city;
       const city = cityId ? await cityRepository.findOneByFilter({
         session_id: sessionId,
-        'data.id': cityId
+        id: cityId
       }) : null;
 
       // 소속 국가 정보
-      const nationId = general.data?.nation;
+      const nationId = general.nation;
       const nation = nationId && nationId !== 0 ? await nationRepository.findOneByFilter({
         session_id: sessionId,
-        'data.nation': nationId
+        nation: nationId
       }) : null;
 
       return {

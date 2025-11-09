@@ -28,11 +28,11 @@ export class GetItemListService {
 
       // 아이템 정보 추출
       const items = {
-        weapon: general.data?.item0 || null,
-        armor: general.data?.item1 || null,
-        horse: general.data?.item2 || null,
-        book: general.data?.item3 || null,
-        special: general.data?.item4 || null,
+        weapon: general.item0 || null,
+        armor: general.item1 || null,
+        horse: general.item2 || null,
+        book: general.item3 || null,
+        special: general.item4 || null,
       };
 
       return {

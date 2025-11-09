@@ -47,7 +47,7 @@ export class DropItemService {
         };
       }
 
-      const item = general.data?.[itemType];
+      const item = general[itemType];
       if (!item || item === 'None') {
         return {
           success: false,
@@ -56,11 +56,11 @@ export class DropItemService {
       }
 
       const itemName = this.getItemName(item);
-      const generalName = general.data?.name || '무명';
+      const generalName = general.name || '무명';
 
-      general.data = general.data || {};
-      general.data[itemType] = 'None';
-      await generalRepository.save(general);
+      await generalRepository.updateBySessionAndNo(sessionId, generalId, {
+        [itemType]: 'None'
+      });
 
       const session = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = session?.data || {};
@@ -82,15 +82,15 @@ export class DropItemService {
 
       const isBuyable = this.isItemBuyable(item);
       if (!isBuyable) {
-        const nationId = general.data?.nation || 0;
+        const nationId = general.nation || 0;
         let nationName = '재야';
 
         if (nationId !== 0) {
           const nation = await nationRepository.findOneByFilter({
             session_id: sessionId,
-            'data.nation': nationId
+            nation: nationId
           });
-          nationName = nation?.data?.name || '무명';
+          nationName = nation?.name || '무명';
         }
 
         const recordId2 = await getNextRecordId(sessionId);

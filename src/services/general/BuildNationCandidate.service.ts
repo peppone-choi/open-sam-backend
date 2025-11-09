@@ -40,7 +40,7 @@ export class BuildNationCandidateService {
         return { success: false, message: '게임이 시작되었습니다.' };
       }
 
-      if (general.data?.nation !== 0) {
+      if (general.nation !== 0) {
         return { success: false, message: '이미 국가에 소속되어있습니다.' };
       }
 
@@ -49,7 +49,7 @@ export class BuildNationCandidateService {
         return { success: false, message: '거병할 수 없는 모드입니다.' };
       }
 
-      const generalNo = general.data?.no;
+      const generalNo = general.no;
       if (!generalNo) {
         return { success: false, message: '장수 번호를 찾을 수 없습니다' };
       }
@@ -69,9 +69,9 @@ export class BuildNationCandidateService {
         }
       });
 
-      general.data = general.data || {};
-      general.data.killturn = gameEnv.killturn || 6;
-      await generalRepository.save(general);
+      await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+        killturn: gameEnv.killturn || 6
+      });
 
       return {
         success: true,

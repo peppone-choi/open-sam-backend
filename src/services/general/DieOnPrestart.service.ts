@@ -34,7 +34,7 @@ export class DieOnPrestartService {
       const general = await generalRepository.findBySessionAndOwner(
         sessionId,
         userId.toString(),
-        { 'data.npc': 0 }
+        { npc: 0 }
       );
 
       if (!general) {
@@ -45,12 +45,12 @@ export class DieOnPrestartService {
         return { success: false, message: '게임이 시작되었습니다.' };
       }
 
-      if (general.data?.nation !== 0) {
+      if (general.nation !== 0) {
         return { success: false, message: '이미 국가에 소속되어있습니다.' };
       }
 
-      const generalNo = general.data?.no;
-      const generalName = general.data?.name || '무명';
+      const generalNo = general.no;
+      const generalName = general.name || '무명';
 
       await worldHistoryRepository.create({
         session_id: sessionId,
@@ -75,7 +75,7 @@ export class DieOnPrestartService {
 
       await generalRepository.deleteByFilter({
         session_id: sessionId,
-        'data.no': generalNo
+        no: generalNo
       });
 
       return {
