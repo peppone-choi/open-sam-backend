@@ -58,7 +58,6 @@ export class GetCommandTableService {
   }
 
   private static async buildCommandTable(general: any, session: any): Promise<any[]> {
-    const generalData = general.data || {};
     const gameEnv = session.data?.game_env || {};
     
     // 세션 설정에서 availableGeneralCommand 가져오기

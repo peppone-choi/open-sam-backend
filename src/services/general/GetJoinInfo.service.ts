@@ -38,16 +38,15 @@ export class GetJoinInfoService {
 
       const nationList = nations
         .map((nation: any) => {
-          const nationData = nation.data || {};
-          const nationId = nationData.nation ?? nation.nation ?? 0;
+          const nationId = nation.nation ?? 0;
           // nation이 0이면 제외 (재야/무명)
           if (nationId === 0) return null;
           return {
             nation: nationId,
-            name: nationData.name || '무명',
-            color: nationData.color || '#000000',
-            scout: nationData.scout || 50,
-            scoutmsg: nationData.scoutmsg || ''
+            name: nation.name || '무명',
+            color: nation.color || '#000000',
+            scout: nation.scout || 50,
+            scoutmsg: nation.scoutmsg || ''
           };
         })
         .filter((nation: any) => nation !== null);
@@ -83,12 +82,11 @@ export class GetJoinInfoService {
         ;
 
       const cityList = availableCities.map((city: any) => {
-        const cityData = city.data || {};
         return {
-          id: city.city || cityData.id || 0, // city 필드가 실제 도시 ID
-          name: city.name || cityData.name || '도시',
-          x: city.x || cityData.x || 0,
-          y: city.y || cityData.y || 0
+          id: city.city || city.id || 0, // city 필드가 실제 도시 ID
+          name: city.name || '도시',
+          x: city.x || 0,
+          y: city.y || 0
         };
       });
 
