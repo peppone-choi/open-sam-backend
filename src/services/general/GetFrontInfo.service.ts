@@ -281,7 +281,7 @@ export class GetFrontInfoService {
       return this.generateDummyNationInfo();
     }
 
-    const nationData = nation.data || {};
+    const nationData = nation;
 
     // 국가 인구 통계 (data.nation 또는 nation 필드 확인)
     const cities = await cityRepository.findByFilter({

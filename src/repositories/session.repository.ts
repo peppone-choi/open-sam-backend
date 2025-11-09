@@ -103,6 +103,24 @@ class SessionRepository {
   }
 
   /**
+   * Mongoose 문서를 저장 (session.save() 대체)
+   * @param sessionDoc - Mongoose 세션 문서
+   * @returns 저장 결과
+   */
+  async saveDocument(sessionDoc: any) {
+    const sessionId = sessionDoc.session_id || sessionDoc.data?.session_id;
+    if (!sessionId) {
+      throw new Error('session_id is required');
+    }
+    
+    // data 필드를 추출하여 업데이트
+    const updateData = sessionDoc.data || sessionDoc.toObject?.() || sessionDoc;
+    await saveSession(sessionId, updateData);
+    
+    return { modifiedCount: 1, matchedCount: 1 };
+  }
+
+  /**
    * 세션 삭제
    * @param sessionId - 세션 ID
    * @returns 삭제 결과

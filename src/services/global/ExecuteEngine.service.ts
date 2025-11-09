@@ -140,7 +140,7 @@ export class ExecuteEngineService {
       sessionData.turnterm = 60;
       session.data = sessionData;
       session.markModified('data');
-      await session.save();
+      await sessionRepository.saveDocument(session);
     }
     
     // turnterm이 없으면 기본값 설정
@@ -149,7 +149,7 @@ export class ExecuteEngineService {
       sessionData.turnterm = 60;
       session.data = sessionData;
       session.markModified('data');
-      await session.save();
+      await sessionRepository.saveDocument(session);
     }
     
     // 턴 시각 이전이면 아무것도 하지 않음
@@ -173,7 +173,7 @@ export class ExecuteEngineService {
           const correctedTurntime = new Date(now.getTime() + turntermInSeconds * 1000);
           sessionData.turntime = correctedTurntime.toISOString();
           session.data = sessionData;
-          await session.save();
+          await sessionRepository.saveDocument(session);
           
           if (lockAcquired) {
             await redis.del(lockKey);
@@ -318,7 +318,7 @@ export class ExecuteEngineService {
       const initialTurntime = sessionData.turntime || now;
       sessionData.starttime = initialTurntime instanceof Date ? initialTurntime : new Date(initialTurntime);
       session.data = sessionData;
-      await session.save();
+      await sessionRepository.saveDocument(session);
       console.log(`[${new Date().toISOString()}] ⚠️ starttime was missing, initialized to: ${sessionData.starttime}`);
     }
     
@@ -339,7 +339,7 @@ export class ExecuteEngineService {
     // 년/월이 변경되었을 때만 저장 (불필요한 DB 업데이트 방지)
     if (sessionData.year !== beforeYear || sessionData.month !== beforeMonth) {
       session.data = sessionData; // turnDate 변경사항 반영
-      await session.save(); // DB에 저장
+      await sessionRepository.saveDocument(session); // DB에 저장
     }
     
     // turnterm은 분 단위로 전달해야 함
@@ -381,7 +381,7 @@ export class ExecuteEngineService {
           currentTurn = lastTurn;
           sessionData.turntime = lastTurn;
           session.data = sessionData;
-          await session.save();
+          await sessionRepository.saveDocument(session);
         }
         return { executed, turntime: currentTurn || sessionData.turntime };
       }
@@ -401,7 +401,7 @@ export class ExecuteEngineService {
       // 단, 년/월이 실제로 증가했는지 확인하기 위해 turnDate 내부에서 이미 체크하고 있습니다
       ExecuteEngineService.turnDate(nextTurn, sessionData);
       session.data = sessionData; // sessionData 변경사항을 session에 반영
-      await session.save(); // DB에 저장 (년/월 업데이트 반영)
+      await sessionRepository.saveDocument(session); // DB에 저장 (년/월 업데이트 반영)
       await this.runEventHandler(sessionId, 'PRE_MONTH', sessionData);
       await this.preUpdateMonthly(sessionId, sessionData);
       
@@ -448,7 +448,7 @@ export class ExecuteEngineService {
       nextTurn = ExecuteEngineService.addTurn(prevTurn, turntermInMinutes);
       sessionData.turntime = prevTurn.toISOString();
       session.data = sessionData; // turntime 업데이트 반영
-      await session.save(); // DB에 저장
+      await sessionRepository.saveDocument(session); // DB에 저장
     }
     
     // while 루프가 실행되었다면 (여러 달을 처리했다면), 마지막 년/월만 브로드캐스트
@@ -474,7 +474,7 @@ export class ExecuteEngineService {
     // 년/월이 변경되었을 때만 저장 (불필요한 DB 업데이트 방지)
     if (sessionData.year !== beforeYearFinal || sessionData.month !== beforeMonthFinal) {
       session.data = sessionData; // turnDate 변경사항 반영
-      await session.save(); // DB에 저장
+      await sessionRepository.saveDocument(session); // DB에 저장
     }
     
     const [executionOver, lastTurn] = await this.executeGeneralCommandUntil(
@@ -511,7 +511,7 @@ export class ExecuteEngineService {
 
     session.data = sessionData;
     session.markModified('data'); // Mixed 타입 변경사항 추적
-    await session.save();
+    await sessionRepository.saveDocument(session);
 
     // 캐시 무효화 (년/월 변경 시)
     try {
@@ -953,13 +953,21 @@ export class ExecuteEngineService {
           // resultTurn 저장
           const resultTurn = command.getResultTurn?.() || lastTurn;
           if (nationStor) {
-            nationStor.value = {
-              command: resultTurn.getCommand(),
-              arg: resultTurn.getArg(),
-              term: resultTurn.getTerm(),
-              seq: resultTurn.getSeq()
-            };
-            await nationStor.save();
+            await kvStorageRepository.updateOneByFilter(
+              {
+                session_id: sessionId,
+                key: `turn_last_${officerLevel}`,
+                namespace: `nation_${nationId}`
+              },
+              {
+                value: {
+                  command: resultTurn.getCommand(),
+                  arg: resultTurn.getArg(),
+                  term: resultTurn.getTerm(),
+                  seq: resultTurn.getSeq()
+                }
+              }
+            );
           } else {
             await kvStorageRepository.create({
               session_id: sessionId,
@@ -1404,21 +1412,32 @@ export class ExecuteEngineService {
     const cities = await cityRepository.findByFilter({ session_id: sessionId });
     
     for (const city of cities) {
-      city.pop = Math.min(city.pop + Math.floor(city.agri / 10), city.pop_max);
-      city.agri = Math.min(city.agri + Math.floor(city.agri / 100), city.agri_max);
-      city.comm = Math.min(city.comm + Math.floor(city.comm / 100), city.comm_max);
-      city.secu = Math.max(city.secu - 5, 0);
-      city.def = Math.max(city.def - 3, 0);
+      const cityNum = city.city || city.data?.city;
+      const newPop = Math.min(city.pop + Math.floor(city.agri / 10), city.pop_max);
+      const newAgri = Math.min(city.agri + Math.floor(city.agri / 100), city.agri_max);
+      const newComm = Math.min(city.comm + Math.floor(city.comm / 100), city.comm_max);
+      const newSecu = Math.max(city.secu - 5, 0);
+      const newDef = Math.max(city.def - 3, 0);
       
-      await city.save();
+      await cityRepository.updateByCityNum(sessionId, cityNum, {
+        pop: newPop,
+        agri: newAgri,
+        comm: newComm,
+        secu: newSecu,
+        def: newDef
+      });
     }
 
     const nations = await nationRepository.findByFilter({ session_id: sessionId });
     for (const nation of nations) {
-      if (nation.data.rice) {
-        nation.data.rice = Math.max((nation.data.rice || 0) - Math.floor((nation.data.gennum || 0) * 10), 0);
-        nation.markModified('data');
-        await nation.save();
+      const currentRice = nation.data?.rice || nation.rice || 0;
+      const gennum = nation.data?.gennum || nation.gennum || 0;
+      if (currentRice > 0) {
+        const newRice = Math.max(currentRice - Math.floor(gennum * 10), 0);
+        const nationNum = nation.data?.nation || nation.nation;
+        await nationRepository.updateByNationNum(sessionId, nationNum, {
+          'data.rice': newRice
+        });
       }
     }
 
