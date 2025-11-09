@@ -45,12 +45,12 @@ export class BattleCreationService {
     let mapTemplate = await battleMapTemplateRepository.findBySessionAndCity(sessionId, cityId);
 
     if (!mapTemplate) {
-      const cityLevel = city.level || city.data?.level || 5;
-      const terrainType = city.terrain || city.data?.terrain || 'plain';
+      const cityLevel = city.level || 5;
+      const terrainType = city.terrain || 'plain';
       mapTemplate = await this.createDefaultMapTemplate(
-        sessionId, 
-        cityId, 
-        city.name || city.data?.name || `도시 ${cityId}`,
+        sessionId,
+        cityId,
+        city.name || `도시 ${cityId}`,
         cityLevel,
         terrainType
       );
@@ -65,15 +65,15 @@ export class BattleCreationService {
       
       attacker: {
         nation_id: attackerNationId,
-        nation_name: attackerNation.data.name || `국가${attackerNationId}`,
+        nation_name: attackerNation.name || `국가${attackerNationId}`,
         generals: attackerGenerals,
         entry_direction: entryDirection,
         entry_exit_id: `exit_${entryDirection}`
       },
-      
+
       defender: {
         nation_id: defenderNationId,
-        nation_name: defenderNation.data.name || `국가${defenderNationId}`,
+        nation_name: defenderNation.name || `국가${defenderNationId}`,
         generals: defenderGenerals,
         city_defense: true
       },
@@ -321,22 +321,22 @@ export class BattleCreationService {
   static async calculateParticipatingForces(sessionId: string, cityId: number, nationId: number) {
     const generals = await generalRepository.findByFilter({
       session_id: sessionId,
-      'data.nation': nationId,
-      'data.city': cityId,
-      'data.crew': { $gt: 0 }
-    }, 'no name data.crew data.crewtype data.leadership data.strength data.intel');
+      nation: nationId,
+      city: cityId,
+      crew: { $gt: 0 }
+    }, 'no name crew crewtype leadership strength intel');
 
-    const totalCrew = generals.reduce((sum, gen) => sum + (gen.data?.crew || 0), 0);
+    const totalCrew = generals.reduce((sum, gen) => sum + (gen.crew || 0), 0);
 
     return {
       generals: generals.map(g => ({
         generalId: g.no,
         name: g.name,
-        crew: g.data?.crew || 0,
-        crewType: g.data?.crewtype || 0,
-        leadership: g.data?.leadership || 0,
-        strength: g.data?.strength || 0,
-        intel: g.data?.intel || 0
+        crew: g.crew || 0,
+        crewType: g.crewtype || 0,
+        leadership: g.leadership || 0,
+        strength: g.strength || 0,
+        intel: g.intel || 0
       })),
       totalCrew,
       generalCount: generals.length
