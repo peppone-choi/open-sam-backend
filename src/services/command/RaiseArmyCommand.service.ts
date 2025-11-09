@@ -92,12 +92,23 @@ export class RaiseArmyCommandService {
 
     // 국가 턴 초기화
     const maxChiefTurn = GameConst.maxChiefTurn || 12;
+    
+    // 기존 최대 ID 조회
+    const existingTurns = await nationTurnRepository.findByFilter({ session_id: sessionId });
+    const maxId = existingTurns.reduce((max: number, turn: any) => {
+      const id = turn.data?.id || 0;
+      return Math.max(max, id);
+    }, 0);
+    
     const turnDocs = [];
+    let currentId = maxId + 1;
+    
     for (const chiefLevel of [12, 11]) {
       for (let turnIdx = 0; turnIdx < maxChiefTurn; turnIdx++) {
         turnDocs.push({
           session_id: sessionId,
           data: {
+            id: currentId++,  // 🔥 고유 ID 추가
             nation_id: nationID,
             officer_level: chiefLevel,
             turn_idx: turnIdx,
