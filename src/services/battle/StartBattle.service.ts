@@ -29,39 +29,39 @@ export class StartBattleService {
         if (!general) continue;
 
         attackerUnits.push({
-          generalId: general.data.no,
-          generalName: general.data.name || '무명',
-          troops: general.data.crew || 0,
-          leadership: general.data.leadership || 50,
-          strength: general.data.strength || 50,
-          intelligence: general.data.intel || 50,
-          unitType: this.getUnitType(general.data.crewtype),
-          morale: general.data.morale || 80,
-          training: general.data.train || 80,
+          generalId: general.no,
+          generalName: general.name || '무명',
+          troops: general.crew || 0,
+          leadership: general.leadership || 50,
+          strength: general.strength || 50,
+          intelligence: general.intel || 50,
+          unitType: this.getUnitType(general.crewtype),
+          morale: general.morale || 80,
+          training: general.train || 80,
           techLevel: 50,
-          specialSkills: general.data.specialSkills || []
+          specialSkills: general.specialSkills || []
         });
       }
 
       const defenderGenerals = await generalRepository.findByFilter({
         session_id: sessionId,
-        'data.nation': defenderNationId,
-        'data.city': targetCityId,
-        'data.crew': { $gt: 0 }
+        nation: defenderNationId,
+        city: targetCityId,
+        crew: { $gt: 0 }
       });
 
       const defenderUnits: IBattleUnit[] = defenderGenerals.map(general => ({
-        generalId: general.data.no,
-        generalName: general.data.name || '무명',
-        troops: general.data.crew || 0,
-        leadership: general.data.leadership || 50,
-        strength: general.data.strength || 50,
-        intelligence: general.data.intel || 50,
-        unitType: this.getUnitType(general.data.crewtype),
-        morale: general.data.morale || 80,
-        training: general.data.train || 80,
+        generalId: general.no,
+        generalName: general.name || '무명',
+        troops: general.crew || 0,
+        leadership: general.leadership || 50,
+        strength: general.strength || 50,
+        intelligence: general.intel || 50,
+        unitType: this.getUnitType(general.crewtype),
+        morale: general.morale || 80,
+        training: general.train || 80,
         techLevel: 50,
-        specialSkills: general.data.specialSkills || []
+        specialSkills: general.specialSkills || []
       }));
 
       const battleId = `battle_${randomUUID()}`;

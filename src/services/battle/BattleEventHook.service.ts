@@ -55,16 +55,16 @@ export async function onCityOccupied(
     };
 
     // 도시 소유권 변경
-    const oldNationId = city.data?.nation || 0;
-    city.data = city.data || {};
-    city.data.nation = attackerNationId;
-    city.markModified('data');
-    await city.save();
+    const oldNationId = city.nation || 0;
+    await cityRepository.updateOneByFilter(
+      { session_id: sessionId, id: cityId },
+      { $set: { nation: attackerNationId } }
+    );
 
     logger.info('[BattleEventHook] City occupied', {
       sessionId,
       cityId,
-      cityName: city.data?.name || city.name,
+      cityName: city.name,
       oldNationId,
       newNationId: attackerNationId,
       attackerGeneralId
@@ -74,7 +74,7 @@ export async function onCityOccupied(
     await ExecuteEngineService.runEventHandler(sessionId, 'OCCUPY_CITY', {
       ...gameEnv,
       cityId,
-      cityName: city.data?.name || city.name,
+      cityName: city.name,
       oldNationId,
       newNationId: attackerNationId,
       attackerNationId,
@@ -85,7 +85,7 @@ export async function onCityOccupied(
     if (oldNationId && oldNationId !== 0) {
       const remainingCities = await cityRepository.count({
         session_id: sessionId,
-        'data.nation': oldNationId
+        nation: oldNationId
       });
 
       if (remainingCities === 0) {
