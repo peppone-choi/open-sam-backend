@@ -1,6 +1,4 @@
 // @ts-nocheck - Argument count mismatches need review
-import { Auction } from '../../models/auction.model';
-import { General } from '../../models/general.model';
 import { generalRepository } from '../../repositories/general.repository';
 import { auctionRepository } from '../../repositories/auction.repository';
 
@@ -21,10 +19,7 @@ export class OpenUniqueAuctionService {
         throw new Error(`최소 경매 금액은 ${minPoint}입니다.`);
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('장수를 찾을 수 없습니다.');

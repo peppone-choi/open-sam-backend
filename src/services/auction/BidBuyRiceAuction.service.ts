@@ -38,16 +38,13 @@ export class BidBuyRiceAuctionService {
         throw new Error('자신이 연 경매에 입찰할 수 없습니다.');
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('장수를 찾을 수 없습니다.');
       }
 
-      const highestBid = auction.bids.length > 0 
+      const highestBid = auction.bids.length > 0
         ? auction.bids.reduce((max, bid) => bid.amount > max.amount ? bid : max)
         : null;
 
@@ -63,31 +60,29 @@ export class BidBuyRiceAuctionService {
       const moreAmount = amount - (myPrevBid ? myPrevBid.amount : 0);
 
       const minimumGold = 1000;
-      if (general.data.gold < moreAmount + minimumGold) {
+      if (general.gold < moreAmount + minimumGold) {
         throw new Error('금이 부족합니다.');
       }
 
       if (highestBid && !myPrevBid) {
-        const oldBidder = await generalRepository.findBySessionAndNo({
-          session_id: sessionId,
-          'data.no': highestBid.generalId
-        });
+        const oldBidder = await generalRepository.findBySessionAndNo(sessionId, highestBid.generalId);
         if (oldBidder) {
-          oldBidder.data.gold += highestBid.amount;
-          await oldBidder.save();
+          await generalRepository.updateBySessionAndNo(sessionId, highestBid.generalId, {
+            gold: oldBidder.gold + highestBid.amount
+          });
         }
       }
 
       auction.bids.push({
         generalId: generalId,
-        generalName: general.data.name,
-        ownerName: general.data.owner_name || '',
+        generalName: general.name,
+        ownerName: general.owner_name || '',
         amount: amount,
         date: now,
         tryExtendCloseDate: false
       });
 
-      general.data.gold -= moreAmount;
+      const newGold = general.gold - moreAmount;
 
       const turnTerm = 10;
       const extendMinutes = Math.max(1, turnTerm * (1/6));
@@ -102,7 +97,9 @@ export class BidBuyRiceAuctionService {
       }
 
       await auction.save();
-      await general.save();
+      await generalRepository.updateBySessionAndNo(sessionId, generalId, {
+        gold: newGold
+      });
 
       return {
         success: true,

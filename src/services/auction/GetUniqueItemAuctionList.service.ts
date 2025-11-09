@@ -1,4 +1,3 @@
-import { Auction } from '../../models/auction.model';
 import { auctionRepository } from '../../repositories/auction.repository';
 
 export class GetUniqueItemAuctionListService {

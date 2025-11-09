@@ -1,6 +1,4 @@
 // @ts-nocheck - Argument count mismatches need review
-import { Auction } from '../../models/auction.model';
-import { General } from '../../models/general.model';
 import { auctionRepository } from '../../repositories/auction.repository';
 import { generalRepository } from '../../repositories/general.repository';
 
@@ -35,12 +33,9 @@ export class GetUniqueItemAuctionDetailService {
           date: bid.date
         }));
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
-      const remainPoint = general?.data.inherit_point || 0;
+      const remainPoint = general?.inherit_point || 0;
       const obfuscatedName = this.genObfuscatedName(generalId);
 
       return {

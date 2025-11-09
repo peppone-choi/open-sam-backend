@@ -1,6 +1,4 @@
 // @ts-nocheck - Argument count mismatches need review
-import { Auction } from '../../models/auction.model';
-import { General } from '../../models/general.model';
 import { auctionRepository } from '../../repositories/auction.repository';
 import { generalRepository } from '../../repositories/general.repository';
 
@@ -40,16 +38,13 @@ export class BidSellRiceAuctionService {
         throw new Error('자신이 연 경매에 입찰할 수 없습니다.');
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         throw new Error('장수를 찾을 수 없습니다.');
       }
 
-      const highestBid = auction.bids.length > 0 
+      const highestBid = auction.bids.length > 0
         ? auction.bids.reduce((max, bid) => bid.amount > max.amount ? bid : max)
         : null;
 
@@ -65,31 +60,29 @@ export class BidSellRiceAuctionService {
       const moreAmount = amount - (myPrevBid ? myPrevBid.amount : 0);
 
       const minimumRice = 5000;
-      if (general.data.rice < moreAmount + minimumRice) {
+      if (general.rice < moreAmount + minimumRice) {
         throw new Error('쌀이 부족합니다.');
       }
 
       if (highestBid && !myPrevBid) {
-        const oldBidder = await generalRepository.findBySessionAndNo({
-          session_id: sessionId,
-          'data.no': highestBid.generalId
-        });
+        const oldBidder = await generalRepository.findBySessionAndNo(sessionId, highestBid.generalId);
         if (oldBidder) {
-          oldBidder.data.rice += highestBid.amount;
-          await oldBidder.save();
+          await generalRepository.updateBySessionAndNo(sessionId, highestBid.generalId, {
+            rice: oldBidder.rice + highestBid.amount
+          });
         }
       }
 
       auction.bids.push({
         generalId: generalId,
-        generalName: general.data.name,
-        ownerName: general.data.owner_name || '',
+        generalName: general.name,
+        ownerName: general.owner_name || '',
         amount: amount,
         date: now,
         tryExtendCloseDate: false
       });
 
-      general.data.rice -= moreAmount;
+      const newRice = general.rice - moreAmount;
 
       const turnTerm = 10;
       const extendMinutes = Math.max(1, turnTerm * (1/6));
@@ -104,7 +97,9 @@ export class BidSellRiceAuctionService {
       }
 
       await auction.save();
-      await general.save();
+      await generalRepository.updateBySessionAndNo(sessionId, generalId, {
+        rice: newRice
+      });
 
       return {
         success: true,

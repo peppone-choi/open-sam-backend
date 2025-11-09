@@ -69,13 +69,7 @@ export class ExecuteCommandService {
   }
 
   private static async validateExecution(context: CommandContext): Promise<{ valid: boolean; reason?: string; message?: string }> {
-    const general = await generalRepository.findOneByFilter({ 
-      session_id: context.sessionId,
-      $or: [
-        { 'data.no': context.generalId },
-        { no: context.generalId }
-      ]
-    });
+    const general = await generalRepository.findBySessionAndNo(context.sessionId, context.generalId);
 
     if (!general) {
       return {
@@ -86,13 +80,7 @@ export class ExecuteCommandService {
     }
 
     if (context.requiresOwnership && context.targetCity && context.ownerAtQueue !== undefined) {
-      const city = await cityRepository.findOneByFilter({ 
-        session_id: context.sessionId,
-        $or: [
-          { 'data.city': context.targetCity },
-          { city: context.targetCity }
-        ]
-      });
+      const city = await cityRepository.findByCityNum(context.sessionId, context.targetCity);
 
       if (!city) {
         return {
@@ -102,13 +90,11 @@ export class ExecuteCommandService {
         };
       }
 
-      const cityNation = city.data?.nation || city.nation;
-      if (cityNation !== context.ownerAtQueue) {
-        const cityName = city.data?.name || city.name;
+      if (city.nation !== context.ownerAtQueue) {
         return {
           valid: false,
           reason: 'city_ownership_changed',
-          message: `${cityName}의 소유권이 변경되어 커맨드가 취소되었습니다.`
+          message: `${city.name}의 소유권이 변경되어 커맨드가 취소되었습니다.`
         };
       }
     }
@@ -122,7 +108,7 @@ export class ExecuteCommandService {
       };
     }
 
-    if (context.cost?.gold && general.data.gold < context.cost.gold) {
+    if (context.cost?.gold && general.gold < context.cost.gold) {
       return {
         valid: false,
         reason: 'insufficient_gold',
@@ -130,7 +116,7 @@ export class ExecuteCommandService {
       };
     }
 
-    if (context.cost?.rice && general.data.rice < context.cost.rice) {
+    if (context.cost?.rice && general.rice < context.cost.rice) {
       return {
         valid: false,
         reason: 'insufficient_rice',
@@ -138,7 +124,7 @@ export class ExecuteCommandService {
       };
     }
 
-    if (context.cost?.troops && general.data.crew < context.cost.troops) {
+    if (context.cost?.troops && general.crew < context.cost.troops) {
       return {
         valid: false,
         reason: 'insufficient_troops',
@@ -160,7 +146,7 @@ export class ExecuteCommandService {
 
     if (inBattle) return 'in_battle';
 
-    if (general.data.battle_status === 'in_battle') {
+    if (general.battle_status === 'in_battle') {
       return 'in_battle';
     }
 
@@ -202,83 +188,78 @@ export class ExecuteCommandService {
   private static async deductCosts(context: CommandContext): Promise<void> {
     if (!context.cost) return;
 
-    const general = await generalRepository.findOneByFilter({
-      session_id: context.sessionId,
-      $or: [
-        { 'data.no': context.generalId },
-        { no: context.generalId }
-      ]
-    });
+    const general = await generalRepository.findBySessionAndNo(context.sessionId, context.generalId);
 
     if (general) {
-      general.data = general.data || {};
+      const updates: any = {};
       if (context.cost.gold) {
-        general.data.gold = (general.data.gold || 0) - context.cost.gold;
+        updates.gold = (general.gold || 0) - context.cost.gold;
       }
       if (context.cost.rice) {
-        general.data.rice = (general.data.rice || 0) - context.cost.rice;
+        updates.rice = (general.rice || 0) - context.cost.rice;
       }
       if (context.cost.troops) {
-        general.data.crew = (general.data.crew || 0) - context.cost.troops;
+        updates.crew = (general.crew || 0) - context.cost.troops;
       }
-      await generalRepository.save(general);
+      await generalRepository.updateBySessionAndNo(context.sessionId, context.generalId, updates);
     }
   }
 
   static async refundCommand(context: CommandContext, reason: string): Promise<void> {
     if (!context.cost) return;
 
-    const general = await generalRepository.findOneByFilter({
-      session_id: context.sessionId,
-      $or: [
-        { 'data.no': context.generalId },
-        { no: context.generalId }
-      ]
-    });
+    const general = await generalRepository.findBySessionAndNo(context.sessionId, context.generalId);
 
     if (general) {
-      general.data = general.data || {};
+      const updates: any = {};
       if (context.cost.gold) {
-        general.data.gold = (general.data.gold || 0) + context.cost.gold;
+        updates.gold = (general.gold || 0) + context.cost.gold;
       }
       if (context.cost.rice) {
-        general.data.rice = (general.data.rice || 0) + context.cost.rice;
+        updates.rice = (general.rice || 0) + context.cost.rice;
       }
       if (context.cost.troops) {
-        general.data.crew = (general.data.crew || 0) + context.cost.troops;
+        updates.crew = (general.crew || 0) + context.cost.troops;
       }
-      await generalRepository.save(general);
+      await generalRepository.updateBySessionAndNo(context.sessionId, context.generalId, updates);
     }
   }
 
   static async checkAndRefundFailedCommands(sessionId: string, turnIdx: number): Promise<void> {
-    const commands = await generalTurnRepository.findBySession(sessionId, {
-      'data.turn_idx': turnIdx,
-      'data.status': { $ne: 'executed' }
+    const commands = await generalTurnRepository.findByFilter({
+      session_id: sessionId,
+      turn_idx: turnIdx,
+      status: { $ne: 'executed' }
     });
 
     for (const cmd of commands) {
       const context: CommandContext = {
         sessionId,
-        generalId: cmd.data.general_id,
-        turnIdx: cmd.data.turn_idx,
-        action: cmd.data.action,
-        arg: cmd.data.arg,
-        targetCity: cmd.data.target_city,
-        ownerAtQueue: cmd.data.owner_at_queue,
-        requiresOwnership: cmd.data.requires_ownership,
-        cost: cmd.data.cost
+        generalId: cmd.general_id,
+        turnIdx: cmd.turn_idx,
+        action: cmd.action,
+        arg: cmd.arg,
+        targetCity: cmd.target_city,
+        ownerAtQueue: cmd.owner_at_queue,
+        requiresOwnership: cmd.requires_ownership,
+        cost: cmd.cost
       };
 
       const result = await this.execute(context);
 
       if (!result.success && result.refund) {
         await this.refundCommand(context, result.reason || 'unknown');
-        
-        cmd.data.status = 'refunded';
-        cmd.data.failure_reason = result.reason;
-        cmd.data.failure_message = result.message;
-        await cmd.save();
+
+        await generalTurnRepository.updateOne(
+          { _id: cmd._id },
+          {
+            $set: {
+              status: 'refunded',
+              failure_reason: result.reason,
+              failure_message: result.message
+            }
+          }
+        );
       }
     }
   }

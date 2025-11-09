@@ -115,7 +115,7 @@ export async function registerAuction(sessionId: string, rng?: any): Promise<voi
     // 장수들의 평균 금, 쌀 조회
     const generals = await generalRepository.findByFilter({
       session_id: sessionId,
-      'data.npc': { $lt: 2 } // NPC 제외
+      npc: { $lt: 2 } // NPC 제외
     });
 
     if (generals.length === 0) {
@@ -124,11 +124,10 @@ export async function registerAuction(sessionId: string, rng?: any): Promise<voi
 
     let totalGold = 0;
     let totalRice = 0;
-    
+
     for (const general of generals) {
-      const data = general.data || {};
-      totalGold += data.gold || 0;
-      totalRice += data.rice || 0;
+      totalGold += general.gold || 0;
+      totalRice += general.rice || 0;
     }
 
     const avgGold = Util.valueFit(Math.floor(totalGold / generals.length), 1000, 20000);
