@@ -88,19 +88,13 @@ export class GetReservedCommandService {
       );
     }
 
-    // General 모델에서 장수 찾기 (data.no 또는 no 필드 확인)
-    const general = await generalRepository.findOneByFilter({
-      session_id: sessionId,
-      $or: [
-        { 'data.no': generalId },
-        { no: generalId }
-      ]
-    });
+    // General 모델에서 장수 찾기
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     console.log('General 조회 결과:', {
       generalId,
       found: !!general,
-      generalNo: general?.data?.no || general?.no,
+      generalNo: general?.no,
     });
 
     if (!general) {
@@ -128,8 +122,8 @@ export class GetReservedCommandService {
     let month = gameEnv.month || sessionData.month || 1;
     const lastExecute = gameEnv.turntime || sessionData.turntime || new Date();
     
-    // general.data.turntime이 있으면 사용, 없으면 현재 시간 기준으로 계산만 (DB 저장 안 함)
-    let turnTime = general.data?.turntime;
+    // general.turntime이 있으면 사용, 없으면 현재 시간 기준으로 계산만 (DB 저장 안 함)
+    let turnTime = general.turntime;
     if (!turnTime) {
       // turntime이 없으면 현재 시간 기준으로 다음 턴 시간 계산 (표시용만)
       const turnTermInSeconds = turnTermInMinutes * 60;
@@ -265,7 +259,7 @@ export class GetReservedCommandService {
       sessionMonth,
       date: new Date().toISOString(),
       turn: turnArray, // 배열로 변경
-      autorun_limit: general.data?.aux?.autorun_limit || null
+      autorun_limit: general.aux?.autorun_limit || null
     };
   }
 
