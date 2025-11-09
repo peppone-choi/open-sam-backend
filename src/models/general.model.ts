@@ -1,4 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { ActionLogger } from '../services/logger/ActionLogger';
+import { LogFormatType } from '../types/log.types';
 
 // 장수 인터페이스
 export interface IGeneral extends Document {

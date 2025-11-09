@@ -97,13 +97,13 @@ export class VoteService {
       
       await voteRecord.save();
 
-      const develCost = session.data?.develcost || 100;
+      const develCost = session.develcost || 100;
       const voteReward = develCost * 5;
 
-      const currentGold = general.data?.gold || general.gold || 0;
+      const currentGold = general.gold || 0;
       const newGold = currentGold + voteReward;
-      
-      await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+
+      await generalRepository.updateBySessionAndNo(sessionId, user.generalId, {
         gold: newGold
       });
       

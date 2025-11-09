@@ -129,37 +129,33 @@ export class SessionStateService {
           return false;
         }
 
-        if (!session.data) {
-          session.data = {};
-        }
-
         // 상태 업데이트
         if (updates.status !== undefined) {
-          session.data.status = updates.status;
+          session.status = updates.status;
         }
         if (updates.year !== undefined) {
-          session.data.year = updates.year;
+          session.year = updates.year;
         }
         if (updates.month !== undefined) {
-          session.data.month = updates.month;
+          session.month = updates.month;
         }
         if (updates.turnterm !== undefined) {
-          session.data.turnterm = updates.turnterm;
+          session.turnterm = updates.turnterm;
         }
         if (updates.turntime !== undefined) {
-          session.data.turntime = updates.turntime;
+          session.turntime = updates.turntime;
         }
         if (updates.isLocked !== undefined) {
-          session.data.is_locked = updates.isLocked;
+          session.is_locked = updates.isLocked;
         }
         if (updates.isUnited !== undefined) {
-          session.data.isunited = updates.isUnited;
+          session.isunited = updates.isUnited;
         }
         if (updates.onlineUserCount !== undefined) {
-          session.data.online_user_cnt = updates.onlineUserCount;
+          session.online_user_cnt = updates.onlineUserCount;
         }
         if (updates.onlineNations !== undefined) {
-          session.data.online_nation = updates.onlineNations;
+          session.online_nation = updates.onlineNations;
         }
 
         await session.save();

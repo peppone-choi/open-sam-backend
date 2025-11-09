@@ -174,22 +174,19 @@ export class InitService {
     console.log(`   ✅ 초기 국가 생성 완료`);
     
     // 5. 세션 데이터 초기화 (턴 시간, 년/월 등)
-    if (!session.data) session.data = {};
-    
     // 시나리오에서 turnterm 가져오기 (없으면 세션 기본값, 그것도 없으면 60분)
     const scenarioTurnterm = scenarioMetadata?.gameSettings?.turnterm || scenarioMetadata?.turnterm;
-    session.data.turnterm = session.data.turnterm || scenarioTurnterm || 60; // 분 단위로 저장
-    
-    session.data.year = session.data.year || 184;
-    session.data.month = session.data.month || 1;
-    session.data.startyear = session.data.startyear || 184;
-    session.data.turn = session.data.turn || 0;
-    session.data.turntime = session.data.turntime || new Date();
-    session.data.starttime = session.data.starttime || new Date();
-    
-    session.markModified('data');
+    session.turnterm = session.turnterm || scenarioTurnterm || 60; // 분 단위로 저장
+
+    session.year = session.year || 184;
+    session.month = session.month || 1;
+    session.startyear = session.startyear || 184;
+    session.turn = session.turn || 0;
+    session.turntime = session.turntime || new Date();
+    session.starttime = session.starttime || new Date();
+
     await session.save();
-    console.log(`   ✅ 세션 데이터 초기화 (턴: ${session.data.turnterm}분)`);
+    console.log(`   ✅ 세션 데이터 초기화 (턴: ${session.turnterm}분)`);
     console.log(`🎉 세션 초기화 완료!\n`);
     
     return { cityCount };

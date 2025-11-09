@@ -77,11 +77,7 @@ export class NewVoteService {
 
       const userName = user?.userName || '[SYSTEM]';
 
-      if (!session.data) {
-        session.data = {};
-      }
-
-      const lastVote = session.data.lastVote || 0;
+      const lastVote = session.lastVote || 0;
       const voteID = lastVote + 1;
 
       if (!keepOldVote) {
@@ -100,8 +96,8 @@ export class NewVoteService {
         options
       };
 
-      session.data[`vote_${voteID}`] = voteInfo;
-      session.data.lastVote = voteID;
+      session[`vote_${voteID}`] = voteInfo;
+      session.lastVote = voteID;
       
       await sessionRepository.saveDocument(session);
 
