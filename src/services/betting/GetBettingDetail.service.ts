@@ -1,6 +1,7 @@
-import { sessionRepository } from '../repositories/session.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { Session } from '../../models/session.model';
-import { generalRepository } from '../repositories/general.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { NgBetting } from '../../models/ng_betting.model';
 import mongoose from 'mongoose';
 
 export class GetBettingDetailService {
@@ -40,18 +41,36 @@ export class GetBettingDetailService {
         };
       }
 
-      const db = mongoose.connection.db;
       const bettingDetail: [string, number][] = [];
       const myBetting: [string, number][] = [];
       
-      if (db) {
-        const ngBettingCollection = db.collection('ng_bettings');
-        
-        const aggregateResult = await ngBettingCollection.aggregate([
+      // Mongoose 모델 사용
+      const aggregateResult = await NgBetting.aggregate([
+        {
+          $match: {
+            session_id: sessionId,
+            'data.betting_id': bettingID
+          }
+        },
+        {
+          $group: {
+            _id: '$data.betting_type',
+            sumAmount: { $sum: '$data.amount' }
+          }
+        }
+      ]);
+
+      for (const result of aggregateResult) {
+        bettingDetail.push([result._id, result.sumAmount || 0]);
+      }
+
+      if (userId) {
+        const myAggregateResult = await NgBetting.aggregate([
           {
             $match: {
               session_id: sessionId,
-              'data.betting_id': bettingID
+              'data.betting_id': bettingID,
+              'data.user_id': userId
             }
           },
           {
@@ -60,32 +79,10 @@ export class GetBettingDetailService {
               sumAmount: { $sum: '$data.amount' }
             }
           }
-        ]).toArray();
+        ]);
 
-        for (const result of aggregateResult) {
-          bettingDetail.push([result._id, result.sumAmount || 0]);
-        }
-
-        if (userId) {
-          const myAggregateResult = await ngBettingCollection.aggregate([
-            {
-              $match: {
-                session_id: sessionId,
-                'data.betting_id': bettingID,
-                'data.user_id': userId
-              }
-            },
-            {
-              $group: {
-                _id: '$data.betting_type',
-                sumAmount: { $sum: '$data.amount' }
-              }
-            }
-          ]).toArray();
-
-          for (const result of myAggregateResult) {
-            myBetting.push([result._id, result.sumAmount || 0]);
-          }
+        for (const result of myAggregateResult) {
+          myBetting.push([result._id, result.sumAmount || 0]);
         }
       }
 

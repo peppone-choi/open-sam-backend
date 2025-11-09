@@ -53,7 +53,8 @@ export class TravelCommand extends GeneralCommand {
     // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
-    const [type, text] = SightseeingMessage.pickAction();
+    const sightseeingMessage = new SightseeingMessage();
+    const [type, text] = sightseeingMessage.pickAction();
 
     let exp = 0;
 

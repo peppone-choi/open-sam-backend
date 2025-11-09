@@ -56,13 +56,11 @@ export class GetJoinInfoService {
       let inheritPoints = 0;
       if (userId) {
         // 이전 장수 조회 (같은 사용자의 이전 장수)
-        const previousGeneral = await generalRepository.findBySessionAndOwner({
-          session_id: sessionId,
-          owner: String(userId),
-          'data.npc': { $lt: 2 }
-        })
-          .sort({ 'data.die_turn': -1 })
-          ;
+        const previousGeneral = await generalRepository.findBySessionAndOwner(
+          sessionId,
+          String(userId),
+          { 'data.npc': { $lt: 2 } }
+        );
 
         if (previousGeneral && previousGeneral.data) {
           const genData = previousGeneral.data;

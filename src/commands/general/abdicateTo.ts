@@ -158,14 +158,26 @@ export class AbdicateToCommand extends GeneralCommand {
     const nationID = this.generalObj.getNationID();
     const generalID = this.generalObj.getID();
     
-    const destRawGenerals = await generalRepository.findByFilter({
+    const destRawGenerals = (await generalRepository.findByFilter({
       session_id: sessionId,
       nation: nationID,
       'data.no': { $ne: generalID }
-    })
-    .select('data.no data.name data.officer_level data.npc data.leadership data.strength data.intel')
-    .sort({ 'data.npc': 1, 'data.name': 1 })
-    .lean();
+    }))
+      .map((g: any) => ({
+        data: {
+          no: g.data?.no,
+          name: g.data?.name,
+          officer_level: g.data?.officer_level,
+          npc: g.data?.npc,
+          leadership: g.data?.leadership,
+          strength: g.data?.strength,
+          intel: g.data?.intel
+        }
+      }))
+      .sort((a, b) => {
+        if (a.data?.npc !== b.data?.npc) return (a.data?.npc || 0) - (b.data?.npc || 0);
+        return (a.data?.name || '').localeCompare(b.data?.name || '');
+      });
 
     return {
       procRes: {

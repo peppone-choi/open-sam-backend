@@ -111,7 +111,7 @@ export class AbdicateCommand extends GeneralCommand {
     logger.pushGeneralActionLog(`<Y>${destGeneralName}</>에게 군주의 자리를 물려줍니다. <1>${date}</>`);
     destLogger.pushGeneralActionLog(`<Y>${generalName}</>에게서 군주의 자리를 물려받습니다.`);
 
-    logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 <Y>${destGeneralName}</>에게 선양`) as any;
+    logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 <Y>${destGeneralName}</>에게 선양`);
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 물려 받음`);
 
     // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
@@ -132,8 +132,7 @@ export class AbdicateCommand extends GeneralCommand {
     // 같은 국가의 다른 장수들 조회 (선양 대상 후보)
     const generals = await generalRepository.findByFilter({
       session_id: this.generalObj.getSessionID(),
-      'data.nation': this.generalObj.getNationID(),
-      'data.nation': { $ne: 0 },
+      'data.nation': { $eq: this.generalObj.getNationID(), $ne: 0 },
       'data.no': { $ne: this.generalObj.getID() }
     });
 

@@ -10,7 +10,7 @@ export class GetUniqueItemAuctionListService {
       const auctions = await auctionRepository.findByFilter({
         session_id: sessionId,
         type: 'UniqueItem'
-      }).sort({ closeDate: 1 });
+      }).sort({ closeDate: 1 }).exec();
 
       const obfuscatedName = this.genObfuscatedName(generalId);
 

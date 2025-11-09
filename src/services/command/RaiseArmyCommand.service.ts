@@ -2,8 +2,8 @@ import { nationRepository } from '../../repositories/nation.repository';
 import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import { generalRepository } from '../../repositories/general.repository';
-import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import { GameConst } from '../../constants/GameConst';
+import { NationTurn } from '../../models/nation_turn.model';
 
 export class RaiseArmyCommandService {
   /**
@@ -69,20 +69,24 @@ export class RaiseArmyCommandService {
     const diplomacyDocs = [];
     for (const destNation of otherNations) {
       const destNationId = destNation.nation || destNation.data?.nation;
-      diplomacyDocs.push({
-        session_id: sessionId,
-        me: destNationId,
-        you: nationID,
-        state: 2,  // 전쟁
-        term: 0
-      });
-      diplomacyDocs.push({
-        session_id: sessionId,
-        me: nationID,
-        you: destNationId,
-        state: 2,  // 전쟁
-        term: 0
-      });
+      
+      // destNationId가 유효한 경우에만 추가
+      if (destNationId && typeof destNationId === 'number') {
+        diplomacyDocs.push({
+          session_id: sessionId,
+          me: destNationId,
+          you: nationID,
+          state: 2,  // 전쟁
+          term: 0
+        });
+        diplomacyDocs.push({
+          session_id: sessionId,
+          me: nationID,
+          you: destNationId,
+          state: 2,  // 전쟁
+          term: 0
+        });
+      }
     }
 
     if (diplomacyDocs.length > 0) {

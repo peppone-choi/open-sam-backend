@@ -1,5 +1,5 @@
 export const CityConst = {
-  getCityList: () => [] as any[],
+  getCityList: () => [],
   byID: (cityID: number): any | null => {
     // TODO: Implement CityConst.byID
     return null;

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Role, ScenarioId } from '../../../common/@types/role.types';
+import { Role, ScenarioId, RelationKey } from '../../../common/@types/role.types';
 import { RoleRepository, RelationHelper } from '../../../common/repository/role-repository';
 import { ScenarioRegistry } from '../../../common/registry/scenario-registry';
 import { ResourceRegistry } from '../../../common/registry/resource-registry';
@@ -111,10 +111,10 @@ router.get('/entities/:role/:id', async (req: Request, res: Response) => {
 router.get('/entities/:role/:id/relations/:relationKey', async (req: Request, res: Response) => {
   const { role, id, relationKey } = req.params;
   const scenario = req.query.scenario as ScenarioId || 'sangokushi';
-  
+
   const ref = { role: role as Role, id, scenario };
-  const related = await RelationHelper.getRelatedref, relationKey;
-  
+  const related = await RelationHelper.getRelated(ref, relationKey as RelationKey);
+
   if (!related) {
     return res.status(404).json({ error: 'Related entity not found' });
   }

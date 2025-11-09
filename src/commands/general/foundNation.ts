@@ -1,6 +1,5 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 
@@ -135,8 +134,8 @@ export class FoundNationCommand extends GeneralCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>에 국가를 건설하였습니다.`);
 
     const josaNationYi = JosaUtil.pick(nationName, '이');
-    logger.pushGlobalHistoryLog(`<Y><b>【건국】</b></>${nationTypeName} <D><b>${nationName}</b></>${josaNationYi} 새로이 등장하였습니다.`) as any;
-    logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaUl} 건국`) as any;
+    logger.pushGlobalHistoryLog(`<Y><b>【건국】</b></>${nationTypeName} <D><b>${nationName}</b></>${josaNationYi} 새로이 등장하였습니다.`);
+    logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaUl} 건국`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <D><b>${nationName}</b></>${josaUl} 건국`);
 
     const exp = 1000;
@@ -148,19 +147,26 @@ export class FoundNationCommand extends GeneralCommand {
     const aux = this.nation?.aux || {};
     aux.can_국기변경 = 1;
 
-    await db.update('city', {
-      nation: general.getNationID(),
-      conflict: '{}'
-    }, 'city=%i', general.getCityID());
+    // Repository 패턴 사용
+    const { cityRepository } = await import('../../repositories/city.repository');
+    const { nationRepository } = await import('../../repositories/nation.repository');
 
-    await db.update('nation', {
-      name: nationName,
-      color: colorType,
-      level: 1,
-      type: nationType,
-      capital: general.getCityID(),
-      aux: JSON.stringify(aux)
-    }, 'nation=%i', general.getNationID());
+    await cityRepository.updateOneByFilter(
+      { session_id: env.session_id, city: general.getCityID() },
+      { nation: general.getNationID(), conflict: {} }
+    );
+
+    await nationRepository.updateOneByFilter(
+      { session_id: env.session_id, 'data.nation': general.getNationID() },
+      {
+        name: nationName,
+        color: colorType,
+        level: 1,
+        type: nationType,
+        capital: general.getCityID(),
+        aux: aux
+      }
+    );
 
     // TODO: refreshNationStaticInfo()
     // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1)

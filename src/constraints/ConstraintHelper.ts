@@ -87,6 +87,24 @@ export class ConstraintHelper {
     };
   }
 
+  static ReqGeneralTrainMargin(maxValue: number): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const currentTrain = input.general?.getVar('train') || 0;
+        return currentTrain < maxValue ? null : `훈련도가 이미 최대치입니다. (최대: ${maxValue})`;
+      }
+    };
+  }
+
+  static ReqGeneralAtmosMargin(maxValue: number): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const currentAtmos = input.general?.getVar('atmos') || 0;
+        return currentAtmos < maxValue ? null : `사기가 이미 최대치입니다. (최대: ${maxValue})`;
+      }
+    };
+  }
+
   static RemainCityCapacity(cityKey: string, actionName: string): IConstraint {
     return {
       test: (input: any, env: any) => {

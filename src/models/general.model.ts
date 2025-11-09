@@ -203,6 +203,10 @@ GeneralSchema.methods.getStaticNation = function(): any {
 GeneralSchema.methods.addExperience = function(exp: number): void {
   if (!this.data.experience) this.data.experience = 0;
   this.data.experience += exp;
+  
+  // 경험치를 기반으로 레벨 계산 (1000 경험치당 1레벨)
+  this.data.explevel = Math.floor(this.data.experience / 1000);
+  
   this.markModified('data');
 };
 

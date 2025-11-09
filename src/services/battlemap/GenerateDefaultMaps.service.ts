@@ -27,7 +27,7 @@ export class GenerateDefaultMapsService {
             { $set: templateData }
           );
           console.log(`🔄 맵 템플릿 업데이트: ${templateData.name}`);
-          results.push(await battleMapTemplateRepository.findByFilterById(existing._id));
+          results.push(await battleMapTemplateRepository.findById(existing._id.toString()));
         } else {
           const template = await battleMapTemplateRepository.create(templateData);
           console.log(`✅ 맵 템플릿 생성: ${templateData.name}`);

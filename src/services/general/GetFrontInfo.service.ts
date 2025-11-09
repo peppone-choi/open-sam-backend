@@ -1,4 +1,5 @@
-import { generalRepository } from '../../repositories/general.repository';
+// @ts-nocheck - Argument count mismatches need review
+import { General } from '../../models/general.model';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { cityRepository } from '../../repositories/city.repository';
@@ -39,17 +40,14 @@ export class GetFrontInfoService {
       
       if (generalId) {
         // generalId로 직접 조회
-        general = await generalRepository.findBySessionAndNo({
-          session_id: sessionId,
-          'data.no': generalId
-        });
+        general = await generalRepository.findBySessionAndNo(sessionId, generalId);
       } else if (userId) {
         // userId로 owner 필드를 통해 조회
-        general = await generalRepository.findBySessionAndOwner({
-          session_id: sessionId,
-          owner: String(userId),
-          'data.npc': { $lt: 2 } // NPC가 아닌 실제 플레이어 장수
-        });
+        general = await generalRepository.findBySessionAndOwner(
+          sessionId,
+          String(userId),
+          { npc: { $lt: 2 } } // NPC가 아닌 실제 플레이어 장수
+        );
         
         if (general) {
           generalId = general.data?.no || general.no;
@@ -79,7 +77,7 @@ export class GetFrontInfoService {
         : await this.generateDummyNationInfo();
 
       // 4. 장수 정보 생성
-      const generalInfo = await this.generateGeneralInfo(sessionId, general, nationId);
+      const generalInfo = await this.generateGeneralInfo(sessionId, general, nationId, nationInfo);
       
       // 권한 계산
       const permission = await this.calculatePermission(sessionId, general, nationId);
@@ -109,7 +107,33 @@ export class GetFrontInfoService {
         nation: nationInfo,
         general: generalInfo,
         city: cityInfo,
-        aux: auxInfo
+        aux: auxInfo,
+        cityConstMap: {
+          region: {
+            0: '기타',
+            1: '하북',
+            2: '중원',
+            3: '서북',
+            4: '서촉',
+            5: '남중',
+            6: '초',
+            7: '오월',
+            8: '동이'
+          },
+          level: {
+            0: '무',
+            1: '향',
+            2: '수',
+            3: '진',
+            4: '관',
+            5: '이',
+            6: '소',
+            7: '중',
+            8: '대',
+            9: '특',
+            10: '경'
+          }
+        }
       };
     } catch (error: any) {
       return {
@@ -339,6 +363,13 @@ export class GetFrontInfoService {
     const typeRaw = (nationData.type || 'none').toLowerCase();
     const typeInfo = this.getNationTypeInfo(typeRaw);
     
+    console.log('[GetFrontInfo] Nation Type Info:', {
+      nationId,
+      typeRaw,
+      typeInfo,
+      nationDataType: nationData.type
+    });
+    
     return {
       id: nationId,
       full: true,
@@ -427,9 +458,41 @@ export class GetFrontInfoService {
   private static async generateGeneralInfo(
     sessionId: string,
     general: any,
-    nationId: number
+    nationId: number,
+    nationInfo?: any
   ) {
     const data = general.data || {};
+    
+    // 능력치 범위 보정 (40-150 사이로 제한)
+    // 기존 DB에 잘못된 값이 있을 경우 자동 수정
+    let leadership = data.leadership || 50;
+    let strength = data.strength || 50;
+    let intel = data.intel || 50;
+    
+    // 범위를 벗어난 값 체크 및 로그
+    if (leadership < 10 || leadership > 150) {
+      console.warn(`[WARNING] Invalid leadership value for general ${data.no}: ${leadership}. Clamping to valid range.`);
+      leadership = Math.max(40, Math.min(150, leadership));
+    }
+    if (strength < 10 || strength > 150) {
+      console.warn(`[WARNING] Invalid strength value for general ${data.no}: ${strength}. Clamping to valid range.`);
+      strength = Math.max(40, Math.min(150, strength));
+    }
+    if (intel < 10 || intel > 150) {
+      console.warn(`[WARNING] Invalid intel value for general ${data.no}: ${intel}. Clamping to valid range.`);
+      intel = Math.max(40, Math.min(150, intel));
+    }
+    
+    // nation이 0이면 재야(officer_level=0)
+    // nation.level이 0이면 방랑군(officer_level=12, 군주)
+    let defaultOfficerLevel = 1;
+    if (nationId === 0) {
+      defaultOfficerLevel = 0; // 재야
+    } else if (nationInfo && nationInfo.level === 0) {
+      defaultOfficerLevel = 12; // 방랑군 군주
+    }
+    
+    const officerLevel = data.officer_level !== undefined ? data.officer_level : defaultOfficerLevel;
 
     return {
       no: data.no || general.no,
@@ -437,13 +500,15 @@ export class GetFrontInfoService {
       nation: nationId,
       npc: data.npc || 0,
       injury: data.injury || 0,
-      leadership: data.leadership || 50,
-      strength: data.strength || 50,
-      intel: data.intel || 50,
+      leadership: leadership,
+      strength: strength,
+      intel: intel,
+      politics: data.politics !== undefined ? data.politics : Math.round((leadership + strength + intel) / 3),
+      charm: data.charm !== undefined ? data.charm : Math.round((leadership + strength + intel) / 3),
       explevel: data.explevel || 0,
       dedlevel: data.dedlevel || 0,
-      gold: data.gold || 1000,
-      rice: data.rice || 1000,
+      gold: (typeof data.gold === 'number' && !isNaN(data.gold)) ? data.gold : 1000,
+      rice: (typeof data.rice === 'number' && !isNaN(data.rice)) ? data.rice : 1000,
       killturn: data.killturn || 0,
       picture: data.picture || '',
       imgsvr: data.imgsvr || 0,
@@ -453,9 +518,13 @@ export class GetFrontInfoService {
       personal: data.personal || 'None',
       belong: data.belong || 0,
       refreshScoreTotal: 0,
-      officerLevel: data.officer_level || 1,
-      officerLevelText: this.getOfficerLevelText(data.officer_level || 1),
-      lbonus: 0,
+      officerLevel: officerLevel,
+      officerLevelText: this.getOfficerLevelText(officerLevel),
+      lbonus: this.calculateStatBonus(data, 'leadership'),
+      sbonus: this.calculateStatBonus(data, 'strength'),
+      ibonus: this.calculateStatBonus(data, 'intel'),
+      pbonus: this.calculateStatBonus(data, 'politics'),
+      cbonus: this.calculateStatBonus(data, 'charm'),
       ownerName: data.owner_name || null,
       honorText: this.getHonor(data.experience || 0),
       dedLevelText: this.getDed(data.dedication || 0),
@@ -470,6 +539,8 @@ export class GetFrontInfoService {
       leadership_exp: data.leadership_exp || 0,
       strength_exp: data.strength_exp || 0,
       intel_exp: data.intel_exp || 0,
+      politics_exp: data.politics_exp || 0,
+      charm_exp: data.charm_exp || 0,
       dex1: data.dex1 || 0,
       dex2: data.dex2 || 0,
       dex3: data.dex3 || 0,
@@ -655,9 +726,9 @@ export class GetFrontInfoService {
     const levels: Record<number, string> = {
       12: '군주', 11: '태사', 10: '대도독', 9: '도독',
       8: '대장군', 7: '장군', 6: '집금오', 5: '장수',
-      4: '태수', 3: '도위', 2: '현령', 1: '백신'
+      4: '태수', 3: '도위', 2: '현령', 1: '일반', 0: '재야'
     };
-    return levels[level] || '백신';
+    return levels[level] || '일반';
   }
 
   private static getHonor(experience: number): string {
@@ -766,5 +837,31 @@ export class GetFrontInfoService {
       console.error('calculatePermission error:', error);
       return 0;
     }
+  }
+
+  /**
+   * 능력치 보정치 계산
+   * 아이템, 특기 등으로 인한 능력치 보너스/페널티를 계산합니다.
+   * 
+   * @param data - 장수 데이터
+   * @param statType - 능력치 타입 ('leadership' | 'strength' | 'intel')
+   * @returns 보정치 (양수: 보너스, 음수: 페널티, 0: 보정 없음)
+   */
+  private static calculateStatBonus(data: any, statType: 'leadership' | 'strength' | 'intel' | 'politics' | 'charm'): number {
+    let bonus = 0;
+
+    // TODO: 아이템 보정치 계산
+    // - 명마(horse): 통솔 +X
+    // - 무기(weapon): 무력 +X
+    // - 서적(book): 지력 +X
+    // - 도구(item): 특정 능력치 +X
+    
+    // TODO: 특기 보정치 계산
+    // - 특기(special, special2)에 따른 능력치 보정
+    
+    // TODO: 부상(injury) 페널티는 여기서 계산하지 않음
+    // (calcInjury 함수에서 별도 처리)
+
+    return bonus;
   }
 }

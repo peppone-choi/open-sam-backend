@@ -1,4 +1,5 @@
 import { sessionRepository } from '../../repositories/session.repository';
+import { NgHistory } from '../../models/ng_history.model';
 import mongoose from 'mongoose';
 
 export class GetHistoryService {
@@ -17,17 +18,8 @@ export class GetHistoryService {
         };
       }
 
-      const db = mongoose.connection.db;
-      if (!db) {
-        return {
-          success: false,
-          message: 'Database connection unavailable'
-        };
-      }
-
-      const historyCollection = db.collection('ng_historys');
-      
-      const history = await historyCollection.findOne({
+      // Mongoose 모델 사용 (히스토리는 로그 데이터이므로 DB 직접 조회 허용)
+      const history = await (NgHistory as any).findOne({
         server_id: serverID,
         year: year,
         month: month

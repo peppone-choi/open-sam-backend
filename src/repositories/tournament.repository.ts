@@ -24,7 +24,7 @@ class TournamentRepository {
     return Tournament.find({ 
       session_id: sessionId, 
       grp: group 
-    }).sort({ grp_no: 1 });
+    }).sort({ grp_no: 1 }).exec();
   }
 
   /**
@@ -67,7 +67,7 @@ class TournamentRepository {
   async find(filter: any, sort?: any) {
     const query = Tournament.find(filter);
     if (sort) {
-      return query.sort(sort);
+      return query.sort(sort).exec();
     }
     return query;
   }

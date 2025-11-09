@@ -49,8 +49,8 @@ if (mongoose.models['KVStorage']) {
     KVStorageModel = existingModel;
   } else {
     // namespace 필드가 없으면 모델 삭제 후 재생성
-    delete mongoose.models['KVStorage'];
-    mongoose.connection.models['KVStorage'] = undefined;
+    Reflect.deleteProperty(mongoose.models, 'KVStorage');
+    Reflect.deleteProperty(mongoose.connection.models, 'KVStorage');
     KVStorageModel = mongoose.model<IKVStorage>('KVStorage', KVStorageSchema);
   }
 } else {

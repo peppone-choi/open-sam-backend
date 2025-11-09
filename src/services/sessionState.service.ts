@@ -8,6 +8,7 @@ import { logger } from '../common/logger';
 import { cacheManager } from '../cache/CacheManager';
 import { getSocketManager } from '../socket/socketManager';
 import Redis from 'ioredis';
+import { sessionRepository } from '../repositories/session.repository';
 
 // Redis 클라이언트 (락 관리용)
 let redisClient: Redis | null = null;

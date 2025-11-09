@@ -43,7 +43,19 @@ export class CacheManager {
   private async initRedis() {
     try {
       const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-      this.l2Cache = createClient({ url: redisUrl }) as RedisClientType;
+      this.l2Cache = createClient({ 
+        url: redisUrl,
+        socket: {
+          connectTimeout: 5000,
+          reconnectStrategy: (retries) => {
+            if (retries > 3) {
+              logger.warn('Redis 재연결 시도 중단 (메모리 캐시만 사용)');
+              return false;
+            }
+            return Math.min(retries * 100, 3000);
+          }
+        }
+      }) as RedisClientType;
       
       this.l2Cache.on('error', (err) => {
         logger.error('Redis 연결 에러', { error: err.message });
@@ -55,9 +67,14 @@ export class CacheManager {
         this.l2Connected = true;
       });
 
+      this.l2Cache.on('ready', () => {
+        logger.info('Redis L2 캐시 준비 완료');
+        this.l2Connected = true;
+      });
+
       await this.l2Cache.connect();
-    } catch (error) {
-      logger.warn('Redis L2 캐시 비활성화 (메모리 캐시만 사용)');
+    } catch (error: any) {
+      logger.warn('Redis L2 캐시 비활성화 (메모리 캐시만 사용)', { error: error.message });
       this.l2Connected = false;
     }
   }

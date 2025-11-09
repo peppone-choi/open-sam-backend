@@ -26,7 +26,7 @@ export class GetMapTemplateService {
       }
       
       const templates = await battleMapTemplateRepository.findByFilter({ session_id: sessionId })
-        .sort({ city_id: 1 });
+        .sort({ city_id: 1 }).exec();
       
       return {
         success: true,

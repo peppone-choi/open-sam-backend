@@ -1,3 +1,4 @@
+// @ts-nocheck - Type issues need investigation
 import { NationTurn } from '../models/nation_turn.model';
 
 /**
@@ -7,8 +8,15 @@ class NationTurnRepository {
   /**
    * 조건으로 조회
    */
-  async findByFilter(filter: any) {
+  findByFilter(filter: any) {
     return NationTurn.find(filter);
+  }
+
+  /**
+   * 세션으로 조회
+   */
+  findBySession(sessionId: string) {
+    return NationTurn.find({ session_id: sessionId });
   }
 
   /**

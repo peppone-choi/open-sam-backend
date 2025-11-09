@@ -91,8 +91,8 @@ async function applyToData(data: Record<string, any>, effects: Record<string, an
         data[key] = evaluated.set;
       } else if ('min' in evaluated || 'max' in evaluated) {
         let newValue = (data[key] || 0) + (evaluated.add || 0);
-        if (evaluated.min !== undefined) newValue = Math.maxnewValue, (evaluated.min);
-        if (evaluated.max !== undefined) newValue = Math.minnewValue, (evaluated.max);
+        if (evaluated.min !== undefined) newValue = Math.max(newValue, evaluated.min);
+        if (evaluated.max !== undefined) newValue = Math.min(newValue, evaluated.max);
         data[key] = newValue;
       }
     } else {

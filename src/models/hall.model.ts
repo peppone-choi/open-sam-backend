@@ -50,7 +50,6 @@ const HallSchema = new Schema<IHall>(
     },
     owner: {
       type: Number,
-      default: null,
       index: true
     },
     aux: {

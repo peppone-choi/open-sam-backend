@@ -9,7 +9,7 @@
     },
     "neutral": {
       "id": "neutral",
-      "name": "-",
+      "name": "중립",
       "category": "neutral",
       "description": "",
       "effects": []

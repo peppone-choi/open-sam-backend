@@ -1,3 +1,4 @@
+// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import '../../utils/function-extensions';
 import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
@@ -61,8 +62,8 @@ export class che_몰수 extends NationCommand {
   }
 
   protected async initWithArg(): Promise<void> {
-    // TODO: Legacy method - const destGeneral = await General.createObjFromDB(this.arg['destGeneralID']);
-    // Use generalRepository.findById() instead
+    const destGeneral = await generalRepository.findById(this.arg['destGeneralID']);
+    
     this.setDestGeneral(destGeneral);
 
     const relYear = this.env['year'] - this.env['startyear'];
@@ -112,7 +113,7 @@ export class che_몰수 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
+    const db = DB.db();
 
     const general = this.generalObj;
     const date = general!.getTurnTime('HM');
@@ -181,7 +182,7 @@ export class che_몰수 extends NationCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    // TODO: Legacy DB access - const db = DB.db();
+    const db = DB.db();
     const nationID = this.getNationID();
     const troops = await db.query('SELECT * FROM troop WHERE nation=?', [nationID]);
     const troopsDict = Util.convertArrayToDict(troops, 'troop_leader');

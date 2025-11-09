@@ -5,7 +5,7 @@ import { sessionRepository } from '../../repositories/session.repository';
 import { troopRepository } from '../../repositories/troop.repository';
 import { CommandFactory } from '../../core/command/CommandFactory';
 import { logger } from '../../common/logger';
-import { GameConst } from '../../const/GameConst';
+import { GameConst } from '../../constants/GameConst';
 import { getAllUnitTypes } from '../../const/GameUnitConst';
 import { getDexLevelList } from '../../utils/dexLevel';
 import { GetMapService } from '../global/GetMap.service';
@@ -45,16 +45,9 @@ export class GetProcessingCommandService {
       // 장수 조회
       let general: any = null;
       if (generalId) {
-        general = await generalRepository.findById({
-          session_id: sessionId,
-          no: generalId
-        });
+        general = await generalRepository.findBySessionAndNo(sessionId, generalId);
       } else if (user?.userId) {
-        general = await generalRepository.findBySessionAndOwner({
-        session_id: sessionId,
-          owner: String(user.userId),
-          'data.npc': { $lt: 2 }
-      });
+        general = await generalRepository.findBySessionAndOwner(sessionId, String(user.userId));
       }
       
       if (!general) {
@@ -242,15 +235,17 @@ export class GetProcessingCommandService {
    */
   private static async getRecruitData(sessionId: string, generalId: number): Promise<any> {
     // 등용 가능한 장수 목록 (NPC < 2, officer_level != 12, 자기 자신 제외)
-    const generals = await generalRepository.findByFilter({
+    const generals = (await generalRepository.findByFilter({
       session_id: sessionId,
       'data.npc': { $lt: 2 },
       'data.officer_level': { $ne: 12 },
       no: { $ne: generalId }
-    })
-      
-      .sort({ 'data.npc': 1, name: 1 })
-      ;
+    }).exec())
+      .sort((a, b) => {
+        const npcDiff = ((a.data as any)?.npc || 0) - ((b.data as any)?.npc || 0);
+        if (npcDiff !== 0) return npcDiff;
+        return (a.name || '').localeCompare(b.name || '');
+      });
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -350,10 +345,7 @@ export class GetProcessingCommandService {
    * 군량매매 커맨드 데이터
    */
   private static async getTradeRiceData(sessionId: string, generalId: number): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return {
@@ -397,7 +389,7 @@ export class GetProcessingCommandService {
       );
       if (fs.existsSync(nationTypesPath)) {
         const nationTypesData = JSON.parse(fs.readFileSync(nationTypesPath, 'utf-8'));
-        nationTypes = nationTypesData.types || nationTypesData || {};
+        nationTypes = nationTypesData.nationTypes || nationTypesData.types || {};
       }
     } catch (error: any) {
       logger.debug('Failed to load nation types:', error.message);
@@ -475,15 +467,17 @@ export class GetProcessingCommandService {
 
     if (command === '증여' || command === 'che_증여' || command === 'donate') {
       // 증여: 같은 국가의 장수들
-      const generals = await generalRepository.findByFilter({
+      const generals = (await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationID,
         no: { $ne: generalId },
         'data.npc': { $lt: 2 }
-      })
-        
-        .sort({ 'data.npc': 1, name: 1 })
-        ;
+      }).exec())
+        .sort((a, b) => {
+          const npcDiff = ((a.data as any)?.npc || 0) - ((b.data as any)?.npc || 0);
+          if (npcDiff !== 0) return npcDiff;
+          return (a.name || '').localeCompare(b.name || '');
+        });
 
       for (const gen of generals) {
         const genData = gen.data || {};
@@ -502,13 +496,15 @@ export class GetProcessingCommandService {
       }
     } else {
       // 몰수/포상: 국가의 모든 장수
-      const generals = await generalRepository.findByFilter({
+      const generals = (await generalRepository.findByFilter({
         session_id: sessionId,
         'data.nation': nationID
-      })
-        
-        .sort({ 'data.npc': 1, name: 1 })
-        ;
+      }).exec())
+        .sort((a, b) => {
+          const npcDiff = ((a.data as any)?.npc || 0) - ((b.data as any)?.npc || 0);
+          if (npcDiff !== 0) return npcDiff;
+          return (a.name || '').localeCompare(b.name || '');
+        });
 
       for (const gen of generals) {
         const genData = gen.data || {};
@@ -706,10 +702,7 @@ export class GetProcessingCommandService {
     generalId: number
   ): Promise<any> {
     // 같은 국가의 장수 목록 (자기 자신 제외)
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { generals: [] };
@@ -718,15 +711,17 @@ export class GetProcessingCommandService {
     const generalData = general.data || {};
     const nationID = generalData.nation || 0;
 
-    const generals = await generalRepository.findByFilter({
+    const generals = (await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID,
       'data.npc': { $lt: 2 },
       no: { $ne: generalId }
-    })
-      
-      .sort({ 'data.officer_level': -1, name: 1 })
-      ;
+    }).exec())
+      .sort((a, b) => {
+        const levelDiff = ((b.data as any)?.officer_level || 0) - ((a.data as any)?.officer_level || 0);
+        if (levelDiff !== 0) return levelDiff;
+        return (a.name || '').localeCompare(b.name || '');
+      });
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -768,10 +763,7 @@ export class GetProcessingCommandService {
     generalId: number
   ): Promise<any> {
     // 임관 가능한 국가 목록 (이미 임관한 국가 제외)
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { nations: [] };
@@ -811,10 +803,7 @@ export class GetProcessingCommandService {
     generalId: number
   ): Promise<any> {
     // 임관 가능한 국가의 장수 목록
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { generals: [], nations: [] };
@@ -824,15 +813,17 @@ export class GetProcessingCommandService {
     const currentNationID = generalData.nation || 0;
 
     // 다른 국가의 장수 목록 (현재 국가 제외)
-    const generals = await generalRepository.findByFilter({
+    const generals = (await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': { $ne: currentNationID },
       'data.npc': { $lt: 2 },
       'data.officer_level': { $ne: 12 } // 군주 제외
-    })
-      
-      .sort({ 'data.officer_level': -1, name: 1 })
-      ;
+    }).exec())
+      .sort((a, b) => {
+        const levelDiff = ((b.data as any)?.officer_level || 0) - ((a.data as any)?.officer_level || 0);
+        if (levelDiff !== 0) return levelDiff;
+        return (a.name || '').localeCompare(b.name || '');
+      });
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -879,10 +870,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { ownDexList: [], dexLevelList: [] };
@@ -922,10 +910,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { citySecu: 0, gold: 0, itemList: {}, ownItem: {} };
@@ -1123,10 +1108,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { nations: [], currentNationLevel: 0, levelInfo: {}, minAmount: 0, maxAmount: 0, amountGuide: [] };
@@ -1235,10 +1217,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { generals: [], cities: [], troops: {} };
@@ -1248,13 +1227,11 @@ export class GetProcessingCommandService {
     const nationID = generalData.nation || 0;
 
     // 같은 국가의 장수 목록
-    const generals = await generalRepository.findByFilter({
+    const generals = (await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': nationID
-    })
-      
-      .sort({ name: 1 })
-      ;
+    }).exec())
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     const generalList = generals.map((gen: any) => {
       const genData = gen.data || {};
@@ -1328,10 +1305,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return { nations: [], startYear: 180, minYear: 180, maxYear: 200, month: 1 };
@@ -1409,10 +1383,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return {
@@ -1508,10 +1479,7 @@ export class GetProcessingCommandService {
     sessionId: string,
     generalId: number
   ): Promise<any> {
-    const general = await generalRepository.findById({
-      session_id: sessionId,
-      no: generalId
-    });
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
     if (!general) {
       return {

@@ -9,6 +9,15 @@ declare global {
         generalId?: number;
         acl?: string;
       } & JwtPayload;
+      admin?: {
+        id: string;
+        username: string;
+        grade: number;
+        role: string;
+        permissions: string[];
+      };
+      sessionInstance?: any;
+      requestId?: string;
     }
   }
 }

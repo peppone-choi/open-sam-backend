@@ -113,7 +113,7 @@ export async function registerAuction(sessionId: string, rng?: any): Promise<voi
     };
 
     // 장수들의 평균 금, 쌀 조회
-    const generals = await generalRepository.findBySession({
+    const generals = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.npc': { $lt: 2 } // NPC 제외
     });

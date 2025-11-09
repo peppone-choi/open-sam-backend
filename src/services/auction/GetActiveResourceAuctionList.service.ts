@@ -11,7 +11,7 @@ export class GetActiveResourceAuctionListService {
         session_id: sessionId,
         type: { $in: ['BuyRice', 'SellRice'] },
         finished: false
-      }).sort({ closeDate: 1 });
+      }).sort({ closeDate: 1 }).exec();
 
       const buyRiceList = [];
       const sellRiceList = [];
@@ -52,7 +52,8 @@ export class GetActiveResourceAuctionListService {
         finished: true
       })
         .sort({ updatedAt: -1 })
-        .limit(20);
+        .limit(20)
+        .exec();
 
       const recentLogs = recentAuctions.map(a => {
         const highestBid = a.bids.length > 0

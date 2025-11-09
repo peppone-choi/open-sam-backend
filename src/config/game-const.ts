@@ -1,1 +1,1 @@
-export const GameConst = {} as any;
+export { GameConst } from '../constants/GameConst';

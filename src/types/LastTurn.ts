@@ -45,6 +45,14 @@ export class LastTurn {
     this.reqTurn = reqTurn;
   }
 
+  setTerm(term: number): void {
+    this.term = term;
+  }
+
+  setSeq(seq: number): void {
+    this.seq = seq;
+  }
+
   toJSON(): any {
     return {
       commandName: this.commandName,

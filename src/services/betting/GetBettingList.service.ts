@@ -1,5 +1,6 @@
-import { sessionRepository } from '../repositories/session.repository';
+import { sessionRepository } from '../../repositories/session.repository';
 import { Session } from '../../models/session.model';
+import { NgBetting } from '../../models/ng_betting.model';
 import mongoose from 'mongoose';
 
 export class GetBettingListService {
@@ -25,7 +26,7 @@ export class GetBettingListService {
       const bettingList: Record<string, any> = {};
       
       for (const [key, rawItem] of Object.entries(bettingStor)) {
-        const item = rawItem as any;
+        const item = rawItem as Record<string, any>;
         
         if (reqType !== null && item.type !== reqType) {
           continue;
@@ -50,30 +51,26 @@ export class GetBettingListService {
 
       const bettingIDList = Object.keys(bettingList).map(id => parseInt(id));
       
-      const db = mongoose.connection.db;
-      if (db) {
-        const ngBettingCollection = db.collection('ng_bettings');
-        
-        const aggregateResult = await ngBettingCollection.aggregate([
-          {
-            $match: {
-              session_id: sessionId,
-              'data.betting_id': { $in: bettingIDList }
-            }
-          },
-          {
-            $group: {
-              _id: '$data.betting_id',
-              totalAmount: { $sum: '$data.amount' }
-            }
+      // Mongoose 모델 사용
+      const aggregateResult = await NgBetting.aggregate([
+        {
+          $match: {
+            session_id: sessionId,
+            'data.betting_id': { $in: bettingIDList }
           }
-        ]).toArray();
+        },
+        {
+          $group: {
+            _id: '$data.betting_id',
+            totalAmount: { $sum: '$data.amount' }
+          }
+        }
+      ]);
 
-        for (const result of aggregateResult) {
-          const bettingID = result._id;
-          if (bettingList[bettingID]) {
-            bettingList[bettingID].totalAmount = result.totalAmount || 0;
-          }
+      for (const result of aggregateResult) {
+        const bettingID = result._id;
+        if (bettingList[bettingID]) {
+          bettingList[bettingID].totalAmount = result.totalAmount || 0;
         }
       }
 

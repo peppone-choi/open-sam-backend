@@ -11,31 +11,34 @@ import { logger } from '../../common/logger';
 export class GetCommandTableService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
+    const generalId = user?.generalId || (data.general_id ? parseInt(data.general_id) : null);
     
     if (!generalId) {
       return {
         success: false,
-        message: '장수 ID가 필요합니다'
+        message: '장수 ID가 필요합니다',
+        reason: '장수 ID가 필요합니다'
       };
     }
 
     try {
-      const general = await generalRepository.findById({
-        session_id: sessionId,
-        no: generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {
           success: false,
-          message: '장수를 찾을 수 없습니다'
+          message: '장수를 찾을 수 없습니다',
+          reason: '장수를 찾을 수 없습니다'
         };
       }
 
       const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {
-        return { success: false, message: '세션을 찾을 수 없습니다' };
+        return { 
+          success: false, 
+          message: '세션을 찾을 수 없습니다',
+          reason: '세션을 찾을 수 없습니다'
+        };
       }
 
       const commandTable = await this.buildCommandTable(general, session);
@@ -108,7 +111,7 @@ export class GetCommandTableService {
                 reqArg: 0,
                 possible: true,
                 compensation: 0,
-                title: registryKey
+                title: String(registryKey)
               });
               continue;
             }
@@ -122,7 +125,7 @@ export class GetCommandTableService {
                 canDisplay = commandObj.canDisplay?.() ?? true;
                 hasMinCondition = commandObj.hasMinConditionMet?.() ?? true;
                 commandName = CommandClass.getName?.() ?? commandClassName.replace(/^che_/, '');
-                commandTitle = commandObj.getCommandDetailTitle?.() ?? commandName;
+                commandTitle = String(commandObj.getCommandDetailTitle?.() ?? commandName);
                 reqArg = CommandClass.reqArg ?? false;
                 compensation = commandObj.getCompensationStyle?.() ?? 0;
               } catch (err: any) {
@@ -146,7 +149,7 @@ export class GetCommandTableService {
             reqArg: reqArg ? 1 : 0,
             possible: hasMinCondition,
             compensation: compensation,
-            title: commandTitle
+            title: String(commandTitle)
           });
         } catch (error: any) {
           logger.warn(`Failed to process command: ${commandClassName}`, error.message);
@@ -157,7 +160,7 @@ export class GetCommandTableService {
             reqArg: 0,
             possible: true,
             compensation: 0,
-            title: commandClassName
+            title: String(commandClassName)
           });
         }
       }

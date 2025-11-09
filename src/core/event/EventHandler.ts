@@ -43,9 +43,11 @@ export class EventHandler {
       const actionResult = await action.run(env);
       resultAction.push(actionResult);
     }
-    result.action = resultAction;
 
-    return result;
+    return {
+      ...result,
+      action: resultAction
+    };
   }
 }
 

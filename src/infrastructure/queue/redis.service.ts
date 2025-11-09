@@ -25,6 +25,8 @@ export class RedisService {
 
     this.client = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
+      connectTimeout: 10000,
+      lazyConnect: false,
       retryStrategy(times) {
         const delay = Math.min(times * 50, 2000);
         return delay;
@@ -47,8 +49,13 @@ export class RedisService {
       this.isConnected = true;
     });
 
+    this.client.on('ready', () => {
+      logger.info('Redis 준비 완료');
+      this.isConnected = true;
+    });
+
     this.client.on('error', (err) => {
-      logger.error('Redis 에러', { error: err.message, stack: err.stack });
+      logger.error('Redis 연결 에러', { error: err.message });
       this.isConnected = false;
     });
 
@@ -57,18 +64,39 @@ export class RedisService {
       this.isConnected = false;
     });
 
-    await this.waitForConnection();
+    // ioredis는 자동으로 연결 시도를 시작하므로 ready 이벤트를 기다림
+    await this.waitForReady();
   }
 
-  private async waitForConnection(timeout = 5000): Promise<void> {
-    const start = Date.now();
-    while (!this.isConnected && Date.now() - start < timeout) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+  private async waitForReady(timeout = 10000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Connection timeout'));
+      }, timeout);
 
-    if (!this.isConnected) {
-      throw new Error('Redis 연결 시간 초과');
-    }
+      if (this.client?.status === 'ready') {
+        clearTimeout(timer);
+        this.isConnected = true;
+        resolve();
+        return;
+      }
+
+      const onReady = () => {
+        clearTimeout(timer);
+        this.isConnected = true;
+        this.client?.off('error', onError);
+        resolve();
+      };
+
+      const onError = (err: Error) => {
+        clearTimeout(timer);
+        this.client?.off('ready', onReady);
+        reject(err);
+      };
+
+      this.client?.once('ready', onReady);
+      this.client?.once('error', onError);
+    });
   }
 
   static async disconnect(): Promise<void> {

@@ -462,7 +462,7 @@ export abstract class BaseCommand {
     return this.alternative;
   }
 
-  public getCommandDetailTitle(): string {
+  public getCommandDetailTitle(): string | Promise<string> {
     return (this.constructor as typeof BaseCommand).getName();
   }
 

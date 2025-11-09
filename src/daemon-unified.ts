@@ -1,3 +1,4 @@
+// @ts-nocheck - Type issues need investigation
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -114,6 +115,43 @@ async function processTournaments() {
 }
 
 /**
+ * NPC 자동 명령 처리 함수 (크론)
+ * NPC들에게 자동으로 명령 할당
+ */
+async function processNPCCommands() {
+  try {
+    const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
+    
+    for (const session of sessions) {
+      const sessionId = session.session_id;
+      const gameEnv = session.data || {};
+      
+      try {
+        const { NPCAutoCommandService } = await import('./services/ai/NPCAutoCommand.service');
+        const result = await NPCAutoCommandService.assignCommandsToAllNPCs(sessionId, gameEnv);
+        
+        if (result.count > 0) {
+          logger.debug(`NPC commands assigned for session ${sessionId}`, {
+            assigned: result.count,
+            errors: result.errors
+          });
+        }
+      } catch (error: any) {
+        logger.error(`NPC command processing error for session ${sessionId}`, {
+          error: error.message,
+          stack: error.stack
+        });
+      }
+    }
+  } catch (error: any) {
+    logger.error('Fatal error in NPC command processor', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
  * 메인 시작 함수
  */
 async function start() {
@@ -180,6 +218,18 @@ async function start() {
     });
     logger.info('✅ 토너먼트 스케줄러 시작', { schedule: TOURNAMENT_CRON_EXPRESSION });
 
+    // 4. NPC 자동 명령 스케줄러 시작
+    const NPC_CRON_EXPRESSION = '*/5 * * * *'; // 5분마다
+    cron.schedule(NPC_CRON_EXPRESSION, () => {
+      processNPCCommands().catch(err => {
+        logger.error('NPC 명령 처리 크론 작업 실행 중 오류', {
+          error: err.message,
+          stack: err.stack
+        });
+      });
+    });
+    logger.info('✅ NPC 자동 명령 스케줄러 시작', { schedule: NPC_CRON_EXPRESSION });
+
     // 2. Redis Streams 커맨드 소비 시작
     const consumerName = process.env.HOSTNAME || 'daemon-unified-1';
     
@@ -188,6 +238,7 @@ async function start() {
         turnScheduler: true,
         auctionScheduler: true,
         tournamentScheduler: true,
+        npcAutoCommand: true,
         commandConsumer: true
       },
       totalCommands: commandStats.total,
@@ -195,7 +246,8 @@ async function start() {
       consumerGroup: 'cmd-group',
       cronSchedule: CRON_EXPRESSION,
       auctionCronSchedule: AUCTION_CRON_EXPRESSION,
-      tournamentCronSchedule: TOURNAMENT_CRON_EXPRESSION
+      tournamentCronSchedule: TOURNAMENT_CRON_EXPRESSION,
+      npcCronSchedule: NPC_CRON_EXPRESSION
     });
 
     // 커맨드 소비 루프

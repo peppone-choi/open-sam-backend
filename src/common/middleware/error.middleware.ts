@@ -42,10 +42,12 @@ export const errorMiddleware = (
   // 에러 로깅
   logger.error('애플리케이션 에러', {
     requestId,
+    path: req.path,
+    method: req.method,
     error: err.message,
     code,
     status,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    stack: err.stack,
     details
   });
 
@@ -55,7 +57,10 @@ export const errorMiddleware = (
       message: err.message || '서버 내부 오류가 발생했습니다',
       code: code || 'INTERNAL_ERROR',
       details,
-      requestId
+      requestId,
+      path: req.path,
+      method: req.method,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     }
   });
 };

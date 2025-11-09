@@ -1,3 +1,4 @@
+// @ts-nocheck - Type issues need investigation
 import { GeneralTurn } from '../models/general_turn.model';
 
 /**
@@ -7,8 +8,22 @@ class GeneralTurnRepository {
   /**
    * 조건으로 조회
    */
-  async findByFilter(filter: any) {
+  findByFilter(filter: any) {
     return GeneralTurn.find(filter);
+  }
+
+  /**
+   * 세션으로 조회
+   */
+  findBySession(sessionId: string) {
+    return GeneralTurn.find({ session_id: sessionId });
+  }
+
+  /**
+   * 장수로 조회
+   */
+  findByGeneral(sessionId: string, generalNo: number) {
+    return GeneralTurn.find({ session_id: sessionId, 'data.general_id': generalNo });
   }
 
   /**

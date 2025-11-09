@@ -67,7 +67,8 @@ export class RepeatCommandService {
       reqTurn = MAX_CHIEF_TURN - turnCnt;
     }
 
-    const turnList = await nationTurnRepository.findBySession(sessionId, {
+    const turnList = await nationTurnRepository.findByFilter({
+      session_id: sessionId,
       'data.nation_id': nationId,
       'data.officer_level': officerLevel,
       'data.turn_idx': { $lt: reqTurn }

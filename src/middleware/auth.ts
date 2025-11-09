@@ -4,8 +4,11 @@ import jwt from 'jsonwebtoken';
 // JWT 토큰 페이로드 타입
 export interface JwtPayload {
   userId: string;
-  username: string;
+  id?: string;
+  username?: string;
   sessionId?: string;
+  generalId?: number;
+  acl?: string;
   grade?: number; // 사용자 등급 (5 이상이 어드민)
 }
 
@@ -28,7 +31,15 @@ export const authenticate = async (
   try {
     // Authorization 헤더 확인
     const authHeader = req.headers.authorization;
+    
+    console.log('========================================');
+    console.log('[Auth] 인증 시도!');
+    console.log('Path:', req.path);
+    console.log('Authorization Header:', authHeader ? authHeader.substring(0, 30) + '...' : 'NONE');
+    console.log('========================================');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[Auth] ❌ 인증 실패 - Authorization 헤더 없음');
       return res.status(401).json({ 
         success: false,
         message: '인증 토큰이 없습니다' 
@@ -50,6 +61,12 @@ export const authenticate = async (
     // JWT 검증
     const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+    
+    console.log('[Auth] ✅ 인증 성공!');
+    console.log('Decoded Token:', JSON.stringify(decoded, null, 2));
+    console.log('userId:', decoded.userId);
+    console.log('generalId:', decoded.generalId);
+    console.log('sessionId:', decoded.sessionId);
     
     // req.user에 사용자 정보 저장
     req.user = decoded;

@@ -1,5 +1,4 @@
 import { generalRepository } from '../../repositories/general.repository';
-import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { generalRecordRepository } from '../../repositories/general-record.repository';
@@ -40,7 +39,7 @@ export class InstantRetreatService {
       }
 
       // 3. 장수 정보 조회
-      const general = await generalRepository.findById({ no: generalId, session_id: sessionId });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
       if (!general) {
         return {
           success: false,

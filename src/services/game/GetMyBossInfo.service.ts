@@ -5,6 +5,8 @@
 
 import { generalRepository } from '../../repositories/general.repository';
 import { logger } from '../../common/logger';
+import { General, IGeneral } from '../../models/general.model';
+import { FilterQuery, Model } from 'mongoose';
 
 export class GetMyBossInfoService {
   static async execute(data: any, user?: any) {
@@ -39,14 +41,12 @@ export class GetMyBossInfoService {
 
       if (myNation > 0) {
         // 국가 상관: 같은 국가, 더 높은 officer_level (군주 제외)
-        const nationBoss = await General
-          .findOne({
-            session_id: sessionId,
-            'data.nation': myNation,
-            'data.officer_level': { $gt: myOfficerLevel, $lt: 12 }
-          })
-          .sort({ 'data.officer_level': -1 })
-          ;
+        const nationBossFilter: FilterQuery<IGeneral> = {
+          session_id: sessionId,
+          'data.nation': myNation,
+          'data.officer_level': { $gt: myOfficerLevel, $lt: 12 }
+        };
+        const nationBoss = await ((General as Model<IGeneral>).findOne(nationBossFilter) as any).sort({ 'data.officer_level': -1 });
 
         if (nationBoss) {
           const bossData = nationBoss.data || {};
@@ -61,14 +61,12 @@ export class GetMyBossInfoService {
 
         // 도시 상관: 같은 도시, 더 높은 officer_level
         if (myCity > 0 && !boss) {
-          const cityBoss = await General
-            .findOne({
-              session_id: sessionId,
-              'data.city': myCity,
-              'data.officer_level': { $gt: myOfficerLevel, $lt: 5 } // 도시 관직 범위
-            })
-            .sort({ 'data.officer_level': -1 })
-            ;
+          const cityBossFilter: FilterQuery<IGeneral> = {
+            session_id: sessionId,
+            'data.city': myCity,
+            'data.officer_level': { $gt: myOfficerLevel, $lt: 5 } // 도시 관직 범위
+          };
+          const cityBoss = await ((General as Model<IGeneral>).findOne(cityBossFilter) as any).sort({ 'data.officer_level': -1 });
 
           if (cityBoss) {
             const bossData = cityBoss.data || {};
@@ -83,13 +81,12 @@ export class GetMyBossInfoService {
         }
 
         // 군주 조회
-        const chief = await General
-          .findOne({
-            session_id: sessionId,
-            'data.nation': myNation,
-            'data.officer_level': 12
-          })
-          ;
+        const chiefFilter: FilterQuery<IGeneral> = {
+          session_id: sessionId,
+          'data.nation': myNation,
+          'data.officer_level': 12
+        };
+        const chief = await ((General as Model<IGeneral>).findOne(chiefFilter) as any);
 
         if (chief) {
           const chiefData = chief.data || {};

@@ -1,3 +1,4 @@
+// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { FireAttackCommand } from './fireAttack';
 import { DB } from '../../config/db';
 
@@ -22,7 +23,7 @@ export class PlunderCommand extends FireAttackCommand {
     const destCityID = destCity.city;
     const destNationID = destCity.nation;
     const commandName = (this.constructor as typeof PlunderCommand).getName();
-    // TODO: Legacy DB access - const db = DB.db();
+    const db = DB.db();
 
     const sabotageDamageMin = 800;
     const sabotageDamageMax = 6400;

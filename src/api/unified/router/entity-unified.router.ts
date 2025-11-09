@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { EntityRepository } from '../../../common/repository/entity-repository';
-import { Role, RoleRef, ScenarioId } from '../../../common/@types/role.types';
+import { Role, RoleRef, ScenarioId, RelationKey } from '../../../common/@types/role.types';
 import { asyncHandler } from '../../../common/utils/async-handler';
 import mongoose from 'mongoose';
 
@@ -487,7 +487,7 @@ router.get(
       query['from.role'] = fromRole;
       query['from.id'] = fromId;
       const ref: RoleRef = { role: fromRole, id: fromId, scenario };
-      const edges = await EntityRepository.findEdgesFromref, key;
+      const edges = await EntityRepository.findEdgesFrom(ref, key as RelationKey);
       return res.json({ data: edges });
     }
 
@@ -495,7 +495,7 @@ router.get(
       query['to.role'] = toRole;
       query['to.id'] = toId;
       const ref: RoleRef = { role: toRole, id: toId, scenario };
-      const edges = await EntityRepository.findEdgesToref, key;
+      const edges = await EntityRepository.findEdgesTo(ref, key as RelationKey);
       return res.json({ data: edges });
     }
 

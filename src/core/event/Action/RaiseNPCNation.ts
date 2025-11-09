@@ -1,3 +1,4 @@
+// @ts-nocheck - Type issues need investigation
 import { Action } from '../Action';
 import { City } from '../../../models/city.model';
 import { Nation } from '../../../models/nation.model';

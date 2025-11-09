@@ -33,7 +33,8 @@ async function repeatGeneralCommand(sessionId: string, generalId: number, turnCn
     reqTurn = MAX_TURN - turnCnt;
   }
 
-  const turnList = await generalTurnRepository.findBySession(sessionId, {
+  const turnList = await generalTurnRepository.findByFilter({
+    session_id: sessionId,
     'data.general_id': generalId,
     'data.turn_idx': { $lt: reqTurn }
   });

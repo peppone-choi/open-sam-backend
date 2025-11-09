@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticate, optionalAuth } from '../middleware/auth';
+import { logger } from '../common/logger';
 
 import { DecideMessageResponseService } from '../services/message/DecideMessageResponse.service';
 import { DeleteMessageService } from '../services/message/DeleteMessage.service';
@@ -135,11 +136,35 @@ router.get('/get-message-preview', authenticate, async (req, res) => {
  *         description: 목록 조회 성공
  */
 router.get('/get-messages', authenticate, async (req, res) => {
+  console.log('========================================');
+  console.log('[GET /get-messages] 요청 받음!');
+  console.log('Query:', req.query);
+  console.log('User:', req.user);
+  console.log('========================================');
+  
   try {
+    logger.info('GET /get-messages 요청', { 
+      query: req.query, 
+      userId: req.user?.userId,
+      generalId: req.user?.generalId 
+    });
     const result = await GetMessagesService.execute(req.query, req.user);
+    
+    console.log('[GET /get-messages] 결과:', result);
+    
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('[GET /get-messages] 에러 발생:', error);
+    logger.error('GET /get-messages 에러', { 
+      error: error.message,
+      stack: error.stack,
+      query: req.query,
+      userId: req.user?.userId 
+    });
+    res.status(400).json({ 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

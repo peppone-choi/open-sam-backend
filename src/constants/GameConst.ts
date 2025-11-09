@@ -152,10 +152,49 @@ export class GameConst {
   static readonly sabotageDamageMax = 1000;
 
   static readonly initialNationGenLimit = 50;
-  
+
   static readonly allItems: any[] = [];
 
   static readonly exchangeFee = 0.05; // 5% 수수료
   static readonly basegold = 1000;
   static readonly baserice = 2000;
+
+  // Missing properties from PHP version - TODO: verify these values
+  static readonly maxResourceActionAmount = 1000000;
+  static readonly resourceActionAmountGuide = 100;
+  static readonly generalMinimumGold = 10000;
+  static readonly generalMinimumRice = 10000;
+  static readonly maxTrainByCommand = 10;
+  static readonly maxAtmosByCommand = 10;
+  static readonly defaultTrainLow = 30;
+  static readonly defaultAtmosLow = 30;
+  static readonly defaultTrainHigh = 80;
+  static readonly defaultAtmosHigh = 80;
+
+  // Training effectiveness coefficient
+  static readonly trainDelta = 1.0;
+
+  // Sabotage probability coefficient (higher = harder to sabotage)
+  static readonly sabotageProbCoefByStat = 500;
+
+  // Side effect of training on atmos (positive correlation)
+  static readonly atmosSideEffectByTraining = 0.2;
+
+  // Available special skills (domestic and war)
+  static readonly availableSpecialDomestic: string[] = ['agriculture', 'commerce', 'security', 'development'];
+  static readonly availableSpecialWar: string[] = ['assault', 'defense', 'strategy', 'leadership'];
+
+  // Sabotage mechanics
+  static readonly sabotageDefenceCoefByGeneralCnt = 50;
+  static readonly sabotageDefaultProb = 0.3;
+
+  // Chief/Officer turn limits
+  static readonly maxChiefTurn = 2; // Max turns for chief officers
+
+  // Nation limits
+  static readonly maxNation = 50; // Maximum number of nations in a game
+  static readonly defaultMaxGeneral = 100; // Default max generals per nation
+
+  // Minimum gold required for betting
+  static readonly minGoldRequiredWhenBetting = 1000;
 }

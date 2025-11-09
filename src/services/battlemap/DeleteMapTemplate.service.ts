@@ -4,7 +4,7 @@ import { battleMapTemplateRepository } from '../../repositories/battle-map-templ
 export class DeleteMapTemplateService {
   static async execute(data: { id: string }) {
     try {
-      const template = await battleMapTemplateRepository.findByFilterById(data.id);
+      const template = await battleMapTemplateRepository.findById(data.id);
       
       if (!template) {
         return {

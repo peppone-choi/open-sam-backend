@@ -14,7 +14,7 @@ export class UpdateMapTemplateService {
     strategicPoints?: any[];
   }) {
     try {
-      const template = await battleMapTemplateRepository.findByFilterById(data.id);
+      const template = await battleMapTemplateRepository.findById(data.id);
       
       if (!template) {
         return {
@@ -36,7 +36,7 @@ export class UpdateMapTemplateService {
       
       await battleMapTemplateRepository.updateOneByFilter({ _id: data.id }, { $set: updateFields });
       
-      const updated = await battleMapTemplateRepository.findByFilterById(data.id);
+      const updated = await battleMapTemplateRepository.findById(data.id);
       
       console.log(`✅ 맵 템플릿 수정: ${updated?.name} (city_id=${updated?.city_id})`);
       

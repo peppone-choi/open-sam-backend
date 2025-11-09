@@ -132,11 +132,11 @@ export class AcceptRecruitCommand extends GeneralCommand {
       }
     );
 
-    // 스카웃 국가의 장수 수 증가  
+    // 스카웃 국가의 장수 수 증가
     await nationRepository.updateOneByFilter(
       {
         session_id: general.getSessionID(),
-        nation: scout.getNationID()
+        nation: destGeneral.getNationID()
       },
       {
         $inc: { gennum: 1 }

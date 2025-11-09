@@ -1,15 +1,17 @@
 import { sessionRepository } from '../../repositories/session.repository';
 import { generalRepository } from '../../repositories/general.repository';
+import { Nation } from '../../models/nation.model';
 import mongoose from 'mongoose';
 import { getSession } from '../../common/cache/model-cache.helper';
+import { ISession } from '../../models/session.model';
 
 export class GetStaticInfoService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    
+
     try {
       // Load session (L1 → L2 → DB)
-      const session = await getSession(sessionId);
+      const session = await getSession(sessionId) as ISession | null;
       if (!session) {
         return {
           success: false,
@@ -19,16 +21,8 @@ export class GetStaticInfoService {
 
       const sessionData = session.data || {};
 
-      const db = mongoose.connection.db;
-      if (!db) {
-        return {
-          success: false,
-          message: 'Database connection unavailable'
-        };
-      }
-
-      const nationCollection = db.collection('nations');
-      const nationCount = await nationCollection.countDocuments({
+      // Mongoose 모델 사용
+      const nationCount = await Nation.countDocuments({
         session_id: sessionId,
         'data.level': { $gt: 0 }
       });

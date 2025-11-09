@@ -50,10 +50,7 @@ export class GetGeneralLogService {
         };
       }
 
-      const general = await generalRepository.findById({
-        session_id: sessionId,
-        no: generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {

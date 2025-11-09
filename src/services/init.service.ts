@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
+import { sessionRepository } from '../repositories/session.repository';
 
 /**
  * 세션 초기화 서비스
