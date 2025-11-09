@@ -461,7 +461,7 @@ export class GetFrontInfoService {
     nationId: number,
     nationInfo?: any
   ) {
-    const data = general.data || {};
+    const data = general;
     
     // 능력치 범위 보정 (40-150 사이로 제한)
     // 기존 DB에 잘못된 값이 있을 경우 자동 수정

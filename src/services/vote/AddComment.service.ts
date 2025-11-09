@@ -53,7 +53,8 @@ export class AddCommentService {
         session_id: sessionId
       }).sort({ 'data.id': -1 }).exec();
 
-      const nextId = lastComment?.data?.id ? lastComment.data.id + 1 : 1;
+      const lastId = lastComment?.data?.id || lastComment?.id || 0;
+      const nextId = lastId + 1;
 
       const comment = new VoteComment({
         session_id: sessionId,

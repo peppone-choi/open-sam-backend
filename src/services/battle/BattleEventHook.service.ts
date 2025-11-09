@@ -201,11 +201,14 @@ export async function onNationDestroyed(
     });
 
     if (attackerNation) {
-      attackerNation.data = attackerNation.data || {};
-      attackerNation.data.gold = (attackerNation.data.gold || 0) + absorbedGold;
-      attackerNation.data.rice = (attackerNation.data.rice || 0) + absorbedRice;
-      attackerNation.markModified('data');
-      await attackerNation.save();
+      const currentGold = attackerNation.data?.gold || attackerNation.gold || 0;
+      const currentRice = attackerNation.data?.rice || attackerNation.rice || 0;
+      const attackerNationNum = attackerNation.data?.nation || attackerNation.nation;
+      
+      await nationRepository.updateByNationNum(sessionId, attackerNationNum, {
+        'data.gold': currentGold + absorbedGold,
+        'data.rice': currentRice + absorbedRice
+      });
     }
 
     // DESTROY_NATION 이벤트 트리거

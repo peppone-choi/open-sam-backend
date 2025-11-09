@@ -100,16 +100,14 @@ export class VoteService {
       const develCost = session.data?.develcost || 100;
       const voteReward = develCost * 5;
 
-      if (!general.data) {
-        general.data = {};
-      }
+      const currentGold = general.data?.gold || general.gold || 0;
+      const newGold = currentGold + voteReward;
       
-      general.data.gold = (general.data.gold || 0) + voteReward;
+      await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+        gold: newGold
+      });
       
       let wonLottery = false;
-
-      general.markModified('data');
-      await general.save();
 
       return {
         result: true,

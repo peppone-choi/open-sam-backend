@@ -29,11 +29,11 @@ export class JoinTroopService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      if (general.data?.troop && general.data.troop !== 0) {
+      if (general.troop && general.troop !== 0) {
         return { success: false, message: '이미 부대에 소속되어 있습니다' };
       }
 
-      const nationId = general.data?.nation || 0;
+      const nationId = general.nation || 0;
       if (nationId === 0) {
         return { success: false, message: '국가에 소속되어 있지 않습니다' };
       }

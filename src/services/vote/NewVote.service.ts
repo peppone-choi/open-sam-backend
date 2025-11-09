@@ -102,8 +102,8 @@ export class NewVoteService {
 
       session.data[`vote_${voteID}`] = voteInfo;
       session.data.lastVote = voteID;
-      session.markModified('data');
-      await session.save();
+      
+      await sessionRepository.saveDocument(session);
 
       await generalRepository.updateManyByFilter(
         { session_id: sessionId },
