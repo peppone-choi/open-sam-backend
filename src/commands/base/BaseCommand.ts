@@ -7,6 +7,7 @@
 import { IGeneral } from '../../models/general.model';
 import { DB } from '../../config/db';
 import { LastTurn as ExternalLastTurn } from '../../types/LastTurn';
+import { ActionLogger } from '../../services/logger/ActionLogger';
 
 export interface ICity {
   city: number;
@@ -147,9 +148,23 @@ export abstract class BaseCommand {
     }
 
     this.generalObj = generalObj;
-    this.logger = generalObj.getLogger?.() || null;
     this.env = env;
     this.arg = arg;
+    
+    // ActionLogger 생성 (env에 year, month가 있을 때만)
+    if (env?.year && env?.month) {
+      this.logger = new ActionLogger(
+        generalObj.getID(),
+        generalObj.getNationID(),
+        env.year,
+        env.month,
+        env.session_id || generalObj.getSessionID(),
+        true // autoFlush
+      );
+    } else {
+      // fallback: General의 간단한 로거 사용
+      this.logger = generalObj.getLogger?.() || null;
+    }
 
     this.init();
     if (this.argTest()) {

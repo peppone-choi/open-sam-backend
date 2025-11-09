@@ -1115,6 +1115,11 @@ export class ExecuteEngineService {
         general.clearActivatedSkill();
       }
       
+      // 로거 flush (ActionLogger인 경우)
+      if (command && typeof command.logger?.flush === 'function') {
+        await command.logger.flush();
+      }
+      
     } catch (error: any) {
       console.error(`Command ${action} failed:`, error);
       await this.pushGeneralActionLog(
@@ -1124,6 +1129,15 @@ export class ExecuteEngineService {
         year,
         month
       );
+      
+      // 에러 시에도 로거 flush
+      if (command && typeof command.logger?.flush === 'function') {
+        try {
+          await command.logger.flush();
+        } catch (flushError) {
+          console.error('Logger flush error:', flushError);
+        }
+      }
     }
   }
 

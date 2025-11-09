@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { GeneralLog } from '../../models/general-log.model';
-import { LogFormatType, LogType, ILogRecord } from '../../types/log.types';
+import { GeneralRecord } from '../../models/general_record.model';
+import { WorldHistory } from '../../models/world_history.model';
+import { LogFormatType, LogType } from '../../types/log.types';
 import { logger } from '../../common/logger';
 
 /**
@@ -245,28 +246,22 @@ export class ActionLogger {
         this.generalBattleDetailLog = [];
       }
 
-      // 국가 이력 로그 (TODO: 별도 테이블 구현 필요)
+      // 국가 이력 로그 → world_history (nation_id > 0)
       if (this.nationalHistoryLog.length > 0 && this.nationId) {
-        logger.info('[ActionLogger] National history log (not yet implemented)', {
-          nationId: this.nationId,
-          count: this.nationalHistoryLog.length,
-        });
+        await this.saveNationLogs(this.nationalHistoryLog);
         this.nationalHistoryLog = [];
       }
 
-      // 전역 이력 로그 (TODO: ng_history 테이블 업데이트)
+      // 전역 이력 로그 → world_history (nation_id = 0)
       if (this.globalHistoryLog.length > 0) {
-        logger.info('[ActionLogger] Global history log (not yet implemented)', {
-          count: this.globalHistoryLog.length,
-        });
+        await this.saveGlobalHistoryLogs(this.globalHistoryLog);
         this.globalHistoryLog = [];
       }
 
-      // 전역 행동 로그 (TODO: ng_history 테이블 업데이트)
+      // 전역 행동 로그 → general_record (general_id = 0, log_type = 'history')
+      // PHP: pushGlobalActionLog는 general_record에 저장
       if (this.globalActionLog.length > 0) {
-        logger.info('[ActionLogger] Global action log (not yet implemented)', {
-          count: this.globalActionLog.length,
-        });
+        await this.saveGlobalActionLogs(this.globalActionLog);
         this.globalActionLog = [];
       }
     } catch (error: any) {
@@ -276,26 +271,83 @@ export class ActionLogger {
   }
 
   /**
-   * 장수 로그 저장 (일괄 insert)
+   * 장수 로그 저장 (일괄 insert) → general_record
    */
   private async saveGeneralLogs(logType: LogType, logs: string[]): Promise<void> {
     if (!logs || logs.length === 0) return;
 
-    const records: ILogRecord[] = logs.map((text) => ({
+    const records = logs.map((text) => ({
       session_id: this.sessionId,
       general_id: this.generalId,
       log_type: logType,
-      message: text,
-      data: {
-        year: this.year,
-        month: this.month,
-      },
+      year: this.year,
+      month: this.month,
+      text: text,
     }));
 
     // 일괄 insert
-    await GeneralLog.insertMany(records);
+    await GeneralRecord.insertMany(records);
 
     logger.info(`[ActionLogger] Saved ${logs.length} ${logType} logs for general ${this.generalId}`);
+  }
+
+  /**
+   * 국가 로그 저장 → world_history (nation_id > 0)
+   */
+  private async saveNationLogs(logs: string[]): Promise<void> {
+    if (!logs || logs.length === 0) return;
+
+    const records = logs.map((text) => ({
+      session_id: this.sessionId,
+      nation_id: this.nationId,
+      year: this.year,
+      month: this.month,
+      text: text,
+    }));
+
+    await WorldHistory.insertMany(records);
+
+    logger.info(`[ActionLogger] Saved ${logs.length} nation history logs for nation ${this.nationId}`);
+  }
+
+  /**
+   * 전역 이력 로그 저장 → world_history (nation_id = 0)
+   */
+  private async saveGlobalHistoryLogs(logs: string[]): Promise<void> {
+    if (!logs || logs.length === 0) return;
+
+    const records = logs.map((text) => ({
+      session_id: this.sessionId,
+      nation_id: 0, // 전역 = 0
+      year: this.year,
+      month: this.month,
+      text: text,
+    }));
+
+    await WorldHistory.insertMany(records);
+
+    logger.info(`[ActionLogger] Saved ${logs.length} global history logs`);
+  }
+
+  /**
+   * 전역 행동 로그 저장 → general_record (general_id = 0)
+   * PHP: pushGlobalActionLog는 general_record에 저장
+   */
+  private async saveGlobalActionLogs(logs: string[]): Promise<void> {
+    if (!logs || logs.length === 0) return;
+
+    const records = logs.map((text) => ({
+      session_id: this.sessionId,
+      general_id: 0, // 전역 = 0
+      log_type: LogType.HISTORY, // PHP와 동일하게 'history' 타입
+      year: this.year,
+      month: this.month,
+      text: text,
+    }));
+
+    await GeneralRecord.insertMany(records);
+
+    logger.info(`[ActionLogger] Saved ${logs.length} global action logs`);
   }
 
   /**
