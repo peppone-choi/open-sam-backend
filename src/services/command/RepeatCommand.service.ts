@@ -40,13 +40,13 @@ async function repeatGeneralCommand(sessionId: string, generalId: number, turnCn
   });
   
   // 정순 정렬
-  turnList.sort((a: any, b: any) => a.data.turn_idx - b.data.turn_idx);
+  turnList.sort((a: any, b: any) => a.turn_idx - b.turn_idx);
 
   for (const turn of turnList) {
-    const turnIdx = turn.data.turn_idx;
-    const action = turn.data.action;
-    const arg = turn.data.arg;
-    const brief = turn.data.brief;
+    const turnIdx = turn.turn_idx;
+    const action = turn.action;
+    const arg = turn.arg;
+    const brief = turn.brief;
 
     const targetIndices: number[] = [];
     for (let i = turnIdx + turnCnt; i < MAX_TURN; i += turnCnt) {

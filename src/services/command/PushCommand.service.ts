@@ -42,21 +42,29 @@ async function pushGeneralCommand(sessionId: string, generalId: number, turnCnt:
   });
   
   // 역순 정렬
-  turns.sort((a: any, b: any) => b.data.turn_idx - a.data.turn_idx);
+  turns.sort((a: any, b: any) => b.turn_idx - a.turn_idx);
 
   for (const turn of turns) {
-    const newIdx = turn.data.turn_idx + turnCnt;
+    const newIdx = turn.turn_idx + turnCnt;
     
     if (newIdx >= MAX_TURN) {
-      turn.data.turn_idx = newIdx - MAX_TURN;
-      turn.data.action = '휴식';
-      turn.data.arg = {};
-      turn.data.brief = '휴식';
+      await generalTurnRepository.updateOne(
+        { _id: turn._id },
+        {
+          $set: {
+            'data.turn_idx': newIdx - MAX_TURN,
+            'data.action': '휴식',
+            'data.arg': {},
+            'data.brief': '휴식'
+          }
+        }
+      );
     } else {
-      turn.data.turn_idx = newIdx;
+      await generalTurnRepository.updateOne(
+        { _id: turn._id },
+        { $set: { 'data.turn_idx': newIdx } }
+      );
     }
-    
-    await turn.save();
   }
 }
 
@@ -69,20 +77,28 @@ async function pullGeneralCommand(sessionId: string, generalId: number, turnCnt:
   });
   
   // 정순 정렬
-  turns.sort((a: any, b: any) => a.data.turn_idx - b.data.turn_idx);
+  turns.sort((a: any, b: any) => a.turn_idx - b.turn_idx);
 
   for (const turn of turns) {
-    const oldIdx = turn.data.turn_idx;
+    const oldIdx = turn.turn_idx;
     
     if (oldIdx < turnCnt) {
-      turn.data.turn_idx = oldIdx + MAX_TURN;
-      turn.data.action = '휴식';
-      turn.data.arg = {};
-      turn.data.brief = '휴식';
+      await generalTurnRepository.updateOne(
+        { _id: turn._id },
+        {
+          $set: {
+            'data.turn_idx': oldIdx + MAX_TURN,
+            'data.action': '휴식',
+            'data.arg': {},
+            'data.brief': '휴식'
+          }
+        }
+      );
     } else {
-      turn.data.turn_idx = oldIdx - turnCnt;
+      await generalTurnRepository.updateOne(
+        { _id: turn._id },
+        { $set: { 'data.turn_idx': oldIdx - turnCnt } }
+      );
     }
-    
-    await turn.save();
   }
 }
