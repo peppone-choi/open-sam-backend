@@ -635,16 +635,15 @@ export class ExecuteEngineService {
         const now = new Date();
         if (generalTurntimeDate > now && generalTurntimeDate > date) {
           // turntime이 현재 시간과 월턴 모두보다 미래면 월턴 시점으로 리셋
-          const generalNo = generalDoc.data?.no || generalDoc.no;
+          const generalNo = generalDoc.no;
           await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
-            'data.turntime': date.toISOString()
+            turntime: date.toISOString()
           });
           // 로컬 객체도 업데이트
-          generalDoc.data = generalDoc.data || {};
-          generalDoc.data.turntime = date.toISOString();
+          generalDoc.turntime = date.toISOString();
         }
       }
-      
+
       const currActionTime = new Date();
       if (currActionTime > limitActionTime) {
         return [true, currentTurn];
@@ -652,11 +651,11 @@ export class ExecuteEngineService {
 
       // 장수 턴 실행 (전역 게임 년/월 사용)
       await this.executeGeneralTurn(sessionId, generalDoc, year, month, turnterm, gameEnv);
-      
-      currentTurn = generalDoc.data?.turntime || new Date().toISOString();
-      
+
+      currentTurn = generalDoc.turntime || new Date().toISOString();
+
       // 장수 정보 업데이트 브로드캐스트 (전역 년/월 사용)
-      const generalNo = generalDoc.data?.no || generalDoc.no;
+      const generalNo = generalDoc.no;
       if (generalNo) {
         GameEventEmitter.broadcastGeneralUpdate(sessionId, generalNo, {
           turntime: currentTurn
@@ -853,8 +852,8 @@ export class ExecuteEngineService {
    * PHP TurnExecutionHelper::processNationCommand() 완전 구현
    */
   private static async processNationCommand(sessionId: string, general: any, year: number, month: number) {
-    const nationId = general.nation || general.data?.nation || 0;
-    const officerLevel = general.data?.officer_level || 0;
+    const nationId = general.nation || 0;
+    const officerLevel = general.officer_level || 0;
 
     if (nationId === 0 || officerLevel < 5) {
       return;
@@ -863,17 +862,17 @@ export class ExecuteEngineService {
     // 0번 턴 조회
     const nationTurn = await nationTurnRepository.findOneByFilter({
       session_id: sessionId,
-      'data.nation_id': nationId,
-      'data.officer_level': officerLevel,
-      'data.turn_idx': 0
+      nation_id: nationId,
+      officer_level: officerLevel,
+      turn_idx: 0
     });
 
     if (!nationTurn) {
       return;
     }
 
-    const action = nationTurn.data.action || '휴식';
-    const arg = nationTurn.data.arg || {};
+    const action = nationTurn.action || '휴식';
+    const arg = nationTurn.arg || {};
 
     if (action === '휴식') {
       return;
@@ -1033,27 +1032,26 @@ export class ExecuteEngineService {
       });
     }
 
-    const action = generalTurn.data.action || '휴식';
-    const arg = generalTurn.data.arg || {};
+    const action = generalTurn.action || '휴식';
+    const arg = generalTurn.arg || {};
 
     // killturn 처리 (PHP 로직과 동일)
     const killturn = gameEnv.killturn || 30;
-    const npcType = general.npc || general.data?.npc || 0;
-    const currentKillturn = general.data?.killturn ?? killturn;
+    const npcType = general.npc || 0;
+    const currentKillturn = general.killturn ?? killturn;
     const autorunMode = false; // TODO: AI 자동 실행 모드 구현
 
     if (npcType >= 2) {
-      general.data.killturn = Math.max(0, currentKillturn - 1);
+      general.killturn = Math.max(0, currentKillturn - 1);
     } else if (currentKillturn > killturn) {
-      general.data.killturn = Math.max(0, currentKillturn - 1);
+      general.killturn = Math.max(0, currentKillturn - 1);
     } else if (autorunMode) {
-      general.data.killturn = Math.max(0, currentKillturn - 1);
+      general.killturn = Math.max(0, currentKillturn - 1);
     } else if (action === '휴식') {
-      general.data.killturn = Math.max(0, currentKillturn - 1);
+      general.killturn = Math.max(0, currentKillturn - 1);
     } else {
-      general.data.killturn = killturn;
+      general.killturn = killturn;
     }
-    general.markModified('data');
 
     if (action === '휴식') {
       return;
@@ -1170,34 +1168,30 @@ export class ExecuteEngineService {
     // 전역 게임 년/월 사용
     const year = gameEnv.year || 180;
     const month = gameEnv.month || 1;
-    const killturn = general.data?.killturn;
+    const killturn = general.killturn;
     
     // killturn이 undefined이거나 null이면 기본값 6 설정 (새로 생성된 장수)
     if (killturn === undefined || killturn === null) {
-      general.data = general.data || {};
-      general.data.killturn = 6;
-      general.markModified('data');
+      general.killturn = 6;
     }
 
     // 삭턴 장수 처리 (killturn이 명시적으로 0 이하인 경우만)
-    const finalKillturn = general.data?.killturn || 6;
+    const finalKillturn = general.killturn || 6;
     if (finalKillturn <= 0) {
       // NPC 유저 삭턴시 NPC로 전환
-      if (general.npc === 1 && general.data?.deadyear > year) {
+      if (general.npc === 1 && general.deadyear > year) {
         await this.pushGeneralActionLog(
           sessionId,
           general.no,
-          `${general.data.owner_name}이 ${general.name}의 육체에서 <S>유체이탈</>합니다!`,
+          `${general.owner_name}이 ${general.name}의 육체에서 <S>유체이탈</>합니다!`,
           year,
           gameEnv.month
         );
 
-        general.data = general.data || {};
-        general.data.killturn = (general.data.deadyear - year) * 12;
-        general.npc = general.data.npc_org || 2;
+        general.killturn = (general.deadyear - year) * 12;
+        general.npc = general.npc_org || 2;
         general.owner = '0';
-        general.data.owner_name = null;
-        general.markModified('data');
+        general.owner_name = null;
       } else {
         // 장수 삭제
         try {
@@ -1213,36 +1207,29 @@ export class ExecuteEngineService {
 
     // 은퇴 처리 (나이 제한)
     const retirementYear = 70;
-    if ((general.data?.age || 20) >= retirementYear && general.npc === 0) {
+    if ((general.age || 20) >= retirementYear && general.npc === 0) {
       // TODO: 환생 처리
-      general.data = general.data || {};
-      general.data.age = 15;
-      general.data.killturn = 120;
-      general.markModified('data');
+      general.age = 15;
+      general.killturn = 120;
     }
 
     // 턴 시간 증가
-    // turntime은 data.turntime에만 존재함
     const sessionTurntime = gameEnv.turntime ? new Date(gameEnv.turntime) : new Date();
-    let currentTurntime = general.data?.turntime 
-      ? new Date(general.data.turntime)
+    let currentTurntime = general.turntime
+      ? new Date(general.turntime)
       : sessionTurntime;
-    
+
     // turntime이 현재 시간보다 미래면 잘못된 상태 (세션 turntime 기준으로 수정)
     const now = new Date();
     if (currentTurntime > now) {
       currentTurntime = sessionTurntime;
     }
-    
+
     // addTurn은 분 단위를 받아야 함
     const turntermInMinutes = gameEnv.turnterm || 60;
     const newTurntime = ExecuteEngineService.addTurn(currentTurntime, turntermInMinutes);
-    
-    general.data = general.data || {};
-    general.data.turntime = newTurntime.toISOString();
-    
-    // turntime 업데이트 완료
-    general.markModified('data');
+
+    general.turntime = newTurntime.toISOString();
     
     return false; // 삭제되지 않음
   }
