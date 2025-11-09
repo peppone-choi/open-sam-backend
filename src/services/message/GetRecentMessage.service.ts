@@ -21,18 +21,15 @@ export class GetRecentMessageService {
       }
 
       // 장수 정보 조회
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const nationId = general.data?.nation || 0;
-      const generalName = general.data?.name || '무명';
-      const permission = general.data?.permission || '';
+      const nationId = general.nation || 0;
+      const generalName = general.name || '무명';
+      const permission = general.permission || '';
 
       let nextSequence = sequence;
       let minSequence = sequence;
@@ -116,8 +113,8 @@ export class GetRecentMessageService {
         nationID: nationId,
         generalName: generalName,
         latestRead: {
-          diplomacy: general.data?.latest_read_diplomacy_msg || 0,
-          private: general.data?.latest_read_private_msg || 0
+          diplomacy: general.latest_read_diplomacy_msg || 0,
+          private: general.latest_read_private_msg || 0
         }
       };
 

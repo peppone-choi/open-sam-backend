@@ -40,8 +40,8 @@ export class GetOldMessageService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
-      const nationId = general.data?.nation || 0;
-      const generalName = general.data?.name || '무명';
+      const nationId = general.nation || 0;
+      const generalName = general.name || '무명';
 
       // 메시지 조회
       let query: any = {

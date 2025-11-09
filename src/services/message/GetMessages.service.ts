@@ -135,7 +135,7 @@ export class GetMessagesService {
         query['data.dest_general_id'] = generalId;
       }
 
-      logger.debug('메시지 조회 쿼리', { query, type, generalId, nationId: general.data?.nation });
+      logger.debug('메시지 조회 쿼리', { query, type, generalId, nationId: general.nation });
       
       const messages = await messageRepository.findByFilter(query);
       
