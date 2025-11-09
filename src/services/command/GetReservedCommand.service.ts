@@ -39,10 +39,10 @@ export class GetReservedCommandService {
     let invalidTurnList = 0;
 
     for (const turn of rawTurns) {
-      let turnIdx = turn.data.turn_idx;
-      const action = turn.data.action;
-      const arg = turn.data.arg;
-      const brief = turn.data.brief;
+      let turnIdx = turn.turn_idx;
+      const action = turn.action;
+      const arg = turn.arg;
+      const brief = turn.brief;
 
       if (turnIdx < 0) {
         invalidTurnList = -1;
