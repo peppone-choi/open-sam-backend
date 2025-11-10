@@ -1,0 +1,522 @@
+{
+  "empire": {
+    "fleets": [
+      {
+        "unitNumber": 1,
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      },
+      {
+        "unitNumber": 2,
+        "system": "알테나",
+        "systemJa": "アルテナ",
+        "planet": "노이엔라데",
+        "planetJa": "ノイエンラーデ"
+      },
+      {
+        "unitNumber": 3,
+        "system": "암리차",
+        "systemJa": "アムリッツァ",
+        "planet": "하펜",
+        "planetJa": "ハーフェン"
+      },
+      {
+        "unitNumber": 4,
+        "system": "프레이아",
+        "systemJa": "フレイア",
+        "planet": "렌텐베르그",
+        "planetJa": "レンテンベルグ"
+      },
+      {
+        "unitNumber": 5,
+        "system": "키포이저",
+        "systemJa": "キフォイザー",
+        "planet": "갈미슈",
+        "planetJa": "ガルミッシュ"
+      },
+      {
+        "unitNumber": 6,
+        "system": "아이젠헤르츠",
+        "systemJa": "アイゼンヘルツ",
+        "planet": "가이에스부르크",
+        "planetJa": "ガイエスブルグ"
+      },
+      {
+        "unitNumber": 8,
+        "system": "이젤론",
+        "systemJa": "イゼルローン",
+        "planet": "이젤론",
+        "planetJa": "イゼルローン"
+      },
+      {
+        "unitNumber": 10,
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      },
+      {
+        "unitNumber": 12,
+        "system": "알테나",
+        "systemJa": "アルテナ",
+        "planet": "나하로트",
+        "planetJa": "ナッハロート"
+      }
+    ],
+    "patrols": [
+      {
+        "unitRange": "1-3",
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      },
+      {
+        "unitRange": "4-5",
+        "system": "니블헤임",
+        "systemJa": "ニブルヘイム",
+        "planet": "에류즈닐",
+        "planetJa": "エリューズニル"
+      },
+      {
+        "unitNumber": 6,
+        "system": "베를라",
+        "systemJa": "ヴェルラ",
+        "planet": "슈테파니",
+        "planetJa": "シュテファニ"
+      },
+      {
+        "unitNumber": 7,
+        "system": "샨타우",
+        "systemJa": "シャンタウ",
+        "planet": "크네스도르프",
+        "planetJa": "クネスドルフ"
+      },
+      {
+        "unitNumber": 8,
+        "system": "아스가르드",
+        "systemJa": "アスガルド",
+        "planet": "토이트부르크",
+        "planetJa": "トイトブルク"
+      },
+      {
+        "unitNumber": 9,
+        "system": "루이트볼딩",
+        "systemJa": "ルイトボルディング",
+        "planet": "루이트볼트",
+        "planetJa": "ルイトポルト"
+      },
+      {
+        "unitNumber": 10,
+        "system": "빌렌슈타인",
+        "systemJa": "ヴィレンンシュタイン",
+        "planet": "바이센호른",
+        "planetJa": "ヴァイセンホルン"
+      },
+      {
+        "unitRange": "11-13",
+        "system": "린더호프",
+        "systemJa": "リンダーホーフ",
+        "planet": "호엔슈반가우",
+        "planetJa": "ホーエンシュヴァンガウ"
+      },
+      {
+        "unitRange": "14-16",
+        "system": "바나헤임",
+        "systemJa": "ヴァナヘイム",
+        "planet": "프레이",
+        "planetJa": "フレイ"
+      },
+      {
+        "unitRange": "17-19",
+        "system": "비텔스바흐",
+        "systemJa": "ヴィテルスバッハ",
+        "planet": "뉘펜부르크",
+        "planetJa": "ニュンフェンブルク"
+      },
+      {
+        "unitRange": "20-22",
+        "system": "보름스가우",
+        "systemJa": "ウォームスガウ",
+        "planet": "콘라트",
+        "planetJa": "コンラート"
+      },
+      {
+        "unitRange": "23-25",
+        "system": "발드레",
+        "systemJa": "バルドレ",
+        "planet": "프릉호르니",
+        "planetJa": "フリングホルニ"
+      },
+      {
+        "unitRange": "26-28",
+        "system": "암리차",
+        "systemJa": "アムリッツァ",
+        "planet": "하펜",
+        "planetJa": "ハーフェン"
+      },
+      {
+        "unitRange": "29-31",
+        "system": "빌로스트",
+        "systemJa": "ビルロスト",
+        "planet": "헤임달",
+        "planetJa": "ヘイムダル"
+      },
+      {
+        "unitRange": "32-34",
+        "system": "반스테이드",
+        "systemJa": "ヴァンステイド",
+        "planet": "팔드갈데",
+        "planetJa": "ファルドガルデ"
+      },
+      {
+        "unitRange": "35-37",
+        "system": "드베르그",
+        "systemJa": "ドヴェルグ",
+        "planet": "그레이프니르",
+        "planetJa": "グレイプニル"
+      },
+      {
+        "unitRange": "38-40",
+        "system": "프레이아",
+        "systemJa": "フレイア",
+        "planet": "렌텐베르크",
+        "planetJa": "レンテンベルク"
+      },
+      {
+        "unitRange": "41-43",
+        "system": "아이젠헤르츠",
+        "systemJa": "アイゼンヘルツ",
+        "planet": "가이에스부르크",
+        "planetJa": "ガイエスブルク"
+      },
+      {
+        "unitRange": "44-46",
+        "system": "폴겐",
+        "systemJa": "フォルゲン",
+        "planet": "슈방가우",
+        "planetJa": "シュヴァンガウ"
+      },
+      {
+        "unitNumber": 49,
+        "system": "키포이저",
+        "systemJa": "キフォイザー",
+        "planet": "갈미슈",
+        "planetJa": "ガルミッシュ"
+      },
+      {
+        "unitRange": "50-52",
+        "system": "이젤론",
+        "systemJa": "イゼルローン",
+        "planet": "이젤론",
+        "planetJa": "イゼルローン"
+      },
+      {
+        "unitRange": "53-60",
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      }
+    ],
+    "groundForces": [
+      {
+        "unitRange": "1-10",
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      },
+      {
+        "unitRange": "11-20",
+        "system": "빌렌슈타인",
+        "systemJa": "ヴィレンシュタイン",
+        "planet": "바이센호른",
+        "planetJa": "ヴァイセンホルン"
+      },
+      {
+        "unitRange": "21-30",
+        "system": "비텔스바흐",
+        "systemJa": "ヴィッテルスバッハ",
+        "planet": "뉘펜부르크",
+        "planetJa": "ニュンフェンブルク"
+      },
+      {
+        "unitRange": "31-40",
+        "system": "암리차",
+        "systemJa": "アムリッツァ",
+        "planet": "하펜",
+        "planetJa": "ハーフェン"
+      },
+      {
+        "unitRange": "41-50",
+        "system": "아이젠헤르츠",
+        "systemJa": "アイゼンヘルツ",
+        "planet": "가이에스부르그",
+        "planetJa": "ガイエスブルグ"
+      },
+      {
+        "unitRange": "51-60",
+        "system": "이젤론",
+        "systemJa": "イゼルローン",
+        "planet": "이젤론",
+        "planetJa": "イゼルローン"
+      }
+    ]
+  },
+  "alliance": {
+    "fleets": [
+      {
+        "unitNumber": 1,
+        "system": "바라트",
+        "systemJa": "バーラト",
+        "planet": "하이네센",
+        "planetJa": "ハイネセン"
+      },
+      {
+        "unitNumber": 2,
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "도리아",
+        "planetJa": "ドーリア"
+      },
+      {
+        "unitNumber": 3,
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "도리아",
+        "planetJa": "ドーリア"
+      },
+      {
+        "unitNumber": 4,
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "슈파라",
+        "planetJa": "シュパーラ"
+      },
+      {
+        "unitNumber": 5,
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "케림",
+        "planetJa": "ケリム"
+      },
+      {
+        "unitNumber": 6,
+        "system": "슈파라",
+        "systemJa": "シュパーラ",
+        "planet": "케림",
+        "planetJa": "ケリム"
+      },
+      {
+        "unitNumber": 7,
+        "system": "루지아나",
+        "systemJa": "ルジアーナ",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      },
+      {
+        "unitNumber": 8,
+        "system": "산타 아나",
+        "systemJa": "サンタ・アナ",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      },
+      {
+        "unitNumber": 9,
+        "system": "루지아나",
+        "systemJa": "ルジアーナ",
+        "planet": "시우다 로드리고",
+        "planetJa": "シウダ・ロドリゴ"
+      },
+      {
+        "unitNumber": 10,
+        "system": "산타 아나",
+        "systemJa": "サンタ・アナ",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      },
+      {
+        "unitNumber": 11,
+        "system": "슈파라",
+        "systemJa": "シュパーラ",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      },
+      {
+        "unitNumber": 12,
+        "system": "바라트",
+        "systemJa": "バーラト",
+        "planet": "하이네센",
+        "planetJa": "ハイネセン"
+      }
+    ],
+    "patrols": [
+      {
+        "unitRange": "1-5",
+        "system": "바라트",
+        "systemJa": "バーラト",
+        "planet": "하이네센",
+        "planetJa": "ハイネセン"
+      },
+      {
+        "unitRange": "6-10",
+        "system": "리우카스",
+        "systemJa": "リューカス",
+        "planet": "발미",
+        "planetJa": "ヴァルミー"
+      },
+      {
+        "unitRange": "11-15",
+        "system": "도리아",
+        "systemJa": "ドーリア",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      },
+      {
+        "unitRange": "16-20",
+        "system": "잠시드",
+        "systemJa": "ジャムシード",
+        "planet": "캇파",
+        "planetJa": "カッファー"
+      },
+      {
+        "unitRange": "21-25",
+        "system": "케림",
+        "systemJa": "ケリム",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      },
+      {
+        "unitRange": "26-30",
+        "system": "로포텐",
+        "systemJa": "ロフォーテン",
+        "planet": "루드밀라",
+        "planetJa": "ルドミラ"
+      },
+      {
+        "unitRange": "31-35",
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "산타 아나",
+        "planetJa": "サンタ・アナ"
+      },
+      {
+        "unitRange": "36-40",
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "루지아나",
+        "planetJa": "ルジアーナ"
+      },
+      {
+        "unitRange": "41-45",
+        "system": "메르칼트",
+        "systemJa": "メルカルト",
+        "planet": "네르갈",
+        "planetJa": "ネルガル"
+      },
+      {
+        "unitRange": "46-49",
+        "system": "리오 베르데",
+        "systemJa": "リオ・ヴェルデ",
+        "planet": "산 카를로스",
+        "planetJa": "サン・カルロス"
+      },
+      {
+        "unitRange": "50-55",
+        "system": "슈파라",
+        "systemJa": "シュバーラ",
+        "planet": "시우다 로드리고",
+        "planetJa": "シウダ・ロドリゴ"
+      },
+      {
+        "unitRange": "56-60",
+        "system": "파라파라",
+        "systemJa": "ファラーファラ",
+        "planet": "미세눔",
+        "planetJa": "ミセヌム"
+      }
+    ],
+    "groundForces": [
+      {
+        "unitRange": "1-5",
+        "system": "바라트",
+        "systemJa": "バーラト",
+        "planet": "하이네센",
+        "planetJa": "ハイネセン"
+      },
+      {
+        "unitRange": "6-10",
+        "system": "리우카스",
+        "systemJa": "リューカス",
+        "planet": "발미",
+        "planetJa": "ヴァルミー"
+      },
+      {
+        "unitRange": "11-15",
+        "system": "도리아",
+        "systemJa": "ドーリア",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      },
+      {
+        "unitRange": "16-20",
+        "system": "잠시드",
+        "systemJa": "ジャムシード",
+        "planet": "캇파",
+        "planetJa": "カッファー"
+      },
+      {
+        "unitRange": "21-25",
+        "system": "케림",
+        "systemJa": "ケリム",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      },
+      {
+        "unitRange": "26-30",
+        "system": "로포덴",
+        "systemJa": "ロフォーデン",
+        "planet": "루드밀라",
+        "planetJa": "ルドミラ"
+      },
+      {
+        "unitRange": "31-35",
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "산아 아나",
+        "planetJa": "サンア・アナ"
+      },
+      {
+        "unitRange": "36-40",
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "루지아나",
+        "planetJa": "ルジアーナ"
+      },
+      {
+        "unitRange": "41-45",
+        "system": "메르칼트",
+        "systemJa": "メルカルト",
+        "planet": "네르갈",
+        "planetJa": "ネルガル"
+      },
+      {
+        "unitRange": "46-50",
+        "system": "리오 베르데",
+        "systemJa": "リオ・ヴェルデ",
+        "planet": "산 카를로스",
+        "planetJa": "サン・カルロス"
+      },
+      {
+        "unitRange": "51-55",
+        "system": "슈파라",
+        "systemJa": "シュパーラ",
+        "planet": "시우다 로드리고",
+        "planetJa": "シウダ・ロドリゴ"
+      }
+    ]
+  }
+}

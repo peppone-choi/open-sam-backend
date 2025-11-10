@@ -1,0 +1,161 @@
+{
+  "morale": {
+    "concept": "사기 (士気)",
+    "fleetMoraleMax": "함대 최대 사기는 함대사령관 '통솔' 능력에 영향",
+    "confusionThreshold": "사기값 감소로 혼란 상태 유닛에 커맨드 레인지 서클 효과 미침",
+    "maintenanceCommand": {
+      "name": "군기 유지",
+      "effect": "군기 유지도 증가, 혼란 발생률 감소"
+    }
+  },
+  "confusion": {
+    "concept": "혼란 (混乱)",
+    "cause": "사기값 감소",
+    "effect": "커맨드 레인지 서클 효과 안 미쳐 커맨드 발령 불가",
+    "combatPosture": "전투 태세 시 사기값 감소값 증가"
+  },
+  "influence": {
+    "concept": "영향력 (影響力)",
+    "rankOrdering": "계급 래더 내 순열 제4법칙: 영향력 높은 순",
+    "gainSources": [
+      "야회 성과",
+      "수렵 결과",
+      "회담 성과",
+      "담화 성과",
+      "연설 성과"
+    ],
+    "politicalCommands": {
+      "soiree": "특정 인물 자신의 수도 저택에 초대 야회. 야회 성과에 따라 영향력 변화",
+      "hunting": "특정 인물 자신의 봉토 행성 저택에 초대 수렵. 수렵 결과에 따라 영향력과 초대객 우호도 변화",
+      "conference": "특정 인물 자신 체류 호텔 일실에 초대 회담. 회담 성과에 따라 영향력 변화",
+      "dialogue": "특정 인물 자신 체류 호텔 일실에 초대 담화. 담화 성과에 따라 초대객 우호도와 영향력 변화",
+      "speech": "행성/요새 중앙 광장에서 연설. 연설 성과에 따라 영향력과 당해 행성/요새 정부 지지율 증감"
+    }
+  },
+  "friendship": {
+    "concept": "우호도 (友好度)",
+    "gainSources": [
+      "회견",
+      "수렵 결과",
+      "담화 성과"
+    ],
+    "commands": {
+      "meeting": "동일 스팟 체류 인물과 회견, 우호도 상승",
+      "hunting": "특정 인물 자신의 봉토 행성 저택에 초대 수렵. 수렵 결과에 따라 영향력과 초대객 우호도 변화",
+      "dialogue": "특정 인물 자신 체류 호텔 일실에 초대 담화. 담화 성과에 따라 초대객 우호도와 영향력 변화"
+    }
+  },
+  "governmentSupportRate": {
+    "concept": "정부 지지율 (政府支持率)",
+    "factors": [
+      "요직 캐릭터 '통솔' 능력",
+      "분열 행진",
+      "연설 성과"
+    ],
+    "effects": {
+      "forceSuppression": "무력 진압 시 정부 지지율 하락 가능",
+      "militaryParade": "분열 행진으로 행성 정부 지지율 증가",
+      "speech": "연설 성과에 따라 영향력과 당해 행성/요새 정부 지지율 증감",
+      "agitation": "시민 선동으로 행성/요새 정부 지지율 하락"
+    },
+    "victoryCondition": "결정적 승리 조건 중 하나"
+  },
+  "securityRate": {
+    "concept": "치안 유지율 (治安維持率)",
+    "improvementMethods": [
+      "경계 출동",
+      "무력 진압",
+      "특별 경비"
+    ],
+    "commands": {
+      "alertDeployment": "주류 중인 육전대로 행성/요새 치안 유지율 증가",
+      "forceSuppression": "주류 중인 육전대로 행성/요새 치안 유지율 증가. 무력 진압 시 정부 지지율 하락 가능",
+      "specialGuard": "특정 경계 스팟 경비 태세 강화"
+    }
+  },
+  "nationalGoals": {
+    "command": "국가 목표",
+    "description": "국가 전략적 목표 책정"
+  },
+  "governanceGoals": {
+    "command": "통치 목표",
+    "description": "특정 행성/요새에 대해 전략적 목표 제시"
+  },
+  "coup": {
+    "commands": {
+      "rebellion": "쿠데타 수모자가 됨",
+      "conspiracy": "동일 스팟 체류 인물에게 쿠데타 참가 교섭",
+      "persuasion": "소속 부대 배비 유닛의 반란 충성도 상승",
+      "revolt": "쿠데타 실행",
+      "participation": "참가 교섭 동의한 쿠데타 참가",
+      "inspection": "쿠데타 조짐 감지"
+    },
+    "victoryCondition": "결정적 승리 조건: 세션 종료 시 쿠데타 미발생"
+  },
+  "arrest": {
+    "commands": {
+      "wideSearch": "행성/요새 체류 특정 인물 수색",
+      "arrestWarrant": "동진영 소속 특정 인물 체포 리스트 등록",
+      "executionOrder": "특정 인물에게 체포 리스트 등록 인물 중 하나 체포 권한 부여",
+      "arrestOrder": "동일 스팟 또는 동일 공간 그리드 동일 부대 특정 인물 체포 시도"
+    },
+    "detention": {
+      "command": "처단",
+      "description": "구금 인물 처단 결정"
+    },
+    "authorities": {
+      "empire": {
+        "憲兵總監": "원수 외 군인 체포 구속 권한",
+        "內務尚書": "대령 이하 군인 체포·처단 권한",
+        "司法尚書": "정치가 체포·처단 권한"
+      },
+      "alliance": {
+        "憲兵司令官": "전 군인 체포 구속 권한",
+        "法秩序委員長": "정치가 체포·처단 권한"
+      }
+    }
+  },
+  "surrenderRecommendation": {
+    "concept": "항복 권고 (降伏勸告)",
+    "successRate": "함대사령관 '통솔' 능력에 영향"
+  },
+  "proposalCommand": {
+    "concept": "제안/명령 (提案/命令)",
+    "organizationBasis": "각 진영 조직 구성에 따라 조직 단위로 실행",
+    "exampleUse": "작전 계획 대상 자신 계급 변경 원 제출 가능"
+  },
+  "operationSystem": {
+    "concept": "작전 계획",
+    "purpose": "진영 전략적 목표 책정, 새 작전 목적(점령/방위/소탕) 정함",
+    "effect": "계획에 기초 행동 시와 그렇지 않은 경우 행동 결과 획득 공적 포인트 값 크게 다름. 작전 계획 기초 행동 시 통상 격파 공적 포인트와 별도로 보너스 포인트 획득",
+    "operationTypes": {
+      "occupation": "적 성계 점령 작전",
+      "defense": "자진영 성계 일정 기간 상태 유지 작전",
+      "suppression": "어느 그리드 존재 적 유닛 격파 소탕 작전 (독행함 대상만)"
+    },
+    "planningElements": [
+      "작전 목적",
+      "목표 성계",
+      "작전 참가 함정 유닛수",
+      "발동 예정 시기"
+    ],
+    "orderIssue": {
+      "concept": "발령",
+      "description": "작전 계획으로 정해진 참가 유닛수 기초, 구체적으로 어느 부대 작전 참가시킬지 결정",
+      "separateAuthority": "작전 계획 입안 역직과 발령 역직은 별 부서 (제국군/동맹군 공통)"
+    },
+    "operationStart": "발령 부대 또는 독행함 일부가 목표 성계 도달 시점에 발령 작전 실제 개시",
+    "duration": "발령 작전 계획은 그 시점부터 게임 내 30일 경과 시점에 종료. 계획 책정자 [작전 철회] 커맨드 실행 시 즉시 철회, 작전 종료",
+    "results": {
+      "occupation": [
+        "작전 목표 성계 내 전 행성/요새 지배하 → 작전 계획 본래 보너스 포인트 발령 전 부대 입력",
+        "작전 목표 성계 내 행성/요새 최저 1개 지배하 → 본래 약50% 보너스 포인트 발령 전 부대 입력"
+      ],
+      "defense": [
+        "작전 목표 성계 내 전 행성/요새가 적 점령 없이 자진영 상태 유지 → 작전 계획 본래 보너스 포인트 발령 전 부대 입력",
+        "작전 목표 성계 내 행성/요새 최저 1개가 적 점령 → 본래 약50% 보너스 포인트 발령 전 부대 입력"
+      ],
+      "suppression": "지정 성계에서 400광년 이내에서 적함선 1척 격침마다 보너스 포인트 획득"
+    }
+  }
+}

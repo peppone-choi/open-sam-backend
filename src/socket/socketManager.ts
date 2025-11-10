@@ -8,6 +8,7 @@ import { BattleSocketHandler } from '../handlers/battle.socket';
 import { GameSocketHandler } from './game.socket';
 import { GeneralSocketHandler } from './general.socket';
 import { NationSocketHandler } from './nation.socket';
+import { WebSocketHandler } from '../services/logh/WebSocketHandler.service';
 
 /**
  * Socket.IO 서버 관리자
@@ -19,6 +20,7 @@ export class SocketManager {
   private gameHandler: GameSocketHandler;
   private generalHandler: GeneralSocketHandler;
   private nationHandler: NationSocketHandler;
+  private loghHandler: WebSocketHandler | null = null;
 
   constructor(httpServer: HTTPServer) {
     // Socket.IO 서버 초기화
@@ -48,6 +50,12 @@ export class SocketManager {
     this.generalHandler = new GeneralSocketHandler(this.io);
     this.nationHandler = new NationSocketHandler(this.io);
 
+    // LOGH 핸들러 초기화 (환경 변수로 제어)
+    if (process.env.ENABLE_LOGH_WEBSOCKET !== 'false') {
+      this.loghHandler = new WebSocketHandler(this.io);
+      console.log('✅ LOGH WebSocket 핸들러 초기화 완료');
+    }
+
     // 연결 처리
     this.io.use(this.authenticateSocket.bind(this));
     this.io.on('connection', this.handleConnection.bind(this));
@@ -60,6 +68,14 @@ export class SocketManager {
    */
   private async authenticateSocket(socket: Socket, next: Function) {
     try {
+      // LOGH 세션 기반 인증 (sessionId만으로 접속 가능)
+      const sessionId = socket.handshake.query?.sessionId as string;
+      if (sessionId && sessionId.startsWith('logh_')) {
+        // LOGH 게임은 sessionId만으로 인증 허용 (오픈 액세스)
+        socket.user = { sessionId } as any;
+        return next();
+      }
+
       const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
 
       if (!token) {
@@ -95,15 +111,22 @@ export class SocketManager {
   private handleConnection(socket: Socket) {
     const user = socket.user as JwtPayload;
     const userId = user?.userId;
+    const sessionId = socket.handshake.query?.sessionId as string;
 
-    console.log(`📡 소켓 연결: ${socket.id} (사용자: ${userId || 'unknown'})`);
+    console.log(`📡 소켓 연결: ${socket.id} (사용자: ${userId || 'unknown'}, 세션: ${sessionId || 'N/A'})`);
 
     // 사용자별 룸에 조인
     if (userId) {
       socket.join(`user:${userId}`);
     }
 
-    // 핸들러에 연결 전달
+    // LOGH 세션인 경우 LOGH 핸들러로 처리
+    if (sessionId && sessionId.startsWith('logh_') && this.loghHandler) {
+      this.loghHandler.handleConnection(socket);
+      return; // LOGH는 별도 처리
+    }
+
+    // 핸들러에 연결 전달 (Sangokushi 전용)
     this.battleHandler.handleConnection(socket);
     this.gameHandler.handleConnection(socket);
     this.generalHandler.handleConnection(socket);

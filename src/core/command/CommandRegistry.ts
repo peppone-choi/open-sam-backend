@@ -9,6 +9,7 @@ import { logger } from '../../common/logger';
 export class CommandRegistry {
   private static generalCommands: Map<string, any> = new Map();
   private static nationCommands: Map<string, any> = new Map();
+  private static loghCommands: Map<string, any> = new Map();
 
   /**
    * General 커맨드 등록
@@ -31,6 +32,16 @@ export class CommandRegistry {
   }
 
   /**
+   * LOGH 커맨드 등록
+   * @param type - 커맨드 타입
+   * @param commandClass - 커맨드 클래스
+   */
+  static registerLogh(type: string, commandClass: any): void {
+    this.loghCommands.set(type, commandClass);
+    logger.debug('LOGH 커맨드 등록', { type, className: commandClass.name });
+  }
+
+  /**
    * General 커맨드 조회
    * @param type - 커맨드 타입
    * @returns 커맨드 클래스 또는 null
@@ -49,6 +60,15 @@ export class CommandRegistry {
   }
 
   /**
+   * LOGH 커맨드 조회
+   * @param type - 커맨드 타입
+   * @returns 커맨드 클래스 또는 null
+   */
+  static getLogh(type: string): any {
+    return this.loghCommands.get(type) || null;
+  }
+
+  /**
    * 모든 General 커맨드 타입 조회
    */
   static getAllGeneralTypes(): string[] {
@@ -63,13 +83,21 @@ export class CommandRegistry {
   }
 
   /**
+   * 모든 LOGH 커맨드 타입 조회
+   */
+  static getAllLoghTypes(): string[] {
+    return Array.from(this.loghCommands.keys());
+  }
+
+  /**
    * 전체 커맨드 수 조회
    */
   static getStats() {
     return {
       generalCount: this.generalCommands.size,
       nationCount: this.nationCommands.size,
-      total: this.generalCommands.size + this.nationCommands.size
+      loghCount: this.loghCommands.size,
+      total: this.generalCommands.size + this.nationCommands.size + this.loghCommands.size
     };
   }
 
@@ -106,6 +134,30 @@ export class CommandRegistry {
       
       this.registerNation(type, commandClass);
     });
+
+    // LOGH Strategic Commands (자동 로드)
+    try {
+      const strategicCommands = await import('../../commands/logh/strategic');
+      
+      let loghCount = 0;
+      Object.entries(strategicCommands).forEach(([className, commandClass]) => {
+        if (className === 'default') return;
+        
+        // 클래스 인스턴스 생성해서 getName() 호출
+        try {
+          const instance = new (commandClass as any)();
+          const commandName = instance.getName();
+          this.registerLogh(commandName, commandClass);
+          loghCount++;
+        } catch (err) {
+          // 무시 (BaseLoghCommand 같은 추상 클래스)
+        }
+      });
+      
+      logger.info('LOGH 전략 커맨드 등록 완료', { count: loghCount });
+    } catch (error) {
+      logger.warn('LOGH 커맨드 로드 실패 (선택 사항)', { error });
+    }
 
     const stats = this.getStats();
     logger.info('커맨드 레지스트리 초기화 완료', stats);

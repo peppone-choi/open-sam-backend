@@ -1,0 +1,141 @@
+{
+  "timeConstants": {
+    "realTimeMultiplier": 24,
+    "cpRecoveryInterval": {
+      "gameTime": 2,
+      "realTime": 5,
+      "unit": "분"
+    },
+    "autoPromotionCheckInterval": {
+      "gameTime": 30,
+      "unit": "일"
+    },
+    "operationDuration": {
+      "gameTime": 30,
+      "unit": "일"
+    },
+    "gameEndDate": "우주력 801년 7월 27일 00시 00분"
+  },
+  "sessionConstants": {
+    "maxPlayers": 2000,
+    "maxJobCardsPerCharacter": 16,
+    "maxAddressBookEntries": 100,
+    "maxMailboxCapacity": 120,
+    "characterContinuationMaxAge": 60
+  },
+  "gridConstants": {
+    "gridSize": 100,
+    "gridSizeUnit": "광년",
+    "maxUnitsPerFactionPerGrid": 300,
+    "maxFactionsPerGrid": 2
+  },
+  "warpConstants": {
+    "minimumNavigationCost": 100
+  },
+  "rankLimits": {
+    "marshal": 5,
+    "seniorAdmiral": 5,
+    "admiral": 10,
+    "viceAdmiral": 20,
+    "rearAdmiral": 40,
+    "commodore": 80,
+    "colonelAndBelow": "unlimited"
+  },
+  "promotionDemotionConstants": {
+    "promotionMeritReset": 0,
+    "demotionMeritSet": 100
+  },
+  "experienceConstants": {
+    "experienceToLevelUp": 100,
+    "levelUpExperienceReset": 0
+  },
+  "commandConstants": {
+    "cpSubstitutionMultiplier": 2
+  },
+  "tacticalConstants": {
+    "evaluationPointCalculationInterval": {
+      "gameTime": 30,
+      "unit": "일"
+    },
+    "commandProcessingTimeRange": {
+      "min": 0,
+      "max": 20,
+      "unit": "초"
+    },
+    "retreatPreparationTime": {
+      "gameTime": 2.5,
+      "unit": "분"
+    },
+    "groundForceDeploymentTime": 20,
+    "groundForceWithdrawalTime": 20,
+    "sortieTimePerUnit": 20,
+    "parallelMoveSpeedMultiplier": 0.5,
+    "maxGroundUnitsPerFaction": 30,
+    "groundUnitFullDeploymentPercentage": 100
+  },
+  "shipUnitConstants": {
+    "shipsPerUnit": 300
+  },
+  "characterDeletionConstants": {
+    "maxRankForDeletion": "대령",
+    "requiredLocation": ["거주구 자실", "호텔 자실"],
+    "noActiveSustainedCommands": true
+  },
+  "retirementConstants": {
+    "postRetirementEnlistmentCooldown": {
+      "gameTime": 30,
+      "unit": "일"
+    },
+    "enlistmentRank": "소좌",
+    "enlistmentFlagship": "전함"
+  },
+  "lectureConstants": {
+    "effectDuration": {
+      "gameTime": 120,
+      "unit": "분"
+    }
+  },
+  "victoryConstants": {
+    "decisiveVictory": {
+      "populationControlThreshold": 0.9,
+      "fleetRatioThreshold": 10
+    },
+    "defeatThreshold": {
+      "controlledSystemsIncludingCapital": 3
+    }
+  },
+  "productionConstants": {
+    "crewTrainingLevels": ["엘리트", "베테랑", "노멀", "그린"],
+    "productionLevel": "그린"
+  },
+  "storageConstants": {
+    "patrolAndGroundForceStorageType": "일괄 부대 창고"
+  },
+  "formulas": {
+    "cpRecovery": "캐릭터 파라미터 '정치' 능력과 '운영' 능력이 영향",
+    "commandRangeCircleMax": "기함 능력에 따라 변화",
+    "commandRangeCircleExpansionRate": "파라미터 '지휘' 값에 따라 변화",
+    "reconnaissanceRange": "유닛 성능과 조선 패널 SENSOR 할당에 따라 변화",
+    "reconnaissanceAccuracy": "색적 유닛으로부터의 거리와 대상 유닛 종별에 따라 변화",
+    "fleetMaxMorale": "함대사령관 '통솔' 능력에 영향",
+    "surrenderRecommendationSuccessRate": "함대사령관 '통솔' 능력에 영향",
+    "taxRevenue": "요직 캐릭터 '통솔' 능력 영향",
+    "governmentSupportRate": "요직 캐릭터 '통솔' 능력 영향",
+    "crewReinforcementAmount": "각 함정 유닛마다 승원 효율 값에 따라 변화"
+  },
+  "gameDesignNotes": {
+    "miimplemented": [
+      "경제 관련",
+      "AI 기능",
+      "서훈",
+      "전투정 (현재 미구현)",
+      "공격에 의한 물자 감소",
+      "전사 시스템",
+      "페잔 점령"
+    ],
+    "temporaryImplementation": [
+      "캐릭터 성장 (연령 효과, 경험치 시스템)",
+      "기함 변경 (계급에 따라 자동 변경)"
+    ]
+  }
+}

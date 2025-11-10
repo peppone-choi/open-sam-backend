@@ -1,0 +1,132 @@
+{
+  "timeSystem": {
+    "realTimeToGameTimeMultiplier": 24,
+    "conversions": {
+      "1_real_second": "24 게임 초",
+      "1_real_minute": "24 게임 분",
+      "1_real_hour": "24 게임 시간 (1일)",
+      "24_real_hours": "24 게임 일",
+      "30_real_hours": "30 게임 일 (1개월)"
+    }
+  },
+  "sessionRules": {
+    "maxPlayers": 2000,
+    "returnRestrictions": {
+      "cannotUseOriginalCharacters": true,
+      "canOnlyJoinOriginalFaction": true
+    },
+    "characterContinuation": {
+      "requiresEvaluationPoints": true,
+      "maxAge": 60,
+      "retainedAttributes": ["연령", "각종 파라미터", "계급"]
+    }
+  },
+  "victoryConditions": {
+    "decisiveVictory": {
+      "populationControl": "90% 이상",
+      "fleetRatio": "10배 이상",
+      "noCoup": true,
+      "commanderInEnemyCapital": true,
+      "commanderInEnemyCapitalNote": "제국군만 해당"
+    },
+    "limitedVictory": {
+      "description": "결정적 승리 조건 중 하나라도 충족하지 못한 경우"
+    },
+    "regionalVictory": {
+      "description": "적 수도 점령 외의 방법으로 세션 종료",
+      "condition": "인구비로 적을 앞서는 경우",
+      "tieBreaker": "동수인 경우 동맹군 승리"
+    },
+    "defeat": {
+      "description": "모든 승리 조건에서 열세인 경우"
+    }
+  },
+  "defeatConditions": [
+    {
+      "condition": "enemyCapitalOccupied",
+      "description": "적 세력의 수도 행성 점령"
+    },
+    {
+      "condition": "controlledSystemsBelowThreshold",
+      "description": "정규군 진영이 지배하는 성계가 수도 성계 포함 3개 이하"
+    },
+    {
+      "condition": "timeLimit",
+      "description": "우주력 801년 7월 27일 00시 00분까지 상기 조건 미달성"
+    }
+  ],
+  "gridSystem": {
+    "gridSize": "100광년",
+    "gridTypes": {
+      "space": "공간 그리드 (빈 우주 공간)",
+      "starSystem": "성계 그리드 (성계 포함)",
+      "impassable": "항행 불능 그리드"
+    },
+    "entryRestrictions": {
+      "maxUnitsPerFaction": 300,
+      "maxFactionsPerGrid": 2,
+      "soloFlagshipRestriction": "독행함은 적 유닛/행성/요새가 있는 성계 진입 불가",
+      "terrainRestriction": "플라즈마 폭풍, 사르가소 스페이스 진입 불가"
+    }
+  },
+  "warpSystem": {
+    "warpError": {
+      "description": "장거리 워프 시 목표 그리드 인접 공간 그리드로 오차 발생 가능"
+    },
+    "navigationCost": {
+      "description": "워프 항행 시 '항속' 소비",
+      "minimumRequired": 100
+    },
+    "starSystemEntry": {
+      "restriction": "성계 그리드 진입 시 인접 그리드로 한 번 워프 필요",
+      "note": "원거리에서 직접 성계 그리드 진입 불가"
+    }
+  },
+  "characterGrowth": {
+    "ageEffect": {
+      "young": "젊은 캐릭터는 매월 능력치 상승 가능",
+      "old": "장년 캐릭터는 매월 능력치 하락 가능"
+    },
+    "experienceSystem": {
+      "cpAccumulation": "CP 사용량 누적",
+      "experiencePerThreshold": "일정 사용량마다 경험치 +1",
+      "levelUpThreshold": 100,
+      "levelUpResult": "경험치 100 달성 시 해당 능력 +1, 경험치 0으로 초기화",
+      "pcp": {
+        "affects": ["통솔", "정치", "운용", "정보"]
+      },
+      "mcp": {
+        "affects": ["지휘", "기동", "공격", "방어"]
+      },
+      "note": "CP 대용으로 소비된 CP는 누적 안 됨"
+    }
+  },
+  "characterDeletion": {
+    "conditions": [
+      "현재 계급이 대령 이하",
+      "거주구 또는 호텔 자실에 체류",
+      "연료보급, 전략색적 등 지속 커맨드 효과 중이 아님"
+    ]
+  },
+  "logoutLocations": {
+    "safeZones": {
+      "home": {
+        "description": "자택/호텔(거실)/거주구(거실)",
+        "deathRisk": false,
+        "arrestRisk": true,
+        "personnelCommandTarget": true
+      },
+      "flagship": {
+        "description": "기함 유닛 내부",
+        "planetDocked": "전사 가능성 없음",
+        "spaceOnline": "AI 자동 대행 (미구현)",
+        "arrestRisk": true,
+        "personnelCommandTarget": true
+      },
+      "other": {
+        "description": "기타 장소",
+        "behavior": "해당 장소에 계속 머무름"
+      }
+    }
+  }
+}

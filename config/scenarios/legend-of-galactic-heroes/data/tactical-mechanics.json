@@ -1,0 +1,281 @@
+{
+  "startConditions": [
+    "은하 내 하나의 그리드에 아군 세력 유닛과 적 세력 유닛이 동일 그리드 존재"
+  ],
+  "endConditions": [
+    "전술 게임 발생 그리드에 적 세력 유닛이 하나도 존재하지 않음",
+    "행성/요새 존재 그리드의 경우 + 그리드 내 존재 전 행성/요새 점령"
+  ],
+  "evaluationPoints": {
+    "sources": [
+      "전술 게임 내 적 함선 격파",
+      "적 행성/요새 점령"
+    ],
+    "calculation": "게임 내 30일 경과마다 집계, 공적 포인트 랭킹으로 평가 포인트 획득"
+  },
+  "unitTypes": {
+    "groundTroops": {
+      "types": ["장갑병", "장갑척탄병", "경장육전병"],
+      "use": "주로 지상전"
+    },
+    "flagship": {
+      "structure": "1척 단위",
+      "types": ["특수 기함 (고유 명칭)", "범용 기함 (일반 함정 유닛 발췌)"]
+    },
+    "shipUnit": {
+      "scale": "1함정 유닛 = 300척",
+      "types": {
+        "empire": ["전함", "고속전함", "순양함", "구축함", "전투정모함", "뇌격정모함", "양륙함", "수송함", "병원수송함", "공작함"],
+        "alliance": ["전함", "순양함", "타격순양함", "구축함", "전투정모함", "양륙함", "수송함", "병원수송함", "공작함"]
+      }
+    }
+  },
+  "flagshipCommand": {
+    "automaticAssignment": "전술 게임 진입 시 동일 부대 함정/육전대 유닛 자동 지휘권 설정",
+    "priorityOrder": [
+      "현재 온라인 캐릭터",
+      "계급 높은 순",
+      "평가 포인트 많은 순",
+      "공적 포인트 많은 순"
+    ],
+    "transferConditions": [
+      "다른 기함 커맨드 레인지 서클 내 미존재",
+      "일체 커맨드 미실행 (완전 정지 상태)"
+    ]
+  },
+  "commandRangeCircle": {
+    "concept": "기함 유닛 또는 방위사령부 발령 기점",
+    "scope": "일정 범위 내 동일 전대 소속 유닛에만 커맨드 발령 가능",
+    "exception": "기함 자체 커맨드, 캐릭터 개인 커맨드는 영향 안 받음",
+    "confusionEffect": "사기값 감소 혼란 유닛에는 효과 미침",
+    "expansion": {
+      "rate": "각 기함 유닛 정해진 상한까지 시간 경과로 확대",
+      "reset": "커맨드 1회 발령마다 0으로 감소",
+      "soloShipException": "독행함은 커맨드 레인지 서클 개념 없음"
+    },
+    "maxValue": "기함 능력에 따라 변화",
+    "expansionRate": "파라미터 '지휘' 값에 따라 변화",
+    "commandProcessingTime": {
+      "range": "0~20초",
+      "display": "입력 받은 유닛에 처리 개시까지 잔여 시간 바 표시"
+    },
+    "outsideUnits": "최대 범위 외 유닛은 기존 커맨드 수행, 없으면 그 자리 대기"
+  },
+  "reconnaissance": {
+    "automatic": true,
+    "noCommandRequired": true,
+    "rangeFactors": ["유닛 성능", "조선 패널 SENSOR 할당"],
+    "accuracyFactors": ["색적 유닛으로부터의 거리", "대상 유닛 종별"],
+    "stationaryBonus": "유닛 정지 시 집중 색적, 정밀도 향상",
+    "evasion": {
+      "concept": "적 색적 회피 하드웨어 능력",
+      "parameter": "유닛 고유 파라미터",
+      "stationaryBonus": "유닛 정지 시 전자전, 색적 회피력 향상"
+    },
+    "informationSharing": "하나의 전술 게임 내 개별 캐릭터 색적 정보 전 아군 캐릭터 공유",
+    "conflictResolution": "색적 성공과 실패 동시 발생 시 색적 성공 우선"
+  },
+  "shipAttack": {
+    "lineOfSight": {
+      "required": true,
+      "blockedBy": ["아군 함정 유닛 (이동요새 포함)", "사선 장애 지형"]
+    },
+    "weaponTypes": {
+      "beamGun": {
+        "effectiveRange": "중·근거리",
+        "consumption": "군수물자 소비 (미구현)"
+      },
+      "missile": {
+        "effectiveRange": "원거리",
+        "consumption": "군수물자 소비 (미구현)"
+      },
+      "fighter": {
+        "attackPower": "낮음",
+        "specialEffect": "함정 유닛 대상 시 이동 속도 저하",
+        "defense": "자함 공격 적 전투정 공격 시 격퇴",
+        "consumption": "일률 10 군수물자 (미구현)"
+      }
+    }
+  },
+  "fortressCannon": {
+    "lineOfSight": "지형적 사선 방해 미존재 필요",
+    "penetration": "사선 통과 전 기함/함정 유닛 자동 명중",
+    "friendlyFire": "아군 공격 가능",
+    "charging": "발사 방향 특정 후 충전 개시, 충전 완료와 함께 자동 발사"
+  },
+  "groundCombat": {
+    "trigger": "행성/요새에 육전대 유닛 강하 시 발생",
+    "requirement": "함정 유닛에 육전대 유닛 탑재 필요",
+    "location": "행성·요새 상 지상전 박스",
+    "defenseDeployment": "방어측 각종 수비대 지상전 박스 전개, 적 지상 부대 대기",
+    "unitLimit": "각 진영 30유닛",
+    "defenseBar": "30유닛 배비 시 100%",
+    "procedure": [
+      "육전대 탑재 함정 유닛을 행성/요새 상에 정박",
+      "전술 커맨드 [육전대출격] 실행, 육전대 유닛 행성/요새 상에 강하",
+      "적 육전대 유닛 존재 시 자동 지상전 개시"
+    ],
+    "participatingUnits": {
+      "normalPlanet": ["장갑병", "장갑척탄병", "경장육전병"],
+      "specialPlanet": ["장갑척탄병", "경장육전병"],
+      "fortress": ["장갑척탄병", "경장육전병"]
+    }
+  },
+  "planetOccupation": {
+    "condition": "행성/요새 상 적 육전대 유닛 완전 배제",
+    "automaticProcessing": [
+      {
+        "type": "직무권한카드상실",
+        "target": "패북 진영 캐릭터",
+        "lost": "관할 행성/요새 고유 직무권한 카드 (행성총독, 행성수비대지휘관, 봉토카드 등)",
+        "gained": "점령 진영 행성/요새 고유 직무권한 카드 획득 (임명 필요)"
+      },
+      {
+        "type": "수비대항복",
+        "effect": "패북 진영 행성수비대 소속 육전대 유닛 즉시 전멸"
+      },
+      {
+        "type": "긴급출격",
+        "effect": "행성/요새 존재 패북 진영 캐릭터 전원 즉시 기함과 함께 출격, 행성/요새 상에 정박 상태"
+      },
+      {
+        "type": "접수",
+        "militarySupplies": "창고 내 군수물자 전부 점령 진영",
+        "ships": "건조 중 함정, 계류소·창고 내 보관 함정 유닛 점령 시점 전부 파괴"
+      },
+      {
+        "type": "시설",
+        "effect": "행성/요새 상 전 시설 점령 진영"
+      },
+      {
+        "type": "소관",
+        "empire": "제국군 점령 행성/요새 자동 제실 직할령"
+      }
+    ]
+  },
+  "unitDamage": {
+    "flagship": {
+      "composition": "1척",
+      "states": ["통상 상태", "손해 상태"],
+      "repair": "공작함으로 수리까지 손해 상태 지속",
+      "destruction": "격파 시 전술 게임에서 배제"
+    },
+    "shipUnit": {
+      "composition": "300척",
+      "states": "각 1척마다 통상/손해 상태",
+      "repair": "공작함으로 수리까지 손해 상태 지속",
+      "destruction": "1척씩 감소"
+    },
+    "cargo": {
+      "supplies": "함정 유닛 척수 비례 동일 비율 감소",
+      "groundTroops": "함정 격파 시 자동 타 함정 이동. 잔존 함정수 일정 이하 시 육전대 유닛 전멸"
+    }
+  },
+  "death": {
+    "playerChoice": "캐릭터 전사는 플레이어 선택에 위임",
+    "normalCase": "기함 격파 시 캐릭터 사망 안 함",
+    "injury": "캐릭터 부상 처리 실행, 설정 '귀환행성'에 즉시 워프 (미구현)",
+    "returnPlanetSetting": "시스템 설정 > 게임 설정 > 귀환행성 설정에서 변경 가능"
+  },
+  "shipCommands": {
+    "move": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "f",
+      "description": "선택 기함/함정 유닛을 지정 위치로 이동"
+    },
+    "turn": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "s",
+      "description": "선택 기함/함정 유닛을 포메이션 유지하며 선회"
+    },
+    "parallelMove": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "d",
+      "description": "기함/함정 유닛 정면 방향 변경 없이 이동. 이동 속도는 유닛 전속의 50%"
+    },
+    "reverse": {
+      "waitTime": 10,
+      "executionTime": 0,
+      "description": "선택 함정/기함 유닛을 그 자리에서 180도 회두. 속도는 캐릭터 [기동] 능력에 따라 변화"
+    },
+    "retreat": {
+      "waitTime": 5,
+      "executionTime": 150,
+      "description": "선택 기함/함정 유닛을 그리드에서 철퇴 (단거리 워프). 레이더 화면 원외 필요. 워프 준비 시간(2.5분) 경과 후 실제 워프. 준비 중 통상 커맨드 입력 가능. 전대 소속 및 실행 개시 시 커맨드 레인지 서클 최대 범위 내 함정 유닛만 적용. 육전대 행성 강하 중이면 지상 부대 잔류"
+    },
+    "formation": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "v",
+      "description": "선택 기함/함정 유닛 그룹화, 지정 대열 정렬. 대열 결정 후 대열 해제 커맨드 입력까지 유지"
+    },
+    "attack": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "r",
+      "description": "선택 함정/기함 유닛에 사정 내 적 유닛 자동 공격 실행. 행성/요새는 자동 공격 안 함"
+    },
+    "fire": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "e",
+      "description": "선택 함정 유닛에 지정 적 유닛 일시 공격 실행"
+    },
+    "airCombat": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "shortcut": "w",
+      "description": "선택 함정 유닛에 지정 적 유닛 전투정 공격 실행. 지정 적 유닛 종류에 따라 '대함전', '요격전' 자동 실행"
+    },
+    "groundForceDeployment": {
+      "waitTime": 5,
+      "executionTime": 20,
+      "description": "함정 유닛 탑재 육전대 유닛을 행성/요새에 강하 또는 출격. 함정 유닛 정박 시 강하, 주류 시 출격. 육전대 유닛 탑재 함정 유닛만 유효"
+    },
+    "groundForceWithdrawal": {
+      "waitTime": 5,
+      "executionTime": 20,
+      "description": "행성/요새 강하 또는 출격 육전대 유닛 철수 (탑재)"
+    },
+    "postureChange": {
+      "waitTime": 10,
+      "executionTime": 0,
+      "description": "선택 함정 유닛 태세 변경. 태세: 항행(통상), 정박(행성/요새 위성 궤도), 주류(행성/요새 내부), 전투(공격력 상승, 색적 범위 하락, 사기값 감소값 증가)"
+    },
+    "sortie": {
+      "waitTime": 5,
+      "executionTime": 20,
+      "description": "행성/요새 주류 기함·함정 유닛 출격. 실행 소요 시간은 1유닛 출격 시간. 배하 유닛 전부 출격은 유닛수×20초 필요. 출격 순서는 함정 유닛 최우선, 종류는 랜덤"
+    },
+    "stop": {
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "현재 실행 중 함정 커맨드 캔슬, 전 유닛 동작 정지"
+    }
+  },
+  "planetFortressCommands": {
+    "fortressCannon": {
+      "waitTime": 5,
+      "executionTime": 0,
+      "description": "요새포 사격. 요새포 공격은 아군 유닛에도 손해. 운용 주의 필요"
+    },
+    "stop": {
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "현재 실행 중 행성/요새 커맨드 캔슬"
+    }
+  },
+  "operationalPanel": {
+    "concept": "기함 에너지 할당 변경",
+    "totalEnergyLimited": true,
+    "beam": "레이저 병기 출력 변경. 공격력 증가, 에너지 충전 속도 단축",
+    "gun": "건 병기 출력 변경. 공격력 증가",
+    "shield": "기함 4방향 대응 실드 회복력 변경. 피탄 감소분 실드 회복",
+    "engine": "전술 게임 중 이동 속도 변경",
+    "warp": "전술 게임 철퇴 필요. 최대값 할당으로 전술 게임 맵 원외에서 철퇴 가능",
+    "sensor": "전술 게임 색적력 변경. 할당 증가로 더 먼 유닛 발견율 증가"
+  }
+}

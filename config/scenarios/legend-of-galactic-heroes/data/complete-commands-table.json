@@ -1,0 +1,790 @@
+{
+  "description": "은하영웅전설 VII 전략 커맨드 완전 일람표 (gin7manual.txt 04712행~)",
+  "descriptionJa": "銀河英雄伝説Ⅶ 戦略コマンド一覧表",
+  "source": "gin7manual.txt lines 04712-05500+",
+  "commandCategories": {
+    "operation": {
+      "name": "작전 커맨드군",
+      "nameJa": "作戦コマンド",
+      "commands": [
+        {
+          "id": "warp",
+          "name": "워프 항행",
+          "nameJa": "ワープ航行",
+          "cpType": "MCP",
+          "cpCost": 40,
+          "executionDelay": 0,
+          "executionDuration": "variable",
+          "description": "임의의 그리드로 이동. 이동 거리에 따라 소비 CP 및 실행 대기 시간 변화. 우주공간에서만 실행 가능",
+          "restrictions": "항속 100 이상 필요"
+        },
+        {
+          "id": "fuel_supply",
+          "name": "연료 보급",
+          "nameJa": "燃料補給",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 8,
+          "executionDuration": "48~960",
+          "description": "워프 연료의 보급 수행"
+        },
+        {
+          "id": "port",
+          "name": "성계 내 항행",
+          "nameJa": "星系内航行",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 8,
+          "executionDuration": 0,
+          "description": "성계 그리드 내 행성 간 이동"
+        },
+        {
+          "id": "discipline_maintenance",
+          "name": "군기 유지",
+          "nameJa": "軍紀維持",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "군기 유지도 증가시켜 혼란 발생률 저하"
+        },
+        {
+          "id": "space_training",
+          "name": "항주 훈련",
+          "nameJa": "航宙訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "부대 훈련도 증가"
+        },
+        {
+          "id": "ground_training",
+          "name": "육전 훈련",
+          "nameJa": "陸戦訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "육전 훈련도 증가"
+        },
+        {
+          "id": "air_training",
+          "name": "공전 훈련",
+          "nameJa": "空戦訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "공전 훈련도 증가"
+        },
+        {
+          "id": "ground_tactical_training",
+          "name": "육전 전술 훈련",
+          "nameJa": "陸戦戦術訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "육전 전술 스킬 습득"
+        },
+        {
+          "id": "air_tactical_training",
+          "name": "공전 전술 훈련",
+          "nameJa": "空戦戦術訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "공전 전술 스킬 습득"
+        },
+        {
+          "id": "alert_dispatch",
+          "name": "경계 출동",
+          "nameJa": "警戒出動",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 24,
+          "executionDuration": 0,
+          "description": "주둔 중인 육전대로 행성/요새의 치안 유지율 증가"
+        },
+        {
+          "id": "armed_suppression",
+          "name": "무력 진압",
+          "nameJa": "武力鎮圧",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 24,
+          "executionDuration": 0,
+          "description": "주둔 중인 육전대로 치안 유지율 증가. 무력 진압 시 정부 지지율 하락 가능성"
+        },
+        {
+          "id": "parade",
+          "name": "분열 행진",
+          "nameJa": "分列行進",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 24,
+          "executionDuration": 0,
+          "description": "주둔 중인 육전대로 행성의 정부 지지율 증가"
+        },
+        {
+          "id": "requisition",
+          "name": "징발",
+          "nameJa": "徴発",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 24,
+          "executionDuration": 0,
+          "description": "점령한 타 세력 행성/요새에서 군수물자 징발"
+        },
+        {
+          "id": "special_security",
+          "name": "특별 경비",
+          "nameJa": "特別警備",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 24,
+          "description": "특정 경계 스포트의 경비 태세 한층 강화"
+        },
+        {
+          "id": "ground_forces_deploy",
+          "name": "육전대 출격",
+          "nameJa": "陸戦隊出撃",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "행성/요새 상 전투에 대비, 전 육전대를 함정에서 주둔"
+        },
+        {
+          "id": "ground_forces_withdraw",
+          "name": "육전대 철수",
+          "nameJa": "陸戦隊撤収",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "출격 중인 자부대의 전 육전대를 함정으로 철수"
+        }
+      ]
+    },
+    "personal": {
+      "name": "개인 커맨드군",
+      "nameJa": "個人コマンド",
+      "commands": [
+        {
+          "id": "long_distance_move",
+          "name": "원거리 이동",
+          "nameJa": "遠距離移動",
+          "cpType": "PCP",
+          "cpCost": 10,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "행성/요새 상의 시설 간 이동"
+        },
+        {
+          "id": "short_distance_move",
+          "name": "근거리 이동",
+          "nameJa": "近距離移動",
+          "cpType": "PCP",
+          "cpCost": 5,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "시설 내 스포트 간 이동"
+        },
+        {
+          "id": "retirement",
+          "name": "퇴역",
+          "nameJa": "退役",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "군을 물러나 정치가가 됨. 퇴역 후 30G일간 지원 커맨드 사용 불가"
+        },
+        {
+          "id": "volunteer",
+          "name": "지원",
+          "nameJa": "志願",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "정치가를 은퇴하고 군인이 됨. 계급은 소좌, 기함은 전함으로 변경"
+        },
+        {
+          "id": "defection",
+          "name": "망명",
+          "nameJa": "亡命",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "타 세력에 망명. 망명 후 망명처 수도에 구금되어 처단 대기"
+        },
+        {
+          "id": "meeting",
+          "name": "회견",
+          "nameJa": "会見",
+          "cpType": "PCP",
+          "cpCost": 10,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "동일 스포트에 체류하는 인물과 회견하여 우호도 상승"
+        },
+        {
+          "id": "study",
+          "name": "수강",
+          "nameJa": "受講",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "능력 파라미터 증가. 사관학교에서만 실행 가능"
+        },
+        {
+          "id": "war_game",
+          "name": "병기 연습",
+          "nameJa": "兵棋演習",
+          "cpType": "PCP",
+          "cpCost": 10,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "시뮬레이터로 전술 훈련 수행. 사관학교에서만 실행 가능"
+        },
+        {
+          "id": "rebellion_intention",
+          "name": "반의",
+          "nameJa": "叛意",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "쿠데타의 수모자가 됨"
+        },
+        {
+          "id": "conspiracy",
+          "name": "모의",
+          "nameJa": "謀議",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "동일 스포트에 체류하는 인물에게 쿠데타 참가 교섭"
+        },
+        {
+          "id": "persuasion",
+          "name": "설득",
+          "nameJa": "説得",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "소속 부대에 배치된 유닛의 반란 충성도 상승"
+        },
+        {
+          "id": "revolt",
+          "name": "반란",
+          "nameJa": "叛乱",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "쿠데타 실행"
+        },
+        {
+          "id": "join",
+          "name": "참가",
+          "nameJa": "参加",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "참가 교섭에 동의한 쿠데타에 참가"
+        },
+        {
+          "id": "fund_investment",
+          "name": "자금 투입",
+          "nameJa": "資金投入",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "사적 계좌에서 자금 투입. 지방자금고: 통치 행성에 원조 자금. 신임박스: 현직 황제/의장 지지/불지지. 지지박스: 차기 황제/의장 후보 지지"
+        },
+        {
+          "id": "flagship_purchase",
+          "name": "기함 구입",
+          "nameJa": "旗艦購入",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "새 기함 구입. 구입에는 평가 포인트 소비 필요"
+        }
+      ]
+    },
+    "command": {
+      "name": "지휘 커맨드군",
+      "nameJa": "指揮コマンド",
+      "commands": [
+        {
+          "id": "operation_plan",
+          "name": "작전 계획",
+          "nameJa": "作戦計画",
+          "cpType": "PCP",
+          "cpCost": "10~1280",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "아군의 전략적 목표 책정"
+        },
+        {
+          "id": "withdraw_operation",
+          "name": "작전 철회",
+          "nameJa": "作戦撤回",
+          "cpType": "PCP",
+          "cpCost": "5~320",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "이미 계획된 작전 중지"
+        },
+        {
+          "id": "issue_order",
+          "name": "발령",
+          "nameJa": "発令",
+          "cpType": "PCP",
+          "cpCost": "1~320",
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "이미 발동한 작전에 실행 부대 할당"
+        },
+        {
+          "id": "unit_formation",
+          "name": "부대 결성",
+          "nameJa": "部隊結成",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "부대 결성을 위해 유닛 편성"
+        },
+        {
+          "id": "unit_dissolution",
+          "name": "부대 해산",
+          "nameJa": "部隊解散",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "행성/요새에 주류 중인 부대 해산"
+        },
+        {
+          "id": "lecture",
+          "name": "강의",
+          "nameJa": "講義",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "수강 커맨드 실행 인물의 능력 파라미터 증가. 실행 후 120G분 또는 실행 스포트 이탈까지 유효. 사관학교에서만 실행 가능"
+        },
+        {
+          "id": "transport_plan",
+          "name": "수송 계획",
+          "nameJa": "輸送計画",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 행성/요새 대상 수송 패키지 작성. 작성 패키지는 수송 창고로 이동"
+        },
+        {
+          "id": "transport_cancel",
+          "name": "수송 중지",
+          "nameJa": "輸送中止",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "책정된 수송 계획 중지"
+        }
+      ]
+    },
+    "logistics": {
+      "name": "병참 커맨드군",
+      "nameJa": "兵站コマンド",
+      "commands": [
+        {
+          "id": "complete_repair",
+          "name": "완전 수리",
+          "nameJa": "完全修理",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "손상 상태 기함 및 전 함정 유닛 수리. 부대 보유 전 군수물자 소비"
+        },
+        {
+          "id": "complete_supply",
+          "name": "완전 보급",
+          "nameJa": "完全補給",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "임의 부대에 군수물자 보급"
+        },
+        {
+          "id": "reorganization",
+          "name": "재편성",
+          "nameJa": "再編成",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "부대 소속 유닛 편성 재검토"
+        },
+        {
+          "id": "replenishment",
+          "name": "보충",
+          "nameJa": "補充",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "소모된 함정 유닛에 함정, 승무원, 군수물자 보충"
+        },
+        {
+          "id": "transport",
+          "name": "반출입",
+          "nameJa": "搬出入",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 행성/요새 대상으로 작성된 수송 패키지 반출입"
+        },
+        {
+          "id": "allocation",
+          "name": "할당",
+          "nameJa": "割当",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "행성/요새 재고 각 유닛, 군수물자를 각 부대 전용 스톡에 할당"
+        }
+      ]
+    },
+    "personnel": {
+      "name": "인사 커맨드군",
+      "nameJa": "人事コマンド",
+      "commands": [
+        {
+          "id": "promotion",
+          "name": "승진",
+          "nameJa": "昇進",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "각 계급 래더 최상위 인물을 1계급 승격"
+        },
+        {
+          "id": "special_promotion",
+          "name": "발탁",
+          "nameJa": "抜擢",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "각 계급 래더 최상위 외 인물을 임의로 1계급 승격"
+        },
+        {
+          "id": "demotion",
+          "name": "강등",
+          "nameJa": "降等",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "각 계급 래더 최상위 외 인물을 임의로 1계급 강등"
+        },
+        {
+          "id": "peerage",
+          "name": "서작",
+          "nameJa": "叙爵",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "귀족 출신으로 일정 이상 작위 보유 인물에게 새 작위 수여"
+        },
+        {
+          "id": "decoration",
+          "name": "서훈",
+          "nameJa": "叙勲",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "계급 등 조건 충족 인물에게 훈장 수여"
+        },
+        {
+          "id": "appointment",
+          "name": "임명",
+          "nameJa": "任命",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물에게 새 직무 권한 부여"
+        },
+        {
+          "id": "dismissal",
+          "name": "파면",
+          "nameJa": "罷免",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물을 임의 직무에서 해임"
+        },
+        {
+          "id": "resignation",
+          "name": "사임",
+          "nameJa": "辞任",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "해당 직무 권한 포기"
+        },
+        {
+          "id": "fief_grant",
+          "name": "봉토 수여",
+          "nameJa": "封土授与",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "남작 이상 작위 보유 인물에게 봉토 수여"
+        },
+        {
+          "id": "fief_direct",
+          "name": "봉토 직할",
+          "nameJa": "封土直轄",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물 소유 봉토를 직할로 환원"
+        }
+      ]
+    },
+    "political": {
+      "name": "정치 커맨드군",
+      "nameJa": "政治コマンド",
+      "commands": [
+        {
+          "id": "soiree",
+          "name": "야회",
+          "nameJa": "夜会",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물을 자신의 수도 저택에 초대해 야회. 야회 성과에 따라 영향력 변화"
+        },
+        {
+          "id": "hunting",
+          "name": "수렵",
+          "nameJa": "狩猟",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물을 자신의 봉토 행성 저택에 초대해 수렵. 수렵 결과에 따라 영향력과 초대객과의 우호도 변화"
+        },
+        {
+          "id": "conference",
+          "name": "회담",
+          "nameJa": "会談",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물을 자신이 체류하는 호텔 객실에 초대해 회담. 회담 성과에 따라 영향력 변화"
+        },
+        {
+          "id": "talk",
+          "name": "담화",
+          "nameJa": "談話",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물을 자신이 체류하는 호텔 객실에 초대해 담화. 담화 성과에 따라 초대객과의 우호도 및 영향력 변화"
+        },
+        {
+          "id": "speech",
+          "name": "연설",
+          "nameJa": "演説",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "행성/요새 중앙광장에서 연설. 연설 성과에 따라 영향력과 해당 행성/요새 정부 지지율 증감"
+        },
+        {
+          "id": "national_goal",
+          "name": "국가 목표",
+          "nameJa": "国家目標",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "국가의 전략적 목표 책정"
+        },
+        {
+          "id": "tax_rate",
+          "name": "납입률 변경",
+          "nameJa": "納入率変更",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "각 행성/요새로부터 납입되는 세금 비율 변경"
+        },
+        {
+          "id": "tariff_rate",
+          "name": "관세율 변경",
+          "nameJa": "関税率変更",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "각 무역 품목에 부과하는 관세율 변경"
+        },
+        {
+          "id": "distribution",
+          "name": "분배",
+          "nameJa": "分配",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "국가 예산에서 특정 행성/요새로의 원조금 지출"
+        },
+        {
+          "id": "punishment",
+          "name": "처단",
+          "nameJa": "処断",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "구금된 인물의 처단 결정"
+        },
+        {
+          "id": "diplomacy",
+          "name": "외교",
+          "nameJa": "外交",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "페잔에 대해 다양한 교섭 수행"
+        },
+        {
+          "id": "governance_goal",
+          "name": "통치 목표",
+          "nameJa": "統治目標",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 행성/요새에 대해 전략적 목표 제시"
+        }
+      ]
+    },
+    "intelligence": {
+      "name": "첩보 커맨드군",
+      "nameJa": "諜報コマンド",
+      "commands": [
+        {
+          "id": "mass_search",
+          "name": "일제 수색",
+          "nameJa": "一斉捜索",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "행성/요새 체류 특정 인물 수색"
+        },
+        {
+          "id": "arrest_permit",
+          "name": "체포 허가",
+          "nameJa": "逮捕許可",
+          "cpType": "PCP",
+          "cpCost": 800,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "동진영 소속 특정 인물을 체포 리스트에 등록"
+        },
+        {
+          "id": "execution_order",
+          "name": "집행 명령",
+          "nameJa": "執行命令",
+          "cpType": "PCP",
+          "cpCost": 800,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "특정 인물에게 체포 리스트 등록 인물 중 하나를 체포할 권한 부여"
+        },
+        {
+          "id": "arrest_order",
+          "name": "체포 명령",
+          "nameJa": "逮捕命令",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "동일 스포트 또는 동일 공간 그리드 동일 부대 내 특정 인물 체포 시도"
+        },
+        {
+          "id": "inspection",
+          "name": "사열",
+          "nameJa": "査閲",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "쿠데타 징후 탐지"
+        },
+        {
+          "id": "assault",
+          "name": "습격",
+          "nameJa": "襲撃",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "동일 스포트 체류 특정 인물에게 습격 시도. 대상은 타진영 인물에 한함"
+        },
+        {
+          "id": "surveillance",
+          "name": "감시",
+          "nameJa": "監視",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "executionDelay": 0,
+          "executionDuration": 0,
+          "description": "동일 스포트 체류 특정 인물에게 감시 부착"
+        }
+      ]
+    }
+  }
+}

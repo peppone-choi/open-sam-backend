@@ -1,0 +1,198 @@
+{
+  "description": "초기 직무권한 카드 보유 정보 (gin7manual.txt 03370-04710행)",
+  "descriptionJa": "初期職務権限カード保持情報",
+  "source": "gin7manual.txt lines 03370-04710",
+  "gameStart": {
+    "date": "우주력 796년 (제국력 487년)",
+    "scenario": "제3차 티아마트 회전 이전"
+  },
+  "empire": {
+    "palace": {
+      "emperor": "프리드리히 4세",
+      "supreme_commander": "프리드리히 4세",
+      "chief_of_staff": "클라젠 원수"
+    },
+    "cabinet": {
+      "imperial_chancellor": "리히텐라데 공작",
+      "state_minister": "리히텐라데 공작",
+      "finance_minister": "게를라흐",
+      "fezzan_commissioner": "렘샤이드"
+    },
+    "military_affairs": {
+      "military_minister": "에렌베르크 원수",
+      "personnel_director": "하우프트 대장"
+    },
+    "general_staff": {
+      "chief_of_general_staff": "슈타인호프 원수",
+      "operations_1_director": "슈타인호프 원수",
+      "operations_2_director": "아벤트로트 중장",
+      "operations_3_director": "아벤트로트 중장"
+    },
+    "space_fleet_command": {
+      "fleet_commander_in_chief": "그레고어 폰 뮈켄베르거 원수",
+      "chief_of_staff_space_fleet": "그라이프스 상급대장"
+    },
+    "military_police": {
+      "provost_marshal": "오펜하이머 대장"
+    },
+    "armored_grenadier": {
+      "armored_grenadier_commander": "오프레서 상급대장"
+    },
+    "science_technology": {
+      "science_director": "샤프트 대장"
+    },
+    "fleets": {
+      "1st_fleet": {
+        "commander": "그레고어 폰 뮈켄베르거 원수"
+      },
+      "2nd_fleet": {
+        "commander": "라인하르트 폰 뮈젤 중장 (로엔그람 백작)",
+        "aide": "키르히아이스 소좌"
+      },
+      "3rd_fleet": {
+        "commander": "메르카츠 대장"
+      },
+      "4th_fleet": {
+        "commander": "슈타덴 중장"
+      },
+      "5th_fleet": {
+        "commander": "포겔 중장"
+      },
+      "6th_fleet": {
+        "commander": "힐데스하임 중장"
+      },
+      "8th_fleet": {
+        "commander": "란츠베르크 중장"
+      },
+      "10th_fleet": {
+        "commander": "플레겔 중장"
+      },
+      "12th_fleet": {
+        "commander": "젝트 대장"
+      }
+    },
+    "patrol_fleets": {
+      "4th_patrol": {
+        "commander": "그뤼네만 소장"
+      },
+      "5th_patrol": {
+        "commander": "디터스도르프 소장"
+      },
+      "29th_patrol": {
+        "commander": "호프마이스터 소장"
+      },
+      "44th_patrol": {
+        "commander": "그뤼젠슈테른 소장"
+      },
+      "53rd_patrol": {
+        "commander": "미터마이어 소장"
+      },
+      "54th_patrol": {
+        "commander": "로이엔탈 소장"
+      },
+      "55th_patrol": {
+        "commander": "렌넨캄프 소장"
+      }
+    },
+    "fortresses": {
+      "iserlohn": {
+        "commander": "슈톡하우젠 상급대장"
+      }
+    }
+  },
+  "alliance": {
+    "supreme_council": {
+      "chairman": "샌포드",
+      "defense_chairman": "트뤼니히트",
+      "finance_chairman": "레베로",
+      "human_resources_chairman": "호앙",
+      "information_transport_chairman": "윈저",
+      "fezzan_commissioner": "헨슬로"
+    },
+    "integrated_operations": {
+      "chief_of_operations": "시트레 원수",
+      "first_deputy_chief": "도슨 대장"
+    },
+    "rear_service": {
+      "rear_service_chief": "록웰 대장"
+    },
+    "defense_committee": {
+      "personnel_director": "그로브너 대장",
+      "intelligence_director": "브론즈 중장"
+    },
+    "space_fleet_command": {
+      "fleet_commander_in_chief": "로보스 원수",
+      "chief_of_staff_space_fleet": "드와이트 그린힐 대장"
+    },
+    "fleets": {
+      "1st_fleet": {
+        "commander": "큐브르스리 중장"
+      },
+      "2nd_fleet": {
+        "commander": "파에타 중장"
+      },
+      "3rd_fleet": {
+        "commander": "르페브르 중장"
+      },
+      "4th_fleet": {
+        "commander": "파스토레 중장",
+        "vice_commander": "탄난차이 소장"
+      },
+      "5th_fleet": {
+        "commander": "뷰코크 중장",
+        "vice_commander": "몽샤르망 소장"
+      },
+      "6th_fleet": {
+        "commander": "무어 중장"
+      },
+      "7th_fleet": {
+        "commander": "호우드 중장"
+      },
+      "8th_fleet": {
+        "commander": "애플턴 중장"
+      },
+      "9th_fleet": {
+        "commander": "알 살렘 중장",
+        "vice_commander": "아메드 소장"
+      },
+      "10th_fleet": {
+        "commander": "우란프 중장",
+        "vice_commander": "모튼 소장"
+      },
+      "11th_fleet": {
+        "commander": "홀랜드 중장",
+        "vice_commander": "첸 소장"
+      },
+      "12th_fleet": {
+        "commander": "보로딘 중장"
+      }
+    },
+    "patrol_fleets": {
+      "11th_patrol": {
+        "commander": "칼센 소장"
+      },
+      "16th_patrol": {
+        "commander": "마리네티 준장",
+        "vice_commander": "코날리 소장"
+      },
+      "21st_patrol": {
+        "commander": "알라르콘 소장"
+      },
+      "26th_patrol": {
+        "commander": "자니얼 준장"
+      },
+      "31st_patrol": {
+        "commander": "르그랑주 소장"
+      },
+      "36th_patrol": {
+        "commander": "덱시 준장"
+      },
+      "46th_patrol": {
+        "commander": "마스카니 준장"
+      },
+      "56th_patrol": {
+        "commander": "구웬 준장"
+      }
+    }
+  }
+}

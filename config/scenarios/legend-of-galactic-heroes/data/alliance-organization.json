@@ -1,0 +1,874 @@
+{
+  "faction": "자유행성동맹",
+  "description": "동맹군 조직 구성표",
+  "organizations": [
+    {
+      "orgId": "supreme_council",
+      "orgName": "최고평의회",
+      "orgNameJa": "最高評議会",
+      "positions": [
+        {
+          "positionId": "chairman",
+          "positionName": "의장",
+          "positionNameJa": "議長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "자유행성동맹의 최고권력자. 통상은, 의회에 의해 선출된다. 의원으로부터 최고평의회를 구성하고, 자유행성동맹의 국정을 운영한다.",
+          "descriptionJa": "自由惑星同盟の最高権力者。通常は、議会によって選出される。議員から最高評議会を構成し、自由惑星同盟の国政を運営する。",
+          "appointedBy": null,
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "vice_chairman",
+          "positionName": "부의장",
+          "positionNameJa": "副議長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 의장 부재시에 그 대리를 맡는다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、議長不在時にその代理を務める。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "state_affairs_chairman",
+          "positionName": "국무위원장",
+          "positionNameJa": "国務委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 지사의 임명을 포함한 내정 전반에 관한 권한을 가진다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、知事の任命を含めた内政全般に関する権限を有する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "defense_chairman",
+          "positionName": "국방위원장",
+          "positionNameJa": "国防委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 국방 전반에 관한 권한을 가진다. 자유행성동맹 최대의 국가조직인 군의 전부를 지휘하에 두고 있으며, 최고평의회에 있어서도 큰 발언력을 가진다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、国防全般に関する権限を有する。自由惑星同盟最大の国家組織である軍の全てを指揮下としており、最高評議会においても大きな発言力を持つ。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "finance_chairman",
+          "positionName": "재정위원장",
+          "positionNameJa": "財政委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 재정 전반을 관할하고, 과세율을 변경하는 권한을 가진다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、財政全般を管轄し、課税率を変更する権限を有する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "law_order_chairman",
+          "positionName": "법질서위원장",
+          "positionNameJa": "法秩序委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원. 자유행성동맹의 최고사법기관이며, 정치가를 체포하고, 처단하는 권한을 가진다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員。自由惑星同盟の最高司法機関であり、政治家を逮捕し、処断する権限を有する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "natural_resources_chairman",
+          "positionName": "천연자원위원장",
+          "positionNameJa": "天然資源委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 천연자원의 채굴 전반을 관할한다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、天然資源の採掘全般を管轄する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "human_resources_chairman",
+          "positionName": "인적자원위원장",
+          "positionNameJa": "人的資源委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 인적자원의 동원체제에 전반을 관할한다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、人的資源の動員体制に全般を管轄する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "economic_development_chairman",
+          "positionName": "경제개발위원장",
+          "positionNameJa": "経済開発委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 국내 경제 전반을 관할한다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、国内経済全般を管轄する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "regional_development_chairman",
+          "positionName": "지역사회개발위원장",
+          "positionNameJa": "地域社会開発委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 지방 경제를 관할한다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、地方経済を管轄する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "information_transport_chairman",
+          "positionName": "정보교통위원장",
+          "positionNameJa": "情報交通委員長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 정보 및 성계간 교통을 관할한다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、情報及び星系間交通を管轄する。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "secretary",
+          "positionName": "서기",
+          "positionNameJa": "書記",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "의장에 의해 임명된다. 자유행성동맹 최고평의회의 일원이며, 전적으로 의장의 보좌를 행한다.",
+          "descriptionJa": "議長によって任命される。自由惑星同盟最高評議会の一員であり、専ら議長の補佐を行う。",
+          "appointedBy": "chairman",
+          "canBeHeldBy": ["정치가"]
+        }
+      ]
+    },
+    {
+      "orgId": "fezzan_office",
+      "orgName": "주페잔 변무관 사무소",
+      "orgNameJa": "駐フェザーン弁務官事務所",
+      "positions": [
+        {
+          "positionId": "fezzan_commissioner",
+          "positionName": "페잔 주재 변무관",
+          "positionNameJa": "フェザーン駐在弁務官",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "국무위원장에 의해 임명된다. 본래는 페잔 자치령에 대한 외교기관이지만, 실질적으로는 첩보활동도 행하고 있다. 현지 부임이 원칙이며, 자치령주에 의해 다양한 외교적 특권이 인정되고 있다.",
+          "descriptionJa": "国務委員長によって任命される。本来はフェザーン自治領に対する外交機関であるが、実質的には諜報活動も行っている。現地赴任が原則であり、自治領主によって様々な外交的特権が認められている。",
+          "appointedBy": "state_affairs_chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "fezzan_assistant",
+          "positionName": "페잔 주재 보좌관",
+          "positionNameJa": "フェザーン駐在補佐官",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "국무위원장에 의해 임명된다. 고등변무관의 보좌를 행한다. 현지 부임이 원칙이며, 자치령주에 의해 다양한 외교적 특권이 인정되고 있다.",
+          "descriptionJa": "国務委員長によって任命される。高等弁務官の補佐を行う。現地赴任が原則であり、自治領主によって様々な外交的特権が認められている。",
+          "appointedBy": "state_affairs_chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "fezzan_military_attache",
+          "positionName": "페잔 주재 무관",
+          "positionNameJa": "フェザーン駐在武官",
+          "quota": 1,
+          "minRank": "소위",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 주로 군사 관련의 정보수집을 행한다. 현지 부임이 원칙이며, 자치령주에 의해 다양한 외교적 특권이 인정되고 있다.",
+          "descriptionJa": "国防委員長によって任命される。主に軍事関連の情報収集を行う。現地赴任が原則であり、自治領主によって様々な外交的特権が認められている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "joint_operations_hq",
+      "orgName": "통합작전본부",
+      "orgNameJa": "統合作戦本部",
+      "positions": [
+        {
+          "positionId": "joint_operations_chief",
+          "positionName": "통합작전본부장",
+          "positionNameJa": "統合作戦本部長",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "우주함대의 부대편성이나 작전계획을 관장하는 통합작전본부의 최고책임자. 국방위원장에 의해 임명되는, 제복조 최고위의 군인이다. 인사의 외에, 함대의 작전입안의 실무도 관장한다.",
+          "descriptionJa": "宇宙艦隊の部隊編成や作戦計画を司る統合作戦本部の最高責任者。国防委員長によって任命される、制服組最高位の軍人である。人事の他に、艦隊の作戦立案の実務も管掌する。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "joint_operations_1st_deputy",
+          "positionName": "통합작전본부 제1차장",
+          "positionNameJa": "統合作戦本部第一次長",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부장에 임명된다. 통합작전본부에 소속하고, 수송함대 및 순찰대의 작전계획을 입안한다.",
+          "descriptionJa": "統合作戦本部長に任命される。統合作戦本部に所属し、輸送艦隊及び巡察隊の作戦計画を立案する。",
+          "appointedBy": "joint_operations_chief",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "joint_operations_2nd_deputy",
+          "positionName": "통합작전본부 제2차장",
+          "positionNameJa": "統合作戦本部第二次長",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부장에 임명된다. 통합작전본부에 소속하고, 독행함의 작전계획을 입안한다.",
+          "descriptionJa": "統合作戦本部長に任命される。統合作戦本部に所属し、独行艦の作戦計画を立案する。",
+          "appointedBy": "joint_operations_chief",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "joint_operations_3rd_deputy",
+          "positionName": "통합작전본부 제3차장",
+          "positionNameJa": "統合作戦本部第三次長",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부장에 임명된다. 통합작전본부에 소속하고, 전군의 보충계획의 조정을 관장한다.",
+          "descriptionJa": "統合作戦本部長に任命される。統合作戦本部に所属し、全軍の補充計画の調整を管掌する。",
+          "appointedBy": "joint_operations_chief",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "joint_operations_counselor",
+          "positionName": "통합작전본부 참사관",
+          "positionNameJa": "統合作戦本部参事官",
+          "quota": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "통합작전본부장에 임명된다. 통합작전본부에 소속하고, 통합작전본부장의 전반적인 보좌를 행한다. 또한, 국방위원회나 우주함대 사령부와의 연락장교로서의 기능도 가진다.",
+          "descriptionJa": "統合作戦本部長に任命される。統合作戦本部に所属し、統合作戦本部長の全般的な補佐を行う。また、国防委員会や宇宙艦隊司令部との連絡将校としての機能も有する。",
+          "appointedBy": "joint_operations_chief",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "ground_combat_hq_chief",
+          "positionName": "육전총감부장",
+          "positionNameJa": "陸戦総監部長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "통합작전본부장에 임명된다. 통합작전본부에 소속하고, 육전대 전반의 인사 및 작전계획을 관장한다.",
+          "descriptionJa": "統合作戦本部長に任命される。統合作戦本部に所属し、陸戦隊全般の人事及び作戦計画を管掌する。",
+          "appointedBy": "joint_operations_chief",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "rear_services_hq",
+      "orgName": "후방근무본부",
+      "orgNameJa": "後方勤務本部",
+      "positions": [
+        {
+          "positionId": "rear_services_chief",
+          "positionName": "후방근무본부장",
+          "positionNameJa": "後方勤務本部長",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "우주함대로의 보급 전반 및 치안을 관장하는 후방근무본부의 최고책임자. 국방위원장에 의해 임명된다.",
+          "descriptionJa": "宇宙艦隊への補給全般及び治安を司る後方勤務本部の最高責任者。国防委員長によって任命される。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "rear_services_deputy",
+          "positionName": "후방근무본부 차장",
+          "positionNameJa": "後方勤務本部次長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "후방근무본부에 소속. 후방근무본부장의 직무 전반을 보좌한다.",
+          "descriptionJa": "後方勤務本部に所属。後方勤務本部長の職務全般を補佐する。",
+          "appointedBy": "rear_services_chief",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "rear_services_counselor",
+          "positionName": "후방근무본부 참사관",
+          "positionNameJa": "後方勤務本部参事官",
+          "quota": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "후방근무본부장에 임명된다. 후방근무본부에 소속하고, 후방근무본부장의 전반적인 보좌를 행한다. 또한, 국방위원회나 통합작전본부와의 연락장교로서의 기능도 가진다.",
+          "descriptionJa": "後方勤務本部長に任命される。後方勤務本部に所属し、後方勤務本部長の全般的な補佐を行う。また、国防委員会や統合作戦本部との連絡将校としての機能も有する。",
+          "appointedBy": "rear_services_chief",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "military_police_commander",
+          "positionName": "헌병사령관",
+          "positionNameJa": "憲兵司令官",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "동맹군의 보안조직의 최고책임자. 후방근무본부장에 의해 임명된다. 모든 군인을 체포구속하는 권한을 가진다. 군내부의 규율을 유지하는 요직이다.",
+          "descriptionJa": "同盟軍の保安組織の最高責任者。後方勤務本部長によって任命される。すべての軍人を逮捕拘束する権限を有する。軍内部の規律を保つ要職である。",
+          "appointedBy": "rear_services_chief",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "defense_committee",
+      "orgName": "국방위원회",
+      "orgNameJa": "国防委員会",
+      "positions": [
+        {
+          "positionId": "inspection_director",
+          "positionName": "사열부장",
+          "positionNameJa": "査閲部長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 군에 대해 보안 목적의 내부수사를 행한다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、軍に対して保安目的の内部捜査を行う。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "strategy_director",
+          "positionName": "전략부장",
+          "positionNameJa": "戦略部長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 전체적인 국방정책을 입안・감독하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、全体的な国防政策を立案・監督するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "personnel_director",
+          "positionName": "인사부장",
+          "positionNameJa": "人事部長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 중좌 이하의 군인에 대한 서훈 등을 관장한다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、中佐以下の軍人に対する叙勲等を管掌する。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "defense_director",
+          "positionName": "방위부장",
+          "positionNameJa": "防衛部長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 동맹 영토 내의 수비대를 관장한다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、同盟領土内の守備隊を管掌する。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "intelligence_director",
+          "positionName": "정보부장",
+          "positionNameJa": "情報部長",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 전략작전국을 관장하여, 동맹군의 첩보활동 전반을 컨트롤한다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、戦略作戦局を管掌して、同盟軍の諜報活動全般をコントロールする。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "communications_director",
+          "positionName": "통신부장",
+          "positionNameJa": "通信部長",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 군에 관여하는 통신 인프라를 관리하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、軍に関与する通信インフラを管理するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "equipment_director",
+          "positionName": "장비부장",
+          "positionNameJa": "装備部長",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 함대, 수송함대, 순찰대의 부대편성을 행한다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、艦隊、輸送艦隊、巡察隊の部隊編成を行う。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "facilities_director",
+          "positionName": "시설부장",
+          "positionNameJa": "施設部長",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 군 관련 시설의 인프라를 관리하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、軍関連施設のインフラを管理するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "accounting_director",
+          "positionName": "경리부장",
+          "positionNameJa": "経理部長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 군 관련 시설의 재무를 관리하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、軍関連施設の財務を管理するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "education_director",
+          "positionName": "교육부장",
+          "positionNameJa": "教育部長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 사관학교를 관장한다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、士官学校を管掌する。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "medical_director",
+          "positionName": "위생부장",
+          "positionNameJa": "衛生部長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "국방위원장에 의해 임명된다. 국방위원회에 소속하고, 야전병원 및 군병원을 관리하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "国防委員長によって任命される。国防委員会に所属し、野戦病院及び軍病院を管理するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["정치가"]
+        }
+      ]
+    },
+    {
+      "orgId": "science_technology_hq",
+      "orgName": "과학기술본부",
+      "orgNameJa": "科学技術本部",
+      "positions": [
+        {
+          "positionId": "science_technology_chief",
+          "positionName": "과학기술본부장",
+          "positionNameJa": "科学技術本部長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 군사 관련의 과학기술을 집약적으로 관장하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "国防委員長によって任じられる。軍事関連の科学技術を集約的に管掌するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "space_fleet_hq",
+      "orgName": "우주함대 사령부",
+      "orgNameJa": "宇宙艦隊司令部",
+      "positions": [
+        {
+          "positionId": "space_fleet_commander",
+          "positionName": "우주함대 사령장관",
+          "positionNameJa": "宇宙艦隊司令長官",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "국방위원장에 의해 임명된다. 통합작전본부의 작전계획에 따라 함대를 운용하는 우주함대 사령부의 최고책임자. 동맹군의 사령장관은 함대 사령관의 인사권도 가진다. 대규모 작전의 경우는 병력을 직솔하고 전장에 임한다.",
+          "descriptionJa": "国防委員長によって任命される。統合作戦本部の作戦計画に従って艦隊を運用する宇宙艦隊司令部の最高責任者。同盟軍の司令長官は艦隊司令官の人事権も有する。大規模な作戦の際は兵力を直率して戦場に臨む。",
+          "appointedBy": "defense_chairman",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "space_fleet_vice_commander",
+          "positionName": "우주함대 부사령장관",
+          "positionNameJa": "宇宙艦隊副司令長官",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부의 작전계획에 따라 수송함대와 순찰대를 운용하는 우주함대 사령부의 차석 지휘관. 우주함대 사령장관에 의해 임명된다.",
+          "descriptionJa": "統合作戦本部の作戦計画に従って輸送艦隊と巡察隊を運用する宇宙艦隊司令部の次席指揮官。宇宙艦隊司令長官によって任命される。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "space_fleet_chief_of_staff",
+          "positionName": "우주함대 총참모장",
+          "positionNameJa": "宇宙艦隊総参謀長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "우주함대 사령장관에 의해 임명된다. 우주함대 사령부에 소속하고, 통합작전본부의 작전계획에 따라 독행함을 운용한다. 우주함대 사령부나 각 함대의 스태프를 통솔하는 직무이기도 하며, 참모를 임명하는 직권을 가진다.",
+          "descriptionJa": "宇宙艦隊司令長官によって任命される。宇宙艦隊司令部に所属し、統合作戦本部の作戦計画に従って独行艦を運用する。宇宙艦隊司令部や各艦隊のスタッフを統率する職務でもあり、参謀を任命する職権を有する。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "space_fleet_staff",
+          "positionName": "우주함대 참모",
+          "positionNameJa": "宇宙艦隊参謀",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "우주함대 사령부에 소속하는 참모. 우주함대 총참모장에 의해 임명된다. 본래는, 스태프로서 우주함대 운용의 보조를 행하는 것이지만, 우주함대 사령부와 각 함대 사령부와의 의사소통을 도모하는 기능도 가진다.",
+          "descriptionJa": "宇宙艦隊司令部に所属する参謀。宇宙艦隊総参謀長によって任命される。本来は、スタッフとして宇宙艦隊運用の補助を行うものであるが、宇宙艦隊司令部と各艦隊司令部との意思疎通を図る機能も有する。",
+          "appointedBy": "space_fleet_chief_of_staff",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "military_academy",
+      "orgName": "동맹군 사관학교",
+      "orgNameJa": "同盟軍士官学校",
+      "positions": [
+        {
+          "positionId": "academy_commandant",
+          "positionName": "사관학교장",
+          "positionNameJa": "士官学校長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "동맹군의 대부분의 사관을 배출하는 사관학교의 최고책임자. 국방위원회・교육부장에 의해 임명된다.",
+          "descriptionJa": "同盟軍のほとんどの士官を輩出する士官学校の最高責任者。国防委員会・教育部長によって任命される。",
+          "appointedBy": "education_director",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "academy_instructor",
+          "positionName": "사관학교 교관",
+          "positionNameJa": "士官学校教官",
+          "quota": 10,
+          "minRank": "조장",
+          "maxRank": "원수",
+          "description": "동맹군 사관학교의 교관. 계급에 얽매이지 않고, 전문적인 기술의 소유자가 초빙되어 교편을 잡는 일이 많다.",
+          "descriptionJa": "同盟軍士官学校の教官。階級にとらわれず、専門的な技術の持ち主が招かれて教鞭を執ることが多い。",
+          "appointedBy": "academy_commandant",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "fleet",
+      "orgName": "함대",
+      "orgNameJa": "艦隊",
+      "positions": [
+        {
+          "positionId": "fleet_commander",
+          "positionName": "함대 사령관",
+          "positionNameJa": "艦隊司令官",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "함대를 통솔하는 사령관. 우주함대 사령장관에 의해 임명되고, 실전부대를 직접 통괄한다. 함대는 최대로 18000척의 함정을 거느리는 최대규모의 전략단위이며, 그 작전행동에 관해서도 충분한 재량권이 부여되고 있다.",
+          "descriptionJa": "艦隊を統率する司令官。宇宙艦隊司令長官によって任じられ、実戦部隊を直接統括する。艦隊は最大で18000隻の艦艇を擁する最大規模の戦略単位であり、その作戦行動に関しても十分な裁量権が与えられている。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_vice_commander",
+          "positionName": "함대 부사령관",
+          "positionNameJa": "艦隊副司令官",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "함대의 차석 지휘관. 우주함대 사령장관에 의해 임명된다. 함대의 일부를 분견하는 '분함대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "艦隊の次席指揮官。宇宙艦隊司令長官によって任命される。艦隊の一部を分遣する 分艦隊 の指揮官を務める場合も多い。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_chief_of_staff",
+          "positionName": "함대 참모장",
+          "positionNameJa": "艦隊参謀長",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "우주함대 총참모장에 의해 임명된다. 함대 사령관의 보좌역으로서 참모팀을 통솔하는 것이 주된 직무이다.",
+          "descriptionJa": "宇宙艦隊総参謀長によって任命される。艦隊司令官の補佐役として参謀チームを統率するのが主たる職務である。",
+          "appointedBy": "space_fleet_chief_of_staff",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_staff_officer",
+          "positionName": "함대 참모",
+          "positionNameJa": "艦隊参謀",
+          "quota": 6,
+          "minRank": "대위",
+          "maxRank": "원수",
+          "description": "우주함대 총참모장에 의해 임명된다. 막료로서, 함대 사령관의 직무를 보좌한다. 함대의 일부를 분견하는 '분함대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "宇宙艦隊総参謀長によって任命される。幕僚として、艦隊司令官の職務を補佐する。艦隊の一部を分遣する 分艦隊 の指揮官を務める場合も多い。",
+          "appointedBy": "space_fleet_chief_of_staff",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_adjutant",
+          "positionName": "함대 사령관 부관",
+          "positionNameJa": "艦隊司令官副官",
+          "quota": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "description": "함대 사령관에 의해 임명된다. 함대 사령관의 개인적인 막료이며, 소장의 사관이 임명된다.",
+          "descriptionJa": "艦隊司令官によって任命される。艦隊司令官の個人的な幕僚であり、少壮の士官が任じられる。",
+          "appointedBy": "fleet_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "transport_fleet",
+      "orgName": "수송함대",
+      "orgNameJa": "輸送艦隊",
+      "positions": [
+        {
+          "positionId": "transport_fleet_commander",
+          "positionName": "수송함대 사령관",
+          "positionNameJa": "輸送艦隊司令官",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "수송함대를 통솔하는 사령관. 우주함대 사령장관에 의해 임명된다. 수송함대는 최대로 6900척의 함정을 거느리는 전략단위이며, 군의 병참의 근간이다.",
+          "descriptionJa": "輸送艦隊を統率する司令官。宇宙艦隊司令長官によって任じられる。輸送艦隊は最大で6900隻の艦艇を擁する戦略単位であり、軍の兵站の根幹である。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "transport_fleet_vice_commander",
+          "positionName": "수송함대 부사령관",
+          "positionNameJa": "輸送艦隊副司令官",
+          "quota": 1,
+          "minRank": "대좌",
+          "maxRank": null,
+          "description": "수송함대의 차석 지휘관. 우주함대 사령장관에 의해 임명된다. 수송함대의 일부를 분견하는 '분함대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "輸送艦隊の次席指揮官。宇宙艦隊司令長官によって任命される。輸送艦隊の一部を分遣する 分艦隊 の指揮官を務める場合も多い。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "transport_fleet_adjutant",
+          "positionName": "수송함대 사령관 부관",
+          "positionNameJa": "輸送艦隊司令官副官",
+          "quota": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "description": "수송함대 사령관에 의해 임명된다. 수송함대 사령관의 개인적인 막료이며, 소장의 사관이 임명된다.",
+          "descriptionJa": "輸送艦隊司令官によって任命される。輸送艦隊司令官の個人的な幕僚であり、少壮の士官が任じられる。",
+          "appointedBy": "transport_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "patrol_fleet",
+      "orgName": "순찰대",
+      "orgNameJa": "巡察隊",
+      "positions": [
+        {
+          "positionId": "patrol_commander",
+          "positionName": "순찰대 사령",
+          "positionNameJa": "巡察隊司令",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "순찰대를 통솔하는 사령. 우주함대 사령장관에 의해 임명된다. 순찰대는 최대로 900척의 함정을 거느리는 전략단위이며, 소규모 작전이나 국내경비에 있어서는 주력부대를 구성한다.",
+          "descriptionJa": "巡察隊を統率する司令。宇宙艦隊司令長官によって任じられる。巡察隊は最大で900隻の艦艇を擁する戦略単位であり、小規模な作戦や国内警備においては主力部隊を構成する。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "patrol_vice_commander",
+          "positionName": "순찰대 부사령",
+          "positionNameJa": "巡察隊副司令",
+          "quota": 1,
+          "minRank": "대좌",
+          "maxRank": null,
+          "description": "순찰대의 차석 지휘관. 우주함대 사령장관에 의해 임명된다. 순찰대의 일부를 분견하는 '경비대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "巡察隊の次席指揮官。宇宙艦隊司令長官によって任命される。巡察隊の一部を分遣する 警備隊 の指揮官を務める場合も多い。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "patrol_adjutant",
+          "positionName": "순찰대 사령 부관",
+          "positionNameJa": "巡察隊司令副官",
+          "quota": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "description": "순찰대 사령에 의해 임명된다. 순찰대 사령의 개인적인 막료이며, 소장의 사관이 임명된다.",
+          "descriptionJa": "巡察隊司令によって任命される。巡察隊司令の個人的な幕僚であり、少壮の士官が任じられる。",
+          "appointedBy": "patrol_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "ground_force",
+      "orgName": "지상부대",
+      "orgNameJa": "地上部隊",
+      "positions": [
+        {
+          "positionId": "ground_force_commander",
+          "positionName": "지상부대 지휘관",
+          "positionNameJa": "地上部隊指揮官",
+          "quota": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "description": "지상부대를 통솔하는 지휘관. 육전총감부장에 의해 임명된다. 지상부대는 최대로 900척의 함정과 90000명을 거느리는 전략단위이며, 지상전의 주력부대이다.",
+          "descriptionJa": "地上部隊を統率する指揮官。陸戦総監部長によって任じられる。地上部隊は最大で900隻の艦艇と90000名を擁する戦略単位であり、地上戦の主力部隊である。",
+          "appointedBy": "ground_combat_hq_chief",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "fortress",
+      "orgName": "요새",
+      "orgNameJa": "要塞",
+      "positions": [
+        {
+          "positionId": "fortress_commander",
+          "positionName": "요새 사령관",
+          "positionNameJa": "要塞司令官",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "요새를 통솔하는 사령관. 국방위원회・시설부장에 의해 임명된다. 요새포를 포함하는 모든 고정화포나 병참부대를 지휘한다.",
+          "descriptionJa": "要塞を統率する司令官。国防委員会・施設部長によって任命される。要塞砲を含むすべての固定火砲や兵站部隊を指揮する。",
+          "appointedBy": "facilities_director",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fortress_garrison_commander",
+          "positionName": "요새 수비대 지휘관",
+          "positionNameJa": "要塞守備隊指揮官",
+          "quota": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "description": "요새 사령관에 의해 임명된다. 요새에 주둔하는 육전대를 통솔한다.",
+          "descriptionJa": "要塞司令官によって任命される。要塞に駐屯する陸戦隊を統率する。",
+          "appointedBy": "fortress_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fortress_administrator",
+          "positionName": "요새 사무총감",
+          "positionNameJa": "要塞事務総監",
+          "quota": 1,
+          "minRank": "대좌",
+          "maxRank": "원수",
+          "description": "요새 사령관에 의해 임명된다. 요새의 경제활동 및 생산을 통솔한다.",
+          "descriptionJa": "要塞司令官によって任命される。要塞の経済活動及び生産を統率する。",
+          "appointedBy": "fortress_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "planet_government",
+      "orgName": "정청(행성)",
+      "orgNameJa": "政庁",
+      "positions": [
+        {
+          "positionId": "planetary_governor",
+          "positionName": "지사",
+          "positionNameJa": "知事",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "자유행성동맹에 있어서 행성의 최고통치자. 국무위원장에 의해 임명된다. 경제활동은 물론, 행성의 치안・방위에도 책임을 가진다. 자유행성동맹에 있어서는, 현역 군인은 지사의 직에 취임할 수 없다.",
+          "descriptionJa": "自由惑星同盟における惑星の最高統治者。国務委員長によって任命される。経済活動は元より、惑星の治安・防衛にも責任を有する。自由惑星同盟においては、現役軍人は知事の職に就く事はできない。",
+          "appointedBy": "state_affairs_chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "planetary_garrison_commander",
+          "positionName": "행성 수비대 지휘관",
+          "positionNameJa": "惑星守備隊指揮官",
+          "quota": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "description": "행성 단위로 배비되는 수비대의 지휘관. 국방위원회・방위부장에 의해 임명된다. 최대로 300000명을 지휘한다.",
+          "descriptionJa": "惑星単位で配備される守備隊の指揮官。国防委員会・防衛部長によって任命される。最大で300000名を指揮する。",
+          "appointedBy": "defense_director",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "capital_government",
+      "orgName": "수도행성 정청",
+      "orgNameJa": "首都惑星",
+      "positions": [
+        {
+          "positionId": "capital_chief_administrator",
+          "positionName": "수도 사정관",
+          "positionNameJa": "首都司政官",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "수도의 최고행정관. 국무위원장에 의해 임명된다. 수도의 경찰 임무와 경제활동 및 생산을 통솔하지만, 군사적인 지휘권은 가지지 않는다.",
+          "descriptionJa": "首都の最高行政官。国務委員長によって任命される。首都の警察任務と経済活動及び生産を統率するが、軍事的な指揮権は有さない。",
+          "appointedBy": "state_affairs_chairman",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "capital_defense_commander",
+          "positionName": "수도 방위지휘관",
+          "positionNameJa": "首都防衛指揮官",
+          "quota": 1,
+          "minRank": "대좌",
+          "maxRank": "원수",
+          "description": "수도의 수비대 지휘관. 국방위원회・방위부장에 의해 임명된다. 최대로 300000명을 지휘한다.",
+          "descriptionJa": "首都の守備隊指揮官。国防委員会・防衛部長によって任命される。最大で300000名を指揮する。",
+          "appointedBy": "defense_director",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "strategic_operations_bureau",
+      "orgName": "전략작전국",
+      "orgNameJa": "戦略作戦局",
+      "positions": [
+        {
+          "positionId": "intelligence_agent",
+          "positionName": "첩보관",
+          "positionNameJa": "諜報官",
+          "quota": 50,
+          "minRank": "소위",
+          "maxRank": "대좌",
+          "description": "국방위원회・정보부장에 의해 임명된다. 적국에 잠입하고, 다양한 수단을 구사하여 첩보활동을 행한다.",
+          "descriptionJa": "国防委員会・情報部長によって任命される。敵国に潜入し、様々な手段を駆使して諜報活動を行う。",
+          "appointedBy": "intelligence_director",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    }
+  ]
+}

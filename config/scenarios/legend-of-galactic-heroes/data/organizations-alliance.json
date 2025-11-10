@@ -1,0 +1,521 @@
+{
+  "description": "자유행성동맹 조직 구성 (gin7manual.txt 01305-01435행)",
+  "descriptionJa": "同盟軍組織構成図",
+  "source": "gin7manual.txt lines 01305-01435, 03619-04710",
+  "factionId": "alliance",
+  "organizations": {
+    "supreme_council": {
+      "id": "supreme_council",
+      "name": "최고평의회",
+      "nameJa": "最高評議会",
+      "location": "수도 행성 (하이네센)",
+      "positions": [
+        {
+          "id": "chairman",
+          "name": "의장",
+          "nameJa": "議長",
+          "count": 1,
+          "type": "정치가",
+          "description": "자유행성동맹 최고 권력자. 통상 의회로 선출. 의원에서 최고평의회 구성, 자유행성동맹 국정 운영",
+          "appointedBy": "의회 선출"
+        },
+        {
+          "id": "vice_chairman",
+          "name": "부의장",
+          "nameJa": "副議長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 의장 부재 시 대리 담당",
+          "appointedBy": "의장"
+        },
+        {
+          "id": "state_affairs_chairman",
+          "name": "국무위원장",
+          "nameJa": "国務委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 지사 임명 포함 내정 전반 권한 보유",
+          "appointedBy": "의장",
+          "authority": ["지사 임명/파면"]
+        },
+        {
+          "id": "defense_chairman",
+          "name": "국방위원장",
+          "nameJa": "国防委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 국방 전반 권한 보유. 자유행성동맹 최대 국가조직인 군 전체 지휘하로 최고평의회에서도 큰 발언력",
+          "appointedBy": "의장",
+          "authority": ["전군 인사권", "통합작전본부장 임명", "우주함대사령장관 임명"]
+        },
+        {
+          "id": "finance_chairman",
+          "name": "재정위원장",
+          "nameJa": "財政委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 재정 전반 관할, 과세율 변경 권한 보유",
+          "appointedBy": "의장",
+          "authority": ["과세율 변경"]
+        },
+        {
+          "id": "law_order_chairman",
+          "name": "법질서위원장",
+          "nameJa": "法秩序委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 자유행성동맹 최고 사법기관. 정치가 체포 및 처단 권한 보유",
+          "appointedBy": "의장",
+          "authority": ["정치가 체포/처단"]
+        },
+        {
+          "id": "natural_resources_chairman",
+          "name": "천연자원위원장",
+          "nameJa": "天然資源委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 천연자원 채굴 전반 관할",
+          "appointedBy": "의장"
+        },
+        {
+          "id": "human_resources_chairman",
+          "name": "인적자원위원장",
+          "nameJa": "人的資源委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 인적자원 동원체제 전반 관할",
+          "appointedBy": "의장"
+        },
+        {
+          "id": "economic_development_chairman",
+          "name": "경제개발위원장",
+          "nameJa": "経済開発委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 국내 경제 전반 관할",
+          "appointedBy": "의장"
+        },
+        {
+          "id": "regional_development_chairman",
+          "name": "지역사회개발위원장",
+          "nameJa": "地域社会開発委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 지방 경제 관할",
+          "appointedBy": "의장"
+        },
+        {
+          "id": "information_transport_chairman",
+          "name": "정보교통위원장",
+          "nameJa": "情報交通委員長",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 정보 및 성계간 교통 관할",
+          "appointedBy": "의장"
+        },
+        {
+          "id": "secretary",
+          "name": "서기",
+          "nameJa": "書記",
+          "count": 1,
+          "type": "정치가",
+          "description": "의장이 임명. 자유행성동맹 최고평의회 일원. 전적으로 의장 보좌",
+          "appointedBy": "의장"
+        }
+      ]
+    },
+    "fezzan_office": {
+      "id": "fezzan_office",
+      "name": "주페잔 판무관사무소",
+      "nameJa": "駐フェザーン弁務官事務所",
+      "positions": [
+        {
+          "id": "fezzan_commissioner",
+          "name": "페잔 주재 판무관",
+          "nameJa": "フェザーン駐在弁務官",
+          "count": 1,
+          "type": "정치가",
+          "description": "국무위원장이 임명. 본래 페잔 자치령 외교기관이나 실질적 첩보활동 수행. 현지 부임 원칙, 자치령주가 각종 외교특권 인정",
+          "appointedBy": "국무위원장"
+        },
+        {
+          "id": "fezzan_assistant",
+          "name": "페잔 주재 보좌관",
+          "nameJa": "フェザーン駐在補佐官",
+          "count": 1,
+          "type": "정치가",
+          "description": "국무위원장이 임명. 고등판무관 보좌. 현지 부임 원칙, 자치령주가 각종 외교특권 인정",
+          "appointedBy": "국무위원장"
+        },
+        {
+          "id": "fezzan_attache",
+          "name": "페잔 주재 무관",
+          "nameJa": "フェザーン駐在武官",
+          "count": 1,
+          "minRank": "소위",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 주로 군사 관련 정보 수집. 현지 부임 원칙, 자치령주가 각종 외교특권 인정",
+          "appointedBy": "국방위원장"
+        }
+      ]
+    },
+    "integrated_operations": {
+      "id": "integrated_operations",
+      "name": "통합작전본부",
+      "nameJa": "統合作戦本部",
+      "description": "우주함대 부대편성·작전계획 관장",
+      "positions": [
+        {
+          "id": "chief_of_operations",
+          "name": "통합작전본부장",
+          "nameJa": "統合作戦本部長",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "우주함대 부대편성·작전계획 관장 통합작전본부 최고 책임자. 국방위원장이 임명, 제복조 최고위 군인. 인사 외에 함대 작전입안 실무도 관장",
+          "appointedBy": "국방위원장",
+          "authority": ["함대 작전계획", "함대 발령"]
+        },
+        {
+          "id": "first_deputy_chief",
+          "name": "통합작전본부 제1차장",
+          "nameJa": "統合作戦本部第一次長",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부장이 임명. 통합작전본부 소속, 수송함대·순찰대 작전계획 입안",
+          "appointedBy": "통합작전본부장",
+          "authority": ["수송함대/순찰대 작전계획", "할당"]
+        },
+        {
+          "id": "second_deputy_chief",
+          "name": "통합작전본부 제2차장",
+          "nameJa": "統合作戦本部第二次長",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부장이 임명. 통합작전본부 소속, 독행함 작전계획 입안",
+          "appointedBy": "통합작전본부장",
+          "authority": ["독행함 작전계획"]
+        },
+        {
+          "id": "third_deputy_chief",
+          "name": "통합작전본부 제3차장",
+          "nameJa": "統合作戦本部第三次長",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통합작전본부장이 임명. 통합작전본부 소속, 전군 보충계획 조정 관장",
+          "appointedBy": "통합작전본부장"
+        },
+        {
+          "id": "operations_counselor",
+          "name": "통합작전본부 참사관",
+          "nameJa": "統合作戦本部参事官",
+          "count": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "통합작전본부장이 임명. 통합작전본부 소속, 통합작전본부장 전반 보좌. 국방위원회·우주함대사령부와의 연락장교 기능 보유",
+          "appointedBy": "통합작전본부장"
+        },
+        {
+          "id": "ground_commander_general",
+          "name": "육전총감부장",
+          "nameJa": "陸戦総監部長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "통합작전본부장이 임명. 통합작전본부 소속, 육전대 전반 인사·작전계획 관장",
+          "appointedBy": "통합작전본부장",
+          "authority": ["지상부대 작전계획"]
+        }
+      ]
+    },
+    "rear_service": {
+      "id": "rear_service",
+      "name": "후방근무본부",
+      "nameJa": "後方勤務本部",
+      "positions": [
+        {
+          "id": "rear_service_chief",
+          "name": "후방근무본부장",
+          "nameJa": "後方勤務本部長",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "우주함대로의 보급 전반·치안 관장 후방근무본부 최고 책임자. 국방위원장이 임명",
+          "appointedBy": "국방위원장"
+        },
+        {
+          "id": "rear_service_deputy",
+          "name": "후방근무본부 차장",
+          "nameJa": "後方勤務本部次長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "후방근무본부 소속. 후방근무본부장 직무 전반 보좌",
+          "appointedBy": "후방근무본부장"
+        },
+        {
+          "id": "rear_service_counselor",
+          "name": "후방근무본부 참사관",
+          "nameJa": "後方勤務本部参事官",
+          "count": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "후방근무본부장이 임명. 후방근무본부 소속, 후방근무본부장 전반 보좌. 국방위원회·통합작전본부와의 연락장교 기능 보유",
+          "appointedBy": "후방근무본부장"
+        }
+      ]
+    },
+    "military_police": {
+      "id": "military_police",
+      "name": "헌병 사령부",
+      "nameJa": "憲兵司令官",
+      "positions": [
+        {
+          "id": "provost_marshal",
+          "name": "헌병 사령관",
+          "nameJa": "憲兵司令官",
+          "count": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "동맹군 보안조직 최고 책임자. 후방근무본부장이 임명. 모든 군인 체포구속 권한 보유. 군내부 규율 유지 요직",
+          "appointedBy": "후방근무본부장",
+          "authority": ["전 군인 체포/구속"]
+        }
+      ]
+    },
+    "defense_committee": {
+      "id": "defense_committee",
+      "name": "국방위원회",
+      "nameJa": "国防委員会",
+      "positions": [
+        {
+          "id": "inspection_director",
+          "name": "사열부장",
+          "nameJa": "査閲部長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 군에 대해 보안 목적 내부수사 수행",
+          "appointedBy": "국방위원장"
+        },
+        {
+          "id": "strategy_director",
+          "name": "전략부장",
+          "nameJa": "戦略部長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 전체적 국방정책 입안·감독하나 거의 명목상 포스트",
+          "appointedBy": "국방위원장"
+        },
+        {
+          "id": "personnel_director",
+          "name": "인사부장",
+          "nameJa": "人事部長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 중좌 이하 군인 서훈 등 관장",
+          "appointedBy": "국방위원장",
+          "authority": ["중좌 이하 서훈"]
+        },
+        {
+          "id": "defense_director",
+          "name": "방위부장",
+          "nameJa": "防衛部長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 동맹 영토 내 수비대 관장",
+          "appointedBy": "국방위원장",
+          "authority": ["행성 수비대 지휘관 임명"]
+        },
+        {
+          "id": "intelligence_director",
+          "name": "정보부장",
+          "nameJa": "情報部長",
+          "count": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 전략작전국 관장해 동맹군 첩보활동 전반 컨트롤",
+          "appointedBy": "국방위원장",
+          "authority": ["전략작전국 관리"]
+        },
+        {
+          "id": "communications_director",
+          "name": "통신부장",
+          "nameJa": "通信部長",
+          "count": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 군 관여 통신 인프라 관리하나 거의 명목상 포스트",
+          "appointedBy": "국방위원장"
+        },
+        {
+          "id": "equipment_director",
+          "name": "장비부장",
+          "nameJa": "装備部長",
+          "count": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 함대·수송함대·순찰대 부대편성 수행",
+          "appointedBy": "국방위원장",
+          "authority": ["함대/수송함대/순찰대 부대결성"]
+        },
+        {
+          "id": "facilities_director",
+          "name": "시설부장",
+          "nameJa": "施設部長",
+          "count": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 국방위원회 소속, 군 관련 시설 인프라 관리하나 거의 명목상 포스트",
+          "appointedBy": "국방위원장"
+        },
+        {
+          "id": "accounting_director",
+          "name": "경리부장",
+          "nameJa": "経理部長",
+          "count": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "type": "정치가",
+          "description": "국방위원장이 임명. 국방위원회 소속, 군 관련 시설 재무 관리하나 거의 명목상 포스트",
+          "appointedBy": "국방위원장"
+        },
+        {
+          "id": "education_director",
+          "name": "교육부장",
+          "nameJa": "教育部長",
+          "count": 1,
+          "type": "정치가",
+          "description": "국방위원장이 임명. 국방위원회 소속, 사관학교 관장",
+          "appointedBy": "국방위원장",
+          "authority": ["사관학교장 임명"]
+        },
+        {
+          "id": "medical_director",
+          "name": "위생부장",
+          "nameJa": "衛生部長",
+          "count": 1,
+          "type": "정치가",
+          "description": "국방위원장이 임명. 국방위원회 소속, 야전병원·군병원 관리하나 거의 명목상 포스트",
+          "appointedBy": "국방위원장"
+        }
+      ]
+    },
+    "strategic_operations": {
+      "id": "strategic_operations",
+      "name": "전략작전국",
+      "nameJa": "戦略作戦局",
+      "positions": [
+        {
+          "id": "intelligence_officer",
+          "name": "첩보관",
+          "nameJa": "諜報官",
+          "count": 50,
+          "minRank": "소위",
+          "maxRank": "대좌",
+          "description": "국방위원회 정보부장이 임명. 적국 잠입, 각종 수단 구사해 첩보활동 수행",
+          "appointedBy": "정보부장"
+        }
+      ]
+    },
+    "science_technology": {
+      "id": "science_technology",
+      "name": "과학기술본부",
+      "nameJa": "科学技術本部",
+      "positions": [
+        {
+          "id": "science_director",
+          "name": "과학기술본부장",
+          "nameJa": "科学技術本部長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 군사 관련 과학기술 집약 관장하나 거의 명목상 포스트",
+          "appointedBy": "국방위원장"
+        }
+      ]
+    },
+    "space_fleet_command": {
+      "id": "space_fleet_command",
+      "name": "우주함대 사령부",
+      "nameJa": "宇宙艦隊司令部",
+      "positions": [
+        {
+          "id": "fleet_commander_in_chief",
+          "name": "우주함대 사령장관",
+          "nameJa": "宇宙艦隊司令長官",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "국방위원장이 임명. 통합작전본부 작전계획에 따라 함대 운용하는 우주함대사령부 최고 책임자. 동맹군 사령장관은 함대사령관 인사권도 보유. 대규모 작전 시 병력 직솔해 전장 임함",
+          "appointedBy": "국방위원장",
+          "authority": ["함대사령관 임명"]
+        },
+        {
+          "id": "vice_fleet_commander",
+          "name": "우주함대 부사령장관",
+          "nameJa": "宇宙艦隊副司令長官",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "우주함대 사령장관이 임명. 통합작전본부 작전계획에 따라 수송함대·순찰대 운용하는 우주함대사령부 차석 지휘관",
+          "appointedBy": "우주함대사령장관"
+        },
+        {
+          "id": "chief_of_staff_space_fleet",
+          "name": "우주함대 총참모장",
+          "nameJa": "宇宙艦隊総参謀長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "우주함대 사령장관이 임명. 우주함대사령부 소속, 통합작전본부 작전계획에 따라 독행함 운용. 우주함대사령부·각 함대 스태프 통솔 직무로 참모 임명 직권 보유",
+          "appointedBy": "우주함대사령장관",
+          "authority": ["함대 참모 임명", "독행함 운용"]
+        },
+        {
+          "id": "space_fleet_staff",
+          "name": "우주함대 참모",
+          "nameJa": "宇宙艦隊参謀",
+          "count": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "우주함대 총참모장이 임명. 우주함대사령부 소속 참모. 본래 스태프로 우주함대 운용 보조하나 우주함대사령부와 각 함대사령부 의사소통 도모 기능 보유",
+          "appointedBy": "우주함대총참모장"
+        }
+      ]
+    },
+    "academy": {
+      "id": "academy",
+      "name": "동맹군 사관학교",
+      "nameJa": "同盟軍士官学校",
+      "positions": [
+        {
+          "id": "academy_commandant",
+          "name": "사관학교장",
+          "nameJa": "士官学校長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "동맹군 대부분 사관 배출 사관학교 최고 책임자. 국방위원회 교육부장이 임명",
+          "appointedBy": "교육부장"
+        },
+        {
+          "id": "academy_instructor",
+          "name": "사관학교 교관",
+          "nameJa": "士官学校教官",
+          "count": 10,
+          "minRank": "조장",
+          "maxRank": "원수",
+          "description": "동맹군 사관학교 교관. 계급 무관하게 전문 기술 보유자 초빙되어 교편 집음 다수",
+          "appointedBy": "사관학교장"
+        }
+      ]
+    }
+  }
+}

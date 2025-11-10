@@ -1,0 +1,828 @@
+{
+  "faction": "은하제국",
+  "description": "제국군 조직 구성표",
+  "organizations": [
+    {
+      "orgId": "imperial_palace",
+      "orgName": "황궁",
+      "orgNameJa": "皇宮",
+      "positions": [
+        {
+          "positionId": "emperor",
+          "positionName": "황제",
+          "positionNameJa": "皇帝",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "은하제국의 최고권력자. 490년간에 걸쳐 골덴바움 일족이 독점했다. 신성불가침이지만, 관료제도의 거대화에 따라 그 권력의 형해화도 현저하다. 친정의 경우는, 제국군 최고사령관 및 제국재상도 겸하는 것이 관례이다.",
+          "descriptionJa": "銀河帝国の最高権力者。490年間に渡ってゴールデンパウム一族が独占した。神聖不可侵であるが、官僚制度の巨大化に伴ってその権力の形骸化も著しい。親政の場合は、帝国軍最高司令官及び帝国宰相も兼ねるのが慣例である。",
+          "appointedBy": null,
+          "canBeHeldBy": ["황족"]
+        },
+        {
+          "positionId": "supreme_commander",
+          "positionName": "제국군 최고사령관",
+          "positionNameJa": "帝国軍最高司令官",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군의 최고위 사령관. 황제의 군사면의 권한을 분여한 것으로, 친정의 경우는 황제가 겸무한다.",
+          "descriptionJa": "帝国軍の最高位司令官。皇帝の軍事面の権限を分与したもので、親政の場合は皇帝が兼務する。",
+          "appointedBy": null,
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "chief_of_staff",
+          "positionName": "막료총감",
+          "positionNameJa": "幕僚総監",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "황제의 군사적 보좌기관인 대본영의 최고책임자. 제국군 최고사령관에 의해 임명된다. 각 함대의 참모장의 임면권을 가지고 있으며, 인사권의 대부분을 장악하는 군무상서의 권력을 어느 정도 견제하고 있다.",
+          "descriptionJa": "皇帝の軍事的補佐機関である大本営の最高責任者。帝国軍最高司令官によって任命される。各艦隊の参謀長の任免権を有しており、人事権の大部分を掌握する軍務尚書の権力をある程度掣肘している。",
+          "appointedBy": "supreme_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "hq_staff",
+          "positionName": "대본영 참모",
+          "positionNameJa": "大本営参謀",
+          "quota": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "황제의 대본영에 소속하는 참모. 막료총감에 의해 임명된다. 대본영의 스태프로서의 직능과 황제의 측근으로서의 기능을 아울러 가진다.",
+          "descriptionJa": "皇帝の大本営に所属する参謀。幕僚総監によって任命される。大本営のスタッフとしての職能と皇帝の側近としての機能を併せて有する。",
+          "appointedBy": "chief_of_staff",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "cabinet",
+      "orgName": "내각",
+      "orgNameJa": "内閣",
+      "positions": [
+        {
+          "positionId": "prime_minister",
+          "positionName": "제국재상",
+          "positionNameJa": "帝国宰相",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "은하제국의 최고문관직. 황제의 통치면의 권한을 분여한 것으로, 친정의 경우는 황제가 겸무하지만, 근년에는 국무상서가 '대리'의 권한으로 제국재상을 겸하는 일이 많다. 국정의 최고책임자로서 내각을 조직하는 권한을 가진다.",
+          "descriptionJa": "銀河帝国の最高文官職。皇帝の統治面の権限を分与したもので、親政の場合は皇帝が兼務するが、近年では国務尚書が\"代理\"の権限で帝国宰相を兼ねる事が多い。国政の最高責任者として内閣を組織する権限を有する。",
+          "appointedBy": null,
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "state_secretary",
+          "positionName": "국무상서",
+          "positionNameJa": "国務尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 은하제국에 있어서 실질적인 통치자인 행성총독을 임면하는 권한을 가진다. 대귀족의 이해에 직결하는 역직이기에, 공평함을 유지하는 균형감각이 요구된다.",
+          "descriptionJa": "帝国宰相によって任命される。銀河帝国における実質的な統治者である惑星総督を任免する権限を有する。大貴族の利害に直結する役職だけに、公平さを保つバランス感覚が求められる。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "internal_affairs_secretary",
+          "positionName": "내무상서",
+          "positionNameJa": "内務尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 시빌리언 컨트롤의 일환으로서, 군의 내부조사를 행하고, 대좌 이하의 군인을 체포・처단하는 직권을 가진다.",
+          "descriptionJa": "帝国宰相によって任命される。シビリアン・コントロールの一環として、軍の内部調査を行い、大佐以下の軍人を逮捕・処断する職権を有する。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "finance_secretary",
+          "positionName": "재무상서",
+          "positionNameJa": "財務尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 은하제국의 경제활동을 관장하는 직무이며, 과세율을 변경하는 권한을 가진다.",
+          "descriptionJa": "帝国宰相によって任命される。銀河帝国の経済活動を司る職務であり、課税率を変更する権限を有する。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "imperial_household_secretary",
+          "positionName": "궁내상서",
+          "positionNameJa": "宮内尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 본래는 황족의 생활이나 재무를 관장하는 직무이지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "帝国宰相によって任命される。本来は皇族の生活や財務を管掌する職務であるが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "justice_secretary",
+          "positionName": "사법상서",
+          "positionNameJa": "司法尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 제국의 최고사법기관이며, 정치가를 체포하고, 처단하는 권한을 가진다.",
+          "descriptionJa": "帝国宰相によって任命される。帝国の最高司法機関であり、政治家を逮捕し、処断する権限を有する。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "ceremonial_secretary",
+          "positionName": "전례상서",
+          "positionNameJa": "典礼尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 본래는 궁정 내에 있어서의 제행사를 관장하는 직무이지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "帝国宰相によって任命される。本来は宮廷内における諸行事を管掌する職務であるが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "science_secretary",
+          "positionName": "과학상서",
+          "positionNameJa": "科学尚書",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 본래는 과학기술 관련을 관장하는 직무이지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "帝国宰相によって任命される。本来は科学技術関連を管掌する職務であるが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "cabinet_secretary_general",
+          "positionName": "내각서기관장",
+          "positionNameJa": "内閣書記官長",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 국무상서를 보좌하는 직무이다.",
+          "descriptionJa": "帝国宰相によって任命される。国務尚書を補佐する職務である。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        }
+      ]
+    },
+    {
+      "orgId": "fezzan_office",
+      "orgName": "주페잔 변무관 사무소",
+      "orgNameJa": "駐フェザーン弁務官事務所",
+      "positions": [
+        {
+          "positionId": "fezzan_high_commissioner",
+          "positionName": "페잔 주재 고등변무관",
+          "positionNameJa": "フェザーン駐在高等弁務官",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "제국재상에 의해 임명된다. 본래는 페잔 자치령에 대한 외교기관이지만, 실질적으로는 첩보활동도 행하고 있다. 현지 부임이 원칙이며, 자치령주에 의해 다양한 외교적 특권이 인정되고 있다.",
+          "descriptionJa": "帝国宰相によって任命される。本来はフェザーン自治領に対する外交機関であるが、実質的には諜報活動も行っている。現地赴任が原則であり、自治領主によって様々な外交的特権が認められている。",
+          "appointedBy": "prime_minister",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "fezzan_assistant",
+          "positionName": "페잔 주재 보좌관",
+          "positionNameJa": "フェザーン駐在補佐官",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "국무상서에 의해 임명된다. 고등변무관의 보좌를 행한다. 현지 부임이 원칙이며, 자치령주에 의해 다양한 외교적 특권이 인정되고 있다.",
+          "descriptionJa": "国務尚書によって任命される。高等弁務官の補佐を行う。現地赴任が原則であり、自治領主によって様々な外交的特権が認められている。",
+          "appointedBy": "state_secretary",
+          "canBeHeldBy": ["정치가"]
+        },
+        {
+          "positionId": "fezzan_military_attache",
+          "positionName": "페잔 주재 무관",
+          "positionNameJa": "フェザーン駐在武官",
+          "quota": 1,
+          "minRank": "소위",
+          "maxRank": "원수",
+          "description": "군무성 인사국장에 의해 임명된다. 주로 군사 관련의 정보수집을 행한다. 현지 부임이 원칙이며, 자치령주에 의해 다양한 외교적 특권이 인정되고 있다.",
+          "descriptionJa": "軍務省人事局長によって任命される。主に軍事関連の情報収集を行う。現地赴任が原則であり、自治領主によって様々な外交的特権が認められている。",
+          "appointedBy": "military_personnel_director",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "military_ministry",
+      "orgName": "군무성",
+      "orgNameJa": "軍務省",
+      "positions": [
+        {
+          "positionId": "military_minister",
+          "positionName": "군무상서",
+          "positionNameJa": "軍務尚書",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 삼장관의 하나로, 제국군의 인사를 관장하는 군무성의 최고책임자. 황제에 의해 직접 임명된다. 제국군의 인사제도의 근간을 좌우하는 요직이며, 군무상서에 취임하는 것은 군인으로서의 영달의 극치라고 여겨지고 있다.",
+          "descriptionJa": "帝国軍三長官の一つで、帝国軍の人事を司る軍務省の最高責任者。皇帝によって直接任命される。帝国軍の人事制度の根幹を左右する要職であり、軍務尚書に就任することは軍人としての栄達の極みであると考えられている。",
+          "appointedBy": "emperor",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "military_vice_minister",
+          "positionName": "군무성 차관",
+          "positionNameJa": "軍務省次官",
+          "quota": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서에 의해 임명된다. 군무성에 소속하고, 군무상서의 직무를 전반적으로 보좌한다. 군무상서의 자리에 이르는 관문으로 간주되고 있다.",
+          "descriptionJa": "軍務尚書によって任命される。軍務省に所属し、軍務尚書の職務を全般的に補佐する。軍務尚書の座に至る関門とみなされている。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "military_personnel_director",
+          "positionName": "군무성 인사국장",
+          "positionNameJa": "軍務省人事局長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "군무상서에 의해 임명된다. 군무성에 소속하고, 대좌 이하의 인사를 관장한다. 가장, 대좌 이하의 인사는 완전히 매뉴얼화되어 있어, 단순한 군관료로서의 재량권 밖에 가지지 않는다.",
+          "descriptionJa": "軍務尚書によって任命される。軍務省に所属し、大佐以下の人事を管掌する。もっとも、大佐以下の人事は完全にマニュアル化されており、単なる軍官僚としての裁量権しか有さない。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "military_investigation_director",
+          "positionName": "군무성 조사국장",
+          "positionNameJa": "軍務省調査局長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "군무상서에 의해 임명된다. 군무성의 하부조직인 통합정찰국을 관장하고, 제국군의 첩보활동 전반을 컨트롤한다.",
+          "descriptionJa": "軍務尚書によって任命される。軍務省の下部組織である統合偵察局を管掌し、帝国軍の諜報活動全般をコントロールする。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "military_counselor",
+          "positionName": "군무성 참사관",
+          "positionNameJa": "軍務省参事官",
+          "quota": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "군무성에 소속하는 참모. 군무성 차관에 의해 임명된다. 군무상서의 스태프이며, 통수본부나 우주함대 사령부와의 연락장교로서의 기능도 가진다.",
+          "descriptionJa": "軍務省に所属する参謀。軍務省次官によって任命される。軍務尚書のスタッフであり、統帥本部や宇宙艦隊司令部との連絡将校としての機能も有する。",
+          "appointedBy": "military_vice_minister",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "supreme_command",
+      "orgName": "통수본부",
+      "orgNameJa": "統帥本部",
+      "positions": [
+        {
+          "positionId": "chief_of_supreme_command",
+          "positionName": "통수본부 총장",
+          "positionNameJa": "統帥本部総長",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 삼장관의 하나로, 우주함대의 부대편성이나 작전계획을 관장하는 통수본부의 최고책임자. 황제에 의해 직접 임명된다. 실제로 입안을 행하는 작전과 과장의 임면권을 가진다. 또한, 함대를 관장하는 작전일과 과장을 겸임하는 것이 관례로 되어 있다.",
+          "descriptionJa": "帝国軍三長官の一つで、宇宙艦隊の部隊編成や作戦計画を司る統帥本部の最高責任者。皇帝によって直接任命される。実際に立案を行う作戦課課長の任免権を有する。また、艦隊を管掌する作戦一課課長を兼任するのが慣例となっている。",
+          "appointedBy": "emperor",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "supreme_command_vice_chief",
+          "positionName": "통수본부 차장",
+          "positionNameJa": "統帥本部次長",
+          "quota": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서에 의해 임명된다. 통수본부에 소속하고, 통수본부 총장의 직무를 전반적으로 보좌하는 사무방의 장. 통수본부 총장의 자리에 이르는 관문으로 간주되고 있다.",
+          "descriptionJa": "軍務尚書によって任命される。統帥本部に所属し、統帥本部総長の職務を全般的に補佐する事務方の長。統帥本部総長の座に至る関門とみなされている。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "operations_1_director",
+          "positionName": "통수본부 작전일과 과장",
+          "positionNameJa": "統帥本部作戦一課課長",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통수본부 총장에 의해 임명되지만, 통상은 통수본부 총장 자신이 겸무한다. 통수본부에 소속하고, 함대의 부대편성이나 작전계획을 입안한다.",
+          "descriptionJa": "統帥本部総長によって任命されるが、通常は統帥本部総長自身が兼務する。統帥本部に所属し、艦隊の部隊編成や作戦計画を立案する。",
+          "appointedBy": "chief_of_supreme_command",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "operations_2_director",
+          "positionName": "통수본부 작전이과 과장",
+          "positionNameJa": "統帥本部作戦二課課長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "통수본부 총장에 의해 임명된다. 통수본부에 소속하고, 수송함대, 순찰대 및 지상부대의 부대편성이나 작전계획을 입안한다.",
+          "descriptionJa": "統帥本部総長によって任命される。統帥本部に所属し、輸送艦隊、巡察隊及び地上部隊の部隊編成や作戦計画を立案する。",
+          "appointedBy": "chief_of_supreme_command",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "operations_3_director",
+          "positionName": "통수본부 작전삼과 과장",
+          "positionNameJa": "統帥本部作戦三課課長",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "통수본부 총장에 의해 임명된다. 통수본부에 소속하고, 독행함의 부대편성이나 작전계획을 입안한다.",
+          "descriptionJa": "統帥本部総長によって任命される。統帥本部に所属し、独行艦の部隊編成や作戦計画を立案する。",
+          "appointedBy": "chief_of_supreme_command",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "supreme_command_inspector",
+          "positionName": "통수본부 감찰관",
+          "positionNameJa": "統帥本部監察官",
+          "quota": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "통수본부 차장에 의해 임명된다. 통수본부에 소속하는 참모이며, 군무성이나 우주함대 사령부와의 연락장교로서의 기능도 가진다.",
+          "descriptionJa": "統帥本部次長によって任命される。統帥本部に所属する参謀であり、軍務省や宇宙艦隊司令部との連絡将校としての機能も有する。",
+          "appointedBy": "supreme_command_vice_chief",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "space_fleet_hq",
+      "orgName": "우주함대 사령부",
+      "orgNameJa": "宇宙艦隊司令部",
+      "positions": [
+        {
+          "positionId": "space_fleet_commander",
+          "positionName": "우주함대 사령장관",
+          "positionNameJa": "宇宙艦隊司令長官",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 삼장관의 하나로, 통수본부의 작전계획에 따라 우주함대를 운용하는 우주함대 사령부의 최고책임자. 제국군 최고사령관에 의해 임명된다. 대규모 작전의 경우는 병력을 직솔하고 전장에 임하기 때문에, 실전지휘에 능한 자가 임명된다.",
+          "descriptionJa": "帝国軍三長官の一つで、統帥本部の作戦計画に従って宇宙艦隊を運用する宇宙艦隊司令部の最高責任者。帝国軍最高司令官によって任命される。大規模な作戦の際は兵力を直率して戦場に臨むため、実戦指揮に長けた者が任じられる。",
+          "appointedBy": "supreme_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "space_fleet_vice_commander",
+          "positionName": "우주함대 부사령장관",
+          "positionNameJa": "宇宙艦隊副司令長官",
+          "quota": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "우주함대 사령부에 소속하고, 통수본부의 작전계획에 따라 수송함대 및 순찰대를 운용한다. 제국군 최고사령관에 의해 임명된다. 실전지휘에 능한 자가 임명된다. 우주함대와 같은 원수가 임명되지만, 격식적으로는 약간 뒤떨어지는 것으로 간주된다.",
+          "descriptionJa": "宇宙艦隊司令部に所属し、統帥本部の作戦計画に従って輸送艦隊及び巡察隊を運用する。帝国軍最高司令官によって任命される。実戦指揮に長けた者が任じられる。宇宙艦隊と同じ元帥が任じられるが、格式的にはやや劣るものとされる。",
+          "appointedBy": "supreme_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "space_fleet_chief_of_staff",
+          "positionName": "우주함대 총참모장",
+          "positionNameJa": "宇宙艦隊総参謀長",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "우주함대 사령장관에 의해 임명된다. 우주함대 사령부에 소속하고, 통수본부의 작전계획에 따라 독행함을 운용한다. 우주함대 사령부의 스태프를 통솔하는 직무이기도 하며, 우주함대 참모를 임명하는 직권을 가진다.",
+          "descriptionJa": "宇宙艦隊司令長官によって任命される。宇宙艦隊司令部に所属し、統帥本部の作戦計画に従って独行艦を運用する。宇宙艦隊司令部のスタッフを統率する職務でもあり、宇宙艦隊参謀を任命する職権を有する。",
+          "appointedBy": "space_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "space_fleet_staff",
+          "positionName": "우주함대 참모",
+          "positionNameJa": "宇宙艦隊参謀",
+          "quota": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "우주함대 사령부에 소속하는 참모. 우주함대 총참모장에 의해 임명된다. 본래는, 스태프로서 우주함대 운용의 보조를 행하는 것이지만, 우주함대 사령부와 각 함대 사령부와의 의사소통을 도모하는 기능도 가진다.",
+          "descriptionJa": "宇宙艦隊司令部に所属する参謀。宇宙艦隊総参謀長によって任命される。本来は、スタッフとして宇宙艦隊運用の補助を行うものであるが、宇宙艦隊司令部と各艦隊司令部との意思疎通を図る機能も有する。",
+          "appointedBy": "space_fleet_chief_of_staff",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "military_police_hq",
+      "orgName": "헌병본부",
+      "orgNameJa": "憲兵本部",
+      "positions": [
+        {
+          "positionId": "provost_marshal",
+          "positionName": "헌병총감",
+          "positionNameJa": "憲兵総監",
+          "quota": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "제국군의 보안조직인 헌병본부의 최고책임자. 군무상서에 의해 임명된다. 원수 이외의 군인을 체포구속하는 권한을 가지며, 군뿐만 아니라 제국 전체에 대한 치안상의 책임을 지는 요직이다.",
+          "descriptionJa": "帝国軍の保安組織である憲兵本部の最高責任者。軍務尚書によって任命される。元帥以外の軍人を逮捕拘束する権限を有し、軍のみならず帝国全体に対する治安上の責任を負う要職である。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "provost_vice_marshal",
+          "positionName": "헌병부총감",
+          "positionNameJa": "憲兵副総監",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "헌병총감에 의해 임명된다. 헌병총감의 보좌가 주된 직무이지만, 현장을 직접 지휘하는 경우도 많다.",
+          "descriptionJa": "憲兵総監によって任命される。憲兵総監の補佐が主たる職務であるが、現場を直接指揮する場合も多い。",
+          "appointedBy": "provost_marshal",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "panzergrenadier_hq",
+      "orgName": "장갑척탄병 총감부",
+      "orgNameJa": "装甲擲弾兵総監部",
+      "positions": [
+        {
+          "positionId": "panzergrenadier_commander",
+          "positionName": "장갑척탄병 총감",
+          "positionNameJa": "装甲擲弾兵総監",
+          "quota": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서에 의해 임명된다. 제국군의 육전부대 전체를 통괄하는 장갑척탄병 총감부의 최고책임자. 실전의 실력자를 갖추어 임명된다.",
+          "descriptionJa": "軍務尚書によって任命される。帝国軍の陸戦部隊全体を統括する装甲擲弾兵総監部の最高責任者。実戦の実力者を以て任じられる。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "panzergrenadier_vice_commander",
+          "positionName": "장갑척탄병 부총감",
+          "positionNameJa": "装甲擲弾兵副総監",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "장갑척탄병 총감에 의해 임명된다. 장갑척탄병 총감부에 소속하고, 장갑척탄병 총감의 직무를 보좌한다.",
+          "descriptionJa": "装甲擲弾兵総監によって任命される。装甲擲弾兵総監部に所属し、装甲擲弾兵総監の職務を補佐する。",
+          "appointedBy": "panzergrenadier_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "science_technology_hq",
+      "orgName": "과학기술 총감부",
+      "orgNameJa": "科学技術総監部",
+      "positions": [
+        {
+          "positionId": "science_technology_director",
+          "positionName": "과학기술 총감",
+          "positionNameJa": "科学技術総監",
+          "quota": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서에 의해 임명된다. 군사 관련의 과학기술을 집약적으로 관장하지만, 거의 명목상의 포스트가 되어 있다.",
+          "descriptionJa": "軍務尚書によって任命される。軍事関連の科学技術を集約的に管掌するが、ほぼ名目上のポストとなっている。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "military_academy",
+      "orgName": "제국군 사관학교",
+      "orgNameJa": "帝国軍士官学校",
+      "positions": [
+        {
+          "positionId": "academy_commandant",
+          "positionName": "사관학교장",
+          "positionNameJa": "士官学校長",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "제국군의 대부분의 사관을 배출하는 사관학교의 최고책임자. 군무상서에 의해 임명된다.",
+          "descriptionJa": "帝国軍のほとんどの士官を輩出する士官学校の最高責任者。軍務尚書によって任命される。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "academy_instructor",
+          "positionName": "사관학교 교관",
+          "positionNameJa": "士官学校教官",
+          "quota": 10,
+          "minRank": "조장",
+          "maxRank": "원수",
+          "description": "제국군 사관학교의 교관. 계급에 얽매이지 않고, 전문적인 기술의 소유자가 초빙되어 교편을 잡는 일이 많다.",
+          "descriptionJa": "帝国軍士官学校の教官。階級にとらわれず、専門的な技術の持ち主が招かれて教鞭を執ることが多い。",
+          "appointedBy": "academy_commandant",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "fleet",
+      "orgName": "함대",
+      "orgNameJa": "艦隊",
+      "positions": [
+        {
+          "positionId": "fleet_commander",
+          "positionName": "함대 사령관",
+          "positionNameJa": "艦隊司令官",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "함대를 통솔하는 사령관. 군무상서에 의해 임명되고, 실전부대를 직접 통괄한다. 함대는 최대로 18000척의 함정을 거느리는 최대규모의 전략단위이며, 그 작전행동에 관해서도 충분한 재량권이 부여되고 있다.",
+          "descriptionJa": "艦隊を統率する司令官。軍務尚書によって任じられ、実戦部隊を直接統括する。艦隊は最大で18000隻の艦艇を擁する最大規模の戦略単位であり、その作戦行動に関しても十分な裁量権が与えられている。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_vice_commander",
+          "positionName": "함대 부사령관",
+          "positionNameJa": "艦隊副司令官",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "함대의 차석 지휘관. 군무상서에 의해 임명된다. 함대의 일부를 분견하는 '분함대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "艦隊の次席指揮官。軍務尚書によって任命される。艦隊の一部を分遣する\"分艦隊\"の指揮官を務める場合も多い。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_chief_of_staff",
+          "positionName": "함대 참모장",
+          "positionNameJa": "艦隊参謀長",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "막료총감에 의해 임명된다. 함대 사령관의 보좌역으로서 참모팀을 통솔하는 것이 주된 직무이지만, 대본영에 대해 독자적인 보고를 보낼 권리도 가진다.",
+          "descriptionJa": "幕僚総監によって任命される。艦隊司令官の補佐役として参謀チームを統率するのが主たる職務であるが、大本営に対して独自の報告を送る権利も有する。",
+          "appointedBy": "chief_of_staff",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_staff_officer",
+          "positionName": "함대 참모",
+          "positionNameJa": "艦隊参謀",
+          "quota": 6,
+          "minRank": "대위",
+          "maxRank": "원수",
+          "description": "함대 사령관에 의해 임명된다. 막료로서, 함대 사령관의 직무를 보좌한다. 함대의 일부를 분견하는 '분함대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "艦隊司令官によって任命される。幕僚として、艦隊司令官の職務を補佐する。艦隊の一部を分遣する\"分艦隊\"の指揮官を務める場合も多い。",
+          "appointedBy": "fleet_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fleet_adjutant",
+          "positionName": "함대 사령관 부관",
+          "positionNameJa": "艦隊司令官副官",
+          "quota": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "description": "함대 사령관에 의해 임명된다. 함대 사령관의 개인적인 막료이며, 소장의 사관이 임명된다.",
+          "descriptionJa": "艦隊司令官によって任命される。艦隊司令官の個人的な幕僚であり、少壮の士官が任じられる。",
+          "appointedBy": "fleet_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "transport_fleet",
+      "orgName": "수송함대",
+      "orgNameJa": "輸送艦隊",
+      "positions": [
+        {
+          "positionId": "transport_fleet_commander",
+          "positionName": "수송함대 사령관",
+          "positionNameJa": "輸送艦隊司令官",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "수송함대를 통솔하는 사령관. 군무성 차관에 의해 임명된다. 수송함대는 최대로 6900척의 함정을 거느리는 전략단위이며, 군의 병참의 근간이다.",
+          "descriptionJa": "輸送艦隊を統率する司令官。軍務省次官によって任じられる。輸送艦隊は最大で6900隻の艦艇を擁する戦略単位であり、軍の兵站の根幹である。",
+          "appointedBy": "military_vice_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "transport_fleet_vice_commander",
+          "positionName": "수송함대 부사령관",
+          "positionNameJa": "輸送艦隊副司令官",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "수송함대의 차석 지휘관. 군무성 차관에 의해 임명된다. 수송함대의 일부를 분견하는 '분함대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "輸送艦隊の次席指揮官。軍務省次官によって任命される。輸送艦隊の一部を分遣する\"分艦隊\"の指揮官を務める場合も多い。",
+          "appointedBy": "military_vice_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "transport_fleet_adjutant",
+          "positionName": "수송함대 사령관 부관",
+          "positionNameJa": "輸送艦隊司令官副官",
+          "quota": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "description": "수송함대 사령관에 의해 임명된다. 수송함대 사령관의 개인적인 막료이며, 소장의 사관이 임명된다.",
+          "descriptionJa": "輸送艦隊司令官によって任命される。輸送艦隊司令官の個人的な幕僚であり、少壮の士官が任じられる。",
+          "appointedBy": "transport_fleet_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "patrol_fleet",
+      "orgName": "순찰대",
+      "orgNameJa": "巡察隊",
+      "positions": [
+        {
+          "positionId": "patrol_commander",
+          "positionName": "순찰대 사령",
+          "positionNameJa": "巡察隊司令",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "순찰대를 통솔하는 사령. 군무성 차관에 의해 임명된다. 순찰대는 최대로 900척의 함정을 거느리는 전략단위이며, 소규모 작전이나 국내경비에 있어서는 주력부대를 구성한다.",
+          "descriptionJa": "巡察隊を統率する司令。軍務省次官によって任じられる。巡察隊は最大で900隻の艦艇を擁する戦略単位であり、小規模な作戦や国内警備においては主力部隊を構成する。",
+          "appointedBy": "military_vice_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "patrol_vice_commander",
+          "positionName": "순찰대 부사령",
+          "positionNameJa": "巡察隊副司令",
+          "quota": 1,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "순찰대의 차석 지휘관. 군무성 차관에 의해 임명된다. 순찰대의 일부를 분견하는 '경비대'의 지휘관을 맡는 경우도 많다.",
+          "descriptionJa": "巡察隊の次席指揮官。軍務省次官によって任命される。巡察隊の一部を分遣する\"警備隊\"の指揮官を務める場合も多い。",
+          "appointedBy": "military_vice_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "patrol_adjutant",
+          "positionName": "순찰대 사령 부관",
+          "positionNameJa": "巡察隊司令副官",
+          "quota": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "description": "순찰대 사령에 의해 임명된다. 순찰대 사령의 개인적인 막료이며, 소장의 사관이 임명된다.",
+          "descriptionJa": "巡察隊司令によって任命される。巡察隊司令の個人的な幕僚であり、少壮の士官が任じられる。",
+          "appointedBy": "patrol_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "ground_force",
+      "orgName": "지상부대",
+      "orgNameJa": "地上部隊",
+      "positions": [
+        {
+          "positionId": "ground_force_commander",
+          "positionName": "지상부대 지휘관",
+          "positionNameJa": "地上部隊指揮官",
+          "quota": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "description": "지상부대를 통솔하는 지휘관. 장갑척탄병 총감에 의해 임명된다. 지상부대는 최대로 900척의 함정과 90000명을 거느리는 전략단위이며, 지상전의 주력부대이다.",
+          "descriptionJa": "地上部隊を統率する指揮官。装甲擲弾兵総監によって任じられる。地上部隊は最大で900隻の艦艇と90000名を擁する戦略単位であり、地上戦の主力部隊である。",
+          "appointedBy": "panzergrenadier_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "fortress",
+      "orgName": "요새",
+      "orgNameJa": "要塞",
+      "positions": [
+        {
+          "positionId": "fortress_commander",
+          "positionName": "요새 사령관",
+          "positionNameJa": "要塞司令官",
+          "quota": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "요새를 통솔하는 사령관. 군무상서에 의해 임명된다. 요새포를 포함하는 모든 고정화포나 병참부대를 지휘한다.",
+          "descriptionJa": "要塞を統率する司令官。軍務尚書によって任命される。要塞砲を含むすべての固定火砲や兵站部隊を指揮する。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fortress_garrison_commander",
+          "positionName": "요새 수비대 지휘관",
+          "positionNameJa": "要塞守備隊指揮官",
+          "quota": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "description": "요새 사령관에 의해 임명된다. 요새에 주둔하는 육전대를 통솔한다.",
+          "descriptionJa": "要塞司令官によって任命される。要塞に駐屯する陸戦隊を統率する。",
+          "appointedBy": "fortress_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "fortress_administrator",
+          "positionName": "요새 사무총감",
+          "positionNameJa": "要塞事務総監",
+          "quota": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "요새 사령관에 의해 임명된다. 요새의 경제활동 및 생산을 통솔한다.",
+          "descriptionJa": "要塞司令官によって任命される。要塞の経済活動及び生産を統率する。",
+          "appointedBy": "fortress_commander",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "planet_government",
+      "orgName": "정청(행성)",
+      "orgNameJa": "政庁",
+      "positions": [
+        {
+          "positionId": "planetary_governor",
+          "positionName": "행성총독",
+          "positionNameJa": "惑星総督",
+          "quota": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "은하제국에 있어서 행성의 최고통치자. 국무상서에 의해 임명된다. 경제활동은 물론, 행성의 치안・방위에도 책임을 가진다. 은하제국에 있어서는 무관에게도 행성총독의 길이 열려 있으며, 현역의 군인이 이 직에 취임하는 일도 있다.",
+          "descriptionJa": "銀河帝国における惑星の最高統治者。国務尚書によって任命される。経済活動は元より、惑星の治安・防衛にも責任を有する。銀河帝国においては武官にも惑星総督の道が開かれており、現役の軍人がこの職に就く事もある。",
+          "appointedBy": "state_secretary",
+          "canBeHeldBy": ["정치가", "군인"]
+        },
+        {
+          "positionId": "planetary_garrison_commander",
+          "positionName": "행성 수비대 지휘관",
+          "positionNameJa": "惑星守備隊指揮官",
+          "quota": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "description": "행성 단위로 배비되는 수비대의 지휘관. 행성총독에 의해 임명된다. 최대로 300000명을 지휘한다.",
+          "descriptionJa": "惑星単位で配備される守備隊の指揮官。惑星総督によって任命される。最大で300000名を指揮する。",
+          "appointedBy": "planetary_governor",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "capital_government",
+      "orgName": "수도행성 정청",
+      "orgNameJa": "首都惑星",
+      "positions": [
+        {
+          "positionId": "capital_defense_commander",
+          "positionName": "제도 방위사령관",
+          "positionNameJa": "帝都防衛司令官",
+          "quota": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "제도의 최고사령관. 제국군 최고사령관에 의해 임명된다. 제도의 경찰 임무와 경제활동 및 생산을 통솔하지만, 군사적인 지휘권은 가지지 않는다.",
+          "descriptionJa": "帝都の最高司令官。帝国軍最高司令官によって任命される。帝都の警察任務と経済活動及び生産を統率するが、軍事的な指揮権は有さない。",
+          "appointedBy": "supreme_commander",
+          "canBeHeldBy": ["군인"]
+        },
+        {
+          "positionId": "imperial_guard_commander",
+          "positionName": "근위병 총감",
+          "positionNameJa": "近衛兵総監",
+          "quota": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "제도의 수비대 지휘관. 군무상서에 의해 임명된다. 근위병을 통솔하고, 제도를 수비한다. 최대로 300000명을 지휘한다.",
+          "descriptionJa": "帝都の守備隊指揮官。軍務尚書によって任命される。近衛兵を統率し、帝都を守備する。最大で300000名を指揮する。",
+          "appointedBy": "military_minister",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    },
+    {
+      "orgId": "intelligence_bureau",
+      "orgName": "통합정찰국",
+      "orgNameJa": "統合偵察局",
+      "positions": [
+        {
+          "positionId": "intelligence_agent",
+          "positionName": "첩보관",
+          "positionNameJa": "諜報官",
+          "quota": 50,
+          "minRank": "소위",
+          "maxRank": "대좌",
+          "description": "군무성 조사국장에 의해 임명된다. 적국에 잠입하고, 다양한 수단을 구사하여 첩보활동을 행한다.",
+          "descriptionJa": "軍務省調査局長によって任命される。敵国に潜入し、様々な手段を駆使して諜報活動を行う。",
+          "appointedBy": "military_investigation_director",
+          "canBeHeldBy": ["군인"]
+        }
+      ]
+    }
+  ]
+}

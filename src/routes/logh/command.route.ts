@@ -84,6 +84,16 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
       },
       getFleetId: () => commander.fleetId,
       getPosition: () => commander.position,
+      startCommand: (commandType: string, durationMs: number, data?: any) => {
+        // Store command execution data in customData
+        if (!commander.customData) commander.customData = {};
+        commander.customData.activeCommand = {
+          type: commandType,
+          startedAt: new Date(),
+          durationMs,
+          data: data || {},
+        };
+      },
       save: async () => await commander.save(),
     };
 

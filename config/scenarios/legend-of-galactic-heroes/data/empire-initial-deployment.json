@@ -1,0 +1,373 @@
+{
+  "faction": "은하제국",
+  "date": "우주력786년",
+  "dateJa": "宇宙暦786年",
+  "positions": [
+    {
+      "positionName": "황제",
+      "positionNameJa": "皇帝",
+      "holderName": "프리드리히 4세",
+      "holderNameJa": "フリードリヒⅣ世"
+    },
+    {
+      "positionName": "제국군 최고사령관",
+      "positionNameJa": "帝国軍最高司令官",
+      "holderName": "프리드리히 4세",
+      "holderNameJa": "フリードリヒⅣ世"
+    },
+    {
+      "positionName": "막료총감",
+      "positionNameJa": "幕僚総監",
+      "holderName": "크라젠 원수",
+      "holderNameJa": "クラーゼン元帥"
+    },
+    {
+      "positionName": "제국재상",
+      "positionNameJa": "帝国宰相",
+      "holderName": "정치가 리히텐라데",
+      "holderNameJa": "政治家リヒテンラーデ"
+    },
+    {
+      "positionName": "국무상서",
+      "positionNameJa": "国務尚書",
+      "holderName": "정치가 리히텐라데",
+      "holderNameJa": "政治家リヒテンラーデ"
+    },
+    {
+      "positionName": "재무상서",
+      "positionNameJa": "財務尚書",
+      "holderName": "정치가 게를라하",
+      "holderNameJa": "政治家ゲルラッハ"
+    },
+    {
+      "positionName": "페잔 주재 고등변무관",
+      "positionNameJa": "フェザーン駐在高等弁務官",
+      "holderName": "정치가 렘샤이트",
+      "holderNameJa": "政治家レムシャイト"
+    },
+    {
+      "positionName": "군무상서",
+      "positionNameJa": "軍務尚書",
+      "holderName": "에렌베르크 원수",
+      "holderNameJa": "エーレンベルグ元帥"
+    },
+    {
+      "positionName": "군무성 인사국장",
+      "positionNameJa": "軍務省人事局長",
+      "holderName": "하우프트 대장",
+      "holderNameJa": "ハウプト大将"
+    },
+    {
+      "positionName": "통수본부 총장",
+      "positionNameJa": "統帥本部総長",
+      "holderName": "슈타인호프 원수",
+      "holderNameJa": "シュタインホフ元帥"
+    },
+    {
+      "positionName": "통수본부 작전일과 과장",
+      "positionNameJa": "統帥本部作戦一課課長",
+      "holderName": "슈타인호프 원수",
+      "holderNameJa": "シュタインホフ元帥"
+    },
+    {
+      "positionName": "통수본부 작전이과 과장",
+      "positionNameJa": "統帥本部作戦二課課長",
+      "holderName": "아벤트로트 중장",
+      "holderNameJa": "アーベントロート中将"
+    },
+    {
+      "positionName": "통수본부 작전삼과 과장",
+      "positionNameJa": "統帥本部作戦三課課長",
+      "holderName": "아벤트로트 중장",
+      "holderNameJa": "アーベントロート中将"
+    },
+    {
+      "positionName": "우주함대 사령장관",
+      "positionNameJa": "宇宙艦隊司令長官",
+      "holderName": "G.뮈켄베르거 원수",
+      "holderNameJa": "G.ミュッケンベルガー元帥"
+    },
+    {
+      "positionName": "우주함대 총참모장",
+      "positionNameJa": "宇宙艦隊総参謀長",
+      "holderName": "그라이프스 상급대장",
+      "holderNameJa": "グライフス上級大将"
+    },
+    {
+      "positionName": "헌병총감",
+      "positionNameJa": "憲兵総監",
+      "holderName": "오펜하이머 대장",
+      "holderNameJa": "オッペンハイマー大将"
+    },
+    {
+      "positionName": "장갑척탄병 총감",
+      "positionNameJa": "装甲擲弾兵総監",
+      "holderName": "오프레서 상급대장",
+      "holderNameJa": "オフレッサー上級大将"
+    },
+    {
+      "positionName": "과학기술 총감",
+      "positionNameJa": "科学技術総監",
+      "holderName": "샤프트 대장",
+      "holderNameJa": "シャフト大将"
+    }
+  ],
+  "fleets": [
+    {
+      "unitType": "fleet",
+      "unitNumber": 1,
+      "unitName": "제1함대",
+      "unitNameJa": "第１艦隊",
+      "commanderName": "G.뮈켄베르거 원수",
+      "commanderNameJa": "G.ミュッケンベルガー元帥",
+      "commanderRank": "원수",
+      "location": {
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 2,
+      "unitName": "제2함대",
+      "unitNameJa": "第２艦隊",
+      "commanderName": "로엔그람 중장",
+      "commanderNameJa": "ローエングラム中将",
+      "commanderRank": "중장",
+      "adjutantName": "키르히아이스 소좌",
+      "adjutantNameJa": "キルヒアイス少佐",
+      "location": {
+        "system": "알테나",
+        "systemJa": "アルテナ",
+        "planet": "노이엔라데",
+        "planetJa": "ノイエンラーデ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 3,
+      "unitName": "제3함대",
+      "unitNameJa": "第３艦隊",
+      "commanderName": "메르카츠 대장",
+      "commanderNameJa": "メルカッツ大将",
+      "commanderRank": "대장",
+      "location": {
+        "system": "암리차",
+        "systemJa": "アムリッツァ",
+        "planet": "하펜",
+        "planetJa": "ハーフェン"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 4,
+      "unitName": "제4함대",
+      "unitNameJa": "第４艦隊",
+      "commanderName": "슈타덴 중장",
+      "commanderNameJa": "シュターデン中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "프레이아",
+        "systemJa": "フレイア",
+        "planet": "렌텐베르그",
+        "planetJa": "レンテンベルグ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 5,
+      "unitName": "제5함대",
+      "unitNameJa": "第５艦隊",
+      "commanderName": "포겔 중장",
+      "commanderNameJa": "フォーゲル中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "키포이저",
+        "systemJa": "キフォイザー",
+        "planet": "갈미슈",
+        "planetJa": "ガルミッシュ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 6,
+      "unitName": "제6함대",
+      "unitNameJa": "第６艦隊",
+      "commanderName": "힐데스하임 중장",
+      "commanderNameJa": "ヒルデスハイム中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "아이젠헤르츠",
+        "systemJa": "アイゼンヘルツ",
+        "planet": "가이에스부르크",
+        "planetJa": "ガイエスブルグ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 8,
+      "unitName": "제8함대",
+      "unitNameJa": "第８艦隊",
+      "commanderName": "란츠베르크 중장",
+      "commanderNameJa": "ランズベルク中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "이젤론",
+        "systemJa": "イゼルローン",
+        "planet": "이젤론",
+        "planetJa": "イゼルローン"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 10,
+      "unitName": "제10함대",
+      "unitNameJa": "第１０艦隊",
+      "commanderName": "프레겔 중장",
+      "commanderNameJa": "フレーゲル中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "발할라",
+        "systemJa": "ヴァルハラ",
+        "planet": "오딘",
+        "planetJa": "オーディン"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 12,
+      "unitName": "제12함대",
+      "unitNameJa": "第１２艦隊",
+      "commanderName": "제크트 대장",
+      "commanderNameJa": "ゼークト大将",
+      "commanderRank": "대장",
+      "location": {
+        "system": "알테나",
+        "systemJa": "アルテナ",
+        "planet": "나하로트",
+        "planetJa": "ナッハロート"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 4,
+      "unitName": "제4순찰대",
+      "unitNameJa": "第４巡察隊",
+      "commanderName": "그뤼네만 소장",
+      "commanderNameJa": "グリューネマン少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "니블헤임",
+        "systemJa": "ニブルヘイム",
+        "planet": "에류즈닐",
+        "planetJa": "エリューズニル"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 5,
+      "unitName": "제5순찰대",
+      "unitNameJa": "第５巡察隊",
+      "commanderName": "디터스도르프 소장",
+      "commanderNameJa": "ディッタースドルフ少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "베를라",
+        "systemJa": "ヴェルラ",
+        "planet": "슈테파니",
+        "planetJa": "シュテファニ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 29,
+      "unitName": "제29순찰대",
+      "unitNameJa": "第２９巡察隊",
+      "commanderName": "호프마이스터 소장",
+      "commanderNameJa": "ホフマイスター少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "발드레",
+        "systemJa": "バルドレ",
+        "planet": "프릉호르니",
+        "planetJa": "フリングホルニ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 44,
+      "unitName": "제44순찰대",
+      "unitNameJa": "第４４巡察隊",
+      "commanderName": "그루첸슈테른 소장",
+      "commanderNameJa": "グルーゼンシュテルン少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "드베르그",
+        "systemJa": "ドヴェルグ",
+        "planet": "그레이프니르",
+        "planetJa": "グレイプニル"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 53,
+      "unitName": "제53순찰대",
+      "unitNameJa": "第５３巡察隊",
+      "commanderName": "미터마이어 소장",
+      "commanderNameJa": "ミッターマイヤー少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "폴겐",
+        "systemJa": "フォルゲン",
+        "planet": "슈방가우",
+        "planetJa": "シュヴァンガウ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 54,
+      "unitName": "제54순찰대",
+      "unitNameJa": "第５４巡察隊",
+      "commanderName": "로이엔탈 소장",
+      "commanderNameJa": "ロイエンタール少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "키포이저",
+        "systemJa": "キフォイザー",
+        "planet": "갈미슈",
+        "planetJa": "ガルミッシュ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 55,
+      "unitName": "제55순찰대",
+      "unitNameJa": "第５５巡察隊",
+      "commanderName": "렌넨캄프 소장",
+      "commanderNameJa": "レンネンカンプ少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "이젤론",
+        "systemJa": "イゼルローン",
+        "planet": "이젤론",
+        "planetJa": "イゼルローン"
+      }
+    },
+    {
+      "unitType": "fortress",
+      "unitName": "이젤론 요새",
+      "unitNameJa": "イゼルローン要塞",
+      "commanderName": "슈토크하우젠 상급대장",
+      "commanderNameJa": "シュトックハウゼン上級大将",
+      "commanderRank": "상급대장",
+      "location": {
+        "system": "이젤론",
+        "systemJa": "イゼルローン",
+        "planet": "이젤론",
+        "planetJa": "イゼルローン"
+      }
+    }
+  ]
+}

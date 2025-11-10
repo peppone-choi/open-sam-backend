@@ -112,9 +112,16 @@ class SessionRepository {
       throw new Error('session_id is required');
     }
     
-    // data 필드를 추출하여 업데이트
-    const updateData = sessionDoc.data || sessionDoc.toObject?.() || sessionDoc;
-    await saveSession(sessionId, updateData);
+    // Mongoose Document인 경우 toObject()로 변환
+    let dataToSave;
+    if (sessionDoc.toObject) {
+      dataToSave = sessionDoc.toObject();
+    } else {
+      dataToSave = sessionDoc;
+    }
+    
+    // 캐시에 전체 문서 저장 (session_id 포함)
+    await saveSession(sessionId, dataToSave);
     
     return { modifiedCount: 1, matchedCount: 1 };
   }

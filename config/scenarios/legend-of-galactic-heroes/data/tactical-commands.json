@@ -1,0 +1,399 @@
+{
+  "tacticalCommands": {
+    "description": "전술 게임 내 실시간 전투 커맨드",
+    "descriptionJa": "戦術ゲーム内でのリアルタイム戦闘コマンド",
+    "vesselCommands": [
+      {
+        "id": "move",
+        "name": "이동",
+        "nameJa": "移動",
+        "shortcut": "f",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "선택 함선을 지정 위치로 이동"
+      },
+      {
+        "id": "turn",
+        "name": "선회",
+        "nameJa": "旋回",
+        "shortcut": "s",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "포메이션 유지하며 선회"
+      },
+      {
+        "id": "parallel_move",
+        "name": "평행 이동",
+        "nameJa": "平行移動",
+        "shortcut": "d",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "정면 방향 유지하며 이동. 속도 50%",
+        "speedPenalty": 0.5
+      },
+      {
+        "id": "reverse",
+        "name": "반전",
+        "nameJa": "反転",
+        "executionDelay": 10,
+        "executionDuration": 0,
+        "description": "제자리에서 180도 회두. 기동 능력에 따라 속도 변화",
+        "affectedBy": "maneuver"
+      },
+      {
+        "id": "retreat",
+        "name": "철퇴 명령",
+        "nameJa": "撤退命令",
+        "executionDelay": 5,
+        "executionDuration": 150,
+        "description": "그리드에서 철퇴 (단거리 워프)",
+        "requirements": [
+          "레이더 화면 원 밖으로 나가야 함",
+          "워프 준비 2.5분 필요",
+          "전대 소속, 커맨드레인지 최대 범위 내 함정만 철퇴",
+          "행성에 강하한 육전대는 잔류"
+        ]
+      },
+      {
+        "id": "formation",
+        "name": "대열 명령",
+        "nameJa": "隊列命令",
+        "shortcut": "v",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "함선 그룹화 및 대열 변경",
+        "formations": [
+          {"id": "spindle", "name": "방추진", "shortcut": "x"},
+          {"id": "ship_type_1", "name": "함종1", "shortcut": "c"},
+          {"id": "ship_type_2", "name": "함종2", "shortcut": "v"},
+          {"id": "mixed_1", "name": "혼성1", "shortcut": "b"},
+          {"id": "mixed_2", "name": "혼성2", "shortcut": "n"},
+          {"id": "three_line", "name": "삼열", "shortcut": "m"},
+          {"id": "cancel", "name": "대열 해제", "shortcut": ","}
+        ]
+      },
+      {
+        "id": "attack",
+        "name": "공격 명령",
+        "nameJa": "攻撃命令",
+        "shortcut": "r",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "사정거리 내 적에게 자동 공격",
+        "note": "행성/요새는 자동 공격 안함",
+        "submodes": [
+          {"id": "volley", "name": "일제 공격", "shortcut": "r"},
+          {"id": "continuous", "name": "연속 공격", "shortcut": "e"},
+          {"id": "cease_fire", "name": "공격 정지", "shortcut": "w"}
+        ]
+      },
+      {
+        "id": "fire",
+        "name": "사격 명령",
+        "nameJa": "射撃命令",
+        "shortcut": "e",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "지정 적에게 일시 공격",
+        "weapons": [
+          {"id": "beam", "name": "빔 병장", "shortcut": "w", "range": "중근거리"},
+          {"id": "gun", "name": "건 병장", "shortcut": "e", "range": "중근거리"},
+          {"id": "missile", "name": "미사일", "shortcut": "r", "range": "원거리"}
+        ],
+        "lineOfSight": [
+          "적과의 사이에 장애물 없어야 함",
+          "사선상 아군 함정 있으면 발사 불가",
+          "사선상 사선 장애 지형 있으면 발사 불가"
+        ]
+      },
+      {
+        "id": "air_combat",
+        "name": "공전 명령",
+        "nameJa": "空戦命令",
+        "shortcut": "w",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "지정 적에게 전투정 공격",
+        "types": ["대함전", "요격전"],
+        "effect": "적 함선 이동 속도 감소",
+        "cost": "일률 10 군수물자",
+        "note": "현재 미구현"
+      },
+      {
+        "id": "ground_deploy",
+        "name": "육전대 출격",
+        "nameJa": "陸戦隊出撃",
+        "executionDelay": 5,
+        "executionDuration": 20,
+        "description": "육전대를 행성/요새로 강하/출격",
+        "modes": [
+          "정박: 강하",
+          "주류: 출격"
+        ],
+        "requirement": "육전대 탑재 함정만"
+      },
+      {
+        "id": "ground_withdraw",
+        "name": "육전대 철수",
+        "nameJa": "陸戦隊撤収",
+        "executionDelay": 5,
+        "executionDuration": 20,
+        "description": "강하/출격한 육전대 철수(탑재)"
+      },
+      {
+        "id": "stance_change",
+        "name": "태세 변경",
+        "nameJa": "態勢変更",
+        "executionDelay": 10,
+        "executionDuration": 0,
+        "description": "함정 태세 변경",
+        "stances": [
+          {
+            "id": "navigation",
+            "name": "항행",
+            "nameJa": "航行",
+            "description": "통상 모드"
+          },
+          {
+            "id": "anchor",
+            "name": "정박",
+            "nameJa": "碇泊",
+            "description": "행성/요새 위성 궤도 체류"
+          },
+          {
+            "id": "station",
+            "name": "주류",
+            "nameJa": "駐留",
+            "description": "행성/요새 내부 착륙"
+          },
+          {
+            "id": "combat",
+            "name": "전투",
+            "nameJa": "戦闘",
+            "description": "공격력 상승, 색적 범위 하락, 사기 감소 증가"
+          }
+        ]
+      },
+      {
+        "id": "sortie",
+        "name": "출격",
+        "nameJa": "出撃",
+        "executionDelay": 5,
+        "executionDuration": 20,
+        "description": "행성/요새에 주류 중인 함선 출격",
+        "note": "1 유닛당 20초. 함정 우선, 함종은 랜덤"
+      },
+      {
+        "id": "stop",
+        "name": "정지 명령",
+        "nameJa": "停止命令",
+        "executionDelay": 0,
+        "executionDuration": 0,
+        "description": "현재 실행 중인 커맨드 취소, 전 유닛 동작 정지"
+      }
+    ],
+    "fortressCommands": [
+      {
+        "id": "fortress_cannon",
+        "name": "요새포 사격",
+        "nameJa": "要塞砲射撃",
+        "executionDelay": 5,
+        "executionDuration": 0,
+        "description": "요새포 발사",
+        "warning": "아군 유닛에도 피해",
+        "mechanics": "사선 통과 전 기함/함정 유닛에 자동 명중"
+      },
+      {
+        "id": "stop",
+        "name": "정지 명령",
+        "nameJa": "停止命令",
+        "executionDelay": 0,
+        "executionDuration": 0,
+        "description": "현재 실행 중인 요새 커맨드 취소"
+      }
+    ],
+    "commandRangeCircle": {
+      "description": "기함 또는 방위사령부가 전대에 커맨드 발령 가능한 범위",
+      "descriptionJa": "旗艦ユニットまたは防衛司令部が戦隊に対してコマンドを発令できる範囲",
+      "mechanics": [
+        "시간 경과와 함께 상한까지 확대",
+        "커맨드 발령마다 0으로 감소",
+        "독행함은 개념 없음"
+      ],
+      "maxRadius": "기함 능력에 따라 변화",
+      "expansionRate": "지휘 파라미터에 따라 변화",
+      "restrictions": [
+        "사기 감소로 혼란 상태 유닛에는 커맨드 불가",
+        "범위 밖 유닛은 기존 커맨드 계속 실행 또는 대기"
+      ],
+      "commandProcessing": {
+        "delay": "0~20초",
+        "description": "커맨드 입력부터 처리 시작까지 시간 필요",
+        "visual": "잔여 시간 바 표시"
+      }
+    },
+    "shipControl": {
+      "description": "기함 조함 패널을 통한 에너지 분배",
+      "descriptionJa": "操艦パネルを操作することによって、自分の旗艦に対するエネルギーの振り分けを変更",
+      "totalEnergy": "제한됨",
+      "allocations": [
+        {
+          "id": "beam",
+          "name": "빔",
+          "effect": "레이저 병기 출력. 공격력 증가, 충전 속도 단축"
+        },
+        {
+          "id": "gun",
+          "name": "건",
+          "effect": "건 병기 출력. 공격력 증가"
+        },
+        {
+          "id": "shield",
+          "name": "실드",
+          "effect": "4방향 실드 회복력. 피탄 감소분 회복"
+        },
+        {
+          "id": "engine",
+          "name": "엔진",
+          "effect": "전술 게임 중 이동 속도"
+        },
+        {
+          "id": "warp",
+          "name": "워프",
+          "effect": "전술 게임 철퇴 필요. 최대값 할당 시 원 밖에서 철퇴 가능"
+        },
+        {
+          "id": "sensor",
+          "name": "센서",
+          "effect": "전술 게임 색적력. 할당 증가 시 원거리 유닛 발견률 상승"
+        }
+      ]
+    },
+    "reconnaissance": {
+      "description": "모든 기함/함정/방위사령부는 색적 능력 보유",
+      "automatic": true,
+      "range": "유닛 성능과 SENSOR 할당에 따라 변화",
+      "precision": [
+        "색적 유닛으로부터의 거리에 따라 변화",
+        "대상 유닛 종별에 따라 변화"
+      ],
+      "concentratedRecon": {
+        "trigger": "유닛 정지 시",
+        "effect": "자동 집중 색적. 정밀도 향상"
+      },
+      "evasion": {
+        "description": "적 색적 회피 능력",
+        "parameter": "유닛 고유 파라미터",
+        "boosted": "유닛 정지 시 자동 전자전으로 색적 회피력 향상"
+      },
+      "informationSharing": {
+        "description": "1개 전술 게임 내 개별 캐릭터 색적 정보는 전 아군과 공유",
+        "conflictResolution": "색적 성공과 실패 동시 발생 시 성공으로 처리"
+      }
+    },
+    "damage": {
+      "flagship": {
+        "unit": "1척",
+        "states": ["통상", "손상"],
+        "repair": "공작함으로 수리",
+        "destruction": "전술 게임에서 제외"
+      },
+      "vessel": {
+        "unit": "300척",
+        "states": ["통상", "손상"],
+        "repair": "공작함으로 수리",
+        "destruction": "1척씩 감소"
+      },
+      "cargo": {
+        "resources": "함정 척수 비례 감소",
+        "groundForces": "격파 시 타 함정으로 자동 이동. 잔존 함정 일정 수 이하 시 전멸"
+      }
+    },
+    "death": {
+      "description": "캐릭터 전사는 플레이어 선택에 위임",
+      "default": "기함 격파 시 캐릭터 부상 처리. 귀환 행성으로 즉시 워프",
+      "returnPlanet": "시스템 설정에서 변경 가능",
+      "status": "현재 미구현"
+    },
+    "meritPoints": {
+      "sources": [
+        "적 유닛 격파",
+        "적 행성/요새 점령"
+      ],
+      "calculation": {
+        "interval": "게임 내 30일마다 집계",
+        "ranking": "공적 포인트 랭킹으로 평가 포인트 획득"
+      },
+      "operationBonus": {
+        "description": "작전 계획에 기반한 행동 시 통상 격파 공적과 별도로 보너스",
+        "operations": [
+          {
+            "type": "occupation",
+            "success": "목표 성계 전 행성/요새 지배",
+            "bonus": "100%"
+          },
+          {
+            "type": "occupation_partial",
+            "success": "목표 성계 최소 1개 행성/요새 지배",
+            "bonus": "50%"
+          },
+          {
+            "type": "defense",
+            "success": "목표 성계 전 행성/요새 적 점령 없이 유지",
+            "bonus": "100%"
+          },
+          {
+            "type": "defense_partial",
+            "success": "목표 성계 최소 1개 행성/요새 적 점령됨",
+            "bonus": "50%"
+          },
+          {
+            "type": "sweep",
+            "success": "지정 성계 400광년 내 적함 1척 격침마다",
+            "bonus": "격침당 보너스"
+          }
+        ],
+        "duration": "작전 기간 게임 내 30일"
+      }
+    }
+  },
+  "shortcuts": {
+    "description": "전술 게임 키보드 단축키",
+    "movement": [
+      {"key": "f", "command": "이동"},
+      {"key": "d", "command": "평행 이동"},
+      {"key": "s", "command": "선회"},
+      {"key": "a", "command": "정지"}
+    ],
+    "combat": [
+      {"key": "r", "command": "공격"},
+      {"key": "e", "command": "사격"},
+      {"key": "w", "command": "공전"}
+    ],
+    "formation": [
+      {"key": "v", "command": "대열 변경"},
+      {"key": "x", "command": "방추진"},
+      {"key": "c", "command": "함종1"},
+      {"key": "v", "command": "함종2"},
+      {"key": "b", "command": "혼성1"},
+      {"key": "n", "command": "혼성2"},
+      {"key": "m", "command": "삼열"},
+      {"key": ",", "command": "대열 해제"}
+    ],
+    "weapons": [
+      {"key": "w", "command": "빔 병장"},
+      {"key": "e", "command": "건 병장"},
+      {"key": "r", "command": "미사일"}
+    ],
+    "attackModes": [
+      {"key": "r", "command": "일제 공격"},
+      {"key": "e", "command": "연속 공격"},
+      {"key": "w", "command": "공격 정지"}
+    ],
+    "other": [
+      {"key": "z", "command": "수리"},
+      {"key": "c", "command": "보급"},
+      {"key": "x", "command": "방어"}
+    ]
+  }
+}

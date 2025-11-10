@@ -13,6 +13,7 @@ export interface ILoghCommander extends Document {
   name: string;
   faction: 'empire' | 'alliance';
   rank: string; // 元帥, 上級大将, 中将, etc.
+  jobPosition: string | null; // 직책 (함대사령관, 참모장 etc.)
 
   // Stats (based on LoghData.ts)
   stats: {
@@ -50,10 +51,24 @@ export interface ILoghCommander extends Document {
 
   // Resources
   supplies: number;
+  personalFunds: number; // 개인 자금
 
   // Game state
   isActive: boolean;
   turnDone: boolean;
+  status: 'active' | 'imprisoned' | 'defected' | 'executed'; // 상태
+  originalFaction?: 'empire' | 'alliance'; // 원래 소속 (망명자용)
+
+  // Active commands (진행 중인 커맨드)
+  activeCommands: Array<{
+    commandType: string;
+    startedAt: Date;
+    completesAt: Date;
+    data: any;
+  }>;
+
+  // Custom data storage
+  customData: Record<string, any>;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -67,6 +82,7 @@ const LoghCommanderSchema = new Schema<ILoghCommander>(
     name: { type: String, required: true },
     faction: { type: String, enum: ['empire', 'alliance'], required: true },
     rank: { type: String, required: true },
+    jobPosition: { type: String, default: null },
 
     stats: {
       command: { type: Number, default: 50 },
@@ -97,9 +113,21 @@ const LoghCommanderSchema = new Schema<ILoghCommander>(
     },
 
     supplies: { type: Number, default: 10000 },
+    personalFunds: { type: Number, default: 50000 },
 
     isActive: { type: Boolean, default: true },
     turnDone: { type: Boolean, default: false },
+    status: { type: String, enum: ['active', 'imprisoned', 'defected', 'executed'], default: 'active' },
+    originalFaction: { type: String, enum: ['empire', 'alliance'] },
+
+    activeCommands: [{
+      commandType: String,
+      startedAt: Date,
+      completesAt: Date,
+      data: Schema.Types.Mixed,
+    }],
+
+    customData: { type: Schema.Types.Mixed, default: {} },
   },
   {
     timestamps: true,

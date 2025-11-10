@@ -1,0 +1,399 @@
+{
+  "faction": "자유행성동맹",
+  "date": "우주력786년",
+  "dateJa": "宇宙暦786年",
+  "positions": [
+    {
+      "positionName": "의장",
+      "positionNameJa": "議長",
+      "holderName": "정치가 샌포드",
+      "holderNameJa": "政治家サンフォード"
+    },
+    {
+      "positionName": "국방위원장",
+      "positionNameJa": "国防委員長",
+      "holderName": "정치가 트류니히트",
+      "holderNameJa": "政治家トリューニヒト"
+    },
+    {
+      "positionName": "재정위원장",
+      "positionNameJa": "財政委員長",
+      "holderName": "정치가 레벨로",
+      "holderNameJa": "政治家レベロ"
+    },
+    {
+      "positionName": "인적자원위원장",
+      "positionNameJa": "人的資源委員長",
+      "holderName": "정치가 호안",
+      "holderNameJa": "政治家ホワン"
+    },
+    {
+      "positionName": "정보교통위원장",
+      "positionNameJa": "情報交通委員長",
+      "holderName": "정치가 윈저",
+      "holderNameJa": "政治家ウィンザー"
+    },
+    {
+      "positionName": "페잔 주재 변무관",
+      "positionNameJa": "フェザーン駐在弁務官",
+      "holderName": "정치가 헨슬로",
+      "holderNameJa": "政治家ヘンスロー"
+    },
+    {
+      "positionName": "통합작전본부장",
+      "positionNameJa": "統合作戦本部長",
+      "holderName": "시트레 원수",
+      "holderNameJa": "シトレ元帥"
+    },
+    {
+      "positionName": "통합작전본부 제1차장",
+      "positionNameJa": "統合作戦本部第一次長",
+      "holderName": "도슨 대장",
+      "holderNameJa": "ドーソン大将"
+    },
+    {
+      "positionName": "후방근무본부장",
+      "positionNameJa": "後方勤務本部長",
+      "holderName": "록웰 대장",
+      "holderNameJa": "ロックウェル大将"
+    },
+    {
+      "positionName": "인사부장",
+      "positionNameJa": "人事部長",
+      "holderName": "그로브너 대장",
+      "holderNameJa": "グローブナー大将"
+    },
+    {
+      "positionName": "정보부장",
+      "positionNameJa": "情報部長",
+      "holderName": "브론즈 중장",
+      "holderNameJa": "ブロンズ中将"
+    },
+    {
+      "positionName": "우주함대 사령장관",
+      "positionNameJa": "宇宙艦隊司令長官",
+      "holderName": "로보스 원수",
+      "holderNameJa": "ロボス元帥"
+    },
+    {
+      "positionName": "우주함대 총참모장",
+      "positionNameJa": "宇宙艦隊総参謀長",
+      "holderName": "D.그린힐 대장",
+      "holderNameJa": "D.グリーンヒル大将"
+    }
+  ],
+  "fleets": [
+    {
+      "unitType": "fleet",
+      "unitNumber": 1,
+      "unitName": "제1함대",
+      "unitNameJa": "第１艦隊",
+      "commanderName": "쿠부르스리 중장",
+      "commanderNameJa": "クブルスリー中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "바라트",
+        "systemJa": "バーラト",
+        "planet": "하이네센",
+        "planetJa": "ハイネセン"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 2,
+      "unitName": "제2함대",
+      "unitNameJa": "第２艦隊",
+      "commanderName": "파에타 중장",
+      "commanderNameJa": "パエッタ中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "도리아",
+        "planetJa": "ドーリア"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 3,
+      "unitName": "제3함대",
+      "unitNameJa": "第３艦隊",
+      "commanderName": "르페브르 중장",
+      "commanderNameJa": "ルフェーブル中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "도리아",
+        "planetJa": "ドーリア"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 4,
+      "unitName": "제4함대",
+      "unitNameJa": "第４艦隊",
+      "commanderName": "파스토레 중장",
+      "commanderNameJa": "パストーレ中将",
+      "commanderRank": "중장",
+      "viceCommanderName": "타난차이 소장",
+      "viceCommanderNameJa": "タナンチャイ少将",
+      "location": {
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "슈파라",
+        "planetJa": "シュパーラ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 5,
+      "unitName": "제5함대",
+      "unitNameJa": "第５艦隊",
+      "commanderName": "뷔코크 중장",
+      "commanderNameJa": "ビュコック中将",
+      "commanderRank": "중장",
+      "viceCommanderName": "몬샤르만 소장",
+      "viceCommanderNameJa": "モンシャルマン少将",
+      "location": {
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "케림",
+        "planetJa": "ケリム"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 6,
+      "unitName": "제6함대",
+      "unitNameJa": "第６艦隊",
+      "commanderName": "무어 중장",
+      "commanderNameJa": "ムーア中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "슈파라",
+        "systemJa": "シュパーラ",
+        "planet": "케림",
+        "planetJa": "ケリム"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 7,
+      "unitName": "제7함대",
+      "unitNameJa": "第７艦隊",
+      "commanderName": "호우드 중장",
+      "commanderNameJa": "ホーウッド中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "루지아나",
+        "systemJa": "ルジアーナ",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 8,
+      "unitName": "제8함대",
+      "unitNameJa": "第８艦隊",
+      "commanderName": "아플턴 중장",
+      "commanderNameJa": "アップルトン中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "산타 아나",
+        "systemJa": "サンタ・アナ",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 9,
+      "unitName": "제9함대",
+      "unitNameJa": "第９艦隊",
+      "commanderName": "알 살렘 중장",
+      "commanderNameJa": "アル・サレム中将",
+      "commanderRank": "중장",
+      "viceCommanderName": "아메드 소장",
+      "viceCommanderNameJa": "アーメド少将",
+      "location": {
+        "system": "루지아나",
+        "systemJa": "ルジアーナ",
+        "planet": "시우다 로드리고",
+        "planetJa": "シウダ・ロドリゴ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 10,
+      "unitName": "제10함대",
+      "unitNameJa": "第１０艦隊",
+      "commanderName": "울란프 중장",
+      "commanderNameJa": "ウランフ中将",
+      "commanderRank": "중장",
+      "viceCommanderName": "모턴 소장",
+      "viceCommanderNameJa": "モートン少将",
+      "viceCommander2Name": "첸 소장",
+      "viceCommander2NameJa": "チェン少将",
+      "location": {
+        "system": "산타 아나",
+        "systemJa": "サンタ・アナ",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 11,
+      "unitName": "제11함대",
+      "unitNameJa": "第１１艦隊",
+      "commanderName": "홀랜드 중장",
+      "commanderNameJa": "ホーランド中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "슈파라",
+        "systemJa": "シュパーラ",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      }
+    },
+    {
+      "unitType": "fleet",
+      "unitNumber": 12,
+      "unitName": "제12함대",
+      "unitNameJa": "第１２艦隊",
+      "commanderName": "보로딘 중장",
+      "commanderNameJa": "ボロディン中将",
+      "commanderRank": "중장",
+      "location": {
+        "system": "바라트",
+        "systemJa": "バーラト",
+        "planet": "하이네센",
+        "planetJa": "ハイネセン"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 11,
+      "unitName": "제11순찰대",
+      "unitNameJa": "第１１巡察隊",
+      "commanderName": "칼센 소장",
+      "commanderNameJa": "カールセン少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "리우카스",
+        "systemJa": "リューカス",
+        "planet": "발미",
+        "planetJa": "ヴァルミー"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 16,
+      "unitName": "제16순찰대",
+      "unitNameJa": "第１６巡察隊",
+      "commanderName": "마리네티 준장",
+      "commanderNameJa": "マリネッティ准将",
+      "commanderRank": "준장",
+      "viceCommanderName": "코날리 소장",
+      "viceCommanderNameJa": "コナリー少将",
+      "location": {
+        "system": "도리아",
+        "systemJa": "ドーリア",
+        "planet": "보르케제",
+        "planetJa": "ボルケーゼ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 21,
+      "unitName": "제21순찰대",
+      "unitNameJa": "第２１巡察隊",
+      "commanderName": "알라르콘 소장",
+      "commanderNameJa": "アラルコン少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "잠시드",
+        "systemJa": "ジャムシード",
+        "planet": "캇파",
+        "planetJa": "カッファー"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 26,
+      "unitName": "제26순찰대",
+      "unitNameJa": "第２６巡察隊",
+      "commanderName": "자니알 준장",
+      "commanderNameJa": "ザーニアル准将",
+      "commanderRank": "준장",
+      "location": {
+        "system": "케림",
+        "systemJa": "ケリム",
+        "planet": "카시나",
+        "planetJa": "カッシナ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 31,
+      "unitName": "제31순찰대",
+      "unitNameJa": "第３１巡察隊",
+      "commanderName": "르그랑주 소장",
+      "commanderNameJa": "ルグランジュ少将",
+      "commanderRank": "소장",
+      "location": {
+        "system": "로포텐",
+        "systemJa": "ロフォーテン",
+        "planet": "루드밀라",
+        "planetJa": "ルドミラ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 36,
+      "unitName": "제36순찰대",
+      "unitNameJa": "第３６巡察隊",
+      "commanderName": "데슈 준장",
+      "commanderNameJa": "デッシュ准将",
+      "commanderRank": "준장",
+      "location": {
+        "system": "엘 파실",
+        "systemJa": "エル・ファシル",
+        "planet": "산타 아나",
+        "planetJa": "サンタ・アナ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 46,
+      "unitName": "제46순찰대",
+      "unitNameJa": "第４６巡察隊",
+      "commanderName": "마스카니 준장",
+      "commanderNameJa": "マスカーニ准将",
+      "commanderRank": "준장",
+      "location": {
+        "system": "폴레비트",
+        "systemJa": "ポレヴィト",
+        "planet": "루지아나",
+        "planetJa": "ルジアーナ"
+      }
+    },
+    {
+      "unitType": "patrol",
+      "unitNumber": 56,
+      "unitName": "제56순찰대",
+      "unitNameJa": "第５６巡察隊",
+      "commanderName": "구엔 준장",
+      "commanderNameJa": "グエン准将",
+      "commanderRank": "준장",
+      "location": {
+        "system": "메르칼트",
+        "systemJa": "メルカルト",
+        "planet": "네르갈",
+        "planetJa": "ネルガル"
+      }
+    }
+  ]
+}

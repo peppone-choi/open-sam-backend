@@ -1,0 +1,505 @@
+{
+  "description": "은하제국 조직 구성 (gin7manual.txt 01182-01300행)",
+  "descriptionJa": "帝国軍組織構成図",
+  "source": "gin7manual.txt lines 01182-01300, 02507-03156",
+  "factionId": "empire",
+  "organizations": {
+    "palace": {
+      "id": "palace",
+      "name": "황궁",
+      "nameJa": "皇宮",
+      "location": "수도 행성 (오딘)",
+      "positions": [
+        {
+          "id": "emperor",
+          "name": "황제",
+          "nameJa": "皇帝",
+          "count": 1,
+          "minRank": null,
+          "maxRank": null,
+          "description": "은하제국 최고 권력자. 490년간 골덴바움 왕조 독점. 신성불가침이나 관료제 거대화로 권력 형해화 심각. 친정 시 제국군 최고사령관 및 제국재상 겸임이 관례",
+          "appointedBy": "세습/선출"
+        },
+        {
+          "id": "supreme_commander",
+          "name": "제국군 최고사령관",
+          "nameJa": "帝国軍最高司令官",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 최고위 사령관. 황제의 군사면 권한 분여. 친정 시 황제가 겸무",
+          "appointedBy": "황제"
+        },
+        {
+          "id": "chief_of_staff",
+          "name": "막료총감",
+          "nameJa": "幕僚総監",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "황제의 군사 보좌기관인 대본영 최고 책임자. 제국군 최고사령관이 임명. 각 함대 참모장 임면권 보유, 군무상서 권력 견제",
+          "appointedBy": "제국군최고사령관",
+          "authority": ["각 함대 참모장 임명/파면"]
+        },
+        {
+          "id": "imperial_staff",
+          "name": "대본영 참모",
+          "nameJa": "大本営参謀",
+          "count": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "황제의 대본영 소속 참모. 막료총감이 임명. 대본영 스태프 직능과 황제 측근 기능 병용",
+          "appointedBy": "막료총감"
+        },
+        {
+          "id": "imperial_guard_commander",
+          "name": "근위병총감",
+          "nameJa": "近衛兵総監",
+          "count": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "제도 수비대 지휘관. 군무상서가 임명. 근위병 통솔, 제도 방위. 최대 300,000명 지휘",
+          "appointedBy": "군무상서"
+        },
+        {
+          "id": "capital_defense_commander",
+          "name": "제도방위사령관",
+          "nameJa": "帝都防衛司令官",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "제도 최고사령관. 제국군 최고사령관이 임명. 제도 경찰임무 및 경제활동과 생산 통솔하나 군사 지휘권 없음",
+          "appointedBy": "제국군최고사령관"
+        }
+      ]
+    },
+    "cabinet": {
+      "id": "cabinet",
+      "name": "내각",
+      "nameJa": "内閣",
+      "positions": [
+        {
+          "id": "imperial_chancellor",
+          "name": "제국재상",
+          "nameJa": "帝国宰相",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "type": "정치가",
+          "description": "은하제국 최고 문관직. 황제의 통치면 권한 분여. 친정 시 황제 겸무하나 근래 국무상서가 '대리' 권한으로 겸임 다수. 국정 최고 책임자로 내각 조직 권한 보유",
+          "appointedBy": "황제",
+          "authority": ["내각 조직"]
+        },
+        {
+          "id": "state_minister",
+          "name": "국무상서",
+          "nameJa": "国務尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 실질적 통치자인 행성 총독 임명 권한 보유. 대귀족 이해 직결 직책으로 공평한 밸런스 감각 요구",
+          "appointedBy": "제국재상",
+          "authority": ["행성 총독 임명/파면"]
+        },
+        {
+          "id": "interior_minister",
+          "name": "내무상서",
+          "nameJa": "内務尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 시빌리언 컨트롤 일환으로 군 내부조사 수행, 대좌 이하 군인 체포·처단 직권 보유",
+          "appointedBy": "제국재상",
+          "authority": ["대좌 이하 군인 체포/처단"]
+        },
+        {
+          "id": "finance_minister",
+          "name": "재무상서",
+          "nameJa": "財務尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 은하제국 경제활동 관장, 과세율 변경 권한 보유",
+          "appointedBy": "제국재상",
+          "authority": ["과세율 변경"]
+        },
+        {
+          "id": "palace_minister",
+          "name": "궁내상서",
+          "nameJa": "宮内尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 본래 황족 생활·재무 관장 직무이나 거의 명목상 포스트",
+          "appointedBy": "제국재상"
+        },
+        {
+          "id": "justice_minister",
+          "name": "사법상서",
+          "nameJa": "司法尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 제국 최고 사법기관. 정치가 체포 및 처단 권한 보유",
+          "appointedBy": "제국재상",
+          "authority": ["정치가 체포/처단"]
+        },
+        {
+          "id": "ceremony_minister",
+          "name": "전례상서",
+          "nameJa": "典礼尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 본래 궁정 내 제행사 관장 직무이나 거의 명목상 포스트",
+          "appointedBy": "제국재상"
+        },
+        {
+          "id": "science_minister",
+          "name": "과학상서",
+          "nameJa": "科学尚書",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 본래 과학기술 관련 관장 직무이나 거의 명목상 포스트",
+          "appointedBy": "제국재상"
+        },
+        {
+          "id": "cabinet_secretary",
+          "name": "내각서기관장",
+          "nameJa": "内閣書記官長",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 국무상서 보좌 직무",
+          "appointedBy": "제국재상"
+        }
+      ]
+    },
+    "fezzan_office": {
+      "id": "fezzan_office",
+      "name": "주페잔 판무관사무소",
+      "nameJa": "駐フェザーン弁務官事務所",
+      "positions": [
+        {
+          "id": "fezzan_commissioner",
+          "name": "페잔 주재 고등판무관",
+          "nameJa": "フェザーン駐在高等弁務官",
+          "count": 1,
+          "type": "정치가",
+          "description": "제국재상이 임명. 본래 페잔 자치령 외교기관이나 실질적 첩보활동 수행. 현지 부임 원칙, 자치령주가 각종 외교특권 인정",
+          "appointedBy": "제국재상"
+        },
+        {
+          "id": "fezzan_assistant",
+          "name": "페잔 주재 보좌관",
+          "nameJa": "フェザーン駐在補佐官",
+          "count": 1,
+          "type": "정치가",
+          "description": "국무상서가 임명. 고등판무관 보좌. 현지 부임 원칙, 자치령주가 각종 외교특권 인정",
+          "appointedBy": "국무상서"
+        },
+        {
+          "id": "fezzan_attache",
+          "name": "페잔 주재 무관",
+          "nameJa": "フェザーン駐在武官",
+          "count": 1,
+          "minRank": "소위",
+          "maxRank": "원수",
+          "description": "군무성 인사국장이 임명. 주로 군사 관련 정보 수집. 현지 부임 원칙, 자치령주가 각종 외교특권 인정",
+          "appointedBy": "군무성인사국장"
+        }
+      ]
+    },
+    "military_affairs": {
+      "id": "military_affairs",
+      "name": "군무성",
+      "nameJa": "軍務省",
+      "description": "제국군 3장관 중 하나. 제국군 인사 관장",
+      "positions": [
+        {
+          "id": "military_minister",
+          "name": "군무상서",
+          "nameJa": "軍務尚書",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 3장관 중 하나. 제국군 인사 관장 군무성 최고 책임자. 황제가 직접 임명. 제국군 인사제도 근간 좌우 요직. 군무상서 취임은 군인으로서 영달의 극치",
+          "appointedBy": "황제",
+          "authority": ["원수~준장 승진/강등/임명/파면", "함대사령관 임명"]
+        },
+        {
+          "id": "military_vice_minister",
+          "name": "군무성 차관",
+          "nameJa": "軍務省次官",
+          "count": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서가 임명. 군무성 소속, 군무상서 직무 전반 보좌. 군무상서 자리 관문으로 간주",
+          "appointedBy": "군무상서"
+        },
+        {
+          "id": "personnel_director",
+          "name": "군무성 인사국장",
+          "nameJa": "軍務省人事局長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "군무상서가 임명. 군무성 소속, 대좌 이하 인사 관장. 대좌 이하 인사는 완전 매뉴얼화되어 군관료 재량권만 보유",
+          "appointedBy": "군무상서",
+          "authority": ["대좌 이하 승진/강등"]
+        },
+        {
+          "id": "investigation_director",
+          "name": "군무성 조사국장",
+          "nameJa": "軍務省調査局長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "군무상서가 임명. 군무성 하부조직 통합정찰국 관장, 제국군 첩보활동 전반 컨트롤",
+          "appointedBy": "군무상서",
+          "authority": ["통합정찰국 관리"]
+        },
+        {
+          "id": "military_counselor",
+          "name": "군무성 참사관",
+          "nameJa": "軍務省参事官",
+          "count": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "군무성 소속 참모. 군무성 차관이 임명. 군무상서 스태프로 통수본부·우주함대사령부와의 연락장교 기능 보유",
+          "appointedBy": "군무성차관"
+        }
+      ]
+    },
+    "integrated_intelligence": {
+      "id": "integrated_intelligence",
+      "name": "통합정찰국",
+      "nameJa": "統合偵察局",
+      "positions": [
+        {
+          "id": "intelligence_officer",
+          "name": "첩보관",
+          "nameJa": "諜報官",
+          "count": 50,
+          "minRank": "소위",
+          "maxRank": "대좌",
+          "description": "군무성 조사국장이 임명. 적국 잠입, 각종 수단 구사해 첩보활동 수행",
+          "appointedBy": "군무성조사국장"
+        }
+      ]
+    },
+    "general_staff": {
+      "id": "general_staff",
+      "name": "통수본부",
+      "nameJa": "統帥本部",
+      "description": "제국군 3장관 중 하나. 우주함대 부대편성·작전계획 관장",
+      "positions": [
+        {
+          "id": "chief_of_general_staff",
+          "name": "통수본부 총장",
+          "nameJa": "統帥本部総長",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 3장관 중 하나. 우주함대 부대편성·작전계획 관장 통수본부 최고 책임자. 황제가 직접 임명. 실제 입안 수행 작전과 과장 임면권 보유. 함대 관장 작전1과 과장 겸임이 관례",
+          "appointedBy": "황제",
+          "authority": ["작전과 과장 임명"]
+        },
+        {
+          "id": "vice_chief_of_general_staff",
+          "name": "통수본부 차장",
+          "nameJa": "統帥本部次長",
+          "count": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서가 임명. 통수본부 소속, 통수본부 총장 직무 전반 보좌하는 사무방 수장. 통수본부 총장 자리 관문으로 간주",
+          "appointedBy": "군무상서"
+        },
+        {
+          "id": "operations_1_director",
+          "name": "통수본부 작전1과 과장",
+          "nameJa": "統帥本部作戦一課課長",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "통수본부 총장이 임명하나 통상 통수본부 총장 자신이 겸무. 통수본부 소속, 함대 부대편성·작전계획 입안",
+          "appointedBy": "통수본부총장",
+          "authority": ["함대 작전계획 입안", "함대 발령"]
+        },
+        {
+          "id": "operations_2_director",
+          "name": "통수본부 작전2과 과장",
+          "nameJa": "統帥本部作戦二課課長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "통수본부 총장이 임명. 통수본부 소속, 수송함대·순찰대·지상부대 부대편성·작전계획 입안",
+          "appointedBy": "통수본부총장",
+          "authority": ["수송함대/순찰대/지상부대 작전계획", "할당"]
+        },
+        {
+          "id": "operations_3_director",
+          "name": "통수본부 작전3과 과장",
+          "nameJa": "統帥本部作戦三課課長",
+          "count": 1,
+          "minRank": "소장",
+          "maxRank": "원수",
+          "description": "통수본부 총장이 임명. 통수본부 소속, 독행함 부대편성·작전계획 입안",
+          "appointedBy": "통수본부총장",
+          "authority": ["독행함 작전계획"]
+        },
+        {
+          "id": "general_staff_inspector",
+          "name": "통수본부 감찰관",
+          "nameJa": "統帥本部監察官",
+          "count": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "통수본부 차장이 임명. 통수본부 소속 참모로 군무성·우주함대사령부와의 연락장교 기능 보유",
+          "appointedBy": "통수본부차장"
+        }
+      ]
+    },
+    "space_fleet_command": {
+      "id": "space_fleet_command",
+      "name": "우주함대 사령부",
+      "nameJa": "宇宙艦隊司令部",
+      "description": "제국군 3장관 중 하나. 통수본부 작전계획에 따라 우주함대 운용",
+      "positions": [
+        {
+          "id": "fleet_commander_in_chief",
+          "name": "우주함대 사령장관",
+          "nameJa": "宇宙艦隊司令長官",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "제국군 3장관 중 하나. 통수본부 작전계획에 따라 우주함대 운용하는 우주함대사령부 최고 책임자. 제국군 최고사령관이 임명. 대규모 작전 시 병력 직솔해 전장 임하므로 실전지휘 능한 자 임명",
+          "appointedBy": "제국군최고사령관"
+        },
+        {
+          "id": "vice_fleet_commander",
+          "name": "우주함대 부사령장관",
+          "nameJa": "宇宙艦隊副司令長官",
+          "count": 1,
+          "minRank": "원수",
+          "maxRank": "원수",
+          "description": "우주함대사령부 소속. 통수본부 작전계획에 따라 수송함대·순찰대 운용. 제국군 최고사령관이 임명. 실전지휘 능한 자 임명. 우주함대와 동일 원수 임명되나 격식은 약간 열세",
+          "appointedBy": "제국군최고사령관"
+        },
+        {
+          "id": "chief_of_staff_space_fleet",
+          "name": "우주함대 총참모장",
+          "nameJa": "宇宙艦隊総参謀長",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "우주함대 사령장관이 임명. 우주함대사령부 소속, 통수본부 작전계획에 따라 독행함 운용. 우주함대사령부 스태프 통솔 직무로 우주함대 참모 임명 직권 보유",
+          "appointedBy": "우주함대사령장관",
+          "authority": ["우주함대 참모 임명", "독행함 운용"]
+        },
+        {
+          "id": "space_fleet_staff",
+          "name": "우주함대 참모",
+          "nameJa": "宇宙艦隊参謀",
+          "count": 10,
+          "minRank": "준장",
+          "maxRank": "원수",
+          "description": "우주함대사령부 소속 참모. 우주함대 총참모장이 임명. 본래 스태프로 우주함대 운용 보조하나 우주함대사령부와 각 함대사령부 의사소통 도모 기능 보유",
+          "appointedBy": "우주함대총참모장"
+        }
+      ]
+    },
+    "military_police": {
+      "id": "military_police",
+      "name": "헌병본부",
+      "nameJa": "憲兵本部",
+      "positions": [
+        {
+          "id": "provost_marshal",
+          "name": "헌병총감",
+          "nameJa": "憲兵総監",
+          "count": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "제국군 보안조직 헌병본부 최고 책임자. 군무상서가 임명. 원수 외 군인 체포구속 권한 보유, 군뿐 아니라 제국 전체 치안상 책임 부담 요직",
+          "appointedBy": "군무상서",
+          "authority": ["원수 외 군인 체포/구속"]
+        },
+        {
+          "id": "vice_provost_marshal",
+          "name": "헌병 부총감",
+          "nameJa": "憲兵副総監",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "헌병총감이 임명. 헌병총감 보좌가 주 직무이나 현장 직접 지휘하는 경우 다수",
+          "appointedBy": "헌병총감"
+        }
+      ]
+    },
+    "armored_grenadier": {
+      "id": "armored_grenadier",
+      "name": "장갑척탄병 총감부",
+      "nameJa": "装甲擲弾兵総監部",
+      "positions": [
+        {
+          "id": "armored_grenadier_commander",
+          "name": "장갑척탄병 총감",
+          "nameJa": "装甲擲弾兵総監",
+          "count": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서가 임명. 제국군 육전부대 전체 통괄 장갑척탄병총감부 최고 책임자. 실전 실력자로 임명",
+          "appointedBy": "군무상서"
+        },
+        {
+          "id": "armored_grenadier_vice_commander",
+          "name": "장갑척탄병 부총감",
+          "nameJa": "装甲擲弾兵副総監",
+          "count": 1,
+          "minRank": "중장",
+          "maxRank": "원수",
+          "description": "장갑척탄병 총감이 임명. 장갑척탄병총감부 소속, 장갑척탄병 총감 직무 보좌",
+          "appointedBy": "장갑척탄병총감"
+        }
+      ]
+    },
+    "science_technology": {
+      "id": "science_technology",
+      "name": "과학기술 총감부",
+      "nameJa": "科学技術総監部",
+      "positions": [
+        {
+          "id": "science_director",
+          "name": "과학기술 총감",
+          "nameJa": "科学技術総監",
+          "count": 1,
+          "minRank": "상급대장",
+          "maxRank": "원수",
+          "description": "군무상서가 임명. 군사 관련 과학기술 집약 관장하나 거의 명목상 포스트",
+          "appointedBy": "군무상서"
+        }
+      ]
+    },
+    "academy": {
+      "id": "academy",
+      "name": "제국군 사관학교",
+      "nameJa": "帝国軍士官学校",
+      "positions": [
+        {
+          "id": "academy_commandant",
+          "name": "사관학교장",
+          "nameJa": "士官学校長",
+          "count": 1,
+          "minRank": "대장",
+          "maxRank": "원수",
+          "description": "제국군 대부분 사관 배출 사관학교 최고 책임자. 군무상서가 임명",
+          "appointedBy": "군무상서"
+        },
+        {
+          "id": "academy_instructor",
+          "name": "사관학교 교관",
+          "nameJa": "士官学校教官",
+          "count": 10,
+          "minRank": "조장",
+          "maxRank": "원수",
+          "description": "제국군 사관학교 교관. 계급 무관하게 전문 기술 보유자 초빙되어 교편 집음 다수",
+          "appointedBy": "사관학교장"
+        }
+      ]
+    }
+  }
+}

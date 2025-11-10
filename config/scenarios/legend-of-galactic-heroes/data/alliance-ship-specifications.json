@@ -1,0 +1,1895 @@
+{
+  "allianceShips": {
+    "battleship": {
+      "name": "표준전함",
+      "nameJa": "標準戦艦",
+      "nameEn": "Standard Battleship",
+      "modelYear": "787년형",
+      "modelYearJa": "787年型",
+      "description": "강력한 광자포와 레이저 수소 미사일 발사 시스템 및 전투정을 주 무장으로 하는 우주함대의 주력함. 제국군의 SS75형 표준전함에 대항하기 위해 건조됨. 반격납식 전투정 격납고가 방어상의 약점이지만, 주포 공격력, 항행 성능, 전자전 능력에서는 SS75형을 압도함.",
+      "descriptionJa": "強力な光子砲とレーザー水爆ミサイル発射システムおよび戦闘艇を主兵装とする宇宙艦隊の主力艦。帝国軍のSS75型標準戦艦に対抗すべく建造された。半格納式の戦闘艇格納庫が防御上のウィークポイントとなっており、艦体の防御性能では一歩譲るが、主砲攻撃力・航行性能・電子戦能力においてはSS75型標準戦艦に決定的に勝るとされる。",
+      "variants": {
+        "flagship": {
+          "id": "battleship_flagship",
+          "name": "전함(기함)",
+          "nameJa": "戦艦（旗艦）",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 22000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 70,
+            "side": 30,
+            "rear": 20
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 90
+          },
+          "weapons": {
+            "beam": {
+              "power": 80,
+              "consumptionRatio": "80/1"
+            },
+            "gun": {
+              "power": 32,
+              "consumptionRatio": "140/2"
+            },
+            "missile": {
+              "power": 90,
+              "consumptionRatio": "90/5"
+            },
+            "antiAir": {
+              "power": 90
+            }
+          },
+          "fightersCarried": 3,
+          "suppliesCapacity": 760,
+          "repairCost": 190
+        },
+        "type1": {
+          "id": "battleship_1",
+          "name": "전함Ⅰ",
+          "nameJa": "戦艦Ⅰ",
+          "buildTime": 4,
+          "requiredCrew": 400,
+          "output": 22000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 70,
+            "side": 30,
+            "rear": 20
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 80,
+              "consumptionRatio": "80/1"
+            },
+            "gun": {
+              "power": 32,
+              "consumptionRatio": "140/2"
+            },
+            "missile": {
+              "power": 90,
+              "consumptionRatio": "90/5"
+            },
+            "antiAir": {
+              "power": 90
+            }
+          },
+          "fightersCarried": 3,
+          "suppliesCapacity": 760,
+          "repairCost": 190
+        },
+        "type2": {
+          "id": "battleship_2",
+          "name": "전함Ⅱ",
+          "nameJa": "戦艦Ⅱ",
+          "modelVariant": "787년 G형",
+          "modelVariantJa": "787年G型",
+          "description": "레일 캐논을 신형으로 교체하여 근거리 포격전 공격력을 강화. 일부 장갑도 증강됨.",
+          "descriptionJa": "787年型標準戦艦のレールキャノンを新形式のものに換装し、近距離砲撃戦での攻撃力を高めたもの。近接戦闘に備えて、一部の装甲も増強されている。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 23000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 80,
+              "consumptionRatio": "80/1"
+            },
+            "gun": {
+              "power": 18,
+              "consumptionRatio": "10"
+            },
+            "missile": null,
+            "antiAir": {
+              "power": 3
+            }
+          },
+          "fightersCarried": 1,
+          "suppliesCapacity": 800,
+          "repairCost": 760
+        },
+        "type3": {
+          "id": "battleship_3",
+          "name": "전함Ⅲ",
+          "nameJa": "戦艦Ⅲ",
+          "modelVariant": "787년 M형",
+          "modelVariantJa": "787年M型",
+          "description": "장거리 전투 능력 강화를 위해 신형 레이저 수소 발사 시스템 탑재. 전투정 격납고를 완전히 폐지하고 탄약 탑재 공간으로 활용.",
+          "descriptionJa": "787年型標準戦艦の長距離戦闘能力を強化すべく、新形式のレーザー水爆発射システムを搭載したもの。戦闘艇格納庫を全廃して弾薬搭載スペースに充てている。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 20000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 64,
+              "consumptionRatio": null
+            },
+            "gun": null,
+            "missile": {
+              "power": 100,
+              "consumptionRatio": "100/6"
+            },
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type4": {
+          "id": "battleship_4",
+          "name": "전함Ⅳ",
+          "nameJa": "戦艦Ⅳ",
+          "modelVariant": "787년 L형",
+          "modelVariantJa": "787年L型",
+          "description": "장갑을 일부 생략 및 경량화하여 기동성을 향상. 후퇴하는 적을 추격하기 위해 설계되었으며, 전선 부대에서는 '쾌속전함'으로 불림.",
+          "descriptionJa": "787年型標準戦艦の装甲を一部省略および軽量化し、機動性を向上させたもの。後退する敵を追撃する目的で設計されており、前線部隊では\"快速戦艦\"と称されている。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 22000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 90,
+              "consumptionRatio": "90/5"
+            },
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type5": {
+          "id": "battleship_5",
+          "name": "전함Ⅴ",
+          "nameJa": "戦艦Ⅴ",
+          "modelVariant": "787년 H형",
+          "modelVariantJa": "787年H型",
+          "description": "장갑을 철저히 강화. 자유행성동맹군 함정의 방어 약점이었던 반격납식 전투정 격납고를 폐지하고 함내식으로 개선. 함체 중량 증가로 기동성이 약간 저하됨.",
+          "descriptionJa": "787年型標準戦艦の装甲を徹底的に強化したもの。自由惑星同盟軍艦艇の防御麺の弱点であった半格納式の戦闘艇格納庫を廃止し、これを艦内式に改めている。また、艦体重量の増加に伴い、機動性が若干低下している。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 18000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 100,
+              "consumptionRatio": null
+            },
+            "gun": {
+              "power": 16,
+              "consumptionRatio": "8"
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type6": {
+          "id": "battleship_6",
+          "name": "전함Ⅵ",
+          "nameJa": "戦艦Ⅵ",
+          "modelVariant": "787년 R형",
+          "modelVariantJa": "787年R型",
+          "description": "정찰 부대에 배속되는 전함. 텡게리급 분함대 기함과 동일 성능의 센서 시스템 탑재. 자세 제어용 스러스터도 강화되어 선회 성능이 약간 향상됨.",
+          "descriptionJa": "偵察部隊に配属される戦艦で、787年型標準戦艦にテンゲリ級分艦隊旗艦と同性能のセンサーシステムを搭載したもの。姿勢制御用のスラスターも強化されており、旋回性能が若干向上している。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 22000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 80,
+              "consumptionRatio": "80/1"
+            },
+            "gun": {
+              "power": 22,
+              "consumptionRatio": "14"
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type7": {
+          "id": "battleship_7",
+          "name": "전함Ⅶ",
+          "nameJa": "戦艦Ⅶ",
+          "modelVariant": "787년 E형",
+          "modelVariantJa": "787年E型",
+          "description": "전시 급조형. 기관을 저출력으로 교체하여 항행 속도가 저하됨. 센서 시스템은 비교적 저렴한 표준순양함용 탑재.",
+          "descriptionJa": "787年型標準戦艦の戦時急造型。機関を低出力のものに換装しているため、航行速度が低下している。また、センサーシステムは比較的安価な標準巡航艦のものを搭載している。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 22000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": {
+              "power": 30,
+              "consumptionRatio": null
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type8": {
+          "id": "battleship_8",
+          "name": "전함Ⅷ",
+          "nameJa": "戦艦Ⅷ",
+          "modelVariant": "787년 U형",
+          "modelVariantJa": "787年U型",
+          "description": "자동화 전함으로 '무인함'으로 속칭됨. 실제로는 항상 완전 무인 상태로 항행할 수 없으며, 특수 운용 시 제외하고는 25%의 승조원이 필요. 전투정은 탑재하지 않음. 인적 자원이 고갈된 동맹군의 전투력 유지를 위해 건조되었으나, 돌입 폐쇄 작전 등 특수 용도로도 사용됨.",
+          "descriptionJa": "787年型標準戦艦を自動化したもので、\"無人艦\"と俗称される。実際は常に完全無人状態で航行できるわけではなく、特殊な運用時を除いては25%の乗組員が必要である。戦闘艇は一切搭載されていない。人的資源の枯渇した同盟軍の戦闘力を維持する目的で建造されたが、突入閉塞作戦などの特殊用途にも使用された。",
+          "buildTime": "-",
+          "requiredCrew": 400,
+          "output": 22000,
+          "unitCount": 1,
+          "detectionRange": 80,
+          "maxSpeed": 200,
+          "armor": {
+            "front": 6400,
+            "side": 4800,
+            "rear": 5600
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": {
+              "power": 18,
+              "consumptionRatio": "10"
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        }
+      }
+    },
+    "cruiser": {
+      "name": "표준순양함",
+      "nameJa": "標準巡航艦",
+      "nameEn": "Standard Cruiser",
+      "modelYear": "795년형",
+      "modelYearJa": "795年型",
+      "description": "중성자 미사일과 광자 펄스포 및 전투정을 주 무장으로 하는 중형함. 전함보다 단거리 교전을 위해 설계됨. 제국군의 SK80형 표준순양함에 비해 소형이지만, 미사일 공격력을 제외하면 거의 대등한 전력을 보유. 동맹군 함정 특유의 반격납식 전투정 격납고가 역시 방어상 문제가 됨.",
+      "descriptionJa": "中性子ミサイルと光子パルス砲および戦闘艇を主兵装とする中型艦であり、戦艦よりも短距離での交戦を意図して設計されている。帝国軍のSK80型標準巡航艦に比して小型であるが、ミサイル攻撃力を除けばほぼこれに匹敵する戦力を有する。ただし、同盟軍艦艇特有の半格納式の戦闘艇格納庫はやはり防御上の問題となっている。",
+      "variants": {
+        "flagship": {
+          "id": "cruiser_flagship",
+          "name": "순양함(기함)",
+          "nameJa": "巡航艦（旗艦）",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 4800,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 60,
+            "side": 22,
+            "rear": 18
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 60
+          },
+          "weapons": {
+            "beam": {
+              "power": 50,
+              "consumptionRatio": "50/3"
+            },
+            "gun": {
+              "power": 24,
+              "consumptionRatio": null
+            },
+            "missile": {
+              "power": 36,
+              "consumptionRatio": null
+            },
+            "antiAir": {
+              "power": 50
+            }
+          },
+          "fightersCarried": 1,
+          "suppliesCapacity": 360,
+          "repairCost": null
+        },
+        "type1": {
+          "id": "cruiser_1",
+          "name": "순양함Ⅰ",
+          "nameJa": "巡航艦Ⅰ",
+          "buildTime": 2,
+          "requiredCrew": 250,
+          "output": 4800,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 60,
+            "side": 22,
+            "rear": 18
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 50,
+              "consumptionRatio": "50/3"
+            },
+            "gun": {
+              "power": 24,
+              "consumptionRatio": null
+            },
+            "missile": {
+              "power": 36,
+              "consumptionRatio": null
+            },
+            "antiAir": {
+              "power": 50
+            }
+          },
+          "fightersCarried": 1,
+          "suppliesCapacity": 360,
+          "repairCost": 320
+        },
+        "type2": {
+          "id": "cruiser_2",
+          "name": "순양함Ⅱ",
+          "nameJa": "巡航艦Ⅱ",
+          "modelVariant": "795년 B형",
+          "modelVariantJa": "795年B型",
+          "description": "함수에 장비된 중성자 펄스포를 신형포로 교체. 전투정을 탑재하지 않아 함체 구조 개구부가 감소하여 방어 성능이 강화됨.",
+          "descriptionJa": "795年型標準巡航艦の艦首に装備された中性子パルス砲を新型砲に換装したもの。戦闘艇を搭載しておらず、結果として艦体構造の開口部が減ったために防御性能が強化された。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 6000,
+          "unitCount": 1,
+          "detectionRange": 70,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 70,
+            "side": 60,
+            "rear": 60
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 90,
+              "consumptionRatio": "90/4"
+            },
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 24
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 360,
+          "repairCost": 320
+        },
+        "type3": {
+          "id": "cruiser_3",
+          "name": "순양함Ⅲ",
+          "nameJa": "巡航艦Ⅲ",
+          "modelVariant": "795년 M형",
+          "modelVariantJa": "795年M型",
+          "description": "중성자 미사일을 더 장사정, 고위력의 레이저 수소 미사일로 교체. 전함 보조 부대로서 장사정 미사일 전투 수행.",
+          "descriptionJa": "795年型標準巡航艦の中性子ミサイルをより長射程・高威力のレーザー水爆ミサイルに換装したもの。戦艦の補助部隊として長射程でのミサイル戦闘を行う。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 4800,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 60,
+            "side": 22,
+            "rear": 18
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 60,
+              "consumptionRatio": "50/3"
+            },
+            "antiAir": {
+              "power": 24
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 360,
+          "repairCost": 320
+        },
+        "type4": {
+          "id": "cruiser_4",
+          "name": "순양함Ⅳ",
+          "nameJa": "巡航艦Ⅳ",
+          "modelVariant": "795년 L형",
+          "modelVariantJa": "795年L型",
+          "description": "장갑을 일부 제거하여 함체 중량을 경감하고 고출력 기관을 탑재하여 고속 항행 가능. 전선 부대에서는 '고속순양함'으로 불림.",
+          "descriptionJa": "795年型標準巡航艦の装甲を一部除去して艦体重量を軽減し、高出力機関を搭載して高速航行を可能としたもの。前線部隊では\"高速巡航艦\"と称される。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 5600,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 12
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": {
+              "power": 16,
+              "consumptionRatio": "8"
+            },
+            "missile": {
+              "power": 40,
+              "consumptionRatio": "40/2"
+            },
+            "antiAir": null
+          },
+          "fightersCarried": 1,
+          "suppliesCapacity": 360,
+          "repairCost": null
+        },
+        "type5": {
+          "id": "cruiser_5",
+          "name": "순양함Ⅴ",
+          "nameJa": "巡航艦Ⅴ",
+          "modelVariant": "795년 H형",
+          "modelVariantJa": "795年H型",
+          "description": "복합 장갑을 증설하여 방어 성능 강화. 개구부를 줄이기 위해 전투정은 탑재하지 않음. 함체 중량 증가로 속도가 저하되고 선회 성능도 악화되었으나, 견고함에서 전선 부대의 신뢰를 얻음.",
+          "descriptionJa": "795年型標準巡航艦に複合装甲を増設して防御性能を高めたもの。開口部を減らすため、戦闘艇は搭載していない。艦体重量の増加によって速度が低下し、旋回性能も悪化したが、堅牢さにおいて前線部隊の信頼を得ている。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 4800,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 8,
+            "side": 5,
+            "rear": 9
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": {
+              "power": 22,
+              "consumptionRatio": "13"
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": 400
+        },
+        "type6": {
+          "id": "cruiser_6",
+          "name": "순양함Ⅵ",
+          "nameJa": "巡航艦Ⅵ",
+          "modelVariant": "795년 R형",
+          "modelVariantJa": "795年R型",
+          "description": "787년형 표준전함의 색적 시스템 탑재. 고도의 색적 능력 보유. 전선 부대에서는 '정찰순양함'으로 불리며 함대 전위 부대의 중핵을 구성.",
+          "descriptionJa": "795年型標準巡航艦に787年型標準戦艦の索敵システムを搭載したもの。高度な索敵能力を有する。前線部隊では\"偵察巡航艦\"と称されて、艦隊の前衛部隊の中核を構成している。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 5600,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 6,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": {
+              "power": 18,
+              "consumptionRatio": "10"
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type7": {
+          "id": "cruiser_7",
+          "name": "순양함Ⅶ",
+          "nameJa": "巡航艦Ⅶ",
+          "modelVariant": "795년 Ri형",
+          "modelVariantJa": "795年Ri型",
+          "description": "795년 R형 순양함의 개량형. 색적 시스템을 텡게리급 분함대 기함의 것으로 교체. 고성능 추구로 건조비가 787년형 표준전함과 동등하게 높아져 비용 대비 효과 측면에서 양산화가 보류됨.",
+          "descriptionJa": "795年R型巡航艦の改良型で、索敵システムをテンゲリ級分艦隊旗艦のそれに換装したもの。高性能を追求した結果、建造費は787年型標準戦艦と同等にまで高騰しており、費用対効果の面から量産化を見送られた。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 4800,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 60,
+            "side": 22,
+            "rear": 18
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": 80
+        },
+        "type8": {
+          "id": "cruiser_8",
+          "name": "순양함Ⅷ",
+          "nameJa": "巡航艦Ⅷ",
+          "modelVariant": "795년 C형",
+          "modelVariantJa": "795年C型",
+          "description": "장기간 전투 항행에 적합하도록 개조. 기관을 연속 운전에 적합하도록 개선하고 탄약고 공간을 확충. 전선 부대에서는 '프리깃함'으로 불리며 수송 선단의 호위 등에 사용됨.",
+          "descriptionJa": "795年型標準巡航艦を長期間の戦闘航行に適するように改造したもので、機関を連続運転に適するものに改め、弾薬庫スペースを拡充したもの。前線部隊では\"フリゲート艦\"と称され、輸送船団の護衛などに使用されている。",
+          "buildTime": "-",
+          "requiredCrew": 250,
+          "output": 4800,
+          "unitCount": 1,
+          "detectionRange": 60,
+          "maxSpeed": 250,
+          "armor": {
+            "front": 60,
+            "side": 22,
+            "rear": 18
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        }
+      }
+    },
+    "assaultCruiser": {
+      "name": "타격순양함",
+      "nameJa": "打撃巡航艦",
+      "nameEn": "Assault Cruiser",
+      "modelYear": "794년형",
+      "modelYearJa": "794年型",
+      "description": "구식화된 790년형 표준순양함의 빔 병장과 전투정 탑재 기능을 제거하고 다수의 중성자 미사일 발사 시스템을 탑재. 795년형 표준순양함의 3배 미사일 투사 능력을 보유하나, 당연히 지속전 능력은 저하됨.",
+      "descriptionJa": "旧式化した790年型標準巡航艦のビーム兵装と戦闘艇搭載機能を除去し、多数の中性子ミサイル発射システムを搭載したもの。795年型標準巡航艦の3倍のミサイル投射能力を有するが、当然ながら継戦能力は低下している。",
+      "variants": {
+        "reconnaissance_cruiser": {
+          "id": "reconnaissance_cruiser",
+          "name": "정찰순양함(레다급)",
+          "nameJa": "偵察巡航艦隊（レダ級）",
+          "modelVariant": "레다급",
+          "modelVariantJa": "レダ級",
+          "description": "795년부터 건조 시작된 레다급 정찰순양함. 정찰, 연락 임무 전담 고속함. 전함 탑재용 광자포와 레이저 수소 미사일을 보유하며 독립적인 전투도 상정하여 설계됨. 한정된 용도로 생산 수량은 극소수.",
+          "descriptionJa": "795年より建造開始されたレダ級偵察巡航艦。偵察・連絡任務専従の高速艦である。戦艦搭載用の光子砲とレーザー水爆ミサイルを有し、独立して戦闘することも想定して設計されている。限定された用途のため、生産数はごく少数。",
+          "buildTime": "-",
+          "requiredCrew": 90,
+          "output": 4000,
+          "unitCount": 1,
+          "detectionRange": 230,
+          "maxSpeed": 300,
+          "armor": {
+            "front": 16,
+            "side": 10,
+            "rear": 6
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 70
+          },
+          "weapons": {
+            "beam": {
+              "power": 32,
+              "consumptionRatio": null
+            },
+            "gun": null,
+            "missile": {
+              "power": 150,
+              "consumptionRatio": "150/8"
+            },
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 480,
+          "repairCost": null
+        },
+        "type1": {
+          "id": "assault_cruiser_1",
+          "name": "타격순양함Ⅰ",
+          "nameJa": "打撃巡航艦Ⅰ",
+          "buildTime": 2,
+          "requiredCrew": 80,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 230,
+          "maxSpeed": 300,
+          "armor": {
+            "front": 16,
+            "side": 10,
+            "rear": 6
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 50
+          },
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 150,
+              "consumptionRatio": "150/8"
+            },
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 480,
+          "repairCost": 400
+        },
+        "type2": {
+          "id": "assault_cruiser_2",
+          "name": "타격순양함Ⅱ",
+          "nameJa": "打撃巡航艦Ⅱ",
+          "modelVariant": "794년 L형",
+          "modelVariantJa": "794年L型",
+          "description": "794년형 타격순양함의 개량형. 요소 부분 외 복합 장갑을 제거하고 함체 중량 경량화를 통해 항행 성능을 향상.",
+          "descriptionJa": "794年型打撃巡航艦の改良型で、要所部分以外の複合装甲を除去し、艦体重量の軽量化を行って航行性能を向上させたもの。",
+          "buildTime": "-",
+          "requiredCrew": 90,
+          "output": 5600,
+          "unitCount": 1,
+          "detectionRange": 230,
+          "maxSpeed": 300,
+          "armor": {
+            "front": 24,
+            "side": 14,
+            "rear": 8
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 70
+          },
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 60,
+              "consumptionRatio": null
+            },
+            "antiAir": {
+              "power": 50
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 480,
+          "repairCost": null
+        },
+        "type3": {
+          "id": "assault_cruiser_3",
+          "name": "타격순양함Ⅲ",
+          "nameJa": "打撃巡航艦Ⅲ",
+          "modelVariant": "794년 H형",
+          "modelVariantJa": "794年H型",
+          "description": "794년형 타격순양함의 개량형. 장갑을 철저히 강화. 증가된 장갑 부분이 함내 공간을 압박하여 미사일 탑재량이 감소함.",
+          "descriptionJa": "794年型打撃巡航艦の改良型で、徹底的に装甲を強化したもの。増加された装甲部分が艦内スペースを圧迫しているため、ミサイルの搭載量が減少している。",
+          "buildTime": "-",
+          "requiredCrew": 80,
+          "output": 4000,
+          "unitCount": 1,
+          "detectionRange": 230,
+          "maxSpeed": 300,
+          "armor": {
+            "front": 16,
+            "side": 10,
+            "rear": 6
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 50
+          },
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 60,
+              "consumptionRatio": null
+            },
+            "antiAir": {
+              "power": 60
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 480,
+          "repairCost": null
+        },
+        "type4": {
+          "id": "assault_cruiser_4",
+          "name": "타격순양함Ⅳ",
+          "nameJa": "打撃巡航艦Ⅳ",
+          "modelVariant": "794년 E형",
+          "modelVariantJa": "794年E型",
+          "description": "794년형 타격순양함의 전시 급조형. 상선용 저출력 기관과 796년형 표준구축함과 동등한 센서 시스템을 탑재.",
+          "descriptionJa": "794年型打撃巡航艦の戦時急造型で、商船用の低出力機関と796年型標準駆逐艦と同等のセンサーシステムを搭載している。",
+          "buildTime": "-",
+          "requiredCrew": 90,
+          "output": 5600,
+          "unitCount": 1,
+          "detectionRange": 230,
+          "maxSpeed": 300,
+          "armor": {
+            "front": 15,
+            "side": 7,
+            "rear": 5
+          },
+          "shield": {
+            "protection": 5600,
+            "capacity": 70
+          },
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        }
+      }
+    },
+    "destroyer": {
+      "name": "표준구축함",
+      "nameJa": "標準駆逐艦",
+      "nameEn": "Standard Destroyer",
+      "modelYear": "796년형",
+      "modelYearJa": "796年型",
+      "description": "795년형 표준순양함의 1/2 강의 함체에 6문의 광자 펄스포를 장비한 중무장함. 단, 실드나 색적 기능, 거주 설비는 우주함으로서 필요 최소한만 장비. 또한 병장 탑재 용적 확보를 위해 전투정은 탑재하지 않음.",
+      "descriptionJa": "795年型標準巡航艦の1/2強の艦体に6門の光子パルス砲を装備する重武装艦。ただし、シールドや索敵機能、居住設備は宇宙艦としては必要最低限のものを装備するに過ぎない。また、兵装搭載容積を確保するため、戦闘艇を搭載していない。",
+      "variants": {
+        "flagship": {
+          "id": "destroyer_flagship",
+          "name": "구축함(기함)",
+          "nameJa": "駆逐艦（旗艦）",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 4
+          },
+          "shield": {
+            "protection": 4000,
+            "capacity": 40
+          },
+          "weapons": {
+            "beam": {
+              "power": 50,
+              "consumptionRatio": "50/2"
+            },
+            "gun": {
+              "power": 19,
+              "consumptionRatio": null
+            },
+            "missile": null,
+            "antiAir": {
+              "power": 24
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 120,
+          "repairCost": null
+        },
+        "type1": {
+          "id": "destroyer_1",
+          "name": "구축함Ⅰ",
+          "nameJa": "駆逐艦Ⅰ",
+          "buildTime": 1,
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 50,
+              "consumptionRatio": "50/2"
+            },
+            "gun": {
+              "power": 19,
+              "consumptionRatio": null
+            },
+            "missile": null,
+            "antiAir": {
+              "power": 24
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 120,
+          "repairCost": 90
+        },
+        "type2": {
+          "id": "destroyer_2",
+          "name": "구축함Ⅱ",
+          "nameJa": "駆逐艦Ⅱ",
+          "modelVariant": "796년 M형",
+          "modelVariantJa": "796年M型",
+          "description": "796년형 표준구축함에 중성자 미사일 발사 시스템을 증설. 동시에 자세 제어 스러스터도 증설되어 선회 성능이 약간 향상됨.",
+          "descriptionJa": "796年型標準駆逐艦に中性子ミサイル発射システムを増設したもの。また、同時に姿勢制御スラスターの増設も行われており、旋回性能が若干向上している。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 0,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 60,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 80,
+              "consumptionRatio": "80/3"
+            },
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 50,
+          "repairCost": 40
+        },
+        "type3": {
+          "id": "destroyer_3",
+          "name": "구축함Ⅲ",
+          "nameJa": "駆逐艦Ⅲ",
+          "modelVariant": "796년 L형",
+          "modelVariantJa": "796年L型",
+          "description": "796년형 표준구축함의 장갑을 제거하고 고속 항행을 가능하게 함. 이미 장갑 방어는 거의 없는 것과 마찬가지. 고속의 함대 기함 수행 호위용으로 건조됨.",
+          "descriptionJa": "796年型標準駆逐艦の装甲を除去し、高速航行を可能としたもの。もはや、装甲防御はほとんど施されていないに等しい。高速の艦隊旗艦の随伴護衛用に建造されている。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 50,
+              "consumptionRatio": "50/2"
+            },
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 160,
+          "repairCost": 120
+        },
+        "type4": {
+          "id": "destroyer_4",
+          "name": "구축함Ⅳ",
+          "nameJa": "駆逐艦Ⅳ",
+          "modelVariant": "796년 H형",
+          "modelVariantJa": "796年H型",
+          "description": "796년형 표준구축함에 장갑을 증설하여 방어 성능을 강화. 함체 중량 증대로 기동 성능이 약간 저하됨.",
+          "descriptionJa": "796年型標準駆逐艦に装甲を増設して防御性能を強化したもの。艦体重量の増大によって、機動性能が若干低下している。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 8,
+            "side": 4,
+            "rear": 1
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": {
+              "power": 12,
+              "consumptionRatio": null
+            },
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 80,
+          "repairCost": 8
+        },
+        "type5": {
+          "id": "destroyer_5",
+          "name": "구축함Ⅴ",
+          "nameJa": "駆逐艦Ⅴ",
+          "modelVariant": "796년 C형",
+          "modelVariantJa": "796年C型",
+          "description": "796년형 표준구축함을 장기간 전투 항행에 적합하도록 개조. 기관을 연속 운전에 적합하도록 개선하고 탄약고 공간을 확충. 전선 부대에서는 '코르벳함'으로 불리며 수송 선단의 호위 등에 사용됨.",
+          "descriptionJa": "796年型標準駆逐艦を長期間の戦闘航行に適するように改造したもので、機関を連続運転に適するものに改め、弾薬庫スペースを拡充したもの。前線部隊では\"コルベット艦\"と称され、輸送船団の護衛などに使用されている。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 60,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type6": {
+          "id": "destroyer_6",
+          "name": "구축함Ⅵ",
+          "nameJa": "駆逐艦Ⅵ",
+          "modelVariant": "796년 R형",
+          "modelVariantJa": "796年R型",
+          "description": "796년형 표준구축함을 강행 정찰용으로 개조. 795년형 표준순양함의 색적 센서 시스템과 고도의 전자적 신호 차단 기능을 보유하며 은폐 행동 성능도 향상됨.",
+          "descriptionJa": "796年型標準駆逐艦を強行偵察用に改造したもので、795年型標準巡航艦の索敵センサーシステムと高度な電磁的信号遮断機能を有し、隠密行動性能も向上している。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 6
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type7": {
+          "id": "destroyer_7",
+          "name": "구축함Ⅶ",
+          "nameJa": "駆逐艦Ⅶ",
+          "modelVariant": "796년 A형",
+          "modelVariantJa": "796年A型",
+          "description": "796년형 표준구축함의 대공 병장을 철저히 강화. 795년형 표준순양함을 상회하는 대공 전투 능력을 보유하며, 전선 부대에서는 '방공구축함'으로 불림.",
+          "descriptionJa": "796年型標準駆逐艦の対空兵装を徹底的に強化したもの。795年型標準巡航艦を上回る対空戦闘能力を有し、前線部隊からは\"防空駆逐艦\"と称されている。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type8": {
+          "id": "destroyer_8",
+          "name": "구축함Ⅷ",
+          "nameJa": "駆逐艦Ⅷ",
+          "modelVariant": "796년 E형",
+          "modelVariantJa": "796年E型",
+          "description": "796년형 표준구축함의 전시 급조형. 색적 센서 시스템을 간략화하고 중성자 미사일을 외장식 런처로 4발만 발사 가능. 약 절반의 공기로 완성 가능.",
+          "descriptionJa": "796年型標準駆逐艦の戦時急造型。索敵センサーシステムを簡略化し、中性子ミサイルを外装式ランチャーとして4射のみ可能としている。約半数の工期で完成させる事が可能である。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 3200,
+          "unitCount": 1,
+          "detectionRange": 220,
+          "maxSpeed": 30,
+          "armor": {
+            "front": 10,
+            "side": 6,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        }
+      }
+    },
+    "carrier": {
+      "name": "표준전투정모함",
+      "nameJa": "標準戦闘艇母艦",
+      "nameEn": "Standard Carrier",
+      "modelYear": "796년형",
+      "modelYearJa": "796年型",
+      "description": "반수납식 격납고에 단좌 전투정 '스파르타니안'을 100척 탑재하고, 787년형 전함에 필적하는 포전 능력을 보유한 대형 전투함.",
+      "descriptionJa": "半収納式の格納庫に単座戦闘艇\"スパルタニアン\"を100隻搭載し、787年型戦艦に匹敵する砲戦能力を有する大型戦闘艦である。",
+      "variants": {
+        "type1": {
+          "id": "carrier_1",
+          "name": "전투정모함Ⅰ",
+          "nameJa": "戦闘艇母艦Ⅰ",
+          "buildTime": 7,
+          "requiredCrew": 180,
+          "output": 6400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 46,
+            "side": 20,
+            "rear": 14
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 64,
+              "consumptionRatio": null
+            },
+            "gun": null,
+            "missile": {
+              "power": 70,
+              "consumptionRatio": "70/3"
+            },
+            "antiAir": {
+              "power": 180
+            }
+          },
+          "fightersCarried": 10,
+          "suppliesCapacity": 2240,
+          "repairCost": 180
+        },
+        "type2": {
+          "id": "carrier_2",
+          "name": "전투정모함Ⅱ",
+          "nameJa": "戦闘艇母艦Ⅱ",
+          "modelVariant": "796년 A형",
+          "modelVariantJa": "796年A型",
+          "description": "796년형 표준전투정모함을 기본으로 하지만 구조 간략화를 위해 함수 광자포를 장비하지 않음. 단, 선택적으로 공격받는 것을 방지하기 위해 외관상으로는 796년형 표준전투정모함과 구별이 안 되도록 의장됨.",
+          "descriptionJa": "796年A型戦闘艇母艦。796年型標準戦闘艇母艦を基本としているが、構造簡略化のため艦首光子砲を装備していない。ただし、選択的に攻撃されることを防止するため、外見的には796年型標準戦闘艇母艦と区別が付かないように艤装されている。",
+          "buildTime": "-",
+          "requiredCrew": 180,
+          "output": 6400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 46,
+            "side": 20,
+            "rear": 14
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 10,
+          "suppliesCapacity": 2000,
+          "repairCost": 180
+        },
+        "type3": {
+          "id": "carrier_3",
+          "name": "전투정모함Ⅲ",
+          "nameJa": "戦闘艇母艦Ⅲ",
+          "modelVariant": "796년 L형",
+          "modelVariantJa": "796年L型",
+          "description": "796년형 표준전투정모함의 장갑 방어를 경감하여 함체 중량을 줄이고 고속 발휘 가능. 함체 구조재도 경량화되어 강도가 저하되었기 때문에 선회 성능을 제한한 형태로 운용됨.",
+          "descriptionJa": "796年L型戦闘艇母艦。796年型標準戦闘艇母艦の装甲防御を軽減して艦体重量を減らし、高速が発揮できるようにしたもの。艦体構造材も軽量化されて強度が低下しているため、旋回性能を制限した形で運用されている。",
+          "buildTime": "-",
+          "requiredCrew": 180,
+          "output": 6400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 44,
+            "side": 18,
+            "rear": 22
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 10,
+          "suppliesCapacity": null,
+          "repairCost": 180
+        },
+        "type4": {
+          "id": "carrier_4",
+          "name": "전투정모함Ⅳ",
+          "nameJa": "戦闘艇母艦Ⅳ",
+          "modelVariant": "796년 H형",
+          "modelVariantJa": "796年H型",
+          "description": "796년형 표준전투정모함에 복합 장갑을 증설. 그러나 함체 중앙부의 반격납식 전투정 행거는 손대지 않았기 때문에 여전히 방어상 약점으로 남음.",
+          "descriptionJa": "796年H型戦闘艇母艦。796年型標準戦闘艇母艦に複合装甲を増設したもの。しかし、艦体中央部の半格納式戦闘艇ハンガーは手つかずであるため、相変わらず防御上の弱点となっている。",
+          "buildTime": "-",
+          "requiredCrew": 180,
+          "output": 6400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 48,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 10,
+          "suppliesCapacity": null,
+          "repairCost": 180
+        }
+      }
+    },
+    "repairShip": {
+      "name": "표준공작함",
+      "nameJa": "標準工作艦",
+      "nameEn": "Standard Repair Ship",
+      "modelYear": "793년형",
+      "modelYearJa": "793年型",
+      "description": "우주 공간에서 자유행성동맹군에 속하는 모든 종류의 함정을 수리하는 능력을 보유.",
+      "descriptionJa": "宇宙空間において、自由惑星同盟軍に属するすべての種類の艦艇を修理する能力を有する。",
+      "variants": {
+        "type1": {
+          "id": "repair_ship_1",
+          "name": "공작함Ⅰ",
+          "nameJa": "工作艦Ⅰ",
+          "buildTime": 1,
+          "requiredCrew": 120,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 24,
+            "side": 14,
+            "rear": 8
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 1200,
+          "repairCost": 100
+        },
+        "type2": {
+          "id": "repair_ship_2",
+          "name": "공작함Ⅱ",
+          "nameJa": "工作艦Ⅱ",
+          "modelVariant": "793년 L형",
+          "modelVariantJa": "793年L型",
+          "description": "793년형 표준공작함의 함체를 경량 구조로 하여 기동성을 향상.",
+          "descriptionJa": "793年L型工作艦。793年型標準工作艦の艦体を軽量構造とし、機動性を向上させたもの。",
+          "buildTime": "-",
+          "requiredCrew": 100,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 22,
+            "side": 12,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 1200,
+          "repairCost": 100
+        },
+        "type3": {
+          "id": "repair_ship_3",
+          "name": "공작함Ⅲ",
+          "nameJa": "工作艦Ⅲ",
+          "modelVariant": "793년 E형",
+          "modelVariantJa": "793年E型",
+          "description": "793년형 표준공작함의 기관을 소형함용 저출력 기관으로 교체. 항행 성능이 대폭 저하됨.",
+          "descriptionJa": "793年E型工作艦。793年型標準工作艦の機関を小型艦用の低出力機関に換装したもの。航行性能が大幅に低下した。",
+          "buildTime": "-",
+          "requiredCrew": 120,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 24,
+            "side": 14,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 1200,
+          "repairCost": 100
+        },
+        "type4": {
+          "id": "repair_ship_4",
+          "name": "공작함Ⅳ",
+          "nameJa": "工作艦Ⅳ",
+          "modelVariant": "793년 S형",
+          "modelVariantJa": "793年S型",
+          "description": "793년형 표준공작함의 수리용 자재 적재량을 증가.",
+          "descriptionJa": "793年S型工作艦。793年型標準工作艦の修理用資材の積載量を増加させたもの。",
+          "buildTime": "-",
+          "requiredCrew": 120,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 24,
+            "side": 14,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 1200,
+          "repairCost": 100
+        }
+      }
+    },
+    "transport": {
+      "name": "표준수송함",
+      "nameJa": "標準輸送艦",
+      "nameEn": "Standard Transport",
+      "modelYear": "792년형",
+      "modelYearJa": "792年型",
+      "description": "함대 기함의 약 2배 전장을 자랑하는 초대형 수송함. 최대 50만 톤의 화물 수송 가능. 자위용으로 광자 펄스포를 장비하여 제한적인 전투력 보유.",
+      "descriptionJa": "艦隊旗艦の約2倍の全長を誇る超大型輸送艦。最大50万トンの貨物を輸送可能である。自衛用に光子パルス砲を装備し、限定的な戦闘力を有する。",
+      "variants": {
+        "type1": {
+          "id": "transport_1",
+          "name": "수송함Ⅰ",
+          "nameJa": "輸送艦Ⅰ",
+          "buildTime": 1,
+          "requiredCrew": 90,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 24,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": {
+              "power": 24,
+              "consumptionRatio": null
+            },
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 20000,
+          "repairCost": 240
+        },
+        "type2": {
+          "id": "transport_2",
+          "name": "수송함Ⅱ",
+          "nameJa": "輸送艦Ⅱ",
+          "modelVariant": "792년 A형",
+          "modelVariantJa": "792年A型",
+          "description": "792년형 표준수송함의 광자 펄스포를 생략. 일부 함은 민생용으로 사용됨.",
+          "descriptionJa": "792年A型輸送艦。792年型標準輸送艦の光子パルス砲を省略したもの。一部の艦は民生用に使用されている。",
+          "buildTime": "-",
+          "requiredCrew": 90,
+          "output": 1600,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 60,
+            "side": 36,
+            "rear": 22
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 30
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type3": {
+          "id": "transport_3",
+          "name": "수송함Ⅲ",
+          "nameJa": "輸送艦Ⅲ",
+          "modelVariant": "792년 S형",
+          "modelVariantJa": "792年S型",
+          "description": "792년 A형 수송함의 개량형. 색적 센서 시스템에도 철저한 간략화가 시행됨. 단독 항행은 상정 외로, 항상 선단을 이루어 운용됨.",
+          "descriptionJa": "792年S型輸送艦。792年A型輸送艦の改良型で、索敵センサーシステムにも徹底した簡略化が施されている。単独で航行することは想定外とされ、常に船団を組んで運用される。",
+          "buildTime": "-",
+          "requiredCrew": 90,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 24,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 16000,
+          "repairCost": null
+        },
+        "type4": {
+          "id": "transport_4",
+          "name": "수송함Ⅳ",
+          "nameJa": "輸送艦Ⅳ",
+          "modelVariant": "792년 L형",
+          "modelVariantJa": "792年L型",
+          "description": "792년형 표준수송함의 기관 출력을 강화하여 고속 항행 가능. 기관부에 압박되어 물자 탑재량이 감소함.",
+          "descriptionJa": "792年L型輸送艦。792年型標準輸送艦の機関出力を強化し、高速航行可能としたもの。機関部に圧迫されて物資の搭載量が減少している。",
+          "buildTime": "-",
+          "requiredCrew": 90,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 24,
+            "side": null,
+            "rear": null
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        }
+      }
+    },
+    "troopTransport": {
+      "name": "표준병원수송함",
+      "nameJa": "標準兵員輸送艦",
+      "nameEn": "Standard Troop Transport",
+      "modelYear": "788년형",
+      "modelYearJa": "788年型",
+      "description": "자유행성동맹군에서는 정부의 보조로 건조된 고속 상선이 징용되어 병원 수송을 수행. 완전 무장 병원 약 600명과 그 장비를 수송 가능.",
+      "descriptionJa": "自由惑星同盟軍においては、政府の補助によって建造された高速商船が徴用されて兵員輸送を行った。完全武装の兵員を約600名とその装備を輸送する事が可能である。",
+      "variants": {
+        "type1": {
+          "id": "troop_transport_1",
+          "name": "병원수송함Ⅰ",
+          "nameJa": "兵員輸送艦Ⅰ",
+          "buildTime": 1,
+          "requiredCrew": 100,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 120,
+          "maxSpeed": null,
+          "armor": {
+            "front": 5,
+            "side": 3,
+            "rear": 2
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": 30
+        },
+        "type2": {
+          "id": "troop_transport_2",
+          "name": "병원수송함Ⅱ",
+          "nameJa": "兵員輸送艦Ⅱ",
+          "modelVariant": "788년 A형",
+          "modelVariantJa": "788年A型",
+          "description": "788년형 표준병원수송함에 자위용 중성자 미사일 발사 시스템을 탑재.",
+          "descriptionJa": "788年A型兵員輸送艦。788年型標準兵員輸送艦に自衛用の中性子ミサイル発射システムを搭載したもの。",
+          "buildTime": "-",
+          "requiredCrew": 100,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 120,
+          "maxSpeed": null,
+          "armor": {
+            "front": 7,
+            "side": 5,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 40,
+              "consumptionRatio": "40/1"
+            },
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type3": {
+          "id": "troop_transport_3",
+          "name": "병원수송함Ⅲ",
+          "nameJa": "兵員輸送艦Ⅲ",
+          "modelVariant": "788년 L형",
+          "modelVariantJa": "788年L型",
+          "description": "788년형 표준병원수송함에 신형 기관을 탑재하여 고속화. 전투 우주역에서의 병원 수송에 사용됨.",
+          "descriptionJa": "788年L型兵員輸送艦。788年型標準兵員輸送艦に新型機関を搭載して高速化したもの。戦闘宙域での兵員輸送に用いられる。",
+          "buildTime": "-",
+          "requiredCrew": 100,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 120,
+          "maxSpeed": null,
+          "armor": {
+            "front": 5,
+            "side": 3,
+            "rear": 2
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": 30
+        },
+        "type4": {
+          "id": "troop_transport_4",
+          "name": "병원수송함Ⅳ",
+          "nameJa": "兵員輸送艦Ⅳ",
+          "modelVariant": "788년 H형",
+          "modelVariantJa": "788年H型",
+          "description": "788년형 표준병원수송함의 장갑을 강화. 단, 원형은 비장갑 민간선이며, 그 증강된 방어도 그다지 견고하지 않음.",
+          "descriptionJa": "788年H型兵員輸送艦。788年型標準兵員輸送艦の装甲を強化したもの。ただし、原型は非装甲の民間船であり、その増強された防御もそれほど強固ではない。",
+          "buildTime": "-",
+          "requiredCrew": 100,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 120,
+          "maxSpeed": null,
+          "armor": {
+            "front": 5,
+            "side": 3,
+            "rear": 2
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": 100
+        }
+      }
+    },
+    "landingShip": {
+      "name": "표준양륙함",
+      "nameJa": "標準揚陸艦",
+      "nameEn": "Standard Landing Ship",
+      "modelYear": "795년형",
+      "modelYearJa": "795年型",
+      "description": "단, 외견상 동일하지만 기함으로 사용되는 함은 고성능 통신 설비 모듈을 탑재한 양륙 지휘함임.",
+      "descriptionJa": "ただし、外見上は同一であるが、旗艦として使用されている艦は高性能の通信設備モジュールを搭載した揚陸指揮艦である。",
+      "variants": {
+        "type1": {
+          "id": "landing_ship_1",
+          "name": "양륙함Ⅰ",
+          "nameJa": "揚陸艦Ⅰ",
+          "buildTime": 1,
+          "requiredCrew": 50,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 17,
+            "side": 12,
+            "rear": 7
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": {
+              "power": 40,
+              "consumptionRatio": "40/1"
+            },
+            "antiAir": {
+              "power": 40
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 30,
+          "repairCost": 40
+        },
+        "type2": {
+          "id": "landing_ship_2",
+          "name": "양륙함Ⅱ",
+          "nameJa": "揚陸艦Ⅱ",
+          "modelVariant": "786년 L형",
+          "modelVariantJa": "786年L型",
+          "description": "786년형 표준양륙함에 신형 기관을 탑재하여 고속화. 전투 우주역에서의 양륙 작전에 사용됨.",
+          "descriptionJa": "786年L型揚陸艦。786年型標準揚陸艦に新型機関を搭載して高速化したもの。戦闘宙域での揚陸作戦に用いられる。",
+          "buildTime": "-",
+          "requiredCrew": 60,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 19,
+            "side": 14,
+            "rear": 9
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type3": {
+          "id": "landing_ship_3",
+          "name": "양륙함Ⅲ",
+          "nameJa": "揚陸艦Ⅲ",
+          "modelVariant": "786년 H형",
+          "modelVariantJa": "786年H型",
+          "description": "786년형 표준양륙함의 장갑을 강화. 전투 우주역에서의 양륙 작전에 사용됨.",
+          "descriptionJa": "786年H型標準揚陸艦。786年型標準揚陸艦の装甲を強化したもの。戦闘宙域での揚陸作戦に用いられる。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 23,
+            "side": 18,
+            "rear": 18
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        },
+        "type4": {
+          "id": "landing_ship_4",
+          "name": "양륙함Ⅳ",
+          "nameJa": "揚陸艦Ⅳ",
+          "modelVariant": "786년 F형",
+          "modelVariantJa": "786年F型",
+          "description": "대 요새전용으로 특별히 개조된 양륙함. 기관 출력이 강화되어 고속 발휘 가능. 또한 장갑도 소형함으로서는 유수한 것을 장비. 그 반면 장갑척탄병 수송만을 상정한 설계로, 장갑병 등 대형 차량은 탑재 불가.",
+          "descriptionJa": "786年F型揚陸艦。対要塞戦用に特に改造を施された揚陸艦。機関出力が強化されており、高速発揮が可能。また、装甲も小型艦としては有数のものを装備している。その反面、装甲擲弾兵の輸送のみを想定した設計になっており、装甲兵などの大型車両は搭載できない。",
+          "buildTime": "-",
+          "requiredCrew": 50,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": null,
+          "maxSpeed": null,
+          "armor": {
+            "front": 17,
+            "side": 12,
+            "rear": 7
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": null,
+          "repairCost": null
+        }
+      }
+    },
+    "civilianShip": {
+      "name": "민간선",
+      "nameJa": "民間船",
+      "nameEn": "Civilian Ship",
+      "description": "자유행성동맹에서 사용되는 전형적인 상선. 중요 인물을 태우는 선박은 우주 해적에 대항하기 위해 무장이 시행된 케이스가 많음.",
+      "descriptionJa": "自由惑星同盟で使用される典型的な商船。重要人物を乗せる船は宇宙海賊に対抗するため武装を施されているケースが多い。",
+      "variants": {
+        "flagship": {
+          "id": "civilian_ship_flagship",
+          "name": "민간선(기함)",
+          "nameJa": "民間船（旗艦）",
+          "buildTime": "-",
+          "requiredCrew": 30,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 100,
+          "maxSpeed": null,
+          "armor": {
+            "front": 20,
+            "side": 16,
+            "rear": 8
+          },
+          "shield": {
+            "protection": null,
+            "capacity": 40
+          },
+          "weapons": {
+            "beam": {
+              "power": 20,
+              "consumptionRatio": null
+            },
+            "gun": {
+              "power": 16,
+              "consumptionRatio": null
+            },
+            "missile": null,
+            "antiAir": {
+              "power": 30
+            }
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 4000,
+          "repairCost": 40
+        },
+        "merchant": {
+          "id": "merchant_ship",
+          "name": "상선",
+          "nameJa": "商船",
+          "description": "자유행성동맹에서 사용되는 전형적인 상선. 선창 모듈을 변경함으로써 승객, 컨테이너, 액체 등 다양한 물건을 수송 가능한 화객선.",
+          "descriptionJa": "自由惑星同盟で使用される典型的な商船。船倉モジュールを変更することで、乗客・コンテナ・液体等の様々な物を輸送可能な貨客船である。",
+          "buildTime": "-",
+          "requiredCrew": 30,
+          "output": 2400,
+          "unitCount": 1,
+          "detectionRange": 100,
+          "maxSpeed": null,
+          "armor": {
+            "front": 12,
+            "side": 8,
+            "rear": 4
+          },
+          "shield": null,
+          "weapons": {
+            "beam": null,
+            "gun": null,
+            "missile": null,
+            "antiAir": null
+          },
+          "fightersCarried": 0,
+          "suppliesCapacity": 4000,
+          "repairCost": 40
+        }
+      }
+    }
+  }
+}

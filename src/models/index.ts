@@ -46,3 +46,10 @@ export * from './plock.model';
 export * from './kv-storage.model';
 export * from './auction.model';
 export * from './ng_auction_bid.model';
+
+// LOGH 시나리오
+export * from './logh/Planet.model';
+export * from './logh/StarSystem.model';
+export * from './logh/MapGrid.model';
+export * from './logh/Fleet.model';
+export * from './logh/Commander.model';

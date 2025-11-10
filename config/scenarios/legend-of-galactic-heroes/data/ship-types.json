@@ -1,0 +1,234 @@
+{
+  "shipTypes": {
+    "flagships": {
+      "description": "1척 단위 기함. 고유명 특수기함과 일반함정에서 추출된 범용기함",
+      "descriptionJa": "1隻単位。固有の名称を持つ特殊旗艦と一般艦艇ユニットから抽出された汎用旗艦",
+      "types": [
+        {
+          "id": "special_flagship",
+          "name": "특수 기함",
+          "nameJa": "特殊旗艦",
+          "examples": ["브륜힐트", "휘페리온", "율리시스"]
+        },
+        {
+          "id": "general_flagship",
+          "name": "범용 기함",
+          "nameJa": "汎用旗艦",
+          "description": "일반 함정 유닛에서 추출"
+        }
+      ]
+    },
+    "vessels": {
+      "description": "1 함정 유닛 = 300척",
+      "descriptionJa": "1艦艇ユニットは300隻を表します",
+      "common": [
+        {
+          "id": "battleship",
+          "name": "전함",
+          "nameEn": "Battleship",
+          "nameJa": "戦艦",
+          "crew": 800,
+          "variants": ["I형", "II형", "III형"]
+        },
+        {
+          "id": "cruiser",
+          "name": "순양함",
+          "nameEn": "Cruiser",
+          "nameJa": "巡航艦",
+          "crew": 600,
+          "variants": ["I형", "II형", "III형"]
+        },
+        {
+          "id": "destroyer",
+          "name": "구축함",
+          "nameEn": "Destroyer",
+          "nameJa": "駆逐艦",
+          "crew": 300,
+          "variants": ["I형", "II형"]
+        },
+        {
+          "id": "carrier",
+          "name": "전투정모함",
+          "nameEn": "Carrier",
+          "nameJa": "戦闘艇母艦",
+          "crew": 500,
+          "capacity": "전투정 48기"
+        },
+        {
+          "id": "landing_ship",
+          "name": "양륙함",
+          "nameEn": "Landing Ship",
+          "nameJa": "揚陸艦",
+          "crew": 400,
+          "capacity": "육전대 탑재"
+        },
+        {
+          "id": "transport",
+          "name": "수송함",
+          "nameEn": "Transport Ship",
+          "nameJa": "輸送艦",
+          "crew": 200,
+          "capacity": "물자 수송"
+        },
+        {
+          "id": "troop_transport",
+          "name": "병원수송함",
+          "nameEn": "Troop Transport",
+          "nameJa": "兵員輸送艦",
+          "crew": 250,
+          "capacity": "병력 수송"
+        },
+        {
+          "id": "repair_ship",
+          "name": "공작함",
+          "nameEn": "Repair Ship",
+          "nameJa": "工作艦",
+          "crew": 300,
+          "ability": "함선 수리"
+        }
+      ],
+      "empire_only": [
+        {
+          "id": "fast_battleship",
+          "name": "고속전함",
+          "nameEn": "Fast Battleship",
+          "nameJa": "高速戦艦",
+          "crew": 850,
+          "faction": "empire"
+        },
+        {
+          "id": "torpedo_carrier",
+          "name": "뇌격정모함",
+          "nameEn": "Torpedo Carrier",
+          "nameJa": "雷撃艇母艦",
+          "crew": 450,
+          "faction": "empire"
+        }
+      ],
+      "alliance_only": [
+        {
+          "id": "assault_cruiser",
+          "name": "타격순양함",
+          "nameEn": "Assault Cruiser",
+          "nameJa": "打撃巡航艦",
+          "crew": 650,
+          "faction": "alliance"
+        }
+      ]
+    },
+    "groundForces": {
+      "description": "육전대 유닛",
+      "descriptionJa": "陸戦隊ユニット",
+      "types": [
+        {
+          "id": "armored_infantry",
+          "name": "장갑병",
+          "nameEn": "Armored Infantry",
+          "nameJa": "装甲兵",
+          "terrain": ["일반 행성"],
+          "faction": "alliance"
+        },
+        {
+          "id": "armored_grenadier",
+          "name": "장갑척탄병",
+          "nameEn": "Armored Grenadier",
+          "nameJa": "装甲擲弾兵",
+          "terrain": ["일반 행성", "가스 행성", "요새"],
+          "faction": "empire"
+        },
+        {
+          "id": "light_infantry",
+          "name": "경장육전병",
+          "nameEn": "Light Infantry",
+          "nameJa": "軽装陸戦兵",
+          "terrain": ["일반 행성", "가스 행성", "요새"]
+        }
+      ]
+    }
+  },
+  "unitLimits": {
+    "gridLimit": {
+      "unitsPerFaction": 300,
+      "factionsPerGrid": 2,
+      "description": "1개 그리드당 진영별 300 유닛, 최대 2개 진영"
+    },
+    "groundCombatBox": {
+      "unitsPerFaction": 30,
+      "description": "지상전 박스당 진영별 30 유닛"
+    }
+  },
+  "formationTypes": [
+    {
+      "id": "spindle",
+      "name": "방추진",
+      "nameJa": "紡錘",
+      "shortcut": "x"
+    },
+    {
+      "id": "ship_type_1",
+      "name": "함종1",
+      "nameJa": "艦種１",
+      "shortcut": "c"
+    },
+    {
+      "id": "ship_type_2",
+      "name": "함종2",
+      "nameJa": "艦種２",
+      "shortcut": "v"
+    },
+    {
+      "id": "mixed_1",
+      "name": "혼성1",
+      "nameJa": "混成１",
+      "shortcut": "b"
+    },
+    {
+      "id": "mixed_2",
+      "name": "혼성2",
+      "nameJa": "混成２",
+      "shortcut": "n"
+    },
+    {
+      "id": "three_line",
+      "name": "삼열",
+      "nameJa": "三列",
+      "shortcut": "m"
+    },
+    {
+      "id": "formation_cancel",
+      "name": "대열해제",
+      "nameJa": "隊列解除",
+      "shortcut": ","
+    }
+  ],
+  "weaponTypes": [
+    {
+      "id": "beam",
+      "name": "빔 병장",
+      "nameJa": "ビーム兵装",
+      "range": "중근거리",
+      "shortcut": "w"
+    },
+    {
+      "id": "gun",
+      "name": "건 병장",
+      "nameJa": "ガン兵装",
+      "range": "중근거리",
+      "shortcut": "e"
+    },
+    {
+      "id": "missile",
+      "name": "미사일",
+      "nameJa": "ミサイル",
+      "range": "원거리",
+      "shortcut": "r"
+    },
+    {
+      "id": "fighter",
+      "name": "전투정",
+      "nameJa": "戦闘艇",
+      "type": "대함/요격",
+      "effect": "적 함선 속도 감소"
+    }
+  ]
+}

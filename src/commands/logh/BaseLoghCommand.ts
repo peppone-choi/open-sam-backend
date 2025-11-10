@@ -20,6 +20,7 @@ export interface ILoghCommandExecutor {
   consumeCommandPoints(amount: number): void;
   getFleetId(): string | null;
   getPosition(): { x: number; y: number; z: number };
+  startCommand(commandType: string, durationMs: number, data?: any): void;
   save(): Promise<any>;
 }
 

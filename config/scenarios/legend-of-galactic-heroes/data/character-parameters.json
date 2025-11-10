@@ -1,0 +1,162 @@
+{
+  "basicParameters": {
+    "name": {
+      "description": "캐릭터 이름",
+      "generateCharacterRule": "다른 캐릭터와 동일 이름 불가"
+    },
+    "gender": {
+      "description": "캐릭터 성별",
+      "note": "남녀 간 역직/능력 차이 없음"
+    },
+    "birthDate": {
+      "description": "생년월일",
+      "empire": "제국력 표시",
+      "alliance": "우주력 표시"
+    },
+    "classification": {
+      "types": ["정치가", "군인"],
+      "changeRule": "전신 시 자동 변경"
+    },
+    "rank": {
+      "lowest": "이등병",
+      "highest": "원수"
+    },
+    "title": {
+      "description": "작위명 (제국군만)",
+      "types": ["공작", "후작", "백작", "자작", "남작", "제국기사"]
+    },
+    "origin": {
+      "empire": ["귀족", "제국기사", "평민", "망명자"],
+      "alliance": ["시민", "망명자"]
+    },
+    "birthplace": {
+      "description": "출신지",
+      "deathReturnRule": "전술 게임 격침 시 귀환 설정 없으면 출신지 자동 귀환"
+    }
+  },
+  "pointSystems": {
+    "merit": {
+      "description": "현 계급의 공적 포인트",
+      "purpose": "순위에 따라 승진/강등 결정"
+    },
+    "evaluation": {
+      "description": "세션 내 캐릭터 평가",
+      "gainConditions": [
+        "전술 게임에서 적 유닛 격파",
+        "적 행성/요새 점령",
+        "소속 세력 승리 시 최종 계급에 따라 획득 (생존 필요)",
+        "준장 이상 사망 시 계급에 따라 일정 값 할당 (진영 승패 무관)"
+      ],
+      "continuationThreshold": "일정 이상 획득 시 다음 세션 계승 가능"
+    },
+    "fame": {
+      "description": "게임 전체 플레이어 평가 (세션 제한 없음)",
+      "increase": "세션 종료 시 평가 포인트 환산하여 추가",
+      "decrease": "오리지널 캐릭터 선택 시 소비"
+    }
+  },
+  "abilities": {
+    "command": {
+      "name": "통솔",
+      "description": "인재 활용 능력",
+      "effects": {
+        "administration": "요직 시 징세액, 정부지지율 영향",
+        "fleet": "함대 최대 사기, 항복 권고 성공률 영향"
+      }
+    },
+    "politics": {
+      "name": "정치",
+      "description": "정치력",
+      "effects": "시민 지지 획득 능력"
+    },
+    "administration": {
+      "name": "운영",
+      "description": "사무 관리 능력",
+      "effects": "행성 통치 영향"
+    },
+    "intelligence": {
+      "name": "정보",
+      "description": "정보 수집 및 분석 능력",
+      "effects": "스파이 활동, 전술 색적 능력 영향"
+    },
+    "leadership": {
+      "name": "지휘",
+      "description": "부대 지휘 능력",
+      "effects": "배하 함선 신속 행동"
+    },
+    "mobility": {
+      "name": "기동",
+      "description": "함대 이동 지휘 능력",
+      "effects": "기민한 조함 가능"
+    },
+    "attack": {
+      "name": "공격",
+      "description": "공격 지휘 능력",
+      "effects": {
+        "fleet": "함대 공격 능력 영향",
+        "planetary": "행성 대함 방어 능력 영향 (행성 방위 사령관)"
+      }
+    },
+    "defense": {
+      "name": "방어",
+      "description": "방어 지휘 능력",
+      "effects": {
+        "fleet": "함대 방어 능력 영향",
+        "planetary": "적 함대 행성 점령 방어 능력 영향"
+      }
+    }
+  },
+  "rankLadder": {
+    "concept": "동일 계급 내 공적 포인트 강순 정렬",
+    "separateTypes": ["군인용", "정치가용"],
+    "orderingRules": [
+      "공적 포인트 다수 순",
+      "작위 높은 순 (은하제국군만)",
+      "최고 서훈 순위 (현재 미구현)",
+      "영향력 높은 순",
+      "전 파라미터 합계"
+    ],
+    "autoPromotion": {
+      "ranksAffected": "대령 이하",
+      "frequency": "게임 내 30일마다",
+      "meritGrant": "해당 래더 내 평균 공적 부여"
+    }
+  },
+  "rankLimits": {
+    "empire": {
+      "원수": 5,
+      "상급대장": 5,
+      "대장": 10,
+      "중장": 20,
+      "소장": 40,
+      "준장": 80,
+      "대령_이하": "제한없음"
+    },
+    "alliance": {
+      "원수": 5,
+      "대장": 10,
+      "중장": 20,
+      "소장": 40,
+      "준장": 80,
+      "대령_이하": "제한없음"
+    }
+  },
+  "promotionDemotion": {
+    "promotion": {
+      "command": "승진 커맨드 실행",
+      "result": "상위 계급 래더 최하위 편입",
+      "meritReset": 0,
+      "lostCards": "개인, 함장, 봉토 제외한 모든 직무권한 카드 상실"
+    },
+    "demotion": {
+      "command": "강등 커맨드 실행",
+      "result": "하위 계급 래더 최하위 편입",
+      "meritSet": 100,
+      "lostCards": "개인, 함장, 봉토 제외한 모든 직무권한 카드 상실"
+    },
+    "autoPromotionBonus": {
+      "description": "자동 승진 시 해당 래더 평균 공적 부여",
+      "applicableRanks": "대령 이하 자동 승진만 해당"
+    }
+  }
+}

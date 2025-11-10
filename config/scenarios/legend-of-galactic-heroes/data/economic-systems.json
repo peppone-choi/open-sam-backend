@@ -1,0 +1,145 @@
+{
+  "economicOverview": {
+    "currentStatus": "경제 관련은 현재 미구현",
+    "nationalRevenue": "각 행성에서 징수하는 세금으로 국가 운영 및 군사비 지불",
+    "importance": "경제면 관리는 국가에 매우 중요"
+  },
+  "production": {
+    "shipProduction": {
+      "location": "각 행성/요새 내 조병공창",
+      "restriction": "조병공창 미보유 행성/요새는 유닛 생산 안 됨"
+    },
+    "personnelProduction": {
+      "types": ["승조원", "육전병"],
+      "method": "각 행성 거주 인구에서 병사 모병",
+      "availability": "거주 가능하고 인구 있는 행성 어디서나 병사 생산 가능",
+      "sideEffect": "모병으로 병사 생산 시 행성 징세 수입 감수"
+    },
+    "crewTypes": {
+      "description": "승조원과 육전병은 훈련 또는 실전 경험으로 수련도 변화",
+      "levels": ["엘리트", "베테랑", "노멀", "그린"],
+      "productionLevel": "그린만 생산"
+    },
+    "autoProduction": {
+      "currentStatus": "현 버전에서는 자동 생산",
+      "control": "설정 변경 가능 역직 없음",
+      "duration": "당해 행성/요새 지배권 이행 안 하면 계속 생산",
+      "taxEffect": "자동 생산은 행성 세수에 영향 안 미침"
+    }
+  },
+  "storage": {
+    "planetStorage": {
+      "description": "행성/요새 보유 창고",
+      "management": "전부 중앙정부 관할",
+      "autoDeposit": "행성/요새 생산 유닛 및 물자 완성과 동시에 자동 창고 보관"
+    },
+    "unitStorage": {
+      "description": "각 부대 전용 창고",
+      "access": "타 부대는 이동 불가, 담당 부대 하나만 자유 출입",
+      "patrolAndGroundException": "순찰대 및 지상부대 부대 창고는 각 부대마다 분리 안 됨, 전부 일괄 부대 창고. 이 일괄 부대 창고에서 어느 부대든 출입 가능"
+    }
+  },
+  "allocation": {
+    "concept": "행성/요새 보관 각 유닛(함정, 육전대, 승조원) 및 군수물자를 특정 부대에 부여",
+    "necessity": "할당으로 부대 창고에 유닛 할당받지 않으면 각 부대는 자신의 부대에 보충도 재편성도 불가",
+    "responsibility": {
+      "empire": {
+        "fleet": "통수본부작전일과장",
+        "patrol": "통수본부작전이과장",
+        "transport": "통수본부작전이과장",
+        "ground": "통수본부작전이과장"
+      },
+      "alliance": {
+        "all": "통합작전본부제삼차장"
+      }
+    },
+    "procedure": [
+      "해당 담당 역직 직무권한 카드 선택, [할당] 클릭",
+      "할당 대상 부대 클릭 지정",
+      "할당 변경 대상물(유닛/군수물자) 선택, 이동량 슬라이더 설정. 1대상 부대에 복수 대상물 동시 설정 가능",
+      "확인 다이얼로그에서 [결정] 클릭"
+    ],
+    "restrictions": [
+      "어느 부대든 [재편성][보충] 커맨드 실행 중 할당 실행 불가",
+      "[할당] 커맨드 실행 중 재편성/보충/반출입 커맨드 실행 불가"
+    ]
+  },
+  "reorganization": {
+    "concept": "자신이 이끄는 부대 유닛을 행성/요새 내 부대 창고와 이동",
+    "effect": "결원 유닛 편성 또는 부대 유닛 구성 변경 가능",
+    "executor": "부대 이끄는 사령관 캐릭터",
+    "procedure": [
+      "해당 직무권한 카드 선택, [재편성] 클릭",
+      "부대에서 부대 창고로 이동 유닛, 부대 창고에서 부대로 이동 유닛 선택, 이동량 슬라이더 설정. 복수종 유닛 이동 동시 설정 가능",
+      "확인 다이얼로그에서 [결정] 클릭"
+    ],
+    "crewRequirement": "유닛 재편성 시 각 유닛마다 필요 승조원 유닛 수 주의. 최종 부대 편성 함정 유닛이 필요로 하는 승조원 유닛 필요"
+  },
+  "reinforcement": {
+    "concept": "전투로 원수 감소 함정 유닛이나 승조원 유닛 보충",
+    "executor": "부대 이끄는 사령관",
+    "procedure": [
+      "해당 직무권한 카드 선택, [보충] 클릭",
+      "보충 함정 유닛 또는 승조원 유닛 선택, [OK] 클릭. 동함종 유닛 일람 표시",
+      "일람에서 실제 보충 유닛 클릭. 보충은 1함종마다만 가능, 1회 복습종 유닛 보충 불가",
+      "보충 척수 확인 후 [결정] 클릭"
+    ],
+    "restrictions": [
+      "보충원 보충 함정 유닛은 부대 창고 내 보충처 함정 유닛과 완전 동타입 필요 (순양함Ⅰ형 보충은 부대 창고 내 순양함Ⅰ형 필요)",
+      "부대 소속 함정 유닛에 함정 보충 시 승조원도 동시 보충 필요. 보충에 의한 승조원 유닛 보충은 각 함정 유닛마다 승원 효율 값에 따라 변화하여 자동 실행",
+      "부대 창고 내 승조원 유닛 미존재 시 부대 속 전 함정 유닛 기능 불능 사태 발생 가능, 이 경우 [결정] 클릭 불가",
+      "상선 유닛 한정 승조원 유닛 불필요하여 상기 제한 없음"
+    ]
+  },
+  "taxSystem": {
+    "status": "미구현",
+    "taxRateChange": {
+      "command": "납입률 변경",
+      "description": "각 행성/요새에서 납입되는 세금 비율 변경"
+    }
+  },
+  "tradeSystem": {
+    "status": "미구현",
+    "tariffRateChange": {
+      "command": "관세율 변경",
+      "description": "각 무역 품목에 과하는 관세율 변경"
+    }
+  },
+  "budget": {
+    "distribution": {
+      "command": "분배",
+      "description": "국가 예산에서 특정 행성/요새 원조금 출연"
+    },
+    "fundInjection": {
+      "command": "자금 투입",
+      "sources": "사적 구좌",
+      "targets": {
+        "regionalFund": "자신 통치 행성 원조 자금 투입",
+        "trustBox": "현직 '황제' or '의장' 지지·불지지 결정",
+        "supportBox": "차기 '황제 or 의장' 후보 지지 결정"
+      }
+    }
+  },
+  "fezzan": {
+    "status": "중립",
+    "violationPenalty": "어느 진영이든 페잔 중립 침범 또는 무력 점령 시 특별 페널티 (페잔 점령 현재 미구현)",
+    "diplomacy": {
+      "command": "외교",
+      "description": "페잔에 대한 각종 교섭"
+    }
+  },
+  "transport": {
+    "transportPlanning": {
+      "command": "수송 계획",
+      "description": "특정 행성/요새 대상 수송 패키지 작성, 수송 창고로 이동"
+    },
+    "transportCancellation": {
+      "command": "수송 중지",
+      "description": "책정된 수송 계획 중지"
+    },
+    "cargoHandling": {
+      "command": "반출입",
+      "description": "특정 행성/요새 대상 작성 수송 패키지 반출입"
+    }
+  }
+}

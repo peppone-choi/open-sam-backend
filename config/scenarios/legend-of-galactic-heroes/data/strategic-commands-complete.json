@@ -1,0 +1,522 @@
+{
+  "operationalCommands": {
+    "warpNavigation": {
+      "cpCost": 40,
+      "waitTime": 0,
+      "executionTime": "거리에 따라 변동",
+      "description": "임의 그리드로 이동. 이동 거리에 따라 소비 CP 및 실행 대기 시간 변화. 우주 공간에서만 실행 가능"
+    },
+    "fuelSupply": {
+      "cpCost": 160,
+      "waitTime": 8,
+      "executionTime": "48~960",
+      "description": "워프 연료 보급"
+    },
+    "interSystemNavigation": {
+      "cpCost": 160,
+      "waitTime": 8,
+      "executionTime": 0,
+      "description": "성계 그리드 내 행성 간 이동"
+    },
+    "militaryDiscipline": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "군기 유지도 증가, 혼란 발생률 감소"
+    },
+    "spaceTraining": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "부대 훈련도 증가"
+    },
+    "groundTraining": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "육전 훈련도 증가"
+    },
+    "airTraining": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "공전 훈련도 증가"
+    },
+    "groundTacticsTraining": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "육전 전술 스킬 습득"
+    },
+    "airTacticsTraining": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "공전 전술 스킬 습득"
+    },
+    "alertDeployment": {
+      "cpCost": 160,
+      "waitTime": 24,
+      "executionTime": 0,
+      "description": "주류 중인 육전대로 행성/요새 치안 유지율 증가"
+    },
+    "forceSuppression": {
+      "cpCost": 160,
+      "waitTime": 24,
+      "executionTime": 0,
+      "description": "주류 중인 육전대로 행성/요새 치안 유지율 증가. 무력 진압 시 정부 지지율 하락 가능"
+    },
+    "militaryParade": {
+      "cpCost": 160,
+      "waitTime": 24,
+      "executionTime": 0,
+      "description": "주류 중인 육전대로 행성 정부 지지율 증가"
+    },
+    "requisition": {
+      "cpCost": 160,
+      "waitTime": 24,
+      "executionTime": 0,
+      "description": "점령한 타세력 행성/요새에서 군수물자 징발"
+    },
+    "specialGuard": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 24,
+      "description": "특정 경계 스팟 경비 태세 강화"
+    },
+    "groundForceDeployment": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "행성/요새 전투 대비 전 육전대 함정에서 주류"
+    },
+    "groundForceWithdrawal": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "출격 중인 자부대 전 육전대 함정으로 철수"
+    }
+  },
+  "personalCommands": {
+    "longDistanceMove": {
+      "cpCost": 10,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "행성/요새 상 시설 간 이동"
+    },
+    "shortDistanceMove": {
+      "cpCost": 5,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "시설 내 스팟 간 이동"
+    },
+    "retirement": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "군을 떠나 정치가가 됨. 퇴역 후 30G일간 지원 커맨드 사용 불가"
+    },
+    "enlistment": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "정치가 은퇴, 군인이 됨. 계급 소좌, 기함 전함으로 변경"
+    },
+    "defection": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "타세력에 망명. 망명 후 망명처 수도에 구금, 처단 대기"
+    },
+    "meeting": {
+      "cpCost": 10,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "동일 스팟 체류 인물과 회견, 우호도 상승"
+    },
+    "attendance": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "능력 파라미터 증가. 사관학교에서만 실행 가능"
+    },
+    "wargame": {
+      "cpCost": 10,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "시뮬레이터 전술 훈련. 사관학교에서만 실행 가능"
+    },
+    "rebellion": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "쿠데타 수모자가 됨"
+    },
+    "conspiracy": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "동일 스팟 체류 인물에게 쿠데타 참가 교섭"
+    },
+    "persuasion": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "소속 부대 배비 유닛의 반란 충성도 상승"
+    },
+    "revolt": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "쿠데타 실행"
+    },
+    "participation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "참가 교섭 동의한 쿠데타 참가"
+    },
+    "fundInjection": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "사적 구좌에서 자금 투입: 지방자금고(통치 행성 원조), 신임 박스(황제/의장 지지/불지지), 지지 박스(차기 황제/의장 후보 지지)"
+    },
+    "flagshipPurchase": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "새 기함 구매. 평가 포인트 소비 필요"
+    }
+  },
+  "commandCommands": {
+    "operationPlanning": {
+      "cpCost": "10~1280",
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "아군 전략적 목표 책정"
+    },
+    "operationCancellation": {
+      "cpCost": "5~320",
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "기 계획된 작전 중지"
+    },
+    "orderIssue": {
+      "cpCost": "1~320",
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "기 발동 작전에 실행 부대 할당"
+    },
+    "unitFormation": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "부대 결성 위해 유닛 편성"
+    },
+    "unitDisbandment": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "행성/요새 주류 부대 해산"
+    },
+    "lecture": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "수강 커맨드 실행 인물 능력 파라미터 증가. 실행 후 120G분 또는 실행 스팟 이탈까지 유효. 사관학교만 실행 가능"
+    },
+    "transportPlanning": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 행성/요새 대상 수송 패키지 작성, 수송 창고로 이동"
+    },
+    "transportCancellation": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "책정된 수송 계획 중지"
+    }
+  },
+  "logisticsCommands": {
+    "completeRepair": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "손상 기함 및 전 함정 유닛 수리. 부대 보유 전 군수물자 소비"
+    },
+    "completeSupply": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "임의 부대에 군수물자 보급"
+    },
+    "reorganization": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "부대 소속 유닛 편성 재검토"
+    },
+    "reinforcement": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "소모된 함정 유닛에 함정, 승조원, 군수물자 보충"
+    },
+    "cargoHandling": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 행성/요새 대상 작성 수송 패키지 반출입"
+    },
+    "allocation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "행성/요새 재고 각 유닛, 군수물자를 각 부대 전용 스톡에 할당"
+    }
+  },
+  "personnelCommands": {
+    "promotion": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "각 계급 래더 최상위 인물 1계급 승격"
+    },
+    "specialPromotion": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "각 계급 래더 최상위 이외 인물 임의 1계급 승격"
+    },
+    "demotion": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "각 계급 래더 최상위 이외 인물 임의 1계급 강등"
+    },
+    "knighthood": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "귀족 출신 일정 이상 작위 인물에게 새 작위 수여"
+    },
+    "decoration": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "계급 등 조건 만족 인물에게 훈장 수여"
+    },
+    "appointment": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물에게 새 직무 권한 부여"
+    },
+    "dismissal": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물 임의 직무에서 해임"
+    },
+    "resignation": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "당해 직무 권한 포기"
+    },
+    "fiefdGrant": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "남작 이상 작위 인물에게 봉토 수여"
+    },
+    "fiefReclamation": {
+      "cpCost": 640,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물 소유 봉토 직할로 환원"
+    }
+  },
+  "politicalCommands": {
+    "soiree": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물 자신의 수도 저택에 초대 야회. 야회 성과에 따라 영향력 변화"
+    },
+    "hunting": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물 자신의 봉토 행성 저택에 초대 수렵. 수렵 결과에 따라 영향력과 초대객 우호도 변화"
+    },
+    "conference": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물 자신 체류 호텔 일실에 초대 회담. 회담 성과에 따라 영향력 변화"
+    },
+    "dialogue": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물 자신 체류 호텔 일실에 초대 담화. 담화 성과에 따라 초대객 우호도와 영향력 변화"
+    },
+    "speech": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "행성/요새 중앙 광장에서 연설. 연설 성과에 따라 영향력과 당해 행성/요새 정부 지지율 증감"
+    },
+    "nationalGoals": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "국가 전략적 목표 책정"
+    },
+    "taxRateChange": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "각 행성/요새에서 납입되는 세금 비율 변경"
+    },
+    "tariffRateChange": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "각 무역 품목에 과하는 관세율 변경"
+    },
+    "distribution": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "국가 예산에서 특정 행성/요새 원조금 출연"
+    },
+    "execution": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "구금 인물 처단 결정"
+    },
+    "diplomacy": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "페잔에 대한 각종 교섭"
+    },
+    "governanceGoals": {
+      "cpCost": 80,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 행성/요새에 대해 전략적 목표 제시"
+    }
+  },
+  "intelligenceCommands": {
+    "wideSearch": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "행성/요새 체류 특정 인물 수색"
+    },
+    "arrestWarrant": {
+      "cpCost": 800,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "동진영 소속 특정 인물 체포 리스트 등록"
+    },
+    "executionOrder": {
+      "cpCost": 800,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 인물에게 체포 리스트 등록 인물 중 하나 체포 권한 부여"
+    },
+    "arrestOrder": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "동일 스팟 또는 동일 공간 그리드 동일 부대 특정 인물 체포 시도"
+    },
+    "inspection": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "쿠데타 조짐 감지"
+    },
+    "raid": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "동일 스팟 체류 특정 인물 습격 시도. 대상은 타진영 인물만"
+    },
+    "surveillance": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "동일 스팟 체류 특정 인물 감시. 대상 인물 노출 안 될 시 감시 계속"
+    },
+    "infiltrationOperation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 시설 내 스팟에 잠입"
+    },
+    "escapeOperation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "잠입 중인 스팟에서 탈출 시도"
+    },
+    "informationOperation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "특정 시설에서 획득 정보 본국 송신"
+    },
+    "sabotageOperation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "잠입 시설에 시한 폭탄 설치"
+    },
+    "agitationOperation": {
+      "cpCost": 160,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "시민 선동으로 행성/요새 정부 지지율 하락"
+    },
+    "invasionOperation": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "타세력 행성/요새 침입 시도"
+    },
+    "returnOperation": {
+      "cpCost": 320,
+      "waitTime": 0,
+      "executionTime": 0,
+      "description": "침입한 행성/요새에서 자진영 행성/요새로 귀환"
+    }
+  },
+  "commandPointSystem": {
+    "types": {
+      "pcp": "정략 커맨드 포인트",
+      "mcp": "군사 커맨드 포인트"
+    },
+    "recovery": {
+      "interval": "2게임 시간마다 (실시간 5분)",
+      "offlineRecovery": true,
+      "noRecoveryCondition": "전술 게임 중",
+      "influencingFactors": ["정치 능력", "운영 능력"]
+    },
+    "substitution": {
+      "rule": "상응 CP 부족 시 다른 CP 자동 대용",
+      "cost": "대용 시 소비량 2배"
+    }
+  },
+  "commandExecutionTime": {
+    "waitTime": "커맨드 입력 후 실행 개시까지 시간",
+    "executionTime": "실행 개시부터 완료까지 시간"
+  }
+}

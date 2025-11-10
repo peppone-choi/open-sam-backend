@@ -1,0 +1,5432 @@
+{
+  "description": "은하영웅전설 행성 및 성계 데이터 (Legend of Galactic Heroes - Complete Edition)",
+  "version": "3.0.0",
+  "source": "planets.md + 은하영웅전설 위키 (나무위키)",
+  "lastUpdate": "2025-11-10",
+  "starSystems": [
+    {
+      "systemNumber": 1,
+      "systemId": "sirius",
+      "systemName": "시리우스 성계",
+      "systemNameJa": "シリウス星系",
+      "systemNameEn": "Sirius",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "emmeya",
+          "planetName": "엠메야",
+          "planetNameJa": "エンメ・ヤ",
+          "planetNameEn": "Emmeya",
+          "faction": "empire",
+          "stats": {
+            "population": 5844,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 77
+          },
+          "gridCoordinates": {
+            "x": 24,
+            "y": 2
+          },
+          "pixelCoordinates": {
+            "x": 486,
+            "y": 49
+          }
+        },
+        {
+          "planetId": "nommo",
+          "planetName": "논모",
+          "planetNameJa": "ノンモ",
+          "planetNameEn": "Nommo",
+          "faction": "empire",
+          "stats": {
+            "population": 5473,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 84
+          },
+          "gridCoordinates": {
+            "x": 31,
+            "y": 4
+          },
+          "pixelCoordinates": {
+            "x": 628,
+            "y": 95
+          }
+        },
+        {
+          "planetId": "londrina",
+          "planetName": "론드리나",
+          "planetNameJa": "ロンドリーナ",
+          "planetNameEn": "Londrina",
+          "faction": "empire",
+          "description": "시리우스 성계의 주성. 라그랑 시티 소재",
+          "facilities": [
+            "라그랑 시티"
+          ],
+          "stats": {
+            "population": 3563,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 78,
+            "loyalty": 84
+          },
+          "gridCoordinates": {
+            "x": 63,
+            "y": 5
+          },
+          "pixelCoordinates": {
+            "x": 1267,
+            "y": 113
+          }
+        }
+      ],
+      "description": "과거 지구통일정부의 식민성이자 시리우스 전역의 무대",
+      "strategicValue": "high",
+      "historicalSignificance": "시리우스 전역 발생지",
+      "gridCoordinates": {
+        "x": 24,
+        "y": 2
+      },
+      "oldCoordinates": {
+        "x": 400,
+        "y": 50
+      }
+    },
+    {
+      "systemNumber": 2,
+      "systemId": "marovia",
+      "systemName": "마로비아 성계",
+      "systemNameJa": "マローヴィア星系",
+      "systemNameEn": "Marovia",
+      "faction": "alliance",
+      "planets": [],
+      "gridCoordinates": {
+        "x": 2,
+        "y": 5
+      },
+      "oldCoordinates": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "systemNumber": 3,
+      "systemId": "solar_system__sonnensystem",
+      "systemName": "태양계",
+      "systemNameJa": "太陽系",
+      "systemNameEn": "Solar System / Sonnensystem",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "venus",
+          "planetName": "금성",
+          "planetNameJa": "金星",
+          "planetNameEn": "Venus",
+          "faction": "empire",
+          "stats": {
+            "population": 1031,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 91
+          },
+          "gridCoordinates": {
+            "x": 75,
+            "y": 3
+          },
+          "pixelCoordinates": {
+            "x": 1507,
+            "y": 74
+          }
+        },
+        {
+          "planetId": "earth__erde",
+          "planetName": "지구",
+          "planetNameJa": "地球",
+          "planetNameEn": "Earth / Erde",
+          "faction": "empire",
+          "stats": {
+            "population": 1408,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 93
+          },
+          "gridCoordinates": {
+            "x": 79,
+            "y": 1
+          },
+          "pixelCoordinates": {
+            "x": 1586,
+            "y": 32
+          }
+        },
+        {
+          "planetId": "mars",
+          "planetName": "화성",
+          "planetNameJa": "火星",
+          "planetNameEn": "Mars",
+          "faction": "empire",
+          "stats": {
+            "population": 1501,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 79,
+            "y": 4
+          },
+          "pixelCoordinates": {
+            "x": 1588,
+            "y": 93
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 75,
+        "y": 3
+      },
+      "oldCoordinates": {
+        "x": 480,
+        "y": 20
+      }
+    },
+    {
+      "systemNumber": 4,
+      "systemId": "vega",
+      "systemName": "베가 성계",
+      "systemNameJa": "ヴェガ星系",
+      "systemNameEn": "Vega",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "eurydike",
+          "planetName": "에우리디케",
+          "planetNameJa": "エウリュディケ",
+          "planetNameEn": "Eurydike",
+          "faction": "empire",
+          "stats": {
+            "population": 976,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          },
+          "gridCoordinates": {
+            "x": 14,
+            "y": 11
+          },
+          "pixelCoordinates": {
+            "x": 285,
+            "y": 233
+          }
+        },
+        {
+          "planetId": "acrisios",
+          "planetName": "아크리시오스",
+          "planetNameJa": "アクリシオス",
+          "planetNameEn": "Acrisios",
+          "faction": "empire",
+          "stats": {
+            "population": 918,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          },
+          "gridCoordinates": {
+            "x": 19,
+            "y": 7
+          },
+          "pixelCoordinates": {
+            "x": 387,
+            "y": 154
+          }
+        },
+        {
+          "planetId": "persephone",
+          "planetName": "페르세포네",
+          "planetNameJa": "ペルセフォネー",
+          "planetNameEn": "Persephone",
+          "faction": "empire",
+          "stats": {
+            "population": 1124,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          },
+          "gridCoordinates": {
+            "x": 25,
+            "y": 6
+          },
+          "pixelCoordinates": {
+            "x": 509,
+            "y": 130
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 14,
+        "y": 11
+      },
+      "oldCoordinates": {
+        "x": 540,
+        "y": 50
+      }
+    },
+    {
+      "systemNumber": 5,
+      "systemId": "shiva",
+      "systemName": "시바 성계",
+      "systemNameJa": "シヴァ星系",
+      "systemNameEn": "Shiva",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "ganga",
+          "planetName": "강가",
+          "planetNameJa": "ガンガー",
+          "planetNameEn": "Ganga",
+          "faction": "alliance",
+          "stats": {
+            "population": 584,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          },
+          "gridCoordinates": {
+            "x": 35,
+            "y": 8
+          },
+          "pixelCoordinates": {
+            "x": 705,
+            "y": 173
+          }
+        },
+        {
+          "planetId": "nandi",
+          "planetName": "난디",
+          "planetNameJa": "ナンディ",
+          "planetNameEn": "Nandi",
+          "faction": "alliance",
+          "stats": {
+            "population": 457,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          },
+          "gridCoordinates": {
+            "x": 40,
+            "y": 6
+          },
+          "pixelCoordinates": {
+            "x": 804,
+            "y": 132
+          }
+        },
+        {
+          "planetId": "ananta",
+          "planetName": "아난타",
+          "planetNameJa": "アナンタ",
+          "planetNameEn": "Ananta",
+          "faction": "alliance",
+          "stats": {
+            "population": 428,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 91
+          },
+          "gridCoordinates": {
+            "x": 43,
+            "y": 11
+          },
+          "pixelCoordinates": {
+            "x": 865,
+            "y": 230
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 35,
+        "y": 8
+      },
+      "oldCoordinates": {
+        "x": 150,
+        "y": 90
+      }
+    },
+    {
+      "systemNumber": 6,
+      "systemId": "bifrst",
+      "systemName": "비프뢰스트 성계",
+      "systemNameJa": "ビルロスト星系",
+      "systemNameEn": "Bifröst",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "himinbjrg",
+          "planetName": "히민뵈르그",
+          "planetNameJa": "ヒミンギョルグ",
+          "planetNameEn": "Himinbjörg",
+          "faction": "empire",
+          "stats": {
+            "population": 1143,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 67,
+            "y": 7
+          },
+          "pixelCoordinates": {
+            "x": 1348,
+            "y": 152
+          }
+        },
+        {
+          "planetId": "burtgang",
+          "planetName": "부르트강",
+          "planetNameJa": "ブルトガング",
+          "planetNameEn": "Burtgang",
+          "faction": "empire",
+          "stats": {
+            "population": 1118,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 89
+          },
+          "gridCoordinates": {
+            "x": 77,
+            "y": 11
+          },
+          "pixelCoordinates": {
+            "x": 1546,
+            "y": 235
+          }
+        },
+        {
+          "planetId": "gjallarhorn",
+          "planetName": "갸라르호른",
+          "planetNameJa": "ギャランホルン",
+          "planetNameEn": "Gjallarhorn",
+          "faction": "empire",
+          "stats": {
+            "population": 1174,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 85
+          },
+          "gridCoordinates": {
+            "x": 84,
+            "y": 9
+          },
+          "pixelCoordinates": {
+            "x": 1688,
+            "y": 194
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 67,
+        "y": 7
+      },
+      "oldCoordinates": {
+        "x": 460,
+        "y": 100
+      }
+    },
+    {
+      "systemNumber": 7,
+      "systemId": "hadat",
+      "systemName": "하다트 성계",
+      "systemNameJa": "ハダト星系",
+      "systemNameEn": "Hadat",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "belasi",
+          "planetName": "벨라시",
+          "planetNameJa": "ベラスィ",
+          "planetNameEn": "Belasi",
+          "faction": "alliance",
+          "stats": {
+            "population": 559,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 91,
+            "y": 8
+          },
+          "pixelCoordinates": {
+            "x": 1830,
+            "y": 173
+          }
+        },
+        {
+          "planetId": "anjar",
+          "planetName": "안자르",
+          "planetNameJa": "アンジャル",
+          "planetNameEn": "Anjar",
+          "faction": "alliance",
+          "stats": {
+            "population": 694,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 92
+          },
+          "gridCoordinates": {
+            "x": 7,
+            "y": 14
+          },
+          "pixelCoordinates": {
+            "x": 145,
+            "y": 291
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 91,
+        "y": 8
+      },
+      "oldCoordinates": {
+        "x": 100,
+        "y": 150
+      }
+    },
+    {
+      "systemNumber": 8,
+      "systemId": "dagon",
+      "systemName": "다곤 성계",
+      "systemNameJa": "ダゴン星系",
+      "systemNameEn": "Dagon",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "dagon_ii",
+          "planetName": "다곤 2",
+          "planetNameJa": "ダゴン2",
+          "planetNameEn": "Dagon II",
+          "faction": "alliance",
+          "stats": {
+            "population": 1473,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 43
+          },
+          "gridCoordinates": {
+            "x": 19,
+            "y": 14
+          },
+          "pixelCoordinates": {
+            "x": 387,
+            "y": 294
+          }
+        },
+        {
+          "planetId": "dagon_iii",
+          "planetName": "다곤 3",
+          "planetNameJa": "ダゴン3",
+          "planetNameEn": "Dagon III",
+          "faction": "alliance",
+          "stats": {
+            "population": 1584,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 31
+          },
+          "gridCoordinates": {
+            "x": 25,
+            "y": 16
+          },
+          "pixelCoordinates": {
+            "x": 507,
+            "y": 333
+          }
+        },
+        {
+          "planetId": "dagon_iv",
+          "planetName": "다곤 4",
+          "planetNameJa": "ダゴン4",
+          "planetNameEn": "Dagon IV",
+          "faction": "alliance",
+          "stats": {
+            "population": 1005,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 30
+          },
+          "gridCoordinates": {
+            "x": 30,
+            "y": 12
+          },
+          "pixelCoordinates": {
+            "x": 608,
+            "y": 252
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 19,
+        "y": 14
+      },
+      "oldCoordinates": {
+        "x": 200,
+        "y": 150
+      }
+    },
+    {
+      "systemNumber": 9,
+      "systemId": "fara_fara",
+      "systemName": "파라-파라 성계",
+      "systemNameJa": "ファラーファラ星系",
+      "systemNameEn": "Fara-Fara",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "ramul",
+          "planetName": "라물",
+          "planetNameJa": "ラムル",
+          "planetNameEn": "Ramul",
+          "faction": "alliance",
+          "stats": {
+            "population": 652,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          },
+          "gridCoordinates": {
+            "x": 32,
+            "y": 17
+          },
+          "pixelCoordinates": {
+            "x": 647,
+            "y": 352
+          }
+        },
+        {
+          "planetId": "misenum",
+          "planetName": "미세눔",
+          "planetNameJa": "ミセヌム",
+          "planetNameEn": "Misenum",
+          "faction": "alliance",
+          "stats": {
+            "population": 708,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 85
+          },
+          "gridCoordinates": {
+            "x": 40,
+            "y": 15
+          },
+          "pixelCoordinates": {
+            "x": 804,
+            "y": 313
+          }
+        },
+        {
+          "planetId": "aswan",
+          "planetName": "아스완",
+          "planetNameJa": "アスワン",
+          "planetNameEn": "Aswan",
+          "faction": "alliance",
+          "stats": {
+            "population": 693,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 85
+          },
+          "gridCoordinates": {
+            "x": 46,
+            "y": 14
+          },
+          "pixelCoordinates": {
+            "x": 924,
+            "y": 294
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 32,
+        "y": 17
+      },
+      "oldCoordinates": {
+        "x": 80,
+        "y": 100
+      }
+    },
+    {
+      "systemNumber": 10,
+      "systemId": "volsorn",
+      "systemName": "볼소른 성계",
+      "systemNameJa": "ボルソルン星系",
+      "systemNameEn": "Volsorn",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "volsorn",
+          "planetName": "볼소른",
+          "planetNameJa": "ボルソルン",
+          "planetNameEn": "Volsorn",
+          "faction": "empire",
+          "stats": {
+            "population": 920,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 86
+          },
+          "gridCoordinates": {
+            "x": 46,
+            "y": 12
+          },
+          "pixelCoordinates": {
+            "x": 926,
+            "y": 252
+          }
+        },
+        {
+          "planetId": "weienbach",
+          "planetName": "바이센바흐",
+          "planetNameJa": "ヴァイセンバッハ",
+          "planetNameEn": "Weißenbach",
+          "faction": "empire",
+          "stats": {
+            "population": 1288,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          },
+          "gridCoordinates": {
+            "x": 53,
+            "y": 12
+          },
+          "pixelCoordinates": {
+            "x": 1066,
+            "y": 252
+          }
+        },
+        {
+          "planetId": "vol",
+          "planetName": "볼",
+          "planetNameJa": "ボル",
+          "planetNameEn": "Vol",
+          "faction": "empire",
+          "stats": {
+            "population": 953,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          },
+          "gridCoordinates": {
+            "x": 60,
+            "y": 12
+          },
+          "pixelCoordinates": {
+            "x": 1208,
+            "y": 253
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 46,
+        "y": 12
+      },
+      "oldCoordinates": {
+        "x": 510,
+        "y": 150
+      }
+    },
+    {
+      "systemNumber": 11,
+      "systemId": "castrop",
+      "systemName": "카스트로프 성계",
+      "systemNameJa": "カストロプ星系",
+      "systemNameEn": "Castrop",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "niederwindenborn",
+          "planetName": "니더빈덴보른",
+          "planetNameJa": "ニーダー・ヴィンデンボルン",
+          "planetNameEn": "Niederwindenborn",
+          "faction": "empire",
+          "stats": {
+            "population": 2636,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 84
+          },
+          "gridCoordinates": {
+            "x": 67,
+            "y": 12
+          },
+          "pixelCoordinates": {
+            "x": 1346,
+            "y": 252
+          }
+        },
+        {
+          "planetId": "voldingborg",
+          "planetName": "볼딩보르크",
+          "planetNameJa": "ヴォルディングボルグ",
+          "planetNameEn": "Voldingborg",
+          "faction": "empire",
+          "stats": {
+            "population": 1810,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 89
+          },
+          "gridCoordinates": {
+            "x": 70,
+            "y": 15
+          },
+          "pixelCoordinates": {
+            "x": 1409,
+            "y": 313
+          }
+        },
+        {
+          "planetId": "mariendorf",
+          "planetName": "마리엔도르프",
+          "planetNameJa": "マリーンドルフ",
+          "planetNameEn": "Mariendorf",
+          "faction": "empire",
+          "stats": {
+            "population": 2916,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 77
+          },
+          "gridCoordinates": {
+            "x": 87,
+            "y": 15
+          },
+          "pixelCoordinates": {
+            "x": 1749,
+            "y": 313
+          }
+        }
+      ],
+      "description": "카스트로프 공작가의 영지. 카스트로프 동란 발생지",
+      "strategicValue": "normal",
+      "historicalSignificance": "카스트로프 동란 - 지크프리트 키르히아이스가 10일 만에 진압",
+      "gridCoordinates": {
+        "x": 67,
+        "y": 12
+      },
+      "oldCoordinates": {
+        "x": 800,
+        "y": 100
+      }
+    },
+    {
+      "systemNumber": 12,
+      "systemId": "elgon",
+      "systemName": "엘곤 성계",
+      "systemNameJa": "エルゴン星系",
+      "systemNameEn": "Elgon",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "butandiga",
+          "planetName": "부탄디가",
+          "planetNameJa": "ブタンディガ",
+          "planetNameEn": "Butandiga",
+          "faction": "alliance",
+          "stats": {
+            "population": 441,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 90
+          },
+          "gridCoordinates": {
+            "x": 92,
+            "y": 15
+          },
+          "pixelCoordinates": {
+            "x": 1850,
+            "y": 311
+          }
+        },
+        {
+          "planetId": "mubale",
+          "planetName": "무발레",
+          "planetNameJa": "ムバレ",
+          "planetNameEn": "Mubale",
+          "faction": "alliance",
+          "stats": {
+            "population": 666,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          },
+          "gridCoordinates": {
+            "x": 6,
+            "y": 20
+          },
+          "pixelCoordinates": {
+            "x": 126,
+            "y": 412
+          }
+        },
+        {
+          "planetId": "kampala",
+          "planetName": "캄팔라",
+          "planetNameJa": "カンパラ",
+          "planetNameEn": "Kampala",
+          "faction": "alliance",
+          "stats": {
+            "population": 532,
+            "industry": 20,
+            "technology": 65,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 93
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "打撃巡航艦Ⅰ",
+            "駆逐艦Ⅰ",
+            "戦闘艇母艦Ⅰ"
+          ],
+          "gridCoordinates": {
+            "x": 15,
+            "y": 20
+          },
+          "pixelCoordinates": {
+            "x": 306,
+            "y": 413
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 92,
+        "y": 15
+      },
+      "oldCoordinates": {
+        "x": 200,
+        "y": 100
+      }
+    },
+    {
+      "systemNumber": 13,
+      "systemId": "willenstein",
+      "systemName": "빌렌슈타인 성계",
+      "systemNameJa": "ヴィレンシュタイン星系",
+      "systemNameEn": "Willenstein",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "weienhorn",
+          "planetName": "바이센호른",
+          "planetNameJa": "ヴァイセンホルン",
+          "planetNameEn": "Weißenhorn",
+          "faction": "empire",
+          "stats": {
+            "population": 1117,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          },
+          "gridCoordinates": {
+            "x": 24,
+            "y": 23
+          },
+          "pixelCoordinates": {
+            "x": 486,
+            "y": 472
+          }
+        },
+        {
+          "planetId": "grfeltshfen",
+          "planetName": "그래펠츠회펜",
+          "planetNameJa": "グラーフェルツホーフェン",
+          "planetNameEn": "Gräfeltshöfen",
+          "faction": "empire",
+          "stats": {
+            "population": 1378,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          },
+          "gridCoordinates": {
+            "x": 41,
+            "y": 19
+          },
+          "pixelCoordinates": {
+            "x": 825,
+            "y": 393
+          }
+        },
+        {
+          "planetId": "obenhausen",
+          "planetName": "오벤하우젠",
+          "planetNameJa": "オーベンハウゼン",
+          "planetNameEn": "Obenhausen",
+          "faction": "empire",
+          "stats": {
+            "population": 1388,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 91
+          },
+          "gridCoordinates": {
+            "x": 44,
+            "y": 19
+          },
+          "pixelCoordinates": {
+            "x": 889,
+            "y": 394
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 24,
+        "y": 23
+      },
+      "oldCoordinates": {
+        "x": 650,
+        "y": 150
+      }
+    },
+    {
+      "systemNumber": 14,
+      "systemId": "astarte",
+      "systemName": "아스타테 성계",
+      "systemNameJa": "アスターテ星系",
+      "systemNameEn": "Astarte",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "astarte_ii",
+          "planetName": "아스타테 2",
+          "planetNameJa": "アスターテ2",
+          "planetNameEn": "Astarte II",
+          "faction": "alliance",
+          "stats": {
+            "population": 829,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 41
+          },
+          "gridCoordinates": {
+            "x": 62,
+            "y": 18
+          },
+          "pixelCoordinates": {
+            "x": 1247,
+            "y": 375
+          }
+        },
+        {
+          "planetId": "astarte_iii",
+          "planetName": "아스타테 3",
+          "planetNameJa": "アスターテ3",
+          "planetNameEn": "Astarte III",
+          "faction": "alliance",
+          "stats": {
+            "population": 896,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 54
+          },
+          "gridCoordinates": {
+            "x": 69,
+            "y": 21
+          },
+          "pixelCoordinates": {
+            "x": 1389,
+            "y": 433
+          }
+        },
+        {
+          "planetId": "astarte_iv",
+          "planetName": "아스타테 4",
+          "planetNameJa": "アスターテ4",
+          "planetNameEn": "Astarte IV",
+          "faction": "alliance",
+          "stats": {
+            "population": 1107,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 52
+          },
+          "gridCoordinates": {
+            "x": 82,
+            "y": 22
+          },
+          "pixelCoordinates": {
+            "x": 1649,
+            "y": 453
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "description": "아스타테 성역 회전 발생지. 이제르론 회랑의 분쟁지역",
+      "historicalSignificance": "라인하르트의 첫 대규모 승리",
+      "gridCoordinates": {
+        "x": 62,
+        "y": 18
+      },
+      "oldCoordinates": {
+        "x": 350,
+        "y": 180
+      }
+    },
+    {
+      "systemNumber": 15,
+      "systemId": "linderhof",
+      "systemName": "린더호프 성계",
+      "systemNameJa": "リンダーホーフ星系",
+      "systemNameEn": "Linderhof",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "chiemsee",
+          "planetName": "킴제",
+          "planetNameJa": "キームゼー",
+          "planetNameEn": "Chiemsee",
+          "faction": "empire",
+          "stats": {
+            "population": 1093,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          },
+          "gridCoordinates": {
+            "x": 88,
+            "y": 18
+          },
+          "pixelCoordinates": {
+            "x": 1769,
+            "y": 372
+          }
+        },
+        {
+          "planetId": "hohenschwangau",
+          "planetName": "호엔슈반가우",
+          "planetNameJa": "ホーエンシュヴァンガウ",
+          "planetNameEn": "Hohenschwangau",
+          "faction": "empire",
+          "stats": {
+            "population": 978,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 78
+          },
+          "gridCoordinates": {
+            "x": 94,
+            "y": 23
+          },
+          "pixelCoordinates": {
+            "x": 1891,
+            "y": 470
+          }
+        },
+        {
+          "planetId": "oberammergau",
+          "planetName": "오버암머가우",
+          "planetNameJa": "オーバーアマガウ",
+          "planetNameEn": "Oberammergau",
+          "faction": "empire",
+          "stats": {
+            "population": 1090,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 78
+          },
+          "gridCoordinates": {
+            "x": 10,
+            "y": 26
+          },
+          "pixelCoordinates": {
+            "x": 206,
+            "y": 534
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 88,
+        "y": 18
+      },
+      "oldCoordinates": {
+        "x": 590,
+        "y": 150
+      }
+    },
+    {
+      "systemNumber": 16,
+      "systemId": "lofoten",
+      "systemName": "로포텐 성계",
+      "systemNameJa": "ロフォーテン星系",
+      "systemNameEn": "Lofoten",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "alstad",
+          "planetName": "알스타",
+          "planetNameJa": "アルスタッド",
+          "planetNameEn": "Alstad",
+          "faction": "alliance",
+          "stats": {
+            "population": 533,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 22,
+            "y": 27
+          },
+          "pixelCoordinates": {
+            "x": 448,
+            "y": 553
+          }
+        },
+        {
+          "planetId": "balstad",
+          "planetName": "발스타",
+          "planetNameJa": "バルスタッド",
+          "planetNameEn": "Balstad",
+          "faction": "alliance",
+          "stats": {
+            "population": 468,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 89
+          },
+          "gridCoordinates": {
+            "x": 27,
+            "y": 29
+          },
+          "pixelCoordinates": {
+            "x": 546,
+            "y": 590
+          }
+        },
+        {
+          "planetId": "svolvr",
+          "planetName": "스볼배르",
+          "planetNameJa": "スボルヴェア",
+          "planetNameEn": "Svolvær",
+          "faction": "alliance",
+          "stats": {
+            "population": 509,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          },
+          "gridCoordinates": {
+            "x": 34,
+            "y": 24
+          },
+          "pixelCoordinates": {
+            "x": 688,
+            "y": 497
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 22,
+        "y": 27
+      },
+      "oldCoordinates": {
+        "x": 80,
+        "y": 190
+      }
+    },
+    {
+      "systemNumber": 17,
+      "systemId": "van_fleet",
+      "systemName": "반 플리트 성계",
+      "systemNameJa": "ヴァンフリート星系",
+      "systemNameEn": "Van Fleet",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "van_fleet_ii",
+          "planetName": "반 플리트 2",
+          "planetNameJa": "ヴァンフリート2",
+          "planetNameEn": "Van Fleet II",
+          "faction": "alliance",
+          "stats": {
+            "population": 1397,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 27
+          },
+          "gridCoordinates": {
+            "x": 38,
+            "y": 28
+          },
+          "pixelCoordinates": {
+            "x": 766,
+            "y": 573
+          }
+        },
+        {
+          "planetId": "van_fleet_iii",
+          "planetName": "반 플리트 3",
+          "planetNameJa": "ヴァンフリート3",
+          "planetNameEn": "Van Fleet III",
+          "faction": "alliance",
+          "stats": {
+            "population": 893,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 20
+          },
+          "gridCoordinates": {
+            "x": 41,
+            "y": 24
+          },
+          "pixelCoordinates": {
+            "x": 828,
+            "y": 495
+          }
+        },
+        {
+          "planetId": "van_fleet_iv",
+          "planetName": "반 플리트 4",
+          "planetNameJa": "ヴァンフリート4",
+          "planetNameEn": "Van Fleet IV",
+          "faction": "alliance",
+          "stats": {
+            "population": 1165,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 38
+          },
+          "gridCoordinates": {
+            "x": 43,
+            "y": 28
+          },
+          "pixelCoordinates": {
+            "x": 868,
+            "y": 576
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "description": "반 플리트 성역 회전 발생지. 이제르론 회랑 동맹측 출구",
+      "historicalSignificance": "반 플리트 성역 회전 - 양 웬리 vs 라인하르트",
+      "gridCoordinates": {
+        "x": 38,
+        "y": 28
+      },
+      "oldCoordinates": {
+        "x": 400,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 18,
+      "systemId": "iserlohn",
+      "systemName": "이제를론 성계",
+      "systemNameJa": "イゼルローン星系",
+      "systemNameEn": "Iserlohn",
+      "faction": "empire",
+      "planets": [],
+      "territoryType": "disputed",
+      "strategicValue": "critical",
+      "description": "이제르론 회랑의 핵심 요충지. 제국-동맹 경계",
+      "historicalSignificance": "양 웬리의 무혈 점령으로 유명",
+      "gridCoordinates": {
+        "x": 24,
+        "y": 25
+      },
+      "oldCoordinates": {
+        "x": 480,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 19,
+      "systemId": "amritsar",
+      "systemName": "암리처 성계",
+      "systemNameJa": "アムリッツァ星系",
+      "systemNameEn": "Amritsar",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "morgen",
+          "planetName": "모르겐",
+          "planetNameJa": "モールゲン",
+          "planetNameEn": "Morgen",
+          "faction": "empire",
+          "stats": {
+            "population": 1434,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          },
+          "gridCoordinates": {
+            "x": 44,
+            "y": 24
+          },
+          "pixelCoordinates": {
+            "x": 889,
+            "y": 493
+          }
+        },
+        {
+          "planetId": "dank",
+          "planetName": "당크",
+          "planetNameJa": "ダンク",
+          "planetNameEn": "Dank",
+          "faction": "empire",
+          "stats": {
+            "population": 983,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 92
+          },
+          "gridCoordinates": {
+            "x": 63,
+            "y": 25
+          },
+          "pixelCoordinates": {
+            "x": 1269,
+            "y": 512
+          }
+        },
+        {
+          "planetId": "hafen",
+          "planetName": "하펜",
+          "planetNameJa": "ハーフェン",
+          "planetNameEn": "Hafen",
+          "faction": "empire",
+          "stats": {
+            "population": 1504,
+            "industry": 20,
+            "technology": 65,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "高速戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "駆逐艦Ⅰ"
+          ],
+          "gridCoordinates": {
+            "x": 75,
+            "y": 27
+          },
+          "pixelCoordinates": {
+            "x": 1506,
+            "y": 551
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 44,
+        "y": 24
+      },
+      "oldCoordinates": {
+        "x": 500,
+        "y": 200
+      }
+    },
+    {
+      "systemNumber": 20,
+      "systemId": "dverg",
+      "systemName": "드베르그 성계",
+      "systemNameJa": "ドヴェルグ星系",
+      "systemNameEn": "Dverg",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "ivaldi",
+          "planetName": "이발디",
+          "planetNameJa": "イーヴァルディ",
+          "planetNameEn": "Ivaldi",
+          "faction": "empire",
+          "stats": {
+            "population": 1116,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          },
+          "gridCoordinates": {
+            "x": 87,
+            "y": 24
+          },
+          "pixelCoordinates": {
+            "x": 1749,
+            "y": 492
+          }
+        },
+        {
+          "planetId": "regin",
+          "planetName": "레긴",
+          "planetNameJa": "レージング",
+          "planetNameEn": "Regin",
+          "faction": "empire",
+          "stats": {
+            "population": 1480,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 77
+          },
+          "gridCoordinates": {
+            "x": 91,
+            "y": 29
+          },
+          "pixelCoordinates": {
+            "x": 1830,
+            "y": 593
+          }
+        },
+        {
+          "planetId": "kaval",
+          "planetName": "카발",
+          "planetNameJa": "カバール",
+          "planetNameEn": "Kaval",
+          "faction": "empire",
+          "stats": {
+            "population": 1392,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          },
+          "gridCoordinates": {
+            "x": 97,
+            "y": 29
+          },
+          "pixelCoordinates": {
+            "x": 1950,
+            "y": 595
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 87,
+        "y": 24
+      },
+      "oldCoordinates": {
+        "x": 570,
+        "y": 200
+      }
+    },
+    {
+      "systemNumber": 21,
+      "systemId": "doria",
+      "systemName": "도리아 성계",
+      "systemNameJa": "ドーリア星系",
+      "systemNameEn": "Doria",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "castagnola",
+          "planetName": "카스타뇰라",
+          "planetNameJa": "カスタノーラ",
+          "planetNameEn": "Castagnola",
+          "faction": "alliance",
+          "stats": {
+            "population": 1119,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 8,
+            "y": 33
+          },
+          "pixelCoordinates": {
+            "x": 166,
+            "y": 676
+          }
+        },
+        {
+          "planetId": "bievetta",
+          "planetName": "비에베타",
+          "planetNameJa": "ビエヴェッタ",
+          "planetNameEn": "Bievetta",
+          "faction": "alliance",
+          "stats": {
+            "population": 1277,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 88
+          },
+          "gridCoordinates": {
+            "x": 12,
+            "y": 32
+          },
+          "pixelCoordinates": {
+            "x": 245,
+            "y": 652
+          }
+        },
+        {
+          "planetId": "borghese",
+          "planetName": "보르게제",
+          "planetNameJa": "ボルケーゼ",
+          "planetNameEn": "Borghese",
+          "faction": "alliance",
+          "stats": {
+            "population": 1017,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 83
+          },
+          "gridCoordinates": {
+            "x": 22,
+            "y": 34
+          },
+          "pixelCoordinates": {
+            "x": 444,
+            "y": 691
+          }
+        }
+      ],
+      "description": "도리아 성역 회전 발생지",
+      "strategicValue": "normal",
+      "historicalSignificance": "도리아 성역 회전",
+      "gridCoordinates": {
+        "x": 8,
+        "y": 33
+      },
+      "oldCoordinates": {
+        "x": 290,
+        "y": 180
+      }
+    },
+    {
+      "systemNumber": 22,
+      "systemId": "chiron",
+      "systemName": "시론 성계",
+      "systemNameJa": "シロン星系",
+      "systemNameEn": "Chiron",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "jalain",
+          "planetName": "자라인",
+          "planetNameJa": "ジャライン",
+          "planetNameEn": "Jalain",
+          "faction": "alliance",
+          "stats": {
+            "population": 494,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          },
+          "gridCoordinates": {
+            "x": 33,
+            "y": 33
+          },
+          "pixelCoordinates": {
+            "x": 666,
+            "y": 673
+          }
+        },
+        {
+          "planetId": "anubis",
+          "planetName": "아누비스",
+          "planetNameJa": "アヌビス",
+          "planetNameEn": "Anubis",
+          "faction": "alliance",
+          "stats": {
+            "population": 590,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          },
+          "gridCoordinates": {
+            "x": 39,
+            "y": 32
+          },
+          "pixelCoordinates": {
+            "x": 786,
+            "y": 652
+          }
+        },
+        {
+          "planetId": "osiris",
+          "planetName": "오시리스",
+          "planetNameJa": "オシリス",
+          "planetNameEn": "Osiris",
+          "faction": "alliance",
+          "stats": {
+            "population": 705,
+            "industry": 20,
+            "technology": 90,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "巡航艦Ⅷ",
+            "打撃巡航艦Ⅰ",
+            "駆逐艦Ⅰ",
+            "戦闘艇母艦Ⅰ"
+          ],
+          "gridCoordinates": {
+            "x": 63,
+            "y": 32
+          },
+          "pixelCoordinates": {
+            "x": 1269,
+            "y": 652
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 33,
+        "y": 33
+      },
+      "oldCoordinates": {
+        "x": 20,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 23,
+      "systemId": "kerim",
+      "systemName": "케림 성계",
+      "systemNameJa": "ケリム星系",
+      "systemNameEn": "Kerim",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "bafra",
+          "planetName": "바프라",
+          "planetNameJa": "バフラ",
+          "planetNameEn": "Bafra",
+          "faction": "alliance",
+          "stats": {
+            "population": 693,
+            "industry": 20,
+            "technology": 85,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          },
+          "production": [
+            "戦艦Ⅵ"
+          ],
+          "gridCoordinates": {
+            "x": 69,
+            "y": 33
+          },
+          "pixelCoordinates": {
+            "x": 1385,
+            "y": 671
+          }
+        },
+        {
+          "planetId": "ayudin",
+          "planetName": "아유딘",
+          "planetNameJa": "アユディン",
+          "planetNameEn": "Ayudin",
+          "faction": "alliance",
+          "stats": {
+            "population": 659,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 85
+          },
+          "gridCoordinates": {
+            "x": 80,
+            "y": 32
+          },
+          "pixelCoordinates": {
+            "x": 1610,
+            "y": 652
+          }
+        },
+        {
+          "planetId": "palas",
+          "planetName": "팔라스",
+          "planetNameJa": "パラス",
+          "planetNameEn": "Palas",
+          "faction": "alliance",
+          "stats": {
+            "population": 585,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 86
+          },
+          "gridCoordinates": {
+            "x": 87,
+            "y": 31
+          },
+          "pixelCoordinates": {
+            "x": 1749,
+            "y": 632
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 69,
+        "y": 33
+      },
+      "oldCoordinates": {
+        "x": 120,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 24,
+      "systemId": "altmhl",
+      "systemName": "알트뮐 성계",
+      "systemNameJa": "アルトミュール星系",
+      "systemNameEn": "Altmühl",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "vaubdzif",
+          "planetName": "바우브지프",
+          "planetNameJa": "ヴァウブジフ",
+          "planetNameEn": "Vaubdzif",
+          "faction": "alliance",
+          "stats": {
+            "population": 515,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 96,
+            "y": 34
+          },
+          "pixelCoordinates": {
+            "x": 1928,
+            "y": 691
+          }
+        },
+        {
+          "planetId": "edirne",
+          "planetName": "에디르네",
+          "planetNameJa": "エディルネ",
+          "planetNameEn": "Edirne",
+          "faction": "alliance",
+          "stats": {
+            "population": 406,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 82
+          },
+          "gridCoordinates": {
+            "x": 26,
+            "y": 38
+          },
+          "pixelCoordinates": {
+            "x": 527,
+            "y": 770
+          }
+        },
+        {
+          "planetId": "regnitza",
+          "planetName": "레그니차",
+          "planetNameJa": "レグニッツァ",
+          "planetNameEn": "Regnitza",
+          "faction": "alliance",
+          "stats": {
+            "population": 622,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 77
+          },
+          "gridCoordinates": {
+            "x": 39,
+            "y": 40
+          },
+          "pixelCoordinates": {
+            "x": 786,
+            "y": 813
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 96,
+        "y": 34
+      },
+      "oldCoordinates": {
+        "x": 380,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 25,
+      "systemId": "tiamat",
+      "systemName": "티아매트 성계",
+      "systemNameJa": "ティアマト星系",
+      "systemNameEn": "Tiamat",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "tiamat_ii",
+          "planetName": "티아매트 2",
+          "planetNameJa": "ティアマト2",
+          "planetNameEn": "Tiamat II",
+          "faction": "alliance",
+          "stats": {
+            "population": 1790,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 43
+          },
+          "gridCoordinates": {
+            "x": 44,
+            "y": 37
+          },
+          "pixelCoordinates": {
+            "x": 889,
+            "y": 752
+          }
+        },
+        {
+          "planetId": "tiamat_iii",
+          "planetName": "티아매트 3",
+          "planetNameJa": "ティアマト3",
+          "planetNameEn": "Tiamat III",
+          "faction": "alliance",
+          "stats": {
+            "population": 1777,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 46
+          },
+          "gridCoordinates": {
+            "x": 51,
+            "y": 37
+          },
+          "pixelCoordinates": {
+            "x": 1026,
+            "y": 754
+          }
+        },
+        {
+          "planetId": "tiamat_iv",
+          "planetName": "티아매트 4",
+          "planetNameJa": "ティアマト4",
+          "planetNameEn": "Tiamat IV",
+          "faction": "alliance",
+          "stats": {
+            "population": 1812,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 53
+          },
+          "gridCoordinates": {
+            "x": 57,
+            "y": 37
+          },
+          "pixelCoordinates": {
+            "x": 1147,
+            "y": 752
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 44,
+        "y": 37
+      },
+      "oldCoordinates": {
+        "x": 320,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 26,
+      "systemId": "heinsberg",
+      "systemName": "하인스베르크 성계",
+      "systemNameJa": "ハインスベルク星系",
+      "systemNameEn": "Heinsberg",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "dassel",
+          "planetName": "다셀",
+          "planetNameJa": "ダッセル",
+          "planetNameEn": "Dassel",
+          "faction": "empire",
+          "stats": {
+            "population": 1384,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 86
+          },
+          "gridCoordinates": {
+            "x": 62,
+            "y": 39
+          },
+          "pixelCoordinates": {
+            "x": 1247,
+            "y": 791
+          }
+        },
+        {
+          "planetId": "mhlenark",
+          "planetName": "뮐렌아르크",
+          "planetNameJa": "ミュレンアルク",
+          "planetNameEn": "Mühlenark",
+          "faction": "empire",
+          "stats": {
+            "population": 1392,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          },
+          "gridCoordinates": {
+            "x": 87,
+            "y": 37
+          },
+          "pixelCoordinates": {
+            "x": 1747,
+            "y": 754
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 62,
+        "y": 39
+      },
+      "oldCoordinates": {
+        "x": 750,
+        "y": 200
+      }
+    },
+    {
+      "systemNumber": 27,
+      "systemId": "vanaheim",
+      "systemName": "바나하임 성계",
+      "systemNameJa": "ヴァナヘイム星系",
+      "systemNameEn": "Vanaheim",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "noatun",
+          "planetName": "노아툰",
+          "planetNameJa": "ノーアトゥーン",
+          "planetNameEn": "Noatun",
+          "faction": "empire",
+          "stats": {
+            "population": 1544,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 92
+          },
+          "gridCoordinates": {
+            "x": 92,
+            "y": 37
+          },
+          "pixelCoordinates": {
+            "x": 1848,
+            "y": 750
+          }
+        },
+        {
+          "planetId": "njord",
+          "planetName": "뇨르드",
+          "planetNameJa": "ニョルド",
+          "planetNameEn": "Njord",
+          "faction": "empire",
+          "stats": {
+            "population": 1417,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 93
+          },
+          "gridCoordinates": {
+            "x": 19,
+            "y": 45
+          },
+          "pixelCoordinates": {
+            "x": 385,
+            "y": 910
+          }
+        },
+        {
+          "planetId": "frey",
+          "planetName": "프레이",
+          "planetNameJa": "フレイ",
+          "planetNameEn": "Frey",
+          "faction": "empire",
+          "stats": {
+            "population": 1438,
+            "industry": 20,
+            "technology": 60,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "駆逐艦Ⅱ"
+          ],
+          "gridCoordinates": {
+            "x": 27,
+            "y": 45
+          },
+          "pixelCoordinates": {
+            "x": 547,
+            "y": 913
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 92,
+        "y": 37
+      },
+      "oldCoordinates": {
+        "x": 780,
+        "y": 150
+      }
+    },
+    {
+      "systemNumber": 28,
+      "systemId": "javanhar",
+      "systemName": "야반할 성계",
+      "systemNameJa": "ヤヴァンハール星系",
+      "systemNameEn": "Javanhar",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "rgen",
+          "planetName": "뤼겐",
+          "planetNameJa": "リューゲン",
+          "planetNameEn": "Rügen",
+          "faction": "empire",
+          "stats": {
+            "population": 847,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 34,
+            "y": 44
+          },
+          "pixelCoordinates": {
+            "x": 688,
+            "y": 892
+          }
+        },
+        {
+          "planetId": "wismar",
+          "planetName": "비스마르",
+          "planetNameJa": "ヴィスマール",
+          "planetNameEn": "Wismar",
+          "faction": "empire",
+          "stats": {
+            "population": 1110,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          },
+          "gridCoordinates": {
+            "x": 60,
+            "y": 46
+          },
+          "pixelCoordinates": {
+            "x": 1205,
+            "y": 931
+          }
+        },
+        {
+          "planetId": "schwerin",
+          "planetName": "슈베린",
+          "planetNameJa": "シュヴェリーン",
+          "planetNameEn": "Schwerin",
+          "faction": "empire",
+          "stats": {
+            "population": 1091,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          },
+          "gridCoordinates": {
+            "x": 66,
+            "y": 43
+          },
+          "pixelCoordinates": {
+            "x": 1326,
+            "y": 873
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 34,
+        "y": 44
+      },
+      "oldCoordinates": {
+        "x": 680,
+        "y": 200
+      }
+    },
+    {
+      "systemNumber": 29,
+      "systemId": "jamshid",
+      "systemName": "잠시드 성계",
+      "systemNameJa": "ジャムシード星系",
+      "systemNameEn": "Jamshid",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "kaffa",
+          "planetName": "카파",
+          "planetNameJa": "カッファー",
+          "planetNameEn": "Kaffa",
+          "faction": "alliance",
+          "stats": {
+            "population": 412,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          },
+          "gridCoordinates": {
+            "x": 72,
+            "y": 44
+          },
+          "pixelCoordinates": {
+            "x": 1448,
+            "y": 894
+          }
+        },
+        {
+          "planetId": "muhabbat",
+          "planetName": "무하바트",
+          "planetNameJa": "ムハバット",
+          "planetNameEn": "Muhabbat",
+          "faction": "alliance",
+          "stats": {
+            "population": 603,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          },
+          "gridCoordinates": {
+            "x": 76,
+            "y": 46
+          },
+          "pixelCoordinates": {
+            "x": 1527,
+            "y": 933
+          }
+        },
+        {
+          "planetId": "avadana",
+          "planetName": "아바다나",
+          "planetNameJa": "アバダナ",
+          "planetNameEn": "Avadana",
+          "faction": "alliance",
+          "stats": {
+            "population": 398,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          },
+          "gridCoordinates": {
+            "x": 81,
+            "y": 43
+          },
+          "pixelCoordinates": {
+            "x": 1629,
+            "y": 872
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 72,
+        "y": 44
+      },
+      "oldCoordinates": {
+        "x": 180,
+        "y": 300
+      }
+    },
+    {
+      "systemNumber": 30,
+      "systemId": "el_facil",
+      "systemName": "엘 파실 성계",
+      "systemNameJa": "エル・ファシル星系",
+      "systemNameEn": "El Facil",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "las_casitas",
+          "planetName": "라스 카시타스",
+          "planetNameJa": "ラス・カシタス",
+          "planetNameEn": "Las Casitas",
+          "faction": "alliance",
+          "stats": {
+            "population": 2175,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 83
+          },
+          "gridCoordinates": {
+            "x": 88,
+            "y": 42
+          },
+          "pixelCoordinates": {
+            "x": 1767,
+            "y": 853
+          }
+        },
+        {
+          "planetId": "santa_ana",
+          "planetName": "산타 아나",
+          "planetNameJa": "サンタ・アナ",
+          "planetNameEn": "Santa Ana",
+          "faction": "alliance",
+          "stats": {
+            "population": 2515,
+            "industry": 20,
+            "technology": 65,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 77
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "打撃巡航艦Ⅰ",
+            "駆逐艦Ⅰ",
+            "戦闘艇母艦Ⅰ"
+          ]
+        },
+        {
+          "planetId": "salvador",
+          "planetName": "살바도르",
+          "planetNameJa": "サルバドル",
+          "planetNameEn": "Salvador",
+          "faction": "alliance",
+          "stats": {
+            "population": 2312,
+            "industry": 20,
+            "technology": 65,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 85
+          },
+          "production": [
+            "揚陸艇Ⅳ"
+          ]
+        }
+      ],
+      "description": "양 웬리 관련 중요 행성. 엘 파실 탈출 작전의 무대",
+      "strategicValue": "high",
+      "historicalSignificance": "양 웬리가 300만 명을 구출한 엘 파실 탈출 작전",
+      "gridCoordinates": {
+        "x": 88,
+        "y": 42
+      },
+      "oldCoordinates": {
+        "x": 250,
+        "y": 300
+      }
+    },
+    {
+      "systemNumber": 31,
+      "systemId": "niflheim",
+      "systemName": "니플하임 성계",
+      "systemNameJa": "ニヴルヘイム星系",
+      "systemNameEn": "Niflheim",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "gjll",
+          "planetName": "교을",
+          "planetNameJa": "ギョッル",
+          "planetNameEn": "Gjöll",
+          "faction": "empire",
+          "stats": {
+            "population": 1120,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        },
+        {
+          "planetId": "hvergelmir",
+          "planetName": "흐베르겔미르",
+          "planetNameJa": "フヴェルゲルミル",
+          "planetNameEn": "Hvergelmir",
+          "faction": "empire",
+          "stats": {
+            "population": 1231,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 39,
+        "y": 25
+      },
+      "oldCoordinates": {
+        "x": 780,
+        "y": 250
+      }
+    },
+    {
+      "systemNumber": 32,
+      "systemId": "vanstad",
+      "systemName": "반스타드 성계",
+      "systemNameJa": "ヴァンステイド星系",
+      "systemNameEn": "Vanstad",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "regsted",
+          "planetName": "레그스테드",
+          "planetNameJa": "レグステッド",
+          "planetNameEn": "Regsted",
+          "faction": "empire",
+          "stats": {
+            "population": 1105,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          }
+        },
+        {
+          "planetId": "faldgarde",
+          "planetName": "팔드가르데",
+          "planetNameJa": "ファルドガルデ",
+          "planetNameEn": "Faldgarde",
+          "faction": "empire",
+          "stats": {
+            "population": 1223,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 27,
+        "y": 30
+      },
+      "oldCoordinates": {
+        "x": 540,
+        "y": 300
+      }
+    },
+    {
+      "systemNumber": 33,
+      "systemId": "arlesheim",
+      "systemName": "알레스하임 성계",
+      "systemNameJa": "アルレスハイム星系",
+      "systemNameEn": "Arlesheim",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "arlesheim_ii",
+          "planetName": "알레스하임 2",
+          "planetNameJa": "アルレスハイム2",
+          "planetNameEn": "Arlesheim II",
+          "faction": "alliance",
+          "stats": {
+            "population": 1217,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 23
+          }
+        },
+        {
+          "planetId": "arlesheim_iii",
+          "planetName": "알레스하임 3",
+          "planetNameJa": "アルレスハイム3",
+          "planetNameEn": "Arlesheim III",
+          "faction": "alliance",
+          "stats": {
+            "population": 1362,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 51
+          }
+        },
+        {
+          "planetId": "arlesheim_iv",
+          "planetName": "알레스하임 4",
+          "planetNameJa": "アルレスハイム4",
+          "planetNameEn": "Arlesheim IV",
+          "faction": "alliance",
+          "stats": {
+            "population": 1693,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 37
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 19,
+        "y": 32
+      },
+      "oldCoordinates": {
+        "x": 380,
+        "y": 320
+      }
+    },
+    {
+      "systemNumber": 34,
+      "systemId": "dragonia",
+      "systemName": "드라고니아 성계",
+      "systemNameJa": "ドラゴニア星系",
+      "systemNameEn": "Dragonia",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "dragonia_ii",
+          "planetName": "드라고니아 2",
+          "planetNameJa": "ドラゴニア2",
+          "planetNameEn": "Dragonia II",
+          "faction": "alliance",
+          "stats": {
+            "population": 417,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          }
+        },
+        {
+          "planetId": "dragonia_iii",
+          "planetName": "드라고니아 3",
+          "planetNameJa": "ドラゴニア3",
+          "planetNameEn": "Dragonia III",
+          "faction": "alliance",
+          "stats": {
+            "population": 717,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 17,
+        "y": 32
+      },
+      "oldCoordinates": {
+        "x": 350,
+        "y": 320
+      }
+    },
+    {
+      "systemNumber": 35,
+      "systemId": "lumbini",
+      "systemName": "룸비니 성계",
+      "systemNameJa": "ルンビーニ星系",
+      "systemNameEn": "Lumbini",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "karaiya",
+          "planetName": "카라이야",
+          "planetNameJa": "カライヤ",
+          "planetNameEn": "Karaiya",
+          "faction": "alliance",
+          "stats": {
+            "population": 686,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 77
+          }
+        },
+        {
+          "planetId": "bhadgaon",
+          "planetName": "바드가온",
+          "planetNameJa": "バドガオン",
+          "planetNameEn": "Bhadgaon",
+          "faction": "alliance",
+          "stats": {
+            "population": 491,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 2,
+        "y": 35
+      },
+      "oldCoordinates": {
+        "x": 50,
+        "y": 350
+      }
+    },
+    {
+      "systemNumber": 36,
+      "systemId": "bharat",
+      "systemName": "바라트 성계",
+      "systemNameJa": "バーラト星系",
+      "systemNameEn": "Bharat",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "kasba_nagum",
+          "planetName": "카스바 나굼",
+          "planetNameJa": "カスバ・ナグム",
+          "planetNameEn": "Kasba Nagum",
+          "faction": "alliance",
+          "stats": {
+            "population": 477,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 90,
+            "loyalty": 85
+          }
+        },
+        {
+          "planetId": "heinessen",
+          "planetName": "하이네센",
+          "planetNameJa": "ハイネセン",
+          "planetNameEn": "Heinessen",
+          "faction": "alliance",
+          "description": "동맹 수도",
+          "isCapital": true,
+          "strategicValue": "capital",
+          "facilities": [
+            "하이네센폴리스",
+            "최고평의회 빌딩",
+            "응웬 킴 호아 광장",
+            "자유행성동맹군 통합작전본부",
+            "하이네센 국립미술관",
+            "상테레제 공동묘지",
+            "아르테미스의 목걸이"
+          ],
+          "hasShipyard": true,
+          "stats": {
+            "population": 33393,
+            "industry": 100,
+            "technology": 70,
+            "defense": 85,
+            "resources": 100,
+            "loyalty": 95
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "巡航艦Ⅱ",
+            "巡航艦Ⅲ",
+            "打撃巡航艦Ⅰ",
+            "駆逐艦Ⅰ",
+            "戦闘艇母艦Ⅰ",
+            "戦闘艇母艦Ⅱ",
+            "戦闘艇母艦Ⅲ"
+          ]
+        },
+        {
+          "planetId": "srinagar",
+          "planetName": "스리나가르",
+          "planetNameJa": "シリューナガル",
+          "planetNameEn": "Srinagar",
+          "faction": "alliance",
+          "description": "한랭한 얼음 행성. 아르테미스의 목걸이 파괴에 사용된 얼음 채취지",
+          "planetType": "ice_planet",
+          "stats": {
+            "population": 472,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 90,
+            "loyalty": 87
+          }
+        }
+      ],
+      "description": "자유행성동맹 수도 성계",
+      "strategicValue": "capital",
+      "gridCoordinates": {
+        "x": 7,
+        "y": 35
+      },
+      "oldCoordinates": {
+        "x": 150,
+        "y": 350
+      }
+    },
+    {
+      "systemNumber": 37,
+      "systemId": "altair",
+      "systemName": "알타이르 성계",
+      "systemNameJa": "アルタイル星系",
+      "systemNameEn": "Altair",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "antinous",
+          "planetName": "안티노우스",
+          "planetNameJa": "アンティノウス",
+          "planetNameEn": "Antinous",
+          "faction": "empire",
+          "stats": {
+            "population": 2999,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 83
+          }
+        },
+        {
+          "planetId": "thermopylae",
+          "planetName": "테르모퓔라이",
+          "planetNameJa": "テルモビュレー",
+          "planetNameEn": "Thermopylae",
+          "faction": "empire",
+          "stats": {
+            "population": 3005,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 77
+          }
+        },
+        {
+          "planetId": "altair",
+          "planetName": "알타이르",
+          "planetNameJa": "アルタイル",
+          "planetNameEn": "Altair",
+          "faction": "empire",
+          "stats": {
+            "population": 3098,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 55,
+            "loyalty": 89
+          }
+        }
+      ],
+      "description": "은하제국 변경 성계. 공화주의자 유배지",
+      "strategicValue": "normal",
+      "historicalSignificance": "알레 하이네센을 비롯한 공화주의자들의 강제노역지",
+      "gridCoordinates": {
+        "x": 30,
+        "y": 35
+      },
+      "oldCoordinates": {
+        "x": 600,
+        "y": 350
+      }
+    },
+    {
+      "systemNumber": 38,
+      "systemId": "wehrla",
+      "systemName": "벨라 성계",
+      "systemNameJa": "ヴェルラ星系",
+      "systemNameEn": "Wehrla",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "jacobi",
+          "planetName": "야코비",
+          "planetNameJa": "ヤコビ",
+          "planetNameEn": "Jacobi",
+          "faction": "empire",
+          "stats": {
+            "population": 1215,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 88
+          }
+        },
+        {
+          "planetId": "stefani",
+          "planetName": "슈테파니",
+          "planetNameJa": "シュテファニ",
+          "planetNameEn": "Stefani",
+          "faction": "empire",
+          "stats": {
+            "population": 1225,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 82
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 36,
+        "y": 30
+      },
+      "oldCoordinates": {
+        "x": 720,
+        "y": 300
+      }
+    },
+    {
+      "systemNumber": 39,
+      "systemId": "lucas",
+      "systemName": "류카스 성계",
+      "systemNameJa": "リューカス星系",
+      "systemNameEn": "Lucas",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "incobane",
+          "planetName": "인코바네",
+          "planetNameJa": "インコバネ",
+          "planetNameEn": "Incobane",
+          "faction": "alliance",
+          "stats": {
+            "population": 609,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        },
+        {
+          "planetId": "valmy",
+          "planetName": "발미",
+          "planetNameJa": "ヴァルミー",
+          "planetNameEn": "Valmy",
+          "faction": "alliance",
+          "stats": {
+            "population": 695,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 12,
+        "y": 39
+      },
+      "oldCoordinates": {
+        "x": 250,
+        "y": 390
+      }
+    },
+    {
+      "systemNumber": 40,
+      "systemId": "luitpolding",
+      "systemName": "루이트폴딩 성계",
+      "systemNameJa": "ルイトポルディング星系",
+      "systemNameEn": "Luitpolding",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "berthold",
+          "planetName": "베르톨트",
+          "planetNameJa": "ベルトホルト",
+          "planetNameEn": "Berthold",
+          "faction": "empire",
+          "stats": {
+            "population": 1316,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 91
+          }
+        },
+        {
+          "planetId": "arnulf",
+          "planetName": "아르눌프",
+          "planetNameJa": "アルヌルフ",
+          "planetNameEn": "Arnulf",
+          "faction": "empire",
+          "stats": {
+            "population": 1557,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 40,
+        "y": 35
+      },
+      "oldCoordinates": {
+        "x": 800,
+        "y": 350
+      }
+    },
+    {
+      "systemNumber": 41,
+      "systemId": "palantia",
+      "systemName": "팔란티아 성계",
+      "systemNameJa": "パランティア星系",
+      "systemNameEn": "Palantia",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "palantia_ii",
+          "planetName": "팔란티아 2",
+          "planetNameJa": "パランティア2",
+          "planetNameEn": "Palantia II",
+          "faction": "alliance",
+          "stats": {
+            "population": 1551,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 34
+          }
+        },
+        {
+          "planetId": "palantia_iii",
+          "planetName": "팔란티아 3",
+          "planetNameJa": "パランティア3",
+          "planetNameEn": "Palantia III",
+          "faction": "alliance",
+          "stats": {
+            "population": 1001,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 42
+          }
+        },
+        {
+          "planetId": "palantia_iv",
+          "planetName": "팔란티아 4",
+          "planetNameJa": "パランティア4",
+          "planetNameEn": "Palantia IV",
+          "faction": "alliance",
+          "stats": {
+            "population": 1581,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 29
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 20,
+        "y": 39
+      },
+      "oldCoordinates": {
+        "x": 400,
+        "y": 390
+      }
+    },
+    {
+      "systemNumber": 42,
+      "systemId": "valhalla",
+      "systemName": "발할라 성계",
+      "systemNameJa": "ヴァルハラ星系",
+      "systemNameEn": "Valhalla",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "odin",
+          "planetName": "오딘",
+          "planetNameJa": "オーディン",
+          "planetNameEn": "Odin",
+          "faction": "empire",
+          "description": "제국 수도",
+          "isCapital": true,
+          "strategicValue": "capital",
+          "facilities": [
+            "노이에 상수시",
+            "은하제국 유년학교",
+            "은하제국 사관학교",
+            "제아들러(고급장교 클럽)"
+          ],
+          "hasShipyard": true,
+          "stats": {
+            "population": 38769,
+            "industry": 100,
+            "technology": 70,
+            "defense": 85,
+            "resources": 100,
+            "loyalty": 95
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "高速戦艦Ⅰ",
+            "高速戦艦Ⅱ",
+            "巡航艦Ⅰ",
+            "駆逐艦Ⅰ",
+            "駆逐艦Ⅱ"
+          ]
+        },
+        {
+          "planetId": "thor",
+          "planetName": "토르",
+          "planetNameJa": "トゥール",
+          "planetNameEn": "Thor",
+          "faction": "empire",
+          "stats": {
+            "population": 1150,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 90,
+            "loyalty": 89
+          }
+        },
+        {
+          "planetId": "valgrind",
+          "planetName": "발그린드",
+          "planetNameJa": "ヴァルグリンド",
+          "planetNameEn": "Valgrind",
+          "faction": "empire",
+          "stats": {
+            "population": 1157,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 90,
+            "loyalty": 79
+          }
+        }
+      ],
+      "description": "은하제국 수도 성계",
+      "strategicValue": "capital",
+      "gridCoordinates": {
+        "x": 39,
+        "y": 40
+      },
+      "oldCoordinates": {
+        "x": 790,
+        "y": 400
+      }
+    },
+    {
+      "systemNumber": 43,
+      "systemId": "lantemario",
+      "systemName": "란테마리오 성계",
+      "systemNameJa": "ランテマリオ星系",
+      "systemNameEn": "Lantemario",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "svantovit",
+          "planetName": "스벤토비트",
+          "planetNameJa": "スヴェン・ヴィト",
+          "planetNameEn": "Svantovit",
+          "faction": "alliance",
+          "stats": {
+            "population": 2891,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 92
+          }
+        },
+        {
+          "planetId": "yarovit",
+          "planetName": "야로비트",
+          "planetNameJa": "ヤロヴィト",
+          "planetNameEn": "Yarovit",
+          "faction": "alliance",
+          "stats": {
+            "population": 2791,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 85
+          }
+        }
+      ],
+      "description": "란테마리오 성역 회전 발생지. 인구 밀집 전략 요충지",
+      "strategicValue": "high",
+      "historicalSignificance": "제1차, 제2차 란테마리오 성역 회전",
+      "gridCoordinates": {
+        "x": 17,
+        "y": 42
+      },
+      "oldCoordinates": {
+        "x": 350,
+        "y": 420
+      }
+    },
+    {
+      "systemNumber": 44,
+      "systemId": "forseti",
+      "systemName": "포르세티 성계",
+      "systemNameJa": "フォルセティ星系",
+      "systemNameEn": "Forseti",
+      "faction": "alliance",
+      "planets": [],
+      "gridCoordinates": {
+        "x": 19,
+        "y": 42
+      },
+      "oldCoordinates": {
+        "x": 380,
+        "y": 420
+      }
+    },
+    {
+      "systemNumber": 45,
+      "systemId": "trabach",
+      "systemName": "트라바흐 성계",
+      "systemNameJa": "トラーバッハ星系",
+      "systemNameEn": "Trabach",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "falkenweiler",
+          "planetName": "팔켄빌러",
+          "planetNameJa": "ファルクヴィーラー",
+          "planetNameEn": "Falkenweiler",
+          "faction": "empire",
+          "stats": {
+            "population": 926,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        },
+        {
+          "planetId": "sternenberg",
+          "planetName": "슈테르넨베르크",
+          "planetNameJa": "シュテルネンベルク",
+          "planetNameEn": "Sternenberg",
+          "faction": "empire",
+          "stats": {
+            "population": 933,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 90
+          }
+        },
+        {
+          "planetId": "traben",
+          "planetName": "트라벤",
+          "planetNameJa": "トラーベン",
+          "planetNameEn": "Traben",
+          "faction": "empire",
+          "stats": {
+            "population": 1448,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 26,
+        "y": 43
+      },
+      "oldCoordinates": {
+        "x": 530,
+        "y": 430
+      }
+    },
+    {
+      "systemNumber": 46,
+      "systemId": "thanatos",
+      "systemName": "타나토스 성계",
+      "systemNameJa": "タナトス星系",
+      "systemNameEn": "Thanatos",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "proskinas",
+          "planetName": "프로스키나스",
+          "planetNameJa": "プロスキナス",
+          "planetNameEn": "Proskinas",
+          "faction": "alliance",
+          "stats": {
+            "population": 454,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          }
+        },
+        {
+          "planetId": "masjid",
+          "planetName": "마스지드",
+          "planetNameJa": "マスジット",
+          "planetNameEn": "Masjid",
+          "faction": "alliance",
+          "stats": {
+            "population": 565,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          }
+        },
+        {
+          "planetId": "ker",
+          "planetName": "케르",
+          "planetNameJa": "ケール",
+          "planetNameEn": "Ker",
+          "faction": "alliance",
+          "stats": {
+            "population": 583,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        }
+      ],
+      "description": "타나토스 성계",
+      "gridCoordinates": {
+        "x": 2,
+        "y": 45
+      },
+      "oldCoordinates": {
+        "x": 50,
+        "y": 450
+      }
+    },
+    {
+      "systemNumber": 47,
+      "systemId": "vermilion",
+      "systemName": "버밀리언 성계",
+      "systemNameJa": "バーミリオン星系",
+      "systemNameEn": "Vermilion",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "loton",
+          "planetName": "로톤",
+          "planetNameJa": "ロートン",
+          "planetNameEn": "Loton",
+          "faction": "alliance",
+          "stats": {
+            "population": 5167,
+            "industry": 20,
+            "technology": 30,
+            "defense": 70,
+            "resources": 90,
+            "loyalty": 76
+          }
+        },
+        {
+          "planetId": "cascade",
+          "planetName": "캐스케이드",
+          "planetNameJa": "カスケード",
+          "planetNameEn": "Cascade",
+          "faction": "alliance",
+          "stats": {
+            "population": 3466,
+            "industry": 20,
+            "technology": 30,
+            "defense": 70,
+            "resources": 90,
+            "loyalty": 87
+          }
+        }
+      ],
+      "description": "버밀리언 성역 회전 발생지. 라인하르트의 흑역사",
+      "strategicValue": "critical",
+      "historicalSignificance": "양 웬리 vs 라인하르트 최후의 대결",
+      "gridCoordinates": {
+        "x": 7,
+        "y": 48
+      },
+      "oldCoordinates": {
+        "x": 150,
+        "y": 480
+      }
+    },
+    {
+      "systemNumber": 48,
+      "systemId": "alvis",
+      "systemName": "알비스 성계",
+      "systemNameJa": "アルヴィース星系",
+      "systemNameEn": "Alvis",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "thrud",
+          "planetName": "스루드",
+          "planetNameJa": "スルード",
+          "planetNameEn": "Thrud",
+          "faction": "empire",
+          "stats": {
+            "population": 1325,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 85
+          }
+        },
+        {
+          "planetId": "untergrn",
+          "planetName": "운터그륀",
+          "planetNameJa": "ウンターグリューン",
+          "planetNameEn": "Untergrün",
+          "faction": "empire",
+          "stats": {
+            "population": 1213,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        },
+        {
+          "planetId": "vangal",
+          "planetName": "방갈",
+          "planetNameJa": "ヴァンガル",
+          "planetNameEn": "Vangal",
+          "faction": "empire",
+          "stats": {
+            "population": 1228,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 32,
+        "y": 48
+      },
+      "oldCoordinates": {
+        "x": 650,
+        "y": 480
+      }
+    },
+    {
+      "systemNumber": 49,
+      "systemId": "mar_adetta",
+      "systemName": "마르 아데타 성계",
+      "systemNameJa": "マル・アデッタ星系",
+      "systemNameEn": "Mar Adetta",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "averanos",
+          "planetName": "아베라노스",
+          "planetNameJa": "アヴェラノス",
+          "planetNameEn": "Averanos",
+          "faction": "alliance",
+          "stats": {
+            "population": 1939,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 90
+          }
+        },
+        {
+          "planetId": "farnese",
+          "planetName": "파르네제",
+          "planetNameJa": "ファルネーゼ",
+          "planetNameEn": "Farnese",
+          "faction": "alliance",
+          "stats": {
+            "population": 2339,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 84
+          }
+        },
+        {
+          "planetId": "mantova",
+          "planetName": "만토바",
+          "planetNameJa": "マントヴァ",
+          "planetNameEn": "Mantova",
+          "faction": "alliance",
+          "stats": {
+            "population": 2225,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 75,
+            "loyalty": 90
+          }
+        }
+      ],
+      "description": "마르 아데타 성역 회전 발생지. 자유행성동맹군 최후의 전장",
+      "strategicValue": "high",
+      "historicalSignificance": "자유행성동맹군의 최후를 알린 전투",
+      "gridCoordinates": {
+        "x": 17,
+        "y": 49
+      },
+      "oldCoordinates": {
+        "x": 350,
+        "y": 490
+      }
+    },
+    {
+      "systemNumber": 50,
+      "systemId": "firezard",
+      "systemName": "파이어자드 성계",
+      "systemNameJa": "ファイアザード星系",
+      "systemNameEn": "Firezard",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "firezard_ii",
+          "planetName": "파이어자드 2",
+          "planetNameJa": "ファイアザード2",
+          "planetNameEn": "Firezard II",
+          "faction": "alliance",
+          "stats": {
+            "population": 1774,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 24
+          }
+        },
+        {
+          "planetId": "firezard_iii",
+          "planetName": "파이어자드 3",
+          "planetNameJa": "ファイアザード3",
+          "planetNameEn": "Firezard III",
+          "faction": "alliance",
+          "stats": {
+            "population": 1704,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 45
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 21,
+        "y": 49
+      },
+      "oldCoordinates": {
+        "x": 420,
+        "y": 490
+      }
+    },
+    {
+      "systemNumber": 51,
+      "systemId": "asgard",
+      "systemName": "아스가르드 성계",
+      "systemNameJa": "アスガルド星系",
+      "systemNameEn": "Asgard",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "ginnungagap",
+          "planetName": "긴눈가가프",
+          "planetNameJa": "ギンヌンガガブ",
+          "planetNameEn": "Ginnungagap",
+          "faction": "empire",
+          "stats": {
+            "population": 1306,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 88
+          }
+        },
+        {
+          "planetId": "teutoburg",
+          "planetName": "토이토부르크",
+          "planetNameJa": "トイトブルク",
+          "planetNameEn": "Teutoburg",
+          "faction": "empire",
+          "stats": {
+            "population": 916,
+            "industry": 20,
+            "technology": 85,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 90
+          },
+          "production": [
+            "雷撃艇母艦Ⅱ",
+            "雷撃艇母艦Ⅲ",
+            "巡航艦Ⅶ"
+          ]
+        },
+        {
+          "planetId": "idavellir",
+          "planetName": "이다벨리르",
+          "planetNameJa": "イーダリル",
+          "planetNameEn": "Idavellir",
+          "faction": "empire",
+          "stats": {
+            "population": 1438,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 92
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 39,
+        "y": 48
+      },
+      "oldCoordinates": {
+        "x": 780,
+        "y": 480
+      }
+    },
+    {
+      "systemNumber": 52,
+      "systemId": "tassili",
+      "systemName": "타실리 성계",
+      "systemNameJa": "タッシリ星系",
+      "systemNameEn": "Tassili",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "adrar_souf",
+          "planetName": "아드라르 소우프",
+          "planetNameJa": "アドラル・ソアフ",
+          "planetNameEn": "Adrar Souf",
+          "faction": "alliance",
+          "stats": {
+            "population": 468,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        },
+        {
+          "planetId": "tuareg",
+          "planetName": "투아레그",
+          "planetNameJa": "トゥアレグ",
+          "planetNameEn": "Tuareg",
+          "faction": "alliance",
+          "stats": {
+            "population": 441,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 92
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 12,
+        "y": 52
+      },
+      "oldCoordinates": {
+        "x": 250,
+        "y": 520
+      }
+    },
+    {
+      "systemNumber": 53,
+      "systemId": "wormsgau",
+      "systemName": "보름스가우 성계",
+      "systemNameJa": "ウォームスガウ星系",
+      "systemNameEn": "Wormsgau",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "konrad",
+          "planetName": "콘라트",
+          "planetNameJa": "コンラート",
+          "planetNameEn": "Konrad",
+          "faction": "empire",
+          "stats": {
+            "population": 1542,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        },
+        {
+          "planetId": "bruno",
+          "planetName": "브루노",
+          "planetNameJa": "ブルーノ",
+          "planetNameEn": "Bruno",
+          "faction": "empire",
+          "stats": {
+            "population": 1064,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        },
+        {
+          "planetId": "liudolf",
+          "planetName": "리우돌프",
+          "planetNameJa": "リウドルフ",
+          "planetNameEn": "Liudolf",
+          "faction": "empire",
+          "stats": {
+            "population": 1233,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 42,
+        "y": 48
+      },
+      "oldCoordinates": {
+        "x": 840,
+        "y": 480
+      }
+    },
+    {
+      "systemNumber": 54,
+      "systemId": "schantau",
+      "systemName": "샨타우 성계",
+      "systemNameJa": "シャンタウ星系",
+      "systemNameEn": "Schantau",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "hakendorf",
+          "planetName": "하켄도르프",
+          "planetNameJa": "ハーケンドルフ",
+          "planetNameEn": "Hakendorf",
+          "faction": "empire",
+          "stats": {
+            "population": 1458,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 86
+          }
+        },
+        {
+          "planetId": "neuenkirchen",
+          "planetName": "노이엔키르헨",
+          "planetNameJa": "ノイエンキルヒェン",
+          "planetNameEn": "Neuenkirchen",
+          "faction": "empire",
+          "stats": {
+            "population": 958,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 89
+          }
+        },
+        {
+          "planetId": "seedorf",
+          "planetName": "제도르프",
+          "planetNameJa": "ゼードルフ",
+          "planetNameEn": "Seedorf",
+          "faction": "empire",
+          "stats": {
+            "population": 1428,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 37,
+        "y": 55
+      },
+      "oldCoordinates": {
+        "x": 750,
+        "y": 550
+      }
+    },
+    {
+      "systemNumber": 55,
+      "systemId": "chandalua",
+      "systemName": "샨달루아 성계",
+      "systemNameJa": "シャンダルーア星系",
+      "systemNameEn": "Chandalua",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "chandalua_ii",
+          "planetName": "샨달루아 2",
+          "planetNameJa": "シャンダルーア2",
+          "planetNameEn": "Chandalua II",
+          "faction": "alliance",
+          "stats": {
+            "population": 400,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 88
+          }
+        },
+        {
+          "planetId": "chandalua_iii",
+          "planetName": "샨달루아 3",
+          "planetNameJa": "シャンダルーア3",
+          "planetNameEn": "Chandalua III",
+          "faction": "alliance",
+          "stats": {
+            "population": 577,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 19,
+        "y": 55
+      },
+      "oldCoordinates": {
+        "x": 380,
+        "y": 550
+      }
+    },
+    {
+      "systemNumber": 56,
+      "systemId": "armentobel",
+      "systemName": "아르멘토벨 성계",
+      "systemNameJa": "アルメントフベール星系",
+      "systemNameEn": "Armentobel",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "gernsheim",
+          "planetName": "게른스하임",
+          "planetNameJa": "ゲルンスハイム",
+          "planetNameEn": "Gernsheim",
+          "faction": "empire",
+          "stats": {
+            "population": 1477,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        },
+        {
+          "planetId": "alsbach",
+          "planetName": "알스바흐",
+          "planetNameJa": "アルスバッハ",
+          "planetNameEn": "Alsbach",
+          "faction": "empire",
+          "stats": {
+            "population": 1508,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 86
+          }
+        },
+        {
+          "planetId": "kleeberg",
+          "planetName": "클레베르크",
+          "planetNameJa": "クレーベルク",
+          "planetNameEn": "Kleeberg",
+          "faction": "empire",
+          "stats": {
+            "population": 1052,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 77
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 27,
+        "y": 57
+      },
+      "oldCoordinates": {
+        "x": 540,
+        "y": 570
+      }
+    },
+    {
+      "systemNumber": 57,
+      "systemId": "rio_verde",
+      "systemName": "리오 베르데 성계",
+      "systemNameJa": "リオ・ヴェルデ星系",
+      "systemNameEn": "Rio Verde",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "san_carlos",
+          "planetName": "산 카를로스",
+          "planetNameJa": "サン・カルロス",
+          "planetNameEn": "San Carlos",
+          "faction": "alliance",
+          "stats": {
+            "population": 544,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        },
+        {
+          "planetId": "llano_blanco",
+          "planetName": "야노 블랑코",
+          "planetNameJa": "リアノ・ブランコ",
+          "planetNameEn": "Llano Blanco",
+          "faction": "alliance",
+          "stats": {
+            "population": 706,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          }
+        },
+        {
+          "planetId": "isla_blanca",
+          "planetName": "이슬라 블랑카",
+          "planetNameJa": "イスラ・ブランカ",
+          "planetNameEn": "Isla Blanca",
+          "faction": "alliance",
+          "stats": {
+            "population": 621,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 89
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 5,
+        "y": 57
+      },
+      "oldCoordinates": {
+        "x": 100,
+        "y": 570
+      }
+    },
+    {
+      "systemNumber": 58,
+      "systemId": "altena",
+      "systemName": "알테나 성계",
+      "systemNameJa": "アルテナ星系",
+      "systemNameEn": "Altena",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "nachrodt",
+          "planetName": "나흐로트",
+          "planetNameJa": "ナッハロート",
+          "planetNameEn": "Nachrodt",
+          "faction": "empire",
+          "stats": {
+            "population": 2221,
+            "industry": 20,
+            "technology": 90,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 21
+          },
+          "production": [
+            "巡航艦Ⅷ"
+          ]
+        },
+        {
+          "planetId": "neuenrade",
+          "planetName": "노이엔라데",
+          "planetNameJa": "ノイエンラーデ",
+          "planetNameEn": "Neuenrade",
+          "faction": "empire",
+          "stats": {
+            "population": 2849,
+            "industry": 20,
+            "technology": 65,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 50
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "高速戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "駆逐艦Ⅰ"
+          ]
+        },
+        {
+          "planetId": "hemtfeld",
+          "planetName": "헴트펠트",
+          "planetNameJa": "ヘートフェルト",
+          "planetNameEn": "Hemtfeld",
+          "faction": "empire",
+          "stats": {
+            "population": 2526,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 24
+          }
+        }
+      ],
+      "territoryType": "disputed",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 35,
+        "y": 58
+      },
+      "oldCoordinates": {
+        "x": 700,
+        "y": 580
+      }
+    },
+    {
+      "systemNumber": 59,
+      "systemId": "eleuthera",
+      "systemName": "엘리세라 성계",
+      "systemNameJa": "エリューセラ星系",
+      "systemNameEn": "Eleuthera",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "ponte_crepaldo",
+          "planetName": "폰테 크레팔도",
+          "planetNameJa": "ポンテ・クレパルド",
+          "planetNameEn": "Ponte Crepaldo",
+          "faction": "alliance",
+          "stats": {
+            "population": 691,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          }
+        },
+        {
+          "planetId": "krukkid",
+          "planetName": "크룩키드",
+          "planetNameJa": "クルッキド",
+          "planetNameEn": "Krukkid",
+          "faction": "alliance",
+          "stats": {
+            "population": 621,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 85
+          }
+        },
+        {
+          "planetId": "andros",
+          "planetName": "안드로스",
+          "planetNameJa": "アンドロス",
+          "planetNameEn": "Andros",
+          "faction": "alliance",
+          "stats": {
+            "population": 721,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 2,
+        "y": 60
+      },
+      "oldCoordinates": {
+        "x": 40,
+        "y": 600
+      }
+    },
+    {
+      "systemNumber": 60,
+      "systemId": "freya",
+      "systemName": "프레이야 성계",
+      "systemNameJa": "フレイア星系",
+      "systemNameEn": "Freya",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "fensalir",
+          "planetName": "펜살리르",
+          "planetNameJa": "フェンサリル",
+          "planetNameEn": "Fensalir",
+          "faction": "empire",
+          "stats": {
+            "population": 3242,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 45,
+            "loyalty": 93
+          }
+        },
+        {
+          "planetId": "brisingamen",
+          "planetName": "브리싱가멘",
+          "planetNameJa": "ブリシンガメン",
+          "planetNameEn": "Brisingamen",
+          "faction": "empire",
+          "stats": {
+            "population": 2770,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 45,
+            "loyalty": 80
+          }
+        },
+        {
+          "planetId": "rentenberg_fortress",
+          "planetName": "렌텐베르크 요새",
+          "planetNameJa": "レンテンベルグ要塞",
+          "planetNameEn": "Rentenberg Fortress",
+          "faction": "empire",
+          "type": "fortress",
+          "strategicValue": "high",
+          "description": "프레이야 성계의 제국 요새",
+          "hasShipyard": true,
+          "stats": {
+            "population": 172,
+            "industry": 80,
+            "technology": 60,
+            "defense": 95,
+            "resources": 65,
+            "loyalty": 82
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "駆逐艦Ⅱ"
+          ]
+        }
+      ],
+      "description": "프레이야 성계. 렌텐베르크 요새 소재지",
+      "strategicValue": "normal",
+      "gridCoordinates": {
+        "x": 30,
+        "y": 60
+      },
+      "oldCoordinates": {
+        "x": 610,
+        "y": 600
+      }
+    },
+    {
+      "systemNumber": 61,
+      "systemId": "gandharva",
+      "systemName": "간다르바 성계",
+      "systemNameJa": "ガンダルヴァ星系",
+      "systemNameEn": "Gandharva",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "kartikeya",
+          "planetName": "카르티케야",
+          "planetNameJa": "カルティケーヤ",
+          "planetNameEn": "Kartikeya",
+          "faction": "alliance",
+          "stats": {
+            "population": 426,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          }
+        },
+        {
+          "planetId": "agastya",
+          "planetName": "아가스티야",
+          "planetNameJa": "アガスティア",
+          "planetNameEn": "Agastya",
+          "faction": "alliance",
+          "stats": {
+            "population": 539,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        },
+        {
+          "planetId": "varuna",
+          "planetName": "바루나",
+          "planetNameJa": "ヴァルナ",
+          "planetNameEn": "Varuna",
+          "faction": "alliance",
+          "stats": {
+            "population": 489,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 90
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 16,
+        "y": 62
+      },
+      "oldCoordinates": {
+        "x": 330,
+        "y": 620
+      }
+    },
+    {
+      "systemNumber": 62,
+      "systemId": "raigarh",
+      "systemName": "라이갈 성계",
+      "systemNameJa": "ライガール星系",
+      "systemNameEn": "Raigarh",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "milpala",
+          "planetName": "밀팔라",
+          "planetNameJa": "ミルパラ",
+          "planetNameEn": "Milpala",
+          "faction": "alliance",
+          "stats": {
+            "population": 652,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          }
+        },
+        {
+          "planetId": "ayuara",
+          "planetName": "아유아라",
+          "planetNameJa": "アユアラ",
+          "planetNameEn": "Ayuara",
+          "faction": "alliance",
+          "stats": {
+            "population": 681,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 10,
+        "y": 62
+      },
+      "oldCoordinates": {
+        "x": 200,
+        "y": 620
+      }
+    },
+    {
+      "systemNumber": 63,
+      "systemId": "winstingen",
+      "systemName": "빈스팅겐 성계",
+      "systemNameJa": "ヴィンスティンゲン星系",
+      "systemNameEn": "Winstingen",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "witt",
+          "planetName": "비트",
+          "planetNameJa": "ヴィート",
+          "planetNameEn": "Witt",
+          "faction": "empire",
+          "stats": {
+            "population": 1168,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        },
+        {
+          "planetId": "isenburg",
+          "planetName": "이젠부르크",
+          "planetNameJa": "イーゼンブルク",
+          "planetNameEn": "Isenburg",
+          "faction": "empire",
+          "stats": {
+            "population": 1499,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 42,
+        "y": 60
+      },
+      "oldCoordinates": {
+        "x": 840,
+        "y": 600
+      }
+    },
+    {
+      "systemNumber": 64,
+      "systemId": "phezzan",
+      "systemName": "페잔 성계",
+      "systemNameJa": "フェザーン星系",
+      "systemNameEn": "Phezzan",
+      "faction": "phezzan",
+      "planets": [
+        {
+          "planetId": "liudolfink",
+          "planetName": "리우돌핑크",
+          "planetNameJa": "リウドルフィンク",
+          "planetNameEn": "Liudolfink",
+          "faction": "phezzan",
+          "stats": {
+            "population": 2301,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 81
+          }
+        },
+        {
+          "planetId": "zariel",
+          "planetName": "자리엘",
+          "planetNameJa": "ザリエル",
+          "planetNameEn": "Zariel",
+          "faction": "phezzan",
+          "stats": {
+            "population": 1890,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 75
+          }
+        },
+        {
+          "planetId": "phezzan",
+          "planetName": "페잔",
+          "planetNameJa": "フェザーン",
+          "planetNameEn": "Phezzan",
+          "faction": "phezzan",
+          "description": "페잔 수도",
+          "isCapital": true,
+          "strategicValue": "high",
+          "facilities": [
+            "페잔 회랑",
+            "호랑가시나무관",
+            "페잔 중앙우주항",
+            "상테레제 광장",
+            "지구교 페잔지부"
+          ],
+          "stats": {
+            "population": 8903,
+            "industry": 40,
+            "technology": 30,
+            "defense": 85,
+            "resources": 80,
+            "loyalty": 95
+          }
+        }
+      ],
+      "description": "페잔 자치령 수도 성계. 은하 경제의 중심지",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 22,
+        "y": 68
+      },
+      "oldCoordinates": {
+        "x": 450,
+        "y": 680
+      }
+    },
+    {
+      "systemNumber": 65,
+      "systemId": "waldemar",
+      "systemName": "발데마르 성계",
+      "systemNameJa": "ヴァルデマール星系",
+      "systemNameEn": "Waldemar",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "paul",
+          "planetName": "파울",
+          "planetNameJa": "パウル",
+          "planetNameEn": "Paul",
+          "faction": "empire",
+          "stats": {
+            "population": 1144,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 89
+          }
+        },
+        {
+          "planetId": "linke",
+          "planetName": "링케",
+          "planetNameJa": "リンケ",
+          "planetNameEn": "Linke",
+          "faction": "empire",
+          "stats": {
+            "population": 996,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 39,
+        "y": 68
+      },
+      "oldCoordinates": {
+        "x": 780,
+        "y": 680
+      }
+    },
+    {
+      "systemNumber": 66,
+      "systemId": "wittelsbach",
+      "systemName": "비텔스바흐 성계",
+      "systemNameJa": "ヴィッテルスバッハ星系",
+      "systemNameEn": "Wittelsbach",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "nymphenburg",
+          "planetName": "뉼펜부르크",
+          "planetNameJa": "ニュンフェンブルク",
+          "planetNameEn": "Nymphenburg",
+          "faction": "empire",
+          "stats": {
+            "population": 1197,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          }
+        },
+        {
+          "planetId": "viktualien",
+          "planetName": "빅투아리엔",
+          "planetNameJa": "ヴィクトアーリエン",
+          "planetNameEn": "Viktualien",
+          "faction": "empire",
+          "stats": {
+            "population": 1182,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 91
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 41,
+        "y": 70
+      },
+      "oldCoordinates": {
+        "x": 820,
+        "y": 700
+      }
+    },
+    {
+      "systemNumber": 67,
+      "systemId": "eisenherz",
+      "systemName": "아이젠헤르츠 성계",
+      "systemNameJa": "アイゼンヘルツ星系",
+      "systemNameEn": "Eisenherz",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "gaiesburg_fortress",
+          "planetName": "가이에스부르크 요새",
+          "planetNameJa": "ガイエスブルク要塞",
+          "planetNameEn": "Gaiesburg Fortress",
+          "faction": "empire",
+          "type": "fortress",
+          "strategicValue": "high",
+          "description": "제국의 이동식 요새. 라인하르트가 이동작전 실행",
+          "hasShipyard": true,
+          "canMove": true,
+          "historicalSignificance": "가이에스부르크 이동작전",
+          "stats": {
+            "population": 138,
+            "industry": 95,
+            "technology": 80,
+            "defense": 98,
+            "resources": 65,
+            "loyalty": 93
+          },
+          "production": [
+            "戦艦Ⅰ",
+            "高速戦艦Ⅰ",
+            "巡航艦Ⅰ",
+            "駆逐艦Ⅰ",
+            "雷撃艇母艦Ⅰ",
+            "巡航艦Ⅵ"
+          ]
+        },
+        {
+          "planetId": "radomer",
+          "planetName": "라도메르",
+          "planetNameJa": "ラドメール",
+          "planetNameEn": "Radomer",
+          "faction": "empire",
+          "stats": {
+            "population": 6981,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 83
+          }
+        },
+        {
+          "planetId": "gotha",
+          "planetName": "고타",
+          "planetNameJa": "ゴータ",
+          "planetNameEn": "Gotha",
+          "faction": "empire",
+          "stats": {
+            "population": 7263,
+            "industry": 20,
+            "technology": 30,
+            "defense": 55,
+            "resources": 65,
+            "loyalty": 82
+          }
+        }
+      ],
+      "description": "아이젠헤르츠 성계. 가이에스부르크 요새 소재지",
+      "strategicValue": "high",
+      "gridCoordinates": {
+        "x": 27,
+        "y": 68
+      },
+      "oldCoordinates": {
+        "x": 540,
+        "y": 680
+      }
+    },
+    {
+      "systemNumber": 68,
+      "systemId": "polevit",
+      "systemName": "폴레비트 성계",
+      "systemNameJa": "ポレヴィト星系",
+      "systemNameEn": "Polevit",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "chernobog",
+          "planetName": "체르노보그",
+          "planetNameJa": "チェルノボーグ",
+          "planetNameEn": "Chernobog",
+          "faction": "alliance",
+          "stats": {
+            "population": 717,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        },
+        {
+          "planetId": "svarog",
+          "planetName": "스바로그",
+          "planetNameJa": "スヴァローグ",
+          "planetNameEn": "Svarog",
+          "faction": "alliance",
+          "stats": {
+            "population": 600,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 76
+          }
+        },
+        {
+          "planetId": "polevik",
+          "planetName": "폴레비크",
+          "planetNameJa": "ポレヴィーク",
+          "planetNameEn": "Polevik",
+          "faction": "alliance",
+          "stats": {
+            "population": 582,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 88
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 24,
+        "y": 68
+      },
+      "oldCoordinates": {
+        "x": 480,
+        "y": 680
+      }
+    },
+    {
+      "systemNumber": 69,
+      "systemId": "tripura",
+      "systemName": "트리플라 성계",
+      "systemNameJa": "トリプラ星系",
+      "systemNameEn": "Tripura",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "agartala",
+          "planetName": "아가탈라",
+          "planetNameJa": "アガタラ",
+          "planetNameEn": "Agartala",
+          "faction": "alliance",
+          "stats": {
+            "population": 554,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 90
+          }
+        },
+        {
+          "planetId": "kalyanpur",
+          "planetName": "칼리얀푸르",
+          "planetNameJa": "カリャンプール",
+          "planetNameEn": "Kalyanpur",
+          "faction": "alliance",
+          "stats": {
+            "population": 413,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          }
+        },
+        {
+          "planetId": "isfahan",
+          "planetName": "이스파한",
+          "planetNameJa": "イスファハン",
+          "planetNameEn": "Isfahan",
+          "faction": "alliance",
+          "stats": {
+            "population": 621,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 12,
+        "y": 70
+      },
+      "oldCoordinates": {
+        "x": 250,
+        "y": 700
+      }
+    },
+    {
+      "systemNumber": 70,
+      "systemId": "jtunheim",
+      "systemName": "예툰하임 성계",
+      "systemNameJa": "ヨーツンヘイム星系",
+      "systemNameEn": "Jötunheim",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "jtunheim",
+          "planetName": "예툰하임",
+          "planetNameJa": "ヨーツンヘイム",
+          "planetNameEn": "Jötunheim",
+          "faction": "empire",
+          "stats": {
+            "population": 1153,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          }
+        },
+        {
+          "planetId": "elivagar",
+          "planetName": "엘리바가르",
+          "planetNameJa": "エーリヴァーガル",
+          "planetNameEn": "Elivagar",
+          "faction": "empire",
+          "stats": {
+            "population": 1526,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 82
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 31,
+        "y": 72
+      },
+      "oldCoordinates": {
+        "x": 620,
+        "y": 720
+      }
+    },
+    {
+      "systemNumber": 71,
+      "systemId": "baratrup",
+      "systemName": "바라트루프 성계",
+      "systemNameJa": "バラトループ星系",
+      "systemNameEn": "Baratrup",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "baratrup_ii",
+          "planetName": "바라트루프 2",
+          "planetNameJa": "バラトループ2",
+          "planetNameEn": "Baratrup II",
+          "faction": "alliance",
+          "stats": {
+            "population": 627,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 93
+          }
+        },
+        {
+          "planetId": "baratrup_iii",
+          "planetName": "바라트루프 3",
+          "planetNameJa": "バラトループ3",
+          "planetNameEn": "Baratrup III",
+          "faction": "alliance",
+          "stats": {
+            "population": 403,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 79
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 19,
+        "y": 75
+      },
+      "oldCoordinates": {
+        "x": 380,
+        "y": 750
+      }
+    },
+    {
+      "systemNumber": 72,
+      "systemId": "rammelsberg",
+      "systemName": "람멜스베르크 성계",
+      "systemNameJa": "ランメルスベルク星系",
+      "systemNameEn": "Rammelsberg",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "hartenstein",
+          "planetName": "할텐슈타인",
+          "planetNameJa": "ハルテンシュタイン",
+          "planetNameEn": "Hartenstein",
+          "faction": "empire",
+          "stats": {
+            "population": 1436,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          }
+        },
+        {
+          "planetId": "himmelsfrst",
+          "planetName": "힘멜스퓌르스트",
+          "planetNameJa": "ヒンメルスフュルスト",
+          "planetNameEn": "Himmelsfürst",
+          "faction": "empire",
+          "stats": {
+            "population": 1400,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        },
+        {
+          "planetId": "schlema",
+          "planetName": "슐레마",
+          "planetNameJa": "シュレマ",
+          "planetNameEn": "Schlema",
+          "faction": "empire",
+          "stats": {
+            "population": 1260,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 40,
+        "y": 75
+      },
+      "oldCoordinates": {
+        "x": 800,
+        "y": 750
+      }
+    },
+    {
+      "systemNumber": 73,
+      "systemId": "braunschweig",
+      "systemName": "브라운슈바이크 성계",
+      "systemNameJa": "ブラウンシュヴァイク星系",
+      "systemNameEn": "Braunschweig",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "wedel",
+          "planetName": "베델",
+          "planetNameJa": "ヴェーデル",
+          "planetNameEn": "Wedel",
+          "faction": "empire",
+          "stats": {
+            "population": 2114,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 45,
+            "loyalty": 75
+          }
+        },
+        {
+          "planetId": "schpenstedt",
+          "planetName": "쇼펜슈테트",
+          "planetNameJa": "ショーペンシュタット",
+          "planetNameEn": "Schöpenstedt",
+          "faction": "empire",
+          "stats": {
+            "population": 2988,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 45,
+            "loyalty": 93
+          }
+        },
+        {
+          "planetId": "volkenrode",
+          "planetName": "폴켄로데",
+          "planetNameJa": "フォルケンローデ",
+          "planetNameEn": "Volkenrode",
+          "faction": "empire",
+          "stats": {
+            "population": 3618,
+            "industry": 20,
+            "technology": 30,
+            "defense": 35,
+            "resources": 45,
+            "loyalty": 79
+          }
+        }
+      ],
+      "description": "브라운슈바이크 공작가의 영지",
+      "strategicValue": "normal",
+      "gridCoordinates": {
+        "x": 33,
+        "y": 77
+      },
+      "oldCoordinates": {
+        "x": 670,
+        "y": 770
+      }
+    },
+    {
+      "systemNumber": 74,
+      "systemId": "littenheim",
+      "systemName": "리텐하임 성계",
+      "systemNameJa": "リッテンハイム星系",
+      "systemNameEn": "Littenheim",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "duntzenheim",
+          "planetName": "뒨첸하임",
+          "planetNameJa": "デュンツェンハイム",
+          "planetNameEn": "Duntzenheim",
+          "faction": "empire",
+          "stats": {
+            "population": 1261,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        },
+        {
+          "planetId": "altenheim",
+          "planetName": "알텐하임",
+          "planetNameJa": "アルテンハイム",
+          "planetNameEn": "Altenheim",
+          "faction": "empire",
+          "stats": {
+            "population": 1436,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 94
+          }
+        },
+        {
+          "planetId": "rogendorf",
+          "planetName": "로겐도르프",
+          "planetNameJa": "ローゲンドルフ",
+          "planetNameEn": "Rogendorf",
+          "faction": "empire",
+          "stats": {
+            "population": 1242,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 38,
+        "y": 80
+      },
+      "oldCoordinates": {
+        "x": 770,
+        "y": 800
+      }
+    },
+    {
+      "systemNumber": 75,
+      "systemId": "melkart",
+      "systemName": "멜카르트 성계",
+      "systemNameJa": "メルカルト星系",
+      "systemNameEn": "Melkart",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "nergal",
+          "planetName": "네르갈",
+          "planetNameJa": "ネルガル",
+          "planetNameEn": "Nergal",
+          "faction": "alliance",
+          "stats": {
+            "population": 671,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 91
+          }
+        },
+        {
+          "planetId": "baal_zaphon",
+          "planetName": "바알 차폰",
+          "planetNameJa": "バール・ザフォン",
+          "planetNameEn": "Baal Zaphon",
+          "faction": "alliance",
+          "stats": {
+            "population": 634,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 16,
+        "y": 77
+      },
+      "oldCoordinates": {
+        "x": 320,
+        "y": 770
+      }
+    },
+    {
+      "systemNumber": 76,
+      "systemId": "kiphoiser",
+      "systemName": "키포이저 성계",
+      "systemNameJa": "キフォイザー星系",
+      "systemNameEn": "Kiphoiser",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "rohrbach",
+          "planetName": "로르바흐",
+          "planetNameJa": "ロールバッハ",
+          "planetNameEn": "Rohrbach",
+          "faction": "empire",
+          "stats": {
+            "population": 1006,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 89
+          }
+        },
+        {
+          "planetId": "wagenbach",
+          "planetName": "바겐바흐",
+          "planetNameJa": "ヴァーゲンバッハ",
+          "planetNameEn": "Wagenbach",
+          "faction": "empire",
+          "stats": {
+            "population": 1186,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 77
+          }
+        },
+        {
+          "planetId": "waltenkirchen",
+          "planetName": "발텐키르헨",
+          "planetNameJa": "ヴァルテンキルヒェン",
+          "planetNameEn": "Waltenkirchen",
+          "faction": "empire",
+          "stats": {
+            "population": 1145,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 87
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 34,
+        "y": 83
+      },
+      "oldCoordinates": {
+        "x": 690,
+        "y": 830
+      }
+    },
+    {
+      "systemNumber": 77,
+      "systemId": "polyn",
+      "systemName": "폴린 성계",
+      "systemNameJa": "ポリーン星系",
+      "systemNameEn": "Polyn",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "bereket",
+          "planetName": "베레켓",
+          "planetNameJa": "ベレケト",
+          "planetNameEn": "Bereket",
+          "faction": "alliance",
+          "stats": {
+            "population": 701,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        },
+        {
+          "planetId": "kirnis",
+          "planetName": "키르니스",
+          "planetNameJa": "キルニス",
+          "planetNameEn": "Kirnis",
+          "faction": "alliance",
+          "stats": {
+            "population": 489,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 84
+          }
+        },
+        {
+          "planetId": "dayan_khan_base",
+          "planetName": "다얀 칸 기지",
+          "planetNameJa": "ダヤン・ハーン",
+          "planetNameEn": "Dayan Khan Base",
+          "faction": "alliance",
+          "type": "base",
+          "stats": {
+            "population": 409,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 7,
+        "y": 82
+      },
+      "oldCoordinates": {
+        "x": 150,
+        "y": 820
+      }
+    },
+    {
+      "systemNumber": 78,
+      "systemId": "schpara",
+      "systemName": "슈팔라 성계",
+      "systemNameJa": "シュパーラ星系",
+      "systemNameEn": "Schpara",
+      "faction": "alliance",
+      "planets": [
+        {
+          "planetId": "visca_grande",
+          "planetName": "비스카 그란데",
+          "planetNameJa": "ヴィスカ・グランデ",
+          "planetNameEn": "Visca Grande",
+          "faction": "alliance",
+          "stats": {
+            "population": 664,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 80
+          }
+        },
+        {
+          "planetId": "ciudad_rodrigo",
+          "planetName": "시우다드 로드리고",
+          "planetNameJa": "シウダ・ロドリゴ",
+          "planetNameEn": "Ciudad Rodrigo",
+          "faction": "alliance",
+          "stats": {
+            "population": 586,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 92
+          }
+        },
+        {
+          "planetId": "vyshkov",
+          "planetName": "비슈코프",
+          "planetNameJa": "ヴィシュコフ",
+          "planetNameEn": "Vyshkov",
+          "faction": "alliance",
+          "stats": {
+            "population": 491,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 88
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 12,
+        "y": 83
+      },
+      "oldCoordinates": {
+        "x": 250,
+        "y": 830
+      }
+    },
+    {
+      "systemNumber": 79,
+      "systemId": "baldur",
+      "systemName": "발두르 성계",
+      "systemNameJa": "バルドル星系",
+      "systemNameEn": "Baldur",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "hringhorni",
+          "planetName": "흘링호르니",
+          "planetNameJa": "フリングオルニ",
+          "planetNameEn": "Hringhorni",
+          "faction": "empire",
+          "stats": {
+            "population": 923,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 83
+          }
+        },
+        {
+          "planetId": "glitnir",
+          "planetName": "글리트니르",
+          "planetNameJa": "グリトニル",
+          "planetNameEn": "Glitnir",
+          "faction": "empire",
+          "stats": {
+            "population": 1512,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 75
+          }
+        },
+        {
+          "planetId": "hd",
+          "planetName": "호드",
+          "planetNameJa": "ホズ",
+          "planetNameEn": "Höd",
+          "faction": "empire",
+          "stats": {
+            "population": 1316,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 78
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 37,
+        "y": 85
+      },
+      "oldCoordinates": {
+        "x": 740,
+        "y": 850
+      }
+    },
+    {
+      "systemNumber": 80,
+      "systemId": "forgen",
+      "systemName": "포르겐 성계",
+      "systemNameJa": "フォルゲン星系",
+      "systemNameEn": "Forgen",
+      "faction": "empire",
+      "planets": [
+        {
+          "planetId": "fssen",
+          "planetName": "퓌센",
+          "planetNameJa": "フュッセン",
+          "planetNameEn": "Füssen",
+          "faction": "empire",
+          "stats": {
+            "population": 1055,
+            "industry": 20,
+            "technology": 30,
+            "defense": 30,
+            "resources": 40,
+            "loyalty": 81
+          }
+        }
+      ],
+      "gridCoordinates": {
+        "x": 29,
+        "y": 85
+      },
+      "oldCoordinates": {
+        "x": 580,
+        "y": 850
+      }
+    }
+  ],
+  "metadata": {
+    "totalStarSystems": 80,
+    "totalPlanets": 208,
+    "empireCount": 39,
+    "allianceCount": 40,
+    "phezzanCount": 1,
+    "disputedCount": 9,
+    "notes": [
+      "이 데이터는 은하영웅전설 소설, 게임, OVA 등을 종합한 자료입니다",
+      "분쟁지역은 이제르론 회랑 주변의 제국-동맹 경계 지역입니다",
+      "소속은 게임 시작 시점 또는 전통적 소속을 나타냅니다"
+    ]
+  },
+  "statistics": {
+    "totalEmpirePopulation": 206520,
+    "totalAlliancePopulation": 130748,
+    "totalPhezzanPopulation": 13094,
+    "empirePopulationBillion": "206.5",
+    "alliancePopulationBillion": "130.7",
+    "phezzanPopulationBillion": "13.1",
+    "note": "1 billion = 1,000 million. Fleet maintenance: ~250 million population per fleet (2.5% conscription rate)"
+  },
+  "coordinateSystem": {
+    "type": "grid",
+    "gridSize": {
+      "width": 100,
+      "height": 50
+    },
+    "note": "Grid coordinates based on navigable map (100x50)",
+    "origin": "Top-left (0, 0)",
+    "xAxis": "Left to right (0-99)",
+    "yAxis": "Top to bottom (0-49)"
+  }
+}

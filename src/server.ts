@@ -132,6 +132,10 @@ export async function createApp(): Promise<Express> {
   app.use('/api/logh', loghCommanderRoutes);
   app.use('/api/logh', loghFleetRoutes);
   app.use('/api/logh', loghCommandRoutes);
+  
+  // LOGH 실시간 시스템 라우트
+  const loghMainRoutes = require('./routes/logh.routes').default;
+  app.use('/api/logh', loghMainRoutes);
 
   // 에러 미들웨어
   app.use(errorMiddleware);
@@ -341,6 +345,16 @@ async function start() {
       logger.info('세션 영속화 데몬 시작 완료');
     } else {
       logger.info('세션 영속화 데몬 비활성화됨 (ENABLE_SESSION_PERSISTER=false)');
+    }
+    
+    // LOGH 게임 루프 시작 (환경 변수로 제어 가능)
+    if (process.env.ENABLE_LOGH_GAME_LOOP === 'true') {
+      const { GameLoopManager } = await import('./services/logh/GameLoop.service');
+      const loghSessionId = process.env.LOGH_SESSION_ID || 'logh_default';
+      GameLoopManager.startLoop(loghSessionId);
+      logger.info('LOGH 게임 루프 시작 완료', { sessionId: loghSessionId });
+    } else {
+      logger.info('LOGH 게임 루프 비활성화됨 (ENABLE_LOGH_GAME_LOOP=false)');
     }
     
     // HTTP 서버 시작

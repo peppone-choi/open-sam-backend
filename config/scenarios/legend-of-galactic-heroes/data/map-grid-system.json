@@ -1,0 +1,262 @@
+{
+  "gridSystem": {
+    "description": "전략 게임 맵은 100광년 단위 그리드로 구분",
+    "descriptionJa": "戦略ゲームで使用する戦略地図は100光年単位のグリッドで区切られています",
+    "gridSize": "100 광년",
+    "gridTypes": [
+      {
+        "id": "space",
+        "name": "공간 그리드",
+        "nameJa": "空間グリッド",
+        "description": "아무것도 없는 우주 공간"
+      },
+      {
+        "id": "star_system",
+        "name": "성계 그리드",
+        "nameJa": "星系グリッド",
+        "description": "성계를 포함하는 그리드"
+      },
+      {
+        "id": "impassable",
+        "name": "항행 불능 그리드",
+        "nameJa": "航行不能グリッド",
+        "description": "원칙적으로 유닛 진입 불가"
+      }
+    ],
+    "entryRestrictions": [
+      {
+        "type": "unit_limit",
+        "name": "유닛 수 제한",
+        "limit": 300,
+        "per": "진영",
+        "description": "1개 그리드에 진입 가능한 함선 유닛 수는 진영당 300 유닛 이하",
+        "includes": ["행성 수비대", "육전대"],
+        "note": "부대 전체가 진입할 여지 필요"
+      },
+      {
+        "type": "faction_limit",
+        "name": "진영 수 제한",
+        "limit": 2,
+        "description": "1개 그리드에 존재 가능한 진영은 최대 2개",
+        "note": "정규군과 반란군은 별도 카운트"
+      },
+      {
+        "type": "solo_flagship",
+        "name": "독행함 단독 항행 제한",
+        "description": "독행함은 독행함 이외의 적 유닛이 있거나 적 행성/요새가 있는 성계 그리드에 진입 불가",
+        "exception": "아군 함정 유닛이 있어 전술 게임 중이면 제한 적용 안됨"
+      },
+      {
+        "type": "terrain",
+        "name": "지형 제한",
+        "description": "지형 장애(플라즈마 폭풍, 사르가소 스페이스) 그리드는 모든 기함/함정 유닛 진입 불가"
+      }
+    ],
+    "warpSystem": {
+      "description": "그리드 간 이동은 워프 항행으로 수행",
+      "restrictions": [
+        {
+          "type": "star_system_entry",
+          "rule": "성계 그리드 진입 시 반드시 인접 그리드를 거쳐야 함",
+          "reason": "원거리에서 직접 워프 진입 불가"
+        },
+        {
+          "type": "warp_error",
+          "description": "장거리 워프 시 도착지에 오차 발생 가능",
+          "result": "목표 그리드에 인접한 공간 그리드로 이동"
+        },
+        {
+          "type": "navigation_cost",
+          "resource": "항속",
+          "requirement": 100,
+          "description": "항속 100 미만 시 워프 항행 실행 불가"
+        }
+      ],
+      "timeScale": {
+        "description": "게임 내 시간은 실시간의 24배 속도",
+        "conversions": [
+          {
+            "real": "1초",
+            "game": "24초"
+          },
+          {
+            "real": "60초",
+            "game": "24분"
+          },
+          {
+            "real": "60분",
+            "game": "24시간 (1일)"
+          },
+          {
+            "real": "24시간",
+            "game": "24일"
+          },
+          {
+            "real": "30시간",
+            "game": "30일 (1개월)"
+          }
+        ]
+      }
+    }
+  },
+  "tacticalGameTrigger": {
+    "startCondition": "1개 그리드에 아군과 적군 유닛이 동시 존재",
+    "endConditions": [
+      "그리드 내 적 세력 유닛 전멸",
+      "행성/요새 그리드의 경우: 모든 행성/요새 점령"
+    ],
+    "timeFlow": "전술 게임도 전략 게임과 동일한 시간 경과",
+    "nonParticipants": "다른 플레이어는 전술 게임 발생 여부와 무관하게 계속 플레이"
+  },
+  "facilities": {
+    "planets": {
+      "description": "성계 내 행성",
+      "facilities": [
+        {
+          "id": "government_office",
+          "name": "정청",
+          "nameJa": "政庁",
+          "function": "행정 시설"
+        },
+        {
+          "id": "defense_command",
+          "name": "방위사령부",
+          "nameJa": "防衛司令部",
+          "function": "군사 지휘"
+        },
+        {
+          "id": "shipyard",
+          "name": "조병공창",
+          "nameJa": "造兵工廠",
+          "function": "함정 건조",
+          "note": "없으면 유닛 생산 불가"
+        },
+        {
+          "id": "warehouse",
+          "name": "창고",
+          "nameJa": "倉庫",
+          "types": [
+            {
+              "type": "planet_warehouse",
+              "name": "행성 창고",
+              "management": "중앙 정부 관할",
+              "auto": "생산 완성품 자동 보관"
+            },
+            {
+              "type": "unit_warehouse",
+              "name": "부대 창고",
+              "management": "담당 부대 전용",
+              "note": "순찰대/지상부대는 일괄 창고"
+            }
+          ]
+        },
+        {
+          "id": "residence",
+          "name": "거주구",
+          "nameJa": "居住区",
+          "function": "캐릭터 거주지"
+        },
+        {
+          "id": "hotel",
+          "name": "호텔",
+          "nameJa": "ホテル",
+          "function": "임시 숙박 시설"
+        },
+        {
+          "id": "academy",
+          "name": "사관학교",
+          "nameJa": "士官学校",
+          "function": "능력 훈련",
+          "commands": ["수강", "병기연습", "강의"]
+        },
+        {
+          "id": "central_square",
+          "name": "중앙광장",
+          "nameJa": "中央広場",
+          "function": "연설 장소"
+        }
+      ]
+    },
+    "fortresses": {
+      "description": "군사 요새",
+      "examples": ["이제르론 요새", "가이에스부르크 요새"],
+      "weapons": {
+        "fortress_cannon": {
+          "name": "요새포",
+          "nameJa": "要塞砲",
+          "power": "초강력",
+          "warning": "아군도 피격 가능",
+          "mechanics": [
+            "사선상 모든 기함/함정 유닛에 자동 명중",
+            "발사 방향 특정 후 충전 시작",
+            "충전 완료와 동시에 자동 발사"
+          ]
+        }
+      }
+    }
+  },
+  "occupationSystem": {
+    "description": "행성/요새 점령 시 처리",
+    "descriptionJa": "惑星/要塞占領時の処理",
+    "triggers": "행성/요새 상의 적 육전대 완전 제거",
+    "effects": [
+      {
+        "type": "authority_card_loss",
+        "description": "패배 진영의 행성/요새 고유 직무권한 카드 즉시 상실",
+        "examples": ["행성 총독", "행성 수비대 지휘관", "봉토 카드"]
+      },
+      {
+        "type": "authority_card_gain",
+        "description": "점령 진영이 행성/요새 고유 직무권한 카드 획득",
+        "note": "유효화는 별도 임명 필요"
+      },
+      {
+        "type": "garrison_surrender",
+        "description": "패배 진영 행성 수비대 육전대 전멸"
+      },
+      {
+        "type": "emergency_sortie",
+        "description": "행성/요새 내 패배 진영 캐릭터 전원 기함과 함께 즉시 출격, 정박 상태"
+      },
+      {
+        "type": "confiscation",
+        "description": "창고 내 군수물자 전부 점령 진영 소유",
+        "destruction": "건조 중 함정, 계류소, 창고 내 함정 유닛 전부 파괴"
+      },
+      {
+        "type": "facility_transfer",
+        "description": "행성/요새 상 모든 시설 점령 진영 소유"
+      },
+      {
+        "type": "jurisdiction",
+        "description": "제국군 점령 행성/요새는 자동으로 황실 직할령"
+      }
+    ]
+  },
+  "productionSystem": {
+    "vessels": {
+      "location": "각 행성/요새 내 조병공창",
+      "requirement": "조병공창 보유 필요",
+      "automatic": true,
+      "note": "현 버전에서 자동 생산. 설정 변경 불가. 세입 영향 없음"
+    },
+    "soldiers": {
+      "types": ["승무원", "육전병"],
+      "method": "각 행성 인구에서 모병",
+      "requirement": "거주 가능 행성, 인구 보유",
+      "effect": "모병 시 해당 행성 징세 수입 감소",
+      "training": {
+        "levels": ["엘리트", "베테랑", "노멀", "그린"],
+        "progression": "훈련 또는 실전 경험으로 숙련도 상승",
+        "initial": "그린만 생산 가능"
+      },
+      "automatic": true
+    }
+  },
+  "spots": {
+    "description": "캐릭터 소재를 나타내는 구획",
+    "examples": ["자택", "회의실", "주점"],
+    "chatRestriction": "채팅은 동일 스포트 또는 동일 그리드 같은 부대 내에서만 가능",
+    "tacticalException": "전술 게임 중에는 동일 그리드 내 전 아군과 채팅 가능"
+  }
+}

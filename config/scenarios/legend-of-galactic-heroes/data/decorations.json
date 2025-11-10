@@ -1,0 +1,1212 @@
+{
+  "description": "은하영웅전설 훈장 시스템",
+  "source": "project 은영전 최종 기획안 + GIN7 매뉴얼",
+  "decorations": {
+    "empire": {
+      "factionName": "은하제국",
+      "factionNameJa": "銀河帝国",
+      "decorations": [
+        {
+          "decorationId": "emp_great_double_eagle",
+          "name": "대쌍두독수리훈장",
+          "nameJa": "大双頭鷲勲章",
+          "grade": 1,
+          "tier": "supreme",
+          "description": "제국 최고 영예의 훈장. 제국에 결정적 공헌을 한 자에게만 수여",
+          "requirements": {
+            "minRank": "원수",
+            "minMerit": 50000,
+            "minBattles": 100,
+            "specialConditions": [
+              "결정적 승리 달성",
+              "적 수도 점령",
+              "황제 직접 수여"
+            ]
+          },
+          "effects": {
+            "influence": 500,
+            "prestige": 2000,
+            "rankLadder": 5,
+            "abilityBonus": {
+              "command": 5,
+              "leadership": 5
+            }
+          },
+          "awardedBy": "황제",
+          "maxRecipients": 5,
+          "rarity": "legendary"
+        },
+        {
+          "decorationId": "emp_double_eagle",
+          "name": "쌍두독수리훈장",
+          "nameJa": "双頭鷲勲章",
+          "grade": 2,
+          "tier": "supreme",
+          "description": "제국의 최고 무공훈장. 뛰어난 전공을 세운 장군에게 수여",
+          "requirements": {
+            "minRank": "원수",
+            "minMerit": 30000,
+            "minBattles": 70,
+            "specialConditions": [
+              "대규모 회전 승리"
+            ]
+          },
+          "effects": {
+            "influence": 300,
+            "prestige": 1500,
+            "rankLadder": 4,
+            "abilityBonus": {
+              "command": 3,
+              "attack": 3
+            }
+          },
+          "awardedBy": "황제",
+          "maxRecipients": 10,
+          "rarity": "legendary"
+        },
+        {
+          "decorationId": "emp_great_cross",
+          "name": "은하제국대십자장",
+          "nameJa": "銀河帝国大十字章",
+          "grade": 3,
+          "tier": "highest",
+          "description": "제국에 큰 공헌을 한 고위 장교에게 수여되는 영예",
+          "requirements": {
+            "minRank": "상급대장",
+            "minMerit": 20000,
+            "minBattles": 50
+          },
+          "effects": {
+            "influence": 200,
+            "prestige": 1000,
+            "rankLadder": 3,
+            "abilityBonus": {
+              "command": 2,
+              "politics": 2
+            }
+          },
+          "awardedBy": "군무상서",
+          "rarity": "epic"
+        },
+        {
+          "decorationId": "emp_knight_cross_gold_1",
+          "name": "공일급기사십자장",
+          "nameJa": "功一級騎士十字章",
+          "grade": 4,
+          "tier": "high",
+          "description": "탁월한 무공을 세운 장교에게 수여. 금색 약장",
+          "requirements": {
+            "minRank": "대장",
+            "minMerit": 15000,
+            "minBattles": 40
+          },
+          "effects": {
+            "influence": 150,
+            "prestige": 800,
+            "rankLadder": 3,
+            "abilityBonus": {
+              "leadership": 2,
+              "attack": 2
+            }
+          },
+          "awardedBy": "군무상서",
+          "rarity": "epic"
+        },
+        {
+          "decorationId": "emp_knight_cross_gold_2",
+          "name": "공이급기사십자장",
+          "nameJa": "功二級騎士十字章",
+          "grade": 5,
+          "tier": "high",
+          "description": "뛰어난 전투 지휘 능력을 인정받은 장교에게 수여",
+          "requirements": {
+            "minRank": "중장",
+            "minMerit": 10000,
+            "minBattles": 30
+          },
+          "effects": {
+            "influence": 120,
+            "prestige": 600,
+            "rankLadder": 2,
+            "abilityBonus": {
+              "leadership": 2,
+              "mobility": 1
+            }
+          },
+          "awardedBy": "군무상서",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_cross_gold_1",
+          "name": "공일급십자장",
+          "nameJa": "功一級十字章",
+          "grade": 6,
+          "tier": "medium",
+          "description": "전공을 인정받은 중급 장교에게 수여",
+          "requirements": {
+            "minRank": "소장",
+            "minMerit": 7000,
+            "minBattles": 20
+          },
+          "effects": {
+            "influence": 100,
+            "prestige": 500,
+            "rankLadder": 2,
+            "abilityBonus": {
+              "leadership": 1,
+              "attack": 1
+            }
+          },
+          "awardedBy": "군무상서",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_cross_gold_2",
+          "name": "공이급십자장",
+          "nameJa": "功二級十字章",
+          "grade": 7,
+          "tier": "medium",
+          "description": "전투에서 공을 세운 중급 장교에게 수여",
+          "requirements": {
+            "minRank": "준장",
+            "minMerit": 5000,
+            "minBattles": 15
+          },
+          "effects": {
+            "influence": 80,
+            "prestige": 400,
+            "rankLadder": 1,
+            "abilityBonus": {
+              "attack": 1,
+              "defense": 1
+            }
+          },
+          "awardedBy": "군무성인사국장",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_merit_cross_gold_1",
+          "name": "공일급전공장",
+          "nameJa": "功一級戦功章",
+          "grade": 8,
+          "tier": "medium",
+          "description": "전투에서 공헌을 인정받은 장교에게 수여",
+          "requirements": {
+            "minRank": "대령",
+            "minMerit": 3000,
+            "minBattles": 10
+          },
+          "effects": {
+            "influence": 60,
+            "prestige": 300,
+            "rankLadder": 1,
+            "abilityBonus": {
+              "attack": 1
+            }
+          },
+          "awardedBy": "군무성인사국장",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_merit_cross_gold_2",
+          "name": "공이급전공장",
+          "nameJa": "功二級戦功章",
+          "grade": 9,
+          "tier": "low",
+          "description": "전투 참가 공로를 인정받은 장교에게 수여",
+          "requirements": {
+            "minRank": "중령",
+            "minMerit": 2000,
+            "minBattles": 8
+          },
+          "effects": {
+            "influence": 50,
+            "prestige": 250,
+            "rankLadder": 1
+          },
+          "awardedBy": "군무성인사국장",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_merit_cross_gold_3",
+          "name": "공삼급전공장",
+          "nameJa": "功三級戦功章",
+          "grade": 10,
+          "tier": "low",
+          "description": "전투 임무 수행 공로 인정",
+          "requirements": {
+            "minRank": "소령",
+            "minMerit": 1500,
+            "minBattles": 6
+          },
+          "effects": {
+            "influence": 40,
+            "prestige": 200,
+            "rankLadder": 1
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "emp_merit_cross_silver",
+          "name": "공사급전공장",
+          "nameJa": "功四級戦功章",
+          "grade": 11,
+          "tier": "low",
+          "description": "전투 참가 공로 인정",
+          "requirements": {
+            "minRank": "대위",
+            "minMerit": 1000,
+            "minBattles": 5
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 150,
+            "rankLadder": 1
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "emp_merit_cross_bronze",
+          "name": "공오급전공장",
+          "nameJa": "功五級戦功章",
+          "grade": 12,
+          "tier": "low",
+          "description": "초급 장교의 전투 참가 인정",
+          "requirements": {
+            "minRank": "중위",
+            "minMerit": 500,
+            "minBattles": 3
+          },
+          "effects": {
+            "influence": 20,
+            "prestige": 100,
+            "rankLadder": 0
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "emp_expedition_medal",
+          "name": "원정부대공군기장",
+          "nameJa": "遠征部隊功軍記章",
+          "grade": 13,
+          "tier": "special",
+          "description": "원정 작전 참가 및 공헌 인정",
+          "requirements": {
+            "minRank": "소위",
+            "minMerit": 300,
+            "specialConditions": [
+              "원정 작전 참가"
+            ]
+          },
+          "effects": {
+            "influence": 15,
+            "prestige": 80
+          },
+          "awardedBy": "함대부사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "emp_combat_medal",
+          "name": "전투공적기장",
+          "nameJa": "戦闘功績記章",
+          "grade": 14,
+          "tier": "special",
+          "description": "전투에서의 공적을 인정",
+          "requirements": {
+            "minRank": "소위",
+            "minMerit": 200,
+            "minBattles": 2
+          },
+          "effects": {
+            "influence": 10,
+            "prestige": 60
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "emp_wound_medal",
+          "name": "전상장",
+          "nameJa": "戦傷章",
+          "grade": 15,
+          "tier": "special",
+          "description": "전투 중 부상당한 자에게 수여",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "전투 중 부상"
+            ]
+          },
+          "effects": {
+            "influence": 5,
+            "prestige": 40,
+            "morale": 10
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "emp_special_merit_1",
+          "name": "특별전공메달1",
+          "nameJa": "特別戦功メダル1",
+          "grade": 16,
+          "tier": "special",
+          "description": "특별한 전공 1회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 1회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_special_merit_2",
+          "name": "특별전공메달2",
+          "nameJa": "特別戦功メダル2",
+          "grade": 17,
+          "tier": "special",
+          "description": "특별한 전공 2회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 2회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_special_merit_3",
+          "name": "특별전공메달3",
+          "nameJa": "特別戦功メダル3",
+          "grade": 18,
+          "tier": "special",
+          "description": "특별한 전공 3회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 3회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_special_merit_4",
+          "name": "특별전공메달4",
+          "nameJa": "特別戦功メダル4",
+          "grade": 19,
+          "tier": "special",
+          "description": "특별한 전공 4회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 4회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_special_merit_5",
+          "name": "특별전공메달5",
+          "nameJa": "特別戦功メダル5",
+          "grade": 20,
+          "tier": "special",
+          "description": "특별한 전공 5회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 5회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "emp_special_merit_6",
+          "name": "특별전공메달6",
+          "nameJa": "特別戦功メダル6",
+          "grade": 21,
+          "tier": "special",
+          "description": "특별한 전공 6회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 6회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_special_merit_7",
+          "name": "특별전공메달7",
+          "nameJa": "特別戦功メダル7",
+          "grade": 22,
+          "tier": "special",
+          "description": "특별한 전공 7회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 7회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_special_merit_8",
+          "name": "특별전공메달8",
+          "nameJa": "特別戦功メダル8",
+          "grade": 23,
+          "tier": "special",
+          "description": "특별한 전공 8회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 8회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_special_merit_9",
+          "name": "특별전공메달9",
+          "nameJa": "特別戦功メダル9",
+          "grade": 24,
+          "tier": "special",
+          "description": "특별한 전공 9회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 9회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_special_merit_10",
+          "name": "특별전공메달10",
+          "nameJa": "特別戦功メダル10",
+          "grade": 25,
+          "tier": "special",
+          "description": "특별한 전공 10회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 10회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "emp_staff_badge",
+          "name": "참모기장",
+          "nameJa": "参謀記章",
+          "grade": 17,
+          "tier": "special",
+          "description": "참모 직위 임명 기념장",
+          "requirements": {
+            "minRank": "대위",
+            "specialConditions": [
+              "참모 직위 보유"
+            ]
+          },
+          "effects": {
+            "influence": 20,
+            "prestige": 100,
+            "abilityBonus": {
+              "politics": 1,
+              "administration": 1
+            }
+          },
+          "awardedBy": "함대참모장",
+          "rarity": "uncommon"
+        }
+      ]
+    },
+    "alliance": {
+      "factionName": "자유행성동맹",
+      "factionNameJa": "自由惑星同盟",
+      "decorations": [
+        {
+          "decorationId": "all_heinessen_medal",
+          "name": "알레 하이네센 특별 훈공대장",
+          "nameJa": "アーレ・ハイネセン特別勲功大章",
+          "grade": 1,
+          "tier": "supreme",
+          "description": "동맹 건국자 하이네센의 이름을 딴 최고 영예의 훈장",
+          "requirements": {
+            "minRank": "원수",
+            "minMerit": 50000,
+            "minBattles": 100,
+            "specialConditions": [
+              "동맹에 결정적 공헌",
+              "민주주의 수호",
+              "의장 직접 수여"
+            ]
+          },
+          "effects": {
+            "influence": 500,
+            "prestige": 2000,
+            "rankLadder": 5,
+            "abilityBonus": {
+              "command": 5,
+              "politics": 3
+            }
+          },
+          "awardedBy": "의장",
+          "maxRecipients": 5,
+          "rarity": "legendary"
+        },
+        {
+          "decorationId": "all_guen_kim_hoa_medal",
+          "name": "구엔 킴 호아 특별 훈공대장",
+          "nameJa": "グエン・キム・ホア特別勲功大章",
+          "grade": 2,
+          "tier": "supreme",
+          "description": "동맹 초대 국방위원장의 이름을 딴 최고 무공훈장",
+          "requirements": {
+            "minRank": "원수",
+            "minMerit": 30000,
+            "minBattles": 70,
+            "specialConditions": [
+              "대규모 회전 승리"
+            ]
+          },
+          "effects": {
+            "influence": 300,
+            "prestige": 1500,
+            "rankLadder": 4,
+            "abilityBonus": {
+              "command": 3,
+              "leadership": 3
+            }
+          },
+          "awardedBy": "의장",
+          "maxRecipients": 10,
+          "rarity": "legendary"
+        },
+        {
+          "decorationId": "all_supreme_council_honor",
+          "name": "자유행성동맹 최고평의회 명예훈장",
+          "nameJa": "自由惑星同盟最高評議会名誉勲章",
+          "grade": 3,
+          "tier": "highest",
+          "description": "최고평의회가 수여하는 최고 영예",
+          "requirements": {
+            "minRank": "원수",
+            "minMerit": 25000,
+            "minBattles": 60,
+            "specialConditions": [
+              "최고평의회 만장일치 결의"
+            ]
+          },
+          "effects": {
+            "influence": 250,
+            "prestige": 1200,
+            "rankLadder": 4,
+            "abilityBonus": {
+              "politics": 3,
+              "command": 2
+            }
+          },
+          "awardedBy": "최고평의회",
+          "rarity": "legendary"
+        },
+        {
+          "decorationId": "all_republican_war_medal",
+          "name": "공화국전쟁훈장",
+          "nameJa": "共和国戦争勲章",
+          "grade": 4,
+          "tier": "high",
+          "description": "공화국 수호에 큰 공헌을 한 자에게 수여",
+          "requirements": {
+            "minRank": "대장",
+            "minMerit": 20000,
+            "minBattles": 50
+          },
+          "effects": {
+            "influence": 200,
+            "prestige": 1000,
+            "rankLadder": 3,
+            "abilityBonus": {
+              "command": 2,
+              "defense": 2
+            }
+          },
+          "awardedBy": "국방위원장",
+          "rarity": "epic"
+        },
+        {
+          "decorationId": "all_republican_honor_medal",
+          "name": "공화국영예훈장",
+          "nameJa": "共和国栄誉勲章",
+          "grade": 5,
+          "tier": "high",
+          "description": "공화국에 영예로운 공적을 세운 자에게 수여",
+          "requirements": {
+            "minRank": "중장",
+            "minMerit": 15000,
+            "minBattles": 40
+          },
+          "effects": {
+            "influence": 150,
+            "prestige": 800,
+            "rankLadder": 3,
+            "abilityBonus": {
+              "leadership": 2,
+              "attack": 1
+            }
+          },
+          "awardedBy": "국방위원장",
+          "rarity": "epic"
+        },
+        {
+          "decorationId": "all_free_knight_1",
+          "name": "자유기사일등훈장",
+          "nameJa": "自由騎士一等勲章",
+          "grade": 6,
+          "tier": "high",
+          "description": "자유를 위해 싸운 기사에게 수여하는 1등 훈장",
+          "requirements": {
+            "minRank": "소장",
+            "minMerit": 10000,
+            "minBattles": 30
+          },
+          "effects": {
+            "influence": 120,
+            "prestige": 600,
+            "rankLadder": 2,
+            "abilityBonus": {
+              "leadership": 2,
+              "mobility": 1
+            }
+          },
+          "awardedBy": "통합작전본부장",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_free_knight_2",
+          "name": "자유기사이등훈장",
+          "nameJa": "自由騎士二等勲章",
+          "grade": 7,
+          "tier": "medium",
+          "description": "자유를 위해 싸운 기사에게 수여하는 2등 훈장",
+          "requirements": {
+            "minRank": "준장",
+            "minMerit": 7000,
+            "minBattles": 20
+          },
+          "effects": {
+            "influence": 100,
+            "prestige": 500,
+            "rankLadder": 2,
+            "abilityBonus": {
+              "attack": 1,
+              "defense": 1
+            }
+          },
+          "awardedBy": "통합작전본부장",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_free_knight_3",
+          "name": "자유기사삼등훈장",
+          "nameJa": "自由騎士三等勲章",
+          "grade": 8,
+          "tier": "medium",
+          "description": "자유를 위해 싸운 기사에게 수여하는 3등 훈장",
+          "requirements": {
+            "minRank": "대령",
+            "minMerit": 5000,
+            "minBattles": 15
+          },
+          "effects": {
+            "influence": 80,
+            "prestige": 400,
+            "rankLadder": 1,
+            "abilityBonus": {
+              "leadership": 1,
+              "attack": 1
+            }
+          },
+          "awardedBy": "함대사령장관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_honor_1",
+          "name": "일등영예훈장",
+          "nameJa": "一等栄誉勲章",
+          "grade": 9,
+          "tier": "medium",
+          "description": "뛰어난 공헌을 인정받은 장교에게 수여",
+          "requirements": {
+            "minRank": "중령",
+            "minMerit": 3000,
+            "minBattles": 10
+          },
+          "effects": {
+            "influence": 60,
+            "prestige": 300,
+            "rankLadder": 1
+          },
+          "awardedBy": "함대사령장관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_honor_2",
+          "name": "이등영예훈장",
+          "nameJa": "二等栄誉勲章",
+          "grade": 10,
+          "tier": "low",
+          "description": "공헌을 인정받은 장교에게 수여",
+          "requirements": {
+            "minRank": "소령",
+            "minMerit": 2000,
+            "minBattles": 8
+          },
+          "effects": {
+            "influence": 50,
+            "prestige": 250,
+            "rankLadder": 1
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_honor_3",
+          "name": "삼등영예훈장",
+          "nameJa": "三等栄誉勲章",
+          "grade": 11,
+          "tier": "low",
+          "description": "전투 임무 수행 공로 인정",
+          "requirements": {
+            "minRank": "대위",
+            "minMerit": 1500,
+            "minBattles": 6
+          },
+          "effects": {
+            "influence": 40,
+            "prestige": 200,
+            "rankLadder": 1
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "all_lin_pao_badge",
+          "name": "린 파오기장",
+          "nameJa": "リン・パオ記章",
+          "grade": 12,
+          "tier": "special",
+          "description": "동맹군 영웅 린 파오를 기리는 기장. 함대 지휘관에게 수여",
+          "requirements": {
+            "minRank": "소장",
+            "specialConditions": [
+              "함대사령관 임명"
+            ]
+          },
+          "effects": {
+            "influence": 50,
+            "prestige": 200,
+            "abilityBonus": {
+              "command": 1,
+              "leadership": 1
+            }
+          },
+          "awardedBy": "우주함대사령장관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_yusuf_topalo_badge",
+          "name": "유습 트파로울기장",
+          "nameJa": "ユースフ・トパロウル記章",
+          "grade": 13,
+          "tier": "special",
+          "description": "동맹군 영웅 유습 트파로울을 기리는 기장. 함대 부지휘관에게 수여",
+          "requirements": {
+            "minRank": "준장",
+            "specialConditions": [
+              "함대부사령관 임명"
+            ]
+          },
+          "effects": {
+            "influence": 40,
+            "prestige": 150,
+            "abilityBonus": {
+              "leadership": 1
+            }
+          },
+          "awardedBy": "우주함대사령장관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_military_merit_badge",
+          "name": "군무공로기장",
+          "nameJa": "軍務功労記章",
+          "grade": 14,
+          "tier": "special",
+          "description": "군무에 대한 공로를 인정",
+          "requirements": {
+            "minRank": "중위",
+            "minMerit": 1000,
+            "minBattles": 5
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "all_wound_medal",
+          "name": "명예부상훈장",
+          "nameJa": "名誉負傷勲章",
+          "grade": 15,
+          "tier": "special",
+          "description": "전투 중 명예롭게 부상당한 자에게 수여",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "전투 중 부상"
+            ]
+          },
+          "effects": {
+            "influence": 5,
+            "prestige": 40,
+            "morale": 10
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "common"
+        },
+        {
+          "decorationId": "all_special_merit_1",
+          "name": "특별전공메달1",
+          "nameJa": "特別戦功メダル1",
+          "grade": 16,
+          "tier": "special",
+          "description": "특별한 전공 1회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 1회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_special_merit_2",
+          "name": "특별전공메달2",
+          "nameJa": "特別戦功メダル2",
+          "grade": 17,
+          "tier": "special",
+          "description": "특별한 전공 2회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 2회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_special_merit_3",
+          "name": "특별전공메달3",
+          "nameJa": "特別戦功メダル3",
+          "grade": 18,
+          "tier": "special",
+          "description": "특별한 전공 3회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 3회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_special_merit_4",
+          "name": "특별전공메달4",
+          "nameJa": "特別戦功メダル4",
+          "grade": 19,
+          "tier": "special",
+          "description": "특별한 전공 4회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 4회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_special_merit_5",
+          "name": "특별전공메달5",
+          "nameJa": "特別戦功メダル5",
+          "grade": 20,
+          "tier": "special",
+          "description": "특별한 전공 5회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 5회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "uncommon"
+        },
+        {
+          "decorationId": "all_special_merit_6",
+          "name": "특별전공메달6",
+          "nameJa": "特別戦功メダル6",
+          "grade": 21,
+          "tier": "special",
+          "description": "특별한 전공 6회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 6회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_special_merit_7",
+          "name": "특별전공메달7",
+          "nameJa": "特別戦功メダル7",
+          "grade": 22,
+          "tier": "special",
+          "description": "특별한 전공 7회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 7회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_special_merit_8",
+          "name": "특별전공메달8",
+          "nameJa": "特別戦功メダル8",
+          "grade": 23,
+          "tier": "special",
+          "description": "특별한 전공 8회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 8회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_special_merit_9",
+          "name": "특별전공메달9",
+          "nameJa": "特別戦功メダル9",
+          "grade": 24,
+          "tier": "special",
+          "description": "특별한 전공 9회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 9회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_special_merit_10",
+          "name": "특별전공메달10",
+          "nameJa": "特別戦功メダル10",
+          "grade": 25,
+          "tier": "special",
+          "description": "특별한 전공 10회차 인정. 여러 차례 특별 임무를 성공한 증표",
+          "requirements": {
+            "minRank": "소위",
+            "specialConditions": [
+              "특별 임무 10회 성공"
+            ]
+          },
+          "effects": {
+            "influence": 30,
+            "prestige": 120
+          },
+          "awardedBy": "함대사령관",
+          "rarity": "rare"
+        },
+        {
+          "decorationId": "all_staff_badge",
+          "name": "참모기장",
+          "nameJa": "参謀記章",
+          "grade": 17,
+          "tier": "special",
+          "description": "참모 직위 임명 기념장",
+          "requirements": {
+            "minRank": "대위",
+            "specialConditions": [
+              "참모 직위 보유"
+            ]
+          },
+          "effects": {
+            "influence": 20,
+            "prestige": 100,
+            "abilityBonus": {
+              "intelligence": 1,
+              "administration": 1
+            }
+          },
+          "awardedBy": "함대참모장",
+          "rarity": "uncommon"
+        }
+      ]
+    }
+  },
+  "decorationSystem": {
+    "description": "훈장 시스템 규칙",
+    "awardingRules": {
+      "ceremony": {
+        "description": "서훈식 개최 시 추가 효과",
+        "effects": {
+          "influence": 20,
+          "factionSupport": 5,
+          "characterMorale": 10
+        },
+        "cost": 10000,
+        "duration": "1일"
+      },
+      "multiple": {
+        "description": "중복 수여 규칙",
+        "sameDecoration": "동일 훈장 중복 불가 (특별전공메달 제외)",
+        "differentGrade": "다른 등급 훈장 동시 보유 가능",
+        "upgrade": "하위 훈장 보유자는 상위 훈장 수여 시 교체"
+      },
+      "revocation": {
+        "description": "훈장 박탈 규칙",
+        "conditions": [
+          "반역죄",
+          "중대한 군율 위반",
+          "명예 실추 행위",
+          "적에게 항복"
+        ],
+        "effects": {
+          "influence": -200,
+          "prestige": -500,
+          "morale": -50
+        }
+      }
+    },
+    "displayRules": {
+      "maxVisible": 5,
+      "priority": "grade 순서 (높은 등급 우선)",
+      "stackedDisplay": "특별전공메달은 숫자로 표시 (예: 특별전공메달 x7)"
+    },
+    "historicalNotes": {
+      "empire": [
+        "쌍두독수리는 제국의 상징",
+        "근위병은 기본적으로 전상장 수여 대상",
+        "원수 계급은 최소 공일급십자장 보유"
+      ],
+      "alliance": [
+        "하이네센 훈장은 건국 이래 5명만 수여",
+        "자유기사 훈장은 민주주의 수호 상징",
+        "린 파오는 초대 우주함대사령장관"
+      ]
+    }
+  }
+}

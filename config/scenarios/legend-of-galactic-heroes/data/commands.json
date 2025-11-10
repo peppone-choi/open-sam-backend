@@ -14,24 +14,12 @@
           "nameEn": "Warp Navigation",
           "nameJa": "ワープ航行",
           "cpType": "MCP",
-          "cpCost": 10,
-          "description": "그리드 간 이동. 별계 그리드는 인접 그리드를 통해서만 진입 가능",
-          "descriptionJa": "グリッド間を移動するためにワープ航行を行います",
+          "cpCost": 40,
+          "description": "그리드 간 이동. 성계 그리드는 인접 그리드를 통해서만 진입 가능",
+          "descriptionJa": "グリッド間を移動するためにワープ航行を行います。移動距離に応じて消費CPと実行待機時間が変化",
           "executionDelay": 0,
           "executionDuration": "variable",
-          "restrictions": "항속 100 이상 필요"
-        },
-        {
-          "id": "port",
-          "name": "기항",
-          "nameEn": "Port",
-          "nameJa": "寄港",
-          "cpType": "MCP",
-          "cpCost": 5,
-          "description": "동일 별계 내 행성 간 이동",
-          "descriptionJa": "同じ星系の中にある惑星間を移動するために星系間航行を行う",
-          "executionDelay": 0,
-          "executionDuration": 10
+          "restrictions": "항속 100 이상 필요. 우주공간에서만 실행 가능"
         },
         {
           "id": "fuel_supply",
@@ -39,21 +27,165 @@
           "nameEn": "Fuel Supply",
           "nameJa": "燃料補給",
           "cpType": "MCP",
-          "cpCost": 0,
-          "description": "행성/요새에서 연료 보급",
-          "executionDelay": 0,
-          "executionDuration": 30
+          "cpCost": 160,
+          "description": "워프 연료 보급",
+          "executionDelay": 8,
+          "executionDuration": "48~960"
         },
         {
-          "id": "strategic_reconnaissance",
-          "name": "전략 색적",
-          "nameEn": "Strategic Reconnaissance",
-          "nameJa": "戦略索敵",
+          "id": "port",
+          "name": "성계 내 항행",
+          "nameEn": "Intersystem Navigation",
+          "nameJa": "星系内航行",
           "cpType": "MCP",
-          "cpCost": 15,
-          "description": "주변 그리드의 적 정보 수집",
+          "cpCost": 160,
+          "description": "성계 그리드 내 행성 간 이동",
+          "descriptionJa": "星系グリッド内の惑星間を移動",
+          "executionDelay": 8,
+          "executionDuration": 0
+        },
+        {
+          "id": "discipline_maintenance",
+          "name": "군기 유지",
+          "nameEn": "Discipline Maintenance",
+          "nameJa": "軍紀維持",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "군기 유지도를 증가시켜 혼란 발생률 저하",
           "executionDelay": 0,
-          "executionDuration": "continuous"
+          "executionDuration": 0
+        },
+        {
+          "id": "space_training",
+          "name": "항주 훈련",
+          "nameEn": "Space Navigation Training",
+          "nameJa": "航宙訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "부대 훈련도 증가",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "ground_training",
+          "name": "육전 훈련",
+          "nameEn": "Ground Combat Training",
+          "nameJa": "陸戦訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "육전 훈련도 증가",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "air_training",
+          "name": "공전 훈련",
+          "nameEn": "Air Combat Training",
+          "nameJa": "空戦訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "공전 훈련도 증가",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "ground_tactical_training",
+          "name": "육전 전술 훈련",
+          "nameEn": "Ground Tactical Training",
+          "nameJa": "陸戦戦術訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "육전 전술 스킬 습득",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "air_tactical_training",
+          "name": "공전 전술 훈련",
+          "nameEn": "Air Tactical Training",
+          "nameJa": "空戦戦術訓練",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "공전 전술 스킬 습득",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "alert_dispatch",
+          "name": "경계 출동",
+          "nameEn": "Alert Dispatch",
+          "nameJa": "警戒出動",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "description": "주둔 중인 육전대로 행성/요새의 치안 유지율 증가",
+          "executionDelay": 24,
+          "executionDuration": 0
+        },
+        {
+          "id": "armed_suppression",
+          "name": "무력 진압",
+          "nameEn": "Armed Suppression",
+          "nameJa": "武力鎮圧",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "description": "주둔 중인 육전대로 치안 유지율 증가. 정부 지지율 하락 가능성",
+          "executionDelay": 24,
+          "executionDuration": 0
+        },
+        {
+          "id": "parade",
+          "name": "분열 행진",
+          "nameEn": "Parade",
+          "nameJa": "分列行進",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "description": "주둔 중인 육전대로 행성의 정부 지지율 증가",
+          "executionDelay": 24,
+          "executionDuration": 0
+        },
+        {
+          "id": "requisition",
+          "name": "징발",
+          "nameEn": "Requisition",
+          "nameJa": "徴発",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "description": "점령한 타 세력의 행성/요새에서 군수물자 징발",
+          "executionDelay": 24,
+          "executionDuration": 0
+        },
+        {
+          "id": "special_security",
+          "name": "특별 경비",
+          "nameEn": "Special Security",
+          "nameJa": "特別警備",
+          "cpType": "MCP",
+          "cpCost": 160,
+          "description": "특정 경계 스포트의 경비 태세 강화",
+          "executionDelay": 0,
+          "executionDuration": 24
+        },
+        {
+          "id": "ground_forces_deploy",
+          "name": "육전대 출격",
+          "nameEn": "Ground Forces Deploy",
+          "nameJa": "陸戦隊出撃",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "행성/요새 전투에 대비해 전 육전대를 함정에서 주둔",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "ground_forces_withdraw",
+          "name": "육전대 철수",
+          "nameEn": "Ground Forces Withdraw",
+          "nameJa": "陸戦隊撤収",
+          "cpType": "MCP",
+          "cpCost": 80,
+          "description": "출격 중인 자부대의 전 육전대를 함정으로 철수",
+          "executionDelay": 0,
+          "executionDuration": 0
         }
       ]
     },
@@ -62,7 +194,7 @@
       "name": "개인 커맨드군",
       "nameEn": "Personal Commands",
       "nameJa": "個人コマンド群",
-      "description": "모든 캐릭터가 공통으로 보유. 별계 내 이동 및 개인 행동. 대부분 개인 카드에 포함",
+      "description": "모든 캐릭터가 공통으로 보유. 성계 내 이동 및 개인 행동. 대부분 개인 카드에 포함",
       "descriptionJa": "全てのキャラクターが共通して保有しているコマンド群です。主に星系内での移動やキャラクター個人単位で実行するコマンドとなっています",
       "commands": [
         {
@@ -71,11 +203,11 @@
           "nameEn": "Long Distance Movement",
           "nameJa": "遠距離移動",
           "cpType": "PCP",
-          "cpCost": 5,
-          "description": "행성 내 시설 간 이동",
-          "descriptionJa": "惑星内の施設間を移動する",
+          "cpCost": 10,
+          "description": "행성/요새 상의 시설 간 이동",
+          "descriptionJa": "惑星/要塞上の施設間を移動",
           "executionDelay": 0,
-          "executionDuration": 5
+          "executionDuration": 0
         },
         {
           "id": "short_distance_move",
@@ -83,22 +215,154 @@
           "nameEn": "Short Distance Movement",
           "nameJa": "近距離移動",
           "cpType": "PCP",
-          "cpCost": 0,
-          "description": "시설 내 방 간 이동",
-          "descriptionJa": "同じ施設内の部屋を移動する",
+          "cpCost": 5,
+          "description": "시설 내 스포트 간 이동",
+          "descriptionJa": "施設内のスポット間を移動",
           "executionDelay": 0,
-          "executionDuration": 1
+          "executionDuration": 0
         },
         {
-          "id": "rest",
-          "name": "휴식",
-          "nameEn": "Rest",
-          "nameJa": "休息",
+          "id": "retirement",
+          "name": "퇴역",
+          "nameEn": "Retirement",
+          "nameJa": "退役",
           "cpType": "PCP",
-          "cpCost": 0,
-          "description": "자택/호텔/거주구에서 휴식",
+          "cpCost": 160,
+          "description": "군을 물러나 정치가가 됨. 퇴역 후 30G일간 지원 커맨드 사용 불가",
           "executionDelay": 0,
-          "executionDuration": 60
+          "executionDuration": 0
+        },
+        {
+          "id": "volunteer",
+          "name": "지원",
+          "nameEn": "Volunteer",
+          "nameJa": "志願",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "description": "정치가를 은퇴하고 군인이 됨. 계급은 소좌, 기함은 전함으로 변경",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "defection",
+          "name": "망명",
+          "nameEn": "Defection",
+          "nameJa": "亡命",
+          "cpType": "PCP",
+          "cpCost": 320,
+          "description": "타 세력에 망명. 망명 후 망명처 수도에 구금되어 처단 대기",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "meeting",
+          "name": "회견",
+          "nameEn": "Meeting",
+          "nameJa": "会見",
+          "cpType": "PCP",
+          "cpCost": 10,
+          "description": "동일 스포트에 체류하는 인물과 회견하여 우호도 상승",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "study",
+          "name": "수강",
+          "nameEn": "Study",
+          "nameJa": "受講",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "description": "능력 파라미터 증가. 사관학교에서만 실행 가능",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "war_game",
+          "name": "병기 연습",
+          "nameEn": "War Game",
+          "nameJa": "兵棋演習",
+          "cpType": "PCP",
+          "cpCost": 10,
+          "description": "시뮬레이터로 전술 훈련 수행. 사관학교에서만 실행 가능",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "rebellion_intention",
+          "name": "반의",
+          "nameEn": "Rebellion Intention",
+          "nameJa": "叛意",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "description": "쿠데타의 수모자가 됨",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "conspiracy",
+          "name": "모의",
+          "nameEn": "Conspiracy",
+          "nameJa": "謀議",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "description": "동일 스포트에 체류하는 인물에게 쿠데타 참가 교섭",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "persuasion",
+          "name": "설득",
+          "nameEn": "Persuasion",
+          "nameJa": "説得",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "description": "소속 부대에 배치된 유닛의 반란 충성도 상승",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "revolt",
+          "name": "반란",
+          "nameEn": "Revolt",
+          "nameJa": "叛乱",
+          "cpType": "PCP",
+          "cpCost": 640,
+          "description": "쿠데타 실행",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "join",
+          "name": "참가",
+          "nameEn": "Join",
+          "nameJa": "参加",
+          "cpType": "PCP",
+          "cpCost": 160,
+          "description": "참가 교섭에 동의한 쿠데타에 참가",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "fund_investment",
+          "name": "자금 투입",
+          "nameEn": "Fund Investment",
+          "nameJa": "資金投入",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "description": "사적 계좌에서 자금 투입. 지방자금고/신임박스/지지박스",
+          "executionDelay": 0,
+          "executionDuration": 0
+        },
+        {
+          "id": "flagship_purchase",
+          "name": "기함 구입",
+          "nameEn": "Flagship Purchase",
+          "nameJa": "旗艦購入",
+          "cpType": "PCP",
+          "cpCost": 80,
+          "description": "새 기함 구입. 평가 포인트 소비 필요",
+          "executionDelay": 0,
+          "executionDuration": 0
         }
       ]
     },
@@ -126,13 +390,13 @@
               "id": "occupation",
               "name": "점령 작전",
               "nameJa": "占領作戦",
-              "description": "적 별계 점령"
+              "description": "적 성계 점령"
             },
             {
               "id": "defense",
               "name": "방어 작전",
               "nameJa": "防衛作戦",
-              "description": "아군 별계 방어"
+              "description": "아군 성계 방어"
             },
             {
               "id": "sweep",

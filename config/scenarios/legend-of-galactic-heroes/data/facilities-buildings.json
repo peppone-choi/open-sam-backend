@@ -1,0 +1,459 @@
+{
+  "facilities": {
+    "description": "행성과 요새 내 시설 및 건물",
+    "descriptionJa": "惑星/要塞上の施設",
+    "planetFacilities": [
+      {
+        "id": "government_office",
+        "name": "정청",
+        "nameJa": "政庁",
+        "description": "행성 행정 본부",
+        "functions": [
+          "행성 총독/지사 집무",
+          "행정 업무 수행",
+          "예산 관리"
+        ],
+        "residents": ["행성 총독/지사", "행정 관료"]
+      },
+      {
+        "id": "defense_hq",
+        "name": "방위사령부",
+        "nameJa": "防衛司令部",
+        "description": "행성 군사 지휘 본부",
+        "functions": [
+          "행성 수비대 지휘",
+          "방어 작전 수립",
+          "요새포 사격 지휘 (요새의 경우)"
+        ],
+        "residents": ["방위사령관", "참모진"],
+        "commands": ["요새포 사격", "방어 명령"]
+      },
+      {
+        "id": "shipyard",
+        "name": "조병공창",
+        "nameJa": "造兵工廠",
+        "description": "함정 건조 시설",
+        "functions": [
+          "함정 유닛 건조",
+          "함선 수리"
+        ],
+        "production": {
+          "automatic": true,
+          "note": "조병공창이 없는 행성/요새는 유닛 생산 불가"
+        }
+      },
+      {
+        "id": "warehouse",
+        "name": "창고",
+        "nameJa": "倉庫",
+        "description": "물자 및 유닛 저장 시설",
+        "types": [
+          {
+            "id": "planet_warehouse",
+            "name": "행성 창고",
+            "nameJa": "惑星倉庫",
+            "management": "중앙 정부 관할",
+            "contents": [
+              "함정 유닛",
+              "육전대 유닛",
+              "승무원 유닛",
+              "군수물자"
+            ],
+            "note": "생산 완성품 자동 보관"
+          },
+          {
+            "id": "unit_warehouse",
+            "name": "부대 창고",
+            "nameJa": "部隊倉庫",
+            "management": "각 부대 전용",
+            "access": "담당 부대만 출입 가능",
+            "exception": "순찰대/지상부대는 통합 창고"
+          }
+        ]
+      },
+      {
+        "id": "dock",
+        "name": "계류소",
+        "nameJa": "係留所",
+        "description": "함선 정박 시설",
+        "functions": [
+          "함선 정박",
+          "함선 유지보수"
+        ]
+      },
+      {
+        "id": "residence_area",
+        "name": "거주구",
+        "nameJa": "居住区",
+        "description": "주거 지역",
+        "contains": [
+          {
+            "id": "private_residence",
+            "name": "자택",
+            "nameJa": "自宅",
+            "description": "개인 주거지",
+            "functions": [
+              "안전한 로그아웃 장소",
+              "전사 위험 없음",
+              "체포 가능성 있음"
+            ]
+          },
+          {
+            "id": "room",
+            "name": "거실",
+            "nameJa": "居室",
+            "description": "거주구 내 개별 방"
+          }
+        ],
+        "spots": [
+          "자택",
+          "복도",
+          "광장"
+        ]
+      },
+      {
+        "id": "hotel",
+        "name": "호텔",
+        "nameJa": "ホテル",
+        "description": "임시 숙박 시설",
+        "functions": [
+          "단기 체류",
+          "회담 장소",
+          "담화 장소"
+        ],
+        "spots": [
+          "객실",
+          "로비",
+          "회의실"
+        ],
+        "commands": ["회담", "담화"]
+      },
+      {
+        "id": "academy",
+        "name": "사관학교",
+        "nameJa": "士官学校",
+        "description": "군사 교육 기관",
+        "functions": [
+          "능력 훈련",
+          "전술 시뮬레이션",
+          "강의 수강"
+        ],
+        "commands": [
+          {
+            "id": "study",
+            "name": "수강",
+            "nameJa": "受講",
+            "effect": "능력 파라미터 증가"
+          },
+          {
+            "id": "war_game",
+            "name": "병기 연습",
+            "nameJa": "兵棋演習",
+            "effect": "전술 훈련"
+          },
+          {
+            "id": "lecture",
+            "name": "강의",
+            "nameJa": "講義",
+            "effect": "수강자 능력 증가",
+            "duration": "120G분 또는 스포트 이탈 시까지"
+          }
+        ],
+        "staff": [
+          "사관학교장",
+          "교관"
+        ]
+      },
+      {
+        "id": "central_square",
+        "name": "중앙광장",
+        "nameJa": "中央広場",
+        "description": "공공 집회 장소",
+        "functions": [
+          "연설",
+          "시위",
+          "공개 행사"
+        ],
+        "commands": [
+          {
+            "id": "speech",
+            "name": "연설",
+            "nameJa": "演説",
+            "effect": "영향력 및 정부 지지율 증감"
+          }
+        ]
+      },
+      {
+        "id": "bar",
+        "name": "주점",
+        "nameJa": "酒場",
+        "description": "음주 및 사교 장소",
+        "functions": [
+          "캐릭터 간 교류",
+          "정보 수집",
+          "채팅"
+        ]
+      },
+      {
+        "id": "conference_room",
+        "name": "회의실",
+        "nameJa": "会議室",
+        "description": "회의 공간",
+        "functions": [
+          "작전 회의",
+          "공식 회담",
+          "비밀 모임"
+        ]
+      },
+      {
+        "id": "prison",
+        "name": "구치소",
+        "nameJa": "拘置所",
+        "description": "구금 시설",
+        "functions": [
+          "체포자 구금",
+          "처단 대기"
+        ],
+        "note": "망명자는 수도에 구금"
+      }
+    ],
+    "empireSpecific": [
+      {
+        "id": "palace",
+        "name": "황궁",
+        "nameJa": "皇宮",
+        "location": "수도 행성 전용",
+        "description": "황제의 거처 및 집무실",
+        "functions": [
+          "황제 거처",
+          "대본영",
+          "근위병 주둔"
+        ],
+        "residents": [
+          "황제",
+          "막료총감",
+          "대본영 참모",
+          "근위병총감"
+        ]
+      },
+      {
+        "id": "noble_estate",
+        "name": "귀족 저택",
+        "nameJa": "貴族邸宅",
+        "description": "귀족의 개인 저택",
+        "functions": [
+          "야회 개최",
+          "사교 활동"
+        ],
+        "commands": [
+          {
+            "id": "soiree",
+            "name": "야회",
+            "nameJa": "夜会",
+            "location": "수도 저택",
+            "effect": "영향력 변화"
+          }
+        ]
+      },
+      {
+        "id": "fief_estate",
+        "name": "봉토 저택",
+        "nameJa": "封土邸宅",
+        "description": "봉토 행성의 영주 저택",
+        "functions": [
+          "영주 거처",
+          "수렵 개최"
+        ],
+        "commands": [
+          {
+            "id": "hunting",
+            "name": "수렵",
+            "nameJa": "狩猟",
+            "location": "봉토 행성",
+            "effect": "영향력 및 우호도 변화"
+          }
+        ]
+      }
+    ],
+    "allianceSpecific": [
+      {
+        "id": "supreme_council",
+        "name": "최고평의회",
+        "nameJa": "最高評議会",
+        "location": "수도 행성 전용",
+        "description": "동맹 최고 의사결정 기관",
+        "functions": [
+          "국정 운영",
+          "최고평의회 회의"
+        ],
+        "residents": [
+          "의장",
+          "부의장",
+          "각 위원장"
+        ]
+      }
+    ],
+    "fortressSpecific": [
+      {
+        "id": "fortress_command",
+        "name": "요새 사령부",
+        "nameJa": "要塞司令部",
+        "description": "요새 총괄 지휘부",
+        "functions": [
+          "요새 전체 지휘",
+          "요새포 통제",
+          "방어 작전"
+        ],
+        "residents": [
+          "요새 사령관",
+          "요새 수비대 지휘관",
+          "요새 사무총감"
+        ]
+      },
+      {
+        "id": "fortress_cannon",
+        "name": "요새포",
+        "nameJa": "要塞砲",
+        "description": "초대형 고정 병기",
+        "power": "초강력",
+        "range": "극장거리",
+        "warning": "사선상 아군도 피격",
+        "mechanics": [
+          "발사 방향 특정 후 충전",
+          "충전 완료와 동시에 자동 발사",
+          "사선 통과 전 기함/함정 유닛에 자동 명중"
+        ]
+      }
+    ]
+  },
+  "movementSystem": {
+    "description": "이동 커맨드 체계",
+    "types": [
+      {
+        "id": "long_distance",
+        "name": "원거리 이동",
+        "nameJa": "遠距離移動",
+        "scope": "행성/요새 상의 시설 간",
+        "cpCost": 10,
+        "examples": [
+          "정청 → 사관학교",
+          "호텔 → 중앙광장",
+          "거주구 → 조병공창"
+        ]
+      },
+      {
+        "id": "short_distance",
+        "name": "근거리 이동",
+        "nameJa": "近距離移動",
+        "scope": "시설 내 스포트 간",
+        "cpCost": 5,
+        "examples": [
+          "호텔 로비 → 객실",
+          "거주구 자택 → 복도",
+          "사관학교 강의실 → 시뮬레이터실"
+        ]
+      },
+      {
+        "id": "intersystem",
+        "name": "성계 내 항행",
+        "nameJa": "星系内航行",
+        "scope": "성계 내 행성 간",
+        "command": "기항",
+        "cpCost": 160,
+        "examples": [
+          "오딘 → 제국령 다른 행성",
+          "하이네센 → 동맹령 다른 행성"
+        ]
+      }
+    ]
+  },
+  "spots": {
+    "description": "캐릭터가 위치할 수 있는 최소 단위 구역",
+    "descriptionJa": "ゲーム上のキャラクターの所在を示す区画",
+    "examples": [
+      "자택",
+      "회의실",
+      "주점",
+      "호텔 객실",
+      "사관학교 강의실",
+      "중앙광장",
+      "정청 집무실",
+      "방위사령부 작전실"
+    ],
+    "chatRestriction": {
+      "rule": "동일 스포트 또는 동일 그리드 동일 부대만 채팅 가능",
+      "exception": "전술 게임 중에는 동일 그리드 내 전 아군과 채팅 가능"
+    },
+    "logoutSafety": {
+      "safe": [
+        "자택/호텔(거실)/거주구(거실)",
+        "기함 유닛 내 (행성/요새 정박 시)"
+      ],
+      "notes": [
+        "전사 위험 없음",
+        "체포 가능성은 있음",
+        "인사 커맨드 대상 가능",
+        "로그아웃해도 캐릭터는 해당 장소에 계속 존재"
+      ]
+    }
+  },
+  "securitySpots": {
+    "description": "경계 스포트 - 특별 경비 가능 장소",
+    "descriptionJa": "警戒スポット",
+    "command": {
+      "id": "special_security",
+      "name": "특별 경비",
+      "nameJa": "特別警備",
+      "effect": "해당 스포트의 경비 태세 강화",
+      "duration": 24
+    },
+    "locations": [
+      "황궁",
+      "정청",
+      "방위사령부",
+      "최고평의회",
+      "요새 사령부"
+    ]
+  },
+  "facilityOwnership": {
+    "description": "시설 소유권 시스템",
+    "occupation": {
+      "rule": "행성/요새 점령 시 모든 시설이 점령 진영 소유로 전환",
+      "effects": [
+        "직무권한 카드 변경",
+        "창고 내 물자 몰수",
+        "건조 중 함정 파괴",
+        "계류소/창고 내 함정 유닛 파괴"
+      ]
+    },
+    "empire": {
+      "directControl": "제국군 점령 행성/요새는 자동으로 황실 직할령",
+      "fief": "봉토 수여로 귀족 영지 설정 가능"
+    }
+  },
+  "productionFacilities": {
+    "shipyard": {
+      "name": "조병공창",
+      "nameJa": "造兵工廠",
+      "production": [
+        "전함",
+        "순양함",
+        "구축함",
+        "각종 특수함"
+      ],
+      "requirement": "조병공창 보유 필수",
+      "automatic": true
+    },
+    "recruitmentCenter": {
+      "name": "모병소",
+      "nameJa": "募兵所",
+      "production": [
+        "승무원 (그린)",
+        "육전병 (그린)"
+      ],
+      "source": "행성 인구",
+      "sideEffect": "징세 수입 감소",
+      "automatic": true
+    }
+  }
+}

@@ -1,0 +1,305 @@
+{
+  "characterParameters": {
+    "basic": [
+      {
+        "id": "name",
+        "name": "성명",
+        "nameJa": "氏名",
+        "description": "캐릭터 이름. 생성 캐릭터는 중복 불가"
+      },
+      {
+        "id": "gender",
+        "name": "성별",
+        "nameJa": "性別",
+        "values": ["남성", "여성"],
+        "description": "남녀 차이 없음"
+      },
+      {
+        "id": "birthdate",
+        "name": "생년월일",
+        "nameJa": "生年月日",
+        "format": "제국력/우주력"
+      },
+      {
+        "id": "classification",
+        "name": "분류",
+        "nameJa": "分類",
+        "values": ["정치가", "군인"],
+        "description": "전직 시 자동 변경"
+      },
+      {
+        "id": "rank",
+        "name": "계급",
+        "nameJa": "階級",
+        "range": "이등병 ~ 원수"
+      },
+      {
+        "id": "origin",
+        "name": "출신",
+        "nameJa": "出自",
+        "empire": ["귀족", "제국기사", "평민", "망명자"],
+        "alliance": ["시민", "망명자"]
+      },
+      {
+        "id": "birthplace",
+        "name": "출신지",
+        "nameJa": "出身地",
+        "description": "격침 시 자동 귀환지"
+      }
+    ],
+    "nobility": {
+      "description": "제국군 전용",
+      "titles": [
+        {
+          "id": "duke",
+          "name": "공작",
+          "nameJa": "公爵",
+          "rank": 1
+        },
+        {
+          "id": "marquis",
+          "name": "후작",
+          "nameJa": "侯爵",
+          "rank": 2
+        },
+        {
+          "id": "count",
+          "name": "백작",
+          "nameJa": "伯爵",
+          "rank": 3
+        },
+        {
+          "id": "viscount",
+          "name": "자작",
+          "nameJa": "子爵",
+          "rank": 4
+        },
+        {
+          "id": "baron",
+          "name": "남작",
+          "nameJa": "男爵",
+          "rank": 5
+        },
+        {
+          "id": "imperial_knight",
+          "name": "제국기사",
+          "nameJa": "帝国騎士",
+          "rank": 6
+        }
+      ]
+    },
+    "points": [
+      {
+        "id": "merit",
+        "name": "공적",
+        "nameJa": "功績",
+        "description": "현재 계급 내 공적 포인트. 순위로 승진/강등 결정",
+        "gain": [
+          "적 유닛 격파",
+          "적 행성/요새 점령",
+          "작전 목표 달성"
+        ]
+      },
+      {
+        "id": "evaluation",
+        "name": "평가 포인트",
+        "nameJa": "評価ポイント",
+        "description": "해당 세션 내 캐릭터 평가",
+        "carryOver": false
+      },
+      {
+        "id": "fame",
+        "name": "명성 포인트",
+        "nameJa": "名声ポイント",
+        "description": "게임 전체에 대한 플레이어 평가",
+        "carryOver": true,
+        "use": "오리지널 캐릭터 선택 시 소비"
+      }
+    ],
+    "abilities": [
+      {
+        "id": "leadership",
+        "name": "통솔",
+        "nameJa": "統率",
+        "description": "인재 활용 능력",
+        "affects": [
+          "징세액",
+          "정부 지지율",
+          "함대 최대 사기",
+          "항복 권고 성공률"
+        ],
+        "range": "0-100"
+      },
+      {
+        "id": "politics",
+        "name": "정치",
+        "nameJa": "政治",
+        "description": "정치력",
+        "affects": ["시민 지지 획득"],
+        "range": "0-100"
+      },
+      {
+        "id": "operations",
+        "name": "운영",
+        "nameJa": "運営",
+        "description": "사무 관리 능력",
+        "affects": ["행성 통치"],
+        "range": "0-100"
+      },
+      {
+        "id": "intelligence",
+        "name": "정보",
+        "nameJa": "情報",
+        "description": "정보 수집 및 분석 능력",
+        "affects": ["스파이 활동", "전술 색적 능력"],
+        "range": "0-100"
+      },
+      {
+        "id": "command",
+        "name": "지휘",
+        "nameJa": "指揮",
+        "description": "부대 지휘 능력",
+        "affects": ["배하 함선 행동 속도"],
+        "range": "0-100"
+      },
+      {
+        "id": "maneuver",
+        "name": "기동",
+        "nameJa": "機動",
+        "description": "함대 이동 지휘 능력",
+        "affects": ["기민한 조함"],
+        "range": "0-100"
+      },
+      {
+        "id": "attack",
+        "name": "공격",
+        "nameJa": "攻撃",
+        "description": "공격 지휘 능력",
+        "affects": [
+          "함대 공격력 (함대사령관/막료)",
+          "행성 대함 방어력 (행성방어사령관)"
+        ],
+        "range": "0-100"
+      },
+      {
+        "id": "defense",
+        "name": "방어",
+        "nameJa": "防御",
+        "description": "방어 지휘 능력",
+        "affects": [
+          "함대 방어력 (함대사령관/막료)",
+          "행성 점령 방어력 (방어사령관)"
+        ],
+        "range": "0-100"
+      }
+    ],
+    "growth": {
+      "ageEffect": {
+        "young": {
+          "description": "젊은 캐릭터는 매월 능력치 상승 가능",
+          "change": "플러스 변화"
+        },
+        "old": {
+          "description": "노년 캐릭터는 매월 능력치 하락 가능",
+          "change": "마이너스 변화"
+        },
+        "limit": "일정 값까지만 변화"
+      },
+      "experienceEffect": {
+        "description": "CP 사용으로 경험치 누적",
+        "mechanism": [
+          "CP 사용 시 누적",
+          "일정량마다 경험치 +1",
+          "경험치 100 도달 시 해당 능력 +1, 경험치 0으로 초기화"
+        ],
+        "cpTypes": {
+          "PCP": ["통솔", "정치", "운용", "정보"],
+          "MCP": ["지휘", "기동", "공격", "방어"]
+        },
+        "note": "CP 대용 소비는 사용량 누적 안됨"
+      }
+    }
+  },
+  "rankLadder": {
+    "description": "동일 계급 내 공적 포인트 순위 시스템",
+    "sortingRules": [
+      {
+        "priority": 1,
+        "rule": "공적 포인트 많은 순"
+      },
+      {
+        "priority": 2,
+        "rule": "작위 높은 순 (제국만)"
+      },
+      {
+        "priority": 3,
+        "rule": "서훈 최고 훈장 순위 (미구현)"
+      },
+      {
+        "priority": 4,
+        "rule": "영향력 높은 순"
+      },
+      {
+        "priority": 5,
+        "rule": "전 파라미터 합계"
+      }
+    ],
+    "autoPromotion": {
+      "ranks": "대좌 이하",
+      "interval": "게임 내 30일마다",
+      "condition": "각 계급 래더 1위 자동 승진",
+      "merit": "래더 내 평균값 부여"
+    }
+  },
+  "victoryConditions": {
+    "gameEnd": [
+      {
+        "condition": "적 수도 행성 점령"
+      },
+      {
+        "condition": "수도 포함 지배 성계가 3개 이하"
+      },
+      {
+        "condition": "우주력 801년 7월 27일 00:00 도달"
+      }
+    ],
+    "victoryTypes": [
+      {
+        "type": "decisive_victory",
+        "name": "결정적 승리",
+        "nameJa": "決定的勝利",
+        "conditions": [
+          "세션 내 인구 90% 이상 지배",
+          "적과의 함정 유닛 수 비율 10배 이상",
+          "쿠데타 미발생",
+          "황제 또는 최고사령관이 적 수도 성계에 이동 (제국만)"
+        ]
+      },
+      {
+        "type": "limited_victory",
+        "name": "한정적 승리",
+        "nameJa": "限定的勝利",
+        "conditions": [
+          "결정적 승리 조건 중 하나라도 미달"
+        ]
+      },
+      {
+        "type": "local_victory",
+        "name": "국지적 승리",
+        "nameJa": "局地的勝利",
+        "conditions": [
+          "적 수도 점령 외 종료",
+          "세션 내 인구비 우위"
+        ]
+      },
+      {
+        "type": "defeat",
+        "name": "패배",
+        "nameJa": "敗北",
+        "conditions": [
+          "상기 승리 조건 모두 열세"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,440 @@
+{
+  "description": "군사 단위 조직 - 함대, 수송함대, 순찰대, 지상부대, 요새, 행성",
+  "descriptionJa": "軍事単位組織",
+  "source": "gin7manual.txt",
+  "militaryUnits": {
+    "fleet": {
+      "id": "fleet",
+      "name": "함대",
+      "nameJa": "艦隊",
+      "maxVessels": 18000,
+      "description": "최대 18,000척 함정 보유하는 최대 규모 전략 단위. 작전 행동에 충분한 재량권 부여",
+      "positions": [
+        {
+          "id": "fleet_commander",
+          "name": "함대 사령관",
+          "nameJa": "艦隊司令官",
+          "count": 1,
+          "empire": {
+            "minRank": "중장",
+            "maxRank": "원수",
+            "appointedBy": "군무상서"
+          },
+          "alliance": {
+            "minRank": "소장",
+            "maxRank": "원수",
+            "appointedBy": "우주함대사령장관"
+          },
+          "description": "함대 통솔 사령관. 실전부대 직접 통괄. 충분한 재량권 부여",
+          "authority": ["작전 수행", "함대 참모 임명"]
+        },
+        {
+          "id": "fleet_vice_commander",
+          "name": "함대 부사령관",
+          "nameJa": "艦隊副司令官",
+          "count": 1,
+          "empire": {
+            "minRank": "소장",
+            "maxRank": "원수",
+            "appointedBy": "군무상서"
+          },
+          "alliance": {
+            "minRank": "준장",
+            "maxRank": "원수",
+            "appointedBy": "우주함대사령장관"
+          },
+          "description": "함대 차석 지휘관. 함대 일부 분견하는 '분함대' 지휘관 담당 다수"
+        },
+        {
+          "id": "fleet_chief_of_staff",
+          "name": "함대 참모장",
+          "nameJa": "艦隊参謀長",
+          "count": 1,
+          "empire": {
+            "minRank": "소장",
+            "maxRank": "원수",
+            "appointedBy": "막료총감"
+          },
+          "alliance": {
+            "minRank": "준장",
+            "maxRank": "원수",
+            "appointedBy": "우주함대총참모장"
+          },
+          "description": "함대 사령관 보좌역으로 참모 팀 통솔이 주 직무",
+          "empire_note": "대본영에 독자 보고 송부 권리 보유"
+        },
+        {
+          "id": "fleet_staff",
+          "name": "함대 참모",
+          "nameJa": "艦隊参謀",
+          "count": 6,
+          "empire": {
+            "minRank": "대위",
+            "maxRank": "원수",
+            "appointedBy": "함대사령관"
+          },
+          "alliance": {
+            "minRank": "대위",
+            "maxRank": "원수",
+            "appointedBy": "우주함대총참모장"
+          },
+          "description": "막료로 함대 사령관 직무 보좌. 분함대 지휘관 담당 다수"
+        },
+        {
+          "id": "fleet_aide",
+          "name": "함대 사령관 부관",
+          "nameJa": "艦隊司令官副官",
+          "count": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "appointedBy": "함대사령관",
+          "description": "함대 사령관 개인 막료. 소장 사관 임명"
+        }
+      ],
+      "commands": [
+        "작전 수행",
+        "재편성",
+        "보충",
+        "완전 수리",
+        "완전 보급"
+      ]
+    },
+    "transport_fleet": {
+      "id": "transport_fleet",
+      "name": "수송함대",
+      "nameJa": "輸送艦隊",
+      "maxVessels": 6900,
+      "description": "최대 6,900척 함정 보유 전략 단위. 군 병참 근간",
+      "positions": [
+        {
+          "id": "transport_commander",
+          "name": "수송함대 사령관",
+          "nameJa": "輸送艦隊司令官",
+          "count": 1,
+          "empire": {
+            "minRank": "중장",
+            "maxRank": "원수",
+            "appointedBy": "군무성차관"
+          },
+          "alliance": {
+            "minRank": "준장",
+            "maxRank": "원수",
+            "appointedBy": "우주함대사령장관"
+          },
+          "description": "수송함대 통솔 사령관"
+        },
+        {
+          "id": "transport_vice_commander",
+          "name": "수송함대 부사령관",
+          "nameJa": "輸送艦隊副司令官",
+          "count": 1,
+          "empire": {
+            "minRank": "소장",
+            "maxRank": "원수",
+            "appointedBy": "군무성차관"
+          },
+          "alliance": {
+            "minRank": "대좌",
+            "maxRank": "원수",
+            "appointedBy": "우주함대사령장관"
+          },
+          "description": "수송함대 차석 지휘관. 분함대 지휘관 담당 다수"
+        },
+        {
+          "id": "transport_aide",
+          "name": "수송함대 사령관 부관",
+          "nameJa": "輸送艦隊司令官副官",
+          "count": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "appointedBy": "수송함대사령관",
+          "description": "수송함대 사령관 개인 막료. 소장 사관 임명"
+        }
+      ],
+      "commands": [
+        "수송 계획",
+        "수송 중지",
+        "반출입"
+      ]
+    },
+    "patrol_fleet": {
+      "id": "patrol_fleet",
+      "name": "순찰대",
+      "nameJa": "巡察隊",
+      "maxVessels": 900,
+      "description": "최대 900척 함정 보유 전략 단위. 소규모 작전·국내 경비 주력 부대 구성",
+      "positions": [
+        {
+          "id": "patrol_commander",
+          "name": "순찰대 사령",
+          "nameJa": "巡察隊司令",
+          "count": 1,
+          "empire": {
+            "minRank": "준장",
+            "maxRank": "원수",
+            "appointedBy": "군무성차관"
+          },
+          "alliance": {
+            "minRank": "준장",
+            "maxRank": "원수",
+            "appointedBy": "우주함대사령장관"
+          },
+          "description": "순찰대 통솔 사령"
+        },
+        {
+          "id": "patrol_vice_commander",
+          "name": "순찰대 부사령",
+          "nameJa": "巡察隊副司令",
+          "count": 1,
+          "empire": {
+            "minRank": "준장",
+            "maxRank": "원수",
+            "appointedBy": "군무성차관"
+          },
+          "alliance": {
+            "minRank": "대좌",
+            "maxRank": "원수",
+            "appointedBy": "우주함대사령장관"
+          },
+          "description": "순찰대 차석 지휘관. '경비대' 지휘관 담당 다수"
+        },
+        {
+          "id": "patrol_aide",
+          "name": "순찰대 사령 부관",
+          "nameJa": "巡察隊司令副官",
+          "count": 1,
+          "minRank": "중위",
+          "maxRank": "원수",
+          "appointedBy": "순찰대사령",
+          "description": "순찰대 사령 개인 막료. 소장 사관 임명"
+        }
+      ],
+      "commands": [
+        "작전 수행",
+        "재편성",
+        "보충"
+      ]
+    },
+    "ground_forces": {
+      "id": "ground_forces",
+      "name": "지상부대",
+      "nameJa": "地上部隊",
+      "maxVessels": 900,
+      "maxTroops": 90000,
+      "description": "최대 900척 함정과 90,000명 보유 전략 단위. 지상전 주력 부대",
+      "positions": [
+        {
+          "id": "ground_commander",
+          "name": "지상부대 지휘관",
+          "nameJa": "地上部隊指揮官",
+          "count": 1,
+          "empire": {
+            "minRank": "소좌",
+            "maxRank": "원수",
+            "appointedBy": "장갑척탄병총감"
+          },
+          "alliance": {
+            "minRank": "소좌",
+            "maxRank": "원수",
+            "appointedBy": "육전총감부장"
+          },
+          "description": "지상부대 통솔 지휘관"
+        }
+      ],
+      "commands": [
+        "재편성",
+        "보충",
+        "육전대 출격",
+        "육전대 철수"
+      ]
+    },
+    "fortress": {
+      "id": "fortress",
+      "name": "요새",
+      "nameJa": "要塞",
+      "description": "군사 요새. 요새포 보유",
+      "examples": ["이제르론 요새", "가이에스부르크 요새"],
+      "positions": [
+        {
+          "id": "fortress_commander",
+          "name": "요새 사령관",
+          "nameJa": "要塞司令官",
+          "count": 1,
+          "empire": {
+            "minRank": "중장",
+            "maxRank": "원수",
+            "appointedBy": "군무상서"
+          },
+          "alliance": {
+            "minRank": "중장",
+            "maxRank": "원수",
+            "appointedBy": "국방위원회시설부장"
+          },
+          "description": "요새 통솔 사령관. 요새포 포함 모든 고정 화포·병참 부대 지휘"
+        },
+        {
+          "id": "fortress_garrison_commander",
+          "name": "요새 수비대 지휘관",
+          "nameJa": "要塞守備隊指揮官",
+          "count": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "appointedBy": "요새사령관",
+          "description": "요새 주둔 육전대 통솔"
+        },
+        {
+          "id": "fortress_administrator",
+          "name": "요새 사무총감",
+          "nameJa": "要塞事務総監",
+          "count": 1,
+          "empire": {
+            "minRank": "소장",
+            "maxRank": "원수"
+          },
+          "alliance": {
+            "minRank": "대좌",
+            "maxRank": "원수"
+          },
+          "appointedBy": "요새사령관",
+          "description": "요새 경제활동·생산 통솔"
+        }
+      ],
+      "weapons": {
+        "fortress_cannon": {
+          "name": "요새포",
+          "nameJa": "要塞砲",
+          "power": "초강력",
+          "range": "극장거리",
+          "warning": "사선상 아군도 피격"
+        }
+      },
+      "commands": [
+        "요새포 사격",
+        "할당",
+        "재편성",
+        "보충"
+      ]
+    },
+    "planet": {
+      "id": "planet",
+      "name": "행성",
+      "nameJa": "惑星",
+      "description": "거주 가능 행성",
+      "empire_positions": [
+        {
+          "id": "governor",
+          "name": "행성 총독",
+          "nameJa": "惑星総督",
+          "count": 1,
+          "minRank": "준장",
+          "type": "정치가/군인",
+          "appointedBy": "국무상서",
+          "description": "은하제국 행성 최고 통치자. 경제활동 및 행성 치안·방위 책임 부담. 은하제국에서는 무관에게도 행성 총독 길 열려 현역 군인 취임도 있음",
+          "authority": ["행성 수비대 지휘관 임명"]
+        },
+        {
+          "id": "garrison_commander",
+          "name": "행성 수비대 지휘관",
+          "nameJa": "惑星守備隊指揮官",
+          "count": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "appointedBy": "행성총독",
+          "description": "행성 단위 배치 수비대 지휘관. 최대 300,000명 지휘"
+        }
+      ],
+      "alliance_positions": [
+        {
+          "id": "governor",
+          "name": "지사",
+          "nameJa": "知事",
+          "count": 1,
+          "type": "정치가",
+          "appointedBy": "국무위원장",
+          "description": "자유행성동맹 행성 최고 통치자. 경제활동 및 행성 치안·방위 책임 부담. 자유행성동맹에서는 현역 군인이 지사 취임 불가",
+          "authority": []
+        },
+        {
+          "id": "garrison_commander",
+          "name": "행성 수비대 지휘관",
+          "nameJa": "惑星守備隊指揮官",
+          "count": 1,
+          "minRank": "소좌",
+          "maxRank": "원수",
+          "appointedBy": "국방위원회방위부장",
+          "description": "행성 단위 배치 수비대 지휘관. 최대 300,000명 지휘"
+        }
+      ],
+      "capital_empire": {
+        "name": "제도 (오딘)",
+        "positions": [
+          {
+            "id": "capital_defense_commander",
+            "name": "제도방위사령관",
+            "count": 1,
+            "minRank": "대장",
+            "maxRank": "원수",
+            "appointedBy": "제국군최고사령관",
+            "description": "제도 최고사령관. 제도 경찰임무·경제활동·생산 통솔하나 군사 지휘권 없음"
+          },
+          {
+            "id": "imperial_guard_commander",
+            "name": "근위병총감",
+            "count": 1,
+            "minRank": "상급대장",
+            "maxRank": "원수",
+            "appointedBy": "군무상서",
+            "description": "제도 수비대 지휘관. 근위병 통솔, 제도 방위. 최대 300,000명 지휘"
+          }
+        ]
+      },
+      "capital_alliance": {
+        "name": "수도 (하이네센)",
+        "positions": [
+          {
+            "id": "capital_administrator",
+            "name": "수도 사정관",
+            "count": 1,
+            "minRank": "대좌",
+            "maxRank": "원수",
+            "type": "정치가",
+            "appointedBy": "국무위원장",
+            "description": "수도 최고 행정관. 수도 경찰임무·경제활동·생산 통솔하나 군사 지휘권 없음"
+          },
+          {
+            "id": "capital_defense_commander",
+            "name": "수도 방위 지휘관",
+            "count": 1,
+            "minRank": "대좌",
+            "maxRank": "원수",
+            "appointedBy": "국방위원회방위부장",
+            "description": "수도 수비대 지휘관. 최대 300,000명 지휘"
+          }
+        ]
+      },
+      "commands": [
+        "할당",
+        "통치 목표",
+        "경계 출동",
+        "무력 진압",
+        "분열 행진"
+      ]
+    }
+  },
+  "warehouseSystem": {
+    "planet_warehouse": {
+      "name": "행성 창고",
+      "nameJa": "惑星倉庫",
+      "management": "중앙 정부 관할",
+      "autoStorage": "생산 완성품 자동 보관",
+      "contents": ["함정 유닛", "육전대 유닛", "승무원 유닛", "군수물자"]
+    },
+    "unit_warehouse": {
+      "name": "부대 창고",
+      "nameJa": "部隊倉庫",
+      "management": "각 부대 전용",
+      "access": "담당 부대만 출입",
+      "exception": "순찰대·지상부대는 통합 창고"
+    }
+  }
+}
