@@ -1120,6 +1120,14 @@ export class ExecuteEngineService {
           return;
         }
         
+        // 디버그: general 구조 확인
+        console.log(`[AI DEBUG] General ${general.no} structure:`, {
+          hasData: !!general.data,
+          hasCity: !!general.city,
+          hasCachedCity: !!general._cached_city,
+          leadership: general.leadership || general.data?.leadership || 'N/A'
+        });
+        
         const decision = await ai.decideNextCommand(
           general,
           city,
