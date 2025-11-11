@@ -391,6 +391,7 @@ export class AIEngine {
         security: 0,
         defense: 0,
         wall: 0,
+        trust: 0,
         isFront: false,
         isSupply: false,
         priority: 0
@@ -563,10 +564,10 @@ export class AIEngine {
     }
     
     // 기술 연구 (지장) - 국가 기술력이 뒤처져 있을 때
-    if (isStrategist && nation) {
+    if (isStrategist && nation && general.env) {
       const tech = nation.tech || 0;
-      const startYear = env?.startyear || env?.year || 0;
-      const currentYear = env?.year || startYear;
+      const startYear = general.env.startyear || general.env.year || 0;
+      const currentYear = general.env.year || startYear;
       const relYear = currentYear - startYear;
       const techLimit = relYear * 50;
       
