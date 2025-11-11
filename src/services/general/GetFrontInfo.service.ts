@@ -252,13 +252,13 @@ export class GetFrontInfoService {
       npcMode: (data.npcmode || 0) as 0 | 1 | 2,
       joinMode: data.join_mode === 0 ? 'onlyRandom' : 'full',
       startyear: data.startyear ?? 180,
-      year: turnInfo.year,
-      month: turnInfo.month,
+      year: gameEnvCopy.year || gameEnv.year || data.startyear || 180,
+      month: gameEnvCopy.month || gameEnv.month || 1,
       autorunUser: {
         limit_minutes: data.autorun_user?.limit_minutes || data.autorun_limit || 0,
         options: data.autorun_user?.options || {}
       },
-      turnterm: data.turnterm || 60, // 분 단위
+      turnterm: gameEnv.turnterm || data.turnterm || 60, // 분 단위
       lastExecuted: lastExecutedStr,
       lastVoteID: data.lastVote || null,
       develCost: data.develcost || 100,
