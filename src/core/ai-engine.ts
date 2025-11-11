@@ -292,6 +292,24 @@ export class AIEngine {
    * 도시 평가
    */
   evaluateCity(city: any): CityEvaluation {
+    // city가 없으면 기본값 반환
+    if (!city || !city.city) {
+      return {
+        cityId: 0,
+        score: 0,
+        developmentRate: 0,
+        population: 0,
+        agriculture: 0,
+        commerce: 0,
+        security: 0,
+        defense: 0,
+        wall: 0,
+        isFront: false,
+        isSupply: false,
+        priority: 0
+      };
+    }
+    
     // 캐시 확인
     if (this.cityEvaluations.has(city.city)) {
       return this.cityEvaluations.get(city.city)!;

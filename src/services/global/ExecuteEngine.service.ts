@@ -1110,11 +1110,19 @@ export class ExecuteEngineService {
         // 현재 도시와 국가 정보 로드
         await this.loadCityAndNation(general, sessionId);
         
-        // AI가 다음 커맨드 결정
+        // AI가 다음 커맨드 결정 (city가 없으면 null 전달)
+        const city = general._cached_city || null;
+        const nation = general._cached_nation || null;
+        
+        if (!city) {
+          console.warn(`[AI] No city found for general ${general.no}, skipping AI decision`);
+          return;
+        }
+        
         const decision = await ai.decideNextCommand(
           general,
-          general._cached_city,
-          general._cached_nation,
+          city,
+          nation,
           { year, month, session_id: sessionId, ...gameEnv }
         );
         
