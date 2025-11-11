@@ -814,14 +814,15 @@ export class ExecuteEngineService {
     const nationId = general.nation || 0;
 
     if (cityId) {
-      const city = await cityRepository.findByCityNum(sessionId, cityId );
+      const city = await cityRepository.findByCityNum(sessionId, cityId);
       if (city) {
-        general.setRawCity(city);
+        // general이 plain object이므로 직접 할당
+        general._cached_city = city;
       }
     }
 
     if (nationId) {
-      const nation = await nationRepository.findByNationNum(sessionId, nationId );
+      const nation = await nationRepository.findByNationNum(sessionId, nationId);
       if (nation) {
         general._cached_nation = nation;
       }

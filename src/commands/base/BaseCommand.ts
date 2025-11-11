@@ -191,9 +191,14 @@ export abstract class BaseCommand {
   protected async setCity(): Promise<void> {
     this.resetTestCache();
     this.city = this.generalObj.getRawCity?.() || null;
-    if (this.city) {
-      return;
-    }
+      if (this.city) {
+        // generalObj가 plain object일 수 있으므로 직접 할당
+        if (typeof this.generalObj.setRawCity === 'function') {
+          this.generalObj.setRawCity(this.city);
+        } else {
+          this.generalObj._cached_city = this.city;
+        }
+      }
     
     const { cityRepository } = require('../../repositories/city.repository');
     const cityId = this.generalObj.getVar('city');
