@@ -450,6 +450,11 @@ export class AIEngine {
     const isWarrior = this.generalType & GeneralType.WARRIOR;
     const isStrategist = this.generalType & GeneralType.STRATEGIST;
     
+    // 디버그 로그
+    console.log(`[AI DOMESTIC] General type: ${this.generalType}, isWarrior: ${isWarrior}, isStrategist: ${isStrategist}`);
+    console.log(`[AI DOMESTIC] Rates:`, rates);
+    console.log(`[AI DOMESTIC] Target rate: ${this.policy.targetDevelopmentRate}`);
+    
     // 개발이 필요한 항목 찾기
     const developmentNeeds: Array<{ command: string; rate: number; priority: number }> = [];
     
@@ -505,7 +510,10 @@ export class AIEngine {
       }
     }
     
+    console.log(`[AI DOMESTIC] Development needs count: ${developmentNeeds.length}`);
+    
     if (developmentNeeds.length === 0) {
+      console.log(`[AI DOMESTIC] No development needs - all rates above target`);
       return null;
     }
     
