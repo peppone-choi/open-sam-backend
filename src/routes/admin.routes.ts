@@ -291,7 +291,7 @@ router.post('/update-game', async (req, res) => {
       session.data.game_env.scenario = data.scenario || '';
     } else if (action === 'msg') {
       // AdminGameSettings 서비스를 사용하여 관리자 메시지 설정
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setAdminMessage(sessionId, data.msg || '');
       
       if (!result.success) {
@@ -307,7 +307,7 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'log') {
       // AdminGameSettings 서비스를 사용하여 전역 로그 추가
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.addGlobalLog(sessionId, data.log || '', req.user);
       
       if (!result.success) {
@@ -323,7 +323,7 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'starttime') {
       // AdminGameSettings 서비스를 사용하여 starttime 설정
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setStartTime(sessionId, data.starttime);
       
       if (!result.success) {
@@ -339,7 +339,7 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'maxgeneral') {
       // AdminGameSettings 서비스를 사용하여 maxgeneral 설정
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setMaxGeneral(sessionId, parseInt(data.maxgeneral) || 300);
       
       if (!result.success) {
@@ -355,7 +355,7 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'maxnation') {
       // AdminGameSettings 서비스를 사용하여 maxnation 설정
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setMaxNation(sessionId, parseInt(data.maxnation) || 12);
       
       if (!result.success) {
@@ -371,7 +371,7 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'startyear') {
       // AdminGameSettings 서비스를 사용하여 startyear 설정
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setStartYear(sessionId, parseInt(data.startyear) || 220);
       
       if (!result.success) {
@@ -387,7 +387,7 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'turnterm') {
       // AdminGameSettings 서비스를 사용하여 turnterm 변경 (장수 턴타임 재계산 포함)
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setTurnTerm(sessionId, parseInt(data.turnterm) || 60);
       
       if (!result.success) {
@@ -781,7 +781,7 @@ router.post('/update-time-control', async (req, res) => {
     
     if (action === 'turnterm') {
       // AdminGameSettings 서비스를 사용하여 turnterm 변경 (장수 턴타임 재계산 포함)
-      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
       const result = await AdminGameSettings.setTurnTerm(sessionId, parseInt(data.turnterm) || 60);
       
       if (!result.success) {
