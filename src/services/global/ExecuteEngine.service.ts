@@ -11,6 +11,9 @@ import { Util } from '../../utils/Util';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 import Redis from 'ioredis';
 import { GameEventEmitter } from '../gameEventEmitter';
+import { SessionStateService } from '../sessionState.service';
+import { getCommand, getNationCommand } from '../../commands';
+import { GeneralLog } from '../../models/general-log.model';
 
 const MAX_TURN = 30;
 const MAX_CHIEF_TURN = 12;
