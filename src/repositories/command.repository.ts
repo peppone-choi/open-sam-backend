@@ -1,6 +1,7 @@
 // @ts-nocheck - Type issues need investigation
 import { Command } from '../models/command.model';
 import { DeleteResult } from 'mongodb';
+import { cacheService } from '../common/cache/cache.service';
 
 /**
  * 커맨드 리포지토리
@@ -70,7 +71,14 @@ class CommandRepository {
    * @returns 생성된 커맨드
    */
   async create(data: any) {
-    return Command.create(data);
+    const result = await Command.create(data);
+    
+    // 캐시 무효화
+    if (data.session_id) {
+      await this._invalidateListCaches(data.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -80,10 +88,20 @@ class CommandRepository {
    * @returns 업데이트 결과
    */
   async updateById(commandId: string, update: any) {
-    return Command.updateOne(
+    // 세션 ID 조회를 위해 먼저 커맨드를 찾기
+    const command = await Command.findById(commandId).lean();
+    
+    const result = await Command.updateOne(
       { _id: commandId },
       { $set: update }
     );
+    
+    // 캐시 무효화
+    if (command?.session_id) {
+      await this._invalidateListCaches(command.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -92,7 +110,17 @@ class CommandRepository {
    * @returns 삭제 결과
    */
   async deleteById(commandId: string): Promise<DeleteResult> {
-    return Command.deleteOne({ _id: commandId });
+    // 세션 ID 조회를 위해 먼저 커맨드를 찾기
+    const command = await Command.findById(commandId).lean();
+    
+    const result = await Command.deleteOne({ _id: commandId });
+    
+    // 캐시 무효화
+    if (command?.session_id) {
+      await this._invalidateListCaches(command.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -101,7 +129,12 @@ class CommandRepository {
    * @returns 삭제 결과
    */
   async deleteBySession(sessionId: string): Promise<DeleteResult> {
-    return Command.deleteMany({ session_id: sessionId });
+    const result = await Command.deleteMany({ session_id: sessionId });
+    
+    // 캐시 무효화
+    await this._invalidateListCaches(sessionId);
+    
+    return result;
   }
 
   /**
@@ -117,6 +150,24 @@ class CommandRepository {
       status: 'completed',
       completed_at: { $gte: fromDate, $lte: toDate }
     });
+  }
+
+  /**
+   * 목록 캐시 무효화 (내부 헬퍼)
+   *
+   * @param sessionId - 세션 ID
+   */
+  private async _invalidateListCaches(sessionId: string) {
+    await cacheService.invalidate(
+      [
+        `commands:list:${sessionId}`,
+        `commands:pending:${sessionId}`,
+      ],
+      [
+        `commands:general:${sessionId}:*`,
+        `commands:status:${sessionId}:*`,
+      ]
+    );
   }
 }
 

@@ -80,13 +80,16 @@ export class GameLoopService {
       // 2. 모든 활성 전투 업데이트 (전술 맵)
       await this.updateAllActiveCombats(deltaTime);
 
-      // 3. CP 회복 체크 (5분마다)
+      // 3. 후퇴 진행 상황 체크 (전술 맵 → 전략 맵)
+      await this.checkRetreatingFleets();
+
+      // 4. CP 회복 체크 (5분마다)
       if (currentTime - this.lastCPRegenTime >= this.cpRegenIntervalMs) {
         await this.regenerateCommandPoints();
         this.lastCPRegenTime = currentTime;
       }
 
-      // 4. 완료된 커맨드 처리
+      // 5. 완료된 커맨드 처리
       await this.processCompletedCommands();
 
     } catch (error) {
@@ -142,6 +145,44 @@ export class GameLoopService {
   }
 
   /**
+   * 후퇴 중인 함대들의 진행 상황 체크
+   * 전술 맵 경계 도달시 전략 맵으로 이동
+   */
+  private async checkRetreatingFleets(): Promise<void> {
+    try {
+      const { Fleet } = await import('../../models/logh/Fleet.model');
+      const { RetreatTacticalCommand } = await import('../../commands/logh/tactical/Retreat');
+
+      // 후퇴 중인 모든 함대 조회
+      const retreatingFleets = await Fleet.find({
+        session_id: this.sessionId,
+        status: 'retreating',
+        isInCombat: true,
+      });
+
+      const retreatCommand = new RetreatTacticalCommand();
+
+      for (const fleet of retreatingFleets) {
+        try {
+          // 후퇴 진행 상황 체크 (경계 도달시 전략 맵으로 이동)
+          const retreatCompleted = await retreatCommand.checkRetreatProgress(
+            fleet.fleetId,
+            this.sessionId
+          );
+
+          if (retreatCompleted) {
+            console.log(`[GameLoop] Fleet ${fleet.fleetId} successfully retreated from combat`);
+          }
+        } catch (error) {
+          console.error(`[GameLoop] Error checking retreat progress for ${fleet.fleetId}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('[GameLoop] Error checking retreating fleets:', error);
+    }
+  }
+
+  /**
    * CP 회복 처리
    * gin7manual: 정치 능력과 운영 능력이 회복량에 영향
    * 전술 게임 중인 커맨더는 회복 안됨
@@ -166,7 +207,7 @@ export class GameLoopService {
 
         // 정치, 운영 능력에 따른 회복량 계산
         const politics = commander.stats?.politics || 50;
-        const management = commander.stats?.strategy || 50; // 운영 능력 대신 strategy 사용
+        const management = commander.stats?.operations || 50; // 운영 능력으로 operations 사용
 
         // 기본 회복량: 1 CP
         // 정치 50 기준, 10당 +0.2 CP

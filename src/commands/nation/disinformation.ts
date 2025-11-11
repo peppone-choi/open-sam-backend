@@ -142,11 +142,20 @@ export class DisinformationCommand extends NationCommand {
     const destBroadcastMessage = `상대의 <M>허보</>에 당했다! <1>${date}</>`;
     const destNationCityList = await db.queryFirstColumn('SELECT city FROM city WHERE nation = %i AND supply = 1', [destNationID]);
 
-    const targetGeneralListInCity = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND city=%i', [destNationID, destCityID]);
-    // TODO: Legacy method - const createObjListFromDB = General.createObjListFromDB;
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    const targetGeneralDocs = await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.nation': destNationID,
+      'data.city': destCityID
+    });
 
-    if (createObjListFromDB) {
-      const targetGenerals = await createObjListFromDB(targetGeneralListInCity);
+    if (targetGeneralDocs && targetGeneralDocs.length > 0) {
+      const { General } = await import('../../models/general.model');
+      const targetGenerals = await Promise.all(
+        targetGeneralDocs.map(doc => General.createObjFromDB(doc.data?.no, sessionId))
+      );
       for (const targetGeneralID in targetGenerals) {
         const targetGeneral = targetGenerals[targetGeneralID];
         const targetLogger = targetGeneral.getLogger();

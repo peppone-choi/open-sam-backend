@@ -11,7 +11,7 @@ export interface ISelectNpcToken extends Document {
 }
 
 const SelectNpcTokenSchema = new Schema<ISelectNpcToken>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

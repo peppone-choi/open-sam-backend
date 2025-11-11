@@ -108,7 +108,7 @@ export interface IPlanet extends Document {
 
 const PlanetSchema = new Schema<IPlanet>(
   {
-    session_id: { type: String, required: true, index: true },
+    session_id: { type: String, required: true },
     planetId: { type: String, required: true },
     planetNumber: { type: Number },
 

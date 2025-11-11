@@ -1,9 +1,10 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { CityConst } from '../../const/CityConst';
 import { searchDistance } from '../../func/searchDistance';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * 접경귀환 커맨드
@@ -24,10 +25,8 @@ export class BorderReturnCommand extends GeneralCommand {
     this.setNation();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // NotOccupiedCity()
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation()
     ];
   }
 
@@ -54,22 +53,25 @@ export class BorderReturnCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const cityID = general.getCityID();
     const logger = general.getLogger();
+    const sessionId = general.getSessionID();
+    const nationID = general.getNationID();
 
     // 3칸 이내 거리별 도시 목록
     const distanceList = searchDistance(cityID, 3, true);
+    const flatCityList = distanceList.flat();
 
     // 아군 점령 도시 목록
-    const occupiedCityList = await db.queryFirstColumn(
-      'SELECT city FROM city WHERE nation = ? AND city IN (?) AND supply = 1',
-      general.getNationID(),
-      distanceList.flat()
-    );
+    const occupiedCities = await cityRepository.findByFilter({
+      session_id: sessionId,
+      nation: nationID,
+      city: { $in: flatCityList },
+      supply: 1
+    });
 
-    const occupiedSet = new Set(occupiedCityList);
+    const occupiedSet = new Set(occupiedCities.map((c: any) => c.city || c.data?.city));
 
     // 가장 가까운 거리의 도시 찾기
     let nearestCityList: number[] = [];
@@ -97,10 +99,14 @@ export class BorderReturnCommand extends GeneralCommand {
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 접경귀환했습니다.`);
     general.setVar('city', destCityID);
 
-    // TODO: InstantAction일 때는 설정하지 않는 게 나을 수 있음
-    // this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
+    this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
 
-    // TODO: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
 
     await this.saveGeneral();
 

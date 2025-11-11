@@ -48,11 +48,14 @@ export abstract class NationCommand extends BaseCommand {
       return null;
     }
     
-    // TODO: Legacy DB access - const db = DB.db();
-    // TODO: Implement KVStorage
-    // const nationStor = KVStorage.getStorage(db, this.getNationID(), 'nation_env');
-    // return nationStor.getValue(this.getNextExecuteKey());
-    return null;
+    // KVStorage 대신 nation.aux에 저장
+    try {
+      const key = this.getNextExecuteKey();
+      const value = this.nation?.aux?._next_execute?.[key];
+      return value || null;
+    } catch (error) {
+      return null;
+    }
   }
 
   public async setNextAvailable(yearMonth: number | null = null): Promise<void> {
@@ -65,9 +68,27 @@ export abstract class NationCommand extends BaseCommand {
         + this.getPostReqTurn() - this.getPreReqTurn();
     }
     
-    // TODO: Legacy DB access - const db = DB.db();
-    // TODO: Implement KVStorage
-    // const nationStor = KVStorage.getStorage(db, this.getNationID(), 'nation_env');
-    // nationStor.setValue(this.getNextExecuteKey(), yearMonth);
+    // KVStorage 대신 nation.aux에 저장
+    try {
+      const { nationRepository } = await import('../../repositories/nation.repository');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const nationID = this.generalObj.getNationID();
+      const key = this.getNextExecuteKey();
+      
+      if (!this.nation.aux) {
+        this.nation.aux = {};
+      }
+      if (!this.nation.aux._next_execute) {
+        this.nation.aux._next_execute = {};
+      }
+      this.nation.aux._next_execute[key] = yearMonth;
+      
+      await nationRepository.updateOneByFilter(
+        { session_id: sessionId, 'data.nation': nationID },
+        { aux: this.nation.aux }
+      );
+    } catch (error) {
+      console.error('setNextAvailable 실패:', error);
+    }
   }
 }

@@ -1,9 +1,10 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { JosaUtil } from '../../utils/JosaUtil';
-import { General } from '../../models/General';
+import { General } from '../../models/general.model';
+import { generalRepository } from '../../repositories/general.repository';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 export class AttemptRebellionCommand extends GeneralCommand {
   protected static actionName = '모반시도';
@@ -18,13 +19,12 @@ export class AttemptRebellionCommand extends GeneralCommand {
     this.setNation();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // BeChief(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // NotLord(),
-      // AllowRebellion(),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.BeChief(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.Custom((input: any, env: any) => input.officer_level !== 12, '군주는 반란을 일으킬 수 없습니다'),
+      ConstraintHelper.Custom((input: any, env: any) => env.allow_rebellion !== false, '반란이 허용되지 않습니다')
     ];
   }
 
@@ -45,53 +45,70 @@ export class AttemptRebellionCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
-
+    const sessionId = general.getSessionID();
     const nationID = general.getNationID();
 
-    const lordID = await db.queryFirstField(
-      'SELECT no FROM general WHERE nation = ? AND officer_level = 12',
-      [nationID]
-    );
+    // 군주 찾기
+    const lordDoc = await generalRepository.findOneByFilter({
+      session_id: sessionId,
+      'data.nation': nationID,
+      'data.officer_level': 12
+    });
 
-    // TODO: const lordGeneral = General.createObjFromDB(lordID);
-    const lordGeneral: any = null; // placeholder
+    if (!lordDoc) {
+      throw new Error('군주를 찾을 수 없습니다');
+    }
 
-    const generalName = general.getName();
-    const lordName = lordGeneral?.getName() || '';
+    const lordID = lordDoc.data?.no || 0;
+    const lordGeneral = await General.createObjFromDB(lordID, sessionId);
+
+    const generalName = general.getVar('name') || '무명';
+    const lordName = lordGeneral.getVar('name') || '무명';
     const nationName = this.nation?.name || '';
 
     const logger = general.getLogger();
-    const lordLogger = lordGeneral?.getLogger();
+    const lordLogger = lordGeneral.getLogger();
 
     general.setVar('officer_level', 12);
     general.setVar('officer_city', 0);
-    lordGeneral?.setVar('officer_level', 1);
-    lordGeneral?.setVar('officer_city', 0);
-    lordGeneral?.multiplyVar('experience', 0.7);
+    lordGeneral.setVar('officer_level', 1);
+    lordGeneral.setVar('officer_city', 0);
+    const currentExp = lordGeneral.getVar('experience') || 0;
+    lordGeneral.setVar('experience', Math.floor(currentExp * 0.7));
 
     const josaYi = JosaUtil.pick(generalName, '이');
     logger.pushGlobalHistoryLog(`<Y><b>【모반】</b></><Y>${generalName}</>${josaYi} <D><b>${nationName}</b></>의 군주 자리를 찬탈했습니다.`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <Y>${lordName}</>에게서 군주자리를 찬탈`);
 
     logger.pushGeneralActionLog(`모반에 성공했습니다. <1>${date}</>`);
-    lordLogger?.pushGeneralActionLog(`<Y>${generalName}</>에게 군주의 자리를 뺏겼습니다.`);
+    lordLogger.pushGeneralActionLog(`<Y>${generalName}</>에게 군주의 자리를 뺏겼습니다.`);
 
     logger.pushGeneralHistoryLog(`모반으로 <D><b>${nationName}</b></>의 군주자리를 찬탈`);
-    lordLogger?.pushGeneralHistoryLog(`<D><b>${generalName}</b></>의 모반으로 인해 <D><b>${nationName}</b></>의 군주자리를 박탈당함`);
+    lordLogger.pushGeneralHistoryLog(`<D><b>${generalName}</b></>의 모반으로 인해 <D><b>${nationName}</b></>의 군주자리를 박탈당함`);
 
     this.setResultTurn(new LastTurn(AttemptRebellionCommand.getName(), this.arg));
     
-    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     
     general.checkStatChange();
 
-    // TODO: StaticEventHandler.handleEvent
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, lordGeneral, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
     
     await this.saveGeneral();
-    lordGeneral?.applyDB(db);
+    await lordGeneral.save();
 
     return true;
   }

@@ -98,6 +98,15 @@ class MessageRepositoryClass {
   async count(filter: any): Promise<number> {
     return Message.countDocuments(filter);
   }
+
+  /**
+   * 세션의 모든 메시지 삭제
+   * @param sessionId - 세션 ID
+   * @returns 삭제 결과
+   */
+  async deleteBySession(sessionId: string) {
+    return Message.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**

@@ -1,7 +1,9 @@
 // @ts-nocheck - Type issues need investigation
 import { Nation } from '../models/nation.model';
 import { DeleteResult } from 'mongodb';
-import { saveNation, getNation } from '../common/cache/model-cache.helper';
+import { saveNation, getNation, invalidateCache } from '../common/cache/model-cache.helper';
+import { cacheService } from '../common/cache/cache.service';
+import { logger } from '../common/logger';
 
 /**
  * 국가 리포지토리
@@ -84,6 +86,10 @@ class NationRepository {
       // data.data 구조인 경우 평탄화
       const nationData = data.data ? { ...data.data, session_id: sessionId } : data;
       await saveNation(sessionId, nationId, nationData);
+      
+      // 목록 캐시 무효화
+      await this._invalidateListCaches(sessionId);
+      
       return nationData;
     }
     
@@ -109,6 +115,10 @@ class NationRepository {
     if (sessionId && nation) {
       const merged = { ...existing, ...update };
       await saveNation(sessionId, nation, merged);
+      
+      // 목록 캐시 무효화
+      await this._invalidateListCaches(sessionId);
+      
       return { modifiedCount: 1, matchedCount: 1 };
     }
     
@@ -132,12 +142,20 @@ class NationRepository {
     if (existing) {
       const merged = { ...existing, ...update };
       await saveNation(sessionId, nationNum, merged);
+      
+      // 목록 캐시 무효화
+      await this._invalidateListCaches(sessionId);
+      
       return { modifiedCount: 1, matchedCount: 1 };
     }
     
     // 없으면 새로 생성
     const newData = { session_id: sessionId, nation: nationNum, ...update };
     await saveNation(sessionId, nationNum, newData);
+    
+    // 목록 캐시 무효화
+    await this._invalidateListCaches(sessionId);
+    
     return { modifiedCount: 1, matchedCount: 0, upsertedCount: 1 };
   }
 
@@ -147,6 +165,18 @@ class NationRepository {
    * @returns 삭제 결과
    */
   async deleteById(nationId: string): Promise<DeleteResult> {
+    // 캐시 무효화
+    const nation = await Nation.findById(nationId).lean();
+    if (nation) {
+      const sessionId = nation.session_id;
+      const nationNum = nation.nation;
+      
+      if (sessionId && nationNum) {
+        await invalidateCache('nation', sessionId, nationNum);
+        await this._invalidateListCaches(sessionId);
+      }
+    }
+    
     return Nation.deleteOne({ _id: nationId });
   }
 
@@ -156,7 +186,40 @@ class NationRepository {
    * @returns 삭제 결과
    */
   async deleteBySession(sessionId: string): Promise<DeleteResult> {
+    // 캐시 무효화
+    await invalidateCache('nation', sessionId);
+    await this._invalidateListCaches(sessionId);
+    
     return Nation.deleteMany({ session_id: sessionId });
+  }
+
+  /**
+   * 국가 일괄 생성 (DB 직접 접근 - 시나리오 리셋용)
+   *
+   * @param nations - 국가 데이터 배열
+   * @returns 생성된 국가 목록
+   */
+  async bulkCreate(nations: any[]): Promise<any[]> {
+    if (!nations || nations.length === 0) {
+      return [];
+    }
+
+    const sessionId = nations[0]?.session_id;
+    logger.info('DB 직접 일괄 생성 실행 (시나리오 리셋)', { 
+      sessionId, 
+      count: nations.length 
+    });
+
+    // DB에 직접 일괄 삽입
+    const result = await Nation.insertMany(nations);
+
+    // 캐시 무효화 (다음 조회 시 새로 로드됨)
+    if (sessionId) {
+      await invalidateCache('nation', sessionId);
+      await this._invalidateListCaches(sessionId);
+    }
+
+    return result;
   }
 
   /**
@@ -175,6 +238,12 @@ class NationRepository {
    * @returns 업데이트 결과
    */
   async updateOneByFilter(filter: any, update: any) {
+    // 캐시 무효화
+    if (filter.session_id) {
+      await invalidateCache('nation', filter.session_id);
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
     return Nation.updateOne(filter, { $set: update });
   }
 
@@ -185,6 +254,12 @@ class NationRepository {
    * @returns 업데이트 결과
    */
   async updateManyByFilter(filter: any, update: any) {
+    // 캐시 무효화
+    if (filter.session_id) {
+      await invalidateCache('nation', filter.session_id);
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
     return Nation.updateMany(filter, { $set: update });
   }
 
@@ -194,6 +269,12 @@ class NationRepository {
    * @returns 삭제 결과
    */
   async deleteManyByFilter(filter: any): Promise<DeleteResult> {
+    // 캐시 무효화
+    if (filter.session_id) {
+      await invalidateCache('nation', filter.session_id);
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
     return Nation.deleteMany(filter);
   }
 
@@ -232,6 +313,10 @@ class NationRepository {
    * @returns 업데이트 결과
    */
   async incrementGennum(sessionId: string, nationNum: number, increment: number) {
+    // 캐시 무효화
+    await invalidateCache('nation', sessionId, nationNum);
+    await this._invalidateListCaches(sessionId);
+    
     return Nation.updateOne(
       {
         session_id: sessionId,
@@ -242,6 +327,21 @@ class NationRepository {
           'data.gennum': increment
         }
       }
+    );
+  }
+
+  /**
+   * 목록 캐시 무효화 (내부 헬퍼)
+   *
+   * @param sessionId - 세션 ID
+   */
+  private async _invalidateListCaches(sessionId: string) {
+    await cacheService.invalidate(
+      [
+        `nations:list:${sessionId}`,
+        `nations:active:${sessionId}`,
+      ],
+      []
     );
   }
 }

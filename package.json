@@ -24,6 +24,8 @@
     "init-general-commands": "ts-node scripts/initialize-general-commands.ts",
     "check-lock": "ts-node scripts/check-lock.ts",
     "create-test-setup": "ts-node scripts/create-test-setup.ts",
+    "update-server-name": "ts-node scripts/update-server-name.ts",
+    "create-servers": "ts-node scripts/create-servers.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

@@ -113,9 +113,19 @@ export interface ISession extends Document {
   };
   
   // 게임 상태
-  status: 'waiting' | 'running' | 'finished';
+  status: 'preparing' | 'running' | 'paused' | 'finished' | 'united';
   started_at?: Date;
   finished_at?: Date;
+  
+  // 동적 필드 (레거시 PHP 호환성)
+  // 최상위 레벨에 저장되는 게임 데이터
+  year?: number;
+  month?: number;
+  startyear?: number;
+  turntime?: Date | string;
+  starttime?: Date | string;
+  turnterm?: number;
+  turn?: number;
   
   // PHP 호환성: 동적 게임 데이터
   // turntime, year, month, turnterm 등을 저장
@@ -152,7 +162,7 @@ const SessionSchema = new Schema<ISession>({
   game_constants: { type: Schema.Types.Mixed, default: {} },
   cities: { type: Schema.Types.Mixed, default: {} },
   
-  status: { type: String, default: 'waiting' },
+  status: { type: String, default: 'preparing' },
   started_at: { type: Date },
   finished_at: { type: Date },
   

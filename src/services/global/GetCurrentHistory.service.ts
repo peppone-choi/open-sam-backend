@@ -26,9 +26,10 @@ export class GetCurrentHistoryService {
 
       // Get session info
       const sessionData = session.data as any || {};
-      const startYear = sessionData.startyear || 180;
-      let year = sessionData.year || 180;
-      let month = sessionData.month || 1;
+      const gameEnv = sessionData.game_env || {};
+      const startYear = gameEnv.startyear || sessionData.startyear || session.startyear || 180;
+      let year = gameEnv.year || sessionData.year || session.year || 180;
+      let month = gameEnv.month || sessionData.month || session.month || 1;
       
       // Calculate yearMonth
       let yearMonth = year * 12 + month;
@@ -83,9 +84,10 @@ export class GetCurrentHistoryService {
     if (!session) return {};
 
     const sessionData = session.data as any || {};
-    const startYear = sessionData.startyear || 180;
-    const year = sessionData.year || 180;
-    const month = sessionData.month || 1;
+    const gameEnv = sessionData.game_env || {};
+    const startYear = gameEnv.startyear || sessionData.startyear || session.startyear || 180;
+    const year = gameEnv.year || sessionData.year || session.year || 180;
+    const month = gameEnv.month || sessionData.month || session.month || 1;
 
     // Get nations
     const nations = await nationRepository.findByFilter({ session_id: sessionId })

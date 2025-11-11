@@ -101,9 +101,28 @@ class GeneralRecordRepository {
       'data.general_id': generalId
     });
   }
+
+  /**
+   * 조건으로 여러 기록 삭제 (alias)
+   * @param filter - 삭제 조건
+   * @returns 삭제 결과
+   */
+  async deleteManyByFilter(filter: any): Promise<DeleteResult> {
+    return GeneralRecord.deleteMany(filter);
+  }
+
+  /**
+   * 세션의 모든 장수 기록 삭제
+   * @param sessionId - 세션 ID
+   * @returns 삭제 결과
+   */
+  async deleteBySession(sessionId: string): Promise<DeleteResult> {
+    return GeneralRecord.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**
  * 장수 기록 리포지토리 싱글톤 인스턴스
  */
+
 export const generalRecordRepository = new GeneralRecordRepository();

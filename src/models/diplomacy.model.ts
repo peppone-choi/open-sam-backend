@@ -9,7 +9,7 @@ export interface IDiplomacy extends Document {
 }
 
 const DiplomacySchema: Schema = new Schema({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   me: { type: Number, required: true },
   you: { type: Number, required: true },
   state: { type: Number, required: true, default: 2 },

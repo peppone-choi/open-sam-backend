@@ -2,6 +2,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 화계 커맨드
@@ -94,12 +95,11 @@ export class FireAttackCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
@@ -111,15 +111,14 @@ export class FireAttackCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // NotOccupiedDestCity(),
-      // NotNeutralDestCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // DisallowDiplomacyBetweenStatus([7 => '불가침국입니다.']),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.NotOccupiedDestCity(),
+      ConstraintHelper.NotNeutralDestCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.DisallowDiplomacyBetweenStatus({ 7: '불가침국입니다.' }),
     ];
   }
 

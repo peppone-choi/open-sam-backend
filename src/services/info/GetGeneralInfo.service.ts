@@ -47,10 +47,7 @@ export class GetGeneralInfoService {
         generalId = general.data?.no || general.no;
       } else {
         // 지정된 generalID로 조회
-        general = await generalRepository.findBySessionAndNo({
-          session_id: sessionId,
-          'data.no': generalId
-        });
+        general = await generalRepository.findBySessionAndNo(sessionId, generalId);
         
         if (!general) {
           return {
@@ -60,9 +57,10 @@ export class GetGeneralInfoService {
         }
       }
       
-      const generalData = general.data || {};
-      const nationId = generalData.nation || 0;
-      const cityId = generalData.city || 0;
+      // data 필드 또는 최상위 필드에서 값 가져오기
+      const generalData = general.data || general;
+      const nationId = generalData.nation || general.nation || 0;
+      const cityId = generalData.city || general.city || 0;
       
       // 국가 정보 조회
       let nationInfo = null;

@@ -30,6 +30,14 @@ export class GetFrontInfoService {
     const userId = user?.userId || user?.id || data.user_id;
     let generalId = user?.generalId || data.general_id;
     
+    console.log('[GetFrontInfo] 시작', {
+      sessionId,
+      userId,
+      generalId,
+      user,
+      data: { session_id: data.session_id, user_id: data.user_id, general_id: data.general_id }
+    });
+    
     const lastNationNoticeDate = data.lastNationNoticeDate || '2022-08-19 00:00:00';
     const lastGeneralRecordID = parseInt(data.lastGeneralRecordID) || 0;
     const lastWorldHistoryID = parseInt(data.lastWorldHistoryID) || 0;
@@ -40,14 +48,18 @@ export class GetFrontInfoService {
       
       if (generalId) {
         // generalId로 직접 조회
+        console.log('[GetFrontInfo] generalId로 조회', { sessionId, generalId });
         general = await generalRepository.findBySessionAndNo(sessionId, generalId);
       } else if (userId) {
         // userId로 owner 필드를 통해 조회
+        console.log('[GetFrontInfo] userId로 조회', { sessionId, userId: String(userId) });
         general = await generalRepository.findBySessionAndOwner(
           sessionId,
           String(userId),
           { npc: { $lt: 2 } } // NPC가 아닌 실제 플레이어 장수
         );
+        
+        console.log('[GetFrontInfo] userId 조회 결과', { found: !!general, generalNo: general?.no });
         
         if (general) {
           generalId = general.no;
@@ -55,18 +67,21 @@ export class GetFrontInfoService {
       }
 
       if (!general) {
+        console.log('[GetFrontInfo] 장수 없음', { generalId, userId });
         return {
           success: false,
           message: generalId ? '장수를 찾을 수 없습니다' : '장수가 없습니다. 먼저 장수를 생성해주세요.'
         };
       }
+      
+      console.log('[GetFrontInfo] 장수 찾음', { generalId, generalNo: general.no, generalName: general.name || general.data?.name });
 
       if (!generalId) {
         generalId = general.no;
       }
 
-      const nationId = general.nation || 0;
-      const cityId = general.city;
+      const nationId = general.nation || general.data?.nation || 0;
+      const cityId = general.city || general.data?.city;
 
       // 2. 전역 정보 생성
       const globalInfo = await this.generateGlobalInfo(sessionId);
@@ -194,6 +209,7 @@ export class GetFrontInfoService {
     }
 
     const data = session.data || {};
+    const gameEnv = data.game_env || {};
     
     // 장수 통계
     const genCount = await General.aggregate([
@@ -201,7 +217,7 @@ export class GetFrontInfoService {
       { $group: { _id: '$data.npc', count: { $sum: 1 } } }
     ]);
 
-    const turntime = data.turntime ? new Date(data.turntime) : new Date();
+    const turntime = (gameEnv.turntime || data.turntime) ? new Date(gameEnv.turntime || data.turntime) : new Date();
     const lastExecutedStr = turntime instanceof Date 
       ? turntime.toISOString().slice(0, 19).replace('T', ' ')
       : String(turntime);
@@ -209,14 +225,16 @@ export class GetFrontInfoService {
     // turnDate를 호출하여 최신 년/월 계산
     // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
     const { ExecuteEngineService } = await import('../global/ExecuteEngine.service');
-    const gameEnvCopy = { ...data };
+    const gameEnvCopy = { ...gameEnv };
     const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
     
     // 년/월이 변경되었으면 DB에 저장
-    if (gameEnvCopy.year !== data.year || gameEnvCopy.month !== data.month) {
-      data.year = gameEnvCopy.year;
-      data.month = gameEnvCopy.month;
+    if (gameEnvCopy.year !== gameEnv.year || gameEnvCopy.month !== gameEnv.month) {
+      gameEnv.year = gameEnvCopy.year;
+      gameEnv.month = gameEnvCopy.month;
+      data.game_env = gameEnv;
       session.data = data;
+      session.markModified('data.game_env');
       await session.save();
     }
     
@@ -451,9 +469,12 @@ export class GetFrontInfoService {
     
     // 능력치 범위 보정 (40-150 사이로 제한)
     // 기존 DB에 잘못된 값이 있을 경우 자동 수정
-    let leadership = data.leadership || 50;
-    let strength = data.strength || 50;
-    let intel = data.intel || 50;
+    // 최상위 필드 우선, 없으면 data.data에서 읽기
+    let leadership = data.leadership ?? data.data?.leadership ?? 50;
+    let strength = data.strength ?? data.data?.strength ?? 50;
+    let intel = data.intel ?? data.data?.intel ?? 50;
+    let politics = data.politics ?? data.data?.politics ?? Math.round((leadership + intel) / 2);
+    let charm = data.charm ?? data.data?.charm ?? Math.round((leadership + intel) / 2);
     
     // 범위를 벗어난 값 체크 및 로그
     if (leadership < 10 || leadership > 150) {
@@ -489,8 +510,8 @@ export class GetFrontInfoService {
       leadership: leadership,
       strength: strength,
       intel: intel,
-      politics: data.politics !== undefined ? data.politics : Math.round((leadership + strength + intel) / 3),
-      charm: data.charm !== undefined ? data.charm : Math.round((leadership + strength + intel) / 3),
+      politics: politics,
+      charm: charm,
       explevel: data.explevel || 0,
       dedlevel: data.dedlevel || 0,
       gold: (typeof data.gold === 'number' && !isNaN(data.gold)) ? data.gold : 1000,
@@ -517,8 +538,8 @@ export class GetFrontInfoService {
       bill: 0,
       reservedCommand: await this.getReservedCommand(sessionId, data.no),
       autorun_limit: data.aux?.autorun_limit || 0,
-      city: data.city || 0,
-      troop: data.troop || 0,
+      city: data.city ?? data.data?.city ?? 0,
+      troop: data.troop ?? data.data?.troop ?? 0,
       refreshScore: 0,
       specage: data.specage || 0,
       specage2: data.specage2 || 0,
@@ -679,9 +700,10 @@ export class GetFrontInfoService {
       general_id: 0,
       log_type: 'history',
       id: { $gte: lastGeneralRecordID }
-    })
-      .sort({ id: -1 })
-      .limit(this.ROW_LIMIT + 1);
+    }, {
+      sort: { id: -1 },
+      limit: this.ROW_LIMIT + 1
+    });
 
     // 장수 행동 기록
     const generalRecord = await generalRecordRepository.findByFilter({
@@ -689,9 +711,10 @@ export class GetFrontInfoService {
       general_id: generalId,
       log_type: 'action',
       id: { $gte: lastGeneralRecordID }
-    })
-      .sort({ id: -1 })
-      .limit(this.ROW_LIMIT + 1);
+    }, {
+      sort: { id: -1 },
+      limit: this.ROW_LIMIT + 1
+    });
 
     return {
       history: history.map(h => [h.id, h.text]),

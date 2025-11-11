@@ -2,6 +2,7 @@
 import { InvestCommerceCommand } from './investCommerce';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 기술 연구 커맨드
@@ -20,13 +21,12 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice)
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice)
     ];
 
     this.reqGold = reqGold;
@@ -78,7 +78,13 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     const ded = score * 1.0;
 
     if (pick === 'success') {
-      // TODO: updateMaxDomesticCritical
+      try {
+        if (typeof general.updateMaxDomesticCritical === 'function') {
+          general.updateMaxDomesticCritical();
+        }
+      } catch (error) {
+        console.error('updateMaxDomesticCritical 실패:', error);
+      }
     } else {
       general.setAuxVar('max_domestic_critical', 0);
     }
@@ -115,7 +121,22 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof ResearchTechCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(ResearchTechCommand.actionName),
+        general
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

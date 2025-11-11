@@ -113,9 +113,19 @@ class KVStorageRepository {
   async deleteMany(filter: any) {
     return KVStorage.deleteMany(filter);
   }
+
+  /**
+   * 세션의 모든 KV 스토리지 삭제
+   * @param sessionId - 세션 ID
+   * @returns 삭제 결과
+   */
+  async deleteBySession(sessionId: string) {
+    return KVStorage.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**
  * KVStorage 리포지토리 싱글톤 인스턴스
  */
+
 export const kvStorageRepository = new KVStorageRepository();

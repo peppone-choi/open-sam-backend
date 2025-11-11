@@ -60,7 +60,7 @@ export class VolunteerCommand extends BaseLoghCommand {
 
     delete commanderDoc.customData.retired;
     delete commanderDoc.customData.retiredAt;
-    commanderDoc.rank = '이등병';
+    commanderDoc.setRankByName('이등병');
     commanderDoc.jobPosition = null;
 
     commander.consumeCommandPoints(this.getRequiredCommandPoints());

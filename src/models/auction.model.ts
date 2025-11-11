@@ -41,7 +41,7 @@ const AuctionBidSchema = new Schema({
 }, { _id: false });
 
 const AuctionSchema = new Schema({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   type: { 
     type: String, 
     required: true, 

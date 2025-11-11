@@ -1,6 +1,8 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { GameConst } from '../../constants/GameConst';
 
 /**
  * 사기 진작 커맨드
@@ -22,21 +24,19 @@ export class BoostMoraleCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // OccupiedCity(),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.OccupiedCity(),
     ];
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // OccupiedCity(),
-      // ReqGeneralCrew(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // ReqGeneralAtmosMargin(100), // GameConst::$maxAtmosByCommand
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.ReqGeneralCrew(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.ReqGeneralAtmosMargin(GameConst.maxAtmosByCommand || 100),
     ];
   }
 
@@ -63,7 +63,6 @@ export class BoostMoraleCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
     const atmosDelta = 0.005;
@@ -101,7 +100,25 @@ export class BoostMoraleCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof BoostMoraleCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(BoostMoraleCommand.actionName),
+        general,
+        sessionId,
+        '사기진작'
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

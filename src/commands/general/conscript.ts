@@ -2,6 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { GameConst } from '../../constants/GameConst';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 징병 커맨드
@@ -46,7 +47,20 @@ export class ConscriptCommand extends GeneralCommand {
       return false;
     }
 
-    // TODO: GameUnitConst.byID validation
+    // 병종 ID 검증
+    try {
+      const { GameUnitConst } = require('../../constants/GameUnitConst');
+      if (GameUnitConst.byID) {
+        const crewTypeData = GameUnitConst.byID(crewType);
+        if (!crewTypeData && crewType !== 0) {
+          // crewType 0은 기본 병종으로 허용
+          return false;
+        }
+      }
+    } catch (error) {
+      // GameUnitConst 없으면 기본 검증만
+    }
+    
     if (amount < 0) {
       return false;
     }
@@ -63,11 +77,10 @@ export class ConscriptCommand extends GeneralCommand {
     this.setNation(['tech', 'aux']);
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // ReqCityCapacity('pop',  '주민', [100]),
-      // ReqCityTrust(20),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.ReqCityCapacity('pop', '주민', 100),
+      ConstraintHelper.ReqCityTrust(20),
     ];
   }
 
@@ -78,8 +91,22 @@ export class ConscriptCommand extends GeneralCommand {
     const currCrewType = general.getCrewTypeObj();
     let maxCrew = leadership * 100;
 
-    // TODO: GameUnitConst.byID
-    const reqCrewType = { id: this.arg.crewType, name: '병종' }; // placeholder
+    // 병종 정보 가져오기 - 동기 require 사용
+    let reqCrewType: any = { id: this.arg.crewType, name: '병종', armType: 0 };
+    try {
+      const { GameUnitConst } = require('../../constants/GameUnitConst');
+      const crewTypeData = GameUnitConst.byID ? GameUnitConst.byID(this.arg.crewType) : null;
+      if (crewTypeData) {
+        reqCrewType = {
+          id: crewTypeData.id || this.arg.crewType,
+          name: crewTypeData.name || '병종',
+          armType: crewTypeData.armType || 0,
+          cost: crewTypeData.cost || 1,
+        };
+      }
+    } catch (error) {
+      // GameUnitConst 없으면 기본값 사용
+    }
 
     if (reqCrewType.id === currCrewType?.id) {
       maxCrew -= general.getVar('crew');
@@ -93,15 +120,14 @@ export class ConscriptCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // ReqCityCapacity('pop',  '주민', [100 + reqCrew]),
-      // ReqCityTrust(20),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // ReqGeneralCrewMargin(reqCrewType.id),
-      // AvailableRecruitCrewType(reqCrewType.id)
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.ReqCityCapacity('pop', '주민', 100 + this.reqCrew),
+      ConstraintHelper.ReqCityTrust(20),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.ReqGeneralCrewMargin(this.reqCrewType?.id),
+      ConstraintHelper.AvailableRecruitCrewType(this.reqCrewType?.id),
     ];
   }
 
@@ -121,10 +147,21 @@ export class ConscriptCommand extends GeneralCommand {
       return [0, 0];
     }
 
-    // TODO: reqCrewType.costWithTech, onCalcDomestic
-    let reqGold = this.maxCrew; // placeholder
+    // 비용 계산 (기술 레벨 반영)
+    const baseCost = this.reqCrewType?.cost || 1;
+    const techLevel = this.nation?.tech || 0;
+    const costWithTech = baseCost * (1 - techLevel / 1000); // 기술 1당 0.1% 할인
+    
+    let reqGold = this.maxCrew * costWithTech;
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     reqGold *= costOffset;
+    
+    // onCalcDomestic 보정 적용
+    const general = this.generalObj;
+    if (general && typeof general.onCalcDomestic === 'function') {
+      reqGold = general.onCalcDomestic('징병', 'cost', reqGold);
+    }
+    
     let reqRice = this.maxCrew / 100;
 
     reqGold = Math.round(reqGold);
@@ -145,7 +182,7 @@ export class ConscriptCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
+    const db = DB.db();
     const general = this.generalObj;
 
     const reqCrew = this.maxCrew;
@@ -160,9 +197,13 @@ export class ConscriptCommand extends GeneralCommand {
     const defaultTrain = (this.constructor as typeof ConscriptCommand).defaultTrain;
     const defaultAtmos = (this.constructor as typeof ConscriptCommand).defaultAtmos;
 
-    // TODO: onCalcDomestic
-    const setTrain = defaultTrain;
-    const setAtmos = defaultAtmos;
+    // onCalcDomestic 보정 적용
+    let setTrain = defaultTrain;
+    let setAtmos = defaultAtmos;
+    if (typeof general.onCalcDomestic === 'function') {
+      setTrain = general.onCalcDomestic('징병', 'train', setTrain);
+      setAtmos = general.onCalcDomestic('징병', 'atmos', setAtmos);
+    }
 
     if (reqCrewType?.id === currCrewType?.id && currCrew > 0) {
       logger.pushGeneralActionLog(`${crewTypeName} ${reqCrew}명을 추가${actionName}했습니다.`);
@@ -180,20 +221,42 @@ export class ConscriptCommand extends GeneralCommand {
       general.setVar('atmos', setAtmos);
     }
 
-    // TODO: onCalcDomestic for reqCrewDown
-    const reqCrewDown = reqCrew;
+    // onCalcDomestic 보정 적용 (주민 감소량)
+    let reqCrewDown = reqCrew;
+    if (typeof general.onCalcDomestic === 'function') {
+      reqCrewDown = general.onCalcDomestic('징병', 'pop_down', reqCrewDown);
+    }
 
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     const newTrust = Math.max(0, (this.city?.trust || 50) - (reqCrewDown / (this.city?.pop || 10000)) / costOffset * 100);
 
-    // TODO: Update city in DB
-    // trust: newTrust
-    // pop: city.pop - reqCrewDown
+    // 도시 정보 업데이트 (주민 감소, 신뢰도 하락)
+    try {
+      const { cityRepository } = await import('../../repositories/city.repository');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const newPop = Math.max(0, (this.city?.pop || 10000) - reqCrewDown);
+      
+      await cityRepository.updateByCityNum(sessionId, this.city?.city, {
+        trust: newTrust,
+        pop: newPop
+      });
+      
+      if (this.city) {
+        this.city.trust = newTrust;
+        this.city.pop = newPop;
+      }
+    } catch (error) {
+      console.error('도시 업데이트 실패:', error);
+      throw new Error('징병 처리 중 도시 업데이트 실패');
+    }
 
     const exp = Math.round(reqCrew / 100);
     const ded = Math.round(reqCrew / 100);
 
-    // TODO: general.addDex
+    // 병종 숙련도 증가
+    if (typeof general.addDex === 'function') {
+      general.addDex(reqCrewType, reqCrew / 50, false);
+    }
 
     const [reqGold, reqRice] = this.getCost();
 
@@ -206,17 +269,180 @@ export class ConscriptCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
-    // TODO: general.setAuxVar('armType', reqCrewType.armType)
+    // 병종 타입 설정
+    if (typeof general.setAuxVar === 'function' && reqCrewType?.armType !== undefined) {
+      general.setAuxVar('armType', reqCrewType.armType);
+    }
+
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
+
+    // tryUniqueItemLottery 처리
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env['session_id'] || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '징병');
+    } catch (error: any) {
+      console.error('tryUniqueItemLottery failed:', error);
+    }
+
     await this.saveGeneral();
 
     return true;
   }
 
   public exportJSVars(): any {
+    // 병종 데이터 내보내기
+    const crewTypeData: any[] = [];
+    
+    try {
+      // units.json에서 병종 데이터 직접 로드
+      const fs = require('fs');
+      const path = require('path');
+      const scenarioId = this.env.scenario_id || 'sangokushi';
+      const unitsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/units.json');
+      
+      if (fs.existsSync(unitsPath)) {
+        const unitsData = JSON.parse(fs.readFileSync(unitsPath, 'utf-8'));
+        const units = unitsData.units || {};
+        
+        for (const [unitId, unitData] of Object.entries(units)) {
+          const unit: any = unitData;
+          
+          // 제약 조건 확인하여 사용 가능 여부 판단
+          const constraints = unit.constraints || [];
+          let notAvailable = false;
+          let constraintReason = '';
+          
+          for (const constraint of constraints) {
+            if (constraint.type === 'impossible') {
+              notAvailable = true;
+              constraintReason = '징병 불가';
+              break;
+            }
+            
+            if (constraint.type === 'reqTech') {
+              const currentTech = this.nation?.tech || 0;
+              if (currentTech < constraint.value) {
+                notAvailable = true;
+                constraintReason = `기술 ${constraint.value} 필요 (현재: ${currentTech})`;
+              }
+            }
+            
+            if (constraint.type === 'reqCities') {
+              const currentCity = this.city;
+              const requiredCity = constraint.value;
+              
+              if (!currentCity) {
+                notAvailable = true;
+                constraintReason = `${requiredCity}에서만 징병 가능`;
+              } else if (currentCity.name !== requiredCity) {
+                notAvailable = true;
+                constraintReason = `${requiredCity}에서만 징병 가능`;
+                console.log(`[Conscript] ${unit.name} (${unit.id}) reqCities check: current=${currentCity.name}, required=${requiredCity}, notAvailable=${notAvailable}`);
+              } else {
+                console.log(`[Conscript] ${unit.name} (${unit.id}) reqCities check: PASSED (current=${currentCity.name})`);
+              }
+            }
+            
+            if (constraint.type === 'reqRegions') {
+              const requiredRegion = constraint.value;
+              const currentCity = this.city;
+              
+              if (!currentCity) {
+                notAvailable = true;
+                constraintReason = `${requiredRegion} 지역에서만 징병 가능`;
+              } else {
+                // regions.json에서 지역 정보 확인
+                try {
+                  const regionsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/regions.json');
+                  if (fs.existsSync(regionsPath)) {
+                    const regionsData = JSON.parse(fs.readFileSync(regionsPath, 'utf-8'));
+                    const regions = regionsData.regions || [];
+                    
+                    // 현재 도시가 속한 지역 찾기
+                    let currentRegionName = null;
+                    for (const region of regions) {
+                      if (region.cities && region.cities.includes(currentCity.name)) {
+                        currentRegionName = region.name;
+                        break;
+                      }
+                    }
+                    
+                    if (currentRegionName !== requiredRegion) {
+                      notAvailable = true;
+                      constraintReason = `${requiredRegion} 지역에서만 징병 가능`;
+                    }
+                  } else {
+                    // regions.json이 없으면 무조건 불가
+                    notAvailable = true;
+                    constraintReason = `${requiredRegion} 지역에서만 징병 가능`;
+                  }
+                } catch (err) {
+                  notAvailable = true;
+                  constraintReason = `${requiredRegion} 지역에서만 징병 가능`;
+                }
+              }
+            }
+            
+            if (constraint.type === 'country_type_unlock') {
+              const requiredType = constraint.value;
+              const currentNation = this.nation;
+              
+              // 국가의 country_type 확인
+              const countryType = currentNation?.country_type || currentNation?.data?.country_type;
+              
+              if (countryType !== requiredType) {
+                notAvailable = true;
+                const typeNames: Record<string, string> = {
+                  'taiping': '태평도',
+                  'bandits': '도적',
+                  'mohism': '묵가',
+                  'militarism': '병가',
+                  'taoism': '도가',
+                  'taoism_religious': '오두미도',
+                  'confucianism': '유가',
+                  'legalism': '법가',
+                  'logicians': '명가',
+                  'diplomatists': '종횡가',
+                  'yinyang': '음양가',
+                  'buddhism': '불가',
+                  'virtue': '덕가'
+                };
+                const typeName = typeNames[requiredType] || requiredType;
+                constraintReason = `${typeName} 국가 전용`;
+              }
+            }
+          }
+          
+          crewTypeData.push({
+            id: unit.id,
+            name: unit.name,
+            armType: unit.type || 'FOOTMAN',
+            cost: unit.cost?.gold || 0,
+            rice: unit.cost?.rice || 0,
+            notAvailable,
+            constraintReason,
+            constraints: unit.constraints || []
+          });
+        }
+      }
+    } catch (error) {
+      console.error('병종 데이터 조회 실패:', error);
+    }
+    
     return {
       procRes: {
-        // TODO: crewType data
+        crewTypes: crewTypeData,
+        selectedCrewType: this.reqCrewType,
+        currentCrewType: this.currCrewType,
+        maxCrew: this.maxCrew,
+        reqCrew: this.reqCrew,
       }
     };
   }

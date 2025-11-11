@@ -50,7 +50,6 @@ export class TravelCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
     const sightseeingMessage = new SightseeingMessage();
@@ -114,8 +113,25 @@ export class TravelCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(TravelCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(TravelCommand.actionName),
+        general,
+        sessionId,
+        '유랑'
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

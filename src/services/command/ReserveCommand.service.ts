@@ -112,7 +112,7 @@ async function setGeneralCommand(
     const finalBrief = brief || action;
 
     for (const turnIdx of turnList) {
-      await generalTurnRepository.findOneAndUpdate(
+      const result = await generalTurnRepository.findOneAndUpdate(
         {
           session_id: sessionId,
           'data.general_id': generalId,
@@ -125,8 +125,18 @@ async function setGeneralCommand(
             'data.brief': finalBrief
           }
         },
-        { upsert: true }
+        { upsert: true, new: true }
       );
+      
+      console.log('[ReserveCommand] 명령 저장 완료:', {
+        sessionId,
+        generalId,
+        turnIdx,
+        action,
+        arg,
+        brief: finalBrief,
+        saved: !!result
+      });
     }
 
     return {

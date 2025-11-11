@@ -11,7 +11,7 @@ export interface INgDiplomacy extends Document {
 }
 
 const NgDiplomacySchema = new Schema<INgDiplomacy>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

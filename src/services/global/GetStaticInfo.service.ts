@@ -1,7 +1,6 @@
 import { sessionRepository } from '../../repositories/session.repository';
 import { generalRepository } from '../../repositories/general.repository';
-import { Nation } from '../../models/nation.model';
-import mongoose from 'mongoose';
+import { nationRepository } from '../../repositories/nation.repository';
 import { getSession } from '../../common/cache/model-cache.helper';
 import { ISession } from '../../models/session.model';
 
@@ -21,8 +20,8 @@ export class GetStaticInfoService {
 
       const sessionData = session.data || {};
 
-      // Mongoose 모델 사용
-      const nationCount = await Nation.countDocuments({
+      // Repository 사용
+      const nationCount = await nationRepository.count({
         session_id: sessionId,
         'data.level': { $gt: 0 }
       });
@@ -42,9 +41,9 @@ export class GetStaticInfoService {
         result: true,
         game: {
           scenario: sessionData.scenario_text || sessionData.scenario || 'Unknown',
-          year: sessionData.year || 180,
-          month: sessionData.month || 1,
-          startYear: sessionData.startyear || 180,
+          year: (sessionData.game_env?.year || sessionData.year || session.year || 180),
+          month: (sessionData.game_env?.month || sessionData.month || session.month || 1),
+          startYear: (sessionData.game_env?.startyear || sessionData.startyear || session.startyear || 180),
           turnTerm: sessionData.turnterm || 60, // 분 단위
           maxUserCnt: sessionData.maxgeneral || 50,
           userCnt: generalCount,

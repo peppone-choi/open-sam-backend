@@ -11,7 +11,7 @@ export interface IRankData extends Document {
 }
 
 const RankDataSchema = new Schema<IRankData>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

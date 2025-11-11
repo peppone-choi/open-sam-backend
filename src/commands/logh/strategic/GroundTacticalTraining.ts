@@ -54,8 +54,8 @@ export class GroundTacticalTrainingCommand extends BaseLoghCommand {
     const commanderDoc = await LoghCommander.findOne({ session_id: commander.session_id, no: commander.no });
     if (!commanderDoc) return { success: false, message: '커맨더를 찾을 수 없습니다.' };
 
-    const oldTactics = commanderDoc.stats.tactics;
-    commanderDoc.stats.tactics = Math.min(100, oldTactics + 3);
+    const oldAttack = commanderDoc.stats.attack;
+    commanderDoc.stats.attack = Math.min(100, oldAttack + 3);
     if (!commanderDoc.customData) commanderDoc.customData = {};
     if (!commanderDoc.customData.tacticalSkills) commanderDoc.customData.tacticalSkills = [];
     if (!commanderDoc.customData.tacticalSkills.includes('ground_combat')) {
@@ -70,8 +70,8 @@ export class GroundTacticalTrainingCommand extends BaseLoghCommand {
 
     return {
       success: true,
-      message: `육전 전술 훈련 완료! 전술: ${oldTactics} → ${commanderDoc.stats.tactics}`,
-      effects: [{ type: 'ground_tactical_training', oldTactics, newTactics: commanderDoc.stats.tactics }],
+      message: `육전 전술 훈련 완료! 공격력: ${oldAttack} → ${commanderDoc.stats.attack}`,
+      effects: [{ type: 'ground_tactical_training', oldAttack, newAttack: commanderDoc.stats.attack }],
     };
   }
 

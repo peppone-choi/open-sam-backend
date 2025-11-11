@@ -3,6 +3,9 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { General } from '../../models/general.model';
 import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { JosaUtil } from '../../utils/JosaUtil';
 
 /**
  * 등용 수락 커맨드
@@ -58,27 +61,37 @@ export class AcceptRecruitCommand extends GeneralCommand {
     this.setNation(['gennum', 'scout']);
 
     this.permissionConstraints = [
-      // TODO: ConstraintHelper
-      // AlwaysFail('예약 불가능 커맨드')
+      ConstraintHelper.AlwaysFail('예약 불가능 커맨드')
     ];
   }
 
   protected async initWithArg(): Promise<void> {
-    // const destGeneral = await General.findById(this.arg.destGeneralID);
-    // this.setDestGeneral(destGeneral);
-    // this.setDestNation(this.arg.destNationID, ['gennum', 'scout']);
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    // 대상 장수 설정
+    const destGeneralDoc = await generalRepository.findOneByFilter({
+      session_id: sessionId,
+      'data.no': this.arg.destGeneralID
+    });
+    
+    if (destGeneralDoc) {
+      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
+      this.setDestGeneral(destGeneral);
+    }
+    
+    // 대상 국가 설정
+    this.setDestNation(this.arg.destNationID, ['gennum', 'scout', 'level']);
 
     const relYear = this.env.year - this.env.startyear;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // ExistsDestNation(),
-      // BeNeutral(),
-      // AllowJoinDestNation(relYear),
-      // ReqDestNationValue('level', '>', 0, '방랑군에는 임관할 수 없습니다.'),
-      // DifferentDestNation(),
-      // ReqGeneralValue('officer_level', '!=', 12, '군주는 등용장을 수락할 수 없습니다')
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.ExistsDestNation(),
+      ConstraintHelper.BeNeutral(),
+      ConstraintHelper.AllowJoinDestNation(relYear),
+      ConstraintHelper.ReqDestNationValue('level', '>', 0, '방랑군에는 임관할 수 없습니다.'),
+      ConstraintHelper.DifferentDestNation(),
+      ConstraintHelper.ReqGeneralValue('officer_level', '관직', '!=', 12, '군주는 등용장을 수락할 수 없습니다')
     ];
   }
 
@@ -103,7 +116,6 @@ export class AcceptRecruitCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -194,25 +206,27 @@ export class AcceptRecruitCommand extends GeneralCommand {
     const logger = general.getLogger();
     const destLogger = destGeneral.getLogger();
 
-    // TODO: JosaUtil
-    logger.pushGeneralActionLog(`<D>${destNationName}</>로 망명하여 수도로 이동합니다.`);
+    const josaRo = JosaUtil.pick(destNationName, '로');
+    logger.pushGeneralActionLog(`<D>${destNationName}</>${josaRo} 망명하여 수도로 이동합니다.`);
     destLogger.pushGeneralActionLog(`<Y>${generalName}</> 등용에 성공했습니다.`);
 
     logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>로 망명`);
     destLogger.pushGeneralHistoryLog(`<Y>${generalName}</> 등용에 성공`);
 
-    logger.pushGlobalActionLog(`<Y>${generalName}</>이 <D><b>${destNationName}</b></>로 <S>망명</>하였습니다.`);
+    const josaYi = JosaUtil.pick(generalName, '이');
+    logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>${josaRo} <S>망명</>하였습니다.`);
 
-    if (nationID !== 0) {
-      // TODO: Legacy DB - await db('nation').where('nation', nationID).update(setOriginalNationValues);
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
     }
-    // TODO: Legacy DB - await db('nation').where('nation', destNationID).update(setScoutNationValues);
-
-    // TODO: InheritancePoint
-    // general.increaseInheritancePoint(InheritanceKey::active_action, 1);
 
     if (general.getNPCType() < 2) {
-      // TODO: max_belong 처리
+      const belongCount = general.getVar('belong') || 0;
+      general.setVar('max_belong', Math.max(belongCount, general.getVar('max_belong') || 0));
     }
 
     general.setVar('permission', 'normal');
@@ -224,11 +238,33 @@ export class AcceptRecruitCommand extends GeneralCommand {
     general.setVar('troop', 0);
 
     if (isTroopLeader) {
-      // TODO: Legacy DB - await db('general').where('troop_leader', generalID).update({ troop: 0 });
-      // TODO: Legacy DB - await db('troop').where('troop_leader', generalID).del();
+      // 부대원들의 부대 해제
+      const sessionId = general.getSessionID();
+      await generalRepository.updateManyByFilter(
+        { session_id: sessionId, 'data.troop': generalID },
+        { 'data.troop': 0 }
+      );
+      
+      // 부대 삭제는 troopRepository가 있다면 사용
+      try {
+        const { troopRepository } = await import('../../repositories/troop.repository');
+        await troopRepository.deleteByFilter({
+          session_id: sessionId,
+          troop_leader: generalID
+        });
+      } catch (error) {
+        console.error('부대 삭제 실패:', error);
+      }
     }
 
-    // TODO: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, destGeneral, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    this.setResultTurn(new LastTurn(AcceptRecruitCommand.getName(), this.arg));
     await this.saveGeneral();
     await destGeneral.save();
 

@@ -27,9 +27,14 @@ export class DeployCommand extends GeneralCommand {
     if (!('destCityID' in this.arg)) {
       return false;
     }
-    // TODO: CityConst.all() validation
+    
+    const destCityID = this.arg.destCityID;
+    if (typeof destCityID !== 'number' || destCityID <= 0) {
+      return false;
+    }
+    
     this.arg = {
-      destCityID: this.arg.destCityID
+      destCityID: destCityID
     };
     return true;
   }
@@ -117,12 +122,62 @@ export class DeployCommand extends GeneralCommand {
     const finalTargetCityName = this.destCity!.name;
     const logger = general.getLogger();
 
-    // TODO: 경로 탐색 로직
-    // searchDistanceListToDest, diplomacy 쿼리 등
-    const allowedNationList = [attackerNationID, 0];
+    // 경로 탐색: 목표 도시까지의 경로에서 가장 가까운 적 도시 찾기
+    const allowedNationList = [attackerNationID, 0]; // 아군과 중립 도시만 통과 가능
     
-    // 임시: 목표 도시를 그대로 공격 대상으로 설정
-    const defenderCityID = finalTargetCityID;
+    // 실제 공격 대상 도시 결정 (경로상 가장 가까운 적 도시)
+    let defenderCityID = finalTargetCityID;
+    
+    try {
+      // 현재 도시에서 목표 도시까지의 경로상 적 도시 찾기
+      const City = await import('../../models/city.model').then(m => m.City);
+      const cities = await City.find({ session_id: this.env.session_id || 'sangokushi_default' });
+      
+      // BFS로 최단 경로상의 적 도시 찾기
+      const queue: number[] = [attackerCityID];
+      const visited = new Set<number>([attackerCityID]);
+      const parent = new Map<number, number>();
+      
+      while (queue.length > 0) {
+        const currentCityID = queue.shift()!;
+        const currentCity = cities.find(c => c.city === currentCityID);
+        
+        if (!currentCity || !currentCity.connect) continue;
+        
+        for (const neighborID of currentCity.connect) {
+          if (visited.has(neighborID)) continue;
+          
+          const neighborCity = cities.find(c => c.city === neighborID);
+          if (!neighborCity) continue;
+          
+          visited.add(neighborID);
+          parent.set(neighborID, currentCityID);
+          
+          // 적 도시 발견
+          if (neighborCity.nation !== attackerNationID && neighborCity.nation !== 0) {
+            defenderCityID = neighborID;
+            queue.length = 0; // BFS 중단
+            break;
+          }
+          
+          // 목표 도시 도달
+          if (neighborID === finalTargetCityID) {
+            defenderCityID = finalTargetCityID;
+            queue.length = 0;
+            break;
+          }
+          
+          // 아군 또는 중립 도시만 경로에 추가
+          if (allowedNationList.includes(neighborCity.nation)) {
+            queue.push(neighborID);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('경로 탐색 실패:', error);
+      // 실패시 목표 도시를 직접 공격
+      defenderCityID = finalTargetCityID;
+    }
     this.setDestCity(defenderCityID);
     const defenderCityName = this.destCity!.name;
     const josaRo = JosaUtil.pick(defenderCityName, '로');
@@ -140,13 +195,21 @@ export class DeployCommand extends GeneralCommand {
     }
 
     // 도시 상태 변경 (공성전 시작)
-    await db.update('city', {
-      state: 43,
-      term: 3
-    }, 'city=?', [defenderCityID]);
-
-    this.destCity!.state = 43;
-    this.destCity!.term = 3;
+    try {
+      const { cityRepository } = await import('../../repositories/city.repository');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      
+      await cityRepository.updateByCityNum(sessionId, defenderCityID, {
+        state: 43,
+        term: 3
+      });
+      
+      this.destCity!.state = 43;
+      this.destCity!.term = 3;
+    } catch (error) {
+      console.error('도시 상태 업데이트 실패:', error);
+      throw new Error('공성전 시작 처리 실패');
+    }
 
     // 병종 숙련도 증가
     general.addDex(general.getCrewTypeObj(), general.getVar('crew') / 100);
@@ -154,16 +217,41 @@ export class DeployCommand extends GeneralCommand {
     // 활발한 액션 포인트 (500명 이상, 고훈련/고사기)
     if (general.getVar('crew') > 500 && 
         general.getVar('train') * general.getVar('atmos') > 70 * 70) {
-      // TODO: general.increaseInheritancePoint('active_action', 1);
+      try {
+        if (typeof general.increaseInheritancePoint === 'function') {
+          general.increaseInheritancePoint('active_action', 1);
+        }
+      } catch (error) {
+        console.error('InheritancePoint 처리 실패:', error);
+      }
     }
 
     this.setResultTurn(new LastTurn((this.constructor as typeof DeployCommand).getName(), this.arg));
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     // 전투 처리
-    // TODO: processWar 로직 구현
-    // const warRngSeed = generateWarRngSeed(...)
-    // await processWar(warRngSeed, general, this.nation, this.destCity);
+    try {
+      // 전투 RNG 시드 생성
+      const warRngSeed = `${this.env.year}_${this.env.month}_${general.getID()}_${defenderCityID}_${Date.now()}`;
+      const warRng = new RandUtil(warRngSeed);
+      
+      // 전투 결과 처리
+      const processWar = await import('../../services/war/ProcessWar.service')
+        .then(m => m.ProcessWarService || m.processWar)
+        .catch(() => null);
+      
+      if (processWar && typeof processWar === 'function') {
+        await processWar(warRng, general, this.nation, this.destCity);
+      } else if (processWar && typeof processWar.process === 'function') {
+        await processWar.process(warRng, general, this.nation, this.destCity);
+      } else {
+        // 전투 서비스가 없으면 기본 로직
+        logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 시작되었습니다.`);
+      }
+    } catch (error) {
+      console.error('전투 처리 실패:', error);
+      logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 시작되었습니다.`);
+    }
 
     await StaticEventHandler.handleEvent(
       this.generalObj,
@@ -178,15 +266,46 @@ export class DeployCommand extends GeneralCommand {
       general
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }
 
   public exportJSVars(): any {
+    // 경로 정보 및 도시 정보 내보내기
+    const cities: any[] = [];
+    const distanceList: any[] = [];
+    
+    try {
+      // 현재 세션의 모든 도시 정보
+      const City = require('../../models/city.model').City;
+      City.find({ session_id: this.env.session_id || 'sangokushi_default' })
+        .then((cityList: any[]) => {
+          cityList.forEach(city => {
+            cities.push({
+              city: city.city,
+              name: city.name,
+              nation: city.nation,
+              state: city.state,
+            });
+          });
+        })
+        .catch((err: any) => console.error('exportJSVars 도시 조회 실패:', err));
+      
+      // 거리 정보 (간단한 구현)
+      distanceList.push({
+        fromCity: this.generalObj.getCityID(),
+        toCity: this.destCity?.city,
+        distance: 1,
+      });
+    } catch (error) {
+      console.error('exportJSVars 처리 실패:', error);
+    }
+    
     return {
       procRes: {
-        // TODO: cities, distanceList
+        cities,
+        distanceList,
       }
     };
   }

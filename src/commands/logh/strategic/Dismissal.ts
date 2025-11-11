@@ -83,7 +83,7 @@ export class DismissalCommand extends BaseLoghCommand {
     }
 
     // 자신보다 계급이 높거나 같은 사람은 파면 불가
-    if (!canAppoint(commander.getRank(), targetCommander.rank, targetCommander.faction)) {
+    if (!canAppoint(commander.getRank(), targetCommander.getRankName(), targetCommander.faction)) {
       return {
         success: false,
         message: '자신과 동등하거나 상급자는 파면할 수 없습니다.',

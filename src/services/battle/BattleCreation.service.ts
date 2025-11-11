@@ -45,12 +45,12 @@ export class BattleCreationService {
     let mapTemplate = await battleMapTemplateRepository.findBySessionAndCity(sessionId, cityId);
 
     if (!mapTemplate) {
-      const cityLevel = city.level || 5;
-      const terrainType = city.terrain || 'plain';
+      const cityLevel = (city as any).level || 5;
+      const terrainType = (city as any).terrain || 'plain';
       mapTemplate = await this.createDefaultMapTemplate(
         sessionId,
         cityId,
-        city.name || `도시 ${cityId}`,
+        (city as any).name || `도시 ${cityId}`,
         cityLevel,
         terrainType
       );
@@ -61,7 +61,7 @@ export class BattleCreationService {
       battle_id: battleId,
       map_template_id: mapTemplate._id,
       city_id: cityId,
-      city_name: city.name,
+      city_name: (city as any).name,
       
       attacker: {
         nation_id: attackerNationId,
@@ -326,7 +326,7 @@ export class BattleCreationService {
       crew: { $gt: 0 }
     }, 'no name crew crewtype leadership strength intel');
 
-    const totalCrew = generals.reduce((sum, gen) => sum + (gen.crew || 0), 0);
+    const totalCrew = generals.reduce((sum, gen) => sum + ((gen as any).crew || 0), 0);
 
     return {
       generals: generals.map(g => ({

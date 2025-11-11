@@ -8,7 +8,7 @@ export interface INationEnv extends Document {
 }
 
 const NationEnvSchema: Schema = new Schema({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   namespace: { type: Number, required: true },
   key: { type: String, required: true },
   value: { type: Schema.Types.Mixed, required: true }

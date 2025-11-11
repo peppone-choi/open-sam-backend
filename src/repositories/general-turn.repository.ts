@@ -102,6 +102,20 @@ class GeneralTurnRepository {
   async bulkWrite(operations: any[]) {
     return GeneralTurn.bulkWrite(operations);
   }
+
+  /**
+   * 조건으로 여러 개 삭제 (alias)
+   */
+  async deleteManyByFilter(filter: any) {
+    return GeneralTurn.deleteMany(filter);
+  }
+
+  /**
+   * 세션의 모든 장수턴 삭제
+   */
+  async deleteBySession(sessionId: string) {
+    return GeneralTurn.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**

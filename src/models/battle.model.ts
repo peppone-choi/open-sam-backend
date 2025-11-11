@@ -126,7 +126,7 @@ const TurnHistorySchema = new Schema({
 }, { _id: false });
 
 const BattleSchema = new Schema({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   battleId: { type: String, required: true, unique: true, index: true },
   
   attackerNationId: { type: Number, required: true },

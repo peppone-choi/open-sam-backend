@@ -9,7 +9,7 @@ export interface IEvent extends Document {
 }
 
 const EventSchema = new Schema<IEvent>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   target: { type: String, enum: ['MONTH', 'OCCUPY_CITY', 'DESTROY_NATION', 'PRE_MONTH', 'UNITED'], required: true },
   priority: { type: Number, default: 1000 },
   condition: { type: Schema.Types.Mixed, required: true },

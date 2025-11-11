@@ -8,6 +8,8 @@ import { Nation } from '../models/nation.model';
 import { City } from '../models/city.model';
 import { SessionStateService } from '../services/sessionState.service';
 import { FileWatcherService } from '../services/file-watcher.service';
+import { ScenarioResetService } from '../services/admin/scenario-reset.service';
+import { syncSessionStatus, type SessionStatus } from '../utils/session-status';
 
 const router = Router();
 
@@ -99,11 +101,15 @@ router.post('/update-user', async (req, res) => {
       user.block = data.block !== undefined ? data.block : user.block;
     }
     
-    await user.save();
+    // Mixed 타입 필드 변경 알림 (Mongoose가 감지하도록)
+    session.markModified('data.game_env');
+    session.markModified('data');
+    
+    await session.save();
     
     res.json({
       result: true,
-      reason: '수정되었습니다'
+      reason: '변경되었습니다'
     });
   } catch (error: any) {
     res.status(500).json({
@@ -206,16 +212,45 @@ router.post('/game-info', async (req, res) => {
     
     const session = await Session.findOne({ session_id: sessionId }).lean();
     const sessionData = session?.data || {};
+    const gameEnv = sessionData.game_env || {};
+    
+    // isunited는 두 위치 중 하나에서 가져옴 (레거시 호환성)
+    const isunited = gameEnv.isunited !== undefined ? gameEnv.isunited : (sessionData.isunited !== undefined ? sessionData.isunited : 0);
+    
+    console.log('[Admin] Get game-info:', {
+      sessionId,
+      hasGameEnv: !!sessionData.game_env,
+      gameEnvIsunited: gameEnv.isunited,
+      dataIsunited: sessionData.isunited,
+      finalIsunited: isunited,
+      gameEnvKeys: Object.keys(gameEnv)
+    });
+    
+    // 세션 상태 (status 우선, 없으면 isunited로 추론)
+    const { getCurrentStatus } = await import('../utils/session-status');
+    const currentStatus = getCurrentStatus(session);
+    
+    const gameInfo = {
+      serverName: session?.name || '',
+      scenario: session?.scenario_name || gameEnv.scenario || '',
+      msg: sessionData.noticeMsg || '',
+      turnterm: sessionData.turnterm || 0,
+      turntime: sessionData.turntime || null,
+      starttime: gameEnv.starttime || null,
+      year: sessionData.year || gameEnv.year || 220,
+      month: sessionData.month || gameEnv.month || 1,
+      startyear: gameEnv.startyear || 220,
+      maxgeneral: gameEnv.maxgeneral || 300,
+      maxnation: gameEnv.maxnation || 12,
+      isunited: isunited,
+      status: currentStatus, // 추가!
+    };
+    
+    console.log('[Admin] Returning isunited:', gameInfo.isunited);
     
     res.json({
       result: true,
-      gameInfo: {
-        msg: sessionData.noticeMsg || '',
-        turnterm: sessionData.turnterm || 0,
-        year: sessionData.year || 0,
-        month: sessionData.month || 0,
-        ...sessionData
-      }
+      gameInfo
     });
   } catch (error: any) {
     res.status(500).json({
@@ -247,17 +282,124 @@ router.post('/update-game', async (req, res) => {
     
     // 게임 정보 업데이트
     session.data = session.data || {};
+    if (!session.data.game_env) session.data.game_env = {};
     
-    if (action === 'msg') {
+    if (action === 'serverName') {
+      session.name = data.serverName || '';
+      session.data.game_env.serverName = data.serverName || '';
+    } else if (action === 'scenario') {
+      session.scenario_name = data.scenario || '';
+      session.data.game_env.scenario = data.scenario || '';
+    } else if (action === 'msg') {
+      session.data.game_env.msg = data.msg || '';
       session.data.noticeMsg = data.msg || '';
+    } else if (action === 'log') {
+      // 중원정세 추가 (world_history 테이블에 추가해야 함)
+      // TODO: 구현 필요
+      console.log('[Admin] Add global log:', data.log);
+    } else if (action === 'starttime') {
+      // ⚠️ CRITICAL FIX: starttime 입력 검증 추가
+      try {
+        const { Util } = await import('../utils/Util');
+        
+        if (!data.starttime) {
+          session.data.game_env.starttime = new Date().toISOString();
+        } else {
+          // 날짜 유효성 검증
+          const inputDate = new Date(data.starttime);
+          
+          if (isNaN(inputDate.getTime())) {
+            return res.status(400).json({
+              result: false,
+              reason: 'Invalid date format for starttime'
+            });
+          }
+          
+          const now = new Date();
+          const tenYearsAgo = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000);
+          const oneYearFuture = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+          
+          // 10년 이전이거나 1년 이후면 거부
+          if (inputDate.getTime() < tenYearsAgo.getTime()) {
+            return res.status(400).json({
+              result: false,
+              reason: 'Starttime is too far in the past (more than 10 years ago)'
+            });
+          }
+          
+          if (inputDate.getTime() > oneYearFuture.getTime()) {
+            return res.status(400).json({
+              result: false,
+              reason: 'Starttime cannot be more than 1 year in the future'
+            });
+          }
+          
+          session.data.game_env.starttime = inputDate.toISOString();
+          console.log('[Admin] Starttime updated:', {
+            sessionId,
+            before: session.data.game_env.starttime,
+            after: inputDate.toISOString()
+          });
+        }
+      } catch (error: any) {
+        console.error('[Admin] Error setting starttime:', error);
+        return res.status(400).json({
+          result: false,
+          reason: `Failed to set starttime: ${error.message}`
+        });
+      }
+    } else if (action === 'maxgeneral') {
+      const newMax = parseInt(data.maxgeneral) || 300;
+      console.log('[Admin] Update maxgeneral:', {
+        sessionId,
+        before: session.data.game_env.maxgeneral,
+        newMax,
+        dataMaxgeneral: data.maxgeneral
+      });
+      session.data.game_env.maxgeneral = newMax;
+      session.markModified('data.game_env');
+    } else if (action === 'maxnation') {
+      session.data.game_env.maxnation = parseInt(data.maxnation) || 12;
+    } else if (action === 'startyear') {
+      session.data.game_env.startyear = parseInt(data.startyear) || 220;
     } else if (action === 'turnterm') {
-      session.data.turnterm = data.turnterm || 1440;
+      session.data.game_env.turnterm = parseInt(data.turnterm) || 60;
+      session.data.turnterm = parseInt(data.turnterm) || 60;
     } else if (action === 'year') {
       session.data.year = data.year || session.data.year || 180;
     } else if (action === 'month') {
       session.data.month = data.month || session.data.month || 1;
     } else if (action === 'status') {
-      session.status = data.status || session.status || 'running';
+      // status 변경: preparing, running, paused, finished, united
+      const newStatus = data.status as SessionStatus;
+      const validStatuses: SessionStatus[] = ['preparing', 'running', 'paused', 'finished', 'united'];
+      
+      if (!validStatuses.includes(newStatus)) {
+        return res.status(400).json({
+          result: false,
+          reason: `유효하지 않은 상태입니다. 가능한 값: ${validStatuses.join(', ')}`
+        });
+      }
+
+      // 헬퍼 함수로 status와 isunited 동기화
+      syncSessionStatus(session, newStatus);
+      await session.save();
+      
+      // SessionStateService 캐시 무효화
+      await SessionStateService.invalidateCache(sessionId);
+      
+      console.log('[Admin] Session status changed:', {
+        sessionId,
+        newStatus,
+        isunited: session.data.game_env.isunited
+      });
+      
+      return res.json({
+        result: true,
+        reason: `서버 상태가 ${newStatus}로 변경되었습니다`,
+        status: newStatus,
+        isunited: session.data.game_env.isunited
+      });
     } else if (action === 'lock') {
       const locked = data.locked !== undefined ? data.locked : false;
       await SessionStateService.updateSessionState(sessionId, {
@@ -295,6 +437,83 @@ router.post('/update-game', async (req, res) => {
         reason: `${result.modifiedCount}명의 장수 나이를 ${fixedAge}살로 수정했습니다`,
         modifiedCount: result.modifiedCount
       });
+    } else if (action === 'serverStatus') {
+      // 서버 열기/닫기
+      const isunited = parseInt(data.isunited);
+      console.log('[Admin] Change server status:', {
+        sessionId,
+        isunited,
+        dataIsunited: data.isunited,
+        beforeGameEnv: session.data.game_env.isunited,
+        beforeData: session.data.isunited
+      });
+      
+      // 두 필드 모두 업데이트 (레거시 호환성)
+      session.data.game_env.isunited = isunited;
+      session.data.isunited = isunited;
+      session.markModified('data.game_env');
+      session.markModified('data');
+      await session.save();
+      
+      console.log('[Admin] Server status changed:', {
+        sessionId,
+        afterGameEnv: session.data.game_env.isunited,
+        afterData: session.data.isunited
+      });
+      
+      return res.json({
+        result: true,
+        reason: `서버 상태가 변경되었습니다 (isunited=${isunited})`
+      });
+    } else if (action === 'resetScenario') {
+      // 시나리오 초기화 - 모든 장수/국가 데이터 삭제 후 시나리오 로드
+      let scenarioId = data.scenarioId;
+      if (!scenarioId) {
+        return res.status(400).json({
+          result: false,
+          reason: '시나리오 ID가 필요합니다'
+        });
+      }
+      
+      // 레거시 시나리오 ID를 CQRS 시나리오 ID로 매핑
+      const legacyToNewMap: Record<string, string> = {
+        '1010': 'sangokushi-huangjin',
+        '1020': 'sangokushi-heroes',
+        '1021': 'sangokushi-heroes-all',
+        '1030': 'sangokushi-alliance',
+        '1031': 'sangokushi-alliance-zheng',
+        '1040': 'sangokushi-chibi',
+        '1041': 'sangokushi-chulsabpyo',
+        '1050': 'sangokushi-guandu',
+        '1060': 'sangokushi-emperor',
+        '1070': 'sangokushi-threekingdoms',
+        '1080': 'sangokushi-yizhou',
+        '1090': 'sangokushi-nanman',
+        '1100': 'sangokushi-baekma',
+        '1110': 'sangokushi-yuan-split',
+        '1120': 'sangokushi-emperor-yuanshu',
+      };
+      
+      // 레거시 ID면 변환
+      if (legacyToNewMap[scenarioId]) {
+        console.log(`[Admin] Converting legacy scenario ID ${scenarioId} -> ${legacyToNewMap[scenarioId]}`);
+        scenarioId = legacyToNewMap[scenarioId];
+      }
+      
+      try {
+        await ScenarioResetService.resetScenario(sessionId, scenarioId);
+        
+        return res.json({
+          result: true,
+          reason: `시나리오 초기화가 완료되었습니다 (scenarioId=${scenarioId})`
+        });
+      } catch (err: any) {
+        console.error('[Admin] Scenario reset failed:', err);
+        return res.status(500).json({
+          result: false,
+          reason: `시나리오 초기화 실패: ${err.message}`
+        });
+      }
     }
     
     await session.save();
@@ -732,13 +951,38 @@ router.post('/adjust-time', async (req, res) => {
     session.data = session.data || {};
     const adjustMs = minutesNum * 60 * 1000;
     
+    // ⚠️ CRITICAL FIX: 시간 조정 시 유효성 검증
+    const now = new Date();
+    const tenYearsAgo = now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000;
+    const oneYearFuture = now.getTime() + 365 * 24 * 60 * 60 * 1000;
+    
     if (type === 'turn_advance') {
       // 턴 시간 앞당김
       const currentTurntime = session.data.turntime ? new Date(session.data.turntime) : new Date();
-      session.data.turntime = new Date(currentTurntime.getTime() - adjustMs).toISOString();
+      const newTurntimeMs = currentTurntime.getTime() - adjustMs;
+      
+      // 유효성 검증: 10년 이전으로 가지 않도록
+      if (newTurntimeMs < tenYearsAgo) {
+        return res.status(400).json({
+          result: false,
+          reason: `Advancing turn by ${minutesNum} minutes would set time too far in the past`
+        });
+      }
+      
+      session.data.turntime = new Date(newTurntimeMs).toISOString();
       
       const currentStarttime = session.data.starttime ? new Date(session.data.starttime) : new Date();
-      session.data.starttime = new Date(currentStarttime.getTime() - adjustMs).toISOString();
+      const newStarttimeMs = currentStarttime.getTime() - adjustMs;
+      
+      // starttime도 검증
+      if (newStarttimeMs < tenYearsAgo) {
+        return res.status(400).json({
+          result: false,
+          reason: `Advancing turn would set starttime too far in the past`
+        });
+      }
+      
+      session.data.starttime = new Date(newStarttimeMs).toISOString();
       
       // General 테이블의 turntime도 조정
       await General.updateMany(
@@ -756,10 +1000,30 @@ router.post('/adjust-time', async (req, res) => {
     } else if (type === 'turn_delay') {
       // 턴 시간 지연
       const currentTurntime = session.data.turntime ? new Date(session.data.turntime) : new Date();
-      session.data.turntime = new Date(currentTurntime.getTime() + adjustMs).toISOString();
+      const newTurntimeMs = currentTurntime.getTime() + adjustMs;
+      
+      // 유효성 검증: 1년 이후로 가지 않도록
+      if (newTurntimeMs > oneYearFuture) {
+        return res.status(400).json({
+          result: false,
+          reason: `Delaying turn by ${minutesNum} minutes would set time too far in the future`
+        });
+      }
+      
+      session.data.turntime = new Date(newTurntimeMs).toISOString();
       
       const currentStarttime = session.data.starttime ? new Date(session.data.starttime) : new Date();
-      session.data.starttime = new Date(currentStarttime.getTime() + adjustMs).toISOString();
+      const newStarttimeMs = currentStarttime.getTime() + adjustMs;
+      
+      // starttime도 검증
+      if (newStarttimeMs > oneYearFuture) {
+        return res.status(400).json({
+          result: false,
+          reason: `Delaying turn would set starttime too far in the future`
+        });
+      }
+      
+      session.data.starttime = new Date(newStarttimeMs).toISOString();
       
       await General.updateMany(
         { session_id: sessionId },

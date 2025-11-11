@@ -138,8 +138,15 @@ export class RealtimeCombatService {
         const vx = fleet.tacticalPosition.velocity?.x || 0;
         const vy = fleet.tacticalPosition.velocity?.y || 0;
 
-        fleet.tacticalPosition.x += vx * deltaTime * fleet.movementSpeed;
-        fleet.tacticalPosition.y += vy * deltaTime * fleet.movementSpeed;
+        // 진형 및 자세에 따른 기동력 보정
+        const formationMods = this.getFormationModifiers(fleet.formation || 'standard');
+        const stanceMods = this.getStanceModifiers(fleet.combatStance || 'balanced');
+        const mobilityMultiplier = 1 + (formationMods.mobilityBonus + stanceMods.mobility) / 100;
+        
+        const effectiveSpeed = fleet.movementSpeed * mobilityMultiplier;
+
+        fleet.tacticalPosition.x += vx * deltaTime * effectiveSpeed;
+        fleet.tacticalPosition.y += vy * deltaTime * effectiveSpeed;
 
         // 목적지 도달 여부 확인
         if (fleet.destination) {
@@ -188,8 +195,12 @@ export class RealtimeCombatService {
         const dy = target.tacticalPosition.y - attacker.tacticalPosition.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
+        // 사정거리에 자세 보정 적용
+        const stanceModifiers = this.getStanceModifiers(attacker.combatStance || 'balanced');
+        const effectiveRange = (attacker.combatRange || 100) * (1 + stanceModifiers.attackRange / 100);
+
         // 사정거리 내라면 공격
-        if (distance <= (attacker.combatRange || 100)) {
+        if (distance <= effectiveRange) {
           const damage = this.calculateDamage(attacker, target, deltaTime);
 
           if (damage > 0) {
@@ -209,10 +220,139 @@ export class RealtimeCombatService {
       }
     }
 
+    // 3. 공중전 처리 (전투기 임무)
+    for (const fleet of fleets) {
+      if (!fleet.customData?.airCombatActive || !fleet.tacticalPosition) continue;
+
+      const airCombatResult = await this.processAirCombat(fleet, fleets, deltaTime);
+      if (airCombatResult) {
+        combatEvents.push(...airCombatResult.events);
+      }
+    }
+
     return {
       fleetPositions,
       combatEvents,
     };
+  }
+
+  /**
+   * 공중전 처리 (전투기 임무)
+   */
+  private static async processAirCombat(
+    attackerFleet: IFleet,
+    allFleets: IFleet[],
+    deltaTime: number
+  ): Promise<{ events: Array<any> } | null> {
+    const events: Array<any> = [];
+
+    if (!attackerFleet.customData?.airCombatActive) {
+      return null;
+    }
+
+    const missionType = attackerFleet.customData.airCombatMission;
+    const airPower = attackerFleet.customData.airCombatPower || 0;
+    const targetFleetId = attackerFleet.customData.airCombatTarget;
+
+    if (!missionType || airPower <= 0) {
+      return null;
+    }
+
+    // 목표 함대 찾기
+    const targetFleet = allFleets.find(f => f.fleetId === targetFleetId);
+    if (!targetFleet || !targetFleet.tacticalPosition) {
+      // 목표 상실
+      attackerFleet.customData.airCombatActive = false;
+      await attackerFleet.save();
+      return null;
+    }
+
+    // 거리 계산
+    const dx = targetFleet.tacticalPosition.x - attackerFleet.tacticalPosition!.x;
+    const dy = targetFleet.tacticalPosition.y - attackerFleet.tacticalPosition!.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // 전투기 사정거리 (일반 함선보다 길다)
+    const fighterRange = (attackerFleet.combatRange || 100) * 2;
+
+    if (distance > fighterRange) {
+      // 사정거리 밖
+      return null;
+    }
+
+    // 임무 타입별 처리
+    switch (missionType) {
+      case 'attack': {
+        // 대함 공격: 적 함선에 피해
+        const baseDamage = airPower * 0.5 * deltaTime; // 전투기 1대당 0.5 피해/초
+        const damage = Math.floor(baseDamage);
+
+        if (damage > 0) {
+          targetFleet.totalShips = Math.max(0, targetFleet.totalShips - damage);
+          targetFleet.totalStrength = Math.max(0, targetFleet.totalStrength - damage * 10);
+
+          events.push({
+            type: 'air_attack',
+            sourceFleetId: attackerFleet.fleetId,
+            targetFleetId: targetFleet.fleetId,
+            damage,
+          });
+
+          await targetFleet.save();
+        }
+        break;
+      }
+
+      case 'intercept': {
+        // 요격: 적 전투기 격추
+        if (targetFleet.customData?.airCombatActive && targetFleet.customData.airCombatPower) {
+          const enemyAirPower = targetFleet.customData.airCombatPower;
+          const interceptPower = airPower * 0.3 * deltaTime; // 초당 30% 격추율
+
+          const destroyed = Math.min(enemyAirPower, Math.floor(interceptPower));
+          if (destroyed > 0) {
+            targetFleet.customData.airCombatPower -= destroyed;
+            if (targetFleet.customData.airCombatPower <= 0) {
+              targetFleet.customData.airCombatActive = false;
+            }
+
+            events.push({
+              type: 'air_intercept',
+              sourceFleetId: attackerFleet.fleetId,
+              targetFleetId: targetFleet.fleetId,
+              destroyed,
+            });
+
+            await targetFleet.save();
+          }
+        }
+        break;
+      }
+
+      case 'escort': {
+        // 호위: 아군 함대 방어력 증가 (보너스 적용은 피해 계산에서 처리)
+        // 여기서는 로그만 남김
+        events.push({
+          type: 'air_escort',
+          sourceFleetId: attackerFleet.fleetId,
+          targetFleetId: targetFleet.fleetId,
+        });
+        break;
+      }
+
+      case 'recon': {
+        // 정찰: 적 정보 수집 (시야 확장, 스탯 공개)
+        // 실제 효과는 UI에서 처리
+        events.push({
+          type: 'air_recon',
+          sourceFleetId: attackerFleet.fleetId,
+          targetFleetId: targetFleet.fleetId,
+        });
+        break;
+      }
+    }
+
+    return { events };
   }
 
   /**
@@ -224,34 +364,80 @@ export class RealtimeCombatService {
     deltaTime: number
   ): number {
     // 기본 공격력 = 전투력 / 100 (초당)
-    const attackPower = attacker.totalStrength / 100;
-    const defensePower = target.totalStrength / 200;
+    let attackPower = attacker.totalStrength / 100;
+    let defensePower = target.totalStrength / 200;
 
+    // 진형 보정 적용
+    const attackerFormation = this.getFormationModifiers(attacker.formation || 'standard');
+    const targetFormation = this.getFormationModifiers(target.formation || 'standard');
+    
+    attackPower *= (1 + attackerFormation.attackBonus / 100);
+    defensePower *= (1 + targetFormation.defenseBonus / 100);
+
+    // 자세 보정 적용
+    const attackerStance = this.getStanceModifiers(attacker.combatStance || 'balanced');
+    const targetStance = this.getStanceModifiers(target.combatStance || 'balanced');
+    
+    // 명중률 보정 (자세에서)
+    const hitChance = 0.8 + (attackerStance.accuracy / 100);
+    // 회피율 보정
+    const evadeChance = targetStance.evasion / 100;
+    
+    // 최종 명중 여부
+    const finalHitChance = Math.max(0.1, Math.min(0.95, hitChance - evadeChance));
+    
     // deltaTime 동안의 피해
     const baseDamage = (attackPower - defensePower) * deltaTime;
+    
+    // 사격 속도 보정
+    const fireRateMultiplier = 1 + (attackerStance.fireRate / 100);
 
-    // 진형 보너스
-    const formationBonus = this.getFormationBonus(attacker.formation);
+    // 최종 피해 = 기본피해 * 사격속도 * 명중확률
+    const finalDamage = baseDamage * fireRateMultiplier * finalHitChance;
 
-    return Math.max(0, Math.floor(baseDamage * formationBonus));
+    return Math.max(0, Math.floor(finalDamage));
   }
 
   /**
-   * 진형 보너스
+   * 진형별 능력치 보정 (Formation.ts와 동기화)
    */
-  private static getFormationBonus(formation: string): number {
-    switch (formation) {
-      case 'offensive':
-        return 1.5;
-      case 'defensive':
-        return 0.8;
-      case 'encircle':
-        return 1.2;
-      case 'retreat':
-        return 0.5;
-      default:
-        return 1.0;
-    }
+  private static getFormationModifiers(formation: string): {
+    attackBonus: number;
+    defenseBonus: number;
+    mobilityBonus: number;
+  } {
+    const formationMap: Record<string, any> = {
+      standard: { attackBonus: 0, defenseBonus: 0, mobilityBonus: 0 },
+      offensive: { attackBonus: 20, defenseBonus: -10, mobilityBonus: 0 },
+      defensive: { attackBonus: -10, defenseBonus: 20, mobilityBonus: -10 },
+      encircle: { attackBonus: 10, defenseBonus: 0, mobilityBonus: -20 },
+      retreat: { attackBonus: -50, defenseBonus: -20, mobilityBonus: 30 },
+      wedge: { attackBonus: 30, defenseBonus: -15, mobilityBonus: 10 },
+      crane: { attackBonus: 5, defenseBonus: -5, mobilityBonus: 5 },
+    };
+
+    return formationMap[formation] || formationMap.standard;
+  }
+
+  /**
+   * 자세별 능력치 보정 (StanceChange.ts와 동기화)
+   */
+  private static getStanceModifiers(stance: string): {
+    attackRange: number;
+    fireRate: number;
+    evasion: number;
+    mobility: number;
+    accuracy: number;
+  } {
+    const stanceMap: Record<string, any> = {
+      balanced: { attackRange: 0, fireRate: 0, evasion: 0, mobility: 0, accuracy: 0 },
+      aggressive: { attackRange: 10, fireRate: 20, evasion: -10, mobility: 15, accuracy: -5 },
+      defensive: { attackRange: -10, fireRate: -10, evasion: 20, mobility: -20, accuracy: 10 },
+      hold_fire: { attackRange: 0, fireRate: -100, evasion: 10, mobility: 20, accuracy: 0 },
+      evasive: { attackRange: -20, fireRate: -30, evasion: 40, mobility: 50, accuracy: -20 },
+    };
+
+    return stanceMap[stance] || stanceMap.balanced;
   }
 
   /**

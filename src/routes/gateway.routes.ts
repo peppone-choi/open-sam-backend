@@ -124,16 +124,74 @@ router.post('/get-user-info', authenticate, async (req, res) => {
  */
 router.post('/get-server-status', async (req, res) => {
   try {
+    // 전역 공지사항 조회 (KVStorage 사용)
+    const { KVStorage } = await import('../models/kv-storage.model');
+    const noticeDoc = await KVStorage.findOne({ key: 'global_notice' }).lean();
+    const notice = noticeDoc?.value || '';
+    
     // 세션 목록 조회
     const sessions = await Session.find({}).lean();
     
-    const serverList = sessions.map((session: any) => ({
-      color: session.color || '#000000',
-      korName: session.name || session.session_id,
-      name: session.session_id,
-      exists: true,
-      enable: session.status === 'active' || session.status === 'running'
-    }));
+    const serverList = sessions.map((session: any) => {
+      const gameEnv = session.data?.game_env || {};
+      const isunited = gameEnv.isunited || 0;
+      const blockGeneralCreate = gameEnv.block_general_create || 0;
+      const isRecruitBlocked = (blockGeneralCreate & 4) !== 0;
+      
+      // 상태 결정 로직: session.status를 우선 사용
+      let status = session.status || 'running';
+      let statusText = '운영중';
+      
+      // session.status 기반 상태 텍스트
+      if (status === 'preparing') {
+        statusText = '준비중';
+      } else if (status === 'running') {
+        statusText = '운영중';
+        if (isRecruitBlocked) {
+          statusText = '모집마감';
+        }
+      } else if (status === 'paused') {
+        statusText = '폐쇄';
+      } else if (status === 'finished') {
+        statusText = '종료';
+      } else if (status === 'united') {
+        statusText = '천하통일';
+      }
+      
+      // 레거시 호환: isunited로 상태 덮어쓰기 (만약 session.status가 없는 경우)
+      if (!session.status) {
+        if (isunited === 3) {
+          statusText = '천하통일';
+          status = 'united';
+        } else if (isunited === 2) {
+          statusText = '폐쇄';
+          status = 'paused';
+        }
+      }
+      
+      return {
+        color: session.color || '#000000',
+        korName: session.name || session.session_id,
+        name: session.session_id,
+        exists: true,
+        enable: true, // 모든 서버 입장 가능 (캐릭터 있으면)
+        isunited: isunited, // 0: 운영중, 2: 준비중, 3: 천하통일
+        blockGeneralCreate: isRecruitBlocked, // 신규 캐릭터 생성 차단 여부
+        status: status,
+        statusText: statusText,
+        // 시나리오 정보
+        scenarioName: session.scenario_name || gameEnv.scenario || '',
+        // 게임 시간 정보
+        year: gameEnv.year || gameEnv.startyear || 220,
+        month: gameEnv.month || 1,
+        turnterm: gameEnv.turnterm || 60,
+        turntime: gameEnv.turntime || null,
+        starttime: gameEnv.starttime || null,
+        // 서버 제한
+        maxgeneral: gameEnv.maxgeneral || 300,
+        maxnation: gameEnv.maxnation || 12
+      };
+    });
 
     // 기본 세션이 없으면 추가
     if (serverList.length === 0) {
@@ -148,6 +206,7 @@ router.post('/get-server-status', async (req, res) => {
 
     res.json({
       result: true,
+      notice: notice,
       server: serverList
     });
   } catch (error: any) {

@@ -1,48 +1,30 @@
-/**
- * Betting Repository - Instance Export
- * Auto-generated to support both static and instance methods
- */
-
-// Re-export the static class for backwards compatibility
-import mongoose from 'mongoose';
-import { NgBetting } from '../models';
+// @ts-nocheck
+import { NgBetting } from '../models/ng_betting.model';
+import { DeleteResult } from 'mongodb';
 
 /**
  * Betting Repository
- * 데이터베이스 접근 계층
  */
-export class BettingRepository {
-  /**
-   * 세션별 데이터 조회
-   */
-  static async findBySession(sessionId: string, model: any, filter: any = {}) {
-    return await model.find({ session_id: sessionId, ...filter });
+class BettingRepository {
+  async findBySession(sessionId: string, filter: any = {}) {
+    return NgBetting.find({ session_id: sessionId, ...filter });
   }
   
-  /**
-   * 데이터 생성
-   */
-  static async create(sessionId: string, model: any, data: any) {
-    return await model.create({ session_id: sessionId, ...data });
+  async create(data: any) {
+    return NgBetting.create(data);
   }
   
-  /**
-   * 데이터 업데이트
-   */
-  static async update(sessionId: string, model: any, filter: any, update: any) {
-    return await model.updateMany(
-      { session_id: sessionId, ...filter },
-      { $set: update }
-    );
+  async updateMany(filter: any, update: any) {
+    return NgBetting.updateMany(filter, { $set: update });
   }
   
-  /**
-   * 데이터 삭제
-   */
-  static async delete(sessionId: string, model: any, filter: any) {
-    return await model.deleteMany({ session_id: sessionId, ...filter });
+  async deleteMany(filter: any): Promise<DeleteResult> {
+    return NgBetting.deleteMany(filter);
+  }
+
+  async deleteBySession(sessionId: string): Promise<DeleteResult> {
+    return NgBetting.deleteMany({ session_id: sessionId });
   }
 }
 
-// Add instance export
 export const bettingRepository = new BettingRepository();

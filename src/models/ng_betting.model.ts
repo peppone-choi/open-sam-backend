@@ -11,7 +11,7 @@ export interface INgBetting extends Document {
 }
 
 const NgBettingSchema = new Schema<INgBetting>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

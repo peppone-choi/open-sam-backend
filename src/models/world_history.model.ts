@@ -25,7 +25,7 @@ export interface IWorldHistory extends Document {
 }
 
 const WorldHistorySchema = new Schema<IWorldHistory>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   nation_id: { type: Number, required: true, index: true },
   year: { type: Number, required: true },
   month: { type: Number, required: true },

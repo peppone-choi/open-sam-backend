@@ -66,7 +66,7 @@ export class RetirementCommand extends BaseLoghCommand {
     }
 
     const oldRank = commanderDoc.rank;
-    commanderDoc.rank = '이등병';
+    commanderDoc.setRankByName('이등병');
     commanderDoc.jobPosition = '정치가';
     if (!commanderDoc.customData) commanderDoc.customData = {};
     commanderDoc.customData.retired = true;

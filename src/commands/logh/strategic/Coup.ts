@@ -99,9 +99,9 @@ export class CoupCommand extends BaseLoghCommand {
 
     // 쿠데타 성공률 계산
     const baseSuccessRate = 30; // 기본 30%
-    const rankBonus = getRankIndex(commanderDoc.rank, commanderDoc.faction) * 2; // 계급 보너스
+    const rankBonus = commanderDoc.rank * 2; // 계급 보너스
     const fleetBonus = Math.min(20, fleet.totalShips / 1000); // 함대 규모 보너스
-    const achievementBonus = Math.min(15, commanderDoc.achievements / 1000); // 공적 보너스
+    const achievementBonus = Math.min(15, commanderDoc.merit / 1000); // 공적 보너스
     const moraleBonus = (fleet.morale - 50) / 5; // 사기 보너스
     
     const successRate = baseSuccessRate + rankBonus + fleetBonus + achievementBonus + moraleBonus;
@@ -133,11 +133,11 @@ export class CoupCommand extends BaseLoghCommand {
       }
 
       // 계급 최고위로 승진
-      commanderDoc.rank = '元帥';
+      commanderDoc.setRankByName('元帥');
       commanderDoc.jobPosition = '최고사령관';
       
       // 공적 대폭 증가
-      commanderDoc.achievements += 10000;
+      commanderDoc.merit += 10000;
 
       await commanderDoc.save();
       await commander.save();

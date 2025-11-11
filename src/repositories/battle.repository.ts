@@ -174,6 +174,15 @@ class BattleRepository {
   async findOne(filter: any) {
     return Battle.findOne(filter);
   }
+
+  /**
+   * 세션의 모든 전투 삭제
+   * @param sessionId - 세션 ID
+   * @returns 삭제 결과
+   */
+  async deleteBySession(sessionId: string): Promise<DeleteResult> {
+    return Battle.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**

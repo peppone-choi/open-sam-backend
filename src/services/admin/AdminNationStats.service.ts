@@ -249,7 +249,7 @@ export class AdminNationStatsService {
     targetNationId: number
   ) {
     try {
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalNo);
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalNo) as any;
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }

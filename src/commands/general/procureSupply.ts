@@ -2,6 +2,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 물자 조달 커맨드
@@ -22,11 +23,10 @@ export class ProcureSupplyCommand extends GeneralCommand {
     this.setNation();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // OccupiedCity(),
-      // SuppliedCity()
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity()
     ];
   }
 
@@ -138,7 +138,22 @@ export class ProcureSupplyCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof ProcureSupplyCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
+
+    // tryUniqueItemLottery 처리
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env['session_id'] || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '물자조달');
+    } catch (error: any) {
+      console.error('tryUniqueItemLottery failed:', error);
+    }
 
     await this.saveGeneral();
 

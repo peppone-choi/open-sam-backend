@@ -39,7 +39,7 @@ export class AdminServerManagementService {
 
           return {
             sessionId: sessionId,
-            name: gameEnv.scenario || sessionId,
+            name: gameEnv.serverName || gameEnv.scenario || sessionId,
             status: gameEnv.isunited === 2 ? 'closed' : 
                    gameEnv.isunited === 3 ? 'united' : 'running',
             statusText: gameEnv.isunited === 2 ? '폐쇄' :
@@ -95,8 +95,46 @@ export class AdminServerManagementService {
       // 세션 생성
       const sessionData = {
         session_id: params.sessionId,
+        name: params.name, // 필수 필드
+        game_mode: 'turn' as const, // 필수 필드
+        scenario_id: params.scenario || 'default',
+        scenario_name: params.scenario || params.name,
+        status: 'waiting' as const,
+        resources: {
+          gold: { name: '금', default_value: 10000 },
+          rice: { name: '쌀', default_value: 50000 },
+        },
+        attributes: {
+          leadership: { name: '통솔', min: 1, max: 100 },
+          strength: { name: '무력', min: 1, max: 100 },
+          intel: { name: '지력', min: 1, max: 100 },
+          politics: { name: '정치', min: 1, max: 100 },
+          charm: { name: '매력', min: 1, max: 100 },
+        },
+        field_mappings: {
+          general: {
+            primary_resource: 'gold',
+            secondary_resource: 'rice',
+            troops_count: 'crew',
+            troops_type: 'crewtype',
+            location: 'city',
+            faction: 'nation',
+            rank: 'officer_level',
+          },
+          city: {
+            population: 'pop',
+            owner: 'nation',
+          },
+          nation: {
+            capital: 'capital',
+            treasury: 'gold',
+          },
+        },
+        commands: {},
+        game_constants: {},
         data: {
           game_env: {
+            serverName: params.name, // 서버 표시 이름
             scenario: params.scenario || params.name,
             turnterm: params.turnterm || 60,
             isunited: 2, // 폐쇄 상태로 시작

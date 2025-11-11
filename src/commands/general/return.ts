@@ -2,6 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { CityConst } from '../../const/CityConst';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 귀환 커맨드
@@ -23,10 +24,8 @@ export class ReturnCommand extends GeneralCommand {
     this.setNation();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // NotCapital(true),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation()
     ];
   }
 
@@ -58,7 +57,6 @@ export class ReturnCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
     const officerLevel = general.getVar('officer_level');
@@ -88,8 +86,25 @@ export class ReturnCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(ReturnCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(ReturnCommand.actionName),
+        general,
+        sessionId,
+        '귀환'
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

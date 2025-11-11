@@ -40,6 +40,7 @@ import installRoutes from './routes/install.routes';
 import oauthRoutes from './routes/oauth.routes';
 import archiveRoutes from './routes/archive.routes';
 import tournamentRoutes from './routes/tournament.routes';
+import scenarioRoutes from './routes/scenario.routes';
 import { FileWatcherService } from './services/file-watcher.service';
 import loghCommanderRoutes from './routes/logh/commander.route';
 import loghFleetRoutes from './routes/logh/fleet.route';
@@ -127,6 +128,7 @@ export async function createApp(): Promise<Express> {
   app.use('/api/npc', npcRoutes);
   app.use('/api/chief', chiefRoutes);
   app.use('/api/processing', processingRoutes);
+  app.use('/api/scenarios', scenarioRoutes);
 
   // LOGH (은하영웅전설) 라우트
   app.use('/api/logh', loghCommanderRoutes);
@@ -248,6 +250,7 @@ app.use('/api/install', installRoutes);
 app.use('/api/oauth', oauthRoutes);
 app.use('/api/archive', archiveRoutes);
 app.use('/api/tournament', tournamentRoutes);
+app.use('/api/scenarios', scenarioRoutes);
 
 // 에러 핸들링 미들웨어 (맨 마지막)
 app.use(errorMiddleware);
@@ -275,6 +278,16 @@ async function start() {
     const { cacheManager } = await import('./cache/CacheManager');
     const cacheStats = cacheManager.getStats();
     logger.info('캐시 시스템 상태', cacheStats);
+    
+    // 🚀 캐시 프리로드 (DB에서 모든 게임 데이터를 캐시로 로드)
+    logger.info('게임 데이터를 캐시로 프리로드 중...');
+    const { CachePreloaderService } = await import('./services/cache/CachePreloader.service');
+    try {
+      await CachePreloaderService.preloadAllSessions();
+      logger.info('✅ 캐시 프리로드 완료');
+    } catch (error: any) {
+      logger.error('⚠️ 캐시 프리로드 실패, 계속 진행:', error);
+    }
     
     // 커맨드 레지스트리 초기화
     await CommandRegistry.loadAll();
@@ -307,8 +320,10 @@ async function start() {
         throw new Error('세션 생성 후 DB 조회 실패');
       }
       
-      await InitService.initializeSession(sessionId);
-      logger.info('기본 세션 생성 완료', { sessionId });
+      // 기본 시나리오: 1010 (황건적의 난)
+      const defaultScenarioNumber = parseInt(process.env.DEFAULT_SCENARIO_NUMBER || '1010');
+      await InitService.initializeSession(sessionId, defaultScenarioNumber);
+      logger.info('기본 세션 생성 완료', { sessionId, scenario: defaultScenarioNumber });
     } else {
       logger.info('기본 세션 로드 완료', { sessionId, sessionName: session.name });
       
@@ -317,7 +332,8 @@ async function start() {
       const cityCount = await City.countDocuments({ session_id: sessionId });
       if (cityCount === 0) {
         logger.info('도시가 없어 초기화를 진행합니다...');
-        await InitService.initializeSession(sessionId);
+        const defaultScenarioNumber = parseInt(process.env.DEFAULT_SCENARIO_NUMBER || '1010');
+        await InitService.initializeSession(sessionId, defaultScenarioNumber);
         logger.info('도시 초기화 완료');
       }
     }

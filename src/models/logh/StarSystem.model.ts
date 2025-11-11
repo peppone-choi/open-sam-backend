@@ -43,7 +43,7 @@ export interface IStarSystem extends Document {
 
 const StarSystemSchema = new Schema<IStarSystem>(
   {
-    session_id: { type: String, required: true, index: true },
+    session_id: { type: String, required: true },
     systemId: { type: String, required: true },
     systemNumber: { type: Number, required: true },
 

@@ -7,26 +7,16 @@ import { Session } from '../models/session.model';
 import { mongoConnection } from '../db/connection';
 import { getSocketManager } from '../socket/socketManager';
 import { logger } from '../common/logger';
+import { CachePreloaderService } from '../services/cache/CachePreloader.service';
 
-// 실행 간격 (밀리초) - 기본값: 10초
-const PROCESS_INTERVAL_MS = parseInt(process.env.TURN_PROCESSOR_INTERVAL_MS || '10000', 10);
+// 실행 간격 (밀리초) - 기본값: 1초 (각 장수는 자신의 turntime에만 실행됨)
+const PROCESS_INTERVAL_MS = parseInt(process.env.TURN_PROCESSOR_INTERVAL_MS || '1000', 10);
 
 async function processTurns() {
   try {
-    // 활성 세션 조회 (status가 'running'이고 isunited가 2,3이 아닌 경우)
+    // 활성 세션 조회 (status가 'running'인 경우만)
     const sessions = await Session.find({ 
-      $or: [
-        { status: 'running' },
-        { 'data.status': { $ne: 'paused' } }
-      ],
-      $and: [
-        {
-          $or: [
-            { 'data.isunited': { $exists: false } },
-            { 'data.isunited': { $nin: [2, 3] } }
-          ]
-        }
-      ]
+      status: 'running'
     });
     
     if (sessions.length === 0) {
@@ -40,8 +30,8 @@ async function processTurns() {
       const sessionId = session.session_id;
       const sessionData = session.data || {};
       
-      // 세션이 실행 중인지 확인
-      if (session.status === 'paused' || sessionData.status === 'paused') {
+      // 세션이 실행 중인지 재확인 (preparing, paused, finished, united는 스킵)
+      if (session.status !== 'running') {
         logger.debug(`[Turn Processor] Session ${sessionId}: Paused, skipping`);
         continue;
       }
@@ -79,6 +69,15 @@ export async function startTurnProcessor() {
   // MongoDB 연결 확인
   if (!mongoConnection.getStatus()) {
     await mongoConnection.connect(process.env.MONGODB_URI);
+  }
+  
+  // 🚀 캐시 프리로드 (DB에서 모든 게임 데이터를 캐시로 로드)
+  logger.info('[Turn Processor] Preloading game data into cache...');
+  try {
+    await CachePreloaderService.preloadAllSessions();
+    logger.info('[Turn Processor] ✅ Cache preload completed');
+  } catch (error: any) {
+    logger.error('[Turn Processor] ⚠️ Cache preload failed, continuing anyway:', error);
   }
   
   const intervalSeconds = PROCESS_INTERVAL_MS / 1000;

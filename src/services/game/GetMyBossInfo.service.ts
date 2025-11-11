@@ -13,7 +13,10 @@ export class GetMyBossInfoService {
     const sessionId = data.session_id || 'sangokushi_default';
     const userId = user?.userId || user?.id;
     
+    logger.info('[GetMyBossInfo] 실행 시작', { sessionId, userId, user });
+    
     if (!userId) {
+      logger.warn('[GetMyBossInfo] userId 없음', { user });
       return {
         result: false,
         reason: '인증이 필요합니다'
@@ -22,6 +25,7 @@ export class GetMyBossInfoService {
 
     try {
       // 자신의 장수 조회
+      logger.info('[GetMyBossInfo] 장수 조회 시작', { sessionId, userId: String(userId) });
       const me = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
 
       if (!me) {

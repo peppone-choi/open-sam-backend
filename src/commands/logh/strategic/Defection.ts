@@ -119,7 +119,7 @@ export class DefectionCommand extends BaseLoghCommand {
     }
 
     // 계급 강등 (망명자는 최하위 계급으로)
-    commanderDoc.rank = '이등병';
+    commanderDoc.setRankByName('이등병');
     
     // 개인 자금 몰수
     commanderDoc.personalFunds = 0;

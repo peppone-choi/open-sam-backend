@@ -71,9 +71,9 @@ export class GetJoinInfoService {
       }
 
       // 5. 기본 스탯 제한 정보
-      const defaultStatMin = gameEnv.defaultStatMin || 40;
-      const defaultStatMax = gameEnv.defaultStatMax || 100;
-      const defaultStatTotal = gameEnv.defaultStatTotal || 240;
+      const defaultStatMin = gameEnv.defaultStatMin || 15;
+      const defaultStatMax = gameEnv.defaultStatMax || 90;
+      const defaultStatTotal = gameEnv.defaultStatTotal || 275;
 
       // 6. 초기 위치 가능한 도시 목록 (모든 도시)
       const availableCities = await cityRepository.findByFilter({
@@ -101,7 +101,9 @@ export class GetJoinInfoService {
         },
         cities: cityList,
         blockCreate: blockCreate,
-        joinMode: sessionData.join_mode || 0
+        joinMode: sessionData.join_mode || 'free', // 'free', 'onlyRandom'
+        allowJoinNation: !(blockCreate & 4), // & 4: 소속 국가 선택 차단 (새 플래그)
+        npcMode: gameEnv.npcmode || 0
       };
     } catch (error: any) {
       console.error('GetJoinInfo error:', error);

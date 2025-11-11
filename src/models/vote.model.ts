@@ -11,7 +11,7 @@ export interface IVote extends Document {
 }
 
 const VoteSchema = new Schema<IVote>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

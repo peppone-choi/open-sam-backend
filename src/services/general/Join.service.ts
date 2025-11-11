@@ -7,6 +7,8 @@ import { generalTurnRepository } from '../../repositories/general-turn.repositor
 import { User } from '../../models/user.model';
 import { RankData } from '../../models/rank_data.model';
 import { UserRecord } from '../../models/user_record.model';
+import { GeneralTurn } from '../../models/general_turn.model';
+import { GeneralRecord } from '../../models/general_record.model';
 import { KVStorage } from '../../utils/KVStorage';
 import crypto from 'crypto';
 
@@ -38,6 +40,9 @@ export class JoinService {
         leadership,
         strength,
         intel,
+        politics,
+        charm,
+        trait: selectedTrait,
         pic,
         character,
         inheritSpecial,
@@ -71,7 +76,7 @@ export class JoinService {
       const gameEnv = session.data?.game_env || {};
       
       // 4. 장수 생성 가능 여부 확인
-      const blockCheck = this.checkBlockCreate(gameEnv);
+      const blockCheck = this.checkBlockCreate(gameEnv, session);
       if (blockCheck) {
         return { success: false, message: blockCheck };
       }
@@ -82,26 +87,47 @@ export class JoinService {
         return { success: false, message: duplicateCheck };
       }
 
-      // 6. 장수 수 제한 확인
+      // 6. 장수 수 제한 확인 (플레이어 장수만 카운트)
       const currentGenCount = await generalRepository.count({ 
         session_id: sessionId,
-        'data.npc': { $lt: 2 }
+        owner: { $ne: 'NPC' } // NPC가 아닌 장수만 카운트
       });
       const maxGeneral = gameEnv.maxgeneral || 500;
+      
+      console.log('[Join] General count check:', {
+        sessionId,
+        currentGenCount,
+        maxGeneral,
+        canJoin: currentGenCount < maxGeneral
+      });
+      
       if (currentGenCount >= maxGeneral) {
         return { success: false, message: '더이상 등록할 수 없습니다!' };
       }
 
-      // 7. 능력치 검증
-      const statTotal = gameEnv.defaultStatTotal || 240;
-      if (leadership + strength + intel > statTotal) {
+      // 7. 능력치 검증 및 트레잇 판정
+      const statTotal = gameEnv.defaultStatTotal || 275; // 통무지정매 5개 능력치 기본 275 (평균 55)
+      const totalStats = leadership + strength + intel + politics + charm;
+      if (totalStats > statTotal) {
         return { 
           success: false, 
           message: `능력치가 ${statTotal}을 넘어섰습니다. 다시 가입해주세요!` 
         };
       }
 
-      // 8. 유산 시스템 (inheritance) 처리
+      // 8. 트레잇 판정 (프론트엔드에서 선택한 트레잇 사용)
+      const traitResult = this.getTraitByName(selectedTrait || '범인');
+      const statMax = traitResult.maxStat; // 트레잇에 따른 최대 능력치 상한
+      
+      // 트레잇 범위 검증
+      if (totalStats < traitResult.totalMin || totalStats > traitResult.totalMax) {
+        return {
+          success: false,
+          message: `${traitResult.name} 트레잇은 능력치 합이 ${traitResult.totalMin}~${traitResult.totalMax} 사이여야 합니다. (현재: ${totalStats})`
+        };
+      }
+
+      // 9. 유산 시스템 (inheritance) 처리 + 트레잇 비용
       const inheritResult = await this.processInheritance(
         userId,
         sessionId,
@@ -111,36 +137,45 @@ export class JoinService {
           inheritTurntimeZone,
           inheritCity,
           inheritBonusStat
-        }
+        },
+        traitResult.inheritCost // 트레잇 비용 추가
       );
 
       if (!inheritResult.success) {
         return inheritResult;
       }
 
-      // 9. 보너스 능력치 계산
+      // 10. 보너스 능력치 계산 (트레잇에 따른 보너스 개수)
       const bonusStats = this.calculateBonusStats(
         inheritBonusStat,
         leadership,
         strength,
         intel,
-        userId
+        politics,
+        charm,
+        userId,
+        traitResult.bonusMin,
+        traitResult.bonusMax
       );
 
-      const finalLeadership = leadership + bonusStats.leadership;
-      const finalStrength = strength + bonusStats.strength;
-      const finalIntel = intel + bonusStats.intel;
+      // 트레잇의 최댓값으로 클램프
+      const finalLeadership = Math.min(leadership + bonusStats.leadership, statMax);
+      const finalStrength = Math.min(strength + bonusStats.strength, statMax);
+      const finalIntel = Math.min(intel + bonusStats.intel, statMax);
+      const finalPolitics = Math.min(politics + bonusStats.politics, statMax);
+      const finalCharm = Math.min(charm + bonusStats.charm, statMax);
 
-      // 10. 나이 계산
+      // 11. 나이 계산 (트레잇 페널티 적용)
       const relYear = Math.max(
         (gameEnv.year || 184) - (gameEnv.startyear || 184),
         0
       );
-      const totalBonus = bonusStats.leadership + bonusStats.strength + bonusStats.intel;
+      const totalBonus = bonusStats.leadership + bonusStats.strength + bonusStats.intel + bonusStats.politics + bonusStats.charm;
       const rng = this.createRNG(userId);
-      const age = 20 + totalBonus * 2 - (rng % 2);
+      const baseAge = 20 + totalBonus * 2 - (rng % 2);
+      const age = Math.max(15, baseAge + traitResult.ageModifier); // 트레잇에 따라 나이 조정
 
-      // 11. 천재(genius) 여부 결정
+      // 12. 천재(genius) 여부 결정
       const geniusResult = this.determineGenius(
         inheritSpecial,
         gameEnv.genius || 0,
@@ -157,19 +192,48 @@ export class JoinService {
         finalLeadership,
         finalStrength,
         finalIntel,
+        finalPolitics,
+        finalCharm,
         rng
       );
 
       // 13. 태어날 도시 결정
-      const bornCity = await this.determineBornCity(
+      const bornCityResult = await this.determineBornCity(
         sessionId,
         inheritCity,
         rng
       );
 
-      if (!bornCity) {
-        return { success: false, message: '태어날 도시를 찾을 수 없습니다' };
+      if (!bornCityResult) {
+        console.error('[Join] No cities available in session:', sessionId);
+        return { 
+          success: false, 
+          message: '태어날 도시를 찾을 수 없습니다. 게임 세션에 도시가 없거나 초기화되지 않았습니다.' 
+        };
       }
+      
+      // city 번호 추출 (최상위 필드 우선, 없으면 data.city)
+      const bornCityID = bornCityResult.city || bornCityResult.data?.city;
+      const bornCityName = bornCityResult.name || bornCityResult.data?.name || '알 수 없는 도시';
+      
+      if (!bornCityID) {
+        console.error('[Join] CRITICAL: bornCity ID is null/undefined!', {
+          bornCityResult,
+          hasCity: !!bornCityResult.city,
+          hasDataCity: !!bornCityResult.data?.city,
+          keys: Object.keys(bornCityResult)
+        });
+        return { 
+          success: false, 
+          message: '도시 번호를 가져올 수 없습니다. 도시 데이터가 손상되었을 수 있습니다.' 
+        };
+      }
+      
+      console.log('[createGeneral] Born city info:', {
+        cityID: bornCityID,
+        cityName: bornCityName,
+        originalObject: bornCityResult
+      });
 
       // 14. 경험치 계산
       const experience = await this.calculateStartExperience(
@@ -178,10 +242,11 @@ export class JoinService {
       );
 
       // 15. 턴타임 계산
+      const turnterm = gameEnv.turnterm || 10; // 기본 10분
       const turntime = this.calculateTurntime(
-        inheritTurntimeZone,
-        gameEnv,
-        rng
+        turnterm,
+        rng,
+        inheritTurntimeZone
       );
 
       // 16. 얼굴 이미지 설정
@@ -205,9 +270,10 @@ export class JoinService {
       }
 
       // 20. 장수 번호 생성 (autoincrement 시뮬레이션)
-      const lastGeneral = await generalRepository.findOneByFilter({ session_id: sessionId  })
+      const generals = await generalRepository.findByFilter({ session_id: sessionId })
         .sort({ no: -1 })
-        ;
+        .limit(1);
+      const lastGeneral = generals.length > 0 ? generals[0] : null;
       const generalNo = (lastGeneral?.no || 0) + 1;
 
       // 21. 장수 생성
@@ -219,20 +285,32 @@ export class JoinService {
           owner: String(userId),
           name: name,
           picture: faceResult.picture,
+          npc: 0, // 최상위 필드로 평탄화
+          leadership: finalLeadership, // 최상위 필드로 평탄화
+          strength: finalStrength, // 최상위 필드로 평탄화
+          intel: finalIntel, // 최상위 필드로 평탄화
+          politics: finalPolitics, // 최상위 필드로 평탄화
+          charm: finalCharm, // 최상위 필드로 평탄화
+          nation: 0, // 최상위 필드로 평탄화 (프론트엔드에서 general.nation으로 직접 참조)
+          city: bornCityID, // 최상위 필드로 평탄화 (프론트엔드에서 general.city로 직접 참조)
           data: {
             owner_name: user?.name || 'Unknown',
             imgsvr: faceResult.imgsvr,
             nation: 0, // 야인으로 시작
-            city: bornCity.city,
+            city: bornCityID, // PHP 원본과 동일하게 city 번호 할당
             troop: 0,
             affinity: affinity,
             leadership: finalLeadership,
             strength: finalStrength,
             intel: finalIntel,
+            politics: finalPolitics,
+            charm: finalCharm,
+            trait: traitResult.name, // 트레잇
+            trait_desc: traitResult.description, // 트레잇 설명
             experience: experience,
             dedication: 0,
-            gold: gameEnv.defaultGold || 1000,
-            rice: gameEnv.defaultRice || 1000,
+            gold: Math.floor((gameEnv.defaultGold || 1000) * traitResult.goldMultiplier),
+            rice: Math.floor((gameEnv.defaultRice || 1000) * traitResult.riceMultiplier),
             crew: 0,
             train: 0,
             atmos: 0,
@@ -410,7 +488,7 @@ export class JoinService {
         sessionId,
         generalNo,
         name,
-        bornCity.name,
+        bornCityName,
         geniusResult.isGenius,
         specialResult.special2Name,
         bonusStats,
@@ -426,7 +504,7 @@ export class JoinService {
         data: {
           generalId: generalNo,
           generalName: name,
-          city: bornCity.name,
+          city: bornCityName,
           isGenius: geniusResult.isGenius
         }
       };
@@ -443,16 +521,16 @@ export class JoinService {
   // ========== Helper Methods ==========
 
   private static validateInput(data: any): any {
-    const required = ['name', 'leadership', 'strength', 'intel', 'pic', 'character'];
+    const required = ['name', 'leadership', 'strength', 'intel', 'politics', 'charm', 'pic', 'character'];
     for (const field of required) {
       if (data[field] === undefined || data[field] === null) {
         return { success: false, message: `${field}는 필수 항목입니다` };
       }
     }
 
-    const { leadership, strength, intel } = data;
-    const min = 30; // GameConst::$defaultStatMin
-    const max = 100; // GameConst::$defaultStatMax
+    const { leadership, strength, intel, politics, charm } = data;
+    const min = 15; // GameConst::$defaultStatMin (PHP: 15)
+    const max = 90; // GameConst::$defaultStatMax (PHP: 80, 우리는 90)
 
     if (leadership < min || leadership > max) {
       return { success: false, message: `통솔은 ${min}~${max} 사이여야 합니다` };
@@ -462,6 +540,12 @@ export class JoinService {
     }
     if (intel < min || intel > max) {
       return { success: false, message: `지력은 ${min}~${max} 사이여야 합니다` };
+    }
+    if (politics < min || politics > max) {
+      return { success: false, message: `정치는 ${min}~${max} 사이여야 합니다` };
+    }
+    if (charm < min || charm > max) {
+      return { success: false, message: `매력은 ${min}~${max} 사이여야 합니다` };
     }
 
     const nameWidth = this.getStringWidth(data.name);
@@ -501,12 +585,90 @@ export class JoinService {
     return width;
   }
 
-  private static checkBlockCreate(gameEnv: any): string | null {
+  private static checkBlockCreate(gameEnv: any, session: any): string | null {
     const blockCreate = gameEnv.block_general_create || 0;
     if (blockCreate & 1) {
       return '장수 직접 생성이 불가능한 모드입니다.';
     }
+    
+    // 세션 상태 확인
+    const sessionStatus = session.status || 'running';
+    
+    // preparing (가오픈): 장수 생성 허용
+    // running: 장수 생성 허용
+    // paused: 장수 생성 금지
+    // finished/united: 장수 생성 금지
+    if (sessionStatus === 'paused') {
+      return '서버가 일시정지 상태입니다.';
+    }
+    if (sessionStatus === 'finished' || sessionStatus === 'united') {
+      return '이미 종료된 서버입니다.';
+    }
+    
     return null;
+  }
+
+  private static getTraitByName(traitName: string): any {
+    // 트레잇 이름으로 정보 반환
+    switch (traitName) {
+      case '천재':
+        return {
+          name: '천재',
+          description: '하늘이 내린 재능',
+          maxStat: 95,
+          bonusMin: 5,
+          bonusMax: 7,
+          totalMin: 220,
+          totalMax: 240,
+          inheritCost: 1000, // 유산 포인트 소모
+          goldMultiplier: 0.5, // 초기 자원 절반
+          riceMultiplier: 0.5,
+          ageModifier: -7 // 나이 -7 (더 어림)
+        };
+      case '영재':
+        return {
+          name: '영재',
+          description: '남다른 자질',
+          maxStat: 92,
+          bonusMin: 4,
+          bonusMax: 6,
+          totalMin: 241,
+          totalMax: 255,
+          inheritCost: 500,
+          goldMultiplier: 0.7,
+          riceMultiplier: 0.7,
+          ageModifier: -4
+        };
+      case '수재':
+        return {
+          name: '수재',
+          description: '뛰어난 소질',
+          maxStat: 91,
+          bonusMin: 4,
+          bonusMax: 5,
+          totalMin: 256,
+          totalMax: 265,
+          inheritCost: 200,
+          goldMultiplier: 0.85,
+          riceMultiplier: 0.85,
+          ageModifier: -2
+        };
+      case '범인':
+      default:
+        return {
+          name: '범인',
+          description: '평범한 인물',
+          maxStat: 90,
+          bonusMin: 3,
+          bonusMax: 5,
+          totalMin: 266,
+          totalMax: 275,
+          inheritCost: 0,
+          goldMultiplier: 1.0,
+          riceMultiplier: 1.0,
+          ageModifier: 0
+        };
+    }
   }
 
   private static async checkDuplicates(
@@ -538,9 +700,10 @@ export class JoinService {
     userId: number | string,
     sessionId: string,
     gameEnv: any,
-    options: any
+    options: any,
+    traitCost: number = 0
   ): Promise<any> {
-    let requiredPoint = 0;
+    let requiredPoint = traitCost; // 트레잇 비용부터 시작
     const inheritCityPoint = gameEnv.inheritBornCityPoint || 500;
     const inheritStatPoint = gameEnv.inheritBornStatPoint || 500;
     const inheritSpecialPoint = gameEnv.inheritBornSpecialPoint || 1000;
@@ -564,7 +727,7 @@ export class JoinService {
     const totalPoint = 999999;
 
     if (totalPoint < requiredPoint) {
-      return { success: false, message: '유산 포인트가 부족합니다. 다시 가입해주세요!' };
+      return { success: false, message: `유산 포인트가 부족합니다. (필요: ${requiredPoint}, 보유: ${totalPoint})` };
     }
 
     if (options.inheritSpecial && gameEnv.genius <= 0) {
@@ -579,30 +742,47 @@ export class JoinService {
     leadership: number,
     strength: number,
     intel: number,
-    userId: number | string
+    politics: number,
+    charm: number,
+    userId: number | string,
+    bonusMin: number = 3,
+    bonusMax: number = 5
   ): any {
-    if (inheritBonusStat && Array.isArray(inheritBonusStat) && inheritBonusStat.length === 3) {
+    if (inheritBonusStat && Array.isArray(inheritBonusStat) && inheritBonusStat.length === 5) {
       const sum = inheritBonusStat.reduce((a, b) => a + b, 0);
-      if (sum >= 3 && sum <= 5) {
+      if (sum >= bonusMin && sum <= bonusMax) {
         return {
           leadership: inheritBonusStat[0],
           strength: inheritBonusStat[1],
-          intel: inheritBonusStat[2]
+          intel: inheritBonusStat[2],
+          politics: inheritBonusStat[3],
+          charm: inheritBonusStat[4]
         };
       }
     }
 
-    // 랜덤 보너스 (3~5)
-    const rng = this.createRNG(userId);
-    const bonusCount = 3 + (rng % 3); // 3, 4, 5
-    const stats = [leadership, strength, intel];
-    const bonuses = [0, 0, 0];
+    // PHP 원본 로직: 능력치를 가중치로 사용
+    // 트레잇에 따라 보너스 개수 변동
+    // PRNG (Pseudo Random Number Generator) 생성
+    const seed = this.createRNG(userId);
+    let rngState = seed;
+    
+    // LCG (Linear Congruential Generator) 구현
+    const nextRandom = () => {
+      rngState = (rngState * 1103515245 + 12345) & 0x7fffffff;
+      return rngState;
+    };
+    
+    const bonusRange = bonusMax - bonusMin + 1;
+    const bonusCount = bonusMin + (nextRandom() % bonusRange); // bonusMin ~ bonusMax
+    const stats = [leadership, strength, intel, politics, charm];
+    const bonuses = [0, 0, 0, 0, 0];
 
     for (let i = 0; i < bonusCount; i++) {
-      const totalWeight = stats[0] + stats[1] + stats[2];
-      const rand = rng % totalWeight;
+      const totalWeight = stats[0] + stats[1] + stats[2] + stats[3] + stats[4];
+      const rand = nextRandom() % totalWeight;
       let cumulative = 0;
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 5; j++) {
         cumulative += stats[j];
         if (rand < cumulative) {
           bonuses[j]++;
@@ -614,7 +794,9 @@ export class JoinService {
     return {
       leadership: bonuses[0],
       strength: bonuses[1],
-      intel: bonuses[2]
+      intel: bonuses[2],
+      politics: bonuses[3],
+      charm: bonuses[4]
     };
   }
 
@@ -641,6 +823,8 @@ export class JoinService {
     leadership: number,
     strength: number,
     intel: number,
+    politics: number,
+    charm: number,
     rng: number
   ): any {
     const retirementYear = 90;
@@ -655,13 +839,18 @@ export class JoinService {
       if (inheritSpecial) {
         special2 = inheritSpecial;
       } else {
-        // 능력치 기반 특기 선택 (간략화)
-        if (leadership > strength && leadership > intel) {
+        // 능력치 기반 특기 선택 (5개 능력치 기반)
+        const maxStat = Math.max(leadership, strength, intel, politics, charm);
+        if (leadership === maxStat) {
           special2 = '귀모';
-        } else if (strength > intel) {
+        } else if (strength === maxStat) {
           special2 = '정예';
-        } else {
+        } else if (intel === maxStat) {
           special2 = '신속';
+        } else if (politics === maxStat) {
+          special2 = '부농';
+        } else {
+          special2 = '명성';
         }
       }
     } else {
@@ -700,61 +889,93 @@ export class JoinService {
     inheritCity: number | null,
     rng: number
   ): Promise<any> {
+    // 상속 도시가 지정된 경우
     if (inheritCity !== null && inheritCity !== undefined && inheritCity !== 0) {
-      const city = await cityRepository.findOneByFilter({ 
-        session_id: sessionId, 
-        city: inheritCity 
-      });
+      console.log('[determineBornCity] Looking for inherited city:', inheritCity);
+      const city = await cityRepository.findByCityNum(sessionId, inheritCity);
       if (city) {
+        console.log('[determineBornCity] Found inherited city:', { city: city.city, name: city.name });
         return city;
       }
+      console.warn('[determineBornCity] Inherited city not found, falling back to random selection');
     }
 
-    // 공백지(level 5~6, nation 0) 우선 - data.nation 또는 nation 필드 모두 확인
+    // 공백지(level 5~6, nation 0) 우선
+    console.log('[determineBornCity] Step 1: Looking for vacant cities (level 5-6, nation 0)');
     let cities = await cityRepository.findByFilter({
       session_id: sessionId,
-      $or: [
-        { 'data.level': { $gte: 5, $lte: 6 }, 'data.nation': 0 },
-        { level: { $gte: 5, $lte: 6 }, nation: 0 },
-        { 'data.level': { $gte: 5, $lte: 6 }, nation: 0 },
-        { level: { $gte: 5, $lte: 6 }, 'data.nation': 0 }
-      ]
-    }).limit(100);
+      level: { $gte: 5, $lte: 6 },
+      nation: 0
+    });
+    cities = cities.slice(0, 100);
+    console.log(`[determineBornCity] Found ${cities.length} vacant cities (level 5-6, nation 0)`);
 
     if (cities.length === 0) {
       // 공백지 없으면 아무 도시나 (level 5~6)
+      console.log('[determineBornCity] Step 2: Looking for any cities (level 5-6)');
       cities = await cityRepository.findByFilter({
         session_id: sessionId,
-        $or: [
-          { 'data.level': { $gte: 5, $lte: 6 } },
-          { level: { $gte: 5, $lte: 6 } }
-        ]
-      }).limit(100);
+        level: { $gte: 5, $lte: 6 }
+      });
+      cities = cities.slice(0, 100);
+      console.log(`[determineBornCity] Found ${cities.length} cities (level 5-6)`);
     }
 
     if (cities.length === 0) {
       // level 조건 없이 nation 0인 도시
+      console.log('[determineBornCity] Step 3: Looking for vacant cities (any level, nation 0)');
       cities = await cityRepository.findByFilter({
         session_id: sessionId,
-        $or: [
-          { 'data.nation': 0 },
-          { nation: 0 }
-        ]
-      }).limit(100);
+        nation: 0
+      });
+      cities = cities.slice(0, 100);
+      console.log(`[determineBornCity] Found ${cities.length} vacant cities (nation 0)`);
     }
 
     if (cities.length === 0) {
       // 아무 도시나
+      console.log('[determineBornCity] Step 4: Looking for any cities');
       cities = await cityRepository.findByFilter({
         session_id: sessionId
-      }).limit(100);
+      });
+      cities = cities.slice(0, 100);
+      console.log(`[determineBornCity] Found ${cities.length} total cities`);
     }
 
     if (cities.length === 0) {
+      console.error('[determineBornCity] CRITICAL: No cities found in session:', sessionId);
       return null;
     }
 
     const selectedCity = cities[Math.abs(rng) % cities.length];
+    
+    // 도시 필드 normalize (최상위 필드 우선, 없으면 data에서 가져오기)
+    if (!selectedCity.city && selectedCity.data?.city) {
+      selectedCity.city = selectedCity.data.city;
+    }
+    if (!selectedCity.name && selectedCity.data?.name) {
+      selectedCity.name = selectedCity.data.name;
+    }
+    
+    // 디버깅: 선택된 도시 정보 로그
+    console.log('[determineBornCity] Selected city (normalized):', {
+      city: selectedCity.city,
+      name: selectedCity.name,
+      nation: selectedCity.nation || selectedCity.data?.nation,
+      level: selectedCity.level || selectedCity.data?.level,
+      hasDataCity: !!selectedCity.data?.city,
+      hasDataName: !!selectedCity.data?.name
+    });
+    
+    // CRITICAL: city 번호가 여전히 없으면 에러
+    if (!selectedCity.city) {
+      console.error('[determineBornCity] CRITICAL ERROR: city field is missing!', {
+        selectedCity,
+        dataKeys: Object.keys(selectedCity.data || {}),
+        topLevelKeys: Object.keys(selectedCity)
+      });
+    }
+    
     return selectedCity;
   }
 
@@ -783,45 +1004,19 @@ export class JoinService {
   }
 
   private static calculateTurntime(
-    inheritTurntimeZone: number | null,
-    gameEnv: any,
-    rng: number
+    turnterm: number,
+    rng: number,
+    inheritTurntimeZone: number | null
   ): Date {
-    const turnterm = gameEnv.turnterm || 60; // 분 단위 (기본 60분)
     const now = new Date();
     
-    // 현재 시간을 기준으로 다음 턴 시간 계산
-    // 오늘 자정부터 계산
-    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-
-    if (inheritTurntimeZone !== null && inheritTurntimeZone !== undefined) {
-      // 유산 턴타임 존 사용
-      const inheritMinutes = inheritTurntimeZone * turnterm; // turnterm은 이미 분 단위
-      const additionalSeconds = rng % Math.max(turnterm * 60 - 1, 1); // 분을 초로 변환
-      const totalSeconds = inheritMinutes * 60 + additionalSeconds;
-      
-      let turntime = new Date(todayMidnight.getTime());
-      turntime.setSeconds(totalSeconds);
-      
-      // 턴 시간이 현재 시간보다 과거면 다음 날로 설정
-      if (turntime.getTime() < now.getTime()) {
-        turntime = new Date(turntime.getTime() + (24 * 60 * 60 * 1000));
-      }
-      
-      return turntime;
-    }
-
-    // 랜덤 턴타임 (오늘 자정부터 24시간 내)
-    const randomMinutes = rng % (24 * 60);
-    let turntime = new Date(todayMidnight.getTime());
-    turntime.setMinutes(randomMinutes);
+    // 세션의 다음 턴 시간에 맞춰서 설정
+    // turnterm 간격으로 턴이 돌기 때문에, 다음 턴까지 기다려야 함
+    const nextTurnTime = new Date(now.getTime() + turnterm * 60 * 1000);
     
-    // 턴 시간이 현재 시간보다 과거면 다음 날로 설정
-    if (turntime.getTime() < now.getTime()) {
-      turntime = new Date(turntime.getTime() + (24 * 60 * 60 * 1000));
-    }
+    console.log(`[Join] Set turntime to next turn: ${nextTurnTime.toISOString()} (${turnterm}분 후)`);
     
-    return turntime;
+    return nextTurnTime;
   }
 
   private static async determineFace(
@@ -903,30 +1098,30 @@ export class JoinService {
       logs.push({
         session_id: sessionId,
         general_id: 0,
+        log_type: 'global',
         year,
         month,
-        type: 'global',
         text: `${cityName}에서 ${name}라는 기재가 천하에 이름을 알립니다.`,
-        date: new Date()
+        created_at: new Date()
       });
       logs.push({
         session_id: sessionId,
         general_id: 0,
+        log_type: 'global',
         year,
         month,
-        type: 'global',
         text: `${specialName} 특기를 가진 천재의 등장으로 온 천하가 떠들썩합니다.`,
-        date: new Date()
+        created_at: new Date()
       });
     } else {
       logs.push({
         session_id: sessionId,
         general_id: 0,
+        log_type: 'global',
         year,
         month,
-        type: 'global',
         text: `${cityName}에서 ${name}라는 호걸이 천하에 이름을 알립니다.`,
-        date: new Date()
+        created_at: new Date()
       });
     }
 
@@ -934,56 +1129,58 @@ export class JoinService {
     logs.push({
       session_id: sessionId,
       general_id: generalId,
+      log_type: 'history',
       year,
       month,
-      type: 'history',
       text: `${name}, ${cityName}에서 큰 뜻을 품다.`,
-      date: new Date()
+      created_at: new Date()
     });
 
     logs.push({
       session_id: sessionId,
       general_id: generalId,
+      log_type: 'action',
       year,
       month,
-      type: 'action',
       text: '삼국지 모의전투 PHP의 세계에 오신 것을 환영합니다 ^o^',
-      date: new Date()
+      created_at: new Date()
     });
 
     logs.push({
       session_id: sessionId,
       general_id: generalId,
+      log_type: 'action',
       year,
       month,
-      type: 'action',
-      text: `통솔 ${bonusStats.leadership} 무력 ${bonusStats.strength} 지력 ${bonusStats.intel} 의 보너스를 받으셨습니다.`,
-      date: new Date()
+      text: `통솔 ${bonusStats.leadership} 무력 ${bonusStats.strength} 지력 ${bonusStats.intel} 정치 ${bonusStats.politics} 매력 ${bonusStats.charm} 의 보너스를 받으셨습니다.`,
+      created_at: new Date()
     });
 
     logs.push({
       session_id: sessionId,
       general_id: generalId,
+      log_type: 'action',
       year,
       month,
-      type: 'action',
       text: `연령은 ${age}세로 시작합니다.`,
-      date: new Date()
+      created_at: new Date()
     });
 
     if (isGenius) {
       logs.push({
         session_id: sessionId,
         general_id: generalId,
+        log_type: 'action',
         year,
         month,
-        type: 'action',
         text: `축하합니다! 천재로 태어나 처음부터 ${specialName} 특기를 가지게 됩니다!`,
-        date: new Date()
+        created_at: new Date()
       });
     }
 
-    await GeneralRecord.insertMany(logs);
+    if (logs.length > 0) {
+      await GeneralRecord.insertMany(logs);
+    }
   }
 
   private static createRNG(userId: number | string): number {

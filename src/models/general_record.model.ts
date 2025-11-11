@@ -23,7 +23,7 @@ export interface IGeneralRecord extends Document {
 }
 
 const GeneralRecordSchema = new Schema<IGeneralRecord>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   general_id: { type: Number, required: true, index: true },
   log_type: { type: String, required: true, index: true },
   year: { type: Number, required: true },

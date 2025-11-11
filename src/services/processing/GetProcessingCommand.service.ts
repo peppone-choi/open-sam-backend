@@ -562,6 +562,13 @@ export class GetProcessingCommandService {
     const startYear = env.startyear || 1;
     const relYear = year - startYear;
     
+    // 현재 장수가 위치한 도시
+    const currentCityId = generalData.city || 0;
+    const currentCity = await cityRepository.findOneByFilter({
+      session_id: sessionId,
+      city: currentCityId
+    });
+    
     // 국가의 소유 도시와 지역 정보
     const cities = await cityRepository.findByFilter({ 
       session_id: sessionId,
@@ -607,8 +614,10 @@ export class GetProcessingCommandService {
       
       const crewTypes: any[] = [];
       for (const unit of units) {
-        // 도시 이름으로 검증
-        const cityNames = ownCities ? Array.from(ownCities.values()).map(c => c.name) : [];
+        // 현재 도시 이름으로 검증 (reqCities는 현재 위치한 도시를 체크)
+        const currentCityName = currentCity?.name || '';
+        const cityNames = currentCityName ? [currentCityName] : [];
+        
         const available = isUnitAvailable(
           unit,
           tech,
@@ -1357,9 +1366,10 @@ export class GetProcessingCommandService {
     // 세션 정보
     const session = await sessionRepository.findBySessionId(sessionId );
     const sessionData = session?.data || {};
-    const startYear = sessionData.startyear || 180;
-    const year = sessionData.year || 180;
-    const month = sessionData.month || 1;
+    const gameEnv = sessionData.game_env || {};
+    const startYear = gameEnv.startyear || sessionData.startyear || session?.startyear || 180;
+    const year = gameEnv.year || sessionData.year || session?.year || 180;
+    const month = gameEnv.month || sessionData.month || session?.month || 1;
     const minYear = year + 1; // 다음 달부터 가능
     const maxYear = year + 24; // 최대 2년
 

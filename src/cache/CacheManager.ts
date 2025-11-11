@@ -5,8 +5,8 @@ import { logger } from '../common/logger';
 /**
  * 3단계 캐싱 시스템
  * 
- * L1: 메모리 (NodeCache) - TTL 10초
- * L2: Redis - TTL 60초  
+ * L1: 메모리 (NodeCache) - TTL 3초 (초고속, 최신 데이터)
+ * L2: Redis - TTL 360초 (고속, 안정적 데이터)
  * L3: MongoDB - 영구 저장
  * 
  * 읽기 순서: L1 → L2 → L3
@@ -22,17 +22,19 @@ export class CacheManager {
   private l1Cache: NodeCache;
   private l2Cache: RedisClientType | null = null;
   private l2Connected: boolean = false;
+  private l2Connecting: boolean = false;
+  private redisInitPromise: Promise<void> | null = null;
 
   private constructor() {
-    // L1: 메모리 캐시 (10초 TTL)
+    // L1: 메모리 캐시 (3초 TTL - 빠른 갱신)
     this.l1Cache = new NodeCache({
-      stdTTL: 10,
-      checkperiod: 5,
+      stdTTL: 3,
+      checkperiod: 1, // 1초마다 만료 체크
       useClones: false // 성능 최적화
     });
 
-    // L2: Redis 연결
-    this.initRedis();
+    // L2: Redis 연결 (비동기 시작)
+    this.redisInitPromise = this.initRedis();
   }
 
   /**
@@ -40,25 +42,42 @@ export class CacheManager {
    * 
    * 연결 실패 시 L1 캐시만 사용합니다.
    */
-  private async initRedis() {
+  private async initRedis(): Promise<void> {
+    if (this.l2Connecting) {
+      return this.redisInitPromise || Promise.resolve();
+    }
+    
+    this.l2Connecting = true;
+    
     try {
       const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+      logger.info(`Redis 연결 시도: ${redisUrl}`);
+      
       this.l2Cache = createClient({ 
         url: redisUrl,
         socket: {
-          connectTimeout: 5000,
+          connectTimeout: 10000,  // 10초로 증가 (Redis 서버 준비 대기)
           reconnectStrategy: (retries) => {
-            if (retries > 3) {
-              logger.warn('Redis 재연결 시도 중단 (메모리 캐시만 사용)');
-              return false;
+            // 처음 5번은 빠르게 재시도 (50ms, 100ms, 200ms, 400ms, 800ms)
+            if (retries <= 5) {
+              return Math.min(retries * 50, 1000);
             }
-            return Math.min(retries * 100, 3000);
+            // 이후에는 느리게 재시도 (2초 간격)
+            if (retries <= 10) {
+              return 2000;
+            }
+            // 10번 초과 시 포기
+            logger.warn(`Redis 재연결 시도 ${retries}번 실패 (메모리 캐시만 사용)`);
+            return false;
           }
         }
       }) as RedisClientType;
       
       this.l2Cache.on('error', (err) => {
-        logger.error('Redis 연결 에러', { error: err.message });
+        logger.error('Redis 연결 에러', { 
+          error: err.message,
+          stack: err.stack 
+        });
         this.l2Connected = false;
       });
 
@@ -72,11 +91,54 @@ export class CacheManager {
         this.l2Connected = true;
       });
 
+      this.l2Cache.on('reconnecting', () => {
+        logger.info('Redis 재연결 중...');
+        this.l2Connected = false;
+      });
+
       await this.l2Cache.connect();
+      logger.info('✅ Redis 연결 완료');
     } catch (error: any) {
-      logger.warn('Redis L2 캐시 비활성화 (메모리 캐시만 사용)', { error: error.message });
+      logger.warn('Redis L2 캐시 비활성화 (메모리 캐시만 사용)', { 
+        error: error.message,
+        stack: error.stack 
+      });
       this.l2Connected = false;
+    } finally {
+      this.l2Connecting = false;
     }
+  }
+  
+  /**
+   * Redis 연결이 준비될 때까지 대기
+   */
+  public async waitForRedis(timeoutMs: number = 5000): Promise<boolean> {
+    const startTime = Date.now();
+    
+    // Redis 초기화가 진행 중이면 대기
+    if (this.redisInitPromise) {
+      try {
+        await Promise.race([
+          this.redisInitPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Redis init timeout')), timeoutMs)
+          )
+        ]);
+      } catch (error: any) {
+        logger.warn('Redis 대기 타임아웃', { error: error.message });
+        return false;
+      }
+    }
+    
+    // 연결 상태 확인
+    while (Date.now() - startTime < timeoutMs) {
+      if (this.l2Connected) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return this.l2Connected;
   }
 
   public static getInstance(): CacheManager {
@@ -120,14 +182,14 @@ export class CacheManager {
   /**
    * L1 캐시에 저장
    */
-  async setL1<T>(key: string, value: T, ttl: number = 10): Promise<void> {
+  async setL1<T>(key: string, value: T, ttl: number = 3): Promise<void> {
     this.l1Cache.set(key, value, ttl);
   }
 
   /**
    * L2 캐시에 저장
    */
-  async setL2<T>(key: string, value: T, ttl: number = 60): Promise<void> {
+  async setL2<T>(key: string, value: T, ttl: number = 360): Promise<void> {
     if (!this.l2Connected || !this.l2Cache) {
       return;
     }
@@ -178,11 +240,11 @@ export class CacheManager {
    * @param value - 저장할 데이터
    * @param ttl - L2 캐시 TTL (초 단위, 기본값: 60초). L1은 항상 10초
    */
-  async set<T>(key: string, value: T, ttl: number = 60): Promise<void> {
+  async set<T>(key: string, value: T, ttl: number = 360): Promise<void> {
     // L1과 L2 모두 저장
     await Promise.all([
-      this.setL1(key, value, 10), // L1은 항상 10초
-      this.setL2(key, value, ttl)  // L2는 지정된 TTL
+      this.setL1(key, value, 3),   // L1은 항상 3초 (빠른 갱신)
+      this.setL2(key, value, ttl)  // L2는 지정된 TTL (기본 360초)
     ]);
   }
 

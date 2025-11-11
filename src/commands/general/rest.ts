@@ -45,7 +45,13 @@ export class RestCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn());
     
-    // TODO: StaticEventHandler.handleEvent
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error: any) {
+      console.error('StaticEventHandler failed:', error);
+    }
     
     general.applyDB(DB.db());
     

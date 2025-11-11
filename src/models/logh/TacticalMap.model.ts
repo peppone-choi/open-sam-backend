@@ -62,7 +62,7 @@ export interface ITacticalMap extends Document {
 
 const TacticalMapSchema = new Schema<ITacticalMap>(
   {
-    session_id: { type: String, required: true, index: true },
+    session_id: { type: String, required: true },
     tacticalMapId: { type: String, required: true },
     
     strategicGridPosition: {

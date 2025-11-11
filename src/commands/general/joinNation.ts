@@ -3,6 +3,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { General } from '../../models/general.model';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 임관 커맨드
@@ -43,18 +44,16 @@ export class JoinNationCommand extends GeneralCommand {
     this.setNation();
 
     const relYear = this.env.year - this.env.startyear;
-
+    
     this.permissionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다')
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다')
     ];
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // BeNeutral(),
-      // AllowJoinAction(),
-      // NoPenalty(PenaltyKey::NoChosenAssignment),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.BeNeutral(),
+      ConstraintHelper.AllowJoinAction(),
+      ConstraintHelper.NoPenalty('NoChosenAssignment'),
     ];
   }
 
@@ -66,20 +65,19 @@ export class JoinNationCommand extends GeneralCommand {
     return this.env.join_mode !== 'onlyRandom';
   }
 
-  protected async initWithArg(): Promise<void> {
+  protected initWithArg(): void {
     const destNationID = this.arg.destNationID;
-    // this.setDestNation(destNationID, ['gennum', 'scout']);
+    this.setDestNation(destNationID, ['gennum', 'scout']);
 
     const relYear = this.env.year - this.env.startyear;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // BeNeutral(),
-      // ExistsDestNation(),
-      // AllowJoinDestNation(relYear),
-      // AllowJoinAction(),
-      // NoPenalty(PenaltyKey::NoChosenAssignment),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.BeNeutral(),
+      ConstraintHelper.ExistsDestNation(),
+      ConstraintHelper.AllowJoinDestNation(relYear),
+      ConstraintHelper.AllowJoinAction(),
+      ConstraintHelper.NoPenalty('NoChosenAssignment'),
     ];
   }
 
@@ -97,8 +95,7 @@ export class JoinNationCommand extends GeneralCommand {
 
   public getBrief(): string {
     const commandName = JoinNationCommand.getName();
-    // TODO: getNationStaticInfo
-    const destNationName = '국가명'; // this.destNation.name
+    const destNationName = this.destNation?.name || '국가명';
     return `【${destNationName}】로 ${commandName}`;
   }
 
@@ -107,7 +104,6 @@ export class JoinNationCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -142,27 +138,62 @@ export class JoinNationCommand extends GeneralCommand {
     if (this.destGeneralObj !== null) {
       general.setVar('city', this.destGeneralObj.getCityID());
     } else {
-      const targetCityID = await db('general')
-        .where('nation', destNationID)
-        .where('officer_level', 12)
-        .first()
-        .then((r: any) => r?.city);
+      const { generalRepository } = await import('../../repositories/general.repository');
+      const sessionId = env.session_id || 'sangokushi_default';
+      
+      const lordDoc = await generalRepository.findOneByFilter({
+        session_id: sessionId,
+        'data.nation': destNationID,
+        'data.officer_level': 12
+      });
+      
+      const targetCityID = lordDoc?.data?.city || destNation.capital || 1;
       general.setVar('city', targetCityID);
     }
 
-    await db('nation')
-      .where('nation', destNationID)
-      .update({
-        gennum: db.raw('gennum + 1'),
-      });
+    const { nationRepository } = await import('../../repositories/nation.repository');
+    const sessionId = env.session_id || 'sangokushi_default';
+    
+    await nationRepository.updateOneByFilter(
+      { session_id: sessionId, 'data.nation': destNationID },
+      { gennum: (destNation.gennum || 0) + 1 }
+    );
 
-    // TODO: refreshNationStaticInfo
-    // TODO: InheritancePoint
+    // refreshNationStaticInfo 호출
+    try {
+      const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');
+      await refreshNationStaticInfo(sessionId, destNationID);
+    } catch (error: any) {
+      console.error('refreshNationStaticInfo 실패:', error);
+    }
+
+    // InheritancePoint 처리
+    try {
+      general.increaseInheritancePoint('active_action', 1);
+    } catch (error: any) {
+      console.error('InheritancePoint 실패:', error);
+    }
+
     general.addExperience(exp);
     this.setResultTurn(new LastTurn(JoinNationCommand.getName(), this.arg));
     general.checkStatChange();
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+
+    // StaticEventHandler 처리
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error: any) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    // tryUniqueItemLottery 처리
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      await tryUniqueItemLottery(rng, general, sessionId, '임관');
+    } catch (error: any) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
+
     await this.saveGeneral();
 
     return true;
@@ -171,12 +202,27 @@ export class JoinNationCommand extends GeneralCommand {
   public async exportJSVars(): Promise<any> {
     const generalObj = this.generalObj;
     const nationID = generalObj.getNationID();
-    // TODO: Legacy DB access - const db = DB.db();
+    const sessionId = this.env.session_id || 'sangokushi_default';
 
-    // TODO: 국가 목록 쿼리 및 반환
+    // 국가 목록 쿼리
+    const { nationRepository } = await import('../../repositories/nation.repository');
+    const nationDocs = await nationRepository.findByFilter({
+      session_id: sessionId,
+      'data.level': { $gt: 0 }
+    });
+
+    const nationList = nationDocs.map((doc: any) => ({
+      nation: doc.data.nation,
+      name: doc.data.name,
+      color: doc.data.color,
+      level: doc.data.level,
+      gennum: doc.data.gennum,
+      capital: doc.data.capital
+    }));
+
     return {
       procRes: {
-        nationList: [],
+        nationList,
         startYear: this.env.startyear,
       },
     };

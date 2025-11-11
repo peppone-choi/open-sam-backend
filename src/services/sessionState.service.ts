@@ -41,14 +41,14 @@ function getRedisClient(): Redis {
 
 export interface SessionState {
   sessionId: string;
-  status: 'waiting' | 'running' | 'paused' | 'finished';
+  status: 'preparing' | 'running' | 'paused' | 'finished' | 'united';
   year: number;
   month: number;
   turnterm: number; // 분 단위
   turntime: Date;
   lastExecuted: Date;
   isLocked: boolean;
-  isUnited: number; // 0: 진행중, 2: 통합 완료, 3: 통합 실패
+  isUnited: number; // 0: 진행중, 2: 통합 완료, 3: 통합 실패 (레거시 호환용, deprecated)
   onlineUserCount?: number;
   onlineNations?: number[];
 }
@@ -207,7 +207,7 @@ export class SessionStateService {
   /**
    * 세션 상태 확인 (락 없이)
    */
-  static async checkSessionStatus(sessionId: string): Promise<'available' | 'locked' | 'paused' | 'finished'> {
+  static async checkSessionStatus(sessionId: string): Promise<'available' | 'locked' | 'paused' | 'finished' | 'preparing'> {
     const state = await this.getSessionState(sessionId);
     if (!state) {
       return 'finished';
@@ -221,7 +221,11 @@ export class SessionStateService {
       return 'paused';
     }
 
-    if (state.status === 'finished' || state.isUnited >= 2) {
+    if (state.status === 'preparing') {
+      return 'preparing'; // 가오픈 상태
+    }
+
+    if (state.status === 'finished' || state.status === 'united') {
       return 'finished';
     }
 
@@ -290,20 +294,27 @@ export class SessionStateService {
 
   // Private 메서드
 
-  private static determineStatus(sessionData: any): 'waiting' | 'running' | 'paused' | 'finished' {
+  private static determineStatus(sessionData: any): 'preparing' | 'running' | 'paused' | 'finished' | 'united' {
+    // 명시적 status가 있으면 사용
     if (sessionData.status) {
       return sessionData.status;
     }
 
-    if (sessionData.isunited >= 2) {
-      return 'finished';
+    // 레거시 isunited 값으로 판단
+    if (sessionData.isunited === 3) {
+      return 'united'; // 천하통일
+    }
+
+    if (sessionData.isunited === 2) {
+      return 'preparing'; // 준비중/폐쇄 → 가오픈 상태로 변경
     }
 
     if (sessionData.is_locked) {
-      return 'paused';
+      return 'paused'; // 일시정지
     }
 
-    return sessionData.year && sessionData.month ? 'running' : 'waiting';
+    // 년도/월이 설정되어 있으면 running, 아니면 preparing
+    return sessionData.year && sessionData.month ? 'running' : 'preparing';
   }
 
   private static async acquireLock(lockKey: string, ttl: number = this.LOCK_TTL): Promise<boolean> {

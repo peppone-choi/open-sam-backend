@@ -2,6 +2,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 첩보 커맨드
@@ -33,10 +34,9 @@ export class SpyCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // NotBeNeutral(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.NotBeNeutral(),
     ];
   }
 
@@ -47,10 +47,9 @@ export class SpyCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotOccupiedDestCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.Custom((input) => input.destCity?.nation !== input.general?.getNationID(), '적 도시가 아닙니다.'),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 

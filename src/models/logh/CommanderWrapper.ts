@@ -5,6 +5,7 @@
 
 import { ILoghCommander } from './Commander.model';
 import { ILoghCommandExecutor } from '../../commands/logh/BaseLoghCommand';
+import { getRankName } from '../../utils/logh-rank-system';
 
 export class CommanderWrapper implements ILoghCommandExecutor {
   private commander: ILoghCommander;
@@ -53,15 +54,21 @@ export class CommanderWrapper implements ILoghCommandExecutor {
   }
 
   getRank(): string {
-    return this.commander.rank;
+    // 숫자 rank를 문자열 계급명으로 변환
+    return getRankName(this.commander.rank, this.commander.faction);
   }
 
   getCommandPoints(): number {
-    return this.commander.commandPoints;
+    // PCP + MCP 합계 반환 (또는 군사 행동력만)
+    return this.commander.commandPoints.military;
   }
 
-  consumeCommandPoints(amount: number): void {
-    this.commander.commandPoints = Math.max(0, this.commander.commandPoints - amount);
+  consumeCommandPoints(amount: number, type: 'PCP' | 'MCP' = 'MCP'): void {
+    if (type === 'PCP') {
+      this.commander.commandPoints.personal = Math.max(0, this.commander.commandPoints.personal - amount);
+    } else {
+      this.commander.commandPoints.military = Math.max(0, this.commander.commandPoints.military - amount);
+    }
   }
 
   getFleetId(): string | null {
@@ -134,12 +141,17 @@ export class CommanderWrapper implements ILoghCommandExecutor {
     const politics = this.commander.stats.politics || 50;
     const bonus = Math.floor(politics / 20); // 정치 20당 +1 CP
     
-    const maxCP = 100; // 최대 CP
     const regenAmount = baseAmount + bonus;
 
-    this.commander.commandPoints = Math.min(
-      maxCP,
-      this.commander.commandPoints + regenAmount
+    // PCP와 MCP 모두 회복
+    this.commander.commandPoints.personal = Math.min(
+      this.commander.commandPoints.maxPersonal,
+      this.commander.commandPoints.personal + regenAmount
+    );
+    
+    this.commander.commandPoints.military = Math.min(
+      this.commander.commandPoints.maxMilitary,
+      this.commander.commandPoints.military + regenAmount
     );
   }
 }

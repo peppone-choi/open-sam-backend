@@ -156,7 +156,31 @@ export class CommandRegistry {
       
       logger.info('LOGH 전략 커맨드 등록 완료', { count: loghCount });
     } catch (error) {
-      logger.warn('LOGH 커맨드 로드 실패 (선택 사항)', { error });
+      logger.warn('LOGH 전략 커맨드 로드 실패', { error });
+    }
+
+    // LOGH Tactical Commands (자동 로드)
+    try {
+      const tacticalCommands = await import('../../commands/logh/tactical');
+      
+      let tacticalCount = 0;
+      Object.entries(tacticalCommands).forEach(([className, commandClass]) => {
+        if (className === 'default') return;
+        
+        // 클래스 인스턴스 생성해서 getName() 호출
+        try {
+          const instance = new (commandClass as any)();
+          const commandName = instance.getName();
+          this.registerLogh(commandName, commandClass);
+          tacticalCount++;
+        } catch (err) {
+          // 무시 (BaseLoghCommand 같은 추상 클래스)
+        }
+      });
+      
+      logger.info('LOGH 전술 커맨드 등록 완료', { count: tacticalCount });
+    } catch (error) {
+      logger.warn('LOGH 전술 커맨드 로드 실패', { error });
     }
 
     const stats = this.getStats();

@@ -89,7 +89,6 @@ export class GatherCommand extends GeneralCommand {
 
     // 각 장수에게 로그 추가
     for (const targetGeneralID of generalList) {
-      // TODO: ActionLogger 처리
       // const targetLogger = new ActionLogger(targetGeneralID, general.getNationID(), env.year, env.month);
       // targetLogger.pushGeneralActionLog(`${troopName} 부대원들은 <G><b>${cityName}</b></>${josaRo} 집합되었습니다.`, ActionLogger.PLAIN);
       // await targetLogger.flush();

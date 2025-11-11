@@ -81,6 +81,13 @@ class VoteRepository {
   async bulkWrite(operations: any[]) {
     return Vote.bulkWrite(operations);
   }
+
+  /**
+   * 세션의 모든 투표 삭제
+   */
+  async deleteBySession(sessionId: string) {
+    return Vote.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**

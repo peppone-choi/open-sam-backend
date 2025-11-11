@@ -93,11 +93,20 @@ export class DesperateDefenseCommand extends NationCommand {
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <M>필사즉생</>을 발동하였습니다.`;
 
-    const targetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
-    // TODO: Legacy method - const createObjListFromDB = General.createObjListFromDB;
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    const targetGeneralDocs = await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.nation': nationID,
+      'data.no': { $ne: generalID }
+    });
 
-    if (createObjListFromDB) {
-      const targetGenerals = await createObjListFromDB(targetGeneralList);
+    if (targetGeneralDocs && targetGeneralDocs.length > 0) {
+      const { General } = await import('../../models/general.model');
+      const targetGenerals = await Promise.all(
+        targetGeneralDocs.map(doc => General.createObjFromDB(doc.data?.no, sessionId))
+      );
       for (const targetGeneralID in targetGenerals) {
         const targetGeneral = targetGenerals[targetGeneralID];
         const targetLogger = targetGeneral.getLogger();

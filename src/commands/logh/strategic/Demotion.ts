@@ -83,7 +83,8 @@ export class DemotionCommand extends BaseLoghCommand {
     }
 
     // 자신보다 계급이 높거나 같은 사람은 강등 불가
-    if (!canAppoint(commander.getRank(), targetCommander.rank, targetCommander.faction)) {
+    const targetRankName = targetCommander.getRankName();
+    if (!canAppoint(commander.getRank(), targetRankName, targetCommander.faction)) {
       return {
         success: false,
         message: '자신과 동등하거나 상급자는 강등시킬 수 없습니다.',
@@ -91,8 +92,8 @@ export class DemotionCommand extends BaseLoghCommand {
     }
 
     // 강등 실행
-    const oldRank = targetCommander.rank;
-    const newRank = demote(targetCommander.rank, targetCommander.faction);
+    const oldRank = targetRankName;
+    const newRank = demote(targetRankName, targetCommander.faction);
 
     // 이미 최하위 계급이면
     if (oldRank === newRank) {
@@ -102,7 +103,7 @@ export class DemotionCommand extends BaseLoghCommand {
       };
     }
 
-    targetCommander.rank = newRank;
+    targetCommander.setRankByName(newRank);
 
     // CP 소모
     commander.consumeCommandPoints(this.getRequiredCommandPoints());

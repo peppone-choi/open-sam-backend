@@ -3,6 +3,7 @@ import { cityRepository } from '../../repositories/city.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 소집해제 커맨드
@@ -21,7 +22,7 @@ export class DismissTroopsCommand extends GeneralCommand {
     this.setNation();
 
     this.fullConditionConstraints = [
-      // ConstraintHelper.ReqGeneralCrew() - TODO: 구현 필요
+      ConstraintHelper.ReqGeneralCrew()
     ];
   }
 
@@ -46,7 +47,6 @@ export class DismissTroopsCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime();
 

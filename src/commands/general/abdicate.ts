@@ -2,8 +2,9 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { JosaUtil } from '../../utils/JosaUtil';
-import { General } from '../../models/General';
+import { General } from '../../models/general.model';
 import { generalRepository } from '../../repositories/general.repository';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 export class AbdicateCommand extends GeneralCommand {
   protected static actionName = '선양';
@@ -36,19 +37,26 @@ export class AbdicateCommand extends GeneralCommand {
     this.setNation();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper.BeLord()
+      ConstraintHelper.BeLord()
     ];
   }
 
-  protected initWithArg(): void {
-    // TODO: const destGeneral = General.createObjFromDB(this.arg.destGeneralID);
-    // this.setDestGeneral(destGeneral);
+  protected async initWithArg(): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const destGeneralDoc = await generalRepository.findOneByFilter({
+      session_id: sessionId,
+      'data.no': this.arg.destGeneralID
+    });
+    
+    if (destGeneralDoc) {
+      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
+      this.setDestGeneral(destGeneral);
+    }
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeLord(),
-      // ExistsDestGeneral(),
-      // FriendlyDestGeneral(),
+      ConstraintHelper.BeLord(),
+      ConstraintHelper.ExistsDestGeneral(),
+      ConstraintHelper.FriendlyDestGeneral(),
     ];
   }
 
@@ -75,7 +83,6 @@ export class AbdicateCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
 
@@ -114,12 +121,23 @@ export class AbdicateCommand extends GeneralCommand {
     logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 <Y>${destGeneralName}</>에게 선양`);
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 물려 받음`);
 
-    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     
     this.setResultTurn(new LastTurn(AbdicateCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler.handleEvent
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, destGeneral, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
     
     // 장수 데이터 저장
     await this.saveGeneral();

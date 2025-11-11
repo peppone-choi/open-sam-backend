@@ -33,7 +33,7 @@ export async function verifyGeneralOwnership(
     }
 
     // 소유권 검증
-    const generalOwner = String(general.owner || '');
+    const generalOwner = String((general as any).owner || '');
     const requestUserId = String(userId || '');
 
     if (generalOwner !== requestUserId) {

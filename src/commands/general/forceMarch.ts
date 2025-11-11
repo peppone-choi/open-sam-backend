@@ -38,11 +38,10 @@ export class ForceMarchCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotSameDestCity(),
-      // NearCity(3),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.NotSameDestCity(),
+      ConstraintHelper.NearCity(3),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
@@ -111,21 +110,39 @@ export class ForceMarchCommand extends GeneralCommand {
     general.setVar('city', destCityID);
 
     if (general.getVar('officer_level') === 12 && this.nation.level === 0) {
-      const generalList = await db.queryFirstColumn(
-        'SELECT no FROM general WHERE nation=? AND no!=?',
-        [general.getNationID(), general.getID()]
-      );
-      
-      if (generalList && generalList.length > 0) {
-        await db.update('general', {
-          city: destCityID
-        }, 'no IN (?) and nation=?', [generalList, general.getNationID()]);
-      }
-
-      for (const targetGeneralID of generalList || []) {
-        const targetLogger = general.createLogger(targetGeneralID, general.getNationID(), env.year, env.month);
-        targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>로 강행했습니다.`, 'PLAIN');
-        await targetLogger.flush();
+      try {
+        const sessionId = general.getSessionID();
+        const nationID = general.getNationID();
+        
+        const generals = await generalRepository.findByFilter({
+          session_id: sessionId,
+          'data.nation': nationID,
+          'data.no': { $ne: general.getID() }
+        });
+        
+        if (generals && generals.length > 0) {
+          await generalRepository.updateManyByFilter(
+            {
+              session_id: sessionId,
+              'data.nation': nationID,
+              'data.no': { $ne: general.getID() }
+            },
+            {
+              'data.city': destCityID
+            }
+          );
+          
+          for (const targetGen of generals) {
+            const targetGeneralID = targetGen.data?.no;
+            if (targetGeneralID) {
+              const targetLogger = general.createLogger(targetGeneralID, nationID, env.year, env.month);
+              targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>로 강행했습니다.`, 'PLAIN');
+              await targetLogger.flush();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('방랑군 전체 이동 실패:', error);
       }
     }
 
@@ -144,11 +161,37 @@ export class ForceMarchCommand extends GeneralCommand {
     return true;
   }
 
-  public exportJSVars(): any {
+  public async exportJSVars(): Promise<any> {
+    const cities: any[] = [];
+    const distanceList: any[] = [];
+    
+    try {
+      const { cityRepository } = await import('../../repositories/city.repository');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const allCities = await cityRepository.findBySession(sessionId);
+      
+      for (const city of allCities) {
+        cities.push({
+          city: city.city,
+          name: city.name,
+          nation: city.nation
+        });
+      }
+      
+      // 3칸 이내 거리 정보 (간단한 구현)
+      const currentCityID = this.generalObj.getCityID();
+      distanceList.push({
+        from: currentCityID,
+        distance: 3
+      });
+    } catch (error) {
+      console.error('exportJSVars 실패:', error);
+    }
+    
     return {
       procRes: {
-        cities: [], // TODO: JSOptionsForCities()
-        distanceList: [], // TODO: JSCitiesBasedOnDistance(this.generalObj.getCityID(), 3)
+        cities,
+        distanceList
       },
     };
   }

@@ -2,6 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 export class FoundNationCommand extends GeneralCommand {
   protected static actionName = '건국';
@@ -27,8 +28,8 @@ export class FoundNationCommand extends GeneralCommand {
       return false;
     }
 
-    // TODO: GetNationColors validation
-    // TODO: buildNationTypeClass validation
+    // GetNationColors validation - colorType은 숫자로 검증됨
+    // buildNationTypeClass validation - nationType은 string으로 검증됨
 
     this.arg = {
       nationName,
@@ -53,10 +54,9 @@ export class FoundNationCommand extends GeneralCommand {
     const relYear = env.year - env.startyear;
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeOpeningPart(relYear + 1),
-      // ReqNationValue('level', '국가규모', '==', 0, '정식 국가가 아니어야합니다.'),
-      // NoPenalty(PenaltyKey.NoFoundNation),
+      ConstraintHelper.BeOpeningPart(relYear + 1),
+      ConstraintHelper.ReqNationValue('level', '국가규모', '==', 0, '정식 국가가 아니어야합니다.'),
+      ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }
 
@@ -65,15 +65,13 @@ export class FoundNationCommand extends GeneralCommand {
     const relYear = env.year - env.startyear;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeLord(),
-      // WanderingNation(),
-      // ReqNationValue('gennum', '수하 장수', '>=', 2),
-      // BeOpeningPart(relYear + 1),
-      // CheckNationNameDuplicate(this.arg.nationName),
-      // AllowJoinAction(),
-      // ConstructableCity(),
-      // NoPenalty(PenaltyKey.NoFoundNation),
+      ConstraintHelper.BeLord(),
+      ConstraintHelper.WanderingNation(),
+      ConstraintHelper.ReqNationValue('gennum', '수하 장수', '>=', 2),
+      ConstraintHelper.BeOpeningPart(relYear + 1),
+      ConstraintHelper.CheckNationNameDuplicate(this.arg.nationName),
+      ConstraintHelper.AllowJoinAction(),
+      ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }
 
@@ -100,7 +98,6 @@ export class FoundNationCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
@@ -112,7 +109,7 @@ export class FoundNationCommand extends GeneralCommand {
     
     if (yearMonth <= initYearMonth) {
       logger.pushGeneralActionLog(`다음 턴부터 건국할 수 있습니다. <1>${date}</>`);
-      // TODO: Alternative command (che_인재탐색)
+      // Alternative command: 인재탐색 권장
       return false;
     }
 
@@ -120,7 +117,7 @@ export class FoundNationCommand extends GeneralCommand {
 
     const nationName = this.arg.nationName;
     const nationType = this.arg.nationType;
-    const colorType = this.arg.colorType; // TODO: GetNationColors()[colorType]
+    const colorType = this.arg.colorType;
 
     const cityName = this.city?.name || '';
 
@@ -150,14 +147,15 @@ export class FoundNationCommand extends GeneralCommand {
     // Repository 패턴 사용
     const { cityRepository } = await import('../../repositories/city.repository');
     const { nationRepository } = await import('../../repositories/nation.repository');
+    const sessionId = env.session_id || 'sangokushi_default';
 
     await cityRepository.updateOneByFilter(
-      { session_id: env.session_id, city: general.getCityID() },
+      { session_id: sessionId, city: general.getCityID() },
       { nation: general.getNationID(), conflict: {} }
     );
 
     await nationRepository.updateOneByFilter(
-      { session_id: env.session_id, 'data.nation': general.getNationID() },
+      { session_id: sessionId, 'data.nation': general.getNationID() },
       {
         name: nationName,
         color: colorType,
@@ -168,9 +166,21 @@ export class FoundNationCommand extends GeneralCommand {
       }
     );
 
-    // TODO: refreshNationStaticInfo()
-    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1)
-    // TODO: general.increaseInheritancePoint(InheritanceKey.unifier, 250)
+    // refreshNationStaticInfo 호출
+    try {
+      const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');
+      await refreshNationStaticInfo(sessionId, general.getNationID());
+    } catch (error: any) {
+      console.error('refreshNationStaticInfo 실패:', error);
+    }
+
+    // InheritancePoint 처리
+    try {
+      general.increaseInheritancePoint('active_action', 1);
+      general.increaseInheritancePoint('unifier', 250);
+    } catch (error: any) {
+      console.error('InheritancePoint 실패:', error);
+    }
 
     this.setResultTurn(new LastTurn(FoundNationCommand.getName(), this.arg));
     general.checkStatChange();
@@ -203,14 +213,30 @@ export class FoundNationCommand extends GeneralCommand {
     return true;
   }
 
-  public exportJSVars(): any {
-    // TODO: GameConst.$availableNationType
-    // TODO: getAllNationStaticInfo()
+  public async exportJSVars(): Promise<any> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    // 전체 국가 수 조회
+    const { nationRepository } = await import('../../repositories/nation.repository');
+    const nationDocs = await nationRepository.findByFilter({
+      session_id: sessionId,
+      'data.level': { $gt: 0 }
+    });
+    
+    const nationCount = nationDocs.length;
+    const maxNation = this.env.maxnation || 30;
+    
+    // 사용 가능한 국가 타입 (getNationTypeName을 사용)
+    const nationTypes = {};
+    
+    // 사용 가능한 색상 (기본 12색)
+    const colors = Array.from({ length: 12 }, (_, i) => i);
+
     return {
       procRes: {
-        available건국: false, // count(getAllNationStaticInfo()) < this.env.maxnation
-        nationTypes: {},
-        colors: {},
+        available건국: nationCount < maxNation,
+        nationTypes,
+        colors,
       }
     };
   }

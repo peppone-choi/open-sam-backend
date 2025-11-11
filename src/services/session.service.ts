@@ -11,6 +11,40 @@ import * as path from 'path';
 import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
 import { generalRepository } from '../repositories/general.repository';
+// 고아 객체 삭제를 위한 repository 임포트
+import { commandRepository } from '../repositories/command.repository';
+import { messageRepository } from '../repositories/message.repository';
+import { troopRepository } from '../repositories/troop.repository';
+import { auctionRepository } from '../repositories/auction.repository';
+import { voteRepository } from '../repositories/vote.repository';
+import { diplomacyRepository } from '../repositories/diplomacy.repository';
+import { ngDiplomacyRepository } from '../repositories/ng-diplomacy.repository';
+import { worldHistoryRepository } from '../repositories/world-history.repository';
+import { kvStorageRepository } from '../repositories/kvstorage.repository';
+import { battleRepository } from '../repositories/battle.repository';
+import { battleMapTemplateRepository } from '../repositories/battle-map-template.repository';
+import { bettingRepository } from '../repositories/betting.repository';
+import { generalTurnRepository } from '../repositories/general-turn.repository';
+import { nationTurnRepository } from '../repositories/nation-turn.repository';
+import { generalRecordRepository } from '../repositories/general-record.repository';
+import { generalAccessLogRepository } from '../repositories/general-access-log.repository';
+import { generalLogRepository } from '../repositories/general-log.repository';
+import { nationEnvRepository } from '../repositories/nation-env.repository';
+import { boardRepository } from '../repositories/board.repository';
+import { commentRepository } from '../repositories/comment.repository';
+import { userRecordRepository } from '../repositories/user-record.repository';
+import { eventRepository } from '../repositories/event.repository';
+import { battleActionRepository } from '../repositories/battle-action.repository';
+import { battleInstanceRepository } from '../repositories/battle-instance.repository';
+import { battlemapTemplateRepository } from '../repositories/battlemap-template.repository';
+import { voteCommentRepository } from '../repositories/vote-comment.repository';
+import { ngAuctionBidRepository } from '../repositories/ng-auction-bid.repository';
+import { ngBettingRepository } from '../repositories/ng-betting.repository';
+import { plockRepository } from '../repositories/plock.repository';
+import { rankDataRepository } from '../repositories/rank-data.repository';
+import { statisticRepository } from '../repositories/statistic.repository';
+import { selectNpcTokenRepository } from '../repositories/select-npc-token.repository';
+import { selectPoolRepository } from '../repositories/select-pool.repository';
 
 /**
  * 세션 관리 서비스
@@ -226,10 +260,21 @@ export class SessionService {
     
     logger.info('세션 초기화 시작', { sessionId });
     
-    // 게임 데이터 삭제
+    // IMPORTANT: 장수 삭제 전에 해당 유저들의 참조 정리
+    const generals = await generalRepository.findByFilter({ session_id: sessionId });
+    const ownerIds = generals.map((g: any) => g.owner).filter((id: string) => id);
+    
+    if (ownerIds.length > 0) {
+      logger.info('해당 세션 장수의 소유자 정리', { sessionId, ownerCount: ownerIds.length });
+    }
+    
+    // 핵심 게임 데이터 삭제
     await cityRepository.deleteManyByFilter({ session_id: sessionId });
     await nationRepository.deleteManyByFilter({ session_id: sessionId });
     await generalRepository.deleteManyByFilter({ session_id: sessionId });
+    
+    // 연관 고아 객체 삭제 (cascade delete)
+    await this._deleteOrphanedData(sessionId);
     
     logger.info('기존 게임 데이터 삭제 완료', { sessionId });
     
@@ -252,8 +297,6 @@ export class SessionService {
       }
     );
     
-    // console.log(`   - 초기화 완료`);
-    
     return session;
   }
   
@@ -266,17 +309,123 @@ export class SessionService {
       throw new Error(`세션을 찾을 수 없습니다: ${sessionId}`);
     }
     
-    // console.log(`🗑️  세션 삭제: ${sessionId}`);
+    logger.info('세션 삭제 시작', { sessionId });
     
-    // 게임 데이터 삭제
+    // IMPORTANT: 장수 삭제 전에 해당 유저들의 참조 정리
+    const generals = await generalRepository.findByFilter({ session_id: sessionId });
+    const ownerIds = generals.map((g: any) => g.owner).filter((id: string) => id);
+    
+    if (ownerIds.length > 0) {
+      logger.info('해당 세션 장수의 소유자 정리', { sessionId, ownerCount: ownerIds.length });
+    }
+    
+    // 핵심 게임 데이터 삭제
     await cityRepository.deleteManyByFilter({ session_id: sessionId });
     await nationRepository.deleteManyByFilter({ session_id: sessionId });
     await generalRepository.deleteManyByFilter({ session_id: sessionId });
     
+    // 연관 고아 객체 삭제 (cascade delete)
+    await this._deleteOrphanedData(sessionId);
+    
     // 세션 설정 삭제
     await sessionRepository.deleteBySessionId(sessionId);
     
-    // console.log(`   - 삭제 완료`);
+    // 캐시 무효화 (전체)
+    await cacheService.invalidate(
+      [`session:byId:${sessionId}`],
+      ['sessions:*', 'cities:*', 'nations:*', 'generals:*', '*']
+    );
+    
+    logger.info('세션 삭제 완료', { sessionId });
+  }
+  
+  /**
+   * 세션 관련 고아 객체 삭제 (내부 메서드)
+   * 
+   * 세션 삭제/초기화 시 호출되어 연관된 모든 데이터를 정리합니다.
+   * Repository 패턴을 사용하여 데이터 삭제를 수행합니다.
+   * 
+   * @param sessionId - 세션 ID
+   * @private
+   */
+  private static async _deleteOrphanedData(sessionId: string) {
+    logger.info('고아 객체 삭제 시작', { sessionId });
+    
+    const deleteTasks = [
+      // Repository가 있는 것들
+      { name: 'commands', fn: () => commandRepository.deleteBySession(sessionId) },
+      { name: 'messages', fn: () => messageRepository.deleteBySession(sessionId) },
+      { name: 'troops', fn: () => troopRepository.deleteBySession(sessionId) },
+      { name: 'votes', fn: () => voteRepository.deleteBySession(sessionId) },
+      { name: 'world_histories', fn: () => worldHistoryRepository.deleteBySession(sessionId) },
+      { name: 'general_turns', fn: () => generalTurnRepository.deleteBySession(sessionId) },
+      { name: 'nation_turns', fn: () => nationTurnRepository.deleteBySession(sessionId) },
+      { name: 'general_records', fn: () => generalRecordRepository.deleteBySession(sessionId) },
+      { name: 'kvstorages', fn: () => kvStorageRepository.deleteBySession(sessionId) },
+      { name: 'battles', fn: () => battleRepository.deleteBySession(sessionId) },
+      { name: 'battle_map_templates', fn: () => battleMapTemplateRepository.deleteBySession(sessionId) },
+      { name: 'diplomacies', fn: () => diplomacyRepository.deleteBySession(sessionId) },
+      { name: 'ng_diplomacies', fn: () => ngDiplomacyRepository.deleteBySession(sessionId) },
+      { name: 'auctions', fn: () => auctionRepository.deleteBySession(sessionId) },
+      { name: 'bettings', fn: () => bettingRepository.deleteBySession(sessionId) },
+      
+      // 추가 Repository들
+      { name: 'general_access_logs', fn: () => generalAccessLogRepository.deleteBySession(sessionId) },
+      { name: 'general_logs', fn: () => generalLogRepository.deleteBySession(sessionId) },
+      { name: 'nation_envs', fn: () => nationEnvRepository.deleteBySession(sessionId) },
+      { name: 'boards', fn: () => boardRepository.deleteBySession(sessionId) },
+      { name: 'comments', fn: () => commentRepository.deleteBySession(sessionId) },
+      { name: 'user_records', fn: () => userRecordRepository.deleteBySession(sessionId) },
+      { name: 'events', fn: () => eventRepository.deleteBySession(sessionId) },
+      { name: 'battleactions', fn: () => battleActionRepository.deleteBySession(sessionId) },
+      { name: 'battleinstances', fn: () => battleInstanceRepository.deleteBySession(sessionId) },
+      { name: 'battlemaptemplates', fn: () => battlemapTemplateRepository.deleteBySession(sessionId) },
+      { name: 'vote_comments', fn: () => voteCommentRepository.deleteBySession(sessionId) },
+      { name: 'ng_auction_bids', fn: () => ngAuctionBidRepository.deleteBySession(sessionId) },
+      { name: 'ng_bettings', fn: () => ngBettingRepository.deleteBySession(sessionId) },
+      { name: 'plocks', fn: () => plockRepository.deleteBySession(sessionId) },
+      { name: 'rank_datas', fn: () => rankDataRepository.deleteBySession(sessionId) },
+      { name: 'statistics', fn: () => statisticRepository.deleteBySession(sessionId) },
+      { name: 'select_npc_tokens', fn: () => selectNpcTokenRepository.deleteBySession(sessionId) },
+      { name: 'select_pools', fn: () => selectPoolRepository.deleteBySession(sessionId) },
+    ];
+    
+    try {
+      const results = await Promise.allSettled(
+        deleteTasks.map(task => task.fn())
+      );
+      
+      // 삭제 결과 로깅
+      let totalDeleted = 0;
+      results.forEach((result, idx) => {
+        const taskName = deleteTasks[idx].name;
+        if (result.status === 'fulfilled') {
+          const deleted = (result.value as any)?.deletedCount || 0;
+          if (deleted > 0) {
+            totalDeleted += deleted;
+            logger.debug(`${taskName}: ${deleted}개 삭제`, { sessionId });
+          }
+        } else {
+          logger.warn('고아 객체 삭제 실패', { 
+            sessionId, 
+            collection: taskName, 
+            error: result.reason?.message 
+          });
+        }
+      });
+      
+      logger.info('고아 객체 삭제 완료', { 
+        sessionId, 
+        totalDeleted,
+        collections: deleteTasks.length 
+      });
+    } catch (error: any) {
+      logger.error('고아 객체 삭제 중 오류', { 
+        sessionId, 
+        error: error.message 
+      });
+      // 오류가 발생해도 계속 진행 (일부 컬렉션이 없을 수 있음)
+    }
   }
   
   /**

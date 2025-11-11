@@ -2,6 +2,8 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { nationRepository } from '../../repositories/nation.repository';
 
 /**
  * 군량 매매 커맨드
@@ -50,28 +52,26 @@ export class TradeMilitaryCommand extends GeneralCommand {
     this.setNation();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqCityTrader(general.getNPCType()),
-      // OccupiedCity(true),
-      // SuppliedCity(),
+      ConstraintHelper.ReqCityTrader(this.generalObj.getNPCType()),
+      ConstraintHelper.OccupiedCity(true),
+      ConstraintHelper.SuppliedCity(),
     ];
   }
 
   protected async initWithArg(): Promise<void> {
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqCityTrader(general.getNPCType()),
-      // OccupiedCity(true),
-      // SuppliedCity(),
+      ConstraintHelper.ReqCityTrader(this.generalObj.getNPCType()),
+      ConstraintHelper.OccupiedCity(true),
+      ConstraintHelper.SuppliedCity(),
     ];
 
     if (this.arg.buyRice) {
       this.fullConditionConstraints.push(
-        // TODO: ReqGeneralGold(1)
+        ConstraintHelper.ReqGeneralGold(1)
       );
     } else {
       this.fullConditionConstraints.push(
-        // TODO: ReqGeneralRice(1)
+        ConstraintHelper.ReqGeneralRice(1)
       );
     }
   }
@@ -149,10 +149,12 @@ export class TradeMilitaryCommand extends GeneralCommand {
     general.increaseVar(buyKey, buyAmount);
     general.increaseVarWithLimit(sellKey, -sellAmount, 0);
 
-    const nationUpdated = {
-      gold: await db.sqleval('gold + %i', tax)
-    };
-    await db.update('nation', nationUpdated, 'nation=%i', general.getNationID());
+    const sessionId = general.getSessionID();
+    const nationID = general.getNationID();
+    const currentNation = await nationRepository.findByNationNum(sessionId, nationID);
+    await nationRepository.updateByNationNum(sessionId, nationID, {
+      gold: (currentNation?.gold || 0) + tax
+    });
 
     const exp = 30;
     const ded = 50;
@@ -170,7 +172,22 @@ export class TradeMilitaryCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof TradeMilitaryCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(TradeMilitaryCommand.actionName),
+        general
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

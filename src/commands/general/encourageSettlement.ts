@@ -2,6 +2,8 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * 정착 장려 커맨드
@@ -28,14 +30,13 @@ export class EncourageSettlementCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // RemainCityCapacity(cityKey, actionName)
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.RemainCityCapacity(cityKey, actionName)
     ];
 
     this.reqRice = reqRice;
@@ -153,7 +154,13 @@ export class EncourageSettlementCommand extends GeneralCommand {
     const ded = score * 1.0;
 
     if (pick === 'success') {
-      // TODO: updateMaxDomesticCritical
+      try {
+        if (typeof general.updateMaxDomesticCritical === 'function') {
+          general.updateMaxDomesticCritical();
+        }
+      } catch (error) {
+        console.error('updateMaxDomesticCritical 실패:', error);
+      }
     } else {
       general.setAuxVar('max_domestic_critical', 0);
     }
@@ -170,13 +177,17 @@ export class EncourageSettlementCommand extends GeneralCommand {
       logger.pushGeneralActionLog(`${actionName}을 하여 주민이 <C>${scoreText}</>명 증가했습니다.`);
     }
 
-    const cityUpdated: any = {};
-    cityUpdated[cityKey] = Math.max(0, Math.min(
+    const newCityValue = Math.max(0, Math.min(
       this.city[cityKey] + score,
       this.city[`${cityKey}_max`]
     ));
     
-    await db.update('city', cityUpdated, 'city=%i', general.getVar('city'));
+    const sessionId = general.getSessionID();
+    const cityID = general.getVar('city');
+    const cityUpdate: any = {};
+    cityUpdate[cityKey] = newCityValue;
+    
+    await cityRepository.updateByCityNum(sessionId, cityID, cityUpdate);
 
     general.increaseVarWithLimit('rice', -this.reqRice, 0);
     general.addExperience(exp);
@@ -186,7 +197,22 @@ export class EncourageSettlementCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof EncourageSettlementCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(EncourageSettlementCommand.actionName),
+        general
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

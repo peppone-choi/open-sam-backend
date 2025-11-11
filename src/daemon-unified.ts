@@ -121,15 +121,15 @@ async function processTournaments() {
 async function processNPCCommands() {
   try {
     const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
-    
+
     for (const session of sessions) {
       const sessionId = session.session_id;
       const gameEnv = session.data || {};
-      
+
       try {
         const { NPCAutoCommandService } = await import('./services/ai/NPCAutoCommand.service');
         const result = await NPCAutoCommandService.assignCommandsToAllNPCs(sessionId, gameEnv);
-        
+
         if (result.count > 0) {
           logger.debug(`NPC commands assigned for session ${sessionId}`, {
             assigned: result.count,
@@ -145,6 +145,123 @@ async function processNPCCommands() {
     }
   } catch (error: any) {
     logger.error('Fatal error in NPC command processor', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * DB 동기화 처리 함수 (크론)
+ *
+ * sync-queue에 있는 변경된 엔티티들을 DB에 저장합니다.
+ *
+ * 동작 순서:
+ * 1. sync-queue에서 모든 항목 스캔
+ * 2. 엔티티 타입별로 DB에 저장
+ * 3. 저장 완료 후 큐에서 제거
+ */
+async function syncToDB() {
+  try {
+    const { scanSyncQueue, getSyncQueueItem, removeFromSyncQueue } = await import('./common/cache/sync-queue.helper');
+    const { General } = await import('./models/general.model');
+    const { City } = await import('./models/city.model');
+    const { Nation } = await import('./models/nation.model');
+    const { Session } = await import('./models/session.model');
+
+    // sync-queue에서 모든 항목 스캔
+    const queueItems = await scanSyncQueue();
+
+    if (queueItems.length === 0) {
+      // 저장할 항목이 없으면 로그 생략
+      return;
+    }
+
+    logger.debug(`DB 동기화 시작`, { count: queueItems.length });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const item of queueItems) {
+      try {
+        // 큐 아이템 조회
+        const queueData = await getSyncQueueItem(item.key);
+        if (!queueData || !queueData.data) {
+          logger.warn('Invalid sync queue item', { key: item.key });
+          await removeFromSyncQueue(item.key);
+          continue;
+        }
+
+        const { type, data } = queueData;
+
+        // 엔티티 타입별로 DB 저장
+        switch (type) {
+          case 'session':
+            await Session.updateOne(
+              { session_id: data.session_id },
+              { $set: data },
+              { upsert: true }
+            );
+            break;
+
+          case 'general':
+            const generalFilter = data._id
+              ? { _id: data._id }
+              : { session_id: data.session_id, no: data.no };
+
+            await General.updateOne(
+              generalFilter,
+              { $set: data },
+              { upsert: true }
+            );
+            break;
+
+          case 'city':
+            await City.updateOne(
+              { session_id: data.session_id, city: data.city },
+              { $set: data },
+              { upsert: true }
+            );
+            break;
+
+          case 'nation':
+            await Nation.updateOne(
+              { session_id: data.session_id, nation: data.nation },
+              { $set: data },
+              { upsert: true }
+            );
+            break;
+
+          default:
+            logger.warn('Unknown entity type in sync queue', { type, key: item.key });
+        }
+
+        // 저장 완료 후 큐에서 제거
+        await removeFromSyncQueue(item.key);
+        successCount++;
+
+      } catch (error: any) {
+        errorCount++;
+        logger.error('DB 동기화 실패', {
+          key: item.key,
+          type: item.type,
+          error: error.message,
+          stack: error.stack
+        });
+        // 실패한 항목은 다음 크론에서 재시도되도록 큐에 남겨둠
+      }
+    }
+
+    if (successCount > 0 || errorCount > 0) {
+      logger.info('DB 동기화 완료', {
+        total: queueItems.length,
+        success: successCount,
+        errors: errorCount
+      });
+    }
+
+  } catch (error: any) {
+    logger.error('DB 동기화 크론 실행 중 오류', {
       error: error.message,
       stack: error.stack
     });
@@ -230,6 +347,18 @@ async function start() {
     });
     logger.info('✅ NPC 자동 명령 스케줄러 시작', { schedule: NPC_CRON_EXPRESSION });
 
+    // 5. DB 동기화 스케줄러 시작 (5초마다)
+    const SYNC_CRON_EXPRESSION = '*/5 * * * * *'; // 5초마다
+    cron.schedule(SYNC_CRON_EXPRESSION, () => {
+      syncToDB().catch(err => {
+        logger.error('DB 동기화 크론 작업 실행 중 오류', {
+          error: err.message,
+          stack: err.stack
+        });
+      });
+    });
+    logger.info('✅ DB 동기화 스케줄러 시작', { schedule: SYNC_CRON_EXPRESSION });
+
     // 2. Redis Streams 커맨드 소비 시작
     const consumerName = process.env.HOSTNAME || 'daemon-unified-1';
     
@@ -239,6 +368,7 @@ async function start() {
         auctionScheduler: true,
         tournamentScheduler: true,
         npcAutoCommand: true,
+        dbSync: true,
         commandConsumer: true
       },
       totalCommands: commandStats.total,
@@ -247,7 +377,8 @@ async function start() {
       cronSchedule: CRON_EXPRESSION,
       auctionCronSchedule: AUCTION_CRON_EXPRESSION,
       tournamentCronSchedule: TOURNAMENT_CRON_EXPRESSION,
-      npcCronSchedule: NPC_CRON_EXPRESSION
+      npcCronSchedule: NPC_CRON_EXPRESSION,
+      syncCronSchedule: SYNC_CRON_EXPRESSION
     });
 
     // 커맨드 소비 루프

@@ -107,6 +107,13 @@ class AuctionRepositoryClass {
   async count(filter: any): Promise<number> {
     return Auction.countDocuments(filter);
   }
+
+  /**
+   * 세션의 모든 경매 삭제
+   */
+  async deleteBySession(sessionId: string) {
+    return Auction.deleteMany({ session_id: sessionId });
+  }
 }
 
 /**

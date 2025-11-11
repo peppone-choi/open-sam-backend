@@ -54,9 +54,9 @@ export class AirTacticalTrainingCommand extends BaseLoghCommand {
     const commanderDoc = await LoghCommander.findOne({ session_id: commander.session_id, no: commander.no });
     if (!commanderDoc) return { success: false, message: '커맨더를 찾을 수 없습니다.' };
 
-    // 전술 능력치 상승
-    const oldTactics = commanderDoc.stats.tactics;
-    commanderDoc.stats.tactics = Math.min(100, oldTactics + 3);
+    // 기동력 능력치 상승 (공전 전술은 기동력 향상)
+    const oldManeuver = commanderDoc.stats.maneuver;
+    commanderDoc.stats.maneuver = Math.min(100, oldManeuver + 3);
 
     // 공전 전술 스킬 저장
     if (!commanderDoc.customData) commanderDoc.customData = {};
@@ -73,8 +73,8 @@ export class AirTacticalTrainingCommand extends BaseLoghCommand {
 
     return {
       success: true,
-      message: `공전 전술 훈련 완료! 전술: ${oldTactics} → ${commanderDoc.stats.tactics}`,
-      effects: [{ type: 'air_tactical_training', oldTactics, newTactics: commanderDoc.stats.tactics }],
+      message: `공전 전술 훈련 완료! 기동력: ${oldManeuver} → ${commanderDoc.stats.maneuver}`,
+      effects: [{ type: 'air_tactical_training', oldManeuver, newManeuver: commanderDoc.stats.maneuver }],
     };
   }
 

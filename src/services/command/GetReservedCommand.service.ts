@@ -39,10 +39,12 @@ export class GetReservedCommandService {
     let invalidTurnList = 0;
 
     for (const turn of rawTurns) {
-      let turnIdx = turn.turn_idx;
-      const action = turn.action;
-      const arg = turn.arg;
-      const brief = turn.brief;
+      // data 객체에서 필드 추출
+      const turnData = turn.data || turn;
+      let turnIdx = turnData.turn_idx;
+      const action = turnData.action;
+      const arg = turnData.arg;
+      const brief = turnData.brief;
 
       if (turnIdx < 0) {
         invalidTurnList = -1;
@@ -160,31 +162,68 @@ export class GetReservedCommandService {
     // turnTime을 기준으로 정확한 년월 계산 (ExecuteEngine.turnDate와 동일한 로직)
     // starttime 기준으로 경과한 턴 수를 계산하여 년월 결정
     const starttime = new Date(sessionData.starttime || sessionData.turntime || new Date());
-    const startyear = sessionData.startyear || 180;
+    const startyear = gameEnv.startyear || sessionData.startyear || session.startyear || 180;
     
-    // turnTime을 turnterm 단위로 자르기
-    const cutTurnFunc = (time: Date, termInMinutes: number): Date => {
-      const baseDate = new Date(time);
-      baseDate.setDate(baseDate.getDate() - 1);
-      baseDate.setHours(1, 0, 0, 0);
+    // ⚠️ CRITICAL FIX: starttime 유효성 검증
+    const now = new Date();
+    const MAX_YEAR_DIFF = 10; // 최대 10년
+    const maxDiffMs = MAX_YEAR_DIFF * 365 * 24 * 60 * 60 * 1000;
+    
+    if (Math.abs(now.getTime() - starttime.getTime()) > maxDiffMs) {
+      console.error(`[GetReservedCommand] ⚠️ Invalid starttime detected: ${starttime.toISOString()}, resetting to current time`);
+      // starttime이 손상되었으면 현재 시간으로 리셋
+      sessionData.starttime = now.toISOString();
+      sessionData.year = startyear;
+      sessionData.month = 1;
       
-      const diffMinutes = Math.floor((time.getTime() - baseDate.getTime()) / (1000 * 60));
-      const cutMinutes = Math.floor(diffMinutes / termInMinutes) * termInMinutes;
+      // 안전한 기본값 반환
+      year = startyear;
+      month = 1;
+    } else {
+      // turnTime을 turnterm 단위로 자르기
+      const cutTurnFunc = (time: Date, termInMinutes: number): Date => {
+        const baseDate = new Date(time);
+        baseDate.setDate(baseDate.getDate() - 1);
+        baseDate.setHours(1, 0, 0, 0);
+        
+        const diffMinutes = Math.floor((time.getTime() - baseDate.getTime()) / (1000 * 60));
+        const cutMinutes = Math.floor(diffMinutes / termInMinutes) * termInMinutes;
+        
+        return new Date(baseDate.getTime() + cutMinutes * 60 * 1000);
+      };
       
-      return new Date(baseDate.getTime() + cutMinutes * 60 * 1000);
-    };
-    
-    const curturn = cutTurnFunc(turnTime, turnTermInMinutes);
-    const starttimeCut = cutTurnFunc(starttime, turnTermInMinutes);
-    
-    // 경과한 턴 수 계산
-    const timeDiffMinutes = (curturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
-    const numTurns = Math.max(0, Math.floor(timeDiffMinutes / turnTermInMinutes));
-    
-    // 년월 계산
-    const date = startyear * 12 + numTurns;
-    year = Math.floor(date / 12);
-    month = (date % 12) + 1;
+      const curturn = cutTurnFunc(turnTime, turnTermInMinutes);
+      const starttimeCut = cutTurnFunc(starttime, turnTermInMinutes);
+      
+      // 경과한 턴 수 계산
+      const timeDiffMinutes = (curturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
+      const numTurns = Math.max(0, Math.floor(timeDiffMinutes / turnTermInMinutes));
+      
+      // ⚠️ CRITICAL FIX: 비정상적으로 큰 numTurns 체크
+      const MAX_REASONABLE_TURNS = MAX_YEAR_DIFF * 365 * 24 * 60 / turnTermInMinutes;
+      if (numTurns > MAX_REASONABLE_TURNS) {
+        console.error(`[GetReservedCommand] ⚠️ Calculated ${numTurns} turns (> ${MAX_REASONABLE_TURNS}), using safe defaults`);
+        year = startyear;
+        month = 1;
+      } else {
+        // 년월 계산 (오버플로우 안전)
+        try {
+          const { Util } = require('../../utils/Util');
+          const date = Util.joinYearMonth(startyear, 1) + numTurns;
+          year = Math.floor(date / 12);
+          month = (date % 12) + 1;
+          
+          // 추가 안전성 체크
+          if (year > 10000 || year < 0) {
+            throw new Error(`Year ${year} out of range`);
+          }
+        } catch (error: any) {
+          console.error(`[GetReservedCommand] ⚠️ Year calculation error:`, error.message);
+          year = startyear;
+          month = 1;
+        }
+      }
+    }
 
     // 초기 상태(명령이 하나도 없을 때)를 14턴까지 휴식으로 자동 채우기
     // 명령이 있을 때는 그걸 대체
@@ -240,13 +279,46 @@ export class GetReservedCommandService {
     }
 
     // 세션의 현재 년/월도 함께 반환 (타임라인 표시용)
-    const sessionTurntime = new Date(sessionData.turntime || new Date());
-    const sessionCurturn = cutTurnFunc(sessionTurntime, turnTermInMinutes);
-    const sessionTimeDiffMinutes = (sessionCurturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
-    const sessionNumTurns = Math.max(0, Math.floor(sessionTimeDiffMinutes / turnTermInMinutes));
-    const sessionDate = startyear * 12 + sessionNumTurns;
-    const sessionYear = Math.floor(sessionDate / 12);
-    const sessionMonth = (sessionDate % 12) + 1;
+    let sessionYear = startyear;
+    let sessionMonth = 1;
+    
+    try {
+      const cutTurnFunc = (time: Date, termInMinutes: number): Date => {
+        const baseDate = new Date(time);
+        baseDate.setDate(baseDate.getDate() - 1);
+        baseDate.setHours(1, 0, 0, 0);
+        
+        const diffMinutes = Math.floor((time.getTime() - baseDate.getTime()) / (1000 * 60));
+        const cutMinutes = Math.floor(diffMinutes / termInMinutes) * termInMinutes;
+        
+        return new Date(baseDate.getTime() + cutMinutes * 60 * 1000);
+      };
+      
+      const sessionTurntime = new Date(sessionData.turntime || new Date());
+      const starttimeCut = cutTurnFunc(starttime, turnTermInMinutes);
+      const sessionCurturn = cutTurnFunc(sessionTurntime, turnTermInMinutes);
+      const sessionTimeDiffMinutes = (sessionCurturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
+      const sessionNumTurns = Math.max(0, Math.floor(sessionTimeDiffMinutes / turnTermInMinutes));
+      
+      // ⚠️ CRITICAL FIX: 비정상적으로 큰 sessionNumTurns 체크
+      const MAX_REASONABLE_TURNS = MAX_YEAR_DIFF * 365 * 24 * 60 / turnTermInMinutes;
+      if (sessionNumTurns > MAX_REASONABLE_TURNS) {
+        console.error(`[GetReservedCommand] ⚠️ Session calculated ${sessionNumTurns} turns (> ${MAX_REASONABLE_TURNS}), using safe defaults`);
+      } else {
+        const { Util } = require('../../utils/Util');
+        const sessionDate = Util.joinYearMonth(startyear, 1) + sessionNumTurns;
+        sessionYear = Math.floor(sessionDate / 12);
+        sessionMonth = (sessionDate % 12) + 1;
+        
+        if (sessionYear > 10000 || sessionYear < 0) {
+          throw new Error(`Session year ${sessionYear} out of range`);
+        }
+      }
+    } catch (error: any) {
+      console.error(`[GetReservedCommand] ⚠️ Session year calculation error:`, error.message);
+      sessionYear = startyear;
+      sessionMonth = 1;
+    }
     
     return {
       success: true,

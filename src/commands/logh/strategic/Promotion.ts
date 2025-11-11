@@ -83,7 +83,8 @@ export class PromotionCommand extends BaseLoghCommand {
     }
 
     // 승진 가능 여부 확인
-    if (!canPromote(targetCommander.rank, targetCommander.achievements, targetCommander.faction)) {
+    const currentRankName = targetCommander.getRankName();
+    if (!canPromote(currentRankName, targetCommander.achievements!, targetCommander.faction)) {
       return {
         success: false,
         message: `공적이 부족하여 승진할 수 없습니다. (현재 공적: ${targetCommander.achievements})`,
@@ -91,10 +92,10 @@ export class PromotionCommand extends BaseLoghCommand {
     }
 
     // 승진 실행
-    const oldRank = targetCommander.rank;
-    const newRank = promote(targetCommander.rank, targetCommander.faction);
+    const oldRank = currentRankName;
+    const newRank = promote(currentRankName, targetCommander.faction);
 
-    targetCommander.rank = newRank;
+    targetCommander.setRankByName(newRank);
 
     // CP 소모
     commander.consumeCommandPoints(this.getRequiredCommandPoints());

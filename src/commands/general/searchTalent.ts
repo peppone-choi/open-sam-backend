@@ -1,8 +1,8 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
-import { General } from '../../models/general.model';
 import { generalRepository } from '../../repositories/general.repository';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 인재 탐색 커맨드
@@ -24,9 +24,8 @@ export class SearchTalentCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
@@ -92,7 +91,6 @@ export class SearchTalentCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const relYear = env.year - env.startyear;
 
@@ -131,7 +129,20 @@ export class SearchTalentCommand extends GeneralCommand {
       general.increaseVar(incStat, 1);
       this.setResultTurn(new LastTurn(SearchTalentCommand.getName(), this.arg));
       general.checkStatChange();
-      // TODO: tryUniqueItemLottery
+      
+      try {
+        const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+        const sessionId = this.env.session_id || 'sangokushi_default';
+        await tryUniqueItemLottery(
+          general.genGenericUniqueRNG(SearchTalentCommand.actionName),
+          general,
+          sessionId,
+          '인재탐색'
+        );
+      } catch (error) {
+        console.error('tryUniqueItemLottery 실패:', error);
+      }
+      
       await this.saveGeneral();
       return true;
     }
@@ -141,8 +152,18 @@ export class SearchTalentCommand extends GeneralCommand {
 
     const scoutType = '발견';
 
-    // TODO: NPC 생성 로직
-    // 여기서는 간략화된 버전
+    // NPC 생성 로직 (실제 구현은 NPC 서비스에서 처리)
+    try {
+      const { NPCGenerationService } = await import('../../services/npc/NPCGeneration.service');
+      await NPCGenerationService.createNPC(general.getSessionID(), {
+        nation: 0,
+        npc: 3,
+        created_by: general.getID()
+      });
+    } catch (error) {
+      console.error('NPC 생성 실패:', error);
+    }
+    
     logger.pushGeneralActionLog(`<Y>인재</>를 ${scoutType}하였습니다! <1>${date}</>`);
     logger.pushGlobalActionLog(`<Y>${general.getName()}</>이 <C>인재</>를 ${scoutType}하였습니다!`);
     logger.pushGeneralHistoryLog(`<C>인재</>를 ${scoutType}`);
@@ -155,7 +176,14 @@ export class SearchTalentCommand extends GeneralCommand {
 
     const [reqGold, reqRice] = this.getCost();
 
-    // TODO: InheritancePoint
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
+    
     general.increaseVarWithLimit('gold', -reqGold, 0);
     general.increaseVarWithLimit('rice', -reqRice, 0);
     general.addExperience(200);
@@ -163,8 +191,27 @@ export class SearchTalentCommand extends GeneralCommand {
     general.increaseVar(incStat, 3);
     this.setResultTurn(new LastTurn(SearchTalentCommand.getName(), this.arg));
     general.checkStatChange();
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+    
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(SearchTalentCommand.actionName),
+        general,
+        sessionId,
+        '인재탐색'
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
+    
     await this.saveGeneral();
     return true;
   }

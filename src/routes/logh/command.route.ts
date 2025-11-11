@@ -75,12 +75,16 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
         const current = (commander as any)[key] || 0;
         (commander as any)[key] = current - value;
       },
-      getNationID: () => 0, // TODO: implement
+      getNationID: () => commander.faction === 'empire' ? 1 : 2,
       getFactionType: () => commander.faction,
-      getRank: () => commander.rank,
-      getCommandPoints: () => commander.commandPoints,
-      consumeCommandPoints: (amount: number) => {
-        commander.commandPoints = Math.max(0, commander.commandPoints - amount);
+      getRank: () => commander.getRankName(),
+      getCommandPoints: () => commander.commandPoints.military,
+      consumeCommandPoints: (amount: number, type: 'PCP' | 'MCP' = 'MCP') => {
+        if (type === 'PCP') {
+          commander.commandPoints.personal = Math.max(0, commander.commandPoints.personal - amount);
+        } else {
+          commander.commandPoints.military = Math.max(0, commander.commandPoints.military - amount);
+        }
       },
       getFleetId: () => commander.fleetId,
       getPosition: () => commander.position,

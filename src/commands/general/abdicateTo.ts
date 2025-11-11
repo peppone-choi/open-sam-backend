@@ -6,6 +6,7 @@ import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { General } from '../../models/general.model';
 import { PenaltyKey, InheritanceKey } from '../../types/Enums';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 선양 커맨드
@@ -43,28 +44,27 @@ export class AbdicateToCommand extends GeneralCommand {
     this.setNation();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeLord()
+      ConstraintHelper.BeLord()
     ];
   }
 
   protected async initWithArg(): Promise<void> {
     const destGeneralID = this.arg.destGeneralID;
     const sessionId = this.env['session_id'] || 'sangokushi_default';
-    const destGeneral = await generalRepository.findOneByFilter({ 
+    const destGeneralDoc = await generalRepository.findOneByFilter({ 
       session_id: sessionId,
       'data.no': destGeneralID 
     });
-    if (!destGeneral) {
-      throw new Error('대상 장수를 찾을 수 없습니다');
+    
+    if (destGeneralDoc) {
+      const destGeneral = await General.createObjFromDB(destGeneralID, sessionId);
+      this.setDestGeneral(destGeneral);
     }
-    this.setDestGeneral(destGeneral);
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeLord(),
-      // ExistsDestGeneral(),
-      // FriendlyDestGeneral(),
+      ConstraintHelper.BeLord(),
+      ConstraintHelper.ExistsDestGeneral(),
+      ConstraintHelper.FriendlyDestGeneral(),
     ];
   }
 
@@ -91,9 +91,8 @@ export class AbdicateToCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
-    const date = general.getTurnTime(general.TURNTIME_HM);
+    const date = general.getTurnTime('HM');
 
     const destGeneral = this.destGeneralObj;
     const destGeneralPenaltyList = JSON.parse(destGeneral.getVar('penalty') || '{}');

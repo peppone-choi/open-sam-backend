@@ -8,7 +8,7 @@ import { LastTurn } from '../../types/LastTurn';
 import { RandUtil } from '../../utils/RandUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
-import { General } from '../../models/General';
+import { General } from '../../models/general.model';
 import { ActionLogger } from '../../utils/ActionLogger';
 
 export class GrantCommand extends GeneralCommand {

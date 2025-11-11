@@ -66,7 +66,7 @@ export class ArrestCommand extends BaseLoghCommand {
       return { success: false, message: '같은 세력만 체포할 수 있습니다.' };
     }
 
-    if (!canAppoint(commander.getRank(), targetCommander.rank, targetCommander.faction)) {
+    if (!canAppoint(commander.getRank(), targetCommander.getRankName(), targetCommander.faction)) {
       return { success: false, message: '자신보다 계급이 높은 사람은 체포할 수 없습니다.' };
     }
 

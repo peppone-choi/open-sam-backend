@@ -2,6 +2,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 상업 투자 커맨드 (기본 내정 클래스)
@@ -27,16 +28,17 @@ export class InvestCommerceCommand extends GeneralCommand {
     this.setNation();
 
     const [reqGold, reqRice] = this.getCost();
+    const cityKey = (this.constructor as typeof InvestCommerceCommand).cityKey;
+    const actionName = (this.constructor as typeof InvestCommerceCommand).actionName;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotWanderingNation(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // RemainCityCapacity(cityKey, actionName)
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.RemainCityCapacity(cityKey, actionName)
     ];
 
     this.reqGold = reqGold;
@@ -165,7 +167,13 @@ export class InvestCommerceCommand extends GeneralCommand {
     const ded = score * 1.0;
 
     if (pick === 'success') {
-      // TODO: updateMaxDomesticCritical
+      try {
+        if (typeof general.updateMaxDomesticCritical === 'function') {
+          general.updateMaxDomesticCritical();
+        }
+      } catch (error) {
+        console.error('updateMaxDomesticCritical 실패:', error);
+      }
     } else {
       general.setAuxVar('max_domestic_critical', 0);
     }
@@ -211,7 +219,22 @@ export class InvestCommerceCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof InvestCommerceCommand).getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler, tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(InvestCommerceCommand.actionName),
+        general
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

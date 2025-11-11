@@ -1,6 +1,7 @@
 // @ts-nocheck - Type issues need investigation
 import { Troop } from '../models/troop.model';
 import { DeleteResult } from 'mongodb';
+import { cacheService } from '../common/cache/cache.service';
 
 /**
  * 부대 리포지토리
@@ -79,7 +80,14 @@ class TroopRepository {
    * @returns 생성된 부대
    */
   async create(data: any) {
-    return Troop.create(data);
+    const result = await Troop.create(data);
+    
+    // 캐시 무효화
+    if (data.session_id) {
+      await this._invalidateListCaches(data.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -89,7 +97,14 @@ class TroopRepository {
    * @returns 업데이트 결과
    */
   async updateMany(filter: any, update: any) {
-    return Troop.updateMany(filter, { $set: update });
+    const result = await Troop.updateMany(filter, { $set: update });
+    
+    // 캐시 무효화
+    if (filter.session_id) {
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -99,7 +114,14 @@ class TroopRepository {
    * @returns 업데이트 결과
    */
   async updateOneByFilter(filter: any, update: any) {
-    return Troop.updateOne(filter, { $set: update });
+    const result = await Troop.updateOne(filter, { $set: update });
+    
+    // 캐시 무효화
+    if (filter.session_id) {
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -108,7 +130,14 @@ class TroopRepository {
    * @returns 삭제 결과
    */
   async deleteMany(filter: any): Promise<DeleteResult> {
-    return Troop.deleteMany(filter);
+    const result = await Troop.deleteMany(filter);
+    
+    // 캐시 무효화
+    if (filter.session_id) {
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -117,7 +146,14 @@ class TroopRepository {
    * @returns 삭제 결과
    */
   async deleteByFilter(filter: any): Promise<DeleteResult> {
-    return Troop.deleteOne(filter);
+    const result = await Troop.deleteOne(filter);
+    
+    // 캐시 무효화
+    if (filter.session_id) {
+      await this._invalidateListCaches(filter.session_id);
+    }
+    
+    return result;
   }
 
   /**
@@ -127,10 +163,45 @@ class TroopRepository {
    * @returns 삭제 결과
    */
   async deleteByNation(sessionId: string, nationId: number): Promise<DeleteResult> {
-    return Troop.deleteMany({
+    const result = await Troop.deleteMany({
       session_id: sessionId,
       'data.nation': nationId
     });
+    
+    // 캐시 무효화
+    await this._invalidateListCaches(sessionId);
+    
+    return result;
+  }
+
+  /**
+   * 세션의 모든 부대 삭제
+   * @param sessionId - 세션 ID
+   * @returns 삭제 결과
+   */
+  async deleteBySession(sessionId: string): Promise<DeleteResult> {
+    const result = await Troop.deleteMany({ session_id: sessionId });
+    
+    // 캐시 무효화
+    await this._invalidateListCaches(sessionId);
+    
+    return result;
+  }
+
+  /**
+   * 목록 캐시 무효화 (내부 헬퍼)
+   *
+   * @param sessionId - 세션 ID
+   */
+  private async _invalidateListCaches(sessionId: string) {
+    await cacheService.invalidate(
+      [
+        `troops:list:${sessionId}`,
+      ],
+      [
+        `troops:nation:${sessionId}:*`,
+      ]
+    );
   }
 }
 

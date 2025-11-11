@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import { ActionLogger } from '../services/logger/ActionLogger';
 import { LogFormatType } from '../types/log.types';
 
@@ -26,7 +26,10 @@ export interface IGeneral extends Document {
   leadership?: number;
   strength?: number;
   intel?: number;
+  politics?: number;
+  charm?: number;
   nation?: number;
+  city?: number;
   owner_name?: string;
   
   // 완전 동적 데이터 (모든 것이 세션 설정에 따라 다름!)
@@ -88,6 +91,11 @@ export interface IGeneral extends Document {
   onCalcDomestic(turnType: string, varType: string, value: number, aux?: any): number;
 }
 
+// Static 메서드 타입 정의
+export interface IGeneralModel extends Model<IGeneral> {
+  createObjFromDB(generalID: number, sessionId?: string): Promise<IGeneral>;
+}
+
 const GeneralSchema = new Schema<IGeneral>({
   no: { type: Number, required: true },
   session_id: { type: String, required: true },
@@ -107,7 +115,10 @@ const GeneralSchema = new Schema<IGeneral>({
   leadership: { type: Number },
   strength: { type: Number },
   intel: { type: Number },
+  politics: { type: Number },
+  charm: { type: Number },
   nation: { type: Number },
+  city: { type: Number },
   owner_name: { type: String },
   
   data: { type: Schema.Types.Mixed, default: {} }
@@ -244,4 +255,24 @@ GeneralSchema.methods.onCalcDomestic = function(turnType: string, varType: strin
   return value;
 };
 
-export const General = mongoose.models.General || mongoose.model<IGeneral>('General', GeneralSchema);
+// Static 메서드: DB에서 장수 객체 생성
+GeneralSchema.statics.createObjFromDB = async function(generalID: number, sessionId?: string): Promise<any> {
+  const { generalRepository } = await import('../repositories/general.repository');
+  
+  // sessionId가 제공되지 않으면 기본값 사용
+  const sid = sessionId || 'sangokushi_default';
+  
+  // generalRepository를 통해 장수 조회
+  const generalDoc = await generalRepository.findOneByFilter({
+    session_id: sid,
+    'data.no': generalID
+  });
+  
+  if (!generalDoc) {
+    throw new Error(`장수 ${generalID}를 찾을 수 없습니다.`);
+  }
+  
+  return generalDoc;
+};
+
+export const General = (mongoose.models.General as IGeneralModel) || mongoose.model<IGeneral, IGeneralModel>('General', GeneralSchema);

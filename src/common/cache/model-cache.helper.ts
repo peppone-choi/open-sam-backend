@@ -26,11 +26,12 @@ const cacheKeys = {
 };
 
 // TTL 설정 (초 단위)
+// 게임 데이터는 프리로드되고 sync-queue로 업데이트되므로 긴 TTL 사용
 const TTL = {
-  SESSION: 300,      // 5분
-  GENERAL: 60,       // 1분
-  CITY: 120,         // 2분
-  NATION: 120,       // 2분
+  SESSION: 360,      // 6분
+  GENERAL: 360,      // 6분 (장수 데이터는 자주 변경됨)
+  CITY: 360,         // 6분
+  NATION: 360,       // 6분
 };
 
 /**
@@ -145,12 +146,7 @@ export async function saveGeneral(sessionId: string, generalId: number, data: an
   await cacheService.invalidate([`generals:list:${sessionId}`], []);
   
   // 4. DB 동기화 큐에 추가
-  await addToSyncQueue('general', `${sessionId}:${generalId}`, {
-    session_id: sessionId,
-    generalId,
-    no,
-    ...data
-  });
+  await addToSyncQueue('general', `${sessionId}:${generalId}`, data);
   
   logger.debug('General Redis 저장', { sessionId, generalId });
   
@@ -173,11 +169,7 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   await cacheService.invalidate([`cities:list:${sessionId}`], []);
   
   // 4. DB 동기화 큐에 추가
-  await addToSyncQueue('city', `${sessionId}:${cityId}`, {
-    session_id: sessionId,
-    city: cityId,
-    ...data
-  });
+  await addToSyncQueue('city', `${sessionId}:${cityId}`, data);
   
   logger.debug('City Redis 저장', { sessionId, cityId });
   
@@ -209,11 +201,7 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
   await cacheService.invalidate([`nations:list:${sessionId}`], []);
   
   // 4. DB 동기화 큐에 추가
-  await addToSyncQueue('nation', `${sessionId}:${nationId}`, {
-    session_id: sessionId,
-    nation: nationId,
-    ...data
-  });
+  await addToSyncQueue('nation', `${sessionId}:${nationId}`, data);
   
   logger.debug('Nation Redis 저장', { sessionId, nationId });
   

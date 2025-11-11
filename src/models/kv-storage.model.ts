@@ -9,7 +9,7 @@ export interface IKVStorage extends Document {
 }
 
 const KVStorageSchema: Schema = new Schema({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   storage_id: { type: String },
   key: { type: String },
   data: { type: Schema.Types.Mixed, default: {} },

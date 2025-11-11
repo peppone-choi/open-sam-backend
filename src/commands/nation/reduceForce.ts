@@ -2,6 +2,7 @@
 import { NationCommand } from '../base/NationCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 export class ReduceForceCommand extends NationCommand {
   protected static actionName = '감축';
@@ -15,9 +16,12 @@ export class ReduceForceCommand extends NationCommand {
     const general = this.generalObj;
 
     if (general.getNationID() === 0) {
-      // TODO: ConstraintHelper - NotBeNeutral
-      this.minConditionConstraints = [];
-      this.fullConditionConstraints = [];
+      this.minConditionConstraints = [
+        ConstraintHelper.NotBeNeutral()
+      ];
+      this.fullConditionConstraints = [
+        ConstraintHelper.NotBeNeutral()
+      ];
       return;
     }
 
@@ -25,15 +29,22 @@ export class ReduceForceCommand extends NationCommand {
     await this.setNation(['gold', 'rice', 'capset', 'capital']);
 
     if (!this.nation.capital) {
-      // TODO: ConstraintHelper - AlwaysFail:방랑상태에서는 불가능합니다.
-      this.fullConditionConstraints = [];
+      this.fullConditionConstraints = [
+        ConstraintHelper.AlwaysFail('방랑상태에서는 불가능합니다.')
+      ];
       return;
     }
 
     await this.setDestCity(this.nation.capital);
 
-    // TODO: ConstraintHelper - OccupiedCity, BeChief, SuppliedCity, ReqDestCityValue
-    this.fullConditionConstraints = [];
+    const [reqGold, reqRice] = this.getCost();
+    
+    this.fullConditionConstraints = [
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.BeChief(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqDestCityValue('pop', '주민', '>=', 100, '주민이 부족합니다')
+    ];
   }
 
   public getCommandDetailTitle(): string {

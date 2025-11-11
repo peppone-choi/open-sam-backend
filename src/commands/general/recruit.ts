@@ -1,7 +1,10 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { JosaUtil } from '../../utils/JosaUtil';
+import { generalRepository } from '../../repositories/general.repository';
 import { General } from '../../models/general.model';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 등용 커맨드
@@ -46,16 +49,14 @@ export class RecruitCommand extends GeneralCommand {
     const relYear = this.env.year - this.env.startyear;
 
     this.permissionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
     ];
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // SuppliedCity(),
+      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
     ];
   }
 
@@ -63,27 +64,35 @@ export class RecruitCommand extends GeneralCommand {
    * 인자와 함께 초기화
    */
   protected async initWithArg(): Promise<void> {
-    // TODO: General.createObjFromDB 구현 필요
-    // const destGeneral = await General.findById(this.arg.destGeneralID);
-    // this.setDestGeneral(destGeneral);
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const destGeneralDoc = await generalRepository.findOneByFilter({
+      session_id: sessionId,
+      'data.no': this.arg.destGeneralID
+    });
+    
+    if (destGeneralDoc) {
+      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
+      this.setDestGeneral(destGeneral);
+    }
 
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // ExistsDestGeneral(),
-      // DifferentNationDestGeneral(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ExistsDestGeneral(),
+      ConstraintHelper.FriendlyDestGeneral(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
 
     // 군주에게는 등용 불가
     if (this.destGeneralObj && this.destGeneralObj.getVar('officer_level') === 12) {
-      // TODO: AlwaysFail constraint
+      this.fullConditionConstraints.push(
+        ConstraintHelper.Custom(() => false, '군주는 등용할 수 없습니다.')
+      );
     }
   }
 
@@ -117,8 +126,8 @@ export class RecruitCommand extends GeneralCommand {
   public getBrief(): string {
     const destGeneralName = this.destGeneralObj.getName();
     const name = RecruitCommand.getName();
-    // TODO: JosaUtil.pick
-    return `【${destGeneralName}】을(를) ${name}`;
+    const josaUl = JosaUtil.pick(destGeneralName, '을');
+    return `【${destGeneralName}】${josaUl} ${name}`;
   }
 
   /**
@@ -133,7 +142,6 @@ export class RecruitCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const destGeneral = this.destGeneralObj;
     const destGeneralName = destGeneral.getName();
@@ -175,7 +183,20 @@ export class RecruitCommand extends GeneralCommand {
       // 등용 실패
       logger.pushGeneralActionLog(`<Y><b>${destGeneralName}</b></>이(가) 등용을 거절했습니다.`);
       
-      // TODO: ScoutMessage 발송
+      try {
+        const { messageRepository } = await import('../../repositories/message.repository');
+        await messageRepository.create({
+          session_id: general.getSessionID(),
+          type: 'scout',
+          from_general: general.getID(),
+          to_general: destGeneralID,
+          nation: general.getNationID(),
+          message: `${general.getName()}이(가) 등용을 제안했습니다.`,
+          created_at: new Date()
+        });
+      } catch (error) {
+        console.error('스카우트 메시지 발송 실패:', error);
+      }
     }
 
     // 경험치 증가
@@ -186,8 +207,25 @@ export class RecruitCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(RecruitCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(RecruitCommand.actionName),
+        general,
+        sessionId,
+        '등용'
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

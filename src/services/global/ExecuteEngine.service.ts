@@ -134,19 +134,50 @@ export class ExecuteEngineService {
     const sessionData = session.data as any || {};
     const now = new Date();
     
-    // turnterm 유효성 검사 (1분~1440분 사이만 허용)
-    if (sessionData.turnterm && (sessionData.turnterm < 1 || sessionData.turnterm > 1440)) {
-      console.log(`[${new Date().toISOString()}] ⚠️ Invalid turnterm: ${sessionData.turnterm}, resetting to 60`);
-      sessionData.turnterm = 60;
-      session.data = sessionData;
-      session.markModified('data');
-      await sessionRepository.saveDocument(session);
+    // game_env 초기화
+    if (!sessionData.game_env) {
+      sessionData.game_env = {};
     }
+    
+    // 준비중/일시정지/종료 상태에서는 턴 실행 안 함
+    const sessionStatus = session.status || 'running';
+    if (sessionStatus !== 'running') {
+      if (lockAcquired) {
+        await redis.del(lockKey);
+        lockAcquired = false;
+        console.log(`[${new Date().toISOString()}] 🔓 Lock released (status=${sessionStatus}): ${lockKey}`);
+      }
+      return {
+        success: true,
+        result: false,
+        updated: false,
+        reason: `Server status is ${sessionStatus}, skipping turn execution`
+      };
+    }
+    
+    // game_env의 데이터를 sessionData 최상위로 플랫화 (호환성)
+    // 기존 코드는 sessionData.turnterm 직접 접근, 신규는 sessionData.game_env.turnterm
+    if (sessionData.game_env.turnterm !== undefined) sessionData.turnterm = sessionData.game_env.turnterm;
+    if (sessionData.game_env.turntime !== undefined) sessionData.turntime = sessionData.game_env.turntime;
+    if (sessionData.game_env.starttime !== undefined) sessionData.starttime = sessionData.game_env.starttime;
+    if (sessionData.game_env.year !== undefined) sessionData.year = sessionData.game_env.year;
+    if (sessionData.game_env.month !== undefined) sessionData.month = sessionData.game_env.month;
     
     // turnterm이 없으면 기본값 설정
     if (!sessionData.turnterm) {
       console.log(`[${new Date().toISOString()}] ⚠️ Missing turnterm, setting default to 60 minutes`);
       sessionData.turnterm = 60;
+      sessionData.game_env.turnterm = 60;
+      session.data = sessionData;
+      session.markModified('data');
+      await sessionRepository.saveDocument(session);
+    }
+    
+    // turnterm 유효성 검사 (1분~1440분 사이만 허용)
+    if (sessionData.turnterm && (sessionData.turnterm < 1 || sessionData.turnterm > 1440)) {
+      console.log(`[${new Date().toISOString()}] ⚠️ Invalid turnterm: ${sessionData.turnterm}, resetting to 60`);
+      sessionData.turnterm = 60;
+      sessionData.game_env.turnterm = 60;
       session.data = sessionData;
       session.markModified('data');
       await sessionRepository.saveDocument(session);
@@ -166,12 +197,14 @@ export class ExecuteEngineService {
       }
       
       if (now < turntime) {
-        // turntime이 너무 먼 미래 (10분 이상)이면 잘못된 설정으로 간주하고 현재 시간 + turnterm으로 재설정
-        // turnterm * 2보다 10분이 더 명확한 기준
-        if (timeDiffInMinutes > 10) {
-          console.log(`[${new Date().toISOString()}] ⚠️ Turntime is too far in future (${timeDiffInMinutes.toFixed(1)}min > 10min), resetting to now + turnterm (${turntermInMinutes}min)`);
+        // turntime이 너무 먼 미래이면 잘못된 설정으로 간주하고 현재 시간 + turnterm으로 재설정
+        // 체크 기준: turnterm * 3 (최소 10분, 최대 180분)
+        const maxAllowedMinutes = Math.min(Math.max(turntermInMinutes * 3, 10), 180);
+        if (timeDiffInMinutes > maxAllowedMinutes) {
+          console.log(`[${new Date().toISOString()}] ⚠️ Turntime is too far in future (${timeDiffInMinutes.toFixed(1)}min > ${maxAllowedMinutes}min), resetting to now + turnterm (${turntermInMinutes}min)`);
           const correctedTurntime = new Date(now.getTime() + turntermInSeconds * 1000);
           sessionData.turntime = correctedTurntime.toISOString();
+          sessionData.game_env.turntime = correctedTurntime.toISOString();
           session.data = sessionData;
           await sessionRepository.saveDocument(session);
           
@@ -204,13 +237,15 @@ export class ExecuteEngineService {
         };
       }
 
-      // 천통시에는 동결 (락 해제 필요)
-      if (sessionData.isunited === 2 || sessionData.isunited === 3) {
+      // 천통시에는 동결 - 위에서 session.status로 이미 체크했으므로 불필요
+      // (레거시 호환성을 위해 유지하되, sessionData에서 isunited 가져오기)
+      const isunited = sessionData.game_env?.isunited ?? sessionData.isunited ?? 0;
+      if (isunited === 2 || isunited === 3) {
         // 락을 해제하고 반환
         if (lockAcquired) {
           await redis.del(lockKey);
           lockAcquired = false;
-          console.log(`[${new Date().toISOString()}] Lock released (early return - united): ${lockKey}`);
+          console.log(`[${new Date().toISOString()}] Lock released (early return - isunited=${isunited}): ${lockKey}`);
         }
         return {
           success: true,
@@ -380,6 +415,7 @@ export class ExecuteEngineService {
           executed = true;
           currentTurn = lastTurn;
           sessionData.turntime = lastTurn;
+          sessionData.game_env.turntime = lastTurn;
           session.data = sessionData;
           await sessionRepository.saveDocument(session);
         }
@@ -447,6 +483,7 @@ export class ExecuteEngineService {
       prevTurn = nextTurn;
       nextTurn = ExecuteEngineService.addTurn(prevTurn, turntermInMinutes);
       sessionData.turntime = prevTurn.toISOString();
+      sessionData.game_env.turntime = prevTurn.toISOString();
       session.data = sessionData; // turntime 업데이트 반영
       await sessionRepository.saveDocument(session); // DB에 저장
     }
@@ -508,6 +545,7 @@ export class ExecuteEngineService {
     
     // turntime을 다음 턴 시간으로 업데이트
     sessionData.turntime = nextTurnAt.toISOString();
+    sessionData.game_env.turntime = nextTurnAt.toISOString();
 
     session.data = sessionData;
     session.markModified('data'); // Mixed 타입 변경사항 추적
@@ -560,9 +598,8 @@ export class ExecuteEngineService {
     // 세션 turntime을 기본값으로 사용하여 비교
     const sessionTurntime = gameEnv.turntime ? new Date(gameEnv.turntime) : date;
     
-    const generals = await generalRepository.findByFilter({
-      session_id: sessionId
-    });
+    // findBySession을 사용하여 캐시에서 조회 (캐시 미스 시 DB 조회 후 캐시에 저장)
+    const generals = await generalRepository.findBySession(sessionId);
     
     // 각 장수의 turntime을 확인하고 date보다 이전인 것만 필터링
     // turntime은 data.turntime에만 존재함
@@ -680,7 +717,9 @@ export class ExecuteEngineService {
       try {
         // 레포지토리를 통한 저장
         const generalNo = generalDoc.data?.no || generalDoc.no;
-        await generalRepository.updateBySessionAndNo(sessionId, generalNo, generalDoc.data || generalDoc.toObject());
+        // generalDoc이 Mongoose 문서인지 plain object인지 확인
+        const generalData = generalDoc.data || (typeof generalDoc.toObject === 'function' ? generalDoc.toObject() : generalDoc);
+        await generalRepository.updateBySessionAndNo(sessionId, generalNo, generalData);
       } catch (error: any) {
         // save() 실패 시 (장수가 삭제됨) 건너뛰기
         if (error.name === 'DocumentNotFoundError' || error.message?.includes('No document found')) {
@@ -1039,9 +1078,11 @@ export class ExecuteEngineService {
     const killturn = gameEnv.killturn || 30;
     const npcType = general.npc || 0;
     const currentKillturn = general.killturn ?? killturn;
-    const autorunMode = false; // TODO: AI 자동 실행 모드 구현
+    const autorunMode = gameEnv.autorunMode || false; // AI 자동 실행 모드
 
+    // NPC 타입에 따른 killturn 처리
     if (npcType >= 2) {
+      // NPC (AI 명장)는 항상 killturn 감소 (삭제 방지)
       general.killturn = Math.max(0, currentKillturn - 1);
     } else if (currentKillturn > killturn) {
       general.killturn = Math.max(0, currentKillturn - 1);
@@ -1053,6 +1094,67 @@ export class ExecuteEngineService {
       general.killturn = killturn;
     }
 
+    // NPC (npc === 2)인 경우 AI가 자동으로 커맨드 결정
+    if (npcType === 2 && action === '휴식') {
+      try {
+        const { AIEngine, AIDifficulty } = await import('../../core/ai-engine');
+        
+        // 난이도 결정 (gameEnv에서 설정 가능)
+        const difficulty = gameEnv.ai_difficulty || AIDifficulty.NORMAL;
+        
+        // AI 엔진 생성 (시드는 장수 번호 + 년월 기반)
+        const seed = generalId * 1000 + year * 12 + month;
+        const ai = new AIEngine(difficulty, {}, seed);
+        
+        // 현재 도시와 국가 정보 로드
+        await this.loadCityAndNation(general, sessionId);
+        
+        // AI가 다음 커맨드 결정
+        const decision = await ai.decideNextCommand(
+          general,
+          general._cached_city,
+          general._cached_nation,
+          { year, month, session_id: sessionId, ...gameEnv }
+        );
+        
+        if (decision && decision.command !== 'neutral') {
+          // AI가 결정한 커맨드를 0번 턴에 설정
+          await generalTurnRepository.updateByFilter(
+            {
+              session_id: sessionId,
+              'data.general_id': generalId,
+              'data.turn_idx': 0
+            },
+            {
+              'data.action': decision.command,
+              'data.arg': decision.args,
+              'data.brief': `AI: ${decision.reason}`
+            }
+          );
+          
+          // generalTurn 다시 조회
+          generalTurn = await generalTurnRepository.findOneByFilter({
+            session_id: sessionId,
+            'data.general_id': generalId,
+            'data.turn_idx': 0
+          });
+          
+          if (generalTurn) {
+            // action과 arg 업데이트
+            action = generalTurn.action || '휴식';
+            arg = generalTurn.arg || {};
+            
+            console.log(`[AI] General ${generalId} (${general.name}) decided: ${action}`, decision.args);
+          }
+        }
+      } catch (error: any) {
+        console.error(`[AI] Failed to decide command for general ${generalId}:`, error);
+        // AI 실패 시 휴식
+        return;
+      }
+    }
+
+    // action이 여전히 휴식이면 종료
     if (action === '휴식') {
       return;
     }
@@ -1478,45 +1580,106 @@ export class ExecuteEngineService {
    * - $year = intdiv($date, 12)
    * - $month = 1 + $date % 12
    * 
+   * 중요: starttime은 "게임 시작한 현실 시간", year/month는 "게임 내 시간"
+   * 
    * @param turntime 현재 턴 시간 (Date 객체 또는 문자열)
    * @param gameEnv 게임 환경 데이터 (starttime, startyear, turnterm, year, month 포함)
    * @returns 계산된 년/월 정보 { year, month, turn }
    */
   public static turnDate(turntime: Date | string, gameEnv: any): { year: number; month: number; turn: number } {
     // starttime과 startyear 가져오기
-    const starttime = gameEnv.starttime ? new Date(gameEnv.starttime) : new Date();
     const startyear = gameEnv.startyear || 180;
     const turntermInMinutes = gameEnv.turnterm || 60; // 분 단위
     
     // curtime을 Date 객체로 변환
     const curtime = turntime instanceof Date ? turntime : new Date(turntime);
-    
-    // PHP: $curturn = cutTurn($curtime, $admin['turnterm'])
-    // cutTurn은 turnterm(분) 간격으로 시간을 자름
     const curturn = ExecuteEngineService.cutTurn(curtime, turntermInMinutes);
+    
+    let starttime = gameEnv.starttime ? new Date(gameEnv.starttime) : null;
+    
+    // starttime이 없거나, 비정상적으로 오래된 경우 리셋
+    // 비정상 기준: 현재 시간과 10년 이상 차이나거나, year가 비정상적으로 큼
+    const MAX_YEAR_DIFF = 10; // 최대 10년
+    const MAX_REASONABLE_YEAR = 10000; // 합리적인 최대 년도
+    const now = new Date();
+    
+    const needsReset = !starttime || 
+                       Math.abs(now.getTime() - starttime.getTime()) > (MAX_YEAR_DIFF * 365 * 24 * 60 * 60 * 1000) ||
+                       (gameEnv.year && gameEnv.year > MAX_REASONABLE_YEAR);
+    
+    if (needsReset) {
+      // starttime을 현재 시간으로 리셋
+      starttime = curturn;
+      gameEnv.starttime = curturn.toISOString();
+      // year/month도 시작 년도로 리셋
+      gameEnv.year = startyear;
+      gameEnv.month = 1;
+      
+      console.warn(`[${new Date().toISOString()}] ⚠️ starttime was invalid, reset to current time. year/month reset to ${startyear}/1`);
+    }
+    
     const starttimeCut = ExecuteEngineService.cutTurn(starttime, turntermInMinutes);
     
     // PHP: $num = intdiv((strtotime($curturn) - strtotime($turn)), $term * 60)
-    // 경과한 분 수를 계산한 후 turnterm으로 나눔
+    // 경과한 현실 시간(분)을 turnterm으로 나눠서 경과한 턴 수 계산
     const timeDiffMinutes = (curturn.getTime() - starttimeCut.getTime()) / (1000 * 60);
     const num = Math.max(0, Math.floor(timeDiffMinutes / turntermInMinutes));
     
-    // PHP: $date = $admin['startyear'] * 12 + $num
-    const date = startyear * 12 + num;
+    // ⚠️ CRITICAL FIX: 오버플로우 방지
+    // 비정상적으로 큰 num이 계산되었다면 starttime이 손상된 것
+    const MAX_REASONABLE_TURNS = 10 * 365 * 24 * 60 / turntermInMinutes; // 10년치 턴
+    if (num > MAX_REASONABLE_TURNS) {
+      console.error(`[${new Date().toISOString()}] ⚠️ CRITICAL: Calculated ${num} turns (> ${MAX_REASONABLE_TURNS}), starttime corruption detected!`);
+      console.error(`starttime: ${starttime.toISOString()}, curturn: ${curturn.toISOString()}`);
+      
+      // starttime을 현재 시간으로 강제 리셋
+      starttime = curturn;
+      gameEnv.starttime = curturn.toISOString();
+      gameEnv.year = startyear;
+      gameEnv.month = 1;
+      
+      // 리셋 후 다시 계산
+      return { year: startyear, month: 1, turn: 1 };
+    }
     
-    // PHP: $year = intdiv($date, 12)
-    // PHP: $month = 1 + $date % 12
-    const year = Math.floor(date / 12);
-    const month = (date % 12) + 1;
+    // PHP와 완전히 동일한 방식:
+    // $date = $admin['startyear'] * 12 + $num;
+    // $year = intdiv($date, 12);
+    // $month = 1 + $date % 12;
+    
+    // ⚠️ CRITICAL FIX: 안전한 계산 (오버플로우 체크)
+    let totalMonths: number;
+    let year: number;
+    let month: number;
+    
+    try {
+      const { Util } = require('../utils/Util');
+      totalMonths = Util.joinYearMonth(startyear, 1) + num; // joinYearMonth는 이미 오버플로우 체크 포함
+      year = Math.floor(totalMonths / 12);
+      month = 1 + (totalMonths % 12);
+      
+      // 추가 안전성 체크: year가 비정상적으로 크면 에러
+      if (year > MAX_REASONABLE_YEAR || year < 0) {
+        throw new Error(`Calculated year ${year} is out of reasonable range`);
+      }
+    } catch (error: any) {
+      console.error(`[${new Date().toISOString()}] ⚠️ CRITICAL: Year calculation overflow detected!`, error.message);
+      console.error(`startyear: ${startyear}, num: ${num}`);
+      
+      // 안전한 기본값으로 리셋
+      gameEnv.starttime = curturn.toISOString();
+      gameEnv.year = startyear;
+      gameEnv.month = 1;
+      
+      return { year: startyear, month: 1, turn: 1 };
+    }
     
     // 바뀐 경우만 업데이트
     if (gameEnv.month !== month || gameEnv.year !== year) {
       gameEnv.year = year;
       gameEnv.month = month;
-      // 디버그 로그는 환경 변수로 제어 (과도한 로그 방지)
-      if (process.env.DEBUG_TURNDATE === 'true') {
-        console.log(`[${new Date().toISOString()}] 📅 Year/Month updated: ${year}년 ${month}월 (starttime: ${starttimeCut.toISOString()}, turntime: ${curturn.toISOString()}, turns: ${num})`);
-      }
+      
+      console.log(`[${new Date().toISOString()}] 📅 Year/Month updated: ${year}년 ${month}월 (elapsed turns: ${num})`);
     }
     
     return { year, month, turn: num + 1 }; // 턴은 1부터 시작

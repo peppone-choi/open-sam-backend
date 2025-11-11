@@ -15,7 +15,7 @@ export interface INgAuctionBid extends Document {
 }
 
 const NgAuctionBidSchema = new Schema<INgAuctionBid>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   auctionId: { type: Schema.Types.ObjectId, required: true, ref: 'Auction', index: true },
   owner: { type: String, required: true },
   generalId: { type: Number, required: true },

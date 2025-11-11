@@ -5,14 +5,12 @@
  */
 
 import { Hall } from '../models/hall.model';
-import { General } from '../models/general.model';
-import { Nation } from '../models/nation.model';
-import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
 import { logger } from '../common/logger';
 import { sessionRepository } from '../repositories/session.repository';
 import { generalRepository } from '../repositories/general.repository';
 import { nationRepository } from '../repositories/nation.repository';
+import { cityRepository } from '../repositories/city.repository';
 
 export class ArchiveService {
   /**
@@ -667,9 +665,7 @@ export class ArchiveService {
       // TODO: 실제 교통 데이터 구현 필요
       // 현재는 기본 구조만 제공
       
-      const cities = await require('../models/city.model').City.find({
-        session_id: sessionId
-      });
+      const cities = await cityRepository.findBySession(sessionId);
 
       const traffic = {
         totalCities: cities.length,

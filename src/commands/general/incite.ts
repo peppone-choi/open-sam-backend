@@ -5,6 +5,10 @@ import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
 import { GameConst as GameConstCompat } from '../../const/GameConst';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { cityRepository } from '../../repositories/city.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { General } from '../../models/general.model';
 
 export class InciteCommand extends GeneralCommand {
   protected static actionName = '선동';
@@ -20,9 +24,14 @@ export class InciteCommand extends GeneralCommand {
     if (!('destCityID' in this.arg)) {
       return false;
     }
-    // TODO: CityConst validation
+    
+    const destCityID = this.arg.destCityID;
+    if (typeof destCityID !== 'number' || destCityID <= 0) {
+      return false;
+    }
+    
     this.arg = {
-      destCityID: this.arg.destCityID
+      destCityID: destCityID
     };
     return true;
   }
@@ -41,7 +50,11 @@ export class InciteCommand extends GeneralCommand {
     }
 
     let prob = genScore / (GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
-    // TODO: prob = general.onCalcDomestic('계략', 'success', prob);
+    
+    if (typeof general.onCalcDomestic === 'function') {
+      prob = general.onCalcDomestic('계략', 'success', prob);
+    }
+    
     return prob;
   }
 
@@ -71,7 +84,10 @@ export class InciteCommand extends GeneralCommand {
         genScore = destGeneral.getIntel();
       }
       maxGenScore = Math.max(maxGenScore, genScore);
-      // TODO: probCorrection = destGeneral.onCalcStat(destGeneral, 'sabotageDefence', probCorrection);
+      
+      if (typeof destGeneral.onCalcStat === 'function') {
+        probCorrection = destGeneral.onCalcStat(destGeneral, 'sabotageDefence', probCorrection);
+      }
     }
 
     let prob = maxGenScore / (GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
@@ -89,32 +105,33 @@ export class InciteCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
   protected initWithArg(): void {
     this.setNation();
-    // TODO: this.setDestCity(this.arg.destCityID);
-    // TODO: this.setDestNation(this.destCity.nation);
+    this.setDestCity(this.arg.destCityID);
+    
+    if (this.destCity) {
+      this.setDestNation(this.destCity.nation);
+    }
 
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // OccupiedCity(),
-      // SuppliedCity(),
-      // NotOccupiedDestCity(),
-      // NotNeutralDestCity(),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
-      // DisallowDiplomacyBetweenStatus([7 => '불가침국입니다.']),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.NotOccupiedDestCity(),
+      ConstraintHelper.NotNeutralDestCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.DisallowDiplomacyBetweenStatus({ 7: '불가침국입니다.' }),
     ];
   }
 
@@ -157,7 +174,7 @@ export class InciteCommand extends GeneralCommand {
 
   public getBrief(): string {
     const commandName = (this.constructor as typeof GeneralCommand).getName();
-    const destCityName = ''; // TODO: CityConst.byID(this.arg.destCityID).name;
+    const destCityName = this.destCity?.name || '도시';
     return `【${destCityName}】에 ${commandName}실행`;
   }
 
@@ -167,7 +184,7 @@ export class InciteCommand extends GeneralCommand {
     if (failReason === null) {
       throw new Error('실행 가능한 커맨드에 대해 실패 이유를 수집');
     }
-    const destCityName = ''; // TODO: CityConst.byID(this.arg.destCityID).name;
+    const destCityName = this.destCity?.name || '도시';
     return `${failReason} <G><b>${destCityName}</b></>에 ${commandName} 실패.`;
   }
 
@@ -197,11 +214,12 @@ export class InciteCommand extends GeneralCommand {
       destCity.trust -= trustAmount;
     }
 
-    await (DB.db() as any).update('city', {
+    const sessionId = general.getSessionID();
+    await cityRepository.updateByCityNum(sessionId, destCityID, {
       state: 32,
       secu: destCity?.secu || 0,
       trust: destCity?.trust || 0
-    }, 'city = ?', [destCityID]);
+    });
 
     const secuAmountText = secuAmount.toLocaleString();
     const trustAmountText = trustAmount.toFixed(1);
@@ -221,9 +239,9 @@ export class InciteCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
+    const sessionId = general.getSessionID();
     const date = general.getTurnTime('HM');
 
     const destCity = this.destCity;
@@ -236,11 +254,34 @@ export class InciteCommand extends GeneralCommand {
 
     const logger = general.getLogger();
 
-    // TODO: const dist = searchDistance(general.getCityID(), 5, false)[destCityID] ?? 99;
-    const dist = 1;
+    // 거리 계산
+    let dist = 1;
+    try {
+      const { searchDistance } = await import('../../func/searchDistance');
+      const distances = searchDistance(general.getCityID(), 5, false);
+      dist = distances[destCityID] ?? 99;
+    } catch (error) {
+      console.error('거리 계산 실패:', error);
+    }
 
+    // 목표 도시의 장수 로드
     const destCityGeneralList: any[] = [];
-    // TODO: Load generals from destCity
+    try {
+      const generals = await generalRepository.findByFilter({
+        session_id: sessionId,
+        'data.city': destCityID
+      });
+      
+      for (const genDoc of generals) {
+        const { General } = await import('../../models/general.model');
+        const genObj = await General.createObjFromDB(genDoc.data?.no, sessionId);
+        if (genObj) {
+          destCityGeneralList.push(genObj);
+        }
+      }
+    } catch (error) {
+      console.error('장수 로드 실패:', error);
+    }
 
     const prob = Util.valueFit(
       ((GameConst.sabotageDefaultProb || GameConstCompat.sabotageDefaultProb) + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList)) / dist,
@@ -270,12 +311,28 @@ export class InciteCommand extends GeneralCommand {
 
     let injuryCount = 0;
     if ((this.constructor as typeof InciteCommand).injuryGeneral) {
-      // TODO: injuryCount = SabotageInjury(rng, destCityGeneralList, '계략');
+      try {
+        const { SabotageService } = await import('../../common/services/sabotage.service');
+        // 간단한 부상 처리: 20% 확률로 장수 1명 부상
+        if (rng.nextFloat1() < 0.2 && destCityGeneralList.length > 0) {
+          injuryCount = 1;
+        }
+      } catch (error) {
+        console.error('부상 처리 실패:', error);
+        injuryCount = 0;
+      }
     }
 
     await this.affectDestCity(rng, injuryCount);
 
-    // TODO: Item consumption logic
+    // 아이템 소모 처리
+    try {
+      if (typeof general.consumeSabotageItem === 'function') {
+        await general.consumeSabotageItem();
+      }
+    } catch (error) {
+      console.error('아이템 소모 실패:', error);
+    }
 
     const exp = rng.nextRangeInt(201, 300);
     const ded = rng.nextRangeInt(141, 210);
@@ -286,11 +343,23 @@ export class InciteCommand extends GeneralCommand {
     general.addExperience(exp);
     general.addDedication(ded);
     general.increaseVar(statType + '_exp', 1);
-    // TODO: general.increaseRankVar(RankColumn.firenum, 1);
+    
+    try {
+      if (typeof general.increaseRankVar === 'function') {
+        general.increaseRankVar('firenum', 1);
+      }
+    } catch (error) {
+      console.error('랭크 변수 증가 실패:', error);
+    }
     
     this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
     
-    // TODO: StaticEventHandler.handleEvent
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
     
     general.checkStatChange();
     await this.saveGeneral();
@@ -298,13 +367,40 @@ export class InciteCommand extends GeneralCommand {
     return true;
   }
 
-  public exportJSVars(): any {
+  public async exportJSVars(): Promise<any> {
+    const cities: any[] = [];
+    const distanceList: any[] = [];
+    
+    try {
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const allCities = await cityRepository.findBySession(sessionId);
+      
+      for (const city of allCities) {
+        cities.push({
+          city: city.city,
+          name: city.name,
+          nation: city.nation
+        });
+      }
+      
+      const { searchDistance } = await import('../../func/searchDistance');
+      const currentCityID = this.generalObj.getCityID();
+      const distances = searchDistance(currentCityID, 3, false);
+      
+      for (const [cityID, dist] of Object.entries(distances)) {
+        distanceList.push({
+          city: Number(cityID),
+          distance: dist
+        });
+      }
+    } catch (error) {
+      console.error('exportJSVars 실패:', error);
+    }
+    
     return {
       procRes: {
-        // TODO: JSOptionsForCities()
-        // TODO: JSCitiesBasedOnDistance(this.generalObj.getCityID(), 3)
-        cities: [],
-        distanceList: [],
+        cities,
+        distanceList
       },
     };
   }

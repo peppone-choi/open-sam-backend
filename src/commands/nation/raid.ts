@@ -45,10 +45,12 @@ export class RaidCommand extends NationCommand {
     this.setNation(['strategic_cmd_limit']);
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // OccupiedCity(),
-      // BeChief(),
-      // AvailableStrategicCommand(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.BeChief(),
+      ConstraintHelper.Custom((input: any, env: any) => {
+        const nation = input._cached_nation || {};
+        return (nation.strategic_cmd_limit || 0) > 0;
+      }, '전략 커맨드 실행 가능 횟수를 초과했습니다')
     ];
   }
 
@@ -56,12 +58,18 @@ export class RaidCommand extends NationCommand {
     this.setDestNation(this.arg.destNationID, null);
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // OccupiedCity(),
-      // BeChief(),
-      // ExistsDestNation(),
-      // AllowDiplomacyWithTerm(1, 12, '선포 12개월 이상인 상대국에만 가능합니다.'),
-      // AvailableStrategicCommand(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.BeChief(),
+      ConstraintHelper.ExistsDestNation(),
+      ConstraintHelper.Custom((input: any, env: any) => {
+        const diplomacy = input._cached_diplomacy || {};
+        const term = diplomacy.term || 0;
+        return diplomacy.state === 1 && term >= 12;
+      }, '선포 12개월 이상인 상대국에만 가능합니다.'),
+      ConstraintHelper.Custom((input: any, env: any) => {
+        const nation = input._cached_nation || {};
+        return (nation.strategic_cmd_limit || 0) > 0;
+      }, '전략 커맨드 실행 가능 횟수를 초과했습니다')
     ];
   }
 
@@ -84,15 +92,20 @@ export class RaidCommand extends NationCommand {
     const genCount = Util.valueFit(this.nation.gennum, GameConst.initialNationGenLimit);
     let nextTerm = Util.round(Math.sqrt(genCount * 16) * 10);
 
-    // TODO: generalObj.onCalcStrategic
-    // nextTerm = this.generalObj.onCalcStrategic(RaidCommand.getName(), 'delay', nextTerm);
+    // 장수의 특수 능력으로 delay 조정
+    try {
+      if (this.generalObj && typeof this.generalObj.onCalcStrategic === 'function') {
+        nextTerm = this.generalObj.onCalcStrategic(RaidCommand.getName(), 'delay', nextTerm);
+      }
+    } catch (error) {
+      console.error('onCalcStrategic 실패:', error);
+    }
     return nextTerm;
   }
 
   public getBrief(): string {
     const commandName = RaidCommand.getName();
-    // TODO: getNationStaticInfo
-    const destNationName = `국가${this.arg.destNationID}`;
+    const destNationName = this.destNation?.name || `국가${this.arg.destNationID}`;
     return `【${destNationName}】에 ${commandName}`;
   }
 
@@ -167,11 +180,19 @@ export class RaidCommand extends NationCommand {
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`);
 
     // 전략 명령 사용 제한 설정
-    // TODO: generalObj.onCalcStrategic
+    let strategicCmdCost = 9;
+    try {
+      if (this.generalObj && typeof this.generalObj.onCalcStrategic === 'function') {
+        strategicCmdCost = this.generalObj.onCalcStrategic(RaidCommand.getName(), 'cost', strategicCmdCost);
+      }
+    } catch (error) {
+      console.error('onCalcStrategic 실패:', error);
+    }
+    
     const { Nation } = await import('../../models/nation.model');
     await nationRepository.updateOneByFilter(
       { session_id: env.session_id, 'data.nation': nationID },
-      { $inc: { 'data.strategic_cmd_limit': -9 } }
+      { $inc: { 'data.strategic_cmd_limit': -strategicCmdCost } }
     );
 
     // 외교 관계에서 선포 기간 3개월 감소

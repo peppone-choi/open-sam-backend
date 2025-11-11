@@ -1,6 +1,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 단련 커맨드
@@ -23,13 +24,12 @@ export class TrainCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // ReqGeneralCrew(),
-      // ReqGeneralValue('train', '훈련', '>=', 20),
-      // ReqGeneralValue('atmos', '사기', '>=', 20),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.ReqGeneralCrew(),
+      ConstraintHelper.ReqGeneralValue('train', '훈련', '>=', 20),
+      ConstraintHelper.ReqGeneralValue('atmos', '사기', '>=', 20),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
@@ -73,7 +73,6 @@ export class TrainCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
 
     // 성공률 계산 (성공 34%, 보통 33%, 실패 33%)
@@ -89,7 +88,9 @@ export class TrainCommand extends GeneralCommand {
     );
 
     const logger = general.getLogger();
-    const armTypeText = '병종'; // TODO: GameUnitConst.allType
+    
+    const crewTypeObj = general.getCrewTypeObj();
+    const armTypeText = crewTypeObj?.name || '병종';
 
     // 결과 로그
     if (pick === 'fail') {

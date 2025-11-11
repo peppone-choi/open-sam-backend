@@ -56,7 +56,7 @@ export class GetNationListService {
       }
 
       // Get all generals ordered by dedication DESC
-      const generals = (await generalRepository.findBySession(sessionId).exec())
+      const generals = (await generalRepository.findBySession(sessionId))
         .sort((a, b) => ((b.data as any)?.dedication || 0) - ((a.data as any)?.dedication || 0));
 
       // Add generals to their nations

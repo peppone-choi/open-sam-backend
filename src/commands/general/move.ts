@@ -1,6 +1,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 이동 커맨드
@@ -22,9 +23,14 @@ export class MoveCommand extends GeneralCommand {
     if (!('destCityID' in this.arg)) {
       return false;
     }
-    // TODO: CityConst.all() 검증
+    
+    const destCityID = this.arg.destCityID;
+    if (typeof destCityID !== 'number' || destCityID <= 0) {
+      return false;
+    }
+    
     this.arg = {
-      destCityID: this.arg.destCityID
+      destCityID: destCityID
     };
     return true;
   }
@@ -36,9 +42,8 @@ export class MoveCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
@@ -51,11 +56,9 @@ export class MoveCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
     
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotSameDestCity(),
-      // NearCity(1),
-      // ReqGeneralGold(reqGold),
-      // ReqGeneralRice(reqRice),
+      ConstraintHelper.NotSameDestCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
     ];
   }
 
@@ -105,7 +108,6 @@ export class MoveCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
 
@@ -125,9 +127,23 @@ export class MoveCommand extends GeneralCommand {
 
     // 군주이고 국가 레벨이 0이면 전체 병력 이동
     if (general.getVar('officer_level') === 12 && this.nation.level === 0) {
-      // TODO: 전체 장수 이동 로직
-      // const generalList = await General.find({ nation: general.getNationID(), no: { $ne: general.getID() } });
-      // generalList.forEach(g => g.city = destCityID);
+      try {
+        const sessionId = general.getSessionID();
+        const nationID = general.getNationID();
+        
+        await generalRepository.updateManyByFilter(
+          {
+            session_id: sessionId,
+            'data.nation': nationID,
+            'data.no': { $ne: general.getID() }
+          },
+          {
+            'data.city': destCityID
+          }
+        );
+      } catch (error) {
+        console.error('방랑군 전체 이동 실패:', error);
+      }
     }
 
     // 경험치 증가
@@ -145,8 +161,25 @@ export class MoveCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(MoveCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(MoveCommand.actionName),
+        general,
+        sessionId,
+        '이동'
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

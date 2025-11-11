@@ -48,6 +48,15 @@ class SessionRepository {
   }
 
   /**
+   * 필터 조건으로 세션 조회
+   * @param filter - MongoDB 필터 조건
+   * @returns 조회된 세션 목록
+   */
+  async findByFilter(filter: any) {
+    return Session.find(filter);
+  }
+
+  /**
    * 모든 세션 조회 (상태 무관)
    * @returns 모든 세션 목록
    */

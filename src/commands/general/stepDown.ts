@@ -5,6 +5,9 @@ import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 export class StepDownCommand extends GeneralCommand {
   protected static actionName = '하야';
@@ -18,9 +21,8 @@ export class StepDownCommand extends GeneralCommand {
     this.setNation();
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // NotBeNeutral(),
-      // NotLord(),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.NotLord(),
     ];
   }
 
@@ -41,9 +43,9 @@ export class StepDownCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
+    const sessionId = general.getSessionID();
     const date = general.getTurnTime('HM');
     const generalID = general.getID();
     const generalName = general.getName();
@@ -63,8 +65,8 @@ export class StepDownCommand extends GeneralCommand {
     general.setVar('dedication', general.getVar('dedication') * (1 - 0.1 * general.getVar('betray')));
     general.addDedication(0, false);
     
-    // TODO: increaseVarWithLimit with GameConst.$maxBetrayCnt
-    general.increaseVarWithLimit('betray', 1, null, 10);
+    const maxBetrayCnt = GameConst.maxBetrayCnt || 10;
+    general.increaseVarWithLimit('betray', 1, null, maxBetrayCnt);
     general.setVar('permission', 'normal');
 
     const newGold = Util.valueFit(general.getVar('gold'), null, GameConst.defaultGold);
@@ -76,13 +78,19 @@ export class StepDownCommand extends GeneralCommand {
     general.setVar('gold', newGold);
     general.setVar('rice', newRice);
 
-    await db.update('nation', {
-      gold: db.sqleval('gold + ?', [lostGold]),
-      rice: db.sqleval('rice + ?', [lostRice]),
-      gennum: db.sqleval('gennum - ?', [general.getNPCType() !== 5 ? 1 : 0])
-    }, 'nation = ?', [nationID]);
+    const currentNation = await nationRepository.findByNationNum(sessionId, nationID);
+    await nationRepository.updateByNationNum(sessionId, nationID, {
+      gold: (currentNation?.gold || 0) + lostGold,
+      rice: (currentNation?.rice || 0) + lostRice,
+      gennum: (currentNation?.gennum || 0) - (general.getNPCType() !== 5 ? 1 : 0)
+    });
 
-    // TODO: refreshNationStaticInfo()
+    try {
+      const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');
+      await refreshNationStaticInfo();
+    } catch (error) {
+      console.error('refreshNationStaticInfo 실패:', error);
+    }
 
     general.setVar('nation', 0);
     general.setVar('officer_level', 0);
@@ -91,20 +99,45 @@ export class StepDownCommand extends GeneralCommand {
     general.setVar('makelimit', 12);
 
     if (general.getVar('troop') === generalID) {
-      await db.update('general', {
-        troop: 0
-      }, 'troop = ?', [generalID]);
-      await db.delete('troop', 'troop_leader = ?', [generalID]);
+      await generalRepository.updateManyByFilter(
+        { session_id: sessionId, 'data.troop': generalID },
+        { 'data.troop': 0 }
+      );
+      
+      try {
+        const { troopRepository } = await import('../../repositories/troop.repository');
+        await troopRepository.deleteManyByFilter({
+          session_id: sessionId,
+          troop_leader: generalID
+        });
+      } catch (error) {
+        console.error('부대 삭제 실패:', error);
+      }
     }
     general.setVar('troop', 0);
 
-    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1)
-    // TODO: InheritanceKey.max_belong handling
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+      
+      if (general.getNPCType() < 2) {
+        const belongCount = general.getVar('belong') || 0;
+        general.setVar('max_belong', Math.max(belongCount, general.getVar('max_belong') || 0));
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
 
     this.setResultTurn(new LastTurn(StepDownCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // TODO: StaticEventHandler.handleEvent
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
     
     await this.saveGeneral();
 

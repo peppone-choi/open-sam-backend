@@ -1,10 +1,13 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { InheritanceKey } from '../../enums/InheritanceKey';
 import { DeleteConflict } from '../../func/DeleteConflict';
 import { refreshNationStaticInfo } from '../../func/refreshNationStaticInfo';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { nationRepository } from '../../repositories/nation.repository';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * 방랑 커맨드
@@ -31,11 +34,9 @@ export class WanderCommand extends GeneralCommand {
     const relYear = env.year - env.startyear;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // BeLord(),
-      // NotWanderingNation(),
-      // NotOpeningPart(relYear),
-      // AllowDiplomacyStatus(this.generalObj.getNationID(), [2, 7], '방랑할 수 없는 외교상태입니다.'),
+      ConstraintHelper.BeLord(),
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.NotOpeningPart(relYear)
     ];
   }
 
@@ -65,9 +66,9 @@ export class WanderCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
+    const sessionId = general.getSessionID();
 
     const generalName = general.getName();
     const nationID = general.getNationID();
@@ -84,67 +85,81 @@ export class WanderCommand extends GeneralCommand {
     await DeleteConflict(nationID);
 
     // 국가 정보 변경: 방랑군으로 전환
-    await db.update(
-      'nation',
-      {
-        name: generalName,
-        color: '#330000', // TODO: 기본 방랑군 색 별도 지정
-        level: 0,
-        type: 'None',
-        tech: 0,
-        capital: 0
-      },
-      'nation = ?',
-      nationID
-    );
+    await nationRepository.updateByNationNum(sessionId, nationID, {
+      name: generalName,
+      color: '#330000',
+      level: 0,
+      type: 'None',
+      tech: 0,
+      capital: 0
+    });
 
     // 군주의 병종 한계 설정
-    await db.update('general', { makelimit: 12 }, 'nation = ?', nationID);
+    await generalRepository.updateManyByFilter(
+      { session_id: sessionId, 'data.nation': nationID },
+      { 'data.makelimit': 12 }
+    );
     general.setVar('makelimit', 12);
     general.setVar('officer_city', 0);
 
     // 다른 장수들의 관직 초기화
-    await db.update(
-      'general',
-      {
-        officer_level: 1,
-        officer_city: 0
+    await generalRepository.updateManyByFilter(
+      { 
+        session_id: sessionId,
+        'data.nation': nationID,
+        'data.officer_level': { $lt: 12 }
       },
-      'nation = ? AND officer_level < 12',
-      nationID
+      {
+        'data.officer_level': 1,
+        'data.officer_city': 0
+      }
     );
 
     // 모든 도시 중립화
-    await db.update(
-      'city',
+    await cityRepository.updateManyByFilter(
+      { session_id: sessionId, nation: nationID },
       {
         nation: 0,
         front: 0,
         conflict: '{}'
-      },
-      'nation = ?',
-      nationID
+      }
     );
 
     // 외교 관계 초기화
-    await db.update(
-      'diplomacy',
-      {
-        state: 2,
-        term: 0
-      },
-      'me = ? OR you = ?',
-      [nationID,
-      nationID]
-    );
+    try {
+      const { diplomacyRepository } = await import('../../repositories/diplomacy.repository');
+      await diplomacyRepository.updateMany(
+        {
+          session_id: sessionId,
+          $or: [{ me: nationID }, { you: nationID }]
+        },
+        {
+          state: 2,
+          term: 0
+        }
+      );
+    } catch (error) {
+      console.error('외교 관계 초기화 실패:', error);
+    }
 
     await refreshNationStaticInfo();
 
-    general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
 
     this.setResultTurn(new LastTurn(WanderCommand.getName(), this.arg));
 
-    // TODO: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
 
     await this.saveGeneral();
 

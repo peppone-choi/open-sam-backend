@@ -109,6 +109,12 @@ export interface IFleet extends Document {
   // 진형
   formation: 'standard' | 'offensive' | 'defensive' | 'encircle' | 'retreat';
 
+  // 전투 자세 (StanceChange 명령에서 사용)
+  combatStance?: 'aggressive' | 'defensive' | 'balanced' | 'hold_fire' | 'evasive';
+
+  // 커스텀 데이터 (tactical commands 등에서 사용)
+  customData?: any;
+
   // 상태
   status: 'idle' | 'moving' | 'combat' | 'retreating' | 'docked' | 'destroyed';
 
@@ -128,7 +134,7 @@ export interface IFleet extends Document {
 
 const FleetSchema = new Schema<IFleet>(
   {
-    session_id: { type: String, required: true, index: true },
+    session_id: { type: String, required: true },
     fleetId: { type: String, required: true },
 
     name: { type: String, required: true },
@@ -222,6 +228,14 @@ const FleetSchema = new Schema<IFleet>(
       enum: ['standard', 'offensive', 'defensive', 'encircle', 'retreat'],
       default: 'standard',
     },
+
+    combatStance: {
+      type: String,
+      enum: ['aggressive', 'defensive', 'balanced', 'hold_fire', 'evasive'],
+      default: 'balanced',
+    },
+
+    customData: { type: Schema.Types.Mixed },
 
     status: {
       type: String,

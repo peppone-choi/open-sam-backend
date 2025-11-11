@@ -43,6 +43,7 @@ export interface INation {
 export interface IConstraint {
   test: (input: IConstraintInput, env: any) => string | null;
   reason?: string;
+  message?: string;
 }
 
 export interface IConstraintInput {
@@ -260,24 +261,56 @@ export abstract class BaseCommand {
 
   protected async setDestCity(cityNo: number, onlyName: boolean = false): Promise<void> {
     this.resetTestCache();
-    // TODO: Implement city lookup
-    this.destCity = {
-      city: cityNo,
-      name: `City_${cityNo}`,
-      nation: 0,
-      pop: 0,
-      agri: 0,
-      comm: 0,
-      secu: 0,
-      def: 0,
-      wall: 0,
-      trust: 0
-    };
+    
+    try {
+      const { cityRepository } = await import('../../repositories/city.repository');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      
+      const cityDoc = await cityRepository.findOneByFilter({
+        session_id: sessionId,
+        city: cityNo
+      });
+      
+      if (cityDoc && cityDoc.data) {
+        this.destCity = cityDoc.data;
+      } else {
+        this.destCity = {
+          city: cityNo,
+          name: `City_${cityNo}`,
+          nation: 0,
+          pop: 0,
+          agri: 0,
+          comm: 0,
+          secu: 0,
+          def: 0,
+          wall: 0,
+          trust: 0
+        };
+      }
+    } catch (error) {
+      console.error('setDestCity 실패:', error);
+      this.destCity = null;
+    }
   }
 
   protected async setDestNation(nationID: number, args: string[] | null = null): Promise<void> {
     this.resetTestCache();
-    // TODO: Implement nation lookup
+    
+    try {
+      const { nationRepository } = await import('../../repositories/nation.repository');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      
+      const nationDoc = await nationRepository.findByNationNum(sessionId, nationID);
+      
+      if (nationDoc && nationDoc.data) {
+        this.destNation = nationDoc.data;
+      } else {
+        this.destNation = null;
+      }
+    } catch (error) {
+      console.error('setDestNation 실패:', error);
+      this.destNation = null;
+    }
   }
 
   protected abstract init(): void;
@@ -335,18 +368,23 @@ export abstract class BaseCommand {
   public abstract getNextAvailableTurn(): Promise<number | null>;
   public abstract setNextAvailable(yearMonth?: number | null): Promise<void>;
 
-  protected testPostReqTurn(): [string, string] | null {
+  protected async testPostReqTurn(): Promise<[string, string] | null> {
     if (!this.getPostReqTurn()) {
       return null;
     }
 
-    const nextAvailableTurn = this.getNextAvailableTurn();
+    const nextAvailableTurn = await this.getNextAvailableTurn();
     if (nextAvailableTurn === null) {
       return null;
     }
 
     const yearMonth = this.joinYearMonth(this.env.year, this.env.month);
-    // TODO: handle Promise properly
+    
+    if (nextAvailableTurn > yearMonth) {
+      const remainingMonths = nextAvailableTurn - yearMonth;
+      return ['대기 기간이 남았습니다', `${remainingMonths}개월 후 사용 가능`];
+    }
+    
     return null;
   }
 
@@ -367,9 +405,20 @@ export abstract class BaseCommand {
       return this.reasonNoPermissionToReserve;
     }
 
-    // TODO: Implement constraint testing
+    // Constraint testing 구현
+    for (const constraint of this.permissionConstraints) {
+      if (constraint && typeof constraint.test === 'function') {
+        const result = constraint.test(this.generalObj?.data || {}, this.env);
+        if (!result) {
+          this.reasonNoPermissionToReserve = constraint.reason || constraint.message || '권한이 없습니다';
+          this.cachedPermissionToReserve = true;
+          return this.reasonNoPermissionToReserve;
+        }
+      }
+    }
+    
     this.cachedPermissionToReserve = true;
-    return this.reasonNoPermissionToReserve;
+    return null;
   }
 
   public canDisplay(): boolean {
@@ -390,9 +439,20 @@ export abstract class BaseCommand {
       return this.reasonNotMinConditionMet;
     }
 
-    // TODO: Implement constraint testing
+    // Constraint testing 구현
+    for (const constraint of this.minConditionConstraints) {
+      if (constraint && typeof constraint.test === 'function') {
+        const result = constraint.test(this.generalObj?.data || {}, this.env);
+        if (!result) {
+          this.reasonNotMinConditionMet = constraint.reason || constraint.message || '조건을 만족하지 않습니다';
+          this.cachedMinConditionMet = true;
+          return this.reasonNotMinConditionMet;
+        }
+      }
+    }
+    
     this.cachedMinConditionMet = true;
-    return this.reasonNotMinConditionMet;
+    return null;
   }
 
   public testFullConditionMet(): string | null {
@@ -410,9 +470,20 @@ export abstract class BaseCommand {
       return this.reasonNotFullConditionMet;
     }
 
-    // TODO: Implement constraint testing
+    // Constraint testing 구현
+    for (const constraint of this.fullConditionConstraints) {
+      if (constraint && typeof constraint.test === 'function') {
+        const result = constraint.test(this.generalObj?.data || {}, this.env);
+        if (!result) {
+          this.reasonNotFullConditionMet = constraint.reason || constraint.message || '조건을 만족하지 않습니다';
+          this.cachedFullConditionMet = true;
+          return this.reasonNotFullConditionMet;
+        }
+      }
+    }
+    
     this.cachedFullConditionMet = true;
-    return this.reasonNotFullConditionMet;
+    return null;
   }
 
   public getTermString(): string {

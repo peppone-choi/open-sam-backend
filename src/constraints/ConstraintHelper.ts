@@ -1,6 +1,7 @@
 export interface IConstraint {
   test: (input: any, env: any) => string | null;
   reason?: string;
+  message?: string;
 }
 
 export interface Constraint extends IConstraint {}
@@ -465,6 +466,14 @@ export class ConstraintHelper {
     };
   }
 
+  static NotNeutralDestCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        return input.destCity?.nation !== 0 ? null : '중립 도시입니다.';
+      }
+    };
+  }
+
   static CheckNationNameDuplicate(nationName: string): IConstraint {
     return {
       test: (input: any, env: any) => {
@@ -480,6 +489,169 @@ export class ConstraintHelper {
       test: (input: any, env: any) => {
         const relYear = env?.year - env?.startyear;
         return relYear < years ? null : `초반 기간이 지났습니다.`;
+      }
+    };
+  }
+
+  static ReqCityTrust(minTrust: number, message?: string): IConstraint {
+    const actualMessage = message || `도시 신뢰도가 부족합니다. (필요: ${minTrust})`;
+    return {
+      test: (input: any, env: any) => {
+        const city = input.city;
+        return (city?.trust || 0) >= minTrust ? null : actualMessage;
+      }
+    };
+  }
+
+  static ReqGeneralCrewMargin(crewTypeId?: number, message?: string): IConstraint {
+    const actualMessage = message || '병력이 최대치입니다.';
+    return {
+      test: (input: any, env: any) => {
+        const general = input.general;
+        if (!general) return actualMessage;
+        
+        const leadership = general.getLeadership?.(true) || general.getVar?.('leadership') || 0;
+        const maxCrew = leadership * 100;
+        const currentCrew = general.getVar?.('crew') || 0;
+        
+        return currentCrew < maxCrew ? null : actualMessage;
+      }
+    };
+  }
+
+  static AvailableRecruitCrewType(crewTypeId: number, message?: string): IConstraint {
+    const actualMessage = message || '해당 병종을 징병할 수 없습니다.';
+    return {
+      test: (input: any, env: any) => {
+        try {
+          // 병종 데이터 로드
+          const fs = require('fs');
+          const path = require('path');
+          const scenarioId = env.scenario_id || 'sangokushi';
+          const unitsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/units.json');
+          
+          if (!fs.existsSync(unitsPath)) {
+            // units.json이 없으면 통과 (기본 병종)
+            return null;
+          }
+          
+          const unitsData = JSON.parse(fs.readFileSync(unitsPath, 'utf-8'));
+          const unitData = unitsData.units?.[crewTypeId.toString()];
+          
+          if (!unitData) {
+            // 병종 데이터가 없으면 통과
+            return null;
+          }
+          
+          // constraints 확인
+          const constraints = unitData.constraints || [];
+          
+          for (const constraint of constraints) {
+            // 1. 절대 징병 불가
+            if (constraint.type === 'impossible') {
+              return `${unitData.name}은(는) 징병할 수 없습니다.`;
+            }
+            
+            // 2. 기술 레벨 요구
+            if (constraint.type === 'reqTech') {
+              const requiredTech = constraint.value;
+              const currentTech = input.nation?.tech || 0;
+              
+              if (currentTech < requiredTech) {
+                return `${unitData.name}은(는) 기술 레벨 ${requiredTech} 이상이 필요합니다. (현재: ${currentTech})`;
+              }
+            }
+            
+            // 3. 특정 도시에서만 징병 가능
+            if (constraint.type === 'reqCities') {
+              const requiredCity = constraint.value;
+              const currentCity = input.city;
+              
+              if (!currentCity || currentCity.name !== requiredCity) {
+                return `${unitData.name}은(는) ${requiredCity}에서만 징병할 수 있습니다.`;
+              }
+            }
+            
+            // 4. 특정 지역에서만 징병 가능
+            if (constraint.type === 'reqRegions') {
+              const requiredRegion = constraint.value;
+              const currentCity = input.city;
+              
+              if (!currentCity) {
+                return `${unitData.name}은(는) ${requiredRegion} 지역에서만 징병할 수 있습니다.`;
+              }
+              
+              // 지역 정보 로드
+              const regionsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/regions.json');
+              if (fs.existsSync(regionsPath)) {
+                const regionsData = JSON.parse(fs.readFileSync(regionsPath, 'utf-8'));
+                const regions = regionsData.regions || [];
+                
+                // 현재 도시가 속한 지역 찾기
+                let currentRegionName = null;
+                for (const region of regions) {
+                  if (region.cities && region.cities.includes(currentCity.name)) {
+                    currentRegionName = region.name;
+                    break;
+                  }
+                }
+                
+                if (currentRegionName !== requiredRegion) {
+                  return `${unitData.name}은(는) ${requiredRegion} 지역에서만 징병할 수 있습니다.`;
+                }
+              }
+            }
+            
+            // 5. 국가 타입 잠금 해제 요구
+            if (constraint.type === 'country_type_unlock') {
+              const requiredType = constraint.value;
+              const currentNation = input.nation;
+              
+              if (!currentNation) {
+                return `${unitData.name}은(는) 특정 국가 형태에서만 징병할 수 있습니다.`;
+              }
+              
+              // 국가의 country_type 확인
+              const countryType = currentNation.country_type || currentNation.data?.country_type;
+              
+              if (countryType !== requiredType) {
+                const typeNames: Record<string, string> = {
+                  'taiping': '태평도',
+                  'bandits': '도적',
+                  'mohism': '묵가',
+                  'militarism': '병가',
+                  'taoism': '도가',
+                  'taoism_religious': '오두미도',
+                  'confucianism': '유가',
+                  'legalism': '법가',
+                  'logicians': '명가',
+                  'diplomatists': '종횡가',
+                  'yinyang': '음양가',
+                  'buddhism': '불가',
+                  'virtue': '덕가'
+                };
+                const typeName = typeNames[requiredType] || requiredType;
+                return `${unitData.name}은(는) ${typeName} 국가에서만 징병할 수 있습니다.`;
+              }
+            }
+            
+            // 6. 특정 국가에서만 징병 가능 (국가 ID)
+            if (constraint.type === 'reqNation') {
+              const requiredNation = constraint.value;
+              const currentNation = input.general?.getNationID();
+              
+              if (currentNation !== requiredNation) {
+                return `${unitData.name}은(는) 특정 국가에서만 징병할 수 있습니다.`;
+              }
+            }
+          }
+          
+          return null;
+        } catch (error) {
+          // 에러 발생 시 통과 (하위 호환성)
+          console.error('[AvailableRecruitCrewType] Error:', error);
+          return null;
+        }
       }
     };
   }

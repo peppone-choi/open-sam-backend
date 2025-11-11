@@ -1,6 +1,8 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * NPC 능동 커맨드
@@ -23,7 +25,6 @@ export class NpcAutoCommand extends GeneralCommand {
       if (!('destCityID' in this.arg)) {
         return false;
       }
-      // TODO: CityConst.byID 검증
       const destCityID = this.arg.destCityID;
       if (typeof destCityID !== 'number' || destCityID <= 0) {
         return false;
@@ -42,8 +43,7 @@ export class NpcAutoCommand extends GeneralCommand {
     this.setNation();
 
     this.permissionConstraints = [
-      // TODO: ConstraintHelper
-      // MustBeNPC()
+      ConstraintHelper.Custom((input: any, env: any) => input.npc >= 2, 'NPC 전용 커맨드입니다')
     ];
 
     this.fullConditionConstraints = [];
@@ -70,22 +70,37 @@ export class NpcAutoCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const general = this.generalObj;
     const logger = general.getLogger();
     const date = general.getTurnTime('HM');
+    const sessionId = general.getSessionID();
 
     if (this.arg.optionText === '순간이동') {
       const destCityID = this.arg.destCityID;
-      // TODO: CityConst.byID로 도시 이름 가져오기
-      const cityName = `도시${destCityID}`;
+      
+      let cityName = `도시${destCityID}`;
+      try {
+        const city = await cityRepository.findByCityNum(sessionId, destCityID);
+        if (city && typeof city === 'object' && 'name' in city) {
+          cityName = (city as any).name || cityName;
+        }
+      } catch (error) {
+        console.error('도시 이름 조회 실패:', error);
+      }
+      
       logger.pushGeneralActionLog(`NPC 전용 명령을 이용해 ${cityName}로 이동했습니다.`);
       general.setVar('city', destCityID);
 
       this.setResultTurn(new LastTurn(NpcAutoCommand.getName(), this.arg));
     }
 
-    // TODO: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     await this.saveGeneral();
 
     return true;

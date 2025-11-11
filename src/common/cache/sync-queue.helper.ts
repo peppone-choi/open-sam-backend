@@ -1,4 +1,5 @@
 import { CacheManager } from '../../cache/CacheManager';
+import { logger } from '../logger';
 
 const cacheManager = CacheManager.getInstance();
 
@@ -34,9 +35,14 @@ export async function addToSyncQueue(
       queueItem,
       86400 // 24시간 TTL
     );
-  } catch (error) {
+  } catch (error: any) {
     // 큐 추가 실패해도 Redis 저장은 성공했으므로 계속 진행
-    console.error('동기화 큐 추가 실패', error);
+    logger.error('동기화 큐 추가 실패', {
+      type,
+      id,
+      message: error?.message,
+      stack: error?.stack
+    });
   }
 }
 
@@ -64,8 +70,12 @@ export async function scanSyncQueue(
     }
     
     return items;
-  } catch (error) {
-    console.error('동기화 큐 스캔 실패', error);
+  } catch (error: any) {
+    logger.error('동기화 큐 스캔 실패', {
+      pattern,
+      message: error?.message,
+      stack: error?.stack
+    });
     return [];
   }
 }
@@ -76,8 +86,12 @@ export async function scanSyncQueue(
 export async function getSyncQueueItem(key: string): Promise<any | null> {
   try {
     return await cacheManager.getL2(key);
-  } catch (error) {
-    console.error('동기화 큐 아이템 조회 실패', error);
+  } catch (error: any) {
+    logger.error('동기화 큐 아이템 조회 실패', {
+      key,
+      message: error?.message,
+      stack: error?.stack
+    });
     return null;
   }
 }
@@ -88,7 +102,11 @@ export async function getSyncQueueItem(key: string): Promise<any | null> {
 export async function removeFromSyncQueue(key: string): Promise<void> {
   try {
     await cacheManager.delete(key);
-  } catch (error) {
-    console.error('동기화 큐 제거 실패', error);
+  } catch (error: any) {
+    logger.error('동기화 큐 제거 실패', {
+      key,
+      message: error?.message,
+      stack: error?.stack
+    });
   }
 }

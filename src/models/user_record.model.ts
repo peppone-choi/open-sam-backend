@@ -12,7 +12,7 @@ export interface IUserRecord extends Document {
 }
 
 const UserRecordSchema = new Schema<IUserRecord>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   user_id: { type: String, required: true, index: true },
   log_type: { type: String, required: true },
   text: { type: String, required: true },

@@ -3,6 +3,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { General } from '../../models/general.model';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 장수를 따라 임관 커맨드
@@ -48,15 +49,13 @@ export class RecruitGeneralCommand extends GeneralCommand {
     const relYear = this.env.year - this.env.startyear;
 
     this.permissionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom')
+      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '임관 모드가 아닙니다.')
     ];
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // BeNeutral(),
-      // AllowJoinAction()
+      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '임관 모드가 아닙니다.'),
+      ConstraintHelper.BeNeutral(),
+      ConstraintHelper.AllowJoinAction()
     ];
   }
 
@@ -77,12 +76,11 @@ export class RecruitGeneralCommand extends GeneralCommand {
     const relYear = this.env.year - this.env.startyear;
 
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqEnvValue('join_mode', '!=', 'onlyRandom'),
-      // BeNeutral(),
-      // ExistsDestNation(),
-      // AllowJoinDestNation(relYear),
-      // AllowJoinAction()
+      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '임관 모드가 아닙니다.'),
+      ConstraintHelper.BeNeutral(),
+      ConstraintHelper.ExistsDestNation(),
+      ConstraintHelper.AllowJoinDestNation(relYear),
+      ConstraintHelper.AllowJoinAction()
     ];
   }
 
@@ -108,10 +106,9 @@ export class RecruitGeneralCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    // TODO: Legacy DB access - const db = DB.db();
     const env = this.env;
-
     const general = this.generalObj;
+    const sessionId = general.getSessionID();
     const date = general.getTurnTime('HM');
     const generalName = general.getName();
 
@@ -142,44 +139,92 @@ export class RecruitGeneralCommand extends GeneralCommand {
     if (this.destGeneralObj !== null) {
       general.setVar('city', this.destGeneralObj.getCityID());
     } else {
-      const targetCityID = await db('general')
-        .where('nation', destNationID)
-        .where('officer_level', 12)
-        .first()
-        .then((r: any) => r?.city);
+      const lordGeneral = await generalRepository.findOneByFilter({
+        session_id: sessionId,
+        'data.nation': destNationID,
+        'data.officer_level': 12
+      });
+      const targetCityID = lordGeneral?.data?.city || destNation.capital || 0;
       general.setVar('city', targetCityID);
     }
 
-    await db('nation')
-      .where('nation', destNationID)
-      .update({
-        gennum: db.raw('gennum + 1'),
-      });
+    await nationRepository.updateByNationNum(sessionId, destNationID, {
+      gennum: (destNation.gennum || 0) + 1
+    });
 
-    // TODO: refreshNationStaticInfo
-    // TODO: InheritancePoint
+    try {
+      const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');
+      await refreshNationStaticInfo();
+    } catch (error) {
+      console.error('refreshNationStaticInfo 실패:', error);
+    }
+
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
+
     general.addExperience(exp);
     this.setResultTurn(new LastTurn(RecruitGeneralCommand.getName(), this.arg));
     general.checkStatChange();
-    // TODO: StaticEventHandler
-    // TODO: tryUniqueItemLottery
+
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      await tryUniqueItemLottery(
+        general.genGenericUniqueRNG(RecruitGeneralCommand.actionName),
+        general
+      );
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
+
     await this.saveGeneral();
 
     return true;
   }
 
   public async exportJSVars(): Promise<any> {
-    // TODO: Legacy DB access - const db = DB.db();
-    const destRawGenerals = await db('general')
-      .where('no', '!=', this.generalObj.getID())
-      .orderBy(['npc', db.raw('BINARY(name)')])
-      .select('no', 'name', 'nation', 'officer_level', 'npc', 'leadership', 'strength', 'intel');
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    const generals = await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.no': { $ne: this.generalObj.getID() }
+    });
+    
+    const destRawGenerals = generals.map(g => ({
+      no: g.data?.no,
+      name: g.data?.name,
+      nationID: g.data?.nation,
+      officerLevel: g.data?.officer_level,
+      npc: g.data?.npc,
+      leadership: g.data?.leadership,
+      strength: g.data?.strength,
+      intel: g.data?.intel
+    })).sort((a, b) => {
+      if (a.npc !== b.npc) return (a.npc || 0) - (b.npc || 0);
+      return (a.name || '').localeCompare(b.name || '');
+    });
 
-    // TODO: 국가 목록 및 스카우트 메시지
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    const nationList = nations.map(n => ({
+      nation: n.nation || n.data?.nation,
+      name: n.name || n.data?.name,
+      color: n.color || n.data?.color
+    }));
 
     return {
       procRes: {
-        nationList: [],
+        nationList,
         generals: destRawGenerals,
         generalsKey: ['no', 'name', 'nationID', 'officerLevel', 'npc', 'leadership', 'strength', 'intel'],
       },

@@ -28,17 +28,37 @@ export class MongoConnection {
     console.log('🔌 MongoDB URI:', mongoUri);
 
     try {
-      await mongoose.connect(mongoUri);
+      await mongoose.connect(mongoUri, {
+        // 자동 재연결 설정
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
       this.isConnected = true;
       logger.info('MongoDB connected successfully');
 
       mongoose.connection.on('error', (error) => {
         logger.error('MongoDB connection error:', error);
+        this.isConnected = false;
       });
 
       mongoose.connection.on('disconnected', () => {
         this.isConnected = false;
-        logger.warn('MongoDB disconnected');
+        logger.warn('MongoDB disconnected - attempting to reconnect...');
+        
+        // 자동 재연결 시도 (5초 후)
+        setTimeout(() => {
+          if (!this.isConnected) {
+            logger.info('Attempting MongoDB reconnection...');
+            this.connect(mongoUri).catch(err => {
+              logger.error('MongoDB reconnection failed:', err);
+            });
+          }
+        }, 5000);
+      });
+
+      mongoose.connection.on('reconnected', () => {
+        this.isConnected = true;
+        logger.info('MongoDB reconnected successfully');
       });
     } catch (error) {
       logger.error('MongoDB connection failed:', error);

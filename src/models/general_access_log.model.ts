@@ -11,7 +11,7 @@ export interface IGeneralAccessLog extends Document {
 }
 
 const GeneralAccessLogSchema = new Schema<IGeneralAccessLog>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

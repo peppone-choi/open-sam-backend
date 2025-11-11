@@ -11,7 +11,7 @@ export interface IStatistic extends Document {
 }
 
 const StatisticSchema = new Schema<IStatistic>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

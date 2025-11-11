@@ -11,7 +11,7 @@ export interface INationTurn extends Document {
 }
 
 const NationTurnSchema = new Schema<INationTurn>({
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true,

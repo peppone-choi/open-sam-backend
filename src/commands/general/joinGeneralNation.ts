@@ -180,11 +180,14 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     if (this.destGeneral) {
       general.setVar('city', this.destGeneral.data?.city || this.destGeneral.data?.location || 0);
     } else {
-      // TODO: 국가의 수도를 찾아서 설정
-      const capitalCity = await db.queryFirst('SELECT city FROM general WHERE nation = ? AND officer_level = 12', [destNationID]);
-      if (capitalCity) {
-        general.setVar('city', capitalCity.city);
-      }
+      const sessionId = general.getSessionID();
+      const lordGeneral = await generalRepository.findOneByFilter({
+        session_id: sessionId,
+        'data.nation': destNationID,
+        'data.officer_level': 12
+      });
+      const capital = lordGeneral?.data?.city || this.destNation?.capital || 1;
+      general.setVar('city', capital);
     }
 
     await db.update(
@@ -196,9 +199,20 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       destNationID
     );
 
-    // TODO: refreshNationStaticInfo 구현
+    try {
+      const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');
+      await refreshNationStaticInfo();
+    } catch (error) {
+      console.error('refreshNationStaticInfo 실패:', error);
+    }
 
-    // TODO: increaseInheritancePoint 구현
+    try {
+      if (typeof general.increaseInheritancePoint === 'function') {
+        general.increaseInheritancePoint('active_action', 1);
+      }
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     // general.increaseInheritancePoint(InheritanceKey.active_action, 1);
 
     general.addExperience(exp);
@@ -235,13 +249,37 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     return true;
   }
 
-  public exportJSVars(): Record<string, any> {
-    // TODO: 구현
-    return {};
+  public async exportJSVars(): Promise<Record<string, any>> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const currentGeneralID = this.generalObj.getID();
+    
+    const generals = await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.no': { $ne: currentGeneralID },
+      'data.officer_level': 12
+    });
+    
+    const generalList = generals.map(g => ({
+      no: g.data?.no,
+      name: g.data?.name,
+      nationID: g.data?.nation,
+      officerLevel: g.data?.officer_level,
+      npc: g.data?.npc,
+      leadership: g.data?.leadership,
+      strength: g.data?.strength,
+      intel: g.data?.intel
+    }));
+    
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    const nationList = nations.map(n => ({
+      nation: n.nation || n.data?.nation,
+      name: n.name || n.data?.name
+    }));
+    
     return {
       procRes: {
-        nationList: [],
-        generals: [],
+        nationList,
+        generals: generalList,
         generalsKey: ['no', 'name', 'nationID', 'officerLevel', 'npc', 'leadership', 'strength', 'intel']
       }
     };

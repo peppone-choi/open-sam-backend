@@ -25,13 +25,13 @@ class CacheService {
    * 
    * @param key - 캐시 키
    * @param loader - DB에서 데이터를 로드하는 함수
-   * @param ttl - L2 캐시 TTL (초 단위, 기본 60초). L1은 항상 10초
+   * @param ttl - L2 캐시 TTL (초 단위, 기본 360초). L1은 항상 3초
    * @returns 캐시된 데이터 또는 DB에서 로드된 데이터
    */
   async getOrLoad<T>(
     key: string,
     loader: () => Promise<T>,
-    ttl: number = 60
+    ttl: number = 360
   ): Promise<T | null> {
     try {
       // 1. L1 캐시 조회 (메모리)
@@ -56,9 +56,9 @@ class CacheService {
 
       // 4. DB 조회 후 L2와 L1 모두 업데이트
       if (data !== null && data !== undefined) {
-        // L2에 저장 (긴 TTL)
+        // L2에 저장 (긴 TTL - 360초)
         await cacheManager.setL2(key, data, ttl);
-        // L1에 저장 (10초 TTL)
+        // L1에 저장 (3초 TTL - 빠른 갱신)
         await cacheManager.setL1(key, data);
         logger.debug('L1, L2 캐시 저장 완료', { key, ttl });
       }

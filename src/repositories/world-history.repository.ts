@@ -97,6 +97,15 @@ class WorldHistoryRepository {
   async deleteBySession(sessionId: string): Promise<DeleteResult> {
     return WorldHistory.deleteMany({ session_id: sessionId });
   }
+
+  /**
+   * 조건으로 여러 히스토리 삭제 (alias)
+   * @param filter - 삭제 조건
+   * @returns 삭제 결과
+   */
+  async deleteManyByFilter(filter: any): Promise<DeleteResult> {
+    return WorldHistory.deleteMany(filter);
+  }
 }
 
 /**

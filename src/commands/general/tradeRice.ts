@@ -2,6 +2,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { Util } from '../../utils/Util';
 import { GameConst } from '../../const/GameConst';
 
@@ -48,21 +49,24 @@ export class TradeRiceCommand extends GeneralCommand {
     this.setNation();
 
     this.minConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqCityTrader(general.getNPCType()),
-      // OccupiedCity(true),
-      // SuppliedCity(),
+      ConstraintHelper.ReqCityTrader(this.generalObj.getNPCType()),
+      ConstraintHelper.OccupiedCity(true),
+      ConstraintHelper.SuppliedCity(),
     ];
   }
 
   protected initWithArg(): void {
     this.fullConditionConstraints = [
-      // TODO: ConstraintHelper
-      // ReqCityTrader(general.getNPCType()),
-      // OccupiedCity(true),
-      // SuppliedCity(),
-      // this.arg.buyRice ? ReqGeneralGold(1) : ReqGeneralRice(1),
+      ConstraintHelper.ReqCityTrader(this.generalObj.getNPCType()),
+      ConstraintHelper.OccupiedCity(true),
+      ConstraintHelper.SuppliedCity(),
     ];
+    
+    if (this.arg.buyRice) {
+      this.fullConditionConstraints.push(ConstraintHelper.ReqGeneralGold(1));
+    } else {
+      this.fullConditionConstraints.push(ConstraintHelper.ReqGeneralRice(1));
+    }
   }
 
   public getCost(): [number, number] {

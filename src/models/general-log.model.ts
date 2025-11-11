@@ -12,7 +12,7 @@ export interface IGeneralLog extends Document {
 
 const GeneralLogSchema: Schema = new Schema({
   id: { type: Number, required: true },
-  session_id: { type: String, required: true, index: true },
+  session_id: { type: String, required: true },
   general_id: { type: Number, required: true, index: true },
   log_type: { type: String, required: true, index: true },
   message: { type: String, default: '' },

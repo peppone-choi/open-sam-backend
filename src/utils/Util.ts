@@ -1,8 +1,18 @@
 export class Util {
   /**
-   * 년월을 정수로 결합 (PHP 호환)
+   * 년월을 정수로 결합 (PHP 호환) - 오버플로우 방지 추가
    */
   static joinYearMonth(year: number, month: number): number {
+    // 유효성 검증
+    if (month < 1 || month > 12) {
+      throw new Error(`Invalid month: ${month}. Must be between 1 and 12.`);
+    }
+    
+    const MAX_SAFE_YEAR = Math.floor((Number.MAX_SAFE_INTEGER + 1) / 12);
+    if (year > MAX_SAFE_YEAR || year < -MAX_SAFE_YEAR) {
+      throw new Error(`Year ${year} is out of safe range for month calculation`);
+    }
+    
     return year * 12 + month - 1;
   }
 

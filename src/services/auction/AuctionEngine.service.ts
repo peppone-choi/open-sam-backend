@@ -126,8 +126,8 @@ export async function registerAuction(sessionId: string, rng?: any): Promise<voi
     let totalRice = 0;
 
     for (const general of generals) {
-      totalGold += general.gold || 0;
-      totalRice += general.rice || 0;
+      totalGold += (general as any).gold || (general as any).data?.gold || 0;
+      totalRice += (general as any).rice || (general as any).data?.rice || 0;
     }
 
     const avgGold = Util.valueFit(Math.floor(totalGold / generals.length), 1000, 20000);

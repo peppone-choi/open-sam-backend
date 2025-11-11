@@ -23,11 +23,14 @@ export abstract class GeneralCommand extends BaseCommand {
       return null;
     }
     
-    // TODO: Legacy DB access - const db = DB.db();
-    // TODO: Implement KVStorage
-    // const lastExecuteStor = KVStorage.getStorage(db, 'next_execute');
-    // return lastExecuteStor.getValue(this.getNextExecuteKey());
-    return null;
+    // KVStorage 대신 general.data에 저장
+    try {
+      const key = this.getNextExecuteKey();
+      const value = this.generalObj?.data?._next_execute?.[key];
+      return value || null;
+    } catch (error) {
+      return null;
+    }
   }
 
   public async setNextAvailable(yearMonth: number | null = null): Promise<void> {
@@ -40,9 +43,16 @@ export abstract class GeneralCommand extends BaseCommand {
         + this.getPostReqTurn() - this.getPreReqTurn();
     }
     
-    // TODO: Legacy DB access - const db = DB.db();
-    // TODO: Implement KVStorage
-    // const lastExecuteStor = KVStorage.getStorage(db, 'next_execute');
-    // lastExecuteStor.setValue(this.getNextExecuteKey(), yearMonth);
+    // KVStorage 대신 general.data에 저장
+    try {
+      const key = this.getNextExecuteKey();
+      if (!this.generalObj.data._next_execute) {
+        this.generalObj.data._next_execute = {};
+      }
+      this.generalObj.data._next_execute[key] = yearMonth;
+      this.generalObj.markModified('data');
+    } catch (error) {
+      console.error('setNextAvailable 실패:', error);
+    }
   }
 }

@@ -31,11 +31,11 @@ export class GetContactListService {
       });
 
       for (const general of generals) {
-        const generalID = general.no || 0;
-        const generalName = general.name || '무명';
-        const nationID = general.nation || 0;
-        const officerLevel = general.officer_level || 0;
-        const npc = general.npc || 0;
+        const generalID = (general as any).no || 0;
+        const generalName = (general as any).name || '무명';
+        const nationID = (general as any).nation || 0;
+        const officerLevel = (general as any).officer_level || 0;
+        const npc = (general as any).npc || 0;
 
         if (!generalNations[nationID]) {
           generalNations[nationID] = [];

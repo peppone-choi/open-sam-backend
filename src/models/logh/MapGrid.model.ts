@@ -44,7 +44,7 @@ export interface IMapGrid extends Document {
 
 const MapGridSchema = new Schema<IMapGrid>(
   {
-    session_id: { type: String, required: true, index: true },
+    session_id: { type: String, required: true },
     
     name: { type: String, required: true },
     nameKo: { type: String },
