@@ -9,6 +9,7 @@ import { commandRepository } from '../../repositories/command.repository';
 import { logger } from '../../common/logger';
 import { Util } from '../../utils/Util';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
+import Redis from 'ioredis';
 
 const MAX_TURN = 30;
 const MAX_CHIEF_TURN = 12;
