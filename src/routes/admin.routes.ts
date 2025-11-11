@@ -288,83 +288,120 @@ router.post('/update-game', async (req, res) => {
       session.name = data.serverName || '';
       session.data.game_env.serverName = data.serverName || '';
     } else if (action === 'scenario') {
-      session.scenario_name = data.scenario || '';
       session.data.game_env.scenario = data.scenario || '';
     } else if (action === 'msg') {
-      session.data.game_env.msg = data.msg || '';
-      session.data.noticeMsg = data.msg || '';
-    } else if (action === 'log') {
-      // 중원정세 추가 (world_history 테이블에 추가해야 함)
-      // TODO: 구현 필요
-      console.log('[Admin] Add global log:', data.log);
-    } else if (action === 'starttime') {
-      // ⚠️ CRITICAL FIX: starttime 입력 검증 추가
-      try {
-        const { Util } = await import('../utils/Util');
-        
-        if (!data.starttime) {
-          session.data.game_env.starttime = new Date().toISOString();
-        } else {
-          // 날짜 유효성 검증
-          const inputDate = new Date(data.starttime);
-          
-          if (isNaN(inputDate.getTime())) {
-            return res.status(400).json({
-              result: false,
-              reason: 'Invalid date format for starttime'
-            });
-          }
-          
-          const now = new Date();
-          const tenYearsAgo = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000);
-          const oneYearFuture = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-          
-          // 10년 이전이거나 1년 이후면 거부
-          if (inputDate.getTime() < tenYearsAgo.getTime()) {
-            return res.status(400).json({
-              result: false,
-              reason: 'Starttime is too far in the past (more than 10 years ago)'
-            });
-          }
-          
-          if (inputDate.getTime() > oneYearFuture.getTime()) {
-            return res.status(400).json({
-              result: false,
-              reason: 'Starttime cannot be more than 1 year in the future'
-            });
-          }
-          
-          session.data.game_env.starttime = inputDate.toISOString();
-          console.log('[Admin] Starttime updated:', {
-            sessionId,
-            before: session.data.game_env.starttime,
-            after: inputDate.toISOString()
-          });
-        }
-      } catch (error: any) {
-        console.error('[Admin] Error setting starttime:', error);
+      // AdminGameSettings 서비스를 사용하여 관리자 메시지 설정
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setAdminMessage(sessionId, data.msg || '');
+      
+      if (!result.success) {
         return res.status(400).json({
           result: false,
-          reason: `Failed to set starttime: ${error.message}`
+          reason: result.message
         });
       }
-    } else if (action === 'maxgeneral') {
-      const newMax = parseInt(data.maxgeneral) || 300;
-      console.log('[Admin] Update maxgeneral:', {
-        sessionId,
-        before: session.data.game_env.maxgeneral,
-        newMax,
-        dataMaxgeneral: data.maxgeneral
+      
+      return res.json({
+        result: true,
+        message: result.message
       });
-      session.data.game_env.maxgeneral = newMax;
-      session.markModified('data.game_env');
+    } else if (action === 'log') {
+      // AdminGameSettings 서비스를 사용하여 전역 로그 추가
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.addGlobalLog(sessionId, data.log || '', req.user);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message
+      });
+    } else if (action === 'starttime') {
+      // AdminGameSettings 서비스를 사용하여 starttime 설정
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setStartTime(sessionId, data.starttime);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message
+      });
+    } else if (action === 'maxgeneral') {
+      // AdminGameSettings 서비스를 사용하여 maxgeneral 설정
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setMaxGeneral(sessionId, parseInt(data.maxgeneral) || 300);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message
+      });
     } else if (action === 'maxnation') {
-      session.data.game_env.maxnation = parseInt(data.maxnation) || 12;
+      // AdminGameSettings 서비스를 사용하여 maxnation 설정
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setMaxNation(sessionId, parseInt(data.maxnation) || 12);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message
+      });
     } else if (action === 'startyear') {
-      session.data.game_env.startyear = parseInt(data.startyear) || 220;
+      // AdminGameSettings 서비스를 사용하여 startyear 설정
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setStartYear(sessionId, parseInt(data.startyear) || 220);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message
+      });
     } else if (action === 'turnterm') {
-      session.data.game_env.turnterm = parseInt(data.turnterm) || 60;
-      session.data.turnterm = parseInt(data.turnterm) || 60;
+      // AdminGameSettings 서비스를 사용하여 turnterm 변경 (장수 턴타임 재계산 포함)
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setTurnTerm(sessionId, parseInt(data.turnterm) || 60);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      // 이미 setTurnTerm에서 session.save()를 했으므로 여기서는 다시 저장하지 않음
+      return res.json({
+        result: true,
+        message: result.message
+      });
     } else if (action === 'year') {
       session.data.year = data.year || session.data.year || 180;
     } else if (action === 'month') {
@@ -743,7 +780,21 @@ router.post('/update-time-control', async (req, res) => {
     session.data = session.data || {};
     
     if (action === 'turnterm') {
-      session.data.turnterm = data.turnterm || 1440;
+      // AdminGameSettings 서비스를 사용하여 turnterm 변경 (장수 턴타임 재계산 포함)
+      const { AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setTurnTerm(sessionId, parseInt(data.turnterm) || 60);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        reason: result.message
+      });
     } else if (action === 'lastExecuted') {
       session.data.lastExecuted = data.lastExecuted || new Date();
     }
