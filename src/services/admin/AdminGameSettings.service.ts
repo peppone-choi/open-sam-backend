@@ -225,15 +225,19 @@ export class AdminGameSettingsService {
       const month = gameEnv.month || 1;
       const turntime = gameEnv.turntime ? new Date(gameEnv.turntime) : new Date();
       
-      // ⚠️ CRITICAL FIX: 경과한 턴 수 계산 (오버플로우 방지)
+      // ⚠️ CRITICAL FIX: 경과한 턴 수 계산
+      // 현재 년/월로부터 경과한 게임 내 월 수를 계산하고, 이를 현실 턴 수로 변환
       let elapsedTurns: number;
       try {
         const currentMonths = Util.joinYearMonth(year, month);
         const startMonths = Util.joinYearMonth(startyear, 1);
-        elapsedTurns = currentMonths - startMonths;
+        const elapsedGameMonths = currentMonths - startMonths; // 게임 내 경과 월 수
+        
+        // 게임 내 1개월 = 현실 1턴이므로, 경과한 게임 월 수 = 경과한 턴 수
+        elapsedTurns = elapsedGameMonths;
         
         // 비정상적으로 큰 경과 턴 수 체크
-        const MAX_REASONABLE_TURNS = 10 * 365 * 24 * 60 / turnTerm; // 10년치
+        const MAX_REASONABLE_TURNS = 100 * 12; // 100년치 게임 시간
         if (elapsedTurns > MAX_REASONABLE_TURNS || elapsedTurns < 0) {
           throw new Error(`Elapsed turns ${elapsedTurns} is out of reasonable range`);
         }
