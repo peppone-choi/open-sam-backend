@@ -235,7 +235,6 @@ export class IssueOperationCommand extends BaseLoghCommand {
       // 모든 페이즈 완료
       operation.status = 'completed';
       commander.setVar('current_operation', operation);
-      console.log(`[LOGH] Operation "${operation.name}" completed!`);
       await commander.save();
       return;
     }

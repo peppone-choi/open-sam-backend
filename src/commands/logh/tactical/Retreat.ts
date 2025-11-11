@@ -316,8 +316,6 @@ export class RetreatTacticalCommand {
 
       await fleet.save();
 
-      console.log(`[LOGH] Fleet ${fleet.name} retreated from (${currentStrategicPos.x},${currentStrategicPos.y}) to (${newStrategicPos.x},${newStrategicPos.y})`);
-
       return true;
     }
 

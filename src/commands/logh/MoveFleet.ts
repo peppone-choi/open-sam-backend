@@ -158,8 +158,7 @@ export class MoveFleetCommand extends BaseLoghCommand {
           commander.setVar('target_position', null);
           commander.setVar('warp_turns_remaining', 0);
 
-          // 도착 알림 (로그에 기록)
-          console.log(`[LOGH] Fleet arrived at (${targetPos.x}, ${targetPos.y}, ${targetPos.z})`);
+          // 도착
         }
       }
 

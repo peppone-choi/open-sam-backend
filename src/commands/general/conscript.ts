@@ -344,9 +344,6 @@ export class ConscriptCommand extends GeneralCommand {
               } else if (currentCity.name !== requiredCity) {
                 notAvailable = true;
                 constraintReason = `${requiredCity}에서만 징병 가능`;
-                console.log(`[Conscript] ${unit.name} (${unit.id}) reqCities check: current=${currentCity.name}, required=${requiredCity}, notAvailable=${notAvailable}`);
-              } else {
-                console.log(`[Conscript] ${unit.name} (${unit.id}) reqCities check: PASSED (current=${currentCity.name})`);
               }
             }
             

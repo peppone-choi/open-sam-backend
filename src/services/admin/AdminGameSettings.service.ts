@@ -263,7 +263,40 @@ export class AdminGameSettingsService {
         gameEnv.starttime = newStarttimeCut.toISOString();
       }
       
+      const oldTurnTerm = gameEnv.turnterm || 60;
       gameEnv.turnterm = turnTerm;
+      
+      let updatedCount = 0;
+      
+      // ⚠️ CRITICAL: 모든 장수의 turntime 재계산 (PHP ServerTool::changeServerTerm 구현)
+      if (oldTurnTerm !== turnTerm) {
+        const { generalRepository } = await import('../../repositories/general.repository');
+        const servTurnTime = turntime;
+        const unitDiff = turnTerm / oldTurnTerm; // 새 턴타임 / 기존 턴타임
+        
+        console.log(`[AdminGameSettings] Recalculating all generals' turntime (${oldTurnTerm}m → ${turnTerm}m, ratio: ${unitDiff})`);
+        
+        const generals = await generalRepository.findByFilter({ session_id: sessionId });
+        
+        for (const general of generals) {
+          const genTurnTime = general.turntime ? new Date(general.turntime) : servTurnTime;
+          
+          // 서버 turntime과의 시간 차이 계산 (초 단위)
+          const timeDiff = (genTurnTime.getTime() - servTurnTime.getTime()) / 1000;
+          
+          // 차이를 새로운 turnterm 비율로 조정
+          const newTimeDiff = timeDiff * unitDiff;
+          
+          // 새로운 turntime 계산
+          const newGenTurnTime = new Date(servTurnTime.getTime() + newTimeDiff * 1000);
+          
+          general.turntime = newGenTurnTime.toISOString();
+          await general.save();
+          updatedCount++;
+        }
+        
+        console.log(`[AdminGameSettings] Updated ${updatedCount} generals' turntime`);
+      }
       
       // Mongoose nested object 변경 감지를 위해 markModified 호출
       session.markModified('data');
@@ -272,10 +305,16 @@ export class AdminGameSettingsService {
       console.log(`[AdminGameSettings] turnterm changed to ${turnTerm}m, starttime recalculated based on ${year}년 ${month}월`);
 
       await sessionRepository.saveDocument(session);
+      
+      // 전역 로그 추가
+      const ActionLogger = (await import('../logger/ActionLogger')).ActionLogger;
+      const logger = new ActionLogger(0, 0, year, month, sessionId, false);
+      logger.pushGlobalHistoryLog(`<R>★</>턴시간이 <C>${turnTerm}분</>으로 변경됩니다.`, (await import('../../types/log.types')).LogFormatType.RAWTEXT);
+      await logger.flush();
 
       return {
         success: true,
-        message: `턴 기간이 ${turnTerm}분으로 변경되었습니다`,
+        message: `턴 기간이 ${turnTerm}분으로 변경되었습니다 (${updatedCount || 0}명의 장수 턴타임 재계산 완료)`,
       };
     } catch (error: any) {
       return { success: false, message: error.message };

@@ -34,8 +34,6 @@ export class ScenarioLoader {
 
       // 레지스트리에 등록
       ScenarioRegistry.register(config);
-      
-      console.log(`✅ Scenario loaded: ${scenarioId}`);
     } catch (error) {
       console.error(`❌ Failed to load scenario: ${scenarioId}`, error);
       throw new Error(`Scenario not found or invalid: ${scenarioId}`);
@@ -54,8 +52,6 @@ export class ScenarioLoader {
         .filter(entry => entry.isDirectory())
         .map(entry => entry.name);
 
-      console.log(`🔍 Found ${scenarioDirs.length} scenario(s): ${scenarioDirs.join(', ')}`);
-
       // 각 시나리오 로드
       for (const scenarioId of scenarioDirs) {
         // scenario.json 존재 여부 확인
@@ -64,11 +60,9 @@ export class ScenarioLoader {
           await fs.access(scenarioJsonPath);
           await this.load(scenarioId);
         } catch (err) {
-          console.warn(`⚠️ Skipping ${scenarioId}: scenario.json not found`);
+          // scenario.json not found, skip
         }
       }
-
-      console.log(`✅ Loaded ${ScenarioRegistry.getAll().length} scenario(s) successfully`);
     } catch (error) {
       console.error('❌ Failed to load scenarios:', error);
       throw error;

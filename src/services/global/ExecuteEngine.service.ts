@@ -1073,8 +1073,8 @@ export class ExecuteEngineService {
       });
     }
 
-    let action = generalTurn.action || '휴식';
-    let arg = generalTurn.arg || {};
+    let action = generalTurn.data?.action || '휴식';
+    let arg = generalTurn.data?.arg || {};
 
     // killturn 처리 (PHP 로직과 동일)
     const killturn = gameEnv.killturn || 30;
@@ -1116,17 +1116,8 @@ export class ExecuteEngineService {
         const nation = general._cached_nation || null;
         
         if (!city) {
-          console.warn(`[AI] No city found for general ${general.no}, skipping AI decision`);
           return;
         }
-        
-        // 디버그: general 구조 확인
-        console.log(`[AI DEBUG] General ${general.no} structure:`, {
-          hasData: !!general.data,
-          hasCity: !!general.city,
-          hasCachedCity: !!general._cached_city,
-          leadership: general.leadership || general.data?.leadership || 'N/A'
-        });
         
         const decision = await ai.decideNextCommand(
           general,
@@ -1161,14 +1152,11 @@ export class ExecuteEngineService {
           
           if (generalTurn) {
             // action과 arg 업데이트
-            action = generalTurn.action || '휴식';
-            arg = generalTurn.arg || {};
-            
-            console.log(`[AI] General ${generalId} (${general.name}) decided: ${action}`, decision.args);
+            action = generalTurn.data?.action || generalTurn.action || '휴식';
+            arg = generalTurn.data?.arg || generalTurn.arg || {};
           }
         }
       } catch (error: any) {
-        console.error(`[AI] Failed to decide command for general ${generalId}:`, error);
         // AI 실패 시 휴식
         return;
       }
@@ -1363,7 +1351,43 @@ export class ExecuteEngineService {
 
     // addTurn은 분 단위를 받아야 함
     const turntermInMinutes = gameEnv.turnterm || 60;
-    const newTurntime = ExecuteEngineService.addTurn(currentTurntime, turntermInMinutes);
+    let newTurntime = ExecuteEngineService.addTurn(currentTurntime, turntermInMinutes);
+
+    // PHP: nextTurnTimeBase를 사용한 개인별 턴타임 조정
+    const nextTurnTimeBase = general.aux?.nextTurnTimeBase || general.data?.aux?.nextTurnTimeBase;
+    if (nextTurnTimeBase !== null && nextTurnTimeBase !== undefined) {
+      // cutTurn: 턴타임을 turnterm 단위로 자르기
+      newTurntime = ExecuteEngineService.cutTurn(newTurntime, turntermInMinutes);
+      // nextTurnTimeBase 초 만큼 더하기
+      newTurntime = new Date(newTurntime.getTime() + nextTurnTimeBase * 1000);
+      
+      // nextTurnTimeBase 초기화
+      if (!general.aux) general.aux = {};
+      general.aux.nextTurnTimeBase = null;
+      if (general.data?.aux) {
+        general.data.aux.nextTurnTimeBase = null;
+      }
+      general.markModified('aux');
+      general.markModified('data.aux');
+    }
+    
+    // custom_turn_hour/minute 지원 (개인별 턴타임 설정)
+    const customHour = general.custom_turn_hour ?? general.data?.custom_turn_hour;
+    const customMinute = general.custom_turn_minute ?? general.data?.custom_turn_minute;
+    
+    if (customHour !== null && customHour !== undefined && 
+        customMinute !== null && customMinute !== undefined) {
+      // 다음 턴타임을 지정된 시:분으로 설정
+      const targetTime = new Date(newTurntime);
+      targetTime.setHours(customHour, customMinute, 0, 0);
+      
+      // 만약 설정한 시간이 이미 지났다면 다음 날로
+      if (targetTime <= newTurntime) {
+        targetTime.setDate(targetTime.getDate() + 1);
+      }
+      
+      newTurntime = targetTime;
+    }
 
     general.turntime = newTurntime.toISOString();
     
@@ -1698,8 +1722,6 @@ export class ExecuteEngineService {
     if (gameEnv.month !== month || gameEnv.year !== year) {
       gameEnv.year = year;
       gameEnv.month = month;
-      
-      console.log(`[${new Date().toISOString()}] 📅 Year/Month updated: ${year}년 ${month}월 (elapsed turns: ${num})`);
     }
     
     return { year, month, turn: num + 1 }; // 턴은 1부터 시작
@@ -1760,6 +1782,24 @@ export class ExecuteEngineService {
     const result = new Date(date);
     // PHP: $target = $turnterm * $turn; $date->add(new \DateInterval("PT{$target}M"));
     result.setMinutes(result.getMinutes() + (turntermInMinutes * turnCount));
+    return result;
+  }
+  
+  /**
+   * 턴타임을 turnterm 단위로 자르기 (PHP cutTurn 구현)
+   * 예: turnterm=60이면 시간을 정각으로 맞춤
+   */
+  public static cutTurn(time: Date | string, turntermInMinutes: number): Date {
+    const date = time instanceof Date ? time : new Date(time);
+    const result = new Date(date);
+    
+    // turnterm 단위로 자르기
+    const minutes = result.getMinutes();
+    const cutMinutes = Math.floor(minutes / turntermInMinutes) * turntermInMinutes;
+    result.setMinutes(cutMinutes);
+    result.setSeconds(0);
+    result.setMilliseconds(0);
+    
     return result;
   }
 

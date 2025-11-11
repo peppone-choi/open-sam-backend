@@ -2,6 +2,39 @@ import { IGeneral } from '../models/general.model';
 import { ICity } from '../models/city.model';
 import { INation } from '../models/nation.model';
 
+/**
+ * AI 내부 커맨드명을 실제 게임 커맨드명으로 변환
+ * 
+ * AI는 간단한 이름(agriculture, commerce 등)을 사용하지만,
+ * 게임 시스템은 CommandRegistry에 등록된 대문자 스네이크 케이스를 사용
+ * 예: InvestCommerceCommand → INVEST_COMMERCE
+ */
+function mapAICommandToGameCommand(aiCommand: string): string {
+  const commandMap: Record<string, string> = {
+    // 내정 (Domestic)
+    'agriculture': 'CULTIVATE_LAND',        // 농지개간
+    'commerce': 'INVEST_COMMERCE',          // 상업투자
+    'security': 'REINFORCE_SECURITY',       // 치안강화
+    'defense': 'REINFORCE_DEFENSE',         // 수비강화
+    'wall': 'REPAIR_WALL',                  // 성벽보수
+    'settlement': 'ENCOURAGE_SETTLEMENT',   // 정착장려 (인구)
+    'trust': 'SELECT_CITIZEN',              // 주민선정 (민심)
+    'tech': 'RESEARCH_TECH',                // 기술연구
+    
+    // 군사 (Military)
+    'recruit': 'CONSCRIPT',                 // 징병
+    'train': 'TRAIN',                       // 훈련
+    'morale': 'BOOST_MORALE',               // 사기진작
+    
+    // 특수 (Special)
+    'cure': 'REST_CURE',                    // 요양
+    'found_nation': 'FOUND_NATION',         // 건국
+    'move': 'MOVE'                          // 이동
+  };
+  
+  return commandMap[aiCommand] || aiCommand;
+}
+
 // AI 난이도 레벨
 export enum AIDifficulty {
   EASY = 'easy',
@@ -10,11 +43,13 @@ export enum AIDifficulty {
   EXPERT = 'expert'
 }
 
-// 장수 타입 분류
+// 장수 타입 분류 (비트 플래그)
 export enum GeneralType {
-  WARRIOR = 1,        // 무장
-  STRATEGIST = 2,     // 지장
-  COMMANDER = 4       // 통솔장
+  WARRIOR = 1,        // 무장 (무력 특화)
+  STRATEGIST = 2,     // 지장 (지력 특화)
+  COMMANDER = 4,      // 통솔장 (통솔 특화)
+  POLITICIAN = 8,     // 정치가 (정치 특화)
+  CHARMER = 16        // 매력가 (매력 특화)
 }
 
 // 외교 상태
@@ -69,12 +104,13 @@ export interface CityEvaluation {
   cityId: number;
   score: number;
   developmentRate: number;
-  population: number;
-  agriculture: number;
-  commerce: number;
-  security: number;
-  defense: number;
-  wall: number;
+  trust: number;           // 민심
+  population: number;      // 인구
+  agriculture: number;     // 농업
+  commerce: number;        // 상업
+  security: number;        // 치안
+  defense: number;         // 수비
+  wall: number;            // 성벽
   isFront: boolean;
   isSupply: boolean;
   priority: number;
@@ -200,15 +236,47 @@ export class AIEngine {
       await this.evaluateCities(cities, nation);
     }
     
-    // 군주인 경우 국가 커맨드 우선 검토
-    if (general.data?.officer_level === 12 || general.data?.officer_level === '군주') {
+    // 1. 요양 (부상이 심한 경우 최우선)
+    const injury = general.data?.injury || 0;
+    const cureThreshold = this.policy.minWarLeadership || 60; // 임시 threshold
+    if (injury > cureThreshold) {
+      return {
+        command: mapAICommandToGameCommand('cure'),
+        args: {},
+        reason: 'high_injury',
+        priority: 100
+      };
+    }
+    
+    // 2. 건국 (군주급 NPC가 재야 상태일 때)
+    const npcType = general.npc || general.data?.npc || 0;
+    const nationId = general.nation || general.data?.nation || 0;
+    const officerLevel = general.data?.officer_level || 0;
+    
+    if (npcType >= 2 && nationId === 0 && officerLevel === 12) {
+      // 방랑군 군주가 건국 가능한지 확인
+      // 실제로는 도시 소유, 자원 등 조건 확인 필요
+      return {
+        command: mapAICommandToGameCommand('found_nation'),
+        args: {
+          nationName: `${general.name || general.data?.name}의 나라`,
+          nationType: 'general',
+          colorType: 0
+        },
+        reason: 'wandering_lord',
+        priority: 95
+      };
+    }
+    
+    // 3. 군주인 경우 국가 커맨드 우선 검토
+    if (officerLevel === 12 || officerLevel === '군주') {
       const nationCommand = await this.decideNationCommand(general, nation, env);
       if (nationCommand) {
         return nationCommand;
       }
     }
     
-    // 우선순위에 따라 행동 결정
+    // 4. 우선순위에 따라 행동 결정
     for (const actionName of this.policy.actionPriorities) {
       const decision = await this.evaluateAction(
         actionName,
@@ -235,14 +303,23 @@ export class AIEngine {
   /**
    * 장수 타입 계산 (무장/지장/통솔장)
    */
+  /**
+   * 장수 타입 분류
+   * PHP GeneralAI::calcGenType 기반으로 확장
+   * 
+   * 타입: 통솔, 무력, 지력, 정치, 매력 (비트 플래그)
+   * 예: 통솔무력형 = COMMANDER | WARRIOR
+   */
   private calculateGeneralType(general: any): number {
     const leadership = general.data?.leadership || general.leadership || 50;
     const strength = Math.max(1, general.data?.strength || general.strength || 50);
     const intel = Math.max(1, general.data?.intel || general.intel || 50);
+    const politics = general.data?.politics || general.politics || 50;
+    const charm = general.data?.charm || general.charm || 50;
     
     let genType = 0;
     
-    // 무장 vs 지장
+    // 1. 무장 vs 지장 (기본 분류)
     if (strength >= intel) {
       genType = GeneralType.WARRIOR;
       // 무지장 (둘 다 높음)
@@ -257,9 +334,19 @@ export class AIEngine {
       }
     }
     
-    // 통솔장
+    // 2. 통솔장 (군사 지휘관)
     if (leadership >= this.policy.minWarLeadership) {
       genType |= GeneralType.COMMANDER;
+    }
+    
+    // 3. 정치가 (민심/외교 전문)
+    if (politics >= 70) {
+      genType |= GeneralType.POLITICIAN;
+    }
+    
+    // 4. 매력가 (인구/등용 전문)
+    if (charm >= 70) {
+      genType |= GeneralType.CHARMER;
     }
     
     return genType;
@@ -344,6 +431,7 @@ export class AIEngine {
       cityId: city.city,
       score: priority,
       developmentRate: avgDevelopmentRate,
+      trust: rates.trust,
       population: city.pop / city.pop_max,
       agriculture: rates.agri,
       commerce: rates.comm,
@@ -447,24 +535,49 @@ export class AIEngine {
     const rates = this.calculateCityDevelopmentRates(city);
     
     // 장수 타입에 따른 능력치
+    const isCommander = this.generalType & GeneralType.COMMANDER;
     const isWarrior = this.generalType & GeneralType.WARRIOR;
     const isStrategist = this.generalType & GeneralType.STRATEGIST;
-    
-    // 디버그 로그
-    console.log(`[AI DOMESTIC] General type: ${this.generalType}, isWarrior: ${isWarrior}, isStrategist: ${isStrategist}`);
-    console.log(`[AI DOMESTIC] Rates:`, rates);
-    console.log(`[AI DOMESTIC] Target rate: ${this.policy.targetDevelopmentRate}`);
+    const isPolitician = this.generalType & GeneralType.POLITICIAN;
+    const isCharmer = this.generalType & GeneralType.CHARMER;
     
     // 개발이 필요한 항목 찾기
     const developmentNeeds: Array<{ command: string; rate: number; priority: number }> = [];
     
-    // 인구 개발 (모든 장수)
-    if (rates.pop < this.policy.targetDevelopmentRate) {
+    // 민심 개발 (통솔장, 정치가) - 주민선정
+    if ((isCommander || isPolitician) && rates.trust < 0.98) {
       developmentNeeds.push({
-        command: 'recruit',
-        rate: rates.pop,
-        priority: (1 - rates.pop) * 100
+        command: 'trust',
+        rate: rates.trust,
+        priority: Math.max(0, (1 - rates.trust / 2 - 0.2)) * 100
       });
+    }
+    
+    // 인구 개발 (통솔장, 매력가) - 정착장려
+    if ((isCommander || isCharmer) && rates.pop < this.policy.targetDevelopmentRate) {
+      developmentNeeds.push({
+        command: 'settlement',
+        rate: rates.pop,
+        priority: (1 - rates.pop) * 90
+      });
+    }
+    
+    // 기술 연구 (지장) - 국가 기술력이 뒤처져 있을 때
+    if (isStrategist && nation) {
+      const tech = nation.tech || 0;
+      const startYear = env?.startyear || env?.year || 0;
+      const currentYear = env?.year || startYear;
+      const relYear = currentYear - startYear;
+      const techLimit = relYear * 50;
+      
+      // 기술이 연도 대비 뒤처져 있으면 연구
+      if (tech < techLimit) {
+        developmentNeeds.push({
+          command: 'tech',
+          rate: tech / Math.max(1, techLimit),
+          priority: (1 - tech / Math.max(1, techLimit)) * 85
+        });
+      }
     }
     
     // 농업/상업 (지장)
@@ -510,10 +623,7 @@ export class AIEngine {
       }
     }
     
-    console.log(`[AI DOMESTIC] Development needs count: ${developmentNeeds.length}`);
-    
     if (developmentNeeds.length === 0) {
-      console.log(`[AI DOMESTIC] No development needs - all rates above target`);
       return null;
     }
     
@@ -527,8 +637,9 @@ export class AIEngine {
     for (const need of developmentNeeds) {
       rand -= need.priority;
       if (rand <= 0) {
+        const gameCommand = mapAICommandToGameCommand(need.command);
         return {
-          command: need.command,
+          command: gameCommand,
           args: { cityId: city.city },
           reason: `develop_${need.command}`,
           priority: need.priority
@@ -536,8 +647,9 @@ export class AIEngine {
       }
     }
     
+    const gameCommand = mapAICommandToGameCommand(developmentNeeds[0].command);
     return {
-      command: developmentNeeds[0].command,
+      command: gameCommand,
       args: { cityId: city.city },
       reason: `develop_${developmentNeeds[0].command}`,
       priority: developmentNeeds[0].priority
@@ -567,7 +679,7 @@ export class AIEngine {
       const popRatio = city.pop / city.pop_max;
       if (popRatio >= this.policy.safeRecruitPopRatio) {
         return {
-          command: 'recruit',
+          command: mapAICommandToGameCommand('recruit'),
           args: { cityId: city.city },
           reason: 'need_crew',
           priority: 90
@@ -576,11 +688,21 @@ export class AIEngine {
     }
     
     // 훈련도가 부족하면 훈련
-    if (crew >= this.policy.minWarCrew && train < this.policy.properWarTrainAtmos) {
+    if (train < this.policy.properWarTrainAtmos) {
       return {
-        command: 'train',
+        command: mapAICommandToGameCommand('train'),
         args: { cityId: city.city },
         reason: 'need_training',
+        priority: 80
+      };
+    }
+    
+    // 사기가 부족하면 사기진작
+    if (atmos < this.policy.properWarTrainAtmos) {
+      return {
+        command: mapAICommandToGameCommand('morale'),
+        args: { cityId: city.city },
+        reason: 'need_morale',
         priority: 80
       };
     }
@@ -623,6 +745,9 @@ export class AIEngine {
       case 'security':
       case 'defense':
       case 'wall':
+      case 'trust':
+      case 'settlement':
+      case 'tech':
         return this.selectBestDomesticCommand(general, city, nation);
       
       case 'attack':

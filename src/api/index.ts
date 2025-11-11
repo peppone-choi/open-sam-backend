@@ -135,13 +135,4 @@ export const mountRoutes = (app: Express) => {
   // Entity System (v2)
   // app.use('/api/v2/entities', entityV2Router);
   app.use('/api/entities', entityUnifiedRouter);
-  
-  console.log('✅ Core API routes mounted successfully');
-  console.log('📍 Active routes: 26 (18 core + 5 new + 3 advanced)');
-  console.log('   P0 (Critical): 4 routes');
-  console.log('   P1 (High): 7 routes');
-  console.log('   P2 (Medium): 12 routes (5 new: info, world, npc, chief, processing)');
-  console.log('   P3 (Low): 3 routes (3 disabled)');
-  console.log('✅ Admin routes enabled - requires grade >= 5');
-  console.log('⚠️  Some advanced routes disabled - see src/api/index.ts for details');
 };
