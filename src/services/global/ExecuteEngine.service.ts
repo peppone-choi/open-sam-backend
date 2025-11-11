@@ -1,17 +1,13 @@
 // @ts-nocheck - Type issues need investigation
 import { sessionRepository } from '../../repositories/session.repository';
 import { generalRepository } from '../../repositories/general.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { cityRepository } from '../../repositories/city.repository';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { nationTurnRepository } from '../../repositories/nation-turn.repository';
-import { GeneralLog } from '../../models/general-log.model';
-import { KVStorage } from '../../models/kv-storage.model';
-import { getCommand, getNationCommand } from '../../commands';
-import { cityRepository } from '../../repositories/city.repository';
-import { nationRepository } from '../../repositories/nation.repository';
-import Redis from 'ioredis';
-import { GameEventEmitter } from '../gameEventEmitter';
-import { SessionStateService } from '../sessionState.service';
+import { commandRepository } from '../../repositories/command.repository';
 import { logger } from '../../common/logger';
+import { Util } from '../../utils/Util';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 
 const MAX_TURN = 30;
@@ -1072,8 +1068,8 @@ export class ExecuteEngineService {
       });
     }
 
-    const action = generalTurn.action || '휴식';
-    const arg = generalTurn.arg || {};
+    let action = generalTurn.action || '휴식';
+    let arg = generalTurn.arg || {};
 
     // killturn 처리 (PHP 로직과 동일)
     const killturn = gameEnv.killturn || 30;
@@ -1664,7 +1660,7 @@ export class ExecuteEngineService {
     let month: number;
     
     try {
-      const { Util } = require('../utils/Util');
+      // Util은 이미 import됨
       totalMonths = Util.joinYearMonth(startyear, 1) + num; // joinYearMonth는 이미 오버플로우 체크 포함
       year = Math.floor(totalMonths / 12);
       month = 1 + (totalMonths % 12);
