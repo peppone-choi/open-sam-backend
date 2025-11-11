@@ -2,6 +2,7 @@ import { sessionRepository } from '../../repositories/session.repository';
 import { ActionLogger } from '../logger/ActionLogger';
 import { LogFormatType } from '../../types/log.types';
 import { SendSystemNoticeService } from '../message/SendSystemNotice.service';
+import { Util } from '../../utils/Util';
 
 /**
  * AdminGameSettings Service
@@ -227,7 +228,6 @@ export class AdminGameSettingsService {
       // ⚠️ CRITICAL FIX: 경과한 턴 수 계산 (오버플로우 방지)
       let elapsedTurns: number;
       try {
-        const { Util } = require('../../utils/Util');
         const currentMonths = Util.joinYearMonth(year, month);
         const startMonths = Util.joinYearMonth(startyear, 1);
         elapsedTurns = currentMonths - startMonths;

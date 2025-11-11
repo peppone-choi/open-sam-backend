@@ -1128,16 +1128,18 @@ export class ExecuteEngineService {
         
         if (decision && decision.command !== 'neutral') {
           // AI가 결정한 커맨드를 0번 턴에 설정
-          await generalTurnRepository.updateByFilter(
+          await generalTurnRepository.updateOne(
             {
               session_id: sessionId,
               'data.general_id': generalId,
               'data.turn_idx': 0
             },
             {
-              'data.action': decision.command,
-              'data.arg': decision.args,
-              'data.brief': `AI: ${decision.reason}`
+              $set: {
+                'data.action': decision.command,
+                'data.arg': decision.args,
+                'data.brief': `AI: ${decision.reason}`
+              }
             }
           );
           
