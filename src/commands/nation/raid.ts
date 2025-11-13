@@ -89,6 +89,9 @@ export class RaidCommand extends NationCommand {
   }
 
   public getPostReqTurn(): number {
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const genCount = Util.valueFit(this.nation.gennum, GameConst.initialNationGenLimit);
     let nextTerm = Util.round(Math.sqrt(genCount * 16) * 10);
 

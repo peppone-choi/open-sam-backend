@@ -70,8 +70,10 @@ export class IntensiveTrainingCommand extends GeneralCommand {
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
+    // 0으로 나누기 방지
+    const crew = Math.max(1, general.getVar('crew'));
     const score = Util.round(
-      general.getLeadership() * 100 / general.getVar('crew') * GameConst.trainDelta * 2 / 3
+      general.getLeadership() * 100 / crew * GameConst.trainDelta * 2 / 3
     );
     const scoreText = score.toLocaleString();
 
@@ -100,8 +102,17 @@ export class IntensiveTrainingCommand extends GeneralCommand {
       this.env,
       this.arg ?? {}
     );
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '맹훈련');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

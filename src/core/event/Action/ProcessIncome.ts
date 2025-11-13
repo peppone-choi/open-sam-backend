@@ -33,7 +33,7 @@ export class ProcessIncome extends Action {
 
   private async processGoldIncome(env: any): Promise<any> {
     const sessionId = env['session_id'] || 'sangokushi_default';
-    const year = env['year'] || 180;
+    const year = env['year'] || 184;
     const month = env['month'] || 1;
 
     const nations = await Nation.find({ session_id: sessionId });
@@ -168,7 +168,7 @@ export class ProcessIncome extends Action {
 
   private async processRiceIncome(env: any): Promise<any> {
     const sessionId = env['session_id'] || 'sangokushi_default';
-    const year = env['year'] || 180;
+    const year = env['year'] || 184;
     const month = env['month'] || 1;
 
     const nations = await Nation.find({ session_id: sessionId });

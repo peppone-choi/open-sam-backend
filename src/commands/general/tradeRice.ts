@@ -88,6 +88,11 @@ export class TradeRiceCommand extends GeneralCommand {
 
     const db = DB.db();
     const general = this.generalObj;
+    
+    if (!this.city) {
+      throw new Error('도시 정보가 없습니다');
+    }
+    
     const tradeRate = this.city.trade;
     const date = general.getTurnTime(general.TURNTIME_HM);
 
@@ -103,6 +108,9 @@ export class TradeRiceCommand extends GeneralCommand {
     } else {
       actualTradeRate = tradeRate / 100;
     }
+    
+    // 0으로 나누기 방지
+    actualTradeRate = Math.max(0.01, actualTradeRate);
 
     let buyKey: string;
     let sellKey: string;
@@ -116,7 +124,9 @@ export class TradeRiceCommand extends GeneralCommand {
       sellAmount = Util.valueFit(this.arg.amount * actualTradeRate, null, general.getVar('gold'));
       tax = sellAmount * GameConst.exchangeFee;
       if (sellAmount + tax > general.getVar('gold')) {
-        sellAmount *= general.getVar('gold') / (sellAmount + tax);
+        // 0으로 나누기 방지
+        const denominator = Math.max(0.01, sellAmount + tax);
+        sellAmount *= general.getVar('gold') / denominator;
         tax = general.getVar('gold') - sellAmount;
       }
       buyAmount = sellAmount / actualTradeRate;
@@ -159,7 +169,9 @@ export class TradeRiceCommand extends GeneralCommand {
     const stats = {
       leadership_exp: general.getLeadership(false, false, false, false),
       strength_exp: general.getStrength(false, false, false, false),
-      intel_exp: general.getIntel(false, false, false, false)
+      intel_exp: general.getIntel(false, false, false, false),
+      politics_exp: general.getPolitics(false, false, false, false),
+      charm_exp: general.getCharm(false, false, false, false)
     };
 
     const incStat = rng.choiceUsingWeight(stats);

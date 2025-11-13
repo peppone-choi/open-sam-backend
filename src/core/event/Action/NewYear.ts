@@ -11,7 +11,7 @@ import { ActionLogger } from '../../../types/ActionLogger';
 export class NewYear extends Action {
   async run(env: any): Promise<any> {
     const sessionId = env['session_id'] || 'sangokushi_default';
-    const year = env['year'] || 180;
+    const year = env['year'] || 184;
     const month = env['month'] || 1;
 
     // 세션에서 마지막으로 NewYear가 처리된 년도 확인

@@ -45,7 +45,7 @@ export class ServerBasicInfoService {
       const game = {
         isUnited: sessionData.isunited || 0,
         npcMode: gameEnv.npcmode || 0,
-        year: sessionData.year || 180,
+        year: sessionData.year || 184,
         month: sessionData.month || 1,
         scenario: sessionData.scenario || 0,
         scenario_text: sessionData.scenario_text || '삼국지',

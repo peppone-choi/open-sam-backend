@@ -114,15 +114,35 @@ async function persistModel(modelName: string, sessionIds: string[]) {
         for (const doc of docs) {
           try {
             if (doc.data) {
+              // DB에서 문서가 삭제되었는지 확인
+              if (!doc.isNew) {
+                const exists = await Model.exists({ _id: doc._id });
+                if (!exists) {
+                  logger.debug(`[Data Persister] ${modelName} doc was deleted, skipping save`, {
+                    sessionId,
+                    docId: doc._id
+                  });
+                  continue;
+                }
+              }
+              
               doc.markModified('data');
               await doc.save();
               savedCount++;
             }
           } catch (error: any) {
-            logger.error(`[Data Persister] Failed to save ${modelName} doc:`, {
-              sessionId,
-              error: error.message
-            });
+            // "No document found" 에러는 debug 레벨로 (시나리오 리셋 시 정상)
+            if (error.message?.includes('No document found')) {
+              logger.debug(`[Data Persister] ${modelName} doc not found (likely deleted):`, {
+                sessionId,
+                docId: doc._id
+              });
+            } else {
+              logger.error(`[Data Persister] Failed to save ${modelName} doc:`, {
+                sessionId,
+                error: error.message
+              });
+            }
           }
         }
 
@@ -170,14 +190,32 @@ async function persistGlobalModels() {
         for (const doc of docs) {
           try {
             if (doc.data) {
+              // DB에서 문서가 삭제되었는지 확인
+              if (!doc.isNew) {
+                const exists = await Model.exists({ _id: doc._id });
+                if (!exists) {
+                  logger.debug(`[Data Persister] Global ${modelName} doc was deleted, skipping save`, {
+                    docId: doc._id
+                  });
+                  continue;
+                }
+              }
+              
               doc.markModified('data');
               await doc.save();
               savedCount++;
             }
           } catch (error: any) {
-            logger.error(`[Data Persister] Failed to save global ${modelName} doc:`, {
-              error: error.message
-            });
+            // "No document found" 에러는 debug 레벨로
+            if (error.message?.includes('No document found')) {
+              logger.debug(`[Data Persister] Global ${modelName} doc not found (likely deleted):`, {
+                docId: doc._id
+              });
+            } else {
+              logger.error(`[Data Persister] Failed to save global ${modelName} doc:`, {
+                error: error.message
+              });
+            }
           }
         }
 

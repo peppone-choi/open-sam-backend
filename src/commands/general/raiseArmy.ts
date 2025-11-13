@@ -60,6 +60,10 @@ export class RaiseArmyCommand extends GeneralCommand {
 
     // 로그 (서비스에서 처리 또는 여기서 처리)
     const logger = general.getLogger();
+    
+    if (!this.city) {
+      throw new Error('도시 정보가 없습니다');
+    }
     const cityName = this.city.name;
     const generalName = general.name;
     

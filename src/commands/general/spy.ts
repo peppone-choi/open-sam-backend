@@ -41,20 +41,27 @@ export class SpyCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
-    this.setDestCity(this.arg.destCityID);
-    this.setDestNation(this.destCity.nation, ['tech']);
-
     const [reqGold, reqRice] = this.getCost();
 
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
-      ConstraintHelper.Custom((input) => input.destCity?.nation !== input.general?.getNationID(), '적 도시가 아닙니다.'),
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.NotSameDestCity(),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];
+    
+    // setDestCity, setDestNation은 비동기 작업이므로 나중에 처리
+    this.setDestCity(this.arg.destCityID);
+    if (this.destCity) {
+      this.setDestNation(this.destCity.nation, ['tech']);
+    }
   }
 
   public getBrief(): string {
-    const cityName = this.destCity.name;
+    const cityName = this.destCity?.name ?? '알 수 없음';
     return `【${cityName}】에 ${(this.constructor as typeof GeneralCommand).getName()} 실행`;
   }
 
@@ -84,7 +91,7 @@ export class SpyCommand extends GeneralCommand {
     if (failReason === null) {
       throw new Error('실행 가능한 커맨드에 대해 실패 이유를 수집');
     }
-    const destCityName = this.destCity.name;
+    const destCityName = this.destCity?.name ?? '알 수 없음';
     return `${failReason} <G><b>${destCityName}</b></>에 ${commandName} 실패.`;
   }
 
@@ -140,8 +147,8 @@ export class SpyCommand extends GeneralCommand {
       logger.pushGeneralActionLog(cityBrief, 'RAWTEXT');
       logger.pushGeneralActionLog(cityDevel, 'RAWTEXT');
 
-      if (this.destNation.nation && general.getNationID()) {
-        const techDiff = Math.floor(this.destNation.tech) - Math.floor(this.nation.tech);
+      if (this.destNation?.nation && general.getNationID() && this.nation) {
+        const techDiff = Math.floor(this.destNation.tech ?? 0) - Math.floor(this.nation.tech ?? 0);
         let techText: string;
         
         if (techDiff >= 1000) {
@@ -155,7 +162,8 @@ export class SpyCommand extends GeneralCommand {
         } else {
           techText = '<C>↓</>미미';
         }
-        logger.pushGeneralActionLog(`【<span class='ev_notice'>${this.destNation.name}</span>】아국대비기술:${techText}`);
+        const destNationName = this.destNation?.name ?? '알 수 없음';
+        logger.pushGeneralActionLog(`【<span class='ev_notice'>${destNationName}</span>】아국대비기술:${techText}`);
       }
     } else if (dist === 2) {
       logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>의 정보를 어느 정도 얻었습니다. <1>${date}</>`);
@@ -166,13 +174,18 @@ export class SpyCommand extends GeneralCommand {
       logger.pushGeneralActionLog(cityBrief, 'RAWTEXT');
     }
 
-    const rawSpy = await db.queryFirstField('SELECT spy FROM nation WHERE nation = ?', [nationID]);
-    const spyInfo = rawSpy ? JSON.parse(rawSpy) : {};
-    spyInfo[destCityID] = 3;
-    
-    await db.update('nation', {
-      spy: JSON.stringify(spyInfo)
-    }, 'nation=?', [nationID]);
+    try {
+      const rawSpy = await db.queryFirstField('SELECT spy FROM nation WHERE nation = ?', [nationID]);
+      const spyInfo = rawSpy ? JSON.parse(rawSpy) : {};
+      spyInfo[destCityID] = 3;
+      
+      await db.update('nation', {
+        spy: JSON.stringify(spyInfo)
+      }, 'nation=?', [nationID]);
+    } catch (error) {
+      console.error(`국가 ${nationID} 첩보 정보 업데이트 실패:`, error);
+      // 첩보 정보 업데이트 실패해도 커맨드 자체는 성공으로 처리
+    }
 
     const exp = rng.nextRangeInt(1, 100);
     const ded = rng.nextRangeInt(1, 70);

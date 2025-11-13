@@ -141,7 +141,7 @@ export class DonateCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

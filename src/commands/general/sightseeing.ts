@@ -47,9 +47,10 @@ export class SightseeingCommand extends GeneralCommand {
     const date = general.getTurnTime(general.TURNTIME_HM);
 
     const sightseeing = new SightseeingMessage();
-    const [type, text] = sightseeing.pickAction();
+    const [type, originalText] = sightseeing.pickAction();
 
     let exp = 0;
+    let text = originalText;
 
     if (type & SightseeingMessage.IncExp) {
       exp += 30;
@@ -66,21 +67,27 @@ export class SightseeingCommand extends GeneralCommand {
     if (type & SightseeingMessage.IncIntel) {
       general.increaseVar('intel_exp', 2);
     }
+    if (type & SightseeingMessage.IncPolitics) {
+      general.increaseVar('politics_exp', 2);
+    }
+    if (type & SightseeingMessage.IncCharm) {
+      general.increaseVar('charm_exp', 2);
+    }
     if (type & SightseeingMessage.IncGold) {
       general.increaseVar('gold', 300);
-      text.replace(':goldAmount:', '300');
+      text = text.replace(':goldAmount:', '300');
     }
     if (type & SightseeingMessage.IncRice) {
       general.increaseVar('rice', 300);
-      text.replace(':riceAmount:', '300');
+      text = text.replace(':riceAmount:', '300');
     }
     if (type & SightseeingMessage.DecGold) {
       general.increaseVarWithLimit('gold', -200, 0);
-      text.replace(':goldAmount:', '200');
+      text = text.replace(':goldAmount:', '200');
     }
     if (type & SightseeingMessage.DecRice) {
       general.increaseVarWithLimit('rice', -200, 0);
-      text.replace(':riceAmount:', '200');
+      text = text.replace(':riceAmount:', '200');
     }
     if (type & SightseeingMessage.Wounded) {
       general.increaseVarWithLimit('injury', rng.nextRangeInt(10, 20), null, 80);
@@ -91,6 +98,7 @@ export class SightseeingCommand extends GeneralCommand {
 
     const logger = general.getLogger();
     logger.pushGeneralActionLog(`${text} <1>${date}</>`);
+    console.log(`[견문] 장수 ${general.name} (ID: ${general.no}) 실행 완료 - 텍스트: ${text}`);
 
     general.addExperience(exp);
     this.setResultTurn(new LastTurn(SightseeingCommand.getName(), this.arg));

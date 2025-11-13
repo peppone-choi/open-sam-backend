@@ -22,41 +22,74 @@ router.get('/templates', async (req: Request, res: Response) => {
     const scenarios = [];
     for (const dir of scenarioDirs) {
       try {
-        const scenarioJsonPath = path.join(scenariosDir, dir.name, 'scenario.json');
-        
-        // scenario.json 파일이 있는지 확인
-        try {
-          await fs.access(scenarioJsonPath);
-        } catch {
-          // scenario.json이 없으면 스킵
-          continue;
-        }
-        
-        const content = await fs.readFile(scenarioJsonPath, 'utf-8');
-        const data = JSON.parse(content);
+        const dirPath = path.join(scenariosDir, dir.name);
         
         // 은하영웅전설은 제외 (아직 미완성)
         if (dir.name.includes('legend-of-galactic-heroes') || dir.name.includes('logh')) {
           continue;
         }
-
-        // 카테고리 자동 감지 (scenario.json에 category가 없으면 ID로 추론)
-        let category = data.category || 'other';
-        if (!data.category) {
-          if (dir.name.startsWith('sangokushi')) {
-            category = 'sangokushi';
+        
+        // PHP 시나리오 파일들 (scenario_*.json) 찾기
+        const files = await fs.readdir(dirPath);
+        const phpScenarioFiles = files.filter(f => f.match(/^scenario_\d+\.json$/));
+        
+        if (phpScenarioFiles.length > 0) {
+          // PHP 시나리오 파일들이 있으면 각각을 시나리오로 등록
+          for (const phpFile of phpScenarioFiles) {
+            try {
+              const phpScenarioPath = path.join(dirPath, phpFile);
+              const content = await fs.readFile(phpScenarioPath, 'utf-8');
+              const data = JSON.parse(content);
+              
+              // scenario_1010.json -> scenario-1010
+              const scenarioId = phpFile.replace('.json', '').replace('_', '-');
+              
+              scenarios.push({
+                id: `${dir.name}/${scenarioId}`,
+                title: data.title || '제목 없음',
+                description: data.title || '',
+                category: 'sangokushi',
+                startYear: data.startYear || 184,
+                version: '1.0.0',
+                order: parseInt(phpFile.match(/\d+/)?.[0] || '999')
+              });
+            } catch (err) {
+              console.warn(`Failed to parse PHP scenario ${phpFile}:`, err);
+            }
           }
-        }
+        } else {
+          // 기존 scenario.json 방식
+          const scenarioJsonPath = path.join(dirPath, 'scenario.json');
+          
+          // scenario.json 파일이 있는지 확인
+          try {
+            await fs.access(scenarioJsonPath);
+          } catch {
+            // scenario.json이 없으면 스킵
+            continue;
+          }
+          
+          const content = await fs.readFile(scenarioJsonPath, 'utf-8');
+          const data = JSON.parse(content);
 
-        scenarios.push({
-          id: dir.name,
-          title: data.name || '제목 없음',
-          description: data.description || '',
-          category: category,
-          startYear: data.metadata?.startYear || data.startYear || data.data?.scenario?.startYear || 184,
-          version: data.version || '1.0.0',
-          order: data.order || 999  // scenario.json에 order 필드가 있으면 사용
-        });
+          // 카테고리 자동 감지
+          let category = data.category || 'other';
+          if (!data.category) {
+            if (dir.name.startsWith('sangokushi')) {
+              category = 'sangokushi';
+            }
+          }
+
+          scenarios.push({
+            id: dir.name,
+            title: data.name || '제목 없음',
+            description: data.description || '',
+            category: category,
+            startYear: data.metadata?.startYear || data.startYear || data.data?.scenario?.startYear || 184,
+            version: data.version || '1.0.0',
+            order: data.order || 999
+          });
+        }
       } catch (err) {
         console.warn(`Failed to parse scenario ${dir.name}:`, err);
       }

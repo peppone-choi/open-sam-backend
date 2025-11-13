@@ -28,7 +28,7 @@ export class GetBettingDetailService {
       }
 
       const sessionData = session.data as any || {};
-      const year = sessionData.year || 180;
+      const year = sessionData.year || 184;
       const month = sessionData.month || 1;
 
       const bettingStor = sessionData.betting || {};

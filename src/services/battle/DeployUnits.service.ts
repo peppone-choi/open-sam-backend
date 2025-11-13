@@ -28,18 +28,37 @@ export class DeployUnitsService {
         return { success: false, message: '해당 장수를 찾을 수 없습니다' };
       }
 
-      // 위치 유효성 검증
-      if (x < 0 || x >= 40 || y < 0 || y >= 40) {
-        return { success: false, message: '유효하지 않은 위치입니다 (0-39 범위)' };
+      // 위치 유효성 검증 (800 x 600 맵)
+      if (x < 0 || x >= battle.map.width || y < 0 || y >= battle.map.height) {
+        return { success: false, message: `유효하지 않은 위치입니다 (0-${battle.map.width} x 0-${battle.map.height} 범위)` };
       }
 
-      // 해당 위치에 다른 유닛이 있는지 확인
-      const hasOtherUnit = allUnits.some(
-        u => u.position && u.position.x === x && u.position.y === y && u.generalId !== generalId
-      );
+      // 배치 영역 검증
+      const isAttacker = battle.attackerUnits.some(u => u.generalId === generalId);
+      const zone = isAttacker ? battle.map.attackerZone : battle.map.defenderZone;
 
-      if (hasOtherUnit) {
-        return { success: false, message: '해당 위치에 이미 다른 유닛이 있습니다' };
+      if (x < zone.x[0] || x > zone.x[1] || y < zone.y[0] || y > zone.y[1]) {
+        return { 
+          success: false, 
+          message: `배치 영역을 벗어났습니다 (x: ${zone.x[0]}-${zone.x[1]}, y: ${zone.y[0]}-${zone.y[1]})` 
+        };
+      }
+
+      // 해당 위치에 다른 유닛이 있는지 확인 (충돌 반경 고려)
+      const tooClose = allUnits.some(u => {
+        if (u.generalId === generalId) return false;
+        if (!u.position) return false;
+        
+        const dx = u.position.x - x;
+        const dy = u.position.y - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const minDistance = u.collisionRadius + unit.collisionRadius;
+        
+        return distance < minDistance;
+      });
+
+      if (tooClose) {
+        return { success: false, message: '다른 유닛과 너무 가깝습니다' };
       }
 
       unit.position = { x, y };

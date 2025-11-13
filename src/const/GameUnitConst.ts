@@ -50,6 +50,13 @@ export interface GameUnitDetail {
   reqRegions?: string[];
   reqCities?: string[];
   reqNationType?: string; // 국가 타입 제약 (country_type_unlock)
+  maxCount?: number; // 최대 부대 수 제한
+  timeRestriction?: string; // 시간 제한 (야간 전용 등)
+  seasonRestriction?: string; // 계절 제한 (겨울 전용 등)
+  weatherRestriction?: string; // 날씨 제한 (건조한 날씨 등)
+  terrainRestriction?: string; // 지형 제한 (수전 전용 등)
+  upkeepMultiplier?: number; // 유지비 배수 (용병 등)
+  setupTime?: number; // 설치 시간 (공성병기 등)
   info: string[];
 }
 
@@ -100,6 +107,13 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     const reqCities: string[] = [];
 
     let reqNationType: string | undefined;
+    let maxCount: number | undefined;
+    let timeRestriction: string | undefined;
+    let seasonRestriction: string | undefined;
+    let weatherRestriction: string | undefined;
+    let terrainRestriction: string | undefined;
+    let upkeepMultiplier: number | undefined;
+    let setupTime: number | undefined;
     
     if (unit.constraints && Array.isArray(unit.constraints)) {
       for (const constraint of unit.constraints) {
@@ -122,6 +136,27 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
         } else if (constraint.type === 'country_type_unlock') {
           // 국가 타입 제약 조건
           reqNationType = constraint.value || undefined;
+        } else if (constraint.type === 'maxCount') {
+          // 최대 부대 수 제한
+          maxCount = constraint.value || undefined;
+        } else if (constraint.type === 'timeRestriction') {
+          // 시간 제한 (야간 전용 등)
+          timeRestriction = constraint.value || undefined;
+        } else if (constraint.type === 'seasonRestriction') {
+          // 계절 제한 (겨울 전용 등)
+          seasonRestriction = constraint.value || undefined;
+        } else if (constraint.type === 'weatherRestriction') {
+          // 날씨 제한 (건조한 날씨 등)
+          weatherRestriction = constraint.value || undefined;
+        } else if (constraint.type === 'terrainRestriction') {
+          // 지형 제한 (수전 전용 등)
+          terrainRestriction = constraint.value || undefined;
+        } else if (constraint.type === 'upkeepMultiplier') {
+          // 유지비 배수 (용병 등)
+          upkeepMultiplier = constraint.value || undefined;
+        } else if (constraint.type === 'setupTime') {
+          // 설치 시간 (공성병기 등)
+          setupTime = constraint.value || undefined;
         }
       }
     }
@@ -154,6 +189,13 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
       reqRegions: reqRegions.length > 0 ? reqRegions : undefined,
       reqCities: reqCities.length > 0 ? reqCities : undefined,
       reqNationType,
+      maxCount,
+      timeRestriction,
+      seasonRestriction,
+      weatherRestriction,
+      terrainRestriction,
+      upkeepMultiplier,
+      setupTime,
       info: Array.isArray(unit.description) ? unit.description : [unit.description || '']
     };
 
@@ -183,6 +225,47 @@ export function getUnitsByType(armType: number, scenarioId: string = 'sangokushi
 export function getAllUnits(scenarioId: string = 'sangokushi'): GameUnitDetail[] {
   buildUnitCache(scenarioId);
   return Array.from(unitCache!.values());
+}
+
+/**
+ * 병종 간 공격 상성 계수 가져오기
+ * @param attackerUnitId 공격자 병종 ID
+ * @param defenderType 방어자 병종 타입 (FOOTMAN, SPEARMAN, CAVALRY, ARCHER 등)
+ * @returns 상성 계수 (1.0 = 대등, >1.0 = 유리, <1.0 = 불리)
+ */
+export function getAttackAdvantage(attackerUnitId: number, defenderType: string, scenarioId: string = 'sangokushi'): number {
+  buildUnitCache(scenarioId);
+  const attacker = unitCache!.get(attackerUnitId);
+  
+  if (!attacker) return 1.0;
+  
+  // units.json의 attacks 데이터에서 상성 가져오기
+  const data = loadUnitsFromJSON(scenarioId);
+  const unitData = data.units?.[attackerUnitId.toString()];
+  
+  if (!unitData || !unitData.attacks) return 1.0;
+  
+  return unitData.attacks[defenderType] || 1.0;
+}
+
+/**
+ * 병종 간 방어 상성 계수 가져오기
+ * @param defenderUnitId 방어자 병종 ID
+ * @param attackerType 공격자 병종 타입
+ * @returns 방어 계수 (>1.0 = 피해 증가, <1.0 = 피해 감소)
+ */
+export function getDefenseAdvantage(defenderUnitId: number, attackerType: string, scenarioId: string = 'sangokushi'): number {
+  buildUnitCache(scenarioId);
+  const defender = unitCache!.get(defenderUnitId);
+  
+  if (!defender) return 1.0;
+  
+  const data = loadUnitsFromJSON(scenarioId);
+  const unitData = data.units?.[defenderUnitId.toString()];
+  
+  if (!unitData || !unitData.defenses) return 1.0;
+  
+  return unitData.defenses[attackerType] || 1.0;
 }
 
 /**

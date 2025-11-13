@@ -75,6 +75,12 @@ export class TravelCommand extends GeneralCommand {
     if (type & SightseeingMessage.IncIntel) {
       general.increaseVar('intel_exp', 2);
     }
+    if (type & SightseeingMessage.IncPolitics) {
+      general.increaseVar('politics_exp', 2);
+    }
+    if (type & SightseeingMessage.IncCharm) {
+      general.increaseVar('charm_exp', 2);
+    }
 
     // 자금/군량 증가
     let finalText = text;

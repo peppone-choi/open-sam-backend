@@ -75,26 +75,44 @@ export class GrantCommand extends GeneralCommand {
     ];
   }
 
-  protected async initWithArg(): Promise<void> {
-    const destGeneral = await generalRepository.findById(this.arg.destGeneralID);
-    this.setDestGeneral(destGeneral);
-
+  protected initWithArg(): void {
+    const { isGold, amount } = this.arg;
+    const resourceType = isGold ? 'gold' : 'rice';
+    const resourceTypeKorean = isGold ? '자금' : '군량';
+    
+    // fullConditionConstraints를 먼저 설정 (setDestGeneral은 비동기이므로 나중에 처리)
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ExistsDestGeneral(),
-      ConstraintHelper.FriendlyDestGeneral()
+      ConstraintHelper.FriendlyDestGeneral(),
     ];
     
-    if (this.arg.isGold) {
+    // 최소 자원 보유량 체크 추가 (GameConst에서 가져옴)
+    if (isGold) {
+      const generalMinimumGold = this.env.general_minimum_gold || 1000;
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralGold(GameConst.generalMinimumGold)
+        ConstraintHelper.ReqGeneralGold(generalMinimumGold)
       );
     } else {
+      const generalMinimumRice = this.env.general_minimum_rice || 1000;
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralRice(GameConst.generalMinimumRice)
+        ConstraintHelper.ReqGeneralRice(generalMinimumRice)
       );
+    }
+    
+    // setDestGeneral을 비동기로 호출 (run() 메서드에서 await 처리)
+    this.setDestGeneralAsync(this.arg.destGeneralID);
+  }
+  
+  // 비동기로 destGeneral 설정하는 헬퍼 메서드
+  private async setDestGeneralAsync(destGeneralID: number): Promise<void> {
+    try {
+      const destGeneral = await generalRepository.findById(destGeneralID);
+      this.setDestGeneral(destGeneral);
+    } catch (error) {
+      console.error('setDestGeneralAsync 실패:', error);
     }
   }
 
@@ -178,8 +196,8 @@ export class GrantCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
-    await await this.saveGeneral();
-    await await destGeneral.save();
+    await this.saveGeneral();
+    await destGeneral.save();
 
     return true;
   }

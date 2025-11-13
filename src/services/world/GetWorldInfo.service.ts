@@ -64,9 +64,9 @@ export class GetWorldInfoService {
       const worldInfo = {
         session: {
           scenario: sessionData.scenario || '삼국지',
-          year: gameEnv.year || sessionData.year || 180,
+          year: gameEnv.year || sessionData.year || 184,
           month: gameEnv.month || sessionData.month || 1,
-          startyear: gameEnv.startyear || sessionData.startyear || 180,
+          startyear: gameEnv.startyear || sessionData.startyear || 184,
           turnterm: gameEnv.turnterm || sessionData.turnterm || 1440,
           lastExecuted: sessionData.turntime || new Date().toISOString()
         },

@@ -82,6 +82,7 @@ export interface IGeneral extends Document {
   getRawCity(): any;
   setRawCity(city: any): void;
   getStaticNation(): any;
+  getTurnTime(format?: string): string;
   addExperience(exp: number): void;
   addDedication(ded: number): void;
   checkStatChange(): Promise<void>;
@@ -89,6 +90,13 @@ export interface IGeneral extends Document {
   markModified(path: string): void;
   save(): Promise<this>;
   onCalcDomestic(turnType: string, varType: string, value: number, aux?: any): number;
+  
+  // 능력치 조회 메서드 (통무지정매)
+  getLeadership(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
+  getStrength(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
+  getIntel(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
+  getPolitics(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
+  getCharm(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
 }
 
 // Static 메서드 타입 정의
@@ -213,6 +221,40 @@ GeneralSchema.methods.getStaticNation = function(): any {
   };
 };
 
+/**
+ * 턴타임을 포맷팅해서 반환
+ * @param format - 'HM': 시:분, 'TURNTIME_HM': 풀 타임스탬프 + 시:분, 없으면 기본
+ * @returns 포맷팅된 시간 문자열
+ */
+GeneralSchema.methods.getTurnTime = function(format?: string): string {
+  // turntime은 data.turntime 또는 top-level turntime에 있을 수 있음
+  const turntime = this.data?.turntime || this.turntime;
+  
+  if (!turntime) {
+    return '';
+  }
+  
+  const date = turntime instanceof Date ? turntime : new Date(turntime);
+  
+  // 유효하지 않은 날짜 체크
+  if (isNaN(date.getTime())) {
+    return '';
+  }
+  
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  if (format === 'HM') {
+    return `${hours}:${minutes}`;
+  } else if (format === 'TURNTIME_HM') {
+    // ISO 형식 + 시:분
+    return `${date.toISOString()} (${hours}:${minutes})`;
+  } else {
+    // 기본: ISO 형식
+    return date.toISOString();
+  }
+};
+
 GeneralSchema.methods.addExperience = function(exp: number): void {
   if (!this.data.experience) this.data.experience = 0;
   this.data.experience += exp;
@@ -253,6 +295,89 @@ GeneralSchema.methods.onCalcDomestic = function(turnType: string, varType: strin
   // }
   
   return value;
+};
+
+/**
+ * 능력치를 계산해서 반환하는 공통 메서드
+ * PHP의 getStatValue와 동일한 로직
+ */
+function getStatValue(general: any, statName: string, withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
+  let statValue = general.getVar(statName) || 0;
+  
+  // 부상 적용
+  if (withInjury) {
+    const injury = general.getVar('injury') || 0;
+    statValue *= (100 - injury) / 100;
+  }
+  
+  // 능력치 상호 보정 (통무지정 시스템)
+  if (withStatAdjust) {
+    if (statName === 'strength') {
+      // 무력 = 무력 + (지력 / 4)
+      const intel = getStatValue(general, 'intel', withInjury, withIActionObj, false, false);
+      statValue += Math.round(intel / 4);
+    } else if (statName === 'intel') {
+      // 지력 = 지력 + (무력 / 4)
+      const strength = getStatValue(general, 'strength', withInjury, withIActionObj, false, false);
+      statValue += Math.round(strength / 4);
+    }
+  }
+  
+  // 최대값 제한 (기본 150)
+  const maxLevel = 150;
+  statValue = Math.max(0, Math.min(statValue, maxLevel));
+  
+  // TODO: withIActionObj - 아이템/특성의 영향 적용
+  // if (withIActionObj) {
+  //   const actionList = general.getActionList();
+  //   for (const actionObj of actionList) {
+  //     if (actionObj && actionObj.onCalcStat) {
+  //       statValue = actionObj.onCalcStat(general, statName, statValue);
+  //     }
+  //   }
+  // }
+  
+  // 정수로 반올림
+  if (useFloor) {
+    return Math.floor(statValue);
+  }
+  
+  return statValue;
+}
+
+/**
+ * 통솔 능력치 조회
+ */
+GeneralSchema.methods.getLeadership = function(withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
+  return getStatValue(this, 'leadership', withInjury, withIActionObj, withStatAdjust, useFloor);
+};
+
+/**
+ * 무력 능력치 조회
+ */
+GeneralSchema.methods.getStrength = function(withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
+  return getStatValue(this, 'strength', withInjury, withIActionObj, withStatAdjust, useFloor);
+};
+
+/**
+ * 지력 능력치 조회
+ */
+GeneralSchema.methods.getIntel = function(withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
+  return getStatValue(this, 'intel', withInjury, withIActionObj, withStatAdjust, useFloor);
+};
+
+/**
+ * 정치 능력치 조회
+ */
+GeneralSchema.methods.getPolitics = function(withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
+  return getStatValue(this, 'politics', withInjury, withIActionObj, withStatAdjust, useFloor);
+};
+
+/**
+ * 매력 능력치 조회
+ */
+GeneralSchema.methods.getCharm = function(withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
+  return getStatValue(this, 'charm', withInjury, withIActionObj, withStatAdjust, useFloor);
 };
 
 // Static 메서드: DB에서 장수 객체 생성

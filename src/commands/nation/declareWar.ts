@@ -164,6 +164,14 @@ export class che_선전포고 extends NationCommand {
     await general!.applyDB(db);
     await ActionLogger.flush();
 
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     return true;
   }
 

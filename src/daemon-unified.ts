@@ -3,14 +3,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import * as cron from 'node-cron';
-import { mongoConnection } from './db/connection';
-import { logger } from './common/logger';
-import { CommandRegistry } from './core/command';
-import { CommandExecutor } from './core/command/CommandExecutor';
-import { Session } from './models/session.model';
-import { ExecuteEngineService } from './services/global/ExecuteEngine.service';
-import { processAuction } from './services/auction/AuctionEngine.service';
-import { processTournament } from './services/tournament/TournamentEngine.service';
 
 /**
  * 통합 게임 데몬
@@ -19,31 +11,53 @@ import { processTournament } from './services/tournament/TournamentEngine.servic
  * 2. 커맨드 소비 (Redis Streams) - 비동기 커맨드 실행
  * 
  * 두 가지 역할을 하나의 프로세스에서 처리합니다.
+ * 
+ * 최적화: 세션 상태 업데이트 직후 락 해제 (운영자 수정 대기 시간 최소화)
  */
 
 let isShuttingDown = false;
+
+// 동적 임포트를 위한 전역 변수
+let mongoConnection: any;
+let logger: any;
+let CommandRegistry: any;
+let CommandExecutor: any;
+let Session: any;
+let ExecuteEngineService: any;
+let processAuction: any;
+let processTournament: any;
 
 /**
  * 턴 처리 함수 (크론)
  */
 async function processTurns() {
   try {
+    console.log(`[${new Date().toISOString()}] 🔄 processTurns() called`);
     const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
+    console.log(`[${new Date().toISOString()}] 📋 Found ${sessions.length} active sessions`);
     
     for (const session of sessions) {
       const sessionId = session.session_id;
       
       try {
+        console.log(`[${new Date().toISOString()}] ⚙️ Processing session: ${sessionId}`);
         const result = await ExecuteEngineService.execute({ session_id: sessionId });
         
         if (result.updated) {
+          console.log(`[${new Date().toISOString()}] ✅ Turn processed for ${sessionId}`, {
+            nextTurntime: result.turntime
+          });
           logger.info(`Turn processed for session ${sessionId}`, {
             nextTurntime: result.turntime
           });
         } else if (result.locked) {
-          logger.debug(`Session ${sessionId} is locked by another instance`);
+          console.log(`[${new Date().toISOString()}] 🔒 Session ${sessionId} is locked by another instance`);
+          // 다른 인스턴스가 잠금 - 무시
+        } else {
+          console.log(`[${new Date().toISOString()}] ⏭️ Session ${sessionId} - no turn update needed`);
         }
       } catch (error: any) {
+        console.error(`[${new Date().toISOString()}] ❌ Turn processing error for ${sessionId}:`, error.message);
         logger.error(`Turn processing error for session ${sessionId}`, {
           error: error.message,
           stack: error.stack
@@ -152,6 +166,83 @@ async function processNPCCommands() {
 }
 
 /**
+ * 전투 해결 처리 함수 (크론)
+ * Planning 제한 시간이 지난 전투를 자동으로 Resolution 처리
+ */
+async function processBattleResolution() {
+  try {
+    const { Battle } = await import('./models/battle.model');
+    const { ResolveTurnService } = await import('./services/battle/ResolveTurn.service');
+    
+    // Planning 단계이고 제한 시간이 지난 전투 찾기
+    const now = new Date();
+    const expiredBattles = await Battle.find({
+      status: 'IN_PROGRESS',
+      currentPhase: 'planning',
+      $expr: {
+        $lt: [
+          { $add: ['$updatedAt', { $multiply: ['$planningTimeLimit', 1000] }] },
+          now
+        ]
+      }
+    });
+
+    for (const battle of expiredBattles) {
+      try {
+        logger.info(`Auto-resolving battle ${battle.battleId} (planning timeout)`);
+        await ResolveTurnService.execute(battle.battleId);
+      } catch (error: any) {
+        logger.error(`Battle resolution error for ${battle.battleId}`, {
+          error: error.message,
+          stack: error.stack
+        });
+      }
+    }
+
+    if (expiredBattles.length > 0) {
+      logger.debug(`Battle resolutions processed`, { count: expiredBattles.length });
+    }
+  } catch (error: any) {
+    logger.error('Fatal error in battle resolution processor', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * Mongoose 내부 필드 및 식별자 필드를 제거하는 헬퍼 함수
+ */
+function sanitizeForUpdate(obj: any, additionalFields: string[] = []): any {
+  const sanitized = { ...obj };
+  
+  // Mongoose 내부 필드 제거
+  delete sanitized.__v;
+  delete sanitized._id;
+  delete sanitized.createdAt;
+  delete sanitized.updatedAt;
+  
+  // 추가 필드 제거 (식별자 필드 등)
+  additionalFields.forEach(field => {
+    delete sanitized[field];
+  });
+  
+  // 중첩된 객체에서도 __v와 _id 제거
+  Object.keys(sanitized).forEach(key => {
+    if (sanitized[key] && typeof sanitized[key] === 'object' && !Array.isArray(sanitized[key])) {
+      if (sanitized[key].__v !== undefined) {
+        delete sanitized[key].__v;
+      }
+      if (sanitized[key]._id !== undefined) {
+        delete sanitized[key]._id;
+      }
+    }
+  });
+  
+  return sanitized;
+}
+
+/**
  * DB 동기화 처리 함수 (크론)
  *
  * sync-queue에 있는 변경된 엔티티들을 DB에 저장합니다.
@@ -187,7 +278,7 @@ async function syncToDB() {
         // 큐 아이템 조회
         const queueData = await getSyncQueueItem(item.key);
         if (!queueData || !queueData.data) {
-          logger.warn('Invalid sync queue item', { key: item.key });
+          // Invalid sync queue item - 삭제
           await removeFromSyncQueue(item.key);
           continue;
         }
@@ -197,10 +288,22 @@ async function syncToDB() {
         // 엔티티 타입별로 DB 저장
         switch (type) {
           case 'session':
+            // data 필드는 Mixed 타입이므로 개별 업데이트하여 충돌 방지
+            const { session_id: sSessionId, data: sData, ...restSessionFields } = data;
+            const sessionUpdate: any = sanitizeForUpdate(restSessionFields, ['session_id']);
+            
+            // data 필드 내부의 각 속성을 개별적으로 설정
+            if (sData) {
+              const sanitizedData = sanitizeForUpdate(sData);
+              Object.keys(sanitizedData).forEach(key => {
+                sessionUpdate[`data.${key}`] = sanitizedData[key];
+              });
+            }
+            
             await Session.updateOne(
-              { session_id: data.session_id },
-              { $set: data },
-              { upsert: true }
+              { session_id: sSessionId },
+              { $set: sessionUpdate },
+              { strict: false }
             );
             break;
 
@@ -209,26 +312,62 @@ async function syncToDB() {
               ? { _id: data._id }
               : { session_id: data.session_id, no: data.no };
 
+            // data 필드는 Mixed 타입이므로 개별 업데이트하여 충돌 방지
+            const { data: gData, ...restGeneralFields } = data;
+            const generalUpdate: any = sanitizeForUpdate(restGeneralFields, ['session_id', 'no']);
+            
+            // data 필드 내부의 각 속성을 개별적으로 설정
+            if (gData) {
+              const sanitizedGData = sanitizeForUpdate(gData);
+              Object.keys(sanitizedGData).forEach(key => {
+                generalUpdate[`data.${key}`] = sanitizedGData[key];
+              });
+            }
+
             await General.updateOne(
               generalFilter,
-              { $set: data },
-              { upsert: true }
+              { $set: generalUpdate },
+              { strict: false }
             );
             break;
 
           case 'city':
+            // data 필드는 Mixed 타입이므로 개별 업데이트하여 충돌 방지
+            const { session_id: cSessionId, city: cCity, data: cData, ...restCityFields } = data;
+            const cityUpdate: any = sanitizeForUpdate(restCityFields, ['session_id', 'city']);
+            
+            // data 필드 내부의 각 속성을 개별적으로 설정
+            if (cData) {
+              const sanitizedCData = sanitizeForUpdate(cData);
+              Object.keys(sanitizedCData).forEach(key => {
+                cityUpdate[`data.${key}`] = sanitizedCData[key];
+              });
+            }
+            
             await City.updateOne(
-              { session_id: data.session_id, city: data.city },
-              { $set: data },
-              { upsert: true }
+              { session_id: cSessionId, city: cCity },
+              { $set: cityUpdate },
+              { strict: false }
             );
             break;
 
           case 'nation':
+            // data 필드는 Mixed 타입이므로 개별 업데이트하여 충돌 방지
+            const { session_id: nSessionId, nation: nNation, data: nData, ...restNationFields } = data;
+            const nationUpdate: any = sanitizeForUpdate(restNationFields, ['session_id', 'nation']);
+            
+            // data 필드 내부의 각 속성을 개별적으로 설정
+            if (nData) {
+              const sanitizedNData = sanitizeForUpdate(nData);
+              Object.keys(sanitizedNData).forEach(key => {
+                nationUpdate[`data.${key}`] = sanitizedNData[key];
+              });
+            }
+            
             await Nation.updateOne(
-              { session_id: data.session_id, nation: data.nation },
-              { $set: data },
-              { upsert: true }
+              { session_id: nSessionId, nation: nNation },
+              { $set: nationUpdate },
+              { strict: false }
             );
             break;
 
@@ -269,10 +408,69 @@ async function syncToDB() {
 }
 
 /**
- * 메인 시작 함수
+ * 커맨드 소비 처리 함수 (크론)
+ * Redis Streams에서 커맨드를 읽어 실행합니다.
  */
+async function consumeCommands(queue: any, groupName: string, consumerName: string) {
+  try {
+    // 비블로킹 방식으로 커맨드 소비 (한 번에 최대 10개)
+    await queue.consume(groupName, consumerName, async (message: any) => {
+      logger.debug('커맨드 수신', {
+        commandId: message.commandId,
+        category: message.category,
+        type: message.type,
+        generalId: message.generalId,
+        sessionId: message.sessionId
+      });
+
+      // CommandExecutor를 통해 커맨드 실행
+      const result = await CommandExecutor.execute({
+        category: message.category,
+        type: message.type,
+        generalId: message.generalId,
+        sessionId: message.sessionId,
+        arg: message.arg
+      });
+
+      if (!result.success) {
+        logger.error('커맨드 실행 실패', {
+          commandId: message.commandId,
+          error: result.error
+        });
+        throw new Error(result.error || 'Command execution failed');
+      }
+
+      logger.info('커맨드 실행 완료', {
+        commandId: message.commandId,
+        result: result.result
+      });
+    });
+  } catch (error: any) {
+    // Consumer Group이 없거나 메시지가 없는 경우는 정상
+    if (!error.message?.includes('BUSYGROUP') && error.message) {
+      logger.debug('커맨드 소비 중 오류 (정상일 수 있음)', {
+        error: error.message
+      });
+    }
+  }
+}
+
+/**
+ * 메인 시작 함수
+ * server.ts에서 import해서 사용 가능
+ */
+export async function startUnifiedDaemon() {
+  return start();
+}
+
 async function start() {
   try {
+    console.log('[DAEMON START] 🚀 통합 게임 데몬 시작 중...');
+    
+    // 동적 임포트로 모든 의존성 로드
+    const loggerModule = await import('./common/logger');
+    logger = loggerModule.logger;
+    
     logger.info('🚀 통합 게임 데몬 시작 중...', {
       nodeEnv: process.env.NODE_ENV || 'development',
       nodeVersion: process.version,
@@ -280,36 +478,85 @@ async function start() {
     });
 
     // MongoDB 연결
+    console.log('[DAEMON START] MongoDB 연결 중...');
+    const dbModule = await import('./db/connection');
+    mongoConnection = dbModule.mongoConnection;
     await mongoConnection.connect(process.env.MONGODB_URI);
+    console.log('[DAEMON START] ✅ MongoDB 연결 성공');
     logger.info('✅ MongoDB 연결 성공');
 
     // Redis 연결
+    console.log('[DAEMON START] Redis 연결 중...');
     const { RedisService } = await import('./infrastructure/queue/redis.service');
     await RedisService.connect();
+    console.log('[DAEMON START] ✅ Redis 연결 성공');
     logger.info('✅ Redis 연결 성공');
 
+    // 모델 및 서비스 로드
+    console.log('[DAEMON START] 모델 로딩 시작...');
+    const sessionModule = await import('./models/session.model');
+    Session = sessionModule.Session;
+    console.log('[DAEMON START] Session 모델 로딩 완료');
+    
+    const commandModule = await import('./core/command');
+    CommandRegistry = commandModule.CommandRegistry;
+    console.log('[DAEMON START] CommandRegistry 로딩 완료');
+    
+    const executorModule = await import('./core/command/CommandExecutor');
+    CommandExecutor = executorModule.CommandExecutor;
+    console.log('[DAEMON START] CommandExecutor 로딩 완료');
+    
+    const engineModule = await import('./services/global/ExecuteEngine.service');
+    ExecuteEngineService = engineModule.ExecuteEngineService;
+    console.log('[DAEMON START] ExecuteEngineService 로딩 완료');
+    
+    const auctionModule = await import('./services/auction/AuctionEngine.service');
+    processAuction = auctionModule.processAuction;
+    console.log('[DAEMON START] AuctionEngine 로딩 완료');
+    
+    const tournamentModule = await import('./services/tournament/TournamentEngine.service');
+    processTournament = tournamentModule.processTournament;
+    console.log('[DAEMON START] TournamentEngine 로딩 완료');
+
     // 커맨드 레지스트리 초기화
+    console.log('[DAEMON START] 커맨드 레지스트리 초기화 중...');
     await CommandRegistry.loadAll();
     const commandStats = CommandRegistry.getStats();
+    console.log('[DAEMON START] ✅ 커맨드 시스템 초기화 완료', commandStats);
     logger.info('✅ 커맨드 시스템 초기화 완료', commandStats);
 
     // CommandQueue 초기화
+    console.log('[DAEMON START] CommandQueue 초기화 중...');
     const { CommandQueue } = await import('./infrastructure/queue/command-queue');
     const queue = new CommandQueue('game:commands');
     await queue.init();
+    console.log('[DAEMON START] ✅ CommandQueue 초기화 완료');
     logger.info('✅ CommandQueue 초기화 완료');
 
-    // 1. 크론 스케줄러 시작 (턴 처리)
-    const CRON_EXPRESSION = '* * * * *'; // 매분
-    cron.schedule(CRON_EXPRESSION, () => {
-      processTurns().catch(err => {
-        logger.error('크론 작업 실행 중 오류', {
-          error: err.message,
-          stack: err.stack
+    // 1. 턴 처리 스케줄러 시작 (매분마다 - PHP 삼국지와 동일)
+    // node-cron 형식: 초(옵션) 분 시 일 월 요일
+    // 5개 필드: 분 시 일 월 요일 (표준)
+    console.log('[DAEMON START] 턴 처리 스케줄러 등록 중...');
+    const TURN_CRON_EXPRESSION = '* * * * *'; // 매분마다
+    let isProcessingTurns = false; // 중복 실행 방지
+    cron.schedule(TURN_CRON_EXPRESSION, () => {
+      if (isProcessingTurns) {
+        logger.debug('턴 처리가 이미 실행 중입니다. 스킵합니다.');
+        return;
+      }
+      isProcessingTurns = true;
+      processTurns()
+        .catch(err => {
+          logger.error('턴 처리 크론 작업 실행 중 오류', {
+            error: err.message,
+            stack: err.stack
+          });
+        })
+        .finally(() => {
+          isProcessingTurns = false;
         });
-      });
     });
-    logger.info('✅ 턴 스케줄러 시작', { schedule: CRON_EXPRESSION });
+    logger.info('✅ 턴 스케줄러 시작 (매분마다)', { schedule: TURN_CRON_EXPRESSION });
 
     // 2. 경매 스케줄러 시작 (경매 종료 처리)
     const AUCTION_CRON_EXPRESSION = '* * * * *'; // 매분
@@ -359,8 +606,55 @@ async function start() {
     });
     logger.info('✅ DB 동기화 스케줄러 시작', { schedule: SYNC_CRON_EXPRESSION });
 
-    // 2. Redis Streams 커맨드 소비 시작
+    // 5.5. 전투 해결 스케줄러 시작 (5초마다)
+    const BATTLE_CRON_EXPRESSION = '*/5 * * * * *'; // 5초마다
+    cron.schedule(BATTLE_CRON_EXPRESSION, () => {
+      processBattleResolution().catch(err => {
+        logger.error('전투 해결 크론 작업 실행 중 오류', {
+          error: err.message,
+          stack: err.stack
+        });
+      });
+    });
+    logger.info('✅ 전투 해결 스케줄러 시작', { schedule: BATTLE_CRON_EXPRESSION });
+
+    // 6. 커맨드 소비 스케줄러 시작 (매초마다)
+    const COMMAND_CRON_EXPRESSION = '* * * * * *'; // 매초
     const consumerName = process.env.HOSTNAME || 'daemon-unified-1';
+    const groupName = 'cmd-group';
+    
+    cron.schedule(COMMAND_CRON_EXPRESSION, () => {
+      consumeCommands(queue, groupName, consumerName).catch(err => {
+        logger.error('커맨드 소비 크론 작업 실행 중 오류', {
+          error: err.message,
+          stack: err.stack
+        });
+      });
+    });
+    logger.info('✅ 커맨드 소비 스케줄러 시작', { schedule: COMMAND_CRON_EXPRESSION });
+    
+    console.log('\n========================================');
+    console.log('🎮 통합 게임 데몬 시작 완료!');
+    console.log('========================================');
+    console.log(`🔧 커맨드: ${commandStats.total}개 로드됨`);
+    console.log(`   - General: ${commandStats.generalCount}개`);
+    console.log(`   - Nation: ${commandStats.nationCount}개`);
+    console.log(`   - LOGH: ${commandStats.loghCount}개`);
+    console.log('');
+    console.log('📋 활성화된 스케줄러:');
+    console.log(`   ✅ 턴 처리: ${TURN_CRON_EXPRESSION} (10초마다)`);
+    console.log(`   ✅ 커맨드 소비: ${COMMAND_CRON_EXPRESSION} (매초)`);
+    console.log(`   ✅ 경매 처리: ${AUCTION_CRON_EXPRESSION} (매분)`);
+    console.log(`   ✅ 토너먼트: ${TOURNAMENT_CRON_EXPRESSION} (매분)`);
+    console.log(`   ✅ NPC 명령: ${NPC_CRON_EXPRESSION} (5분마다)`);
+    console.log(`   ✅ DB 동기화: ${SYNC_CRON_EXPRESSION} (5초마다)`);
+    console.log(`   ✅ 전투 해결: ${BATTLE_CRON_EXPRESSION} (5초마다)`);
+    console.log('');
+    console.log('🔌 Queue 정보:');
+    console.log(`   - Stream: game:commands`);
+    console.log(`   - Group: ${groupName}`);
+    console.log(`   - Consumer: ${consumerName}`);
+    console.log('========================================\n');
     
     logger.info('🎮 통합 게임 데몬 시작 완료!', {
       features: {
@@ -369,78 +663,29 @@ async function start() {
         tournamentScheduler: true,
         npcAutoCommand: true,
         dbSync: true,
+        battleResolution: true,
         commandConsumer: true
       },
       totalCommands: commandStats.total,
       streamName: 'game:commands',
-      consumerGroup: 'cmd-group',
-      cronSchedule: CRON_EXPRESSION,
+      consumerGroup: groupName,
+      consumerName: consumerName,
+      turnCronSchedule: TURN_CRON_EXPRESSION,
       auctionCronSchedule: AUCTION_CRON_EXPRESSION,
       tournamentCronSchedule: TOURNAMENT_CRON_EXPRESSION,
       npcCronSchedule: NPC_CRON_EXPRESSION,
-      syncCronSchedule: SYNC_CRON_EXPRESSION
+      syncCronSchedule: SYNC_CRON_EXPRESSION,
+      commandCronSchedule: COMMAND_CRON_EXPRESSION
     });
-
-    // 커맨드 소비 루프
-    while (!isShuttingDown) {
-      try {
-        await queue.consume('cmd-group', consumerName, async (message) => {
-          const { commandId, category, type, generalId, sessionId, arg } = message;
-
-          logger.info('📥 커맨드 수신', {
-            commandId,
-            category,
-            type,
-            generalId
-          });
-
-          try {
-            // 커맨드 실행
-            const result = await CommandExecutor.execute({
-              category: category as 'general' | 'nation',
-              type,
-              generalId,
-              sessionId,
-              arg
-            });
-
-            logger.info('✅ 커맨드 실행 완료', {
-              commandId,
-              success: result.success
-            });
-
-            // TODO: 결과를 Command 문서에 업데이트
-            // await commandRepository.updateById(commandId, {
-            //   status: 'completed',
-            //   result: result.result,
-            //   completed_at: new Date()
-            // });
-
-          } catch (error) {
-            logger.error('❌ 커맨드 실행 실패', {
-              commandId,
-              error: error instanceof Error ? error.message : String(error),
-              stack: error instanceof Error ? error.stack : undefined
-            });
-
-            // TODO: 실패 상태 업데이트
-            // await commandRepository.updateById(commandId, {
-            //   status: 'failed',
-            //   error: error.message,
-            //   completed_at: new Date()
-            // });
-          }
-        });
-      } catch (error) {
-        if (!isShuttingDown) {
-          logger.error('커맨드 소비 에러', {
-            error: error instanceof Error ? error.message : String(error)
-          });
-          // 잠시 대기 후 재시도
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+    
+    // 메인 프로세스는 계속 실행 (크론 작업이 돌 수 있도록)
+    // setInterval로 이벤트 루프 유지
+    setInterval(() => {
+      // 주기적으로 상태 확인 (매 5분)
+      if (!isShuttingDown) {
+        logger.debug('데몬 상태 확인 - 정상 실행 중');
       }
-    }
+    }, 5 * 60 * 1000);
 
   } catch (error) {
     logger.error('🔥 통합 게임 데몬 시작 실패', {
@@ -459,12 +704,22 @@ async function shutdown(signal: string) {
   isShuttingDown = true;
 
   try {
+    // 모든 세션의 락 해제
+    const { RedisService } = await import('./infrastructure/queue/redis.service');
+    const redis = RedisService.getClient();
+    
+    // execute_engine_lock:* 패턴의 모든 락 키 찾기
+    const lockKeys = await redis.keys('execute_engine_lock:*');
+    if (lockKeys.length > 0) {
+      await Promise.all(lockKeys.map(key => redis.del(key)));
+      logger.info('🔓 모든 락 해제 완료', { count: lockKeys.length, keys: lockKeys });
+    }
+
     // MongoDB 연결 종료
     await mongoConnection.disconnect();
     logger.info('MongoDB 연결 종료');
 
     // Redis 연결 종료
-    const { RedisService } = await import('./infrastructure/queue/redis.service');
     await RedisService.disconnect();
     logger.info('Redis 연결 종료');
 
@@ -497,4 +752,11 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-start();
+// 이 파일이 직접 실행될 때만 start() 호출
+// ts-node-dev에서도 작동하도록 개선
+if (require.main === module || process.argv[1]?.includes('daemon-unified')) {
+  start().catch(err => {
+    console.error('❌ 데몬 시작 실패:', err);
+    process.exit(1);
+  });
+}

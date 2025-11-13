@@ -33,13 +33,15 @@ export class ForceMarchCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
-    this.setDestCity(this.arg.destCityID, true);
-
     const [reqGold, reqRice] = this.getCost();
 
+    // setDestCity를 먼저 호출
+    this.setDestCity(this.arg.destCityID, true);
+
+    // fullConditionConstraints 설정 (PHP와 동일)
     this.fullConditionConstraints = [
       ConstraintHelper.NotSameDestCity(),
-      ConstraintHelper.NearCity(3),
+      ConstraintHelper.NearCity(3), // 최대 3칸 거리
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];
@@ -67,7 +69,7 @@ export class ForceMarchCommand extends GeneralCommand {
 
   public getBrief(): string {
     const commandName = (this.constructor as typeof GeneralCommand).getName();
-    const destCityName = this.destCity.name;
+    const destCityName = this.destCity?.name ?? '목적지';
     return `【${destCityName}】로 ${commandName}`;
   }
 
@@ -77,7 +79,7 @@ export class ForceMarchCommand extends GeneralCommand {
     if (failReason === null) {
       throw new Error('실행 가능한 커맨드에 대해 실패 이유를 수집');
     }
-    const destCityName = this.destCity.name;
+    const destCityName = this.destCity?.name ?? '목적지';
     return `${failReason} <G><b>${destCityName}</b></>로 ${commandName} 실패.`;
   }
 
@@ -99,6 +101,10 @@ export class ForceMarchCommand extends GeneralCommand {
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
 
+    if (!this.destCity) {
+      throw new Error('목적 도시 정보가 없습니다');
+    }
+    
     const destCityName = this.destCity.name;
     const destCityID = this.destCity.city;
 
@@ -109,7 +115,7 @@ export class ForceMarchCommand extends GeneralCommand {
     const exp = 100;
     general.setVar('city', destCityID);
 
-    if (general.getVar('officer_level') === 12 && this.nation.level === 0) {
+    if (general.getVar('officer_level') === 12 && this.nation && this.nation.level === 0) {
       try {
         const sessionId = general.getSessionID();
         const nationID = general.getNationID();
@@ -155,6 +161,23 @@ export class ForceMarchCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn(ForceMarchCommand.getName(), this.arg));
     general.checkStatChange();
+
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '강행');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
 
     await this.saveGeneral();
 

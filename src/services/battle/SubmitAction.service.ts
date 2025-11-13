@@ -7,6 +7,8 @@ import { battleRepository } from '../../repositories/battle.repository';
  */
 const UNIT_MOVEMENT_RANGE: Record<UnitType, number> = {
   [UnitType.FOOTMAN]: 3,
+  [UnitType.SPEARMAN]: 2,
+  [UnitType.HALBERD]: 2,
   [UnitType.ARCHER]: 4,
   [UnitType.CAVALRY]: 5,
   [UnitType.WIZARD]: 3,
@@ -18,6 +20,8 @@ const UNIT_MOVEMENT_RANGE: Record<UnitType, number> = {
  */
 const UNIT_ATTACK_RANGE: Record<UnitType, number> = {
   [UnitType.FOOTMAN]: 1,
+  [UnitType.SPEARMAN]: 1,
+  [UnitType.HALBERD]: 1,
   [UnitType.ARCHER]: 4,
   [UnitType.CAVALRY]: 2,
   [UnitType.WIZARD]: 3,

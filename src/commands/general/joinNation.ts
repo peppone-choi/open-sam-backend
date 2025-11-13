@@ -66,19 +66,20 @@ export class JoinNationCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
-    const destNationID = this.arg.destNationID;
-    this.setDestNation(destNationID, ['gennum', 'scout']);
-
     const relYear = this.env.year - this.env.startyear;
 
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
       ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
       ConstraintHelper.BeNeutral(),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.AllowJoinDestNation(relYear),
-      ConstraintHelper.AllowJoinAction(),
-      ConstraintHelper.NoPenalty('NoChosenAssignment'),
+      ConstraintHelper.DifferentDestNation(),
     ];
+    
+    // setDestNation은 비동기 작업이므로 나중에 처리
+    const destNationID = this.arg.destNationID;
+    this.setDestNation(destNationID, ['gennum', 'scout']);
   }
 
   public getCost(): [number, number] {
@@ -134,6 +135,8 @@ export class JoinNationCommand extends GeneralCommand {
     general.setVar('officer_city', 0);
     general.setVar('belong', 1);
     general.setVar('troop', 0);
+
+    console.log(`[JoinNation] 장수 #${general.getID()} ${general.getName()}: nation=${destNationID}, officer_level=1 설정완료`);
 
     if (this.destGeneralObj !== null) {
       general.setVar('city', this.destGeneralObj.getCityID());
@@ -194,7 +197,17 @@ export class JoinNationCommand extends GeneralCommand {
       console.error('tryUniqueItemLottery 실패:', error);
     }
 
+    console.log(`[JoinNation] 저장 전 데이터 확인:`, {
+      no: general.getID(),
+      name: general.getName(),
+      nation: general.getVar('nation'),
+      officer_level: general.getVar('officer_level'),
+      city: general.getVar('city')
+    });
+
     await this.saveGeneral();
+
+    console.log(`[JoinNation] 저장 완료`);
 
     return true;
   }

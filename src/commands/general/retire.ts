@@ -66,12 +66,21 @@ export class RetireCommand extends GeneralCommand {
     await StaticEventHandler.handleEvent(
       this.generalObj,
       this.destGeneralObj,
-      RetireCommand,
+      this,
       this.env,
       this.arg ?? {}
     );
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '은퇴');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

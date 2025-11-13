@@ -84,6 +84,21 @@ export class GameEventEmitter {
       socketManager.broadcastGameEvent(sessionId, event, data);
     }
   }
+
+  /**
+   * 로그 업데이트 브로드캐스트
+   * @param sessionId 세션 ID
+   * @param generalId 장수 ID (장수동향/개인기록용, 중원정세는 0)
+   * @param logType 'action' | 'history'
+   * @param logId 로그 ID
+   * @param logText 로그 텍스트
+   */
+  static broadcastLogUpdate(sessionId: string, generalId: number, logType: 'action' | 'history', logId: number, logText: string) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastLogUpdate(sessionId, generalId, logType, logId, logText);
+    }
+  }
 }
 
 

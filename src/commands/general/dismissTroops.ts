@@ -93,6 +93,15 @@ export class DismissTroopsCommand extends GeneralCommand {
       console.error('StaticEventHandler failed:', error);
     }
 
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '소집해제');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
+
     await this.saveGeneral();
 
     return true;

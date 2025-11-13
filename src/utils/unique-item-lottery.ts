@@ -183,7 +183,7 @@ export async function giveRandomUniqueItem(
     const inheritRandomUnique = generalData.aux?.inheritRandomUnique;
     if (inheritRandomUnique) {
       const [year, month, initYear, initMonth] = await gameStor.getValuesAsArray(['year', 'month', 'init_year', 'init_month']);
-      const relMonthByInit = Util.joinYearMonth(year || 180, month || 1) - Util.joinYearMonth(initYear || 180, initMonth || 1);
+      const relMonthByInit = Util.joinYearMonth(year || 184, month || 1) - Util.joinYearMonth(initYear || 184, initMonth || 1);
       const minMonthToAllowInheritItem = 4; // GameConst에서 가져와야 함
       const availableBuyUnique = relMonthByInit >= minMonthToAllowInheritItem;
 
@@ -216,7 +216,7 @@ export async function giveRandomUniqueItem(
 
     // 로그 기록
     const [year, month] = await gameStor.getValuesAsArray(['year', 'month']);
-    const actionLogger = new ActionLogger(general.no, nationId, year || 180, month || 1);
+    const actionLogger = new ActionLogger(general.no, nationId, year || 184, month || 1);
 
     actionLogger.pushGeneralActionLog(`<C>${itemName}</>${josaUl} 습득했습니다!`);
     actionLogger.pushGeneralHistoryLog(`<C>${itemName}</>${josaUl} 습득`);
@@ -287,7 +287,7 @@ export async function tryUniqueItemLottery(
 
     // 년도별 최대 시도 횟수 계산
     const [startYear, year, month, initYear, initMonth] = await gameStor.getValuesAsArray(['startyear', 'year', 'month', 'init_year', 'init_month']);
-    const relYear = (year || 180) - (startYear || 180);
+    const relYear = (year || 184) - (startYear || 184);
     let maxTrialCountByYear = 1;
     for (const [targetYear, targetTrialCnt] of maxUniqueItemLimit) {
       if (relYear < targetYear) {
@@ -366,7 +366,7 @@ export async function tryUniqueItemLottery(
     const moreProb = Math.pow(10, 1 / 4);
 
     // 유산 포인트로 구매한 경우 또는 건국 시 100% 확률
-    const relMonthByInit = Util.joinYearMonth(year || 180, month || 1) - Util.joinYearMonth(initYear || 180, initMonth || 1);
+    const relMonthByInit = Util.joinYearMonth(year || 184, month || 1) - Util.joinYearMonth(initYear || 184, initMonth || 1);
     const availableBuyUnique = relMonthByInit >= minMonthToAllowInheritItem;
     const inheritRandomUnique = generalData.aux?.inheritRandomUnique;
 

@@ -72,6 +72,10 @@ export class WanderCommand extends GeneralCommand {
 
     const generalName = general.getName();
     const nationID = general.getNationID();
+    
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nationName = this.nation.name;
 
     const logger = general.getLogger();
@@ -159,6 +163,15 @@ export class WanderCommand extends GeneralCommand {
       await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
     } catch (error) {
       console.error('StaticEventHandler 실패:', error);
+    }
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '방랑');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
     }
 
     await this.saveGeneral();

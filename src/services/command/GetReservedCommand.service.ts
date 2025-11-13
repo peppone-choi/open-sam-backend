@@ -2,8 +2,8 @@ import { generalTurnRepository } from '../../repositories/general-turn.repositor
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 
-const MAX_TURN = 30;
-const FLIPPED_MAX_TURN = 14;
+const MAX_TURN = 50;
+const FLIPPED_MAX_TURN = 30;
 
 export class GetReservedCommandService {
   static async execute(data: any, user?: any) {
@@ -17,14 +17,6 @@ export class GetReservedCommandService {
       }
     }
     
-    console.log('GetReservedCommand.execute:', {
-      sessionId,
-      generalId,
-      generalIdType: typeof generalId,
-      userGeneralId: user?.generalId,
-      dataGeneralId: data.general_id,
-      dataGeneralIdType: typeof data.general_id,
-    });
     
     if (!generalId) {
       return {
@@ -34,6 +26,8 @@ export class GetReservedCommandService {
     }
 
     const rawTurns = await generalTurnRepository.findByGeneral(sessionId, generalId);
+
+
 
     const commandList: any = {};
     let invalidTurnList = 0;
@@ -93,11 +87,7 @@ export class GetReservedCommandService {
     // General 모델에서 장수 찾기
     const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
-    console.log('General 조회 결과:', {
-      generalId,
-      found: !!general,
-      generalNo: general?.no,
-    });
+
 
     if (!general) {
       return {
@@ -120,26 +110,26 @@ export class GetReservedCommandService {
     
     const turnTermInMinutes = gameEnv.turnterm || sessionData.turnterm || 60; // 분 단위
     const turnTerm = turnTermInMinutes * 60; // 초 단위로 변환
-    let year = gameEnv.year || sessionData.year || 180;
+    let year = gameEnv.year || sessionData.year || session.year || 184;
     let month = gameEnv.month || sessionData.month || 1;
     const lastExecute = gameEnv.turntime || sessionData.turntime || new Date();
     
     // general.turntime이 있으면 사용, 없으면 현재 시간 기준으로 계산만 (DB 저장 안 함)
     let turnTime = general.turntime;
+    const turnTermInSeconds = turnTermInMinutes * 60;
+    
+    const cutTurnFunc = (time: Date, term: number): Date => {
+      const timeInSeconds = Math.floor(time.getTime() / 1000);
+      const cutSeconds = Math.floor(timeInSeconds / term) * term;
+      return new Date(cutSeconds * 1000);
+    };
+    
+    const addTurnFunc = (time: Date, term: number): Date => {
+      return new Date(time.getTime() + term * 1000);
+    };
+    
     if (!turnTime) {
       // turntime이 없으면 현재 시간 기준으로 다음 턴 시간 계산 (표시용만)
-      const turnTermInSeconds = turnTermInMinutes * 60;
-      
-      const cutTurnFunc = (time: Date, term: number): Date => {
-        const timeInSeconds = Math.floor(time.getTime() / 1000);
-        const cutSeconds = Math.floor(timeInSeconds / term) * term;
-        return new Date(cutSeconds * 1000);
-      };
-      
-      const addTurnFunc = (time: Date, term: number): Date => {
-        return new Date(time.getTime() + term * 1000);
-      };
-      
       const now = new Date();
       const cutNow = cutTurnFunc(now, turnTermInSeconds);
       const nextTurnTime = addTurnFunc(cutNow, turnTermInSeconds);
@@ -150,19 +140,30 @@ export class GetReservedCommandService {
       
       // DB에는 저장하지 않음 (조회 API이므로 읽기 전용)
       // 실제 turntime은 ExecuteEngine에서만 업데이트
-    } else if (typeof turnTime === 'string') {
-      turnTime = new Date(turnTime);
-    } else if (!(turnTime instanceof Date)) {
-      turnTime = new Date(turnTime);
+    } else {
+      // turnTime을 Date 객체로 변환
+      if (typeof turnTime === 'string') {
+        turnTime = new Date(turnTime);
+      } else if (!(turnTime instanceof Date)) {
+        turnTime = new Date(turnTime);
+      }
+      
+      // turnTime이 과거라면, 현재 시간 기준으로 다음 턴 시간 계산
+      const now = new Date();
+      if (turnTime.getTime() < now.getTime()) {
+        const cutNow = cutTurnFunc(now, turnTermInSeconds);
+        const nextTurnTime = addTurnFunc(cutNow, turnTermInSeconds);
+        
+        turnTime = nextTurnTime.getTime() <= now.getTime() 
+          ? addTurnFunc(nextTurnTime, turnTermInSeconds)
+          : nextTurnTime;
+      }
     }
-    
-    // turnTime은 그대로 사용 (과거 시간이어도 수정하지 않음)
-    // 실제 턴 시간 업데이트는 ExecuteEngine.updateTurnTime에서만 수행
 
     // turnTime을 기준으로 정확한 년월 계산 (ExecuteEngine.turnDate와 동일한 로직)
     // starttime 기준으로 경과한 턴 수를 계산하여 년월 결정
     const starttime = new Date(sessionData.starttime || sessionData.turntime || new Date());
-    const startyear = gameEnv.startyear || sessionData.startyear || session.startyear || 180;
+    const startyear = gameEnv.startyear || gameEnv.startYear || sessionData.startyear || session.startyear || 184;
     
     // ⚠️ CRITICAL FIX: starttime 유효성 검증
     const now = new Date();
@@ -248,35 +249,9 @@ export class GetReservedCommandService {
       }
     }
     
-    // 초기 상태(명령이 하나도 없을 때) 또는 빈 턴이 있으면 DB에 자동으로 휴식 명령 저장 (14턴까지만)
-    if (emptyTurns.length > 0) {
-      // 명령이 하나도 없으면 초기 상태로 14턴까지 모두 휴식으로 저장
-      // 명령이 일부만 있으면 빈 턴만 휴식으로 저장
-      const bulkOps = emptyTurns.map(turnIdx => ({
-        updateOne: {
-          filter: {
-            session_id: sessionId,
-            'data.general_id': generalId,
-            'data.turn_idx': turnIdx
-          },
-          update: {
-            $set: {
-              session_id: sessionId,
-              'data.general_id': generalId,
-              'data.turn_idx': turnIdx,
-              'data.action': '휴식',
-              'data.brief': '휴식',
-              'data.arg': {}
-            }
-          },
-          upsert: true
-        }
-      }));
-      
-      if (bulkOps.length > 0) {
-        await generalTurnRepository.bulkWrite(bulkOps);
-      }
-    }
+    // ⚠️ 빈 턴 자동 생성 로직 - 조회용으로만 사용, DB에 저장하지 않음
+    // 프론트엔드에서는 turnArray를 받아서 화면에 표시하므로 DB 저장 불필요
+    // 실제 턴 실행 시 ExecuteEngine에서 턴이 없으면 자동으로 "휴식"으로 실행함
 
     // 세션의 현재 년/월도 함께 반환 (타임라인 표시용)
     let sessionYear = startyear;

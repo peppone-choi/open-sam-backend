@@ -48,24 +48,15 @@ export class AbdicateToCommand extends GeneralCommand {
     ];
   }
 
-  protected async initWithArg(): Promise<void> {
-    const destGeneralID = this.arg.destGeneralID;
-    const sessionId = this.env['session_id'] || 'sangokushi_default';
-    const destGeneralDoc = await generalRepository.findOneByFilter({ 
-      session_id: sessionId,
-      'data.no': destGeneralID 
-    });
-    
-    if (destGeneralDoc) {
-      const destGeneral = await General.createObjFromDB(destGeneralID, sessionId);
-      this.setDestGeneral(destGeneral);
-    }
-
+  protected initWithArg(): void {
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
       ConstraintHelper.BeLord(),
       ConstraintHelper.ExistsDestGeneral(),
       ConstraintHelper.FriendlyDestGeneral(),
     ];
+    
+    // destGeneral은 run() 메서드에서 로드됨
   }
 
   public getCost(): [number, number] {
@@ -106,6 +97,10 @@ export class AbdicateToCommand extends GeneralCommand {
 
     const generalName = general.getName();
     const destGeneralName = destGeneral.getName();
+    
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nationName = this.nation.name;
 
     const logger = general.getLogger();

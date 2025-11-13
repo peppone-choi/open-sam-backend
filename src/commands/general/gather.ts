@@ -89,9 +89,17 @@ export class GatherCommand extends GeneralCommand {
 
     // 각 장수에게 로그 추가
     for (const targetGeneralID of generalList) {
-      // const targetLogger = new ActionLogger(targetGeneralID, general.getNationID(), env.year, env.month);
-      // targetLogger.pushGeneralActionLog(`${troopName} 부대원들은 <G><b>${cityName}</b></>${josaRo} 집합되었습니다.`, ActionLogger.PLAIN);
-      // await targetLogger.flush();
+      const { ActionLogger } = await import('../../services/logger/ActionLogger');
+      const targetLogger = new ActionLogger(
+        targetGeneralID,
+        general.getNationID(),
+        env.year,
+        env.month,
+        env.session_id,
+        true
+      );
+      targetLogger.pushGeneralActionLog(`${troopName} 부대원들은 <G><b>${cityName}</b></>${josaRo} 집합되었습니다.`, 'PLAIN');
+      await targetLogger.flush();
     }
 
     const exp = 70;
@@ -117,7 +125,7 @@ export class GatherCommand extends GeneralCommand {
       general
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

@@ -54,6 +54,8 @@ export interface IConstraintInput {
   destGeneral?: any;
   destCity?: ICity | null;
   destNation?: INation | null;
+  ownedCities?: ICity[];
+  ownedRegions?: number[];
 }
 
 export interface ILastTurn {
@@ -213,7 +215,21 @@ export abstract class BaseCommand {
         ]
       });
       if (cityDoc) {
-        this.city = cityDoc.data || cityDoc.toObject?.() || cityDoc;
+        // City 모델은 최상위 필드 우선 사용
+        const cityObj = cityDoc.toObject?.() || cityDoc;
+        this.city = {
+          city: cityObj.city ?? cityObj.data?.city,
+          name: cityObj.name ?? cityObj.data?.name,
+          nation: cityObj.nation ?? cityObj.data?.nation,
+          level: cityObj.level ?? cityObj.data?.level,
+          pop: cityObj.pop ?? cityObj.data?.pop,
+          agri: cityObj.agri ?? cityObj.data?.agri,
+          comm: cityObj.comm ?? cityObj.data?.comm,
+          secu: cityObj.secu ?? cityObj.data?.secu,
+          def: cityObj.def ?? cityObj.data?.def,
+          wall: cityObj.wall ?? cityObj.data?.wall,
+          ...cityObj.data // data 필드의 나머지 속성도 포함
+        };
         this.generalObj.setRawCity?.(this.city);
       }
     }
@@ -264,7 +280,62 @@ export abstract class BaseCommand {
     this.destGeneralObj = destGeneralObj;
   }
 
-  protected async setDestCity(cityNo: number, onlyName: boolean = false): Promise<void> {
+  protected setDestCity(cityNo: number, onlyName: boolean = false): void {
+    this.resetTestCache();
+    
+    // 즉시 fallback 값으로 설정하여 동기적으로 사용 가능하게 함
+    this.destCity = {
+      city: cityNo,
+      name: `City_${cityNo}`,
+      nation: 0,
+      pop: 0,
+      agri: 0,
+      comm: 0,
+      secu: 0,
+      def: 0,
+      wall: 0,
+      trust: 0,
+      level: 0
+    };
+    
+    // 백그라운드에서 실제 데이터 로드
+    (async () => {
+      try {
+        const { cityRepository } = await import('../../repositories/city.repository');
+        const sessionId = this.env.session_id || 'sangokushi_default';
+        
+        const cityDoc = await cityRepository.findOneByFilter({
+          session_id: sessionId,
+          city: cityNo
+        });
+        
+        if (!cityDoc) {
+          console.error(`setDestCity: City ${cityNo} not found in session ${sessionId}`);
+          return;
+        }
+        
+        // City 모델은 최상위 필드를 우선 사용, 없으면 data 필드 사용
+        this.destCity = {
+          city: cityDoc.city ?? cityDoc.data?.city ?? cityNo,
+          name: cityDoc.name ?? cityDoc.data?.name ?? `City_${cityNo}`,
+          nation: cityDoc.nation ?? cityDoc.data?.nation ?? 0,
+          pop: cityDoc.pop ?? cityDoc.data?.pop ?? 0,
+          agri: cityDoc.agri ?? cityDoc.data?.agri ?? 0,
+          comm: cityDoc.comm ?? cityDoc.data?.comm ?? 0,
+          secu: cityDoc.secu ?? cityDoc.data?.secu ?? 0,
+          def: cityDoc.def ?? cityDoc.data?.def ?? 0,
+          wall: cityDoc.wall ?? cityDoc.data?.wall ?? 0,
+          trust: cityDoc.trust ?? cityDoc.data?.trust ?? 0,
+          level: cityDoc.level ?? cityDoc.data?.level ?? 0
+        };
+      } catch (error) {
+        console.error('setDestCity 실패:', error);
+      }
+    })();
+  }
+  
+  // async 버전도 필요한 경우를 위해 별도로 제공
+  protected async setDestCityAsync(cityNo: number, onlyName: boolean = false): Promise<void> {
     this.resetTestCache();
     
     try {
@@ -276,9 +347,8 @@ export abstract class BaseCommand {
         city: cityNo
       });
       
-      if (cityDoc && cityDoc.data) {
-        this.destCity = cityDoc.data;
-      } else {
+      if (!cityDoc) {
+        console.error(`setDestCityAsync: City ${cityNo} not found in session ${sessionId}`);
         this.destCity = {
           city: cityNo,
           name: `City_${cityNo}`,
@@ -291,10 +361,37 @@ export abstract class BaseCommand {
           wall: 0,
           trust: 0
         };
+        return;
       }
+      
+      // City 모델은 최상위 필드를 우선 사용, 없으면 data 필드 사용
+      this.destCity = {
+        city: cityDoc.city ?? cityDoc.data?.city ?? cityNo,
+        name: cityDoc.name ?? cityDoc.data?.name ?? `City_${cityNo}`,
+        nation: cityDoc.nation ?? cityDoc.data?.nation ?? 0,
+        pop: cityDoc.pop ?? cityDoc.data?.pop ?? 0,
+        agri: cityDoc.agri ?? cityDoc.data?.agri ?? 0,
+        comm: cityDoc.comm ?? cityDoc.data?.comm ?? 0,
+        secu: cityDoc.secu ?? cityDoc.data?.secu ?? 0,
+        def: cityDoc.def ?? cityDoc.data?.def ?? 0,
+        wall: cityDoc.wall ?? cityDoc.data?.wall ?? 0,
+        trust: cityDoc.trust ?? cityDoc.data?.trust ?? 0,
+        level: cityDoc.level ?? cityDoc.data?.level ?? 0
+      };
     } catch (error) {
-      console.error('setDestCity 실패:', error);
-      this.destCity = null;
+      console.error('setDestCityAsync 실패:', error);
+      this.destCity = {
+        city: cityNo,
+        name: `City_${cityNo}`,
+        nation: 0,
+        pop: 0,
+        agri: 0,
+        comm: 0,
+        secu: 0,
+        def: 0,
+        wall: 0,
+        trust: 0
+      };
     }
   }
 
@@ -321,9 +418,11 @@ export abstract class BaseCommand {
   protected abstract init(): void;
   
   protected initWithArg(): void {
+    // 자식 클래스에서 오버라이드해야 함
+    // reqArg가 true인 경우 반드시 오버라이드 필요
     const constructor = this.constructor as typeof BaseCommand;
     if (constructor.reqArg) {
-      throw new Error('NotInheritedMethodException');
+      console.warn(`[Warning] ${constructor.name}: initWithArg() not overridden but reqArg=true`);
     }
   }
 
@@ -410,12 +509,23 @@ export abstract class BaseCommand {
       return this.reasonNoPermissionToReserve;
     }
 
+    // Constraint input 객체 생성
+    const input: IConstraintInput = {
+      general: this.generalObj,
+      city: this.city,
+      nation: this.nation,
+      cmd_arg: this.arg,
+      destGeneral: this.destGeneralObj,
+      destCity: this.destCity,
+      destNation: this.destNation
+    };
+
     // Constraint testing 구현
     for (const constraint of this.permissionConstraints) {
       if (constraint && typeof constraint.test === 'function') {
-        const result = constraint.test(this.generalObj?.data || {}, this.env);
-        if (!result) {
-          this.reasonNoPermissionToReserve = constraint.reason || constraint.message || '권한이 없습니다';
+        const result = constraint.test(input, this.env);
+        if (result !== null) {
+          this.reasonNoPermissionToReserve = result || constraint.reason || constraint.message || '권한이 없습니다';
           this.cachedPermissionToReserve = true;
           return this.reasonNoPermissionToReserve;
         }
@@ -444,12 +554,23 @@ export abstract class BaseCommand {
       return this.reasonNotMinConditionMet;
     }
 
+    // Constraint input 객체 생성
+    const input: IConstraintInput = {
+      general: this.generalObj,
+      city: this.city,
+      nation: this.nation,
+      cmd_arg: this.arg,
+      destGeneral: this.destGeneralObj,
+      destCity: this.destCity,
+      destNation: this.destNation
+    };
+
     // Constraint testing 구현
     for (const constraint of this.minConditionConstraints) {
       if (constraint && typeof constraint.test === 'function') {
-        const result = constraint.test(this.generalObj?.data || {}, this.env);
-        if (!result) {
-          this.reasonNotMinConditionMet = constraint.reason || constraint.message || '조건을 만족하지 않습니다';
+        const result = constraint.test(input, this.env);
+        if (result !== null) {
+          this.reasonNotMinConditionMet = result || constraint.reason || constraint.message || '조건을 만족하지 않습니다';
           this.cachedMinConditionMet = true;
           return this.reasonNotMinConditionMet;
         }
@@ -475,12 +596,26 @@ export abstract class BaseCommand {
       return this.reasonNotFullConditionMet;
     }
 
+    // Constraint input 객체 생성
+    // ownedCities는 env에서 전달받음 (ExecuteEngine에서 미리 로드)
+    const input: IConstraintInput = {
+      general: this.generalObj,
+      city: this.city,
+      nation: this.nation,
+      cmd_arg: this.arg,
+      destGeneral: this.destGeneralObj,
+      destCity: this.destCity,
+      destNation: this.destNation,
+      ownedCities: this.env?.ownedCities || []
+    };
+
     // Constraint testing 구현
     for (const constraint of this.fullConditionConstraints) {
       if (constraint && typeof constraint.test === 'function') {
-        const result = constraint.test(this.generalObj?.data || {}, this.env);
-        if (!result) {
-          this.reasonNotFullConditionMet = constraint.reason || constraint.message || '조건을 만족하지 않습니다';
+        const result = constraint.test(input, this.env);
+        // result가 null이면 성공, 문자열이면 실패 (에러 메시지)
+        if (result !== null) {
+          this.reasonNotFullConditionMet = result || constraint.reason || constraint.message || '조건을 만족하지 않습니다';
           this.cachedFullConditionMet = true;
           return this.reasonNotFullConditionMet;
         }
@@ -587,13 +722,19 @@ export abstract class BaseCommand {
     const sessionId = this.env.session_id;
     const generalNo = this.generalObj.getID();
     
+    console.log(`[BaseCommand.saveGeneral] 장수 저장 시작: session=${sessionId}, no=${generalNo}`);
+    
     // generalObj가 Mongoose 문서인 경우
     if (this.generalObj.save && typeof this.generalObj.save === 'function') {
+      console.log(`[BaseCommand.saveGeneral] Mongoose save() 호출`);
       await this.generalObj.save();
     } else {
       // 일반 객체인 경우 레포지토리 사용
       const updateData = this.generalObj.data || this.generalObj.toObject?.() || this.generalObj;
+      console.log(`[BaseCommand.saveGeneral] Repository 사용, updateData.nation=${updateData.nation}, updateData.officer_level=${updateData.officer_level}`);
       await generalRepository.updateBySessionAndNo(sessionId, generalNo, updateData);
     }
+    
+    console.log(`[BaseCommand.saveGeneral] 장수 저장 완료`);
   }
 }

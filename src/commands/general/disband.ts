@@ -67,10 +67,10 @@ export class DisbandCommand extends GeneralCommand {
     const generalName = general.getName();
     const josaYi = JosaUtil.pick(generalName, '이');
 
-    const nation = this!.nation;
+    const nation = this.nation;
     if (!nation) throw new Error('nation이 없습니다');
-    const nationID = nation!.nation;
-    const nationName = nation!.name;
+    const nationID = nation.nation;
+    const nationName = nation.name;
     const josaUl = JosaUtil.pick(nationName, '을');
 
     await db.update('general', {
@@ -95,7 +95,7 @@ export class DisbandCommand extends GeneralCommand {
     general.setVar('makelimit', 12);
     
     for (const oldGeneral of nationGenerals) {
-      await await oldGeneral.save();
+      await oldGeneral.save();
     }
     
     await StaticEventHandler.handleEvent(
@@ -106,7 +106,7 @@ export class DisbandCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     await runEventHandler(db, null, 'OccupyCity');
 

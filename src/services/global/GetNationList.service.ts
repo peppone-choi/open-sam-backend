@@ -2,6 +2,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { getNationTypeInfo } from '../../core/nation-type/NationTypeFactory';
 
 /**
  * GetNationList Service
@@ -28,10 +29,21 @@ export class GetNationListService {
       // Build nations map
       const nations: Record<number, any> = {};
       for (const nation of nationsData) {
+        const nationData = nation.data || {};
+        const nationType = nationData.type || null;
+        const typeInfo = getNationTypeInfo(nationType);
+        
         nations[nation.nation] = {
-          ...nation.data,
+          ...nationData,
           nation: nation.nation,
-          name: nation.name
+          name: nation.name,
+          type: {
+            raw: nationType,
+            name: typeInfo.name,
+            pros: typeInfo.pros,
+            cons: typeInfo.cons
+          },
+          topChiefs: {} // 지도자 정보는 나중에 추가
         };
       }
 
@@ -48,10 +60,21 @@ export class GetNationListService {
       // Get nation 0 (neutral) if exists
       const neutralNation = await nationRepository.findByNationNum(sessionId, 0 );
       if (neutralNation) {
+        const neutralData = neutralNation.data || {};
+        const neutralType = neutralData.type || null;
+        const neutralTypeInfo = getNationTypeInfo(neutralType);
+        
         sortedNations[0] = {
-          ...neutralNation.data,
+          ...neutralData,
           nation: 0,
-          name: neutralNation.name
+          name: neutralNation.name,
+          type: {
+            raw: neutralType,
+            name: neutralTypeInfo.name,
+            pros: neutralTypeInfo.pros,
+            cons: neutralTypeInfo.cons
+          },
+          topChiefs: {} // 지도자 정보 초기화
         };
       }
 
@@ -63,19 +86,29 @@ export class GetNationListService {
       for (const general of generals) {
         const genData = general.data as any || {};
         const nationID = genData.nation || 0;
+        const officerLevel = genData.officer_level || 1;
         
         // Extract general info
         const generalInfo: any = {
           npc: general.owner === 'NPC' ? 1 : 0,
+          no: general.no,
           name: general.name,
           nation: nationID,
-          officer_level: genData.officer_level || 1,
+          officer_level: officerLevel,
         };
 
         // Add permission if auditor or ambassador
         const permission = genData.permission;
         if (permission === 'auditor' || permission === 'ambassador') {
           generalInfo.permission = permission;
+        }
+
+        // 지도자 정보 추가 (군주=12, 부군주=11 등)
+        if (officerLevel >= 11 && sortedNations[nationID]) {
+          if (!sortedNations[nationID].topChiefs) {
+            sortedNations[nationID].topChiefs = {};
+          }
+          sortedNations[nationID].topChiefs[officerLevel] = generalInfo;
         }
 
         // Simplify officer_level (< 5 becomes 1)

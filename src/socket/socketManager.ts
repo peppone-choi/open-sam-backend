@@ -249,6 +249,25 @@ export class SocketManager {
   }
 
   /**
+   * 로그 업데이트 브로드캐스트
+   * @param sessionId 세션 ID
+   * @param generalId 장수 ID (장수동향/개인기록용, 중원정세는 0)
+   * @param logType 'action' | 'history'
+   * @param logId 로그 ID
+   * @param logText 로그 텍스트
+   */
+  broadcastLogUpdate(sessionId: string, generalId: number, logType: 'action' | 'history', logId: number, logText: string) {
+    this.io.to(`session:${sessionId}`).emit('log:updated', {
+      sessionId,
+      generalId,
+      logType,
+      logId,
+      logText,
+      timestamp: new Date()
+    });
+  }
+
+  /**
    * Socket.IO 서버 인스턴스 반환
    */
   getIO(): SocketIOServer {

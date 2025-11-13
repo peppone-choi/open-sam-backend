@@ -121,6 +121,14 @@ export class che_국기변경 extends NationCommand {
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
     await general!.applyDB(db);
 
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     return true;
   }
 

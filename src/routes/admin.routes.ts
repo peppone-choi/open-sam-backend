@@ -10,8 +10,73 @@ import { SessionStateService } from '../services/sessionState.service';
 import { FileWatcherService } from '../services/file-watcher.service';
 import { ScenarioResetService } from '../services/admin/scenario-reset.service';
 import { syncSessionStatus, type SessionStatus } from '../utils/session-status';
+import Redis from 'ioredis';
 
 const router = Router();
+
+// Redis 클라이언트 (락 해제용)
+let adminRedisClient: Redis | null = null;
+function getAdminRedisClient(): Redis {
+  if (!adminRedisClient) {
+    const url = process.env.REDIS_URL;
+    if (url) {
+      adminRedisClient = new Redis(url);
+    } else {
+      adminRedisClient = new Redis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_DB || '0'),
+      });
+    }
+  }
+  return adminRedisClient;
+}
+
+/**
+ * 관리자 작업 전 락 강제 해제 및 전체 캐시 무효화
+ */
+async function forceUnlockAndClearCache(sessionId: string) {
+  const redis = getAdminRedisClient();
+  const lockKey = `execute_engine_lock:${sessionId}`;
+  
+  // 1. 락 강제 해제
+  const lockExists = await redis.get(lockKey);
+  if (lockExists) {
+    await redis.del(lockKey);
+    console.log(`[Admin] 🔓 강제 락 해제: ${lockKey}`);
+  }
+  
+  // 2. 전체 세션 캐시 무효화
+  try {
+    const { cacheManager } = await import('../cache/CacheManager');
+    
+    // 세션 관련 캐시
+    await cacheManager.delete(`session:state:${sessionId}`);
+    await cacheManager.delete(`session:byId:${sessionId}`);
+    
+    // 패턴 매칭으로 모든 관련 캐시 삭제
+    const patterns = [
+      `general:${sessionId}:*`,
+      `city:${sessionId}:*`,
+      `nation:${sessionId}:*`,
+      `generals:session:${sessionId}`,
+      `cities:session:${sessionId}`,
+      `nations:session:${sessionId}`
+    ];
+    
+    for (const pattern of patterns) {
+      await cacheManager.deletePattern(pattern);
+    }
+    
+    console.log(`[Admin] 🗑️ 전체 캐시 무효화 완료: ${sessionId}`);
+  } catch (error) {
+    console.error('[Admin] 캐시 무효화 실패:', error);
+  }
+  
+  // 3. SessionStateService 캐시 무효화
+  await SessionStateService.invalidateCache(sessionId);
+}
 
 // 모든 admin 라우트에 인증 필요 (grade >= 5)
 router.use(authenticate);
@@ -230,6 +295,12 @@ router.post('/game-info', async (req, res) => {
     const { getCurrentStatus } = await import('../utils/session-status');
     const currentStatus = getCurrentStatus(session);
     
+    // turnDate를 호출하여 현재 년/월 계산 (GetMap과 동일한 방식)
+    const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
+    const turntime = sessionData.turntime ? new Date(sessionData.turntime) : new Date();
+    const gameEnvCopy = { ...sessionData };
+    const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+    
     const gameInfo = {
       serverName: session?.name || '',
       scenario: session?.scenario_name || gameEnv.scenario || '',
@@ -237,8 +308,8 @@ router.post('/game-info', async (req, res) => {
       turnterm: sessionData.turnterm || 0,
       turntime: sessionData.turntime || null,
       starttime: gameEnv.starttime || null,
-      year: sessionData.year || gameEnv.year || 220,
-      month: sessionData.month || gameEnv.month || 1,
+      year: turnInfo.year,
+      month: turnInfo.month,
       startyear: gameEnv.startyear || 220,
       maxgeneral: gameEnv.maxgeneral || 300,
       maxnation: gameEnv.maxnation || 12,
@@ -287,8 +358,10 @@ router.post('/update-game', async (req, res) => {
     if (action === 'serverName') {
       session.name = data.serverName || '';
       session.data.game_env.serverName = data.serverName || '';
+      session.markModified('data.game_env');
     } else if (action === 'scenario') {
       session.data.game_env.scenario = data.scenario || '';
+      session.markModified('data.game_env');
     } else if (action === 'msg') {
       // AdminGameSettings 서비스를 사용하여 관리자 메시지 설정
       const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
@@ -403,9 +476,21 @@ router.post('/update-game', async (req, res) => {
         message: result.message
       });
     } else if (action === 'year') {
-      session.data.year = data.year || session.data.year || 180;
+      // 락 해제 및 캐시 무효화
+      await forceUnlockAndClearCache(sessionId);
+      
+      session.data.year = data.year || session.data.year || 184;
+      session.data.game_env.year = session.data.year;
+      session.markModified('data');
+      session.markModified('data.game_env');
     } else if (action === 'month') {
+      // 락 해제 및 캐시 무효화
+      await forceUnlockAndClearCache(sessionId);
+      
       session.data.month = data.month || session.data.month || 1;
+      session.data.game_env.month = session.data.month;
+      session.markModified('data');
+      session.markModified('data.game_env');
     } else if (action === 'status') {
       // status 변경: preparing, running, paused, finished, united
       const newStatus = data.status as SessionStatus;
@@ -417,6 +502,9 @@ router.post('/update-game', async (req, res) => {
           reason: `유효하지 않은 상태입니다. 가능한 값: ${validStatuses.join(', ')}`
         });
       }
+
+      // 락 해제 및 캐시 무효화
+      await forceUnlockAndClearCache(sessionId);
 
       // 헬퍼 함수로 status와 isunited 동기화
       syncSessionStatus(session, newStatus);
@@ -431,9 +519,26 @@ router.post('/update-game', async (req, res) => {
         isunited: session.data.game_env.isunited
       });
       
+      // preparing → running으로 변경 시 즉시 턴 처리 시작
+      if (newStatus === 'running') {
+        console.log('[Admin] 🚀 Status changed to running, triggering immediate turn execution...');
+        
+        // ExecuteEngine 동적 임포트하여 즉시 실행
+        const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
+        
+        // 비동기로 턴 처리 시작 (응답은 바로 반환)
+        ExecuteEngineService.execute({ session_id: sessionId })
+          .then(result => {
+            console.log('[Admin] ✅ Initial turn execution completed:', result);
+          })
+          .catch(err => {
+            console.error('[Admin] ❌ Initial turn execution failed:', err);
+          });
+      }
+      
       return res.json({
         result: true,
-        reason: `서버 상태가 ${newStatus}로 변경되었습니다`,
+        reason: `서버 상태가 ${newStatus}로 변경되었습니다${newStatus === 'running' ? ' (턴 처리 즉시 시작됨)' : ''}`,
         status: newStatus,
         isunited: session.data.game_env.isunited
       });
@@ -443,15 +548,40 @@ router.post('/update-game', async (req, res) => {
         isLocked: locked,
         status: locked ? 'paused' : 'running'
       });
+      
+      // 잠금 해제(unlock) 시 즉시 턴 처리 시작
+      if (!locked) {
+        console.log('[Admin] 🚀 Session unlocked, triggering immediate turn execution...');
+        
+        const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
+        
+        ExecuteEngineService.execute({ session_id: sessionId })
+          .then(result => {
+            console.log('[Admin] ✅ Turn execution after unlock completed:', result);
+          })
+          .catch(err => {
+            console.error('[Admin] ❌ Turn execution after unlock failed:', err);
+          });
+      }
     } else if (action === 'block_create') {
       session.data.block_general_create = data.block_create !== undefined ? data.block_create : 0;
+      session.markModified('data');
     } else if (action === 'fix_turntime') {
+      // 락 해제 및 캐시 무효화
+      await forceUnlockAndClearCache(sessionId);
+      
       // turntime 수정 (분 단위)
       const minutes = parseInt(data.minutes || '60', 10);
       const now = new Date();
       const newTurntime = new Date(now.getTime() + minutes * 60 * 1000);
       session.data.turntime = newTurntime.toISOString();
+      session.data.game_env.turntime = newTurntime.toISOString();
+      session.markModified('data');
+      session.markModified('data.game_env');
     } else if (action === 'fix_age') {
+      // 락 해제 및 캐시 무효화
+      await forceUnlockAndClearCache(sessionId);
+      
       // 비정상적으로 높은 나이를 수정
       const maxAge = data?.maxAge || 200;
       const fixedAge = data?.fixedAge || 30; // 기본값: 30살
@@ -485,6 +615,9 @@ router.post('/update-game', async (req, res) => {
         beforeData: session.data.isunited
       });
       
+      // 락 해제 및 캐시 무효화
+      await forceUnlockAndClearCache(sessionId);
+      
       // 두 필드 모두 업데이트 (레거시 호환성)
       session.data.game_env.isunited = isunited;
       session.data.isunited = isunited;
@@ -498,9 +631,24 @@ router.post('/update-game', async (req, res) => {
         afterData: session.data.isunited
       });
       
+      // isunited = 0 (오픈)으로 변경 시 즉시 턴 처리 시작
+      if (isunited === 0) {
+        console.log('[Admin] 🚀 Server opened (isunited=0), triggering immediate turn execution...');
+        
+        const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
+        
+        ExecuteEngineService.execute({ session_id: sessionId })
+          .then(result => {
+            console.log('[Admin] ✅ Turn execution after server open completed:', result);
+          })
+          .catch(err => {
+            console.error('[Admin] ❌ Turn execution after server open failed:', err);
+          });
+      }
+      
       return res.json({
         result: true,
-        reason: `서버 상태가 변경되었습니다 (isunited=${isunited})`
+        reason: `서버 상태가 변경되었습니다 (isunited=${isunited})${isunited === 0 ? ' (턴 처리 즉시 시작됨)' : ''}`
       });
     } else if (action === 'resetScenario') {
       // 시나리오 초기화 - 모든 장수/국가 데이터 삭제 후 시나리오 로드
@@ -538,11 +686,17 @@ router.post('/update-game', async (req, res) => {
       }
       
       try {
-        await ScenarioResetService.resetScenario(sessionId, scenarioId);
+        // turnterm 파라미터 전달 (프론트엔드에서 보낸 값 또는 세션의 현재 값 사용)
+        const turnterm = data.turnterm || session.data?.game_env?.turnterm || session.turnterm;
+        const options = turnterm ? { turnterm } : undefined;
+        
+        console.log(`[Admin] Resetting scenario ${scenarioId} with turnterm: ${turnterm || 'default'}`);
+        
+        await ScenarioResetService.resetScenario(sessionId, scenarioId, options);
         
         return res.json({
           result: true,
-          reason: `시나리오 초기화가 완료되었습니다 (scenarioId=${scenarioId})`
+          reason: `시나리오 초기화가 완료되었습니다 (scenarioId=${scenarioId}, turnterm=${turnterm || 'default'})`
         });
       } catch (err: any) {
         console.error('[Admin] Scenario reset failed:', err);

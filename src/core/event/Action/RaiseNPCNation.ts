@@ -11,7 +11,7 @@ import { Nation } from '../../../models/nation.model';
 export class RaiseNPCNation extends Action {
   async run(env: any): Promise<any> {
     const sessionId = env['session_id'] || 'sangokushi_default';
-    const year = env['year'] || 180;
+    const year = env['year'] || 184;
     const month = env['month'] || 1;
 
     // 소, 중 성만 선택 (level 5~6)

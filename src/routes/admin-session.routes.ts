@@ -161,8 +161,18 @@ router.post('/open', authenticate, requireAdmin, async (req: Request, res: Respo
     
     session.data.isunited = 0;  // 운영 중
     session.data.turntime = new Date(Date.now() + (session.data.turnterm || 60) * 60 * 1000).toISOString();
+    session.markModified('data');
     session.updated_at = new Date();
     await session.save();
+    
+    // Redis 캐시 무효화
+    try {
+      const { cacheManager } = await import('../cache/CacheManager');
+      await cacheManager.delete(`session:state:${sessionId}`);
+      await cacheManager.delete(`session:byId:${sessionId}`);
+    } catch (error) {
+      console.warn(`[AdminSession] Failed to invalidate cache:`, error);
+    }
     
     res.json({
       success: true,
@@ -197,8 +207,18 @@ router.post('/close', authenticate, requireAdmin, async (req: Request, res: Resp
     }
     
     session.data.isunited = 2;  // 폐쇄
+    session.markModified('data');
     session.updated_at = new Date();
     await session.save();
+    
+    // Redis 캐시 무효화
+    try {
+      const { cacheManager } = await import('../cache/CacheManager');
+      await cacheManager.delete(`session:state:${sessionId}`);
+      await cacheManager.delete(`session:byId:${sessionId}`);
+    } catch (error) {
+      console.warn(`[AdminSession] Failed to invalidate cache:`, error);
+    }
     
     res.json({
       success: true,
@@ -243,17 +263,37 @@ router.post('/reset', authenticate, requireAdmin, async (req: Request, res: Resp
     await NationTurn.deleteMany({ session_id: sessionId });
     
     // 세션 초기화
-    const startyear = session.data?.startyear || 200;
-    session.data = {
-      ...session.data,
-      year: startyear,
-      month: 1,
-      isunited: 2,  // 폐쇄
-      turntime: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      lastExecuted: new Date().toISOString(),
-    };
+    // startYear 우선순위: session.startyear > data.game_env.startyear > data.startyear > 기본값 184
+    const startyear = session.startyear || session.data?.game_env?.startyear || session.data?.startyear || 184;
+    
+    if (!session.data) session.data = {};
+    if (!session.data.game_env) session.data.game_env = {};
+    
+    session.data.year = startyear;
+    session.data.month = 1;
+    session.data.isunited = 2;  // 폐쇄
+    session.data.turntime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    session.data.lastExecuted = new Date().toISOString();
+    session.data.game_env.year = startyear;
+    session.data.game_env.month = 1;
+    session.data.game_env.isunited = 2;
+    session.year = startyear;
+    session.month = 1;
+    session.startyear = startyear;
+    
+    session.markModified('data');
+    session.markModified('data.game_env');
     session.updated_at = new Date();
     await session.save();
+    
+    // Redis 캐시 무효화
+    try {
+      const { cacheManager } = await import('../cache/CacheManager');
+      await cacheManager.delete(`session:state:${sessionId}`);
+      await cacheManager.delete(`session:byId:${sessionId}`);
+    } catch (error) {
+      console.warn(`[AdminSession] Failed to invalidate cache:`, error);
+    }
     
     res.json({
       success: true,
@@ -261,6 +301,109 @@ router.post('/reset', authenticate, requireAdmin, async (req: Request, res: Resp
       session: {
         sessionId: session.session_id,
         status: 'closed',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/session/update:
+ *   post:
+ *     summary: 세션 데이터 업데이트 (MongoDB + Redis 캐시 동기화)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/update', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { sessionId, data } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId가 필요합니다' });
+    }
+    
+    const session = await Session.findOne({ session_id: sessionId });
+    if (!session) {
+      return res.status(404).json({ success: false, message: '세션을 찾을 수 없습니다' });
+    }
+    
+    // 세션 데이터 업데이트
+    if (data.year !== undefined) {
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      session.data.year = data.year;
+      session.data.game_env.year = data.year;
+      session.year = data.year;
+    }
+    
+    if (data.month !== undefined) {
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      session.data.month = data.month;
+      session.data.game_env.month = data.month;
+      session.month = data.month;
+    }
+    
+    if (data.startyear !== undefined) {
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      session.data.game_env.startyear = data.startyear;
+      session.data.game_env.startYear = data.startyear;
+      session.startyear = data.startyear;
+    }
+    
+    if (data.turnterm !== undefined) {
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      session.data.turnterm = data.turnterm;
+      session.data.game_env.turnterm = data.turnterm;
+      session.turnterm = data.turnterm;
+    }
+    
+    if (data.isunited !== undefined) {
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      session.data.isunited = data.isunited;
+      session.data.game_env.isunited = data.isunited;
+      session.isunited = data.isunited;
+    }
+    
+    if (data.scenario_name !== undefined) {
+      session.scenario_name = data.scenario_name;
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      session.data.game_env.scenario = data.scenario_name;
+    }
+    
+    // Mongoose nested object 변경 감지
+    session.markModified('data');
+    session.markModified('data.game_env');
+    session.updated_at = new Date();
+    
+    await session.save();
+    
+    // Redis 캐시 무효화
+    try {
+      const { cacheManager } = await import('../cache/CacheManager');
+      await cacheManager.delete(`session:state:${sessionId}`);
+      await cacheManager.delete(`session:byId:${sessionId}`);
+      console.log(`[AdminSession] Cache invalidated for ${sessionId}`);
+    } catch (error) {
+      console.warn(`[AdminSession] Failed to invalidate cache:`, error);
+    }
+    
+    res.json({
+      success: true,
+      message: '세션 데이터가 업데이트되었습니다',
+      session: {
+        sessionId: session.session_id,
+        year: session.data?.year,
+        month: session.data?.month,
+        startyear: session.data?.game_env?.startyear,
+        scenario: session.scenario_name,
       },
     });
   } catch (error) {

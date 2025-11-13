@@ -49,7 +49,8 @@ export class JoinService {
         inheritTurntimeZone,
         inheritCity: inheritCityParam,
         inheritBonusStat,
-        city: cityParam
+        city: cityParam,
+        nation: selectedNation
       } = data;
       
       // city 파라미터가 있으면 inheritCity로 사용 (도시 선택)
@@ -197,11 +198,21 @@ export class JoinService {
         rng
       );
 
-      // 13. 태어날 도시 결정
+      // 13. 세력 결정: 사용자가 선택한 세력 사용 (없으면 0 = 재야)
+      const nationId = selectedNation !== undefined && selectedNation !== null ? Number(selectedNation) : 0;
+      
+      console.log('[Join] Selected nation:', {
+        selectedNation,
+        nationId,
+        isReya: nationId === 0
+      });
+
+      // 14. 태어날 도시 결정
       const bornCityResult = await this.determineBornCity(
         sessionId,
         inheritCity,
-        rng
+        rng,
+        nationId // 선택한 국가 전달
       );
 
       if (!bornCityResult) {
@@ -235,48 +246,50 @@ export class JoinService {
         originalObject: bornCityResult
       });
 
-      // 14. 경험치 계산
+      // 15. 경험치 계산
       const experience = await this.calculateStartExperience(
         sessionId,
         relYear
       );
 
-      // 15. 턴타임 계산
+      // 16. 턴타임 계산 (세션의 turntime에 맞춰서)
       const turnterm = gameEnv.turnterm || 10; // 기본 10분
+      const sessionTurntime = session.data?.turntime || session.turntime;
       const turntime = this.calculateTurntime(
         turnterm,
+        sessionTurntime,
         rng,
         inheritTurntimeZone
       );
 
-      // 16. 얼굴 이미지 설정
+      // 17. 얼굴 이미지 설정
       const faceResult = await this.determineFace(
         userId,
         gameEnv.show_img_level || 0,
         pic
       );
 
-      // 17. 성격 및 상성 결정
+      // 18. 성격 및 상성 결정
       const personality = this.determinePersonality(character, rng);
       const affinity = (rng % 150) + 1;
 
-      // 18. 배신 수치 계산
+      // 19. 배신 수치 계산
       const betray = relYear >= 4 ? 2 : 0;
 
-      // 19. 익명 모드 체크
+      // 20. 익명 모드 체크
       const blockCustomName = (gameEnv.block_general_create || 0) & 2;
       if (blockCustomName) {
         name = this.generateRandomName();
       }
 
-      // 20. 장수 번호 생성 (autoincrement 시뮬레이션)
+      // 21. 장수 번호 생성 (autoincrement 시뮬레이션)
       const generals = await generalRepository.findByFilter({ session_id: sessionId })
         .sort({ no: -1 })
         .limit(1);
       const lastGeneral = generals.length > 0 ? generals[0] : null;
       const generalNo = (lastGeneral?.no || 0) + 1;
-
-      // 21. 장수 생성
+      
+      // 22. 장수 생성
       let newGeneral;
       try {
         const generalData = {
@@ -291,12 +304,12 @@ export class JoinService {
           intel: finalIntel, // 최상위 필드로 평탄화
           politics: finalPolitics, // 최상위 필드로 평탄화
           charm: finalCharm, // 최상위 필드로 평탄화
-          nation: 0, // 최상위 필드로 평탄화 (프론트엔드에서 general.nation으로 직접 참조)
+          nation: nationId, // 최상위 필드로 평탄화 (사용자가 선택한 세력)
           city: bornCityID, // 최상위 필드로 평탄화 (프론트엔드에서 general.city로 직접 참조)
           data: {
             owner_name: user?.name || 'Unknown',
             imgsvr: faceResult.imgsvr,
-            nation: 0, // 야인으로 시작
+            nation: nationId, // 사용자가 선택한 세력
             city: bornCityID, // PHP 원본과 동일하게 city 번호 할당
             troop: 0,
             affinity: affinity,
@@ -685,7 +698,7 @@ export class JoinService {
       return '이미 등록하셨습니다!';
     }
 
-    const existingName = await generalRepository.findById({
+    const existingName = await generalRepository.findOneByFilter({
       session_id: sessionId,
       name: name
     });
@@ -887,7 +900,8 @@ export class JoinService {
   private static async determineBornCity(
     sessionId: string,
     inheritCity: number | null,
-    rng: number
+    rng: number,
+    selectedNation?: number // 선택한 국가 ID
   ): Promise<any> {
     // 상속 도시가 지정된 경우
     if (inheritCity !== null && inheritCity !== undefined && inheritCity !== 0) {
@@ -900,46 +914,67 @@ export class JoinService {
       console.warn('[determineBornCity] Inherited city not found, falling back to random selection');
     }
 
-    // 공백지(level 5~6, nation 0) 우선
-    console.log('[determineBornCity] Step 1: Looking for vacant cities (level 5-6, nation 0)');
-    let cities = await cityRepository.findByFilter({
-      session_id: sessionId,
-      level: { $gte: 5, $lte: 6 },
-      nation: 0
-    });
-    cities = cities.slice(0, 100);
-    console.log(`[determineBornCity] Found ${cities.length} vacant cities (level 5-6, nation 0)`);
-
-    if (cities.length === 0) {
-      // 공백지 없으면 아무 도시나 (level 5~6)
-      console.log('[determineBornCity] Step 2: Looking for any cities (level 5-6)');
+    // 랜덤 선택 로직 (국가별 필터링)
+    let cities: any[] = [];
+    
+    if (selectedNation !== undefined && selectedNation > 0) {
+      // 특정 국가를 선택한 경우: 해당 국가의 도시만 선택
+      console.log(`[determineBornCity] Looking for cities in nation ${selectedNation}`);
       cities = await cityRepository.findByFilter({
         session_id: sessionId,
-        level: { $gte: 5, $lte: 6 }
+        nation: selectedNation
       });
       cities = cities.slice(0, 100);
-      console.log(`[determineBornCity] Found ${cities.length} cities (level 5-6)`);
+      console.log(`[determineBornCity] Found ${cities.length} cities in nation ${selectedNation}`);
+      
+      if (cities.length === 0) {
+        console.warn(`[determineBornCity] No cities found for nation ${selectedNation}, falling back to all cities`);
+      }
     }
-
+    
+    // 재야(nation 0) 또는 국가 도시가 없는 경우: 기존 로직 사용
     if (cities.length === 0) {
-      // level 조건 없이 nation 0인 도시
-      console.log('[determineBornCity] Step 3: Looking for vacant cities (any level, nation 0)');
+      // 공백지(level 5~6, nation 0) 우선
+      console.log('[determineBornCity] Step 1: Looking for vacant cities (level 5-6, nation 0)');
       cities = await cityRepository.findByFilter({
         session_id: sessionId,
+        level: { $gte: 5, $lte: 6 },
         nation: 0
       });
       cities = cities.slice(0, 100);
-      console.log(`[determineBornCity] Found ${cities.length} vacant cities (nation 0)`);
-    }
+      console.log(`[determineBornCity] Found ${cities.length} vacant cities (level 5-6, nation 0)`);
 
-    if (cities.length === 0) {
-      // 아무 도시나
-      console.log('[determineBornCity] Step 4: Looking for any cities');
-      cities = await cityRepository.findByFilter({
-        session_id: sessionId
-      });
-      cities = cities.slice(0, 100);
-      console.log(`[determineBornCity] Found ${cities.length} total cities`);
+      if (cities.length === 0) {
+        // 공백지 없으면 아무 도시나 (level 5~6)
+        console.log('[determineBornCity] Step 2: Looking for any cities (level 5-6)');
+        cities = await cityRepository.findByFilter({
+          session_id: sessionId,
+          level: { $gte: 5, $lte: 6 }
+        });
+        cities = cities.slice(0, 100);
+        console.log(`[determineBornCity] Found ${cities.length} cities (level 5-6)`);
+      }
+
+      if (cities.length === 0) {
+        // level 조건 없이 nation 0인 도시
+        console.log('[determineBornCity] Step 3: Looking for vacant cities (any level, nation 0)');
+        cities = await cityRepository.findByFilter({
+          session_id: sessionId,
+          nation: 0
+        });
+        cities = cities.slice(0, 100);
+        console.log(`[determineBornCity] Found ${cities.length} vacant cities (nation 0)`);
+      }
+
+      if (cities.length === 0) {
+        // 아무 도시나
+        console.log('[determineBornCity] Step 4: Looking for any cities');
+        cities = await cityRepository.findByFilter({
+          session_id: sessionId
+        });
+        cities = cities.slice(0, 100);
+        console.log(`[determineBornCity] Found ${cities.length} total cities`);
+      }
     }
 
     if (cities.length === 0) {
@@ -1005,18 +1040,72 @@ export class JoinService {
 
   private static calculateTurntime(
     turnterm: number,
+    sessionTurntime: string | Date | undefined,
     rng: number,
     inheritTurntimeZone: number | null
   ): Date {
     const now = new Date();
     
-    // 세션의 다음 턴 시간에 맞춰서 설정
-    // turnterm 간격으로 턴이 돌기 때문에, 다음 턴까지 기다려야 함
-    const nextTurnTime = new Date(now.getTime() + turnterm * 60 * 1000);
+    let baseTime: Date;
+    if (sessionTurntime) {
+      baseTime = new Date(sessionTurntime);
+    } else {
+      baseTime = now;
+    }
     
-    console.log(`[Join] Set turntime to next turn: ${nextTurnTime.toISOString()} (${turnterm}분 후)`);
+    let turntime: Date;
     
-    return nextTurnTime;
+    // 상속 턴타임 처리 (PHP Join.php:357-367)
+    if (inheritTurntimeZone !== null && inheritTurntimeZone >= 0) {
+      // inheritTurntimeZone: 0-59 사이의 분 단위 존
+      // PHP: $inheritTurntime = $inheritTurntimeZone * $admin['turnterm']
+      let inheritSeconds = inheritTurntimeZone * turnterm * 60;
+      
+      // 추가 랜덤: 0 ~ (turnterm - 1)분
+      const extraMinutes = Math.abs(rng % turnterm);
+      inheritSeconds += extraMinutes * 60;
+      
+      // 마이크로초 추가 (0 ~ 999999 마이크로초 = 0 ~ 999.999 밀리초)
+      const randMicroseconds = Math.abs(rng * 7919) % 1000000; // 다른 시드 사용
+      const randMilliseconds = randMicroseconds / 1000;
+      
+      // cutTurn: 현재 turntime을 turnterm 단위로 내림
+      const cutTime = this.cutTurn(baseTime, turnterm);
+      
+      turntime = new Date(cutTime.getTime() + inheritSeconds * 1000 + randMilliseconds);
+      
+      console.log(`[Join] Inheritance turntime: zone=${inheritTurntimeZone}, base=${cutTime.toISOString()}, offset=${inheritSeconds}초`);
+    } else {
+      // 기본 랜덤 턴타임 (PHP getRandTurn)
+      // 0 ~ (60 * turnterm - 1) 초 사이의 랜덤 값
+      const randSeconds = Math.abs(rng) % (60 * turnterm);
+      
+      // 마이크로초 추가 (0.000000 ~ 0.999999초 = 0 ~ 999.999 밀리초)
+      const randMicroseconds = Math.abs(rng * 7919) % 1000000;
+      const randMilliseconds = randMicroseconds / 1000;
+      
+      turntime = new Date(baseTime.getTime() + randSeconds * 1000 + randMilliseconds);
+    }
+    
+    // 계산된 turntime이 현재 시간보다 과거면 turnterm을 더해서 다음 턴으로
+    if (now.getTime() >= turntime.getTime()) {
+      turntime = new Date(turntime.getTime() + turnterm * 60 * 1000);
+    }
+    
+    const minutesUntilTurn = Math.round((turntime.getTime() - now.getTime()) / 60000);
+    console.log(`[Join] Set turntime: ${turntime.toISOString()} (${minutesUntilTurn}분 후, base: ${baseTime.toISOString()})`);
+    
+    return turntime;
+  }
+  
+  /**
+   * PHP cutTurn 구현: turntime을 turnterm 단위로 내림
+   */
+  private static cutTurn(time: Date, turnterm: number): Date {
+    const turntermMs = turnterm * 60 * 1000;
+    const timeMs = time.getTime();
+    const remainder = timeMs % turntermMs;
+    return new Date(timeMs - remainder);
   }
 
   private static async determineFace(

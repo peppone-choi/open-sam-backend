@@ -167,9 +167,10 @@ export class TradeEquipmentCommand extends GeneralCommand {
       if (!itemObj.isBuyable()) {
         const generalName = general.getName();
         const josaYi = JosaUtil.pick(generalName, '이');
-        const nationName = general.getStaticNation()['name'];
+        const staticNation2 = general.getStaticNation();
+        const nationName2 = staticNation2?.name || '무명';
         logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <C>${itemName}</>${josaUl} 판매했습니다!`);
-        logger.pushGlobalHistoryLog(`<R><b>【판매】</b></><D><b>${nationName}</b></>의 <Y>${generalName}</>${josaYi} <C>${itemName}</>${josaUl} 판매했습니다!`);
+        logger.pushGlobalHistoryLog(`<R><b>【판매】</b></><D><b>${nationName2}</b></>의 <Y>${generalName}</>${josaYi} <C>${itemName}</>${josaUl} 판매했습니다!`);
       }
     }
 
@@ -187,7 +188,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

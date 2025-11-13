@@ -316,15 +316,24 @@ export class ActionLogger {
   private async saveGlobalHistoryLogs(logs: string[]): Promise<void> {
     if (!logs || logs.length === 0) return;
 
-    const records = logs.map((text) => ({
-      session_id: this.sessionId,
-      nation_id: 0, // 전역 = 0
-      year: this.year,
-      month: this.month,
-      text: text,
-    }));
-
-    await WorldHistory.insertMany(records);
+    // 각 로그를 개별적으로 저장 (중복 키 에러 방지)
+    for (const text of logs) {
+      try {
+        await WorldHistory.create({
+          session_id: this.sessionId,
+          nation_id: 0, // 전역 = 0
+          year: this.year,
+          month: this.month,
+          text: text,
+        });
+      } catch (error: any) {
+        // 중복 키 에러는 무시하고 계속 진행
+        if (error.code !== 11000) {
+          throw error;
+        }
+        logger.warn(`[ActionLogger] Duplicate global history log ignored: ${text.substring(0, 50)}`);
+      }
+    }
 
     logger.info(`[ActionLogger] Saved ${logs.length} global history logs`);
   }

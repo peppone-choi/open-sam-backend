@@ -115,10 +115,16 @@ class SessionRepository {
    * @param sessionDoc - Mongoose 세션 문서
    * @returns 저장 결과
    */
-  async saveDocument(sessionDoc: any) {
+  async saveDocument(sessionDoc: any, immediate: boolean = false) {
     const sessionId = sessionDoc.session_id || sessionDoc.data?.session_id;
     if (!sessionId) {
       throw new Error('session_id is required');
+    }
+    
+    // Mongoose Document인 경우 save() 메서드 사용 (DB 저장)
+    if (sessionDoc.save && typeof sessionDoc.save === 'function') {
+      // Mongoose Document - DB에 직접 저장
+      await sessionDoc.save();
     }
     
     // Mongoose Document인 경우 toObject()로 변환
@@ -129,7 +135,7 @@ class SessionRepository {
       dataToSave = sessionDoc;
     }
     
-    // 캐시에 전체 문서 저장 (session_id 포함)
+    // 캐시에도 저장
     await saveSession(sessionId, dataToSave);
     
     return { modifiedCount: 1, matchedCount: 1 };

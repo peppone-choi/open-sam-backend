@@ -37,7 +37,7 @@ export class GameSocketHandler {
         socket.emit('game:subscribed', {
           sessionId,
           status: session.status || 'running',
-          year: session.data?.year || 180,
+          year: session.data?.year || 184,
           month: session.data?.month || 1,
           timestamp: new Date()
         });
@@ -67,7 +67,7 @@ export class GameSocketHandler {
         socket.emit('game:status', {
           sessionId,
           status: session.status || 'running',
-          year: session.data?.year || 180,
+          year: session.data?.year || 184,
           month: session.data?.month || 1,
           turnterm: session.data?.turnterm || 1440,
           lastExecuted: session.data?.lastExecuted || null,

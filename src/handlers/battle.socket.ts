@@ -29,6 +29,11 @@ export class BattleSocketHandler {
       await this.handleLeave(socket, data);
     });
 
+    // 실시간 전투 명령 (Phase 3)
+    socket.on('battle:command', async (data) => {
+      await this.handleRealtimeCommand(socket, data);
+    });
+
     socket.on('disconnect', () => {
       console.log('전투 소켓 연결 해제:', socket.id);
     });
@@ -229,6 +234,13 @@ export class BattleSocketHandler {
         battleLog: result.battleLog
       });
 
+      // 전투 로그 실시간 브로드캐스트
+      if (result.battleLog && Array.isArray(result.battleLog)) {
+        for (const log of result.battleLog) {
+          this.broadcastBattleLog(battle.battleId, log, 'action');
+        }
+      }
+
       battle.currentTurnActions = [];
       battle.readyPlayers = [];
 
@@ -283,6 +295,112 @@ export class BattleSocketHandler {
       clearTimeout(timer);
       this.battleTimers.delete(battleId);
     }
+  }
+
+  /**
+   * 실시간 전투 명령 처리 (Phase 3)
+   */
+  private async handleRealtimeCommand(socket: Socket, data: { 
+    battleId: string; 
+    generalId: number; 
+    command: 'move' | 'attack' | 'hold' | 'retreat';
+    targetPosition?: { x: number; y: number };
+    targetGeneralId?: number;
+  }) {
+    try {
+      const { battleId, generalId, command, targetPosition, targetGeneralId } = data;
+
+      const battle = await Battle.findOne({ battleId });
+      if (!battle) {
+        socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
+        return;
+      }
+
+      if (battle.status !== BattleStatus.IN_PROGRESS) {
+        socket.emit('battle:error', { message: '전투가 진행 중이 아닙니다' });
+        return;
+      }
+
+      // 해당 장수의 유닛 찾기
+      const allUnits = [...battle.attackerUnits, ...battle.defenderUnits];
+      const unit = allUnits.find(u => u.generalId === generalId);
+
+      if (!unit) {
+        socket.emit('battle:error', { message: '해당 장수를 찾을 수 없습니다' });
+        return;
+      }
+
+      // AI 제어 해제 (유저가 직접 컨트롤)
+      unit.isAIControlled = false;
+
+      // 명령 적용
+      switch (command) {
+        case 'move':
+          if (targetPosition) {
+            unit.targetPosition = targetPosition;
+            unit.stance = 'aggressive';
+          }
+          break;
+
+        case 'attack':
+          if (targetGeneralId !== undefined) {
+            const target = allUnits.find(u => u.generalId === targetGeneralId);
+            if (target) {
+              unit.targetPosition = target.position;
+              unit.stance = 'aggressive';
+            }
+          }
+          break;
+
+        case 'hold':
+          unit.targetPosition = undefined;
+          unit.stance = 'hold';
+          break;
+
+        case 'retreat':
+          unit.stance = 'retreat';
+          // AI가 후퇴 위치 계산
+          unit.isAIControlled = true;
+          break;
+      }
+
+      await battle.save();
+
+      // 명령 확인 응답
+      socket.emit('battle:command_acknowledged', {
+        generalId,
+        command,
+        timestamp: new Date()
+      });
+
+    } catch (error: any) {
+      socket.emit('battle:error', { message: error.message });
+    }
+  }
+
+  /**
+   * 실시간 전투 상태 브로드캐스트 (BattleSimulation.service에서 호출)
+   */
+  broadcastBattleState(battleId: string, state: any) {
+    this.io.to(`battle:${battleId}`).emit('battle:state', {
+      ...state,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 전투 로그 브로드캐스트
+   * @param battleId 전투 ID
+   * @param logText 로그 텍스트
+   * @param logType 'action' | 'damage' | 'status' | 'result'
+   */
+  broadcastBattleLog(battleId: string, logText: string, logType: string = 'action') {
+    this.io.to(`battle:${battleId}`).emit('battle:log', {
+      battleId,
+      logText,
+      logType,
+      timestamp: new Date()
+    });
   }
 
   /**

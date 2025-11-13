@@ -9,6 +9,30 @@ import { worldHistoryRepository } from '../../repositories/world-history.reposit
 import * as fs from 'fs';
 import * as path from 'path';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { getNationTypeInfo as getNationTypeInfoFromFactory } from '../../core/nation-type/NationTypeFactory';
+
+// Constants 로드
+let cachedConstants: any = null;
+function loadConstants() {
+  if (!cachedConstants) {
+    try {
+      // dist 폴더에서 실행되므로 프로젝트 루트로 이동
+      const constantsPath = path.resolve(__dirname, '../../../config/scenarios/sangokushi/data/constants.json');
+      cachedConstants = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
+      console.log('[GetFrontInfo] Constants loaded successfully from:', constantsPath);
+    } catch (error) {
+      console.error('[GetFrontInfo] Failed to load constants.json:', error);
+      // 폴백: 기본값 반환
+      cachedConstants = {
+        regions: {},
+        levelMap: {},
+        officerTitles: {},
+        nationLevels: {}
+      };
+    }
+  }
+  return cachedConstants;
+}
 
 /**
  * GetFrontInfo Service  
@@ -39,8 +63,10 @@ export class GetFrontInfoService {
     });
     
     const lastNationNoticeDate = data.lastNationNoticeDate || '2022-08-19 00:00:00';
-    const lastGeneralRecordID = parseInt(data.lastGeneralRecordID) || 0;
-    const lastWorldHistoryID = parseInt(data.lastWorldHistoryID) || 0;
+    const lastGeneralRecordID = parseInt(data.lastGeneralRecordID) || 0; // 장수동향 (action)
+    const lastPersonalHistoryID = parseInt(data.lastPersonalHistoryID) || 0; // 개인기록 (history)
+    const lastGlobalHistoryID = parseInt(data.lastGlobalHistoryID) || 0; // 중원정세 (history, general_id=0)
+    const lastWorldHistoryID = parseInt(data.lastWorldHistoryID) || 0; // 구식 (미사용)
 
     try {
       // 1. 장수 정보 조회 (generalId가 없으면 userId로 찾기)
@@ -107,12 +133,16 @@ export class GetFrontInfoService {
       const recentRecord = await this.generateRecentRecord(
         sessionId,
         generalId,
-        lastWorldHistoryID,
-        lastGeneralRecordID
+        lastGeneralRecordID,
+        lastPersonalHistoryID,
+        lastGlobalHistoryID
       );
 
       // 7. 보조 정보
       const auxInfo: any = {};
+
+      // 8. constants.json에서 상수 로드
+      const constants = loadConstants();
 
       return {
         success: true,
@@ -124,30 +154,10 @@ export class GetFrontInfoService {
         city: cityInfo,
         aux: auxInfo,
         cityConstMap: {
-          region: {
-            0: '기타',
-            1: '하북',
-            2: '중원',
-            3: '서북',
-            4: '서촉',
-            5: '남중',
-            6: '초',
-            7: '오월',
-            8: '동이'
-          },
-          level: {
-            0: '무',
-            1: '향',
-            2: '수',
-            3: '진',
-            4: '관',
-            5: '이',
-            6: '소',
-            7: '중',
-            8: '대',
-            9: '특',
-            10: '경'
-          }
+          region: constants.regions || {},
+          level: constants.levelMap || {},
+          officerTitles: constants.officerTitles || {},
+          nationLevels: constants.nationLevels || {}
         }
       };
     } catch (error: any) {
@@ -228,10 +238,15 @@ export class GetFrontInfoService {
     const gameEnvCopy = { ...gameEnv };
     const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
     
-    // 년/월이 변경되었으면 DB에 저장
-    if (gameEnvCopy.year !== gameEnv.year || gameEnvCopy.month !== gameEnv.month) {
+    // 년/월 또는 starttime이 변경되었으면 DB에 저장
+    if (gameEnvCopy.year !== gameEnv.year || gameEnvCopy.month !== gameEnv.month || gameEnvCopy.starttime !== gameEnv.starttime) {
+      const starttimeChanged = gameEnvCopy.starttime !== gameEnv.starttime;
       gameEnv.year = gameEnvCopy.year;
       gameEnv.month = gameEnvCopy.month;
+      if (starttimeChanged) {
+        gameEnv.starttime = gameEnvCopy.starttime;
+        console.log(`[${new Date().toISOString()}] ✅ Saved corrected starttime to DB: ${gameEnv.starttime}`);
+      }
       data.game_env = gameEnv;
       session.data = data;
       session.markModified('data.game_env');
@@ -251,9 +266,9 @@ export class GetFrontInfoService {
       isFiction: (data.is_fiction || 0) as 0 | 1,
       npcMode: (data.npcmode || 0) as 0 | 1 | 2,
       joinMode: data.join_mode === 0 ? 'onlyRandom' : 'full',
-      startyear: data.startyear ?? 180,
-      year: gameEnvCopy.year || gameEnv.year || data.startyear || 180,
-      month: gameEnvCopy.month || gameEnv.month || 1,
+      startyear: data.startyear ?? data.startYear ?? 184,
+      year: turnInfo.year,
+      month: turnInfo.month,
       autorunUser: {
         limit_minutes: data.autorun_user?.limit_minutes || data.autorun_limit || 0,
         options: data.autorun_user?.options || {}
@@ -332,25 +347,39 @@ export class GetFrontInfoService {
       }, 0)
     };
 
-    // 고위 관직자 조회 (군주, 태사)
+    // 고위 관직자 조회 (군주=12, 부군주=11)
+    // nation과 officer_level로 필터링
     const topChiefs = await generalRepository.findByFilter({
       session_id: sessionId,
       nation: nationId,
-      officer_level: { $in: [11, 12] }
+      'data.officer_level': { $in: [11, 12] }
+    });
+
+    console.log('[GetFrontInfo] TopChiefs query result:', {
+      nationId,
+      count: topChiefs.length,
+      chiefs: topChiefs.map((g: any) => ({
+        no: g.no,
+        name: g.name,
+        officer_level: g.officer_level,
+        data_officer_level: g.data?.officer_level
+      }))
     });
 
     const topChiefsMap: Record<number, any> = {};
     topChiefs.forEach((g: any) => {
-      const level = g.officer_level;
+      const level = g.officer_level ?? g.data?.officer_level;
       if (level === 11 || level === 12) {
         topChiefsMap[level] = {
           officer_level: level,
           no: g.no,
           name: g.name || '무명',
-          npc: g.npc || 0
+          npc: g.npc ?? g.data?.npc ?? 0
         };
       }
     });
+    
+    console.log('[GetFrontInfo] TopChiefs map:', topChiefsMap);
 
     // 재야(nation 0)는 "재야"로 표시
     const nationName = nationId === 0 ? '재야' : (nationData.name || '무명');
@@ -363,15 +392,16 @@ export class GetFrontInfoService {
       ? '#' + nationColor.toString(16).padStart(6, '0')
       : '#000000';
     
-    // 국가 타입 정보 가져오기
-    const typeRaw = (nationData.type || 'none').toLowerCase();
+    // 국가 타입 정보 가져오기 (최상위 필드 우선, 없으면 data에서)
+    const typeRaw = (nationData.type || nationData.data?.type || 'none').toLowerCase();
     const typeInfo = this.getNationTypeInfo(typeRaw);
     
     console.log('[GetFrontInfo] Nation Type Info:', {
       nationId,
       typeRaw,
       typeInfo,
-      nationDataType: nationData.type
+      nationDataType: nationData.type,
+      nationDataDataType: nationData.data?.type
     });
     
     return {
@@ -389,18 +419,18 @@ export class GetFrontInfoService {
         max: crew.crewMax
       },
       type: {
-        raw: nationData.type || 'None',
+        raw: nationData.type || nationData.data?.type || 'None',
         name: typeInfo.name,
         pros: typeInfo.pros,
         cons: typeInfo.cons
       },
       color: colorStr,
-      level: nationData.level || 0,
-      capital: nationData.capital || 0,
-      gold: nationData.gold || 0,
-      rice: nationData.rice || 0,
-      tech: nationData.tech || 0,
-      gennum: nationData.gennum || 0,
+      level: nationData.level ?? nationData.data?.level ?? 0,
+      capital: nationData.capital ?? nationData.data?.capital ?? 0,
+      gold: nationData.gold ?? nationData.data?.gold ?? 0,
+      rice: nationData.rice ?? nationData.data?.rice ?? 0,
+      tech: nationData.tech ?? nationData.data?.tech ?? 0,
+      gennum: nationData.gennum ?? nationData.data?.gennum ?? 0,
       power: nationData.power || {},
       bill: nationData.bill || '',
       taxRate: nationData.rate || 10,
@@ -682,47 +712,59 @@ export class GetFrontInfoService {
   private static async generateRecentRecord(
     sessionId: string,
     generalId: number,
-    lastWorldHistoryID: number,
-    lastGeneralRecordID: number
+    lastGeneralRecordID: number,
+    lastPersonalHistoryID: number,
+    lastGlobalHistoryID: number
   ) {
-    // 역사 기록
-    const history = await worldHistoryRepository.findByFilter({
+    // 장수 행동 기록 (장수동향) - 해당 장수의 action 타입 로그
+    const generalFilter: any = {
       session_id: sessionId,
-      nation_id: 0,
-      id: { $gte: lastWorldHistoryID }
-    })
-      .sort({ id: -1 })
-      .limit(this.ROW_LIMIT + 1);
-
-    // 전역 기록
-    const globalRecord = await generalRecordRepository.findByFilter({
-      session_id: sessionId,
-      general_id: 0,
-      log_type: 'history',
-      id: { $gte: lastGeneralRecordID }
-    }, {
+      general_id: generalId,
+      log_type: 'action'
+    };
+    if (lastGeneralRecordID > 0) {
+      generalFilter.id = { $gt: lastGeneralRecordID };
+    }
+    const generalRecord = await generalRecordRepository.findByFilter(generalFilter, {
       sort: { id: -1 },
       limit: this.ROW_LIMIT + 1
     });
 
-    // 장수 행동 기록
-    const generalRecord = await generalRecordRepository.findByFilter({
+    // 개인기록 - 해당 장수의 history 타입 로그
+    const personalHistoryFilter: any = {
       session_id: sessionId,
       general_id: generalId,
-      log_type: 'action',
-      id: { $gte: lastGeneralRecordID }
-    }, {
+      log_type: 'history'
+    };
+    if (lastPersonalHistoryID > 0) {
+      personalHistoryFilter.id = { $gt: lastPersonalHistoryID };
+    }
+    const personalHistoryRecord = await generalRecordRepository.findByFilter(personalHistoryFilter, {
+      sort: { id: -1 },
+      limit: this.ROW_LIMIT + 1
+    });
+
+    // 전역 기록 (중원정세) - general_id: 0인 history 타입 로그
+    const globalFilter: any = {
+      session_id: sessionId,
+      general_id: 0,
+      log_type: 'history'
+    };
+    if (lastGlobalHistoryID > 0) {
+      globalFilter.id = { $gt: lastGlobalHistoryID };
+    }
+    const globalRecord = await generalRecordRepository.findByFilter(globalFilter, {
       sort: { id: -1 },
       limit: this.ROW_LIMIT + 1
     });
 
     return {
-      history: history.map(h => [h.id, h.text]),
-      global: globalRecord.map(g => [g.id, g.text]),
-      general: generalRecord.map(g => [g.id, g.text]),
-      flushHistory: history.length > this.ROW_LIMIT ? 1 : 0,
-      flushGlobal: globalRecord.length > this.ROW_LIMIT ? 1 : 0,
-      flushGeneral: generalRecord.length > this.ROW_LIMIT ? 1 : 0
+      general: generalRecord.map(g => [g.id, g.text]), // 장수동향
+      history: personalHistoryRecord.map(h => [h.id, h.text]), // 개인기록
+      global: globalRecord.map(g => [g.id, g.text]), // 중원정세
+      flushGeneral: generalRecord.length > this.ROW_LIMIT ? 1 : 0,
+      flushHistory: personalHistoryRecord.length > this.ROW_LIMIT ? 1 : 0,
+      flushGlobal: globalRecord.length > this.ROW_LIMIT ? 1 : 0
     };
   }
 
@@ -790,33 +832,16 @@ export class GetFrontInfoService {
    */
   private static getNationTypeInfo(typeRaw: string): { name: string; pros: string; cons: string } {
     try {
-      const typeFilePath = path.join(__dirname, '../../config/scenarios/sangokushi/data/nation-types.json');
-      if (fs.existsSync(typeFilePath)) {
-        const typeData = JSON.parse(fs.readFileSync(typeFilePath, 'utf-8'));
-        const typeInfo = typeData.nationTypes?.[typeRaw];
-        if (typeInfo) {
-          // description에서 pros/cons 추출 (예: "농상↑ 민심↑ / 쌀수입↓")
-          const description = typeInfo.description || '';
-          const parts = description.split(' / ');
-          const pros = parts[0] || '';
-          const cons = parts[1] || '';
-          
-          return {
-            name: typeInfo.name || '-',
-            pros: pros,
-            cons: cons
-          };
-        }
-      }
+      // NationTypeFactory 사용
+      return getNationTypeInfoFromFactory(typeRaw);
     } catch (error) {
       console.error('getNationTypeInfo error:', error);
+      return {
+        name: '-',
+        pros: '',
+        cons: ''
+      };
     }
-    
-    return {
-      name: '-',
-      pros: '',
-      cons: ''
-    };
   }
 
   /**

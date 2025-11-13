@@ -1,17 +1,19 @@
 import { generalRepository } from '../../repositories/general.repository';
-import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { GeneralRecord, IGeneralRecord } from '../../models/general_record.model';
+import { Model } from 'mongoose';
 
 /**
  * GetGeneralLogs Service
  * 장수의 행동/이력 로그 조회
  * 
  * PHP: func_history.php의 getGeneralHistoryLog, getGeneralActionLog 참고
+ * general_records 컬렉션 사용 (PHP general_record 테이블과 호환)
  */
 export class GetGeneralLogsService {
   static async execute(data: any, user?: any) {
     const sessionId = data.serverID || data.session_id || process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
     const generalId = data.general_id || data.generalID;
-    const logType = data.log_type || 'action'; // 'action' | 'history' | 'battle_result' | 'battle_detail'
+    const logType = data.log_type || 'action'; // 'action' | 'history' | 'battle_result' | 'battle_detail' | 'battle_brief'
     const limit = parseInt(data.limit) || 50;
     const year = data.year ? parseInt(data.year) : undefined;
     const month = data.month ? parseInt(data.month) : undefined;
@@ -56,11 +58,12 @@ export class GetGeneralLogsService {
         query.month = month;
       }
 
-      // 로그 조회 (최신순) - Repository 사용
-      const logs = await generalRecordRepository.findByFilter(query, {
-        sort: { created_at: -1, _id: -1 },
-        limit: limit
-      });
+      // 로그 조회 (최신순) - GeneralRecord 모델 사용
+      const GeneralRecordModel = GeneralRecord as Model<IGeneralRecord>;
+      const logs = await GeneralRecordModel.find(query)
+        .sort({ created_at: -1, _id: -1 })
+        .limit(limit)
+        .lean();
 
       return {
         success: true,

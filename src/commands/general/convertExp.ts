@@ -163,7 +163,7 @@ export class ConvertExpCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
-    await await this.saveGeneral();
+      await this.saveGeneral();
 
     return true;
   }
@@ -173,20 +173,28 @@ export class ConvertExpCommand extends GeneralCommand {
     const ownDexList: any[] = [];
     
     for (const [armType, armName] of Object.entries(GameUnitConst.allType())) {
+      const armTypeNum = Number(armType);
+      if (isNaN(armTypeNum)) {
+        console.warn(`Invalid armType: ${armType}`);
+        continue;
+      }
       ownDexList.push({
-        armType: Number(armType),
+        armType: armTypeNum,
         name: armName,
         amount: general.getVar('dex' + armType),
       });
     }
 
+    // getDexLevelList 함수 호출 (동기)
+    const { getDexLevelList } = require('../../utils/dexLevel');
+    const dexLevels = getDexLevelList();
+    
     const dexLevelList: any[] = [];
-    const dexLevels: any[] = [];
-    for (const [dexKey, color, name] of dexLevels) {
+    for (const dexLevel of dexLevels) {
       dexLevelList.push({
-        amount: dexKey,
-        color,
-        name
+        amount: dexLevel.amount,
+        color: dexLevel.color,
+        name: dexLevel.name
       });
     }
 

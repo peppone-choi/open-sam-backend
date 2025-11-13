@@ -31,20 +31,29 @@ export class PlunderCommand extends FireAttackCommand {
     const minNationalRice = 10000;
 
     const yearCoef = Math.sqrt(1 + (this.env.year - this.env.startyear) / 4) / 2;
-    const commRatio = destCity.comm / destCity.comm_max;
-    const agriRatio = destCity.agri / destCity.agri_max;
+    // 0으로 나누기 방지: _max 값들이 0일 수 있음
+    const commMax = Math.max(1, destCity.comm_max ?? 1);
+    const agriMax = Math.max(1, destCity.agri_max ?? 1);
+    const commRatio = (destCity.comm ?? 0) / commMax;
+    const agriRatio = (destCity.agri ?? 0) / agriMax;
     
     let gold = rng.nextRangeInt(sabotageDamageMin, sabotageDamageMax) * destCity.level * yearCoef * (0.25 + commRatio / 4);
     let rice = rng.nextRangeInt(sabotageDamageMin, sabotageDamageMax) * destCity.level * yearCoef * (0.25 + agriRatio / 4);
 
     if (destCity.supply) {
-      const destNationResult = await db.queryFirstList(
-        'SELECT gold, rice FROM nation WHERE nation=?',
-        [destNationID]
-      );
-      
-      let destNationGold = destNationResult[0];
-      let destNationRice = destNationResult[1];
+      try {
+        const destNationResult = await db.queryFirstList(
+          'SELECT gold, rice FROM nation WHERE nation=?',
+          [destNationID]
+        );
+        
+        // 배열 범위 체크: 쿼리 결과가 없을 수 있음
+        if (!destNationResult || destNationResult.length < 2) {
+          throw new Error(`국가 ${destNationID}의 자원 정보를 찾을 수 없습니다`);
+        }
+        
+        let destNationGold = destNationResult[0] ?? 0;
+        let destNationRice = destNationResult[1] ?? 0;
 
       destNationGold -= gold;
       destNationRice -= rice;
@@ -58,14 +67,18 @@ export class PlunderCommand extends FireAttackCommand {
         destNationRice = minNationalRice;
       }
 
-      await db.update('nation', {
-        gold: destNationGold,
-        rice: destNationRice
-      }, 'nation=?', [destNationID]);
-      
-      await db.update('city', {
-        state: 34
-      }, 'city=?', [destCityID]);
+        await db.update('nation', {
+          gold: destNationGold,
+          rice: destNationRice
+        }, 'nation=?', [destNationID]);
+        
+        await db.update('city', {
+          state: 34
+        }, 'city=?', [destCityID]);
+      } catch (error) {
+        console.error(`약탈 처리 중 DB 업데이트 실패:`, error);
+        throw new Error(`약탈 처리 실패: ${error.message}`);
+      }
     } else {
       await db.update('city', {
         comm: Math.max(0, destCity.comm - gold / 12),

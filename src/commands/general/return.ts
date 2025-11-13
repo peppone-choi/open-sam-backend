@@ -67,6 +67,9 @@ export class ReturnCommand extends GeneralCommand {
       destCityID = general.getVar('officer_city');
     } else {
       // 그 외에는 수도로
+      if (!this.nation) {
+        throw new Error('국가 정보가 없습니다');
+      }
       destCityID = this.nation.capital;
     }
 

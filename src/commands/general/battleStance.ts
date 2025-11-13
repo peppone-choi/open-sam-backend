@@ -43,8 +43,12 @@ export class BattleStanceCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    const crew = this.generalObj.getVar('crew');
-    const techCost = getTechCost(this!.nation.tech);
+    const crew = Math.max(1, this.generalObj.getVar('crew')); // 0으로 나누기 방지
+    
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
+    const techCost = getTechCost(this.nation.tech);
     return [Util.round(crew / 100 * 3 * techCost), 0];
   }
 
@@ -86,7 +90,7 @@ export class BattleStanceCommand extends GeneralCommand {
     if (term < 3) {
       logger.pushGeneralActionLog(`병사들을 열심히 훈련중... (${term}/3) <1>${date}</>`);
       this.setResultTurn(turnResult);
-      await await this.saveGeneral();
+      await this.saveGeneral();
 
       return true;
     }
@@ -102,7 +106,7 @@ export class BattleStanceCommand extends GeneralCommand {
     general.addExperience(exp);
     general.addDedication(ded);
 
-    const crew = general.getVar('crew');
+    const crew = Math.max(1, general.getVar('crew')); // 0으로 나누기 방지
 
     general.addDex(general.getCrewTypeObj(), crew / 100 * 3, false);
 

@@ -28,10 +28,11 @@ class GeneralRepository {
     // 먼저 캐시에서 찾기
     // generalId가 MongoDB _id인 경우, session_id와 no를 알 수 없으므로
     // DB 조회 후 캐시에 저장
+    // IMPORTANT: .lean()을 제거하여 Mongoose 문서(메서드 포함)를 반환
     return cacheService.getOrLoad(
       `general:byMongoId:${generalId}`,
       async () => {
-        const general = await General.findById(generalId).lean();
+        const general = await General.findById(generalId);
 
         // DB에서 조회한 결과를 캐시에 저장 (session_id와 no 기준)
         if (general) {

@@ -530,7 +530,8 @@ export class AIEngine {
   selectBestDomesticCommand(
     general: any,
     city: any,
-    nation: any
+    nation: any,
+    env?: any
   ): CommandDecision | null {
     const evaluation = this.evaluateCity(city);
     const rates = this.calculateCityDevelopmentRates(city);
@@ -545,83 +546,87 @@ export class AIEngine {
     // 개발이 필요한 항목 찾기
     const developmentNeeds: Array<{ command: string; rate: number; priority: number }> = [];
     
-    // 민심 개발 (통솔장, 정치가) - 주민선정
-    if ((isCommander || isPolitician) && rates.trust < 0.98) {
+    // 민심 개발 (모든 타입 가능, 통솔장/정치가는 우선순위 높음) - 주민선정
+    if (rates.trust < 0.98) {
+      const priorityBonus = (isCommander || isPolitician) ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'trust',
         rate: rates.trust,
-        priority: Math.max(0, (1 - rates.trust / 2 - 0.2)) * 100
+        priority: Math.max(0, (1 - rates.trust / 2 - 0.2)) * 100 * priorityBonus
       });
     }
     
-    // 인구 개발 (통솔장, 매력가) - 정착장려
-    if ((isCommander || isCharmer) && rates.pop < this.policy.targetDevelopmentRate) {
+    // 인구 개발 (모든 타입 가능, 통솔장/매력가는 우선순위 높음) - 정착장려
+    if (rates.pop < this.policy.targetDevelopmentRate) {
+      const priorityBonus = (isCommander || isCharmer) ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'settlement',
         rate: rates.pop,
-        priority: (1 - rates.pop) * 90
+        priority: (1 - rates.pop) * 90 * priorityBonus
       });
     }
     
-    // 기술 연구 (지장) - 국가 기술력이 뒤처져 있을 때
-    if (isStrategist && nation && general.env) {
-      const tech = nation.tech || 0;
-      const startYear = general.env.startyear || general.env.year || 0;
-      const currentYear = general.env.year || startYear;
+    // 기술 연구 (모든 타입 가능, 지장은 우선순위 높음) - 국가 기술력이 뒤처져 있을 때
+    if (nation && env) {
+      const tech = nation.tech || nation.data?.tech || 0;
+      const startYear = env.startyear || env.year || 0;
+      const currentYear = env.year || startYear;
       const relYear = currentYear - startYear;
       const techLimit = relYear * 50;
       
       // 기술이 연도 대비 뒤처져 있으면 연구
       if (tech < techLimit) {
+        const priorityBonus = isStrategist ? 1.5 : 1.0;
         developmentNeeds.push({
           command: 'tech',
           rate: tech / Math.max(1, techLimit),
-          priority: (1 - tech / Math.max(1, techLimit)) * 85
+          priority: (1 - tech / Math.max(1, techLimit)) * 85 * priorityBonus
         });
       }
     }
     
-    // 농업/상업 (지장)
-    if (isStrategist) {
-      if (rates.agri < this.policy.targetDevelopmentRate) {
-        developmentNeeds.push({
-          command: 'agriculture',
-          rate: rates.agri,
-          priority: (1 - rates.agri) * 80
-        });
-      }
-      if (rates.comm < this.policy.targetDevelopmentRate) {
-        developmentNeeds.push({
-          command: 'commerce',
-          rate: rates.comm,
-          priority: (1 - rates.comm) * 80
-        });
-      }
+    // 농업/상업 (모든 타입 가능, 지장은 우선순위 높음)
+    if (rates.agri < this.policy.targetDevelopmentRate) {
+      const priorityBonus = isStrategist ? 1.5 : 1.0;
+      developmentNeeds.push({
+        command: 'agriculture',
+        rate: rates.agri,
+        priority: (1 - rates.agri) * 80 * priorityBonus
+      });
+    }
+    if (rates.comm < this.policy.targetDevelopmentRate) {
+      const priorityBonus = isStrategist ? 1.5 : 1.0;
+      developmentNeeds.push({
+        command: 'commerce',
+        rate: rates.comm,
+        priority: (1 - rates.comm) * 80 * priorityBonus
+      });
     }
     
-    // 치안/방어/성벽 (무장)
-    if (isWarrior) {
-      if (rates.secu < this.policy.targetDevelopmentRate) {
-        developmentNeeds.push({
-          command: 'security',
-          rate: rates.secu,
-          priority: (1 - rates.secu) * 70
-        });
-      }
-      if (rates.def < this.policy.targetDevelopmentRate) {
-        developmentNeeds.push({
-          command: 'defense',
-          rate: rates.def,
-          priority: (1 - rates.def) * 70
-        });
-      }
-      if (rates.wall < this.policy.targetDevelopmentRate) {
-        developmentNeeds.push({
-          command: 'wall',
-          rate: rates.wall,
-          priority: (1 - rates.wall) * 60
-        });
-      }
+    // 치안/방어/성벽 (모든 타입 가능, 무장은 우선순위 높음)
+    if (rates.secu < this.policy.targetDevelopmentRate) {
+      const priorityBonus = isWarrior ? 1.5 : 1.0;
+      developmentNeeds.push({
+        command: 'security',
+        rate: rates.secu,
+        priority: (1 - rates.secu) * 70 * priorityBonus
+      });
+    }
+    if (rates.def < this.policy.targetDevelopmentRate) {
+      const priorityBonus = isWarrior ? 1.5 : 1.0;
+      developmentNeeds.push({
+        command: 'defense',
+        rate: rates.def,
+        priority: (1 - rates.def) * 70 * priorityBonus
+      });
+    }
+    if (rates.wall < this.policy.targetDevelopmentRate) {
+      const priorityBonus = isWarrior ? 1.5 : 1.0;
+      developmentNeeds.push({
+        command: 'wall',
+        rate: rates.wall,
+        priority: (1 - rates.wall) * 60 * priorityBonus
+      });
     }
     
     if (developmentNeeds.length === 0) {
@@ -666,57 +671,63 @@ export class AIEngine {
     nation: any,
     env: any
   ): CommandDecision | null {
-    // 통솔장이 아니면 군사 행동 불가
-    if (!(this.generalType & GeneralType.COMMANDER)) {
+    const crew = general.data?.crew || general.crew || 0;
+    const train = general.data?.train || general.train || 0;
+    const atmos = general.data?.atmos || general.atmos || 0;
+    const leadership = general.data?.leadership || general.leadership || 50;
+    
+    // 통솔이 매우 낮으면 (30 미만) 군사 행동 불가
+    if (leadership < 30) {
       return null;
     }
     
-    const crew = general.data?.crew || 0;
-    const train = general.data?.train || 0;
-    const atmos = general.data?.atmos || 0;
-    
-    // 병력이 부족하면 징병
-    if (crew < this.policy.minWarCrew) {
-      const popRatio = city.pop / city.pop_max;
+    // 병력이 부족하면 징병 (통솔 40 이상)
+    if (crew < this.policy.minWarCrew && leadership >= 40) {
+      const cityData = city.data || city;
+      const popRatio = (cityData.pop || 0) / Math.max(cityData.pop_max || 1, 1);
       if (popRatio >= this.policy.safeRecruitPopRatio) {
         return {
           command: mapAICommandToGameCommand('recruit'),
-          args: { cityId: city.city },
+          args: { crewType: 0, amount: 1000 },
           reason: 'need_crew',
           priority: 90
         };
       }
     }
     
-    // 훈련도가 부족하면 훈련
-    if (train < this.policy.properWarTrainAtmos) {
-      return {
-        command: mapAICommandToGameCommand('train'),
-        args: { cityId: city.city },
-        reason: 'need_training',
-        priority: 80
-      };
+    // 병사가 있으면 훈련도 체크
+    if (crew > 0) {
+      // 훈련도가 부족하면 훈련 (통솔 40 이상)
+      if (train < this.policy.properWarTrainAtmos && leadership >= 40) {
+        return {
+          command: mapAICommandToGameCommand('train'),
+          args: {},
+          reason: 'need_training',
+          priority: 80
+        };
+      }
+      
+      // 사기가 부족하면 사기진작
+      if (atmos < this.policy.properWarTrainAtmos && leadership >= 40) {
+        // 사기진작 커맨드가 없으면 훈련으로 대체
+        return {
+          command: mapAICommandToGameCommand('train'),
+          args: {},
+          reason: 'need_morale',
+          priority: 80
+        };
+      }
     }
     
-    // 사기가 부족하면 사기진작
-    if (atmos < this.policy.properWarTrainAtmos) {
-      return {
-        command: mapAICommandToGameCommand('morale'),
-        args: { cityId: city.city },
-        reason: 'need_morale',
-        priority: 80
-      };
-    }
-    
-    // 전쟁 상태이고 조건이 충족되면 공격
-    if (this.diplomacyState >= DiplomacyState.WAR) {
+    // 전쟁 상태이고 조건이 충족되면 공격 (통솔장만 가능)
+    if ((this.generalType & GeneralType.COMMANDER) && this.diplomacyState >= DiplomacyState.WAR) {
       // 실제로는 인접 적 도시 찾기 필요
       // 여기서는 간단히 공격 가능 여부만 반환
       if (crew >= this.policy.minWarCrew &&
           Math.max(train, atmos) >= this.policy.properWarTrainAtmos) {
         return {
           command: 'attack',
-          args: { fromCityId: city.city },
+          args: { fromCityId: city.city || city.data?.city },
           reason: 'ready_for_war',
           priority: 100
         };
@@ -749,7 +760,7 @@ export class AIEngine {
       case 'trust':
       case 'settlement':
       case 'tech':
-        return this.selectBestDomesticCommand(general, city, nation);
+        return this.selectBestDomesticCommand(general, city, nation, env);
       
       case 'attack':
         if (this.shouldAttack(general, null, city, nation)) {
@@ -770,16 +781,16 @@ export class AIEngine {
     nation: any,
     env: any
   ): Promise<CommandDecision | null> {
-    // 세율 조정
-    const taxRate = this.decideTaxRate(nation, env);
-    if (taxRate !== nation.rate) {
-      return {
-        command: 'set_tax_rate',
-        args: { rate: taxRate },
-        reason: 'adjust_tax_rate',
-        priority: 50
-      };
-    }
+    // 세율 조정 (TODO: set_tax_rate 명령 구현 필요)
+    // const taxRate = this.decideTaxRate(nation, env);
+    // if (taxRate !== nation.rate) {
+    //   return {
+    //     command: 'set_tax_rate',
+    //     args: { rate: taxRate },
+    //     reason: 'adjust_tax_rate',
+    //     priority: 50
+    //   };
+    // }
     
     // 선전포고 검토
     if (this.diplomacyState === DiplomacyState.PEACE) {

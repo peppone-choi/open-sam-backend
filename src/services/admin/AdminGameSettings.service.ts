@@ -17,6 +17,20 @@ import { Util } from '../../utils/Util';
  */
 export class AdminGameSettingsService {
   /**
+   * 세션 캐시 무효화 헬퍼
+   */
+  private static async invalidateSessionCache(sessionId: string): Promise<void> {
+    try {
+      const { cacheManager } = await import('../../cache/CacheManager');
+      await cacheManager.delete(`session:state:${sessionId}`);
+      await cacheManager.delete(`session:byId:${sessionId}`);
+      console.log(`[AdminGameSettings] Session cache invalidated for ${sessionId}`);
+    } catch (error) {
+      console.warn(`[AdminGameSettings] Failed to invalidate cache:`, error);
+    }
+  }
+
+  /**
    * 운영자 메시지 설정 (전체 공지)
    */
   static async setAdminMessage(sessionId: string, message: string) {
@@ -33,8 +47,9 @@ export class AdminGameSettingsService {
       
       session.markModified('data');
       session.markModified('data.game_env');
-      
+
       await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
 
       return {
         success: true,
@@ -100,6 +115,7 @@ export class AdminGameSettingsService {
       session.markModified('data.game_env');
 
       await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
 
       return {
         success: true,
@@ -128,10 +144,11 @@ export class AdminGameSettingsService {
       session.markModified('data.game_env');
 
       await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
 
       return {
         success: true,
-        message: `최대 장수 수가 ${maxGeneral}명으로 설정되었습니다`,
+        message: `최대 장수 수가 ${maxGeneral}명으로 변경되었습니다`,
       };
     } catch (error: any) {
       return { success: false, message: error.message };
@@ -156,10 +173,11 @@ export class AdminGameSettingsService {
       session.markModified('data.game_env');
 
       await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
 
       return {
         success: true,
-        message: `최대 국가 수가 ${maxNation}개로 설정되었습니다`,
+        message: `최대 국가 수가 ${maxNation}개로 변경되었습니다`,
       };
     } catch (error: any) {
       return { success: false, message: error.message };
@@ -184,10 +202,11 @@ export class AdminGameSettingsService {
       session.markModified('data.game_env');
 
       await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
 
       return {
         success: true,
-        message: `시작 년도가 ${startYear}년으로 설정되었습니다`,
+        message: `시작 년도가 ${startYear}년으로 변경되었습니다`,
       };
     } catch (error: any) {
       return { success: false, message: error.message };
@@ -220,9 +239,10 @@ export class AdminGameSettingsService {
       
       // PHP ServerTool과 동일한 로직: turnterm 변경 시 starttime을 역산
       // 이렇게 하면 게임 내 년/월이 유지되면서 turnterm만 변경됨
-      const startyear = gameEnv.startyear || 180;
-      const year = gameEnv.year || startyear;
-      const month = gameEnv.month || 1;
+      // startYear 우선순위: session.startyear > gameEnv.startyear > gameEnv.startYear > 기본값 184
+      const startyear = session.startyear || gameEnv.startyear || gameEnv.startYear || 184;
+      const year = gameEnv.year || session.year || startyear;
+      const month = gameEnv.month || session.month || 1;
       const turntime = gameEnv.turntime ? new Date(gameEnv.turntime) : new Date();
       
       // ⚠️ CRITICAL FIX: 경과한 턴 수 계산
@@ -269,6 +289,8 @@ export class AdminGameSettingsService {
       
       const oldTurnTerm = gameEnv.turnterm || 60;
       gameEnv.turnterm = turnTerm;
+      session.data.turnterm = turnTerm; // sessionData.turnterm에도 저장
+      session.turnterm = turnTerm; // 최상위 레벨에도 저장
       
       let updatedCount = 0;
       
@@ -309,6 +331,7 @@ export class AdminGameSettingsService {
       console.log(`[AdminGameSettings] turnterm changed to ${turnTerm}m, starttime recalculated based on ${year}년 ${month}월`);
 
       await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
       
       // 전역 로그 추가
       const ActionLogger = (await import('../logger/ActionLogger')).ActionLogger;

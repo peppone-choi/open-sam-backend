@@ -11,7 +11,7 @@ import { ConstraintHelper } from '../../constraints/ConstraintHelper';
  */
 export class InvestCommerceCommand extends GeneralCommand {
   protected static cityKey = 'comm';
-  protected static statKey = 'intel';
+  protected static statKey = 'politics'; // 상업 투자는 정치 능력치 사용
   protected static actionKey = '상업';
   protected static actionName = '상업 투자';
   protected static debuffFront = 0.5;
@@ -50,6 +50,8 @@ export class InvestCommerceCommand extends GeneralCommand {
       'leadership': '통솔경험',
       'strength': '무력경험',
       'intel': '지력경험',
+      'politics': '정치경험',
+      'charm': '매력경험',
     };
     const statKey = (this.constructor as typeof InvestCommerceCommand).statKey;
     const statType = statTypeBase[statKey];
@@ -91,6 +93,10 @@ export class InvestCommerceCommand extends GeneralCommand {
 
   protected calcBaseScore(rng: any): number {
     const general = this.generalObj;
+    
+    if (!this.city) {
+      throw new Error('도시 정보가 없습니다');
+    }
     const trust = Math.max(50, Math.min(this.city.trust, 100));
     const statKey = (this.constructor as typeof InvestCommerceCommand).statKey;
 
@@ -101,6 +107,10 @@ export class InvestCommerceCommand extends GeneralCommand {
       score = general.getStrength(true, true, true, false);
     } else if (statKey === 'leadership') {
       score = general.getLeadership(true, true, true, false);
+    } else if (statKey === 'politics') {
+      score = general.getPolitics(true, true, true, false);
+    } else if (statKey === 'charm') {
+      score = general.getCharm(true, true, true, false);
     }
 
     score *= trust / 100;
@@ -188,10 +198,10 @@ export class InvestCommerceCommand extends GeneralCommand {
       logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다.`);
     }
 
-    if ([1, 3].includes(this.city.front)) {
+    if ([1, 3].includes(this.city?.front ?? 0)) {
       let actualDebuffFront = debuffFront;
 
-      if (this.nation.capital === this.city.city) {
+      if (this.nation && this.nation.capital === this.city.city) {
         const relYear = this.env.year - this.env.startyear;
 
         if (relYear < 25) {

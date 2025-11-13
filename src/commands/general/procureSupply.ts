@@ -70,7 +70,11 @@ export class ProcureSupplyCommand extends GeneralCommand {
       ['쌀', 'rice']
     ]);
 
-    let score = general.getLeadership() + general.getStrength() + general.getIntel();
+    // 물자조달은 정치 60% + 통솔 40% (행정력과 조직력)
+    const politics = general.getPolitics();
+    const leadership = general.getLeadership();
+    let score = politics * 0.6 + leadership * 0.4;
+    score *= 3; // 기존 3개 합산 수준 유지
     score *= this.getDomesticExpLevelBonus(general.getVar('explevel'));
     score *= rng.nextRange(0.8, 1.2);
 
@@ -96,10 +100,14 @@ export class ProcureSupplyCommand extends GeneralCommand {
 
     const logger = general.getLogger();
 
-    if ([1, 3].includes(this.city.front)) {
+    if (!this.city) {
+      throw new Error('도시 정보가 없습니다');
+    }
+
+    if ([1, 3].includes(this.city.front ?? 0)) {
       let actualDebuffFront = debuffFront;
 
-      if (this.nation.capital === this.city.city) {
+      if (this.nation && this.nation.capital === this.city.city) {
         const relYear = this.env.year - this.env.startyear;
 
         if (relYear < 25) {
@@ -124,7 +132,9 @@ export class ProcureSupplyCommand extends GeneralCommand {
     const incStat = rng.choiceUsingWeight({
       'leadership_exp': general.getLeadership(false, false, false, false),
       'strength_exp': general.getStrength(false, false, false, false),
-      'intel_exp': general.getIntel(false, false, false, false)
+      'intel_exp': general.getIntel(false, false, false, false),
+      'politics_exp': general.getPolitics(false, false, false, false),
+      'charm_exp': general.getCharm(false, false, false, false)
     });
 
     general.addExperience(exp);

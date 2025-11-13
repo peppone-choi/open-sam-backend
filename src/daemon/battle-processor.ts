@@ -300,7 +300,7 @@ function checkVictoryCondition(battle: any, result: any): { isFinished: boolean;
   }
 
   const elapsedTime = (new Date().getTime() - new Date(battle.startedAt).getTime()) / 1000;
-  const timeCapSeconds = battle.time_cap_seconds || 1800;
+  const timeCapSeconds = battle.time_cap_seconds || 1840;
   
   if (elapsedTime >= timeCapSeconds) {
     return { isFinished: true, winner: 'defender' };

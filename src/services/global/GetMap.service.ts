@@ -27,7 +27,7 @@ export class GetMapService {
       // Get session info (year, month, startYear)
       const sessionData = session.data as any || {};
       const gameEnv = sessionData.game_env || {};
-      const startYear = gameEnv.startyear || sessionData.startyear || session.startyear || 180;
+      const startYear = gameEnv.startyear || sessionData.startyear || session.startyear || 184;
       
       // turnDate를 호출하여 최신 년/월 계산 (GetFrontInfo와 동일한 방식)
       const { ExecuteEngineService } = await import('./ExecuteEngine.service');
@@ -105,12 +105,20 @@ export class GetMapService {
         const nationData = nation.data as any || {};
         const color = nation.color || nationData.color || '#000000';
         const capital = nation.capital ?? nationData.capital ?? 0;
+        const flagImage = nation.flagImage || nationData.flagImage || null;
+        const flagTextColor = nation.flagTextColor || nationData.flagTextColor || 'auto';
+        const flagBgColor = nation.flagBgColor || nationData.flagBgColor || null;
+        const flagBorderColor = nation.flagBorderColor || nationData.flagBorderColor || 'auto';
         
         nationList.push([
           nation.nation,
           nation.name || nationData.name || '무명',
           color,
-          capital
+          capital,
+          flagImage,
+          flagTextColor,
+          flagBgColor,
+          flagBorderColor
         ]);
       }
 

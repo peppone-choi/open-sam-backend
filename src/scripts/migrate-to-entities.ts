@@ -65,7 +65,7 @@ async function migrateCommander(general: any, scenario: string, dryRun: boolean)
         injury: general.injury || 0,
         age: general.age || 20,
         startAge: general.startage || 20,
-        birthYear: general.bornyear || 180,
+        birthYear: general.bornyear || 184,
         deadYear: general.deadyear || 300,
         
         // 특기 레벨

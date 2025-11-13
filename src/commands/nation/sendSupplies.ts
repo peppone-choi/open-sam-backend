@@ -255,9 +255,14 @@ export class che_물자원조 extends NationCommand {
     const nationLevelList = getNationLevelList() as any;
     for (const level in nationLevelList) {
       const [levelText] = nationLevelList[level];
+      const levelNum = Number(level);
+      if (isNaN(levelNum)) {
+        console.warn(`Invalid level: ${level}`);
+        continue;
+      }
       levelInfo[level] = {
         text: levelText,
-        amount: Number(level) * GameConst.coefAidAmount
+        amount: levelNum * GameConst.coefAidAmount
       };
     }
 

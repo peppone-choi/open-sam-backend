@@ -86,7 +86,8 @@ export class GetJoinInfoService {
           id: city.city || city.id || 0, // city 필드가 실제 도시 ID
           name: city.name || '도시',
           x: city.x || 0,
-          y: city.y || 0
+          y: city.y || 0,
+          nation: city.nation || 0 // 소속 국가 ID 추가
         };
       });
 

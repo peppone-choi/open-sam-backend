@@ -45,9 +45,12 @@ export class CommandExecutor {
       });
 
       // 1. 장수 및 환경 데이터 로드
-      // TODO: General, Session 로드
-      const general: any = null; // await generalRepository.findById(commandData.generalId);
-      const session: any = null; // await sessionRepository.findBySessionId(commandData.sessionId);
+      const { generalRepository } = await import('../../repositories/general.repository');
+      const { sessionRepository } = await import('../../repositories/session.repository');
+      
+      const generalNo = parseInt(commandData.generalId, 10);
+      const general = await generalRepository.findBySessionAndNo(commandData.sessionId, generalNo);
+      const session = await sessionRepository.findBySessionId(commandData.sessionId);
 
       if (!general) {
         throw new BadRequestError('장수를 찾을 수 없습니다', { generalId: commandData.generalId });
@@ -57,7 +60,12 @@ export class CommandExecutor {
         throw new BadRequestError('세션을 찾을 수 없습니다', { sessionId: commandData.sessionId });
       }
 
-      const env = session.toEnvObject(); // 환경 데이터 변환
+      const gameEnv = session.data || {};
+      const env = {
+        ...gameEnv.game_env,
+        ...gameEnv,
+        session_id: commandData.sessionId
+      };
 
       // 2. 커맨드 인스턴스 생성
       const command = CommandFactory.create(
@@ -87,8 +95,15 @@ export class CommandExecutor {
       }
 
       // 5. 커맨드 실행
-      // TODO: RNG 객체 생성
-      const rng: any = {}; // new RandUtil();
+      // RNG 객체 생성 (간단한 래퍼)
+      const rng = {
+        nextRangeInt: (min: number, max: number) => {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        },
+        choice: (arr: any[]) => {
+          return arr[Math.floor(Math.random() * arr.length)];
+        }
+      };
       const success = await command.run(rng);
 
       const duration = Date.now() - startTime;

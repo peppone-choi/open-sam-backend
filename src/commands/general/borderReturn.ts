@@ -60,8 +60,8 @@ export class BorderReturnCommand extends GeneralCommand {
     const nationID = general.getNationID();
 
     // 3칸 이내 거리별 도시 목록
-    const distanceList = searchDistance(cityID, 3, true);
-    const flatCityList = distanceList.flat();
+    const distanceMap = await searchDistance(cityID, 3, true, sessionId);
+    const flatCityList = Object.keys(distanceMap).map(Number);
 
     // 아군 점령 도시 목록
     const occupiedCities = await cityRepository.findByFilter({
@@ -73,17 +73,18 @@ export class BorderReturnCommand extends GeneralCommand {
 
     const occupiedSet = new Set(occupiedCities.map((c: any) => c.city || c.data?.city));
 
-    // 가장 가까운 거리의 도시 찾기
+    // 가장 가까운 거리의 도시 찾기 (거리 순으로 정렬)
+    const cityDistancePairs = Object.entries(distanceMap)
+      .map(([cityId, distance]) => ({ cityId: Number(cityId), distance }))
+      .filter(pair => occupiedSet.has(pair.cityId))
+      .sort((a, b) => a.distance - b.distance);
+    
     let nearestCityList: number[] = [];
-    for (const cityList of distanceList) {
-      for (const cid of cityList) {
-        if (occupiedSet.has(cid)) {
-          nearestCityList.push(cid);
-        }
-      }
-      if (nearestCityList.length > 0) {
-        break;
-      }
+    if (cityDistancePairs.length > 0) {
+      const minDistance = cityDistancePairs[0].distance;
+      nearestCityList = cityDistancePairs
+        .filter(pair => pair.distance === minDistance)
+        .map(pair => pair.cityId);
     }
 
     // 3칸 이내에 아군 도시가 없으면 실패
@@ -106,6 +107,15 @@ export class BorderReturnCommand extends GeneralCommand {
       await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
     } catch (error) {
       console.error('StaticEventHandler 실패:', error);
+    }
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '접경귀환');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
     }
 
     await this.saveGeneral();

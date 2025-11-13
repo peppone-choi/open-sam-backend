@@ -74,7 +74,7 @@ export class DismissCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof DismissCommand).getName(), this.arg));
     general.checkStatChange();
     await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, DismissCommand, this.env, this.arg ?? {});
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

@@ -42,7 +42,7 @@ export async function updateTraffic(sessionId: string): Promise<void> {
     const gameStor = KVStorage.getStorage(`game_env:${sessionId}`);
     
     // 현재 게임 환경 변수 조회
-    const year = await gameStor.getValue('year') || 180;
+    const year = await gameStor.getValue('year') || 184;
     const month = await gameStor.getValue('month') || 1;
     const refresh = await gameStor.getValue('refresh') || 0;
     const maxonline = await gameStor.getValue('maxonline') || 0;

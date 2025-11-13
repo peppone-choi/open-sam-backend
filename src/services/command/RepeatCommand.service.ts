@@ -1,6 +1,6 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
-const MAX_TURN = 30;
+const MAX_TURN = 50;
 
 export class RepeatCommandService {
   static async execute(data: any, user?: any) {
@@ -17,6 +17,14 @@ export class RepeatCommandService {
     }
 
     await repeatGeneralCommand(sessionId, generalId, amount);
+
+    // 캐시 무효화
+    try {
+      const { cacheManager } = await import('../../cache/CacheManager');
+      await cacheManager.delete(`general:${sessionId}:${generalId}`);
+    } catch (error: any) {
+      console.error('Cache invalidation failed:', error);
+    }
 
     return {
       success: true,

@@ -13,6 +13,8 @@ import { SetGeneralPermissionService } from '../services/game/SetGeneralPermissi
 import { RaiseEventService } from '../services/game/RaiseEvent.service';
 import { GetMyBossInfoService } from '../services/game/GetMyBossInfo.service';
 import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
+import { generalRecordRepository } from '../repositories/general-record.repository';
+import { worldHistoryRepository } from '../repositories/world-history.repository';
 
 const router = Router();
 
@@ -392,10 +394,15 @@ router.get('/turn', async (req, res) => {
     const gameEnvCopy = { ...sessionData };
     const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
     
-    // 년/월이 변경되었으면 DB에 저장
-    if (gameEnvCopy.year !== sessionData.year || gameEnvCopy.month !== sessionData.month) {
+    // 년/월 또는 starttime이 변경되었으면 DB에 저장
+    if (gameEnvCopy.year !== sessionData.year || gameEnvCopy.month !== sessionData.month || gameEnvCopy.starttime !== sessionData.starttime) {
+      const starttimeChanged = gameEnvCopy.starttime !== sessionData.starttime;
       sessionData.year = gameEnvCopy.year;
       sessionData.month = gameEnvCopy.month;
+      if (starttimeChanged) {
+        sessionData.starttime = gameEnvCopy.starttime;
+        console.log(`[${new Date().toISOString()}] ✅ Saved corrected starttime to DB: ${sessionData.starttime}`);
+      }
       session.data = sessionData;
       await session.save();
     }
@@ -1136,6 +1143,124 @@ router.post('/my-boss-info', authenticate, async (req, res) => {
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/logs/general:
+ *   get:
+ *     summary: 장수 동향 조회
+ *     description: 특정 장수의 행동 기록을 조회합니다
+ *     tags: [Game]
+ *     parameters:
+ *       - in: query
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: generalId
+ *         required: true
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 50
+ */
+router.get('/logs/general', async (req, res) => {
+  try {
+    const { sessionId, generalId, limit = 50 } = req.query;
+    
+    if (!sessionId || !generalId) {
+      return res.status(400).json({ 
+        result: false, 
+        reason: 'sessionId and generalId are required' 
+      });
+    }
+    
+    const records = await generalRecordRepository.findByFilter(
+      {
+        session_id: sessionId,
+        general_id: parseInt(generalId as string),
+        log_type: 'action'
+      },
+      {
+        sort: { created_at: -1 },
+        limit: parseInt(limit as string)
+      }
+    );
+    
+    res.json({
+      result: true,
+      logs: records.map(record => ({
+        id: record._id,
+        generalId: record.general_id,
+        logType: record.log_type,
+        year: record.year,
+        month: record.month,
+        text: record.text,
+        timestamp: record.created_at
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/logs/global:
+ *   get:
+ *     summary: 중원 정세 조회
+ *     description: 전역 이벤트 히스토리를 조회합니다
+ *     tags: [Game]
+ *     parameters:
+ *       - in: query
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 50
+ */
+router.get('/logs/global', async (req, res) => {
+  try {
+    const { sessionId, limit = 50 } = req.query;
+    
+    if (!sessionId) {
+      return res.status(400).json({ 
+        result: false, 
+        reason: 'sessionId is required' 
+      });
+    }
+    
+    const histories = await worldHistoryRepository.findByFilter({
+      session_id: sessionId,
+      nation_id: 0  // 0 = 전역 이벤트
+    })
+    .sort({ created_at: -1 })
+    .limit(parseInt(limit as string))
+    .lean();
+    
+    res.json({
+      result: true,
+      logs: histories.map(history => ({
+        id: history._id,
+        nationId: history.nation_id,
+        year: history.year,
+        month: history.month,
+        text: history.text,
+        timestamp: history.created_at
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
   }
 });
 

@@ -76,16 +76,21 @@ export class SessionStateService {
       }
 
       const sessionData = session.data || {};
+      const gameEnv = sessionData.game_env || {};
+      
+      // startYear 우선순위: session.startyear > gameEnv.startyear > gameEnv.startYear > 기본값 184
+      const startYear = session.startyear || gameEnv.startyear || gameEnv.startYear || 184;
+      
       const state: SessionState = {
         sessionId,
         status: this.determineStatus(sessionData),
-        year: sessionData.year || 180,
-        month: sessionData.month || 1,
-        turnterm: sessionData.turnterm || 60,
+        year: sessionData.year || gameEnv.year || session.year || startYear,
+        month: sessionData.month || gameEnv.month || session.month || 1,
+        turnterm: sessionData.turnterm || gameEnv.turnterm || session.turnterm || 60,
         turntime: sessionData.turntime ? new Date(sessionData.turntime) : new Date(),
         lastExecuted: sessionData.turntime ? new Date(sessionData.turntime) : new Date(),
         isLocked: sessionData.is_locked || false,
-        isUnited: sessionData.isunited || 0,
+        isUnited: sessionData.isunited || gameEnv.isunited || 0,
         onlineUserCount: sessionData.online_user_cnt || 0,
         onlineNations: Array.isArray(sessionData.online_nation) 
           ? sessionData.online_nation 

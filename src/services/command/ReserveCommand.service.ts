@@ -2,7 +2,7 @@ import { generalTurnRepository } from '../../repositories/general-turn.repositor
 import { neutralize, removeSpecialCharacter, getStringWidth } from '../../utils/string-util';
 import GameConstants from '../../utils/game-constants';
 
-const MAX_TURN = GameConstants.MAX_TURN;
+const MAX_TURN = GameConstants.MAX_TURN; // 50
 
 export class ReserveCommandService {
   static async execute(data: any, user?: any) {
@@ -16,16 +16,6 @@ export class ReserveCommandService {
       }
     }
     
-    console.log('ReserveCommand.execute:', {
-      sessionId,
-      generalId,
-      generalIdType: typeof generalId,
-      userGeneralId: user?.generalId,
-      dataGeneralId: data.general_id,
-      dataGeneralIdType: typeof data.general_id,
-      user: user ? { userId: user.userId, id: user.id } : null,
-      data: { action: data.action, turn_idx: data.turn_idx, brief: data.brief }
-    });
     
     const action = data.action;
     const brief = data.brief || action; // brief가 있으면 사용, 없으면 action 사용
@@ -68,7 +58,21 @@ export class ReserveCommandService {
       };
     }
 
+    // 커맨드 예약은 turntime에 영향을 주지 않음
+    // turntime은 장수 생성 시간 + (turnterm × N)으로 고정
+    // 데몬이 밀린 턴을 while 루프로 모두 처리함
+
     const result = await setGeneralCommand(sessionId, generalId, turnList, action, arg, brief);
+
+    // 캐시 무효화
+    if (result.success) {
+      try {
+        const { cacheManager } = await import('../../cache/CacheManager');
+        await cacheManager.delete(`general:${sessionId}:${generalId}`);
+      } catch (error: any) {
+        console.error('Cache invalidation failed:', error);
+      }
+    }
 
     return result;
   }
@@ -112,6 +116,13 @@ async function setGeneralCommand(
     const finalBrief = brief || action;
 
     for (const turnIdx of turnList) {
+      // 기존 데이터 확인
+      const existing = await generalTurnRepository.findOneByFilter({
+        session_id: sessionId,
+        'data.general_id': generalId,
+        'data.turn_idx': turnIdx
+      });
+      
       const result = await generalTurnRepository.findOneAndUpdate(
         {
           session_id: sessionId,
@@ -128,15 +139,7 @@ async function setGeneralCommand(
         { upsert: true, new: true }
       );
       
-      console.log('[ReserveCommand] 명령 저장 완료:', {
-        sessionId,
-        generalId,
-        turnIdx,
-        action,
-        arg,
-        brief: finalBrief,
-        saved: !!result
-      });
+
     }
 
     return {

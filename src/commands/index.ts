@@ -1,6 +1,114 @@
 import * as generalCommands from './general';
 import * as nationCommands from './nation';
 
+// 영문 커맨드 타입 → 한글 매핑 (레거시 DB 호환)
+const englishToKoreanCommandMap: Record<string, string> = {
+  'REST': '휴식',
+  'TRAIN': '단련',
+  'HEAL': '치료',
+  'RECRUIT': '모집',
+  'CONSCRIPT': '징병',
+  'MOVE': '이동',
+  'RETURN': '귀환',
+  'BORDER_RETURN': '접경귀환',
+  'CULTIVATE_FARM': '농업',
+  'INVEST_COMMERCE': '상업',
+  'RESEARCH_TECH': '기술연구',
+  'REINFORCE_DEFENSE': '방어',
+  'REINFORCE_SECURITY': '치안',
+  'REPAIR_WALL': '성벽',
+  'INTENSIVE_TRAINING': '집중훈련',
+  'TRAIN_TROOPS': '부대훈련',
+  'BOOST_MORALE': '사기',
+  'DEPLOY': '출병',
+  'FOUND_NATION': '건국',
+  'RANDOM_FOUND_NATION': '무작위건국',
+  'ABDICATE': '하야',
+  'RETIRE': '은퇴',
+  'SEARCH_TALENT': '인재등용',
+  'DISBAND': '해산',
+  'SIGHTSEEING': '견문',
+  'TRADE_RICE': '군량매매',
+  'CULTIVATE_LAND': '농지개간',
+  'ABDICATE_TO': '선양',
+  'NPC_AUTO': 'NPC능동',
+  'WANDER': '방랑',
+  'TRAVEL': '순행',
+  'RECRUIT_SOLDIERS': '모병',
+  'PROCURE_SUPPLY': '물자조달',
+  'BATTLE_STANCE': '전투태세',
+  'RESET_BATTLE_SKILL': '전투특기초기화',
+  'RESET_ADMIN_SKILL': '내정특기초기화',
+  'ENCOURAGE_SETTLEMENT': '정착장려',
+  'SELECT_CITIZEN': '주민선정',
+  'GRANT': '증여',
+  'DONATE': '헌납',
+  'PLUNDER': '탈취',
+  'DESTROY': '파괴',
+  'FIRE_ATTACK': '화계',
+  'FORCE_MARCH': '강행',
+  'GATHER': '집합',
+  'RAISE_ARMY': '거병',
+  'SPY': '첩보',
+  'RECRUIT_GENERAL': '등용',
+  'ACCEPT_RECRUIT': '등용수락',
+  'JOIN_NATION': '임관',
+  'RANDOM_JOIN_NATION': '랜덤임관',
+  'ATTEMPT_REBELLION': '모반시도',
+  'AGITATE': '선동',
+  'TRADE_EQUIPMENT': '장비매매',
+  'TRADE_MILITARY': '군사매매',
+  'CONVERT_EXP': '숙련전환',
+  'REST_CURE': '요양',
+  'REPAIR_WALL_EXTEND': '성벽보수',
+  'DISMISS_TROOPS': '소집해제',
+  'REINFORCE_DEFENSE_EXTEND': '수비강화',
+  'JOIN_GENERAL_NATION': '장수대상임관',
+};
+
+const englishToKoreanNationCommandMap: Record<string, string> = {
+  'REDUCE_FORCE': '감축',
+  'RAID': '급습',
+  'COUNTER_ATTACK': '피장파장',
+  'RANDOM_CAPITAL_MOVE': '무작위수도이전',
+  'APPOINT_OFFICER': '발령',
+  'DECLARE_WAR': '선전포고',
+  'EXPAND': '증축',
+  'MOVE_CAPITAL': '천도',
+  'REWARD': '포상',
+  'CR_POPULATION_MOVE': '인구이동',
+  'REST': '휴식',
+  // che_ 접두사가 붙은 커맨드들은 한글명 그대로 사용
+  '국기변경': '국기변경',
+  '국호변경': '국호변경',
+  '몰수': '몰수',
+  '물자원조': '물자원조',
+  '백성동원': '백성동원',
+  '부대탈퇴지시': '부대탈퇴지시',
+  '불가침수락': '불가침수락',
+  '불가침제의': '불가침제의',
+  '불가침파기수락': '불가침파기수락',
+  '불가침파기제의': '불가침파기제의',
+  '수몰': '수몰',
+  '의병모집': '의병모집',
+  '이호경식': '이호경식',
+  '종전수락': '종전수락',
+  '종전제의': '종전제의',
+  '초토화': '초토화',
+  '필사즉생': '필사즉생',
+  '허보': '허보',
+  // event_ 접두사가 붙은 커맨드들도 한글명 그대로
+  '극병연구': '극병연구',
+  '대검병연구': '대검병연구',
+  '무희연구': '무희연구',
+  '산저병연구': '산저병연구',
+  '상병연구': '상병연구',
+  '원융노병연구': '원융노병연구',
+  '음귀병연구': '음귀병연구',
+  '화륜차연구': '화륜차연구',
+  '화시병연구': '화시병연구',
+};
+
 export const CommandRegistry: Record<string, any> = {
   '휴식': generalCommands.RestCommand,
   '단련': generalCommands.TrainCommand,
@@ -39,7 +147,7 @@ export const CommandRegistry: Record<string, any> = {
   '전투특기초기화': generalCommands.ResetBattleSkillCommand,
   '내정특기초기화': generalCommands.ResetAdminSkillCommand,
   '정착장려': generalCommands.EncourageSettlementCommand,
-  '주민선정': generalCommands.SelectCitizenCommand,
+  '주민선정': generalCommands.GoodGovernanceCommand,
   '증여': generalCommands.GrantCommand,
   '헌납': generalCommands.DonateCommand,
   '탈취': generalCommands.PlunderCommand,
@@ -107,11 +215,33 @@ export const NationCommandRegistry: Record<string, any> = {
 };
 
 export function getCommand(action: string) {
-  return CommandRegistry[action] || null;
+  // 1. 한글 커맨드명으로 직접 조회
+  if (CommandRegistry[action]) {
+    return CommandRegistry[action];
+  }
+  
+  // 2. 영문 타입 (INVEST_COMMERCE 등)을 한글로 변환
+  const koreanName = englishToKoreanCommandMap[action];
+  if (koreanName && CommandRegistry[koreanName]) {
+    return CommandRegistry[koreanName];
+  }
+  
+  return null;
 }
 
 export function getNationCommand(action: string) {
-  return NationCommandRegistry[action] || null;
+  // 1. 한글 커맨드명으로 직접 조회
+  if (NationCommandRegistry[action]) {
+    return NationCommandRegistry[action];
+  }
+  
+  // 2. 영문 타입을 한글로 변환
+  const koreanName = englishToKoreanNationCommandMap[action];
+  if (koreanName && NationCommandRegistry[koreanName]) {
+    return NationCommandRegistry[koreanName];
+  }
+  
+  return null;
 }
 
 export * from './base/BaseCommand';

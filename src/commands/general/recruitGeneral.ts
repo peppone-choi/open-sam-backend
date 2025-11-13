@@ -67,21 +67,18 @@ export class RecruitGeneralCommand extends GeneralCommand {
     return this.env.join_mode !== 'onlyRandom';
   }
 
-  protected async initWithArg(): Promise<void> {
-    const destGeneralID = this.arg.destGeneralID;
-    // const destGeneral = await General.findById(destGeneralID);
-    // this.setDestGeneral(destGeneral);
-    // this.setDestNation(this.destGeneralObj.getVar('nation'), ['gennum', 'scout']);
-
+  protected initWithArg(): void {
     const relYear = this.env.year - this.env.startyear;
 
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
       ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '임관 모드가 아닙니다.'),
       ConstraintHelper.BeNeutral(),
-      ConstraintHelper.ExistsDestNation(),
-      ConstraintHelper.AllowJoinDestNation(relYear),
+      ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.AllowJoinAction()
     ];
+    
+    // destGeneral, destNation은 run() 메서드에서 로드됨
   }
 
   public getCost(): [number, number] {

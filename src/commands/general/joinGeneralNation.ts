@@ -69,42 +69,19 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     ];
   }
 
-  protected async initWithArg(): Promise<void> {
-    const destGeneralID = this.arg['destGeneralID'];
-    const sessionId = this.env['session_id'] || 'sangokushi_default';
+  protected initWithArg(): void {
+    const relYear = this.env['year'] - this.env['startyear'];
 
-    const destGeneralDoc = await generalRepository.findOneByFilter({
-      session_id: sessionId,
-      'data.no': destGeneralID
-    });
-
-    if (!destGeneralDoc) {
-      throw new Error('대상 장수를 찾을 수 없습니다');
-    }
-
-    this.destGeneral = destGeneralDoc;
-    const destNationId = destGeneralDoc.nation || 0;
-
-    const destNationDoc = await nationRepository.findOneByFilter({
-      session_id: sessionId,
-      'data.nation': destNationId
-    });
-
-    if (destNationDoc) {
-      this.destNation = {
-        nation: destNationId,
-        name: destNationDoc.data?.name || '무명',
-        gennum: destNationDoc.data?.gennum || 0
-      };
-    }
-
-    const env = this.env;
-    const relYear = env['year'] - env['startyear'];
-
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
-      // ConstraintHelper.ExistsDestNation(),
+      // ConstraintHelper.BeNeutral(),
+      // ConstraintHelper.ExistsDestGeneral(),
+      // ConstraintHelper.FriendlyDestGeneral(),
       // ConstraintHelper.AllowJoinDestNation(relYear),
+      // ConstraintHelper.AllowJoinAction()
     ];
+    
+    // destGeneral, destNation은 run() 메서드에서 로드됨
   }
 
   public getCommandDetailTitle(): string {
@@ -176,11 +153,10 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     general.setVar('officer_level', 1);
     general.setVar('officer_city', 0);
     general.setVar('belong', 1);
-
+    
     if (this.destGeneral) {
       general.setVar('city', this.destGeneral.data?.city || this.destGeneral.data?.location || 0);
     } else {
-      const sessionId = general.getSessionID();
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': destNationID,
@@ -190,14 +166,9 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       general.setVar('city', capital);
     }
 
-    await db.update(
-      'nation',
-      {
-        gennum: db.raw('gennum + 1')
-      },
-      'nation = ?',
-      destNationID
-    );
+    // Repository 패턴 사용
+    const { nationRepository } = await import('../../repositories/nation.repository');
+    await nationRepository.incrementValue(sessionId, destNationID, 'gennum', 1);
 
     try {
       const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');

@@ -190,6 +190,14 @@ export class che_이호경식 extends NationCommand {
     this.setResultTurn(new LastTurn(che_이호경식.getName(), this.arg));
     await general!.applyDB(db);
 
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     return true;
   }
 

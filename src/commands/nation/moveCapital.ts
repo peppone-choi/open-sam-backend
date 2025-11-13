@@ -79,12 +79,17 @@ export class che_천도 extends NationCommand {
 
   public getCommandDetailTitle(): string {
     const name = che_천도.getName();
-    const amount = (Number(this.env['develcost']) * 5).toLocaleString();
+    const develcost = Number(this.env['develcost']);
+    if (isNaN(develcost)) {
+      console.warn('Invalid develcost in moveCapital');
+    }
+    const amount = (develcost * 5).toLocaleString();
     return `${name}/1+거리×2턴(금쌀 ${amount}×2^거리)`;
   }
 
   public getCost(): [number, number] {
-    let amount = Number(this.env['develcost']) * 5;
+    const develcost = Number(this.env['develcost']);
+    let amount = (isNaN(develcost) ? 0 : develcost) * 5;
     amount *= 2 ** (this.getDistance() ?? 50);
     return [amount, amount];
   }
@@ -208,6 +213,14 @@ export class che_천도 extends NationCommand {
 
     this.setResultTurn(new LastTurn(che_천도.getName(), this.arg));
     await general!.applyDB(db);
+
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
 
     return true;
   }

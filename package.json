@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:api": "ts-node-dev --respawn --transpile-only src/server-minimal.ts",
     "dev:turn": "ts-node-dev --respawn --transpile-only src/daemon/turn-processor.ts",
     "dev:daemon": "ts-node-dev --respawn --transpile-only src/daemon-unified.ts",
     "dev:cmd": "ts-node-dev --respawn --transpile-only src/daemon.ts",

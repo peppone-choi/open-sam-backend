@@ -11,6 +11,21 @@ import { addToSyncQueue } from './sync-queue.helper';
 const cacheManager = CacheManager.getInstance();
 
 /**
+ * Mongoose 내부 필드를 제거하여 sync queue에 안전하게 저장할 수 있는 데이터로 변환
+ */
+function sanitizeForSync(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  
+  const cleaned = { ...data };
+  delete cleaned.__v;
+  delete cleaned._id;
+  delete cleaned.createdAt;
+  delete cleaned.updatedAt;
+  
+  return cleaned;
+}
+
+/**
  * 모델별 캐시 헬퍼
  * 
  * L1 → L2 → DB 순서로 데이터를 조회합니다.
@@ -114,8 +129,8 @@ export async function saveSession(sessionId: string, data: any) {
   // 2. L1 캐시 업데이트
   await cacheManager.setL1(cacheKeys.session(sessionId), data);
   
-  // 3. DB 동기화 큐에 추가 (데몬이 처리)
-  await addToSyncQueue('session', sessionId, data);
+  // 3. DB 동기화 큐에 추가 (데몬이 처리) - Mongoose 내부 필드 제거
+  await addToSyncQueue('session', sessionId, sanitizeForSync(data));
   
   logger.debug('Session Redis 저장', { sessionId });
   
@@ -145,8 +160,8 @@ export async function saveGeneral(sessionId: string, generalId: number, data: an
   // 3. 목록 캐시 무효화
   await cacheService.invalidate([`generals:list:${sessionId}`], []);
   
-  // 4. DB 동기화 큐에 추가
-  await addToSyncQueue('general', `${sessionId}:${generalId}`, data);
+  // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
+  await addToSyncQueue('general', `${sessionId}:${generalId}`, sanitizeForSync(data));
   
   logger.debug('General Redis 저장', { sessionId, generalId });
   
@@ -168,8 +183,8 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   // 3. 목록 캐시 무효화
   await cacheService.invalidate([`cities:list:${sessionId}`], []);
   
-  // 4. DB 동기화 큐에 추가
-  await addToSyncQueue('city', `${sessionId}:${cityId}`, data);
+  // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
+  await addToSyncQueue('city', `${sessionId}:${cityId}`, sanitizeForSync(data));
   
   logger.debug('City Redis 저장', { sessionId, cityId });
   
@@ -200,8 +215,8 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
   // 3. 목록 캐시 무효화
   await cacheService.invalidate([`nations:list:${sessionId}`], []);
   
-  // 4. DB 동기화 큐에 추가
-  await addToSyncQueue('nation', `${sessionId}:${nationId}`, data);
+  // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
+  await addToSyncQueue('nation', `${sessionId}:${nationId}`, sanitizeForSync(data));
   
   logger.debug('Nation Redis 저장', { sessionId, nationId });
   

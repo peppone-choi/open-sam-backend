@@ -12,7 +12,6 @@ import { mountRoutes } from './api';
 import { errorMiddleware } from './common/middleware/error.middleware';
 import { requestLogger } from './common/middleware/request-logger.middleware';
 import { logger } from './common/logger';
-import { CommandRegistry } from './core/command';
 import { swaggerSpec } from './config/swagger';
 import { autoExtractToken } from './middleware/auth';
 import { initializeSocket } from './socket/socketManager';
@@ -262,7 +261,7 @@ async function start() {
       process.env.TZ = 'Asia/Seoul';
     }
     
-    logger.info('서버 시작 중...', {
+    logger.info('🚀 API 서버 시작 중...', {
       nodeEnv: process.env.NODE_ENV || 'development',
       port: PORT,
       nodeVersion: process.version,
@@ -270,73 +269,29 @@ async function start() {
       currentTime: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
     });
 
+    // ========================================
+    // 데이터베이스 및 캐시 연결
+    // ========================================
+    
     // MongoDB 연결
     await mongoConnection.connect(process.env.MONGODB_URI);
-    logger.info('MongoDB 연결 성공', { uri: process.env.MONGODB_URI?.replace(/\/\/.*:.*@/, '//***:***@') });
+    logger.info('✅ MongoDB 연결 성공', { 
+      uri: process.env.MONGODB_URI?.replace(/\/\/.*:.*@/, '//***:***@') 
+    });
     
-    // Redis 캐시 상태 확인
+    // Redis 캐시 연결 및 상태 확인
     const { cacheManager } = await import('./cache/CacheManager');
     const cacheStats = cacheManager.getStats();
-    logger.info('캐시 시스템 상태', cacheStats);
+    logger.info('✅ 캐시 시스템 초기화 완료', cacheStats);
     
-    // 🚀 캐시 프리로드 (DB에서 모든 게임 데이터를 캐시로 로드)
-    logger.info('게임 데이터를 캐시로 프리로드 중...');
-    const { CachePreloaderService } = await import('./services/cache/CachePreloader.service');
-    try {
-      await CachePreloaderService.preloadAllSessions();
-      logger.info('✅ 캐시 프리로드 완료');
-    } catch (error: any) {
-      logger.error('⚠️ 캐시 프리로드 실패, 계속 진행:', error);
-    }
+    // ========================================
+    // API 서버 전용 설정
+    // ========================================
+    // 게임 로직(커맨드 실행, 턴 처리)은 별도 데몬에서 처리
+    // 이 서버는 HTTP API 요청만 처리하고 커맨드를 Redis Queue에 전달
+    // ========================================
     
-    // 커맨드 레지스트리 초기화
-    await CommandRegistry.loadAll();
-    const commandStats = CommandRegistry.getStats();
-    logger.info('커맨드 시스템 초기화 완료', commandStats);
-    
-    // 기본 세션 자동 생성
-    logger.info('세션 초기화 중...');
-    const { SessionService } = await import('./services/session.service');
-    const { InitService } = await import('./services/init.service');
-    const { Session } = await import('./models/session.model');
-    
-    const sessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
-    let session = await Session.findOne({ session_id: sessionId });
-    
-    if (!session) {
-      logger.info('기본 삼국지 세션 생성 중...');
-      session = await SessionService.createDefaultSangokushi();
-      
-      // 세션이 DB에 저장되었는지 확인 (재시도)
-      let retries = 3;
-      while (retries > 0) {
-        session = await Session.findOne({ session_id: sessionId });
-        if (session) break;
-        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms 대기
-        retries--;
-      }
-      
-      if (!session) {
-        throw new Error('세션 생성 후 DB 조회 실패');
-      }
-      
-      // 기본 시나리오: 1010 (황건적의 난)
-      const defaultScenarioNumber = parseInt(process.env.DEFAULT_SCENARIO_NUMBER || '1010');
-      await InitService.initializeSession(sessionId, defaultScenarioNumber);
-      logger.info('기본 세션 생성 완료', { sessionId, scenario: defaultScenarioNumber });
-    } else {
-      logger.info('기본 세션 로드 완료', { sessionId, sessionName: session.name });
-      
-      // 도시가 없으면 초기화
-      const { City } = await import('./models/city.model');
-      const cityCount = await City.countDocuments({ session_id: sessionId });
-      if (cityCount === 0) {
-        logger.info('도시가 없어 초기화를 진행합니다...');
-        const defaultScenarioNumber = parseInt(process.env.DEFAULT_SCENARIO_NUMBER || '1010');
-        await InitService.initializeSession(sessionId, defaultScenarioNumber);
-        logger.info('도시 초기화 완료');
-      }
-    }
+    const commandStats = { generalCount: 0, nationCount: 0, loghCount: 0, total: 0 };
     
     // HTTP 서버 생성 (Socket.IO를 위한)
     const httpServer = createHTTPServer(app);
@@ -345,38 +300,30 @@ async function start() {
     const socketManager = initializeSocket(httpServer);
     logger.info('Socket.IO 서버 초기화 완료');
     
-    // 턴 프로세서 데몬 시작 (환경 변수로 제어 가능)
-    if (process.env.ENABLE_TURN_PROCESSOR !== 'false') {
-      const { startTurnProcessor } = await import('./daemon/turn-processor');
-      await startTurnProcessor();
-      logger.info('턴 프로세서 데몬 시작 완료');
-    } else {
-      logger.info('턴 프로세서 데몬 비활성화됨 (ENABLE_TURN_PROCESSOR=false)');
-    }
-    
-    // 세션 영속화 데몬 시작 (환경 변수로 제어 가능)
-    if (process.env.ENABLE_SESSION_PERSISTER !== 'false') {
-      const { startSessionPersister } = await import('./daemon/session-persister');
-      await startSessionPersister();
-      logger.info('세션 영속화 데몬 시작 완료');
-    } else {
-      logger.info('세션 영속화 데몬 비활성화됨 (ENABLE_SESSION_PERSISTER=false)');
-    }
-    
-    // LOGH 게임 루프 시작 (환경 변수로 제어 가능)
-    if (process.env.ENABLE_LOGH_GAME_LOOP === 'true') {
-      const { GameLoopManager } = await import('./services/logh/GameLoop.service');
-      const loghSessionId = process.env.LOGH_SESSION_ID || 'logh_default';
-      GameLoopManager.startLoop(loghSessionId);
-      logger.info('LOGH 게임 루프 시작 완료', { sessionId: loghSessionId });
-    } else {
-      logger.info('LOGH 게임 루프 비활성화됨 (ENABLE_LOGH_GAME_LOOP=false)');
-    }
+    // ========================================
+    // ⚠️ 게임 로직 데몬 분리 안내
+    // ========================================
+    // 게임 턴 처리, 커맨드 실행 등은 별도 데몬에서 처리됩니다.
+    // 
+    // 데몬 실행 방법:
+    //   npm run dev:daemon     (개발 모드)
+    //   npm run start:daemon   (프로덕션 모드)
+    // 
+    // 데몬 기능:
+    //   - 턴 스케줄링 (10초마다)
+    //   - 커맨드 소비 (Redis Streams)
+    //   - 경매 처리
+    //   - 토너먼트 처리
+    //   - NPC 자동 명령
+    //   - DB 동기화
+    // ========================================
+    logger.info('⚠️ 게임 데몬은 별도 실행 필요: npm run dev:daemon');
     
     // HTTP 서버 시작
     httpServer.listen(PORT, () => {
-      logger.info('API 서버 시작 완료', {
+      logger.info('✅ API 서버 시작 완료', {
         port: PORT,
+        mode: 'API-ONLY (Game Daemon Required Separately)',
         routes: [
           'Admin: /api/admin/*',
           'Core: /api/generals, /api/cities, /api/nations, /api/commands, /api/game-sessions',
@@ -391,9 +338,29 @@ async function start() {
           'Events: /api/ng-bettings, /api/votes, /api/vote-comments, /api/ng-auctions, /api/ng-auction-bids'
         ]
       });
-      console.log('\n🚀 서버가 성공적으로 시작되었습니다!');
+      
+      console.log('\n========================================');
+      console.log('🚀 API 서버 시작 완료!');
+      console.log('========================================');
       console.log(`📍 포트: ${PORT}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📡 Socket.IO: 활성화됨`);
+      console.log('');
+      console.log('⚠️  게임 데몬 별도 실행 필요:');
+      console.log('   npm run dev:daemon     (개발 모드)');
+      console.log('   npm run start:daemon   (프로덕션)');
+      console.log('');
+      console.log('📦 서버 역할:');
+      console.log('   - HTTP API 요청 처리');
+      console.log('   - 커맨드를 Redis Queue에 전달');
+      console.log('   - Socket.IO 실시간 통신');
+      console.log('');
+      console.log('🎮 데몬 역할:');
+      console.log('   - 턴 처리 (10초마다)');
+      console.log('   - 커맨드 실행 (Redis Queue)');
+      console.log('   - 경매/토너먼트 처리');
+      console.log('   - NPC 자동 명령');
+      console.log('========================================\n');
       
       // 개발 모드에서 JSON 파일 감시 시작
       if (process.env.NODE_ENV !== 'production') {
@@ -401,8 +368,6 @@ async function start() {
         const defaultScenarioId = process.env.DEFAULT_SCENARIO_ID || 'sangokushi';
         FileWatcherService.startWatching(defaultScenarioId, defaultSessionId);
       }
-      console.log(`🎮 커맨드: ${commandStats.total}개 (General: ${commandStats.generalCount}, Nation: ${commandStats.nationCount})`);
-      console.log(`📡 Socket.IO: 활성화됨\n`);
     });
   } catch (error) {
     logger.error('서버 시작 실패', {
@@ -413,7 +378,33 @@ async function start() {
   }
 }
 
+// Graceful shutdown
+let isShuttingDown = false;
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
+  logger.info('🛑 Shutdown 신호 수신', { signal });
+
+  try {
+    // MongoDB 연결 종료
+    await mongoConnection.disconnect();
+    logger.info('MongoDB 연결 종료');
+
+    logger.info('✅ API 서버 정상 종료');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Shutdown 중 에러', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+    process.exit(1);
+  }
+}
+
 // 프로세스 에러 핸들링
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('처리되지 않은 Promise 거부', {
     reason: String(reason),

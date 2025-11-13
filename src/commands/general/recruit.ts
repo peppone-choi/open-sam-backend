@@ -63,20 +63,10 @@ export class RecruitCommand extends GeneralCommand {
   /**
    * 인자와 함께 초기화
    */
-  protected async initWithArg(): Promise<void> {
-    const sessionId = this.env.session_id || 'sangokushi_default';
-    const destGeneralDoc = await generalRepository.findOneByFilter({
-      session_id: sessionId,
-      'data.no': this.arg.destGeneralID
-    });
-    
-    if (destGeneralDoc) {
-      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
-      this.setDestGeneral(destGeneral);
-    }
-
+  protected initWithArg(): void {
     const [reqGold, reqRice] = this.getCost();
 
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
       ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
       ConstraintHelper.NotBeNeutral(),
@@ -87,13 +77,8 @@ export class RecruitCommand extends GeneralCommand {
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];
-
-    // 군주에게는 등용 불가
-    if (this.destGeneralObj && this.destGeneralObj.getVar('officer_level') === 12) {
-      this.fullConditionConstraints.push(
-        ConstraintHelper.Custom(() => false, '군주는 등용할 수 없습니다.')
-      );
-    }
+    
+    // destGeneral은 run() 메서드에서 로드됨
   }
 
   public canDisplay(): boolean {
@@ -107,6 +92,10 @@ export class RecruitCommand extends GeneralCommand {
     }
     
     const destGeneral = this.destGeneralObj;
+    if (!destGeneral) {
+      return [env.develcost, 0];
+    }
+    
     const reqGold = Math.round(
       env.develcost +
       (destGeneral.getVar('experience') + destGeneral.getVar('dedication')) / 1000
@@ -124,7 +113,7 @@ export class RecruitCommand extends GeneralCommand {
   }
 
   public getBrief(): string {
-    const destGeneralName = this.destGeneralObj.getName();
+    const destGeneralName = this.destGeneralObj?.getName() ?? '알 수 없음';
     const name = RecruitCommand.getName();
     const josaUl = JosaUtil.pick(destGeneralName, '을');
     return `【${destGeneralName}】${josaUl} ${name}`;
@@ -144,6 +133,14 @@ export class RecruitCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const destGeneral = this.destGeneralObj;
+    
+    if (!destGeneral) {
+      throw new Error('대상 장수 정보가 없습니다');
+    }
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
+    
     const destGeneralName = destGeneral.getName();
     const destGeneralID = destGeneral.getID();
 
@@ -202,7 +199,7 @@ export class RecruitCommand extends GeneralCommand {
     // 경험치 증가
     const exp = 50;
     general.addExperience(exp);
-    general.increaseVar('intel_exp', 1);
+    general.increaseVar('charm_exp', 1);
 
     this.setResultTurn(new LastTurn(RecruitCommand.getName(), this.arg));
     general.checkStatChange();

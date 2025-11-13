@@ -6,11 +6,13 @@
  */
 
 export enum UnitType {
-  FOOTMAN = 'FOOTMAN',    // 보병
-  CAVALRY = 'CAVALRY',     // 기병
-  ARCHER = 'ARCHER',       // 궁병
-  WIZARD = 'WIZARD',       // 귀병
-  SIEGE = 'SIEGE'          // 차병
+  FOOTMAN = 'FOOTMAN',     // 보병 (도검병)
+  SPEARMAN = 'SPEARMAN',   // 창병 (기병 카운터)
+  HALBERD = 'HALBERD',     // 극병 (창병 카운터, 최고 방어력)
+  CAVALRY = 'CAVALRY',     // 기병 (극병 카운터)
+  ARCHER = 'ARCHER',       // 궁병 (원거리)
+  WIZARD = 'WIZARD',       // 귀병 (계략)
+  SIEGE = 'SIEGE'          // 차병 (공성)
 }
 
 export enum TerrainType {
@@ -64,40 +66,81 @@ export interface BattleResult {
 }
 
 /**
- * 병종 상성 테이블
+ * 병종 상성 테이블 (삼국지 11 완전 재현)
+ * 
+ * 핵심 가위바위보:
+ * - 창병(SPEARMAN) → 기병(CAVALRY): 2.5배 압도
+ * - 극병(HALBERD) → 창병(SPEARMAN): 1.7배 압도
+ * - 기병(CAVALRY) → 극병(HALBERD): 1.6배 우세
+ * 
  * 행: 공격자, 열: 수비자
  */
 const UNIT_ADVANTAGE_TABLE: Record<UnitType, Record<UnitType, number>> = {
+  // 보병 (일반 도검병) - 범용
   [UnitType.FOOTMAN]: {
     [UnitType.FOOTMAN]: 1.0,
-    [UnitType.CAVALRY]: 0.7,    // 기병에 약함
-    [UnitType.ARCHER]: 1.3,     // 궁병에 강함
+    [UnitType.SPEARMAN]: 1.1,   // 창병에 약간 유리
+    [UnitType.HALBERD]: 0.9,    // 극병과 호각
+    [UnitType.CAVALRY]: 0.8,    // 기병에 불리
+    [UnitType.ARCHER]: 1.1,
     [UnitType.WIZARD]: 1.0,
     [UnitType.SIEGE]: 1.2
   },
-  [UnitType.CAVALRY]: {
-    [UnitType.FOOTMAN]: 1.4,    // 보병에 강함
-    [UnitType.CAVALRY]: 1.0,
-    [UnitType.ARCHER]: 1.5,     // 궁병에 매우 강함
-    [UnitType.WIZARD]: 0.8,
-    [UnitType.SIEGE]: 1.6       // 차병에 강함
-  },
-  [UnitType.ARCHER]: {
-    [UnitType.FOOTMAN]: 0.8,    // 보병에 약함
-    [UnitType.CAVALRY]: 0.6,    // 기병에 약함
-    [UnitType.ARCHER]: 1.0,
-    [UnitType.WIZARD]: 1.2,
-    [UnitType.SIEGE]: 1.1
-  },
-  [UnitType.WIZARD]: {
-    [UnitType.FOOTMAN]: 1.0,
-    [UnitType.CAVALRY]: 1.3,    // 기병에 강함
+  // 창병 - 기병 카운터
+  [UnitType.SPEARMAN]: {
+    [UnitType.FOOTMAN]: 0.9,    // 보병에 약간 불리
+    [UnitType.SPEARMAN]: 1.0,
+    [UnitType.HALBERD]: 0.6,    // 극병에 매우 약함
+    [UnitType.CAVALRY]: 2.5,    // 기병에 압도적 (삼국지 11)
     [UnitType.ARCHER]: 0.9,
-    [UnitType.WIZARD]: 1.0,
-    [UnitType.SIEGE]: 0.9
+    [UnitType.WIZARD]: 0.9,
+    [UnitType.SIEGE]: 1.0
   },
+  // 극병 - 창병 카운터, 최고 방어력
+  [UnitType.HALBERD]: {
+    [UnitType.FOOTMAN]: 0.9,    // 보병과 호각
+    [UnitType.SPEARMAN]: 1.7,   // 창병에 압도적
+    [UnitType.HALBERD]: 1.0,
+    [UnitType.CAVALRY]: 0.7,    // 기병에 불리
+    [UnitType.ARCHER]: 1.1,
+    [UnitType.WIZARD]: 1.0,
+    [UnitType.SIEGE]: 1.2
+  },
+  // 기병 - 극병 카운터, 고기동
+  [UnitType.CAVALRY]: {
+    [UnitType.FOOTMAN]: 1.2,    // 보병에 유리
+    [UnitType.SPEARMAN]: 0.4,   // 창병에 자살 공격
+    [UnitType.HALBERD]: 1.6,    // 극병에 우세
+    [UnitType.CAVALRY]: 1.0,
+    [UnitType.ARCHER]: 1.6,     // 궁병에 압도적
+    [UnitType.WIZARD]: 1.2,
+    [UnitType.SIEGE]: 1.5
+  },
+  // 궁병 - 원거리 공격, 상성 없음
+  [UnitType.ARCHER]: {
+    [UnitType.FOOTMAN]: 1.0,    // 상성 없음
+    [UnitType.SPEARMAN]: 1.0,   // 상성 없음
+    [UnitType.HALBERD]: 1.0,    // 상성 없음
+    [UnitType.CAVALRY]: 1.0,    // 상성 없음
+    [UnitType.ARCHER]: 1.0,
+    [UnitType.WIZARD]: 0.8,
+    [UnitType.SIEGE]: 0.8
+  },
+  // 계략병
+  [UnitType.WIZARD]: {
+    [UnitType.FOOTMAN]: 1.1,
+    [UnitType.SPEARMAN]: 1.1,
+    [UnitType.HALBERD]: 1.0,
+    [UnitType.CAVALRY]: 0.9,
+    [UnitType.ARCHER]: 1.2,
+    [UnitType.WIZARD]: 1.0,
+    [UnitType.SIEGE]: 1.0
+  },
+  // 공성병
   [UnitType.SIEGE]: {
-    [UnitType.FOOTMAN]: 0.9,
+    [UnitType.FOOTMAN]: 0.7,
+    [UnitType.SPEARMAN]: 0.6,
+    [UnitType.HALBERD]: 0.7,
     [UnitType.CAVALRY]: 0.6,    // 기병에 약함
     [UnitType.ARCHER]: 0.9,
     [UnitType.WIZARD]: 1.0,
@@ -111,27 +154,35 @@ const UNIT_ADVANTAGE_TABLE: Record<UnitType, Record<UnitType, number>> = {
 const TERRAIN_BONUS: Record<TerrainType, Record<UnitType, number>> = {
   [TerrainType.PLAINS]: {
     [UnitType.FOOTMAN]: 1.0,
+    [UnitType.SPEARMAN]: 1.0,
+    [UnitType.HALBERD]: 1.0,
     [UnitType.CAVALRY]: 1.3,    // 평지에서 기병 강함
     [UnitType.ARCHER]: 1.1,
     [UnitType.WIZARD]: 1.0,
     [UnitType.SIEGE]: 1.0
   },
   [TerrainType.FOREST]: {
-    [UnitType.FOOTMAN]: 1.2,    // 숲에서 보병 유리
+    [UnitType.FOOTMAN]: 1.2,
+    [UnitType.SPEARMAN]: 1.2,   // 숲에서 창병 유리
+    [UnitType.HALBERD]: 1.1,
     [UnitType.CAVALRY]: 0.7,    // 기병 불리
-    [UnitType.ARCHER]: 1.3,     // 궁병 유리
+    [UnitType.ARCHER]: 1.3,
     [UnitType.WIZARD]: 1.1,
     [UnitType.SIEGE]: 0.6
   },
   [TerrainType.MOUNTAIN]: {
     [UnitType.FOOTMAN]: 1.3,
+    [UnitType.SPEARMAN]: 1.3,
+    [UnitType.HALBERD]: 1.2,
     [UnitType.CAVALRY]: 0.5,    // 산악에서 기병 매우 불리
-    [UnitType.ARCHER]: 1.4,     // 궁병 매우 유리
+    [UnitType.ARCHER]: 1.4,
     [UnitType.WIZARD]: 1.2,
     [UnitType.SIEGE]: 0.4
   },
   [TerrainType.WATER]: {
     [UnitType.FOOTMAN]: 0.9,
+    [UnitType.SPEARMAN]: 0.8,
+    [UnitType.HALBERD]: 0.9,
     [UnitType.CAVALRY]: 0.6,
     [UnitType.ARCHER]: 1.0,
     [UnitType.WIZARD]: 1.3,
@@ -139,20 +190,29 @@ const TERRAIN_BONUS: Record<TerrainType, Record<UnitType, number>> = {
   },
   [TerrainType.FORTRESS]: {
     [UnitType.FOOTMAN]: 0.8,
+    [UnitType.SPEARMAN]: 0.9,
+    [UnitType.HALBERD]: 1.0,    // 극병 방어에 유리
     [UnitType.CAVALRY]: 0.6,
     [UnitType.ARCHER]: 1.0,
     [UnitType.WIZARD]: 0.9,
-    [UnitType.SIEGE]: 1.5       // 공성전에서 차병 강함
+    [UnitType.SIEGE]: 1.5
   }
 };
 
 /**
  * 병종별 기본 공격력/방어력 계수
+ * 
+ * 삼국지 11 기준:
+ * - 창병: 낮은 공격, 중간 방어, 느린 속도 (방어선)
+ * - 극병: 중간 공격, 최고 방어, 느린 속도 (탱커)
+ * - 기병: 높은 공격, 낮은 방어, 빠른 속도 (돌격)
  */
 const UNIT_BASE_STATS: Record<UnitType, { attack: number; defense: number; speed: number }> = {
-  [UnitType.FOOTMAN]: { attack: 1.0, defense: 1.2, speed: 3 },
-  [UnitType.CAVALRY]: { attack: 1.4, defense: 0.8, speed: 5 },
-  [UnitType.ARCHER]: { attack: 1.1, defense: 0.7, speed: 4 },
+  [UnitType.FOOTMAN]: { attack: 1.0, defense: 1.1, speed: 3 },
+  [UnitType.SPEARMAN]: { attack: 0.8, defense: 1.0, speed: 2 },  // 낮은 공격, 방어 특화
+  [UnitType.HALBERD]: { attack: 0.9, defense: 1.4, speed: 2 },   // 최고 방어력
+  [UnitType.CAVALRY]: { attack: 1.4, defense: 0.7, speed: 5 },   // 높은 공격, 빠른 속도
+  [UnitType.ARCHER]: { attack: 1.0, defense: 0.6, speed: 3 },    // 원거리, 약한 방어
   [UnitType.WIZARD]: { attack: 1.2, defense: 1.0, speed: 3 },
   [UnitType.SIEGE]: { attack: 1.3, defense: 1.1, speed: 2 }
 };

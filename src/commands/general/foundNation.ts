@@ -47,30 +47,21 @@ export class FoundNationCommand extends GeneralCommand {
   }
 
   protected init(): void {
-    const env = this.env;
     this.setCity();
     this.setNation(['gennum', 'aux']);
 
-    const relYear = env.year - env.startyear;
-
     this.minConditionConstraints = [
-      ConstraintHelper.BeOpeningPart(relYear + 1),
       ConstraintHelper.ReqNationValue('level', '국가규모', '==', 0, '정식 국가가 아니어야합니다.'),
       ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }
 
   protected initWithArg(): void {
-    const env = this.env;
-    const relYear = env.year - env.startyear;
-
     this.fullConditionConstraints = [
       ConstraintHelper.BeLord(),
       ConstraintHelper.WanderingNation(),
       ConstraintHelper.ReqNationValue('gennum', '수하 장수', '>=', 2),
-      ConstraintHelper.BeOpeningPart(relYear + 1),
       ConstraintHelper.CheckNationNameDuplicate(this.arg.nationName),
-      ConstraintHelper.AllowJoinAction(),
       ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }
@@ -103,16 +94,6 @@ export class FoundNationCommand extends GeneralCommand {
     const date = general.getTurnTime('HM');
     const generalName = general.getName();
     const logger = general.getLogger();
-
-    const initYearMonth = Util.joinYearMonth(env.init_year, env.init_month);
-    const yearMonth = Util.joinYearMonth(env.year, env.month);
-    
-    if (yearMonth <= initYearMonth) {
-      logger.pushGeneralActionLog(`다음 턴부터 건국할 수 있습니다. <1>${date}</>`);
-      // Alternative command: 인재탐색 권장
-      return false;
-    }
-
     const josaYi = JosaUtil.pick(generalName, '이');
 
     const nationName = this.arg.nationName;
@@ -123,6 +104,120 @@ export class FoundNationCommand extends GeneralCommand {
 
     const josaUl = JosaUtil.pick(nationName, '을');
 
+    // === 도시 레벨 체크 ===
+    const currentCityID = general.getCityID();
+    const { cityRepository } = await import('../../repositories/city.repository');
+    const sessionId = env.session_id || 'sangokushi_default';
+    
+    const currentCity = await cityRepository.findOneByFilter({
+      session_id: sessionId,
+      city: currentCityID
+    });
+
+    if (!currentCity) {
+      logger.pushGeneralActionLog(`도시 정보를 찾을 수 없습니다. <1>${date}</>`);
+      return false;
+    }
+
+    const cityLevel = currentCity.level || 0;
+    if (cityLevel < 5) {
+      logger.pushGeneralActionLog(`이민족 영토 또는 소(小) 이상의 도시에서만 건국할 수 있습니다. <1>${date}</>`);
+      return false;
+    }
+
+    const currentNationID = general.getNationID();
+
+    // 공백지인 경우 (nation === 0) 호족과 전투
+    // 이미 방랑군이 점령한 도시(nation === currentNationID)는 전투 스킵
+    if (currentCity && currentCity.nation === 0) {
+      const { ProcessWarService } = await import('../../services/war/ProcessWar.service');
+      const { RandUtil } = await import('../../utils/RandUtil');
+      const cityLevel = currentCity.level || 1;
+      
+      // 호족 세력 생성 (ProcessWar의 createLocalMilitia 로직 사용)
+      const localRng = new RandUtil(rng.seed);
+      const localMilitia = (ProcessWarService as any).createLocalMilitia(currentCity, localRng);
+      
+      // 방어 세력 타입 결정
+      let defenderType: string;
+      if (cityLevel >= 7) {
+        defenderType = '한 태수';
+      } else if (cityLevel === 6) {
+        defenderType = '한 현령';
+      } else if (cityLevel === 5) {
+        defenderType = '이민족';
+      } else if (cityLevel === 4) {
+        defenderType = '한 관문 수비대';
+      } else if (cityLevel === 3) {
+        defenderType = '한 진영 수비대';
+      } else if (cityLevel === 2) {
+        defenderType = '항구 호족';
+      } else if (cityLevel === 1) {
+        defenderType = '향촌 호족';
+      } else {
+        defenderType = '유민 무리';
+      }
+      
+      // 이민족 도시의 경우 특별 메시지
+      if (cityLevel === 5) {
+        logger.pushGeneralActionLog(
+          `<G><b>${cityName}</b></>의 ${defenderType} 세력과 전투를 시작합니다! [적 ${localMilitia.crew}명]`
+        );
+        logger.pushGlobalActionLog?.(
+          `<Y>${generalName}</>${josaYi} 이민족 땅 <G><b>${cityName}</b></>를 정복하여 건국을 시도합니다!`
+        );
+      } else {
+        logger.pushGeneralActionLog(
+          `<G><b>${cityName}</b></>의 ${defenderType}과(와) 전투를 시작합니다! [적 ${localMilitia.crew}명]`
+        );
+        logger.pushGlobalActionLog?.(
+          `<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>의 ${defenderType}과(와) 건국을 위한 전투를 시작합니다!`
+        );
+      }
+
+      // 자동 전투 실행
+      const battleResult = await (ProcessWarService as any).executeAutoBattle(
+        sessionId,
+        general,
+        localMilitia,
+        currentCity,
+        rng
+      );
+
+      if (battleResult.winner === 'defender') {
+        // 전투 패배 - 건국 실패
+        logger.pushGeneralActionLog(
+          `${defenderType}에게 패배했습니다! 건국에 실패했습니다. [손실: ${battleResult.attackerLoss}명] <1>${date}</>`
+        );
+        logger.pushGlobalActionLog?.(
+          `<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>에서 건국을 시도했으나 ${defenderType}에게 패배했습니다!`
+        );
+        
+        // 병력 손실만 반영
+        general.setVar('crew', Math.max(0, general.getVar('crew') - battleResult.attackerLoss));
+        await this.saveGeneral();
+        
+        return false;
+      }
+
+      // 전투 승리
+      if (cityLevel === 5) {
+        logger.pushGeneralActionLog(
+          `${defenderType} 세력을 격파했습니다! [피해: ${battleResult.attackerLoss}명]`
+        );
+      } else {
+        logger.pushGeneralActionLog(
+          `${defenderType}을(를) 격파했습니다! [피해: ${battleResult.attackerLoss}명]`
+        );
+      }
+      
+      // 병력 손실 반영
+      general.setVar('crew', Math.max(0, general.getVar('crew') - battleResult.attackerLoss));
+      
+      // 도시 점령은 건국 성공 후에 처리 (아래에서 cityRepository.updateOneByFilter)
+    }
+
+    // === 건국 진행 ===
     // 국가 타입 이름 가져오기
     const { getNationTypeName } = await import('../../core/nation-type/NationTypeFactory');
     const nationTypeName = getNationTypeName(nationType);
@@ -145,26 +240,37 @@ export class FoundNationCommand extends GeneralCommand {
     aux.can_국기변경 = 1;
 
     // Repository 패턴 사용
-    const { cityRepository } = await import('../../repositories/city.repository');
     const { nationRepository } = await import('../../repositories/nation.repository');
-    const sessionId = env.session_id || 'sangokushi_default';
 
-    await cityRepository.updateOneByFilter(
-      { session_id: sessionId, city: general.getCityID() },
-      { nation: general.getNationID(), conflict: {} }
-    );
+    // 건국 진행 (원자적 처리 시도)
+    try {
+      // 1. 먼저 국가 승격 (방랑군 → 정식 국가)
+      await nationRepository.updateOneByFilter(
+        { session_id: sessionId, 'data.nation': general.getNationID() },
+        {
+          name: nationName,
+          color: colorType,
+          level: 1,
+          type: nationType,
+          capital: general.getCityID(),
+          aux: aux
+        }
+      );
 
-    await nationRepository.updateOneByFilter(
-      { session_id: sessionId, 'data.nation': general.getNationID() },
-      {
-        name: nationName,
-        color: colorType,
-        level: 1,
-        type: nationType,
-        capital: general.getCityID(),
-        aux: aux
+      // 2. 그 다음 도시 점령 (국가 수도로 설정)
+      const cityUpdateResult = await cityRepository.updateOneByFilter(
+        { session_id: sessionId, city: general.getCityID() },
+        { nation: general.getNationID(), conflict: {} }
+      );
+
+      if (!cityUpdateResult) {
+        throw new Error('도시 점령에 실패했습니다. 관리자에게 문의하세요.');
       }
-    );
+    } catch (error: any) {
+      console.error('[건국 실패] 국가 생성 중 오류 발생:', error);
+      logger.pushGeneralActionLog(`건국 중 오류가 발생했습니다. 관리자에게 문의하세요. <1>${date}</>`);
+      throw error;
+    }
 
     // refreshNationStaticInfo 호출
     try {

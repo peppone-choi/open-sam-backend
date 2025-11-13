@@ -73,9 +73,11 @@ export class SearchTalentCommand extends GeneralCommand {
       remainSlot = 0;
     }
 
-    const foundPropMain = Math.pow(remainSlot / maxGenCnt, 6);
+    // 0으로 나누기 방지
+    const safeMaxGenCnt = Math.max(1, maxGenCnt);
+    const foundPropMain = Math.pow(remainSlot / safeMaxGenCnt, 6);
     const foundPropSmall = 1 / (totalNpcCnt / 3 + 1);
-    const foundPropBig = 1 / maxGenCnt;
+    const foundPropBig = 1 / safeMaxGenCnt;
 
     let foundProp: number;
     if (totalNpcCnt < 50) {
@@ -115,6 +117,8 @@ export class SearchTalentCommand extends GeneralCommand {
         leadership_exp: general.getLeadership(false, false, false, false),
         strength_exp: general.getStrength(false, false, false, false),
         intel_exp: general.getIntel(false, false, false, false),
+        politics_exp: general.getPolitics(false, false, false, false),
+        charm_exp: general.getCharm(false, false, false, false),
       });
 
       const [reqGold, reqRice] = this.getCost();
@@ -147,8 +151,10 @@ export class SearchTalentCommand extends GeneralCommand {
       return true;
     }
 
-    const exp = 100 * (Math.sqrt(1 / foundProp) + 1);
-    const ded = 150 * (Math.sqrt(1 / foundProp) + 1);
+    // 0으로 나누기 방지
+    const safeFoundProp = Math.max(0.0001, foundProp);
+    const exp = 100 * (Math.sqrt(1 / safeFoundProp) + 1);
+    const ded = 150 * (Math.sqrt(1 / safeFoundProp) + 1);
 
     const scoutType = '발견';
 
@@ -172,6 +178,8 @@ export class SearchTalentCommand extends GeneralCommand {
       leadership_exp: general.getLeadership(false, false, false, false),
       strength_exp: general.getStrength(false, false, false, false),
       intel_exp: general.getIntel(false, false, false, false),
+      politics_exp: general.getPolitics(false, false, false, false),
+      charm_exp: general.getCharm(false, false, false, false),
     });
 
     const [reqGold, reqRice] = this.getCost();

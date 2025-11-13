@@ -5,6 +5,8 @@ import { DeployUnitsService } from '../services/battle/DeployUnits.service';
 import { SubmitActionService } from '../services/battle/SubmitAction.service';
 import { ReadyUpService } from '../services/battle/ReadyUp.service';
 import { GetBattleHistoryService } from '../services/battle/GetBattleHistory.service';
+import { ResolveTurnService } from '../services/battle/ResolveTurn.service';
+import { StartSimulationService } from '../services/battle/StartSimulation.service';
 
 const router = Router();
 
@@ -906,6 +908,100 @@ router.post('/:battleId/ready', async (req, res) => {
 
 /**
  * @swagger
+ * /api/battle/{battleId}/resolve:
+ *   post:
+ *     summary: 턴 해결 (Resolution)
+ *     description: |
+ *       Planning 페이즈를 종료하고 Resolution 페이즈를 실행합니다. 모든 플레이어의 액션을 계산하고 전투 결과를 반영합니다.
+ *       
+ *       **자동 호출 조건:**
+ *       - 모든 플레이어 Ready-Up 완료
+ *       - Planning 제한 시간 초과
+ *       
+ *       **수동 호출 (관리자):**
+ *       - 테스트용
+ *       - 강제 진행
+ *       
+ *       **Resolution 프로세스:**
+ *       1. Planning → Resolution 전환
+ *       2. 모든 액션 수집
+ *       3. 이동 처리 (충돌 검사)
+ *       4. 공격 처리 (병종 상성, 데미지)
+ *       5. 스킬 처리
+ *       6. 데미지 적용
+ *       7. 사망 유닛 제거
+ *       8. 승리 조건 체크
+ *       9. 턴 증가 / 전투 종료
+ *       10. Planning 재시작 OR 전투 완료
+ *       
+ *       **전투 결과:**
+ *       - 각 액션의 성공/실패
+ *       - 데미지 계산 결과
+ *       - 유닛 상태 변화
+ *       - 승리/패배 여부
+ *       
+ *       **승리 조건:**
+ *       - 공격군: 방어군 전멸
+ *       - 방어군: 공격군 전멸 OR 턴 수 초과
+ *       - 무승부: 양측 전멸 OR 최대 턴 도달
+ *     tags: [Battle]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: battleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 전투 ID
+ *         example: "550e8400-e29b-41d4-a716-446655440000"
+ *     responses:
+ *       200:
+ *         description: 턴 해결 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 턴 해결 완료
+ *                 events:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [move, attack, damage, death, victory]
+ *                       actorId:
+ *                         type: number
+ *                       message:
+ *                         type: string
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+router.post('/:battleId/resolve', async (req, res) => {
+  try {
+    const result = await ResolveTurnService.execute(req.params.battleId);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
  * /api/battle/{battleId}/history:
  *   get:
  *     summary: 전투 이력 조회
@@ -1053,6 +1149,63 @@ router.get('/:battleId/history', async (req, res) => {
       res.json(result);
     } else {
       res.status(404).json(result);
+    }
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/battle/{battleId}/start-simulation:
+ *   post:
+ *     summary: 실시간 전투 시뮬레이션 시작 (Phase 3)
+ *     description: |
+ *       배치 완료 후 실시간 RTS 전투를 시작합니다. AI 제어 유닛 자동 배치 및 게임 루프 시작.
+ *       
+ *       **Phase 3 전투 시스템:**
+ *       - 20 tick/s 실시간 게임 루프
+ *       - 800x600 좌표 기반 이동
+ *       - 병종별 AI 전술
+ *       - WebSocket으로 상태 브로드캐스트
+ *       
+ *       **자동 배치:**
+ *       - 미배치 AI 유닛 자동 배치
+ *       - 진형별 배치 (line/column/wedge/square/skirmish)
+ *       - isAIControlled = true 설정
+ *       
+ *       **시뮬레이션 시작:**
+ *       - BattleStatus: DEPLOYING → IN_PROGRESS
+ *       - BattleSimulationManager 시작
+ *       - WebSocket room 생성: `battle:{battleId}`
+ *     tags: [Battle]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: battleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 전투 ID
+ *     responses:
+ *       200:
+ *         description: 시뮬레이션 시작 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+router.post('/:battleId/start-simulation', async (req, res) => {
+  try {
+    const result = await StartSimulationService.execute({
+      battleId: req.params.battleId
+    }, req.user);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
     }
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

@@ -50,13 +50,16 @@ export class MoveCommand extends GeneralCommand {
   /**
    * 인자와 함께 초기화
    */
-  protected async initWithArg(): Promise<void> {
-    this.setDestCity(this.arg.destCityID, true);
-
+  protected initWithArg(): void {
     const [reqGold, reqRice] = this.getCost();
     
+    // setDestCity를 먼저 호출 (constraint에서 destCity 사용)
+    this.setDestCity(this.arg.destCityID, true);
+    
+    // fullConditionConstraints 설정
     this.fullConditionConstraints = [
       ConstraintHelper.NotSameDestCity(),
+      ConstraintHelper.NearCity(1),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];
@@ -111,6 +114,13 @@ export class MoveCommand extends GeneralCommand {
     const env = this.env;
     const general = this.generalObj;
 
+    // 실제 도시 데이터 로드 (initWithArg에서 동기적으로 호출되므로 여기서 다시 로드)
+    await this.setDestCityAsync(this.arg.destCityID, true);
+    
+    if (!this.destCity) {
+      throw new Error('목적 도시 정보가 없습니다');
+    }
+    
     const destCityName = this.destCity.name;
     const destCityID = this.destCity.city;
 
@@ -126,7 +136,7 @@ export class MoveCommand extends GeneralCommand {
     general.setVar('city', destCityID);
 
     // 군주이고 국가 레벨이 0이면 전체 병력 이동
-    if (general.getVar('officer_level') === 12 && this.nation.level === 0) {
+    if (general.getVar('officer_level') === 12 && this.nation && this.nation.level === 0) {
       try {
         const sessionId = general.getSessionID();
         const nationID = general.getNationID();
@@ -155,8 +165,8 @@ export class MoveCommand extends GeneralCommand {
     general.increaseVarWithLimit('gold', -reqGold, 0);
     general.increaseVarWithLimit('rice', -reqRice, 0);
 
-    // 사기 감소
-    general.increaseVarWithLimit('atmos', -5, 0);
+    // 사기 감소 (최소값 20)
+    general.increaseVarWithLimit('atmos', -5, 20);
 
     this.setResultTurn(new LastTurn(MoveCommand.getName(), this.arg));
     general.checkStatChange();

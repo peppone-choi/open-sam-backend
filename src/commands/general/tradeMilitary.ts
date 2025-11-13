@@ -58,7 +58,7 @@ export class TradeMilitaryCommand extends GeneralCommand {
     ];
   }
 
-  protected async initWithArg(): Promise<void> {
+  protected initWithArg(): void {
     this.fullConditionConstraints = [
       ConstraintHelper.ReqCityTrader(this.generalObj.getNPCType()),
       ConstraintHelper.OccupiedCity(true),
@@ -95,6 +95,11 @@ export class TradeMilitaryCommand extends GeneralCommand {
 
     const db = DB.db();
     const general = this.generalObj;
+    
+    if (!this.city) {
+      throw new Error('도시 정보가 없습니다');
+    }
+    
     let tradeRate = this.city.trade;
     const buyRice = this.arg.buyRice;
     const exchangeFee = 0.05;
@@ -108,6 +113,9 @@ export class TradeMilitaryCommand extends GeneralCommand {
     } else {
       tradeRate /= 100;
     }
+    
+    // 0으로 나누기 방지
+    tradeRate = Math.max(0.01, tradeRate);
 
     let buyKey: string;
     let sellKey: string;
@@ -121,7 +129,9 @@ export class TradeMilitaryCommand extends GeneralCommand {
       sellAmount = Math.min(this.arg.amount * tradeRate, general.getVar('gold'));
       tax = sellAmount * exchangeFee;
       if (sellAmount + tax > general.getVar('gold')) {
-        sellAmount *= general.getVar('gold') / (sellAmount + tax);
+        // 0으로 나누기 방지
+        const denominator = Math.max(0.01, sellAmount + tax);
+        sellAmount *= general.getVar('gold') / denominator;
         tax = general.getVar('gold') - sellAmount;
       }
       buyAmount = sellAmount / tradeRate;
@@ -162,7 +172,9 @@ export class TradeMilitaryCommand extends GeneralCommand {
     const incStat = rng.choiceUsingWeight({
       'leadership_exp': general.getLeadership(false, false, false, false),
       'strength_exp': general.getStrength(false, false, false, false),
-      'intel_exp': general.getIntel(false, false, false, false)
+      'intel_exp': general.getIntel(false, false, false, false),
+      'politics_exp': general.getPolitics(false, false, false, false),
+      'charm_exp': general.getCharm(false, false, false, false)
     });
 
     general.addExperience(exp);

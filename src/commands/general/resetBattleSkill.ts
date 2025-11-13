@@ -86,9 +86,12 @@ export class ResetBattleSkillCommand extends GeneralCommand {
     let oldSpecialList = general.getAuxVar(oldTypeKey) ?? [];
     oldSpecialList.push(general.getVar(specialType));
 
-    if (specialType === 'special' && oldSpecialList.length === GameConst.availableSpecialDomestic?.length) {
+    const availableSpecialLength = GameConst.availableSpecialDomestic?.length || 0;
+    const availableWarLength = GameConst.availableSpecialWar?.length || 0;
+    
+    if (specialType === 'special' && oldSpecialList.length === availableSpecialLength) {
       oldSpecialList = [general.getVar(specialType)];
-    } else if (specialType === 'special2' && oldSpecialList.length === GameConst.availableSpecialWar?.length) {
+    } else if (specialType === 'special2' && oldSpecialList.length === availableWarLength) {
       oldSpecialList = [general.getVar(specialType)];
     }
     
@@ -111,7 +114,7 @@ export class ResetBattleSkillCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

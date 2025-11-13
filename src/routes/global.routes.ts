@@ -118,7 +118,7 @@ router.get('/get-const', async (req: Request, res: Response, next: NextFunction)
       DEFAULT_STAT_MIN: GameConstants.DEFAULT_STAT_MIN || 30,
       DEFAULT_STAT_MAX: GameConstants.DEFAULT_STAT_MAX || 100,
       DEFAULT_STAT_TOTAL: GameConstants.DEFAULT_STAT_TOTAL || 200,
-      DEFAULT_START_YEAR: GameConstants.DEFAULT_START_YEAR || 180,
+      DEFAULT_START_YEAR: GameConstants.DEFAULT_START_YEAR || 184,
       DEFAULT_GOLD: GameConstants.DEFAULT_GOLD || 1000,
       DEFAULT_RICE: GameConstants.DEFAULT_RICE || 1000,
       MAX_LEVEL: GameConstants.MAX_LEVEL || 255

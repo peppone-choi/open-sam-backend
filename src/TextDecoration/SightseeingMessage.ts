@@ -6,12 +6,14 @@ export class SightseeingMessage {
   static readonly IncLeadership = 0x10;
   static readonly IncStrength = 0x20;
   static readonly IncIntel = 0x40;
-  static readonly IncGold = 0x100;
-  static readonly IncRice = 0x200;
-  static readonly DecGold = 0x400;
-  static readonly DecRice = 0x800;
-  static readonly Wounded = 0x1000;
-  static readonly HeavyWounded = 0x2000;
+  static readonly IncPolitics = 0x80;
+  static readonly IncCharm = 0x100;
+  static readonly IncGold = 0x200;
+  static readonly IncRice = 0x400;
+  static readonly DecGold = 0x800;
+  static readonly DecRice = 0x1000;
+  static readonly Wounded = 0x2000;
+  static readonly HeavyWounded = 0x4000;
 
   private static messages: Array<[[number, string[]], number]> | null = null;
 
@@ -37,6 +39,14 @@ export class SightseeingMessage {
       [[this.IncHeavyExp | this.IncIntel, [
         '어느 명사와 설전을 벌여 멋지게 이겼습니다.',
         '거리에서 글 모르는 아이들을 모아 글을 가르쳤습니다.',
+      ]], 2],
+      [[this.IncHeavyExp | this.IncPolitics, [
+        '마을 사람들의 분쟁을 조정하여 해결해주었습니다.',
+        '관아의 문서를 정리해주어 감사를 받았습니다.',
+      ]], 2],
+      [[this.IncHeavyExp | this.IncCharm, [
+        '길가에서 시를 읊어 사람들의 감탄을 받았습니다.',
+        '주점에서 사람들과 즐거운 시간을 보냈습니다.',
       ]], 2],
       [[this.IncExp | this.IncGold, [
         '지나가는 행인에게서 금을 <C>:goldAmount:</> 받았습니다.',

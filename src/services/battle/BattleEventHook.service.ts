@@ -49,7 +49,7 @@ export async function onCityOccupied(
 
     const sessionData = session.data || {};
     const gameEnv = {
-      year: sessionData.year || 180,
+      year: sessionData.year || 184,
       month: sessionData.month || 1,
       session_id: sessionId
     };
@@ -128,7 +128,7 @@ export async function onNationDestroyed(
 
     const sessionData = session.data || {};
     const gameEnv = {
-      year: sessionData.year || 180,
+      year: sessionData.year || 184,
       month: sessionData.month || 1,
       session_id: sessionId
     };
@@ -299,7 +299,7 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
 
     const sessionData = session.data || {};
     const gameEnv = {
-      year: sessionData.year || 180,
+      year: sessionData.year || 184,
       month: sessionData.month || 1,
       session_id: sessionId
     };

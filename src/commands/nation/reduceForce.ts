@@ -28,6 +28,10 @@ export class ReduceForceCommand extends NationCommand {
     await this.setCity();
     await this.setNation(['gold', 'rice', 'capset', 'capital']);
 
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
+
     if (!this.nation.capital) {
       this.fullConditionConstraints = [
         ConstraintHelper.AlwaysFail('방랑상태에서는 불가능합니다.')
@@ -70,6 +74,10 @@ export class ReduceForceCommand extends NationCommand {
   public addTermStack(): boolean {
     const lastTurn = this.getLastTurn();
     const commandName = ReduceForceCommand.getName();
+    
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     
     if (lastTurn.getCommand() !== commandName || lastTurn.getArg() !== this.arg) {
       this.setResultTurn(new LastTurn(commandName, this.arg, 1, this.nation.capset));
@@ -146,6 +154,14 @@ export class ReduceForceCommand extends NationCommand {
     general.increaseInheritancePoint('active_action', 1);
     this.setResultTurn(new LastTurn(ReduceForceCommand.getName(), this.arg, 0));
     await await this.saveGeneral();
+
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
 
     return true;
   }

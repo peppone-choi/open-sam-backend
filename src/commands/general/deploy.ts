@@ -56,11 +56,10 @@ export class DeployCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
-    this.setDestCity(this.arg.destCityID);
-
     const [reqGold, reqRice] = this.getCost();
     const relYear = this.env.year - this.env.startyear;
 
+    // fullConditionConstraints를 먼저 설정 (setDestCity는 비동기이므로 나중에 처리)
     this.fullConditionConstraints = [
       ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.NotSameDestCity(),
@@ -71,6 +70,9 @@ export class DeployCommand extends GeneralCommand {
       ConstraintHelper.AllowWar(),
       ConstraintHelper.HasRouteWithEnemy(),
     ];
+    
+    // setDestCity는 비동기이지만 생성자에서 동기적으로 호출됨
+    this.setDestCity(this.arg.destCityID);
   }
 
   public getCommandDetailTitle(): string {
@@ -79,7 +81,8 @@ export class DeployCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    return [0, Util.round(this.generalObj.getVar('crew') / 100)];
+    const crew = Math.max(1, this.generalObj.getVar('crew'));
+    return [0, Util.round(crew / 100)];
   }
 
   public getPreReqTurn(): number {
@@ -178,7 +181,7 @@ export class DeployCommand extends GeneralCommand {
       // 실패시 목표 도시를 직접 공격
       defenderCityID = finalTargetCityID;
     }
-    this.setDestCity(defenderCityID);
+    await this.setDestCity(defenderCityID);
     const defenderCityName = this.destCity!.name;
     const josaRo = JosaUtil.pick(defenderCityName, '로');
     const defenderNationID = this.destCity!.nation;
@@ -212,7 +215,8 @@ export class DeployCommand extends GeneralCommand {
     }
 
     // 병종 숙련도 증가
-    general.addDex(general.getCrewTypeObj(), general.getVar('crew') / 100);
+    const crew = Math.max(1, general.getVar('crew'));
+    general.addDex(general.getCrewTypeObj(), crew / 100);
 
     // 활발한 액션 포인트 (500명 이상, 고훈련/고사기)
     if (general.getVar('crew') > 500 && 

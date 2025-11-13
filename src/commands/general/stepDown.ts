@@ -138,6 +138,15 @@ export class StepDownCommand extends GeneralCommand {
     } catch (error) {
       console.error('StaticEventHandler 실패:', error);
     }
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '하야');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
     
     await this.saveGeneral();
 

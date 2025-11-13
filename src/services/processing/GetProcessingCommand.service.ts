@@ -1367,8 +1367,8 @@ export class GetProcessingCommandService {
     const session = await sessionRepository.findBySessionId(sessionId );
     const sessionData = session?.data || {};
     const gameEnv = sessionData.game_env || {};
-    const startYear = gameEnv.startyear || sessionData.startyear || session?.startyear || 180;
-    const year = gameEnv.year || sessionData.year || session?.year || 180;
+    const startYear = gameEnv.startyear || sessionData.startyear || session?.startyear || 184;
+    const year = gameEnv.year || sessionData.year || session?.year || 184;
     const month = gameEnv.month || sessionData.month || session?.month || 1;
     const minYear = year + 1; // 다음 달부터 가능
     const maxYear = year + 24; // 최대 2년

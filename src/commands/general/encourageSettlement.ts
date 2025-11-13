@@ -12,7 +12,7 @@ import { cityRepository } from '../../repositories/city.repository';
  */
 export class EncourageSettlementCommand extends GeneralCommand {
   protected static cityKey = 'pop';
-  protected static statKey = 'leadership';
+  protected static statKey = 'politics'; // 정착 장려는 정치 능력치 사용 (매력도 일부 관여)
   protected static actionKey = '인구';
   protected static actionName = '정착 장려';
 
@@ -48,6 +48,8 @@ export class EncourageSettlementCommand extends GeneralCommand {
       'leadership': '통솔경험',
       'strength': '무력경험',
       'intel': '지력경험',
+      'politics': '정치경험',
+      'charm': '매력경험',
     };
     const statKey = (this.constructor as typeof EncourageSettlementCommand).statKey;
     const statType = statTypeBase[statKey];
@@ -108,6 +110,13 @@ export class EncourageSettlementCommand extends GeneralCommand {
     let score = 0;
     if (statKey === 'leadership') {
       score = general.getLeadership(true, true, true, false);
+    } else if (statKey === 'politics') {
+      score = general.getPolitics(true, true, true, false);
+      // 정착 장려는 매력도 일부 영향
+      const charm = general.getCharm(true, true, true, false);
+      score = score * 0.7 + charm * 0.3;
+    } else if (statKey === 'charm') {
+      score = general.getCharm(true, true, true, false);
     }
 
     score *= this.getDomesticExpLevelBonus(general.getVar('explevel'));
@@ -192,7 +201,9 @@ export class EncourageSettlementCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -this.reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    general.increaseVar(`${statKey}_exp`, 1);
+    // 정착장려는 정치 70% + 매력 30%
+    general.increaseVar('politics_exp', 1);
+    general.increaseVar('charm_exp', 0.5);
     
     this.setResultTurn(new LastTurn((this.constructor as typeof EncourageSettlementCommand).getName(), this.arg));
     general.checkStatChange();

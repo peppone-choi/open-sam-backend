@@ -160,6 +160,14 @@ export class che_포상 extends NationCommand {
     await general!.applyDB(db);
     await destGeneral!.applyDB(db);
 
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     return true;
   }
 

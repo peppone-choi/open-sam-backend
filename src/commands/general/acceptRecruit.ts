@@ -65,34 +65,24 @@ export class AcceptRecruitCommand extends GeneralCommand {
     ];
   }
 
-  protected async initWithArg(): Promise<void> {
-    const sessionId = this.env.session_id || 'sangokushi_default';
-    
-    // 대상 장수 설정
-    const destGeneralDoc = await generalRepository.findOneByFilter({
-      session_id: sessionId,
-      'data.no': this.arg.destGeneralID
-    });
-    
-    if (destGeneralDoc) {
-      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
-      this.setDestGeneral(destGeneral);
-    }
-    
-    // 대상 국가 설정
-    this.setDestNation(this.arg.destNationID, ['gennum', 'scout', 'level']);
-
+  protected initWithArg(): void {
     const relYear = this.env.year - this.env.startyear;
 
+    // destNation 먼저 설정
+    this.setDestNation(this.arg.destNationID);
+
+    // fullConditionConstraints 설정 (PHP와 동일)
     this.fullConditionConstraints = [
-      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다'),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.BeNeutral(),
       ConstraintHelper.AllowJoinDestNation(relYear),
       ConstraintHelper.ReqDestNationValue('level', '>', 0, '방랑군에는 임관할 수 없습니다.'),
       ConstraintHelper.DifferentDestNation(),
-      ConstraintHelper.ReqGeneralValue('officer_level', '관직', '!=', 12, '군주는 등용장을 수락할 수 없습니다')
+      ConstraintHelper.ReqGeneralValue('officer_level', '직위', '!=', 12, '군주는 등용장을 수락할 수 없습니다'),
     ];
+    
+    // destGeneral, destNation은 run() 메서드에서 로드됨
   }
 
   public canDisplay(): boolean {
@@ -125,6 +115,11 @@ export class AcceptRecruitCommand extends GeneralCommand {
     const nationID = general.getNationID();
 
     const destGeneral = this.destGeneralObj;
+    
+    if (!this.destNation) {
+      throw new Error('목적 국가 정보가 없습니다');
+    }
+    
     const destNationID = this.destNation.nation;
     const destNationName = this.destNation.name;
 
@@ -234,7 +229,7 @@ export class AcceptRecruitCommand extends GeneralCommand {
     general.setVar('officer_level', 1);
     general.setVar('officer_city', 0);
     general.setVar('nation', destNationID);
-    general.setVar('city', this.destNation.capital);
+    general.setVar('city', this.destNation?.capital ?? 0);
     general.setVar('troop', 0);
 
     if (isTroopLeader) {

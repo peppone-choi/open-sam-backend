@@ -50,7 +50,7 @@ export { ReinforceSecurityCommand } from './reinforceSecurity';
 export { ResetAdminSkillCommand } from './resetAdminSkill';
 export { ResetBattleSkillCommand } from './resetBattleSkill';
 export { RetireCommand } from './retire';
-export { SelectCitizenCommand } from './selectCitizen';
+export { GoodGovernanceCommand } from './goodGovernance';
 export { SightseeingCommand } from './sightseeing';
 export { TradeRiceCommand } from './tradeRice';
 export { CultivateLandCommand } from './cultivateLand';

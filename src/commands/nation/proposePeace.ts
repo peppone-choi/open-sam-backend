@@ -126,7 +126,7 @@ export class che_종전제의 extends NationCommand {
     validUntil.setMinutes(validUntil.getMinutes() + validMinutes);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general!.applyDB(db);
+    await this.saveGeneral();
     await destLogger.flush();
 
     return true;

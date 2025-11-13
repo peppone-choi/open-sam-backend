@@ -41,9 +41,9 @@ export class GetStaticInfoService {
         result: true,
         game: {
           scenario: sessionData.scenario_text || sessionData.scenario || 'Unknown',
-          year: (sessionData.game_env?.year || sessionData.year || session.year || 180),
+          year: (sessionData.game_env?.year || sessionData.year || session.year || 184),
           month: (sessionData.game_env?.month || sessionData.month || session.month || 1),
-          startYear: (sessionData.game_env?.startyear || sessionData.startyear || session.startyear || 180),
+          startYear: (sessionData.game_env?.startyear || sessionData.startyear || session.startyear || 184),
           turnTerm: sessionData.turnterm || 60, // 분 단위
           maxUserCnt: sessionData.maxgeneral || 50,
           userCnt: generalCount,

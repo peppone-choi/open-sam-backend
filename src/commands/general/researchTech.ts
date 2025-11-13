@@ -45,6 +45,10 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
     const db = DB.db();
     const general = this.generalObj;
+    
+    if (!this.city) {
+      throw new Error('도시 정보가 없습니다');
+    }
     const trust = Math.max(50, Math.min(this.city.trust, 100));
     const statKey = (this.constructor as typeof InvestCommerceCommand).statKey;
     const actionKey = (this.constructor as typeof InvestCommerceCommand).actionKey;
@@ -54,6 +58,7 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
     let { success: successRatio, fail: failRatio } = this.criticalRatioDomestic(general, statKey);
     if (trust < 80) {
+      // 0으로 나누기 방지 (trust는 이미 50~100 범위)
       successRatio *= trust / 80;
     }
     successRatio = general.onCalcDomestic(actionKey, 'success', successRatio);
@@ -99,6 +104,10 @@ export class ResearchTechCommand extends InvestCommerceCommand {
       logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다.`);
     }
 
+    if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
+    
     if (this.techLimit(this.env.startyear, this.env.year, this.nation.tech)) {
       score /= 4;
     }
@@ -108,10 +117,18 @@ export class ResearchTechCommand extends InvestCommerceCommand {
       await db.queryFirstField('SELECT gennum FROM nation WHERE nation=%i', general.getVar('nation'))
     );
 
-    const nationUpdated = {
-      tech: this.nation.tech + score / genCount
-    };
-    await db.update('nation', nationUpdated, 'nation=%i', general.getVar('nation'));
+    // 0으로 나누기 방지: genCount는 최소 10
+    const techIncrease = score / Math.max(1, genCount);
+    
+    try {
+      const nationUpdated = {
+        tech: this.nation.tech + techIncrease
+      };
+      await db.update('nation', nationUpdated, 'nation=%i', general.getVar('nation'));
+    } catch (error) {
+      console.error('국가 기술 업데이트 실패:', error);
+      throw new Error(`기술 연구 실패: ${error.message}`);
+    }
 
     general.increaseVarWithLimit('gold', -this.reqGold, 0);
     general.addExperience(exp);

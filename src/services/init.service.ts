@@ -7,6 +7,7 @@ import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
 import { sessionRepository } from '../repositories/session.repository';
 import { generalRepository } from '../repositories/general.repository';
+import { SessionSync } from '../utils/session-sync';
 
 /**
  * 세션 초기화 서비스
@@ -101,6 +102,10 @@ export class InitService {
     // 1. 세션 설정 조회
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) throw new Error('세션을 찾을 수 없습니다');
+    
+    // session.data 초기화 (SessionSync가 사용함)
+    session.data = session.data || {};
+    session.data.game_env = session.data.game_env || {};
     
     // 시나리오 번호가 있으면 ScenarioResetService 사용 (권장)
     if (scenarioNumber !== undefined) {
@@ -361,22 +366,65 @@ export class InitService {
     // 5. 세션 데이터 초기화 (턴 시간, 년/월 등)
     // 시나리오에서 turnterm 가져오기 (없으면 세션 기본값, 그것도 없으면 60분)
     const scenarioTurnterm = scenarioMetadata?.gameSettings?.turnterm || scenarioMetadata?.turnterm;
-    session.turnterm = session.turnterm || scenarioTurnterm || 60; // 분 단위로 저장
+    const turnterm = session.turnterm || scenarioTurnterm || 60; // 분 단위로 저장
 
     // 시나리오 메타데이터에서 시작 년도 읽기
     const scenarioStartYear = scenarioMetadata?.metadata?.startYear || 
                               scenarioMetadata?.startYear || 
                               184;
 
-    session.year = session.year || scenarioStartYear;
-    session.month = session.month || 1;
-    session.startyear = session.startyear || scenarioStartYear;
-    session.turn = session.turn || 0;
-    session.turntime = session.turntime || new Date();
-    session.starttime = session.starttime || new Date();
+    // SessionSync를 사용하여 모든 위치에 동기화
+    // 초기화 시에는 기존 값을 무시하고 새로 설정
+    SessionSync.syncTurnterm(session, turnterm);
+    SessionSync.syncStartyear(session, scenarioStartYear);
+    SessionSync.syncYear(session, scenarioStartYear);
+    SessionSync.syncMonth(session, 1);
+    
+    // starttime과 turntime은 현재 시간 기준 (현실 시간)
+    // 초기화 시에는 항상 현재 시간으로 리셋
+    const now = new Date();
+    SessionSync.syncStarttime(session, now);
+    SessionSync.syncTurntime(session, now);
+    
+    // 서버 상태를 폐쇄(준비중)로 설정
+    // 시나리오 초기화 후에는 관리자가 수동으로 서버를 오픈해야 함
+    session.status = 'preparing';
+    SessionSync.syncIsunited(session, 2); // 2 = 폐쇄
+    
+    console.log(`   ✅ 게임 시작 시간 설정: ${now.toISOString()}`);
+    console.log(`   ✅ 게임 시작 년도: ${scenarioStartYear}년 1월`);
+    console.log(`   ✅ 서버 상태: 폐쇄 (preparing), isunited: 2`);
+    
+    session.turn = 0; // 초기화 시에는 항상 0
 
-    await session.save();
-    console.log(`   ✅ 세션 데이터 초기화 (턴: ${session.turnterm}분)`);
+    session.markModified('data');
+    session.markModified('data.game_env');
+    await sessionRepository.saveDocument(session);
+    
+    // 저장 후 실제 DB 값 확인
+    const savedSession = await sessionRepository.findBySessionId(sessionId);
+    const savedData = savedSession?.data || {};
+    const savedGameEnv = savedData.game_env || {};
+    
+    console.log(`   ✅ 세션 데이터 초기화 완료:`);
+    console.log(`      - 턴텀: ${turnterm}분`);
+    console.log(`      - 시작 년도: ${scenarioStartYear}년`);
+    console.log(`      - 현재 년/월: ${scenarioStartYear}년 1월`);
+    console.log(`      - starttime: ${now.toISOString()}`);
+    console.log(`      - turntime: ${now.toISOString()}`);
+    console.log(`      - isunited: 2 (폐쇄)`);
+    console.log(`   📊 DB 저장 확인:`);
+    console.log(`      - data.startyear: ${savedData.startyear}`);
+    console.log(`      - data.year: ${savedData.year}`);
+    console.log(`      - data.month: ${savedData.month}`);
+    console.log(`      - data.starttime: ${savedData.starttime}`);
+    console.log(`      - data.turntime: ${savedData.turntime}`);
+    console.log(`      - data.isunited: ${savedData.isunited}`);
+    console.log(`      - game_env.startyear: ${savedGameEnv.startyear}`);
+    console.log(`      - game_env.year: ${savedGameEnv.year}`);
+    console.log(`      - game_env.month: ${savedGameEnv.month}`);
+    console.log(`      - game_env.starttime: ${savedGameEnv.starttime}`);
+    console.log(`      - game_env.isunited: ${savedGameEnv.isunited}`);
     console.log(`🎉 세션 초기화 완료!\n`);
     
     return { cityCount };

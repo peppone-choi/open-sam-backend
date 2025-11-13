@@ -240,6 +240,48 @@ export class ConstraintHelper {
     };
   }
 
+  static NearCity(distance: number): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        if (!input.general || !input.destCity) {
+          return '장수 또는 목적지 정보가 없습니다.';
+        }
+        
+        const generalCity = input.general.getVar?.('city') || input.general.city || input.general.data?.city;
+        const destCityID = input.destCity.city || input.destCity.data?.city;
+        
+        if (!generalCity || !destCityID) {
+          return '도시 정보가 없습니다.';
+        }
+        
+        try {
+          const { searchDistance } = require('../func/searchDistance');
+          const distances = searchDistance(generalCity, distance, false);
+          
+          // searchDistance가 빈 객체를 반환하면 거리 체크를 스킵
+          if (!distances || Object.keys(distances).length === 0) {
+            console.warn(`[NearCity] searchDistance returned empty, skipping check for city ${generalCity} -> ${destCityID}`);
+            return null; // 일단 허용 (거리 계산 실패 시)
+          }
+          
+          if (distances[destCityID] !== undefined) {
+            return null;
+          }
+          
+          if (distance === 1) {
+            return '인접도시가 아닙니다.';
+          } else {
+            return '거리가 너무 멉니다.';
+          }
+        } catch (error) {
+          console.error('NearCity constraint error:', error);
+          // 에러 시 일단 허용 (서버 안정성 우선)
+          return null;
+        }
+      }
+    };
+  }
+
   static ExistsDestGeneral(): IConstraint {
     return {
       test: (input: any, env: any) => input.destGeneral ? null : '대상 장수가 없습니다.'
@@ -290,8 +332,45 @@ export class ConstraintHelper {
     return { test: () => null };
   }
 
-  static AllowJoinDestNation(...args: any[]): IConstraint {
-    return { test: () => null };
+  static AllowJoinDestNation(relYear: number): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const destNation = input.destNation;
+        if (!destNation) {
+          return '대상 국가가 없습니다.';
+        }
+
+        const openingPartYear = env.opening_part_year || 3;
+        const initialNationGenLimit = env.initial_nation_gen_limit || 10;
+        const gennum = destNation.gennum || destNation.data?.gennum || 0;
+        const scout = destNation.scout || destNation.data?.scout || 0;
+
+        // 개막기에 장수 수 제한
+        if (relYear < openingPartYear && gennum >= initialNationGenLimit) {
+          return '임관이 제한되고 있습니다.';
+        }
+
+        // 임관 금지 국가
+        if (scout === 1) {
+          return '임관이 금지되어 있습니다.';
+        }
+
+        // 태수국 제한 (유저장)
+        const general = input.general;
+        const npc = general?.npc ?? general?.data?.npc ?? 2;
+        const nationName = destNation.name || destNation.data?.name || '';
+        if (npc < 2 && nationName.startsWith('ⓤ')) {
+          return '유저장은 태수국에 임관할 수 없습니다.';
+        }
+
+        // 이민족 국가 제한
+        if (npc !== 9 && nationName.startsWith('ⓞ')) {
+          return '이민족 국가에 임관할 수 없습니다.';
+        }
+
+        return null;
+      }
+    };
   }
 
   static NoPenalty(...penalties: any[]): IConstraint {
@@ -562,43 +641,79 @@ export class ConstraintHelper {
               }
             }
             
-            // 3. 특정 도시에서만 징병 가능
+            // 3. 특정 도시 소유 필요 (ANY 로직 - 국가가 소유한 도시 중 하나라도 있으면 OK)
             if (constraint.type === 'reqCities') {
-              const requiredCity = constraint.value;
-              const currentCity = input.city;
+              const requiredCityNames = Array.isArray(constraint.value) ? constraint.value : [constraint.value];
+              const nationId = input.general?.getNationID();
               
-              if (!currentCity || currentCity.name !== requiredCity) {
-                return `${unitData.name}은(는) ${requiredCity}에서만 징병할 수 있습니다.`;
+              if (!nationId || nationId === 0) {
+                return `${unitData.name}은(는) ${requiredCityNames.join(', ')} 중 하나를 소유해야 합니다.`;
+              }
+              
+              // input.ownedCities 사용 (ExecuteEngine에서 미리 로드됨)
+              const ownedCities = input.ownedCities || [];
+              
+              if (ownedCities.length > 0) {
+                const hasRequiredCity = ownedCities.some((city: any) => 
+                  requiredCityNames.includes(city.name)
+                );
+                
+                if (!hasRequiredCity) {
+                  const ownedCityNames = ownedCities.map((c: any) => c.name).join(', ');
+                  return `${unitData.name}은(는) ${requiredCityNames.join(', ')} 중 하나를 소유해야 합니다. (보유 도시: ${ownedCityNames || '없음'})`;
+                }
+              } else {
+                // ownedCities가 비어있으면 도시를 하나도 소유하지 않은 것
+                return `${unitData.name}은(는) ${requiredCityNames.join(', ')} 중 하나를 소유해야 합니다.`;
               }
             }
             
-            // 4. 특정 지역에서만 징병 가능
-            if (constraint.type === 'reqRegions') {
-              const requiredRegion = constraint.value;
-              const currentCity = input.city;
+            // 4. 특정 지역 소유 필요 (ANY 로직 - 국가가 해당 지역에 도시를 하나라도 소유하면 OK)
+            if (constraint.type === 'reqRegions' || constraint.type === 'reqRegion') {
+              const requiredRegionNames = Array.isArray(constraint.value) ? constraint.value : [constraint.value];
+              const nationId = input.general?.getNationID();
               
-              if (!currentCity) {
-                return `${unitData.name}은(는) ${requiredRegion} 지역에서만 징병할 수 있습니다.`;
+              if (!nationId || nationId === 0) {
+                return `${unitData.name}은(는) ${requiredRegionNames.join(', ')} 지역에 도시를 소유해야 합니다.`;
               }
               
               // 지역 정보 로드
               const regionsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/regions.json');
-              if (fs.existsSync(regionsPath)) {
-                const regionsData = JSON.parse(fs.readFileSync(regionsPath, 'utf-8'));
-                const regions = regionsData.regions || [];
-                
-                // 현재 도시가 속한 지역 찾기
-                let currentRegionName = null;
+              if (!fs.existsSync(regionsPath)) {
+                // regions.json이 없으면 통과
+                return null;
+              }
+              
+              const regionsData = JSON.parse(fs.readFileSync(regionsPath, 'utf-8'));
+              const regions = regionsData.regions || [];
+              
+              // input.ownedCities 사용
+              const ownedCities = input.ownedCities || [];
+              
+              const hasRequiredRegion = ownedCities.some((ownedCity: any) => {
+                // 소유 도시가 요구 지역에 속하는지 확인
                 for (const region of regions) {
-                  if (region.cities && region.cities.includes(currentCity.name)) {
-                    currentRegionName = region.name;
-                    break;
+                  if (region.cities && region.cities.includes(ownedCity.name)) {
+                    if (requiredRegionNames.includes(region.name) || 
+                        (region.aliases && region.aliases.some((alias: string) => requiredRegionNames.includes(alias)))) {
+                      return true;
+                    }
                   }
                 }
-                
-                if (currentRegionName !== requiredRegion) {
-                  return `${unitData.name}은(는) ${requiredRegion} 지역에서만 징병할 수 있습니다.`;
-                }
+                return false;
+              });
+              
+              if (!hasRequiredRegion) {
+                const ownedRegionSet = new Set<string>();
+                ownedCities.forEach((city: any) => {
+                  for (const region of regions) {
+                    if (region.cities && region.cities.includes(city.name)) {
+                      ownedRegionSet.add(region.name);
+                    }
+                  }
+                });
+                const ownedRegionsText = Array.from(ownedRegionSet).join(', ') || '없음';
+                return `${unitData.name}은(는) ${requiredRegionNames.join(', ')} 지역에 도시를 소유해야 합니다. (보유 지역: ${ownedRegionsText})`;
               }
             }
             
@@ -642,6 +757,110 @@ export class ConstraintHelper {
               
               if (currentNation !== requiredNation) {
                 return `${unitData.name}은(는) 특정 국가에서만 징병할 수 있습니다.`;
+              }
+            }
+            
+            // 7. 수뇌부 필요 (officer_level >= 5)
+            if (constraint.type === 'reqChief') {
+              const officerLevel = input.general?.getVar?.('officer_level') || 0;
+              if (officerLevel < 5) {
+                return `${unitData.name}은(는) 군주 및 수뇌부만 징병할 수 있습니다.`;
+              }
+            }
+            
+            // 8. 수뇌부 아니어야 함 (officer_level < 5)
+            if (constraint.type === 'reqNotChief') {
+              const officerLevel = input.general?.getVar?.('officer_level') || 0;
+              if (officerLevel >= 5) {
+                return `${unitData.name}은(는) 수뇌부가 아닌 장수만 징병할 수 있습니다.`;
+              }
+            }
+            
+            // 9. 특정 도시가 특정 레벨 이상 (reqCitiesWithCityLevel)
+            if (constraint.type === 'reqCitiesWithCityLevel') {
+              const requiredCityNames = Array.isArray(constraint.cities) ? constraint.cities : [constraint.cities];
+              const requiredLevel = constraint.level || 1;
+              const ownedCities = input.ownedCities || [];
+              
+              const hasRequiredLevelCity = ownedCities.some((city: any) => 
+                requiredCityNames.includes(city.name) && (city.level || 0) >= requiredLevel
+              );
+              
+              if (!hasRequiredLevelCity) {
+                const levelNames = ['', '소', '중', '대', '거', '도'];
+                const levelText = levelNames[requiredLevel] || requiredLevel;
+                return `${unitData.name}은(는) ${requiredCityNames.join(', ')} 중 하나가 ${levelText}성 이상이어야 합니다.`;
+              }
+            }
+            
+            // 10. 고급 도시 N개 이상 소유 (reqHighLevelCities)
+            if (constraint.type === 'reqHighLevelCities') {
+              const requiredLevel = constraint.level || 3;
+              const requiredCount = constraint.count || 1;
+              const ownedCities = input.ownedCities || [];
+              
+              const highLevelCityCount = ownedCities.filter((city: any) => 
+                (city.level || 0) >= requiredLevel
+              ).length;
+              
+              if (highLevelCityCount < requiredCount) {
+                const levelNames = ['', '소', '중', '대', '거', '도'];
+                const levelText = levelNames[requiredLevel] || requiredLevel;
+                return `${unitData.name}은(는) ${levelText}성 이상을 ${requiredCount}개 이상 소유해야 합니다. (현재: ${highLevelCityCount}개)`;
+              }
+            }
+            
+            // 11. 최소 상대 년도 (reqMinRelYear)
+            if (constraint.type === 'reqMinRelYear') {
+              const requiredYear = constraint.value || 0;
+              const currentYear = env.year || 184;
+              const startYear = env.startyear || 184;
+              const relativeYear = currentYear - startYear;
+              
+              if (relativeYear < requiredYear) {
+                return `${unitData.name}은(는) ${requiredYear}년 경과 후 사용 가능합니다. (현재: ${relativeYear}년)`;
+              }
+            }
+            
+            // 12. 국가 aux 조건 (reqNationAux)
+            if (constraint.type === 'reqNationAux') {
+              const auxKey = constraint.key;
+              const cmp = constraint.cmp || '==';
+              const value = constraint.value || 0;
+              
+              const nationAux = input.nation?.aux || input.nation?.data?.aux || {};
+              const currentValue = nationAux[auxKey] || 0;
+              
+              let passed = false;
+              switch (cmp) {
+                case '==': passed = (currentValue == value); break;
+                case '!=': passed = (currentValue != value); break;
+                case '<': passed = (currentValue < value); break;
+                case '>': passed = (currentValue > value); break;
+                case '<=': passed = (currentValue <= value); break;
+                case '>=': passed = (currentValue >= value); break;
+              }
+              
+              if (!passed) {
+                // 특수 메시지 (병종별)
+                const specialMessages: Record<string, string> = {
+                  'can_대검병사용': '대검병 연구 시 가능',
+                  'can_극병사용': '극병 연구 시 가능',
+                  'can_화시병사용': '화시병 연구 시 가능',
+                  'can_원융노병사용': '원융노병 연구 시 가능',
+                  'can_산저병사용': '산저병 연구 시 가능',
+                  'can_상병사용': '상병 연구 시 가능',
+                  'can_음귀병사용': '음귀병 연구 시 가능',
+                  'can_무희사용': '무희 연구 시 가능',
+                  'can_화륜차사용': '화륜차 연구 시 가능'
+                };
+                
+                const specialMsg = specialMessages[auxKey];
+                if (specialMsg && cmp === '==' && value === 1) {
+                  return `${unitData.name}은(는) ${specialMsg}합니다.`;
+                }
+                
+                return `${unitData.name}은(는) 특정 국가 조건(${auxKey} ${cmp} ${value})을 만족해야 합니다.`;
               }
             }
           }

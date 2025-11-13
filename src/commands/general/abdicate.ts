@@ -41,23 +41,15 @@ export class AbdicateCommand extends GeneralCommand {
     ];
   }
 
-  protected async initWithArg(): Promise<void> {
-    const sessionId = this.env.session_id || 'sangokushi_default';
-    const destGeneralDoc = await generalRepository.findOneByFilter({
-      session_id: sessionId,
-      'data.no': this.arg.destGeneralID
-    });
-    
-    if (destGeneralDoc) {
-      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
-      this.setDestGeneral(destGeneral);
-    }
-
+  protected initWithArg(): void {
+    // fullConditionConstraints를 먼저 설정 (비동기 작업은 run()에서 처리)
     this.fullConditionConstraints = [
       ConstraintHelper.BeLord(),
       ConstraintHelper.ExistsDestGeneral(),
       ConstraintHelper.FriendlyDestGeneral(),
     ];
+    
+    // destGeneral은 run() 메서드에서 로드됨
   }
 
   public getCost(): [number, number] {
@@ -85,6 +77,23 @@ export class AbdicateCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
+
+    // destGeneral 로드 (initWithArg에서 비동기 작업을 할 수 없으므로 여기서 처리)
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const destGeneralDoc = await generalRepository.findOneByFilter({
+      session_id: sessionId,
+      'data.no': this.arg.destGeneralID
+    });
+    
+    if (destGeneralDoc) {
+      const destGeneral = await General.createObjFromDB(this.arg.destGeneralID, sessionId);
+      this.setDestGeneral(destGeneral);
+    }
+    
+    if (!this.destGeneralObj) {
+      general.getLogger().pushGeneralActionLog("선양할 장수를 찾을 수 없습니다.");
+      return false;
+    }
 
     const destGeneral = this.destGeneralObj;
     const destGeneralPenaltyList = JSON.parse(destGeneral.getVar('penalty') || '{}');
@@ -137,6 +146,15 @@ export class AbdicateCommand extends GeneralCommand {
       await StaticEventHandler.handleEvent(general, destGeneral, this, this.env, this.arg);
     } catch (error) {
       console.error('StaticEventHandler 실패:', error);
+    }
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '선양');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
     }
     
     // 장수 데이터 저장

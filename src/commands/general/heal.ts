@@ -58,8 +58,17 @@ export class HealCommand extends GeneralCommand {
       this.env,
       this.arg ?? {}
     );
+
+    // UniqueItemLottery
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '요양');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

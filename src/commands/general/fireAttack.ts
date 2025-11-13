@@ -39,6 +39,10 @@ export class FireAttackCommand extends GeneralCommand {
       genScore = general.getStrength();
     } else if (statType === 'intel') {
       genScore = general.getIntel();
+    } else if (statType === 'politics') {
+      genScore = general.getPolitics();
+    } else if (statType === 'charm') {
+      genScore = general.getCharm();
     } else {
       throw new Error('Invalid stat type');
     }
@@ -51,6 +55,10 @@ export class FireAttackCommand extends GeneralCommand {
   protected calcSabotageDefenceProb(destCityGeneralList: any[]): number {
     const statType = (this.constructor as typeof FireAttackCommand).statType;
     const destCity = this.destCity;
+    
+    if (!this.destNation) {
+      throw new Error('목적 국가 정보가 없습니다');
+    }
     const destNationID = this.destNation.nation;
 
     let maxGenScore = 0;
@@ -71,6 +79,10 @@ export class FireAttackCommand extends GeneralCommand {
         genScore = destGeneral.getStrength();
       } else if (statType === 'intel') {
         genScore = destGeneral.getIntel();
+      } else if (statType === 'politics') {
+        genScore = destGeneral.getPolitics();
+      } else if (statType === 'charm') {
+        genScore = destGeneral.getCharm();
       } else {
         throw new Error('Invalid stat type');
       }
@@ -83,7 +95,10 @@ export class FireAttackCommand extends GeneralCommand {
     let prob = maxGenScore / sabotageProbCoefByStat;
     prob += probCorrection;
     prob += (Math.log2(affectGeneralCount + 1) - 1.25) * sabotageDefenceCoefByGeneralCnt;
-    prob += (destCity.secu / destCity.secu_max) / 5;
+    
+    // 0으로 나누기 방지: secu_max가 0일 수 있음
+    const secuMax = Math.max(1, destCity?.secu_max ?? 1);
+    prob += ((destCity?.secu ?? 0) / secuMax) / 5;
     prob += destCity.supply ? 0.1 : 0;
 
     return prob;
@@ -106,10 +121,15 @@ export class FireAttackCommand extends GeneralCommand {
   protected initWithArg(): void {
     this.setNation();
     this.setDestCity(this.arg.destCityID);
-    this.setDestNation(this.destCity.nation);
-
+    
+    // destCity가 설정된 후 destNation 설정
+    if (this.destCity) {
+      this.setDestNation(this.destCity.nation);
+    }
+    
     const [reqGold, reqRice] = this.getCost();
 
+    // fullConditionConstraints 설정 (PHP와 동일)
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
@@ -118,7 +138,7 @@ export class FireAttackCommand extends GeneralCommand {
       ConstraintHelper.NotNeutralDestCity(),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
-      ConstraintHelper.DisallowDiplomacyBetweenStatus({ 7: '불가침국입니다.' }),
+      ConstraintHelper.DisallowDiplomacyBetweenStatus({7: '불가침국입니다.'}),
     ];
   }
 
@@ -152,7 +172,7 @@ export class FireAttackCommand extends GeneralCommand {
 
   public getBrief(): string {
     const commandName = (this.constructor as typeof GeneralCommand).getName();
-    const destCityName = this.destCity.name;
+    const destCityName = this.destCity?.name ?? '알 수 없음';
     return `【${destCityName}】에 ${commandName}실행`;
   }
 
@@ -162,7 +182,7 @@ export class FireAttackCommand extends GeneralCommand {
     if (failReason === null) {
       throw new Error('실행 가능한 커맨드에 대해 실패 이유를 수집');
     }
-    const destCityName = this.destCity.name;
+    const destCityName = this.destCity?.name ?? '알 수 없음';
     return `${failReason} <G><b>${destCityName}</b></>에 ${commandName} 실패.`;
   }
 
@@ -179,6 +199,11 @@ export class FireAttackCommand extends GeneralCommand {
     const date = general.getTurnTime('HM');
     const logger = general.getLogger();
     const destCity = this.destCity;
+    
+    if (!destCity) {
+      throw new Error('목적 도시 정보가 없습니다');
+    }
+    
     const destCityName = destCity.name;
     const destCityID = destCity.city;
     const commandName = (this.constructor as typeof GeneralCommand).getName();
@@ -192,11 +217,16 @@ export class FireAttackCommand extends GeneralCommand {
     destCity.agri -= agriAmount;
     destCity.comm -= commAmount;
 
-    await DB.db().update('city', {
-      state: 32,
-      agri: destCity.agri,
-      comm: destCity.comm
-    }, 'city=?', [destCityID]);
+    try {
+      await DB.db().update('city', {
+        state: 32,
+        agri: destCity.agri,
+        comm: destCity.comm
+      }, 'city=?', [destCityID]);
+    } catch (error) {
+      console.error(`도시 ${destCityID} 업데이트 실패:`, error);
+      throw new Error(`도시 업데이트 실패: ${error.message}`);
+    }
 
     const agriAmountText = agriAmount.toLocaleString();
     const commAmountText = commAmount.toLocaleString();
@@ -226,17 +256,40 @@ export class FireAttackCommand extends GeneralCommand {
     const statType = (this.constructor as typeof FireAttackCommand).statType;
     const logger = general.getLogger();
 
+    // 거리 계산
+    const { searchDistance } = await import('../../func/searchDistance');
+    const distances = searchDistance(general.getCityID(), 5, false);
+    const dist = distances[destCityID] ?? 99;
+
+    // 목적지 도시의 장수 목록 로드
     const cityGeneralID = await db.queryFirstColumn(
       'SELECT no FROM general WHERE city = ? AND nation = ?',
       [destCityID, destNationID]
     );
 
+    const { General } = await import('../../models/general.model');
     const destCityGeneralList: any[] = [];
+    
+    if (cityGeneralID && cityGeneralID.length > 0) {
+      const { generalRepository } = await import('../../repositories/general.repository');
+      for (const genID of cityGeneralID) {
+        try {
+          const destGeneral = await generalRepository.findById(genID);
+          if (destGeneral) {
+            destGeneral.setRawCity?.(destCity);
+            destCityGeneralList.push(destGeneral);
+          }
+        } catch (error) {
+          console.error(`장수 ${genID} 로드 실패:`, error);
+        }
+      }
+    }
 
+    // 확률 계산 (거리 패널티 포함)
     const sabotageDefaultProb = 0.05;
-    const prob = Math.max(0, Math.min(0.5, 
-      sabotageDefaultProb + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList)
-    ));
+    let prob = sabotageDefaultProb + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList);
+    prob /= dist; // 거리에 따른 패널티
+    prob = Math.max(0, Math.min(0.5, prob));
 
     if (!rng.nextBool(prob)) {
       logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>에 ${commandName}이(가) 실패했습니다. <1>${date}</>`);
@@ -249,7 +302,10 @@ export class FireAttackCommand extends GeneralCommand {
       general.increaseVarWithLimit('rice', -reqRice, 0);
       general.addExperience(exp);
       general.addDedication(ded);
-      general.increaseVar(statType + '_exp', 1);
+      // 화공은 지력 주력 + 정치/매력 소량
+      general.increaseVar('intel_exp', 1);
+      general.increaseVar('politics_exp', 0.3);
+      general.increaseVar('charm_exp', 0.3);
 
       this.setResultTurn(new LastTurn(FireAttackCommand.getName(), this.arg));
       general.checkStatChange();
@@ -257,9 +313,31 @@ export class FireAttackCommand extends GeneralCommand {
       return false;
     }
 
-    const injuryCount = 0;
+    // 부상 처리
+    const injuryGeneral = (this.constructor as typeof FireAttackCommand).injuryGeneral;
+    let injuryCount = 0;
+    
+    if (injuryGeneral) {
+      const { SabotageInjury } = await import('../../func/sabotageInjury');
+      injuryCount = await SabotageInjury(rng, destCityGeneralList, '계략');
+    }
 
     await this.affectDestCity(rng, injuryCount);
+
+    // 아이템 소비 처리
+    try {
+      const itemObj = general.getItem?.();
+      if (itemObj && itemObj.tryConsumeNow) {
+        if (await itemObj.tryConsumeNow(general, 'GeneralCommand', '계략')) {
+          const itemName = itemObj.getName();
+          const itemRawName = itemObj.getRawName();
+          logger.pushGeneralActionLog(`<C>${itemName}</을(를) 사용!`, 'PLAIN');
+          general.deleteItem();
+        }
+      }
+    } catch (error) {
+      console.error('아이템 소비 실패:', error);
+    }
 
     const exp = rng.nextRangeInt(201, 300);
     const ded = rng.nextRangeInt(141, 210);
@@ -269,9 +347,28 @@ export class FireAttackCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    general.increaseVar(statType + '_exp', 1);
+    // 화공은 지력 주력 + 정치/매력 소량
+    general.increaseVar('intel_exp', 1);
+    general.increaseVar('politics_exp', 0.3);
+    general.increaseVar('charm_exp', 0.3);
+    
+    // 화공 횟수 증가 (랭킹)
+    try {
+      general.increaseRankVar?.('firenum', 1);
+    } catch (error) {
+      console.error('firenum 랭킹 증가 실패:', error);
+    }
 
     this.setResultTurn(new LastTurn(FireAttackCommand.getName(), this.arg));
+    
+    // StaticEventHandler 호출
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
     general.checkStatChange();
     await this.saveGeneral();
 

@@ -128,8 +128,23 @@ export class ActionLogger {
     }
     
     try {
-      // TODO: DB에 로그 저장 (GeneralLog 모델)
-      // await GeneralLog.insertMany(this.logs);
+      const { generalRecordRepository } = await import('../repositories/general-record.repository');
+      
+      // DB에 로그 저장
+      for (const log of this.logs) {
+        if (!log.generalId) continue;
+        
+        // action type에 따라 log_type 결정
+        const logType = log.action.includes('history') ? 'history' : 'action';
+        
+        await generalRecordRepository.create({
+          session_id: 'sangokushi_default', // TODO: 세션 ID를 동적으로 가져와야 함
+          general_id: log.generalId,
+          log_type: logType,
+          text: log.message,
+          date: log.timestamp
+        });
+      }
       
       // 로그 초기화
       this.logs = [];

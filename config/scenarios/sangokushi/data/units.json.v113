@@ -1,0 +1,5567 @@
+{
+  "units": {
+    "1000": {
+      "id": 1000,
+      "type": "CASTLE",
+      "name": "성벽",
+      "cost": {
+        "gold": 9999,
+        "rice": 9999
+      },
+      "stats": {
+        "tech": 99,
+        "offense": 0,
+        "magic": 0,
+        "attackRange": 99,
+        "defenseRange": 99
+      },
+      "attacks": {},
+      "defenses": {},
+      "description": [
+        "아군 영토를 방어하는 견고한 성벽입니다.",
+        "생성할 수 없습니다. 공성 병기에게 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "impossible"
+        }
+      ]
+    },
+    "1100": {
+      "id": 1100,
+      "type": "FOOTMAN",
+      "name": "보병",
+      "cost": {
+        "gold": 100,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 9,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "기본적인 보병 병종입니다. 전열을 유지하고 적의 공격을 막아냅니다.",
+        "균형 잡힌 능력치를 가지고 있습니다."
+      ],
+      "constraints": []
+    },
+    "1101": {
+      "id": 1101,
+      "type": "FOOTMAN",
+      "name": "향병",
+      "cost": {
+        "gold": 60,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 8,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.7,
+        "SIEGE": 1
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.3,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "가장 기본적인 경급 보병입니다. 의복과 경피갑으로 무장하며, 단병기(도)를 사용합니다.",
+        "전선을 유지하고 적의 사격을 일부 막아낼 수 있으나, 기병의 돌격에는 취약합니다."
+      ],
+      "constraints": []
+    },
+    "1102": {
+      "id": 1102,
+      "type": "FOOTMAN",
+      "name": "정병",
+      "cost": {
+        "gold": 100,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "잘 훈련된 정규 보병입니다. 평피갑과 방패, 그리고 도를 사용합니다.",
+        "균형 잡힌 능력치로 전열 유지에 능하며, 기병의 돌격에 어느 정도 버텨낼 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1103": {
+      "id": 1103,
+      "type": "FOOTMAN",
+      "name": "검병",
+      "cost": {
+        "gold": 150,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.7
+      },
+      "description": [
+        "중피갑과 검, 보병용 대형 방패로 무장한 정예 보병입니다.",
+        "높은 방어력으로 전선을 견고히 유지하며, 관통 피해가 높은 검으로 중장갑 적을 상대합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1104": {
+      "id": 1104,
+      "type": "FOOTMAN",
+      "name": "부월수",
+      "cost": {
+        "gold": 130,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.2,
+        "FOOTMAN_HEAVY": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8,
+        "FOOTMAN_HEAVY": 0.7
+      },
+      "description": [
+        "도끼(월)를 사용하는 정예 공격형 보병입니다. 경철갑을 착용하며 보병용 타원형 방패를 지녔습니다.",
+        "빠른 공격 속도와 높은 관통 피해로 중장갑 보병과 방패를 든 부대에 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1105": {
+      "id": 1105,
+      "type": "FOOTMAN",
+      "name": "등갑군",
+      "cost": {
+        "gold": 100,
+        "rice": 225
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "ARCHER": 1.5,
+        "CAVALRY": 0.8,
+        "SIEGE": 1
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "남만 지역(남중)에서 모집 가능한 정규 특수 보병입니다. 중등갑과 보병용 등나무 방패, 도를 사용합니다.",
+        "등나무 갑옷으로 궁병의 사격을 거의 무력화하나, 화염 계략이나 불화살에 매우 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "남중"
+        }
+      ]
+    },
+    "1106": {
+      "id": 1106,
+      "type": "FOOTMAN",
+      "name": "백이병",
+      "cost": {
+        "gold": 175,
+        "rice": 175
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 13,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "성도 지역에서 모집 가능한 최정예 보병입니다. 평철갑과 보병용 대형 방패, 극을 사용합니다.",
+        "뛰어난 사기와 방어력으로 불리한 싸움도 버텨냅니다. 다용도 장병인 극은 기병에게도 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "성도"
+        }
+      ]
+    },
+    "1107": {
+      "id": 1107,
+      "type": "FOOTMAN",
+      "name": "금군",
+      "cost": {
+        "gold": 200,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 16,
+        "magic": 0,
+        "attackRange": 12,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "낙양에서 모집 가능한 최정예 보병입니다. 중철갑과 보병용 직사각 고급 방패, 검을 사용합니다.",
+        "높은 방어력과 사기로 무장한 제국의 핵심 방패입니다. 전신에 걸쳐 철제 찰갑을 단단히 착용합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "낙양"
+        }
+      ]
+    },
+    "1108": {
+      "id": 1108,
+      "type": "FOOTMAN",
+      "name": "황건병",
+      "cost": {
+        "gold": 70,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 11,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "ARCHER": 1,
+        "CAVALRY": 0.8,
+        "SIEGE": 1
+      },
+      "defenses": {
+        "ARCHER": 1,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "태평도 사상을 따르는 광신적인 경급 보병입니다. 의복과 도, 조잡한 방패를 사용합니다.",
+        "장비는 형편없으나, 광신적인 사기로 인해 패주하지 않고 끝까지 싸우는 경향이 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "taiping"
+        }
+      ]
+    },
+    "1109": {
+      "id": 1109,
+      "type": "FOOTMAN",
+      "name": "산적",
+      "cost": {
+        "gold": 120,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "ARCHER": 1.3,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.9
+      },
+      "description": [
+        "도적 사상을 가진 국가가 모집하는 공격형 경장 보병입니다. 경피갑과 쌍수 도를 사용합니다.",
+        "방패를 포기한 대신 빠른 공격 속도와 높은 공격력으로 무장했습니다. 숲 지형에서 이동 속도 저하가 적습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "bandits"
+        }
+      ]
+    },
+    "1110": {
+      "id": 1110,
+      "type": "FOOTMAN",
+      "name": "왜구",
+      "cost": {
+        "gold": 110,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "왜(倭) 지역에서 모집 가능한 공격형 보병입니다. 경피갑과 날이 잘 선 왜검을 사용합니다.",
+        "해안 지역 전투에 보너스를 받으며, 사기가 높아 쉽게 패주하지 않습니다. 높은 근접 공격력으로 적을 압박합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "왜"
+        }
+      ]
+    },
+    "1111": {
+      "id": 1111,
+      "type": "FOOTMAN",
+      "name": "왜구",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 140,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 17,
+        "defense": 12,
+        "health": 125,
+        "morale": 72,
+        "speed": 76,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "katana",
+        "armor": "medium_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "coastal_fighter",
+        "high_morale"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "왜 지역의 검사입니다.",
+        "해안 전투에 보너스를 받으며 사기가 높습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "왜"
+        }
+      ]
+    },
+    "1112": {
+      "id": 1112,
+      "type": "FOOTMAN",
+      "name": "저족병",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 110,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 13,
+        "defense": 13,
+        "health": 115,
+        "morale": 68,
+        "speed": 74,
+        "charge": 10
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "mountain_fighter",
+        "high_morale"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.2
+      },
+      "description": [
+        "서북 저족의 보병입니다.",
+        "산악 지형과 매복에 능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "서북"
+        }
+      ]
+    },
+    "1113": {
+      "id": 1113,
+      "type": "FOOTMAN",
+      "name": "흑산적",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 130,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 19,
+        "defense": 10,
+        "health": 120,
+        "morale": 65,
+        "speed": 78,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "two_handed_axe",
+        "armor": "light_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "raider",
+        "forest_fighter"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "ARCHER": 1.3,
+        "FOOTMAN": 1.2,
+        "FOOTMAN_SHIELD": 1.5
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1
+      },
+      "description": [
+        "산적 출신의 공격형 보병입니다.",
+        "숲 지형에서 강력한 전투력을 발휘합니다."
+      ],
+      "constraints": []
+    },
+    "1114": {
+      "id": 1114,
+      "type": "FOOTMAN",
+      "name": "호위병",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 240,
+        "rice": 260
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 22,
+        "defense": 24,
+        "health": 155,
+        "morale": 85,
+        "speed": 64,
+        "charge": 12
+      },
+      "equipment": {
+        "weapon": "jian_sword",
+        "armor": "heavy_iron",
+        "shield": "tower_shield"
+      },
+      "abilities": [
+        "disciplined",
+        "armor_piercing",
+        "unbreakable",
+        "bodyguard"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle",
+        "turtle"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 1,
+        "FOOTMAN": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "장군을 호위하는 정예 근위병입니다.",
+        "최고급 장비로 무장하여 장군을 보호합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2200
+        }
+      ]
+    },
+    "1115": {
+      "id": 1115,
+      "type": "FOOTMAN",
+      "name": "가야검사",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 170,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 20,
+        "defense": 15,
+        "health": 135,
+        "morale": 74,
+        "speed": 72,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "heavy_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "coastal_fighter",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "FOOTMAN": 1.1
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1
+      },
+      "description": [
+        "김해 가야의 정예 검사입니다.",
+        "해안 전투에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCity",
+          "value": "김해"
+        }
+      ]
+    },
+    "1116": {
+      "id": 1116,
+      "type": "FOOTMAN",
+      "name": "진국위병(陳國衛兵)",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 170,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 17,
+        "health": 135,
+        "morale": 76,
+        "speed": 70,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "jian_sword",
+        "armor": "heavy_iron",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "disciplined",
+        "armor_piercing",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle",
+        "turtle"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9,
+        "FOOTMAN_HEAVY": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "CAVALRY": 1
+      },
+      "description": [
+        "진양을 지키는 정예 보병입니다.",
+        "우수한 훈련과 장비로 균형잡힌 전투력을 발휘합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCity",
+          "value": "진양"
+        },
+        {
+          "type": "reqTech",
+          "value": 1700
+        }
+      ]
+    },
+    "1117": {
+      "id": 1117,
+      "type": "FOOTMAN",
+      "name": "묵협(墨俠)",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 190,
+        "rice": 220
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 17,
+        "defense": 21,
+        "health": 145,
+        "morale": 82,
+        "speed": 68,
+        "charge": 12
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "heavy_iron",
+        "shield": "large_shield"
+      },
+      "abilities": [
+        "disciplined",
+        "defensive_master",
+        "philosophy_boost"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle",
+        "turtle"
+      ],
+      "attacks": {
+        "ARCHER": 1.4,
+        "WIZARD": 1.6
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "WIZARD": 0.4,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "묵가 사상으로 무장한 방어 전문 보병입니다.",
+        "겸애와 비공의 정신으로 원거리 공격과 계략에 강합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1118": {
+      "id": 1118,
+      "type": "FOOTMAN",
+      "name": "덕망민병대(德望民兵隊)",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 90,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 11,
+        "defense": 11,
+        "health": 105,
+        "morale": 65,
+        "speed": 72,
+        "charge": 10
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "light_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "high_morale",
+        "loyal"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "ARCHER": 1.1,
+        "CAVALRY": 0.8
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.2
+      },
+      "description": [
+        "덕망 높은 장군을 따르는 민병입니다.",
+        "높은 사기로 불리한 상황에서도 잘 버팁니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 800
+        }
+      ]
+    },
+    "1200": {
+      "id": 1200,
+      "type": "ARCHER",
+      "name": "궁병",
+      "cost": {
+        "gold": 100,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 10,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 150,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1,
+        "SIEGE": 0.6
+      },
+      "defenses": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1,
+        "SIEGE": 1.4
+      },
+      "description": [
+        "기본적인 궁병 병종입니다. 원거리에서 적을 공격합니다.",
+        "근접전에는 취약하므로 보호가 필요합니다."
+      ],
+      "constraints": []
+    },
+    "1201": {
+      "id": 1201,
+      "type": "SPEARMAN",
+      "name": "향용",
+      "cost": {
+        "gold": 70,
+        "rice": 110
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "CAVALRY": 1.5,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.5,
+        "FOOTMAN": 1.2,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "가장 기본적인 경급 창병입니다. 경피갑과 창을 사용합니다.",
+        "기병 돌격 피해를 상당 부분 반사하여 기병을 상대로 매우 효과적입니다. 하지만 보병과 궁병에 취약합니다."
+      ],
+      "constraints": []
+    },
+    "1202": {
+      "id": 1202,
+      "type": "SPEARMAN",
+      "name": "창병",
+      "cost": {
+        "gold": 110,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 11,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "FOOTMAN": 1.2,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "훈련받은 정규 창병입니다. 평피갑과 장창을 사용합니다.",
+        "기병 돌격 피해를 거의 완벽하게 반사하여 기병의 돌격을 무력화하고 큰 피해를 입힙니다. 기병 상대로 맞돌격 시 돌격 방어 능력이 사라지니 주의해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1203": {
+      "id": 1203,
+      "type": "SPEARMAN",
+      "name": "방패용",
+      "cost": {
+        "gold": 130,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "CAVALRY": 1.7,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 1.1,
+        "ARCHER": 0.6
+      },
+      "description": [
+        "평철갑과 보병용 타원형 고급 방패, 장창으로 무장한 정예 창병입니다.",
+        "기병을 막아내는 동시에 방패로 궁병의 사격에도 강합니다. 전열 유지에 더욱 견고합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1204": {
+      "id": 1204,
+      "type": "SPEARMAN",
+      "name": "극병",
+      "cost": {
+        "gold": 140,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 14,
+        "magic": 0,
+        "attackRange": 11,
+        "defenseRange": 13
+      },
+      "attacks": {
+        "CAVALRY": 1.6,
+        "FOOTMAN": 1.1,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN": 0.9,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "양손 무기인 극을 사용하는 정예 창병입니다. 중피갑으로 무장합니다.",
+        "창과 도끼의 장점을 겸비하여 기병과 보병 모두에게 다용도로 대응 가능합니다. 방패가 없어 사격에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1205": {
+      "id": 1205,
+      "type": "SPEARMAN",
+      "name": "무릉만",
+      "cost": {
+        "gold": 160,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 15
+      },
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.9,
+        "ARCHER": 0.7
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "FOOTMAN": 1.1,
+        "ARCHER": 1.3
+      },
+      "description": [
+        "무릉 지역에서 모집 가능한 최정예 특수 창병입니다. 평철갑과 장창을 사용합니다.",
+        "숲 지형에서 이동 속도와 매복 보너스를 받습니다. 기병 저지에 탁월합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCities",
+          "value": "무릉"
+        }
+      ]
+    },
+    "1206": {
+      "id": 1206,
+      "type": "SPEARMAN",
+      "name": "강족창",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 120,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 14,
+        "defense": 14,
+        "health": 120,
+        "morale": 70,
+        "speed": 72,
+        "charge": 6
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "medium_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "desert_fighter"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square"
+      ],
+      "attacks": {
+        "CAVALRY": 1.9,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "ARCHER": 1
+      },
+      "description": [
+        "서북 강족의 창병입니다.",
+        "사막 지형에서 이동 패널티가 없습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "서북"
+        }
+      ]
+    },
+    "1207": {
+      "id": 1207,
+      "type": "SPEARMAN",
+      "name": "월창병",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 160,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 16,
+        "defense": 16,
+        "health": 135,
+        "morale": 76,
+        "speed": 70,
+        "charge": 8
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "medium_iron",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "naval_fighter"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square"
+      ],
+      "attacks": {
+        "CAVALRY": 2,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "ARCHER": 0.8
+      },
+      "description": [
+        "오월 지역의 정예 창병입니다.",
+        "수전에 능하며 기병 방어에 탁월합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "오월"
+        }
+      ]
+    },
+    "1208": {
+      "id": 1208,
+      "type": "SPEARMAN",
+      "name": "동주병",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 140,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 14,
+        "defense": 17,
+        "health": 130,
+        "morale": 70,
+        "speed": 68,
+        "charge": 6
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "heavy_leather",
+        "shield": "large_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square",
+        "turtle"
+      ],
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "ARCHER": 0.6
+      },
+      "description": [
+        "형주 동주의 방어형 창병입니다.",
+        "높은 방어력으로 전열을 유지합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "형주"
+        }
+      ]
+    },
+    "1209": {
+      "id": 1209,
+      "type": "SPEARMAN",
+      "name": "진국창병(陳國槍兵)",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 150,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 15,
+        "defense": 17,
+        "health": 135,
+        "morale": 74,
+        "speed": 70,
+        "charge": 8
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "heavy_leather",
+        "shield": "large_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "disciplined",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square",
+        "turtle"
+      ],
+      "attacks": {
+        "CAVALRY": 1.9,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "ARCHER": 0.6
+      },
+      "description": [
+        "진양 지역의 정예 창병입니다.",
+        "견고한 방어력과 기병 저지 능력으로 전선을 지켜냅니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCity",
+          "value": "진양"
+        },
+        {
+          "type": "reqTech",
+          "value": 1600
+        }
+      ]
+    },
+    "1210": {
+      "id": 1210,
+      "type": "SPEARMAN",
+      "name": "정원병(精銳兵)",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 180,
+        "rice": 210
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 16,
+        "defense": 19,
+        "health": 145,
+        "morale": 80,
+        "speed": 68,
+        "charge": 10
+      },
+      "equipment": {
+        "weapon": "ji_polearm",
+        "armor": "heavy_iron",
+        "shield": "large_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "disciplined",
+        "formation_master"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square",
+        "turtle",
+        "circle"
+      ],
+      "attacks": {
+        "CAVALRY": 1.9,
+        "FOOTMAN": 1
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "ARCHER": 0.6
+      },
+      "description": [
+        "병법에 정통한 정예 극병입니다.",
+        "다양한 진형을 구사하며 기병 방어와 전선 유지에 탁월합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1211": {
+      "id": 1211,
+      "type": "SPEARMAN",
+      "name": "철추병",
+      "cost": {
+        "gold": 170,
+        "rice": 220
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 16,
+        "magic": 0,
+        "attackRange": 10,
+        "defenseRange": 14
+      },
+      "attacks": {
+        "CAVALRY": 1.6,
+        "FOOTMAN_HEAVY": 1.4,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "FOOTMAN_HEAVY": 0.6,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "묵가 사상을 가진 국가만 모집 가능한 최정예 창병입니다. 평철갑과 철추를 사용합니다.",
+        "무거운 철추로 적의 장갑을 파괴하는 데 특화되어 있습니다. 기병 돌격 반사 능력과 더불어 중장갑 적에게 치명적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "mohism"
+        }
+      ]
+    },
+    "1300": {
+      "id": 1300,
+      "type": "CAVALRY",
+      "name": "기병",
+      "cost": {
+        "gold": 150,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 11,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 7,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "ARCHER": 1.5,
+        "SIEGE": 1.3,
+        "FOOTMAN": 1.1,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "SIEGE": 0.9,
+        "FOOTMAN": 0.9,
+        "SPEARMAN": 2
+      },
+      "description": [
+        "기본적인 기병 병종입니다. 빠른 기동력과 강력한 돌격력을 가집니다.",
+        "창병에게 돌격 피해를 반사당하므로 주의가 필요합니다."
+      ],
+      "constraints": []
+    },
+    "1301": {
+      "id": 1301,
+      "type": "ARCHER",
+      "name": "향궁수",
+      "cost": {
+        "gold": 80,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 7,
+        "magic": 0,
+        "attackRange": 120,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 0.9,
+        "SIEGE": 0.5,
+        "ARCHER_ARMOR": 0.8
+      },
+      "defenses": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.1,
+        "SIEGE": 1.5,
+        "ARCHER_ARMOR": 1.2
+      },
+      "description": [
+        "가장 기본적인 경급 궁병입니다. 의복을 착용하며 활을 사용합니다.",
+        "원거리에서 적을 견제하고 피해를 누적시키지만, 근접전 능력이 매우 떨어져 보호가 필요합니다."
+      ],
+      "constraints": []
+    },
+    "1302": {
+      "id": 1302,
+      "type": "ARCHER",
+      "name": "정궁수",
+      "cost": {
+        "gold": 120,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 150,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1,
+        "SIEGE": 0.6,
+        "ARCHER_ARMOR": 0.7
+      },
+      "defenses": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1,
+        "SIEGE": 1.4,
+        "ARCHER_ARMOR": 1.1
+      },
+      "description": [
+        "잘 훈련된 정규 궁병입니다. 경피갑을 착용하며 활을 사용합니다.",
+        "향궁수보다 긴 사거리와 높은 명중률을 자랑합니다. 불화살 등 특수 탄약으로 전술적 변수를 창출할 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1303": {
+      "id": 1303,
+      "type": "ARCHER",
+      "name": "노병",
+      "cost": {
+        "gold": 130,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 170,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.3,
+        "CAVALRY_ARMOR": 1.2,
+        "SIEGE": 0.8
+      },
+      "defenses": {
+        "FOOTMAN_HEAVY": 0.7,
+        "CAVALRY_ARMOR": 0.8,
+        "SIEGE": 1.2
+      },
+      "description": [
+        "평피갑을 착용하며 노(석궁)를 사용하는 정예 원거리 병종입니다.",
+        "활보다 느린 공격 속도와 낮은 기본 피해를 가지나, 높은 관통 피해와 긴 사거리로 중장갑 부대에 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1304": {
+      "id": 1304,
+      "type": "ARCHER",
+      "name": "연노병",
+      "cost": {
+        "gold": 150,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 8,
+        "magic": 0,
+        "attackRange": 100,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "FOOTMAN": 1.5,
+        "CAVALRY": 1.3,
+        "SIEGE": 0.5
+      },
+      "defenses": {
+        "FOOTMAN": 0.8,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.5
+      },
+      "description": [
+        "중피갑을 착용하며 연노(연발 석궁)를 사용하는 정예 원거리 병종입니다.",
+        "관통 피해는 전무하지만 빠른 연사력으로 적을 제압하며, 짧은 사거리에서 보병과 기병에게 치명적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1305": {
+      "id": 1305,
+      "type": "ARCHER",
+      "name": "월궁수",
+      "cost": {
+        "gold": 160,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 11,
+        "magic": 0,
+        "attackRange": 160,
+        "defenseRange": 9
+      },
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1.1,
+        "SIEGE": 0.7
+      },
+      "defenses": {
+        "FOOTMAN": 1,
+        "CAVALRY": 0.9,
+        "SIEGE": 1.3
+      },
+      "description": [
+        "오월 지역에서 모집 가능한 최정예 특수 궁병입니다. 경철갑을 착용하며 오월 지역 특유의 강력한 활을 사용합니다.",
+        "매우 정확하고 강력한 사격으로 적의 전열을 빠르게 와해시킬 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "오월"
+        }
+      ]
+    },
+    "1306": {
+      "id": 1306,
+      "type": "ARCHER",
+      "name": "동이궁수",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 140,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 16,
+        "defense": 7,
+        "health": 95,
+        "morale": 65,
+        "speed": 78,
+        "range": 160,
+        "ammo": 32
+      },
+      "equipment": {
+        "weapon": "composite_bow",
+        "armor": "light_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "ranged_attack",
+        "skirmisher",
+        "forest_fighter"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1.1
+      },
+      "defenses": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1
+      },
+      "description": [
+        "동이 지역의 기마 궁수입니다.",
+        "이동 중 사격에 능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "동이"
+        }
+      ]
+    },
+    "1307": {
+      "id": 1307,
+      "type": "ARCHER",
+      "name": "익주 궁병",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 170,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 18,
+        "defense": 9,
+        "health": 100,
+        "morale": 68,
+        "speed": 72,
+        "range": 165,
+        "ammo": 30
+      },
+      "equipment": {
+        "weapon": "elite_bow",
+        "armor": "medium_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "ranged_attack",
+        "accurate",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "ranged_mixed"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1.2
+      },
+      "defenses": {
+        "FOOTMAN": 1,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "익주 지역의 정예 궁병입니다.",
+        "뛰어난 명중률로 적을 제압합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "익주"
+        }
+      ]
+    },
+    "1308": {
+      "id": 1308,
+      "type": "ARCHER",
+      "name": "투창병",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 150,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 17,
+        "defense": 10,
+        "health": 105,
+        "morale": 65,
+        "speed": 74,
+        "range": 50,
+        "ammo": 12,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "javelin",
+        "armor": "medium_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "skirmisher",
+        "armor_piercing"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.4,
+        "CAVALRY": 1.5
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.8
+      },
+      "description": [
+        "투창을 사용하는 혼합 병종입니다.",
+        "근접전도 가능하며 관통력이 높습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1300
+        }
+      ]
+    },
+    "1309": {
+      "id": 1309,
+      "type": "ARCHER",
+      "name": "진국노병(陳國弩兵)",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 210,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 20,
+        "defense": 11,
+        "health": 110,
+        "morale": 75,
+        "speed": 70,
+        "range": 185,
+        "ammo": 24
+      },
+      "equipment": {
+        "weapon": "heavy_crossbow",
+        "armor": "heavy_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "ranged_attack",
+        "armor_piercing",
+        "disciplined",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "ranged_mixed",
+        "square"
+      ],
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.5,
+        "CAVALRY_ARMOR": 1.4,
+        "SIEGE": 1.1,
+        "FOOTMAN": 1.3
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "진왕 유총의 근거지 진양에서 모집 가능한 정예 노병입니다.",
+        "높은 관통 피해로 적의 중장갑 부대에 치명적이며 대규모 집중 사격에 능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCity",
+          "value": "진양"
+        },
+        {
+          "type": "reqTech",
+          "value": 2200
+        }
+      ]
+    },
+    "1310": {
+      "id": 1310,
+      "type": "ARCHER",
+      "name": "진국노병대(陳國弩兵隊)",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 210,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 20,
+        "defense": 11,
+        "health": 110,
+        "morale": 75,
+        "speed": 70,
+        "range": 185,
+        "ammo": 24
+      },
+      "equipment": {
+        "weapon": "elite_crossbow",
+        "armor": "heavy_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "ranged_attack",
+        "armor_piercing",
+        "disciplined",
+        "volley_fire"
+      ],
+      "formations": [
+        "loose",
+        "ranged_mixed",
+        "square"
+      ],
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.5,
+        "CAVALRY_ARMOR": 1.4,
+        "SIEGE": 1.1
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "진양 지역의 정예 노병 부대입니다.",
+        "높은 관통력으로 중장갑 적을 제압하며 일제사격에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqCity",
+          "value": "진양"
+        },
+        {
+          "type": "reqTech",
+          "value": 2200
+        }
+      ]
+    },
+    "1401": {
+      "id": 1401,
+      "type": "CAVALRY",
+      "name": "경기병",
+      "cost": {
+        "gold": 120,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 7,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "ARCHER": 1.5,
+        "SIEGE": 1.3,
+        "FOOTMAN": 1.1,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "SIEGE": 0.9,
+        "FOOTMAN": 0.9,
+        "SPEARMAN": 2
+      },
+      "description": [
+        "경피갑과 도를 사용하는 경급 기병입니다. 기병용 등나무 방패를 지녔습니다.",
+        "빠른 기동력과 높은 돌격 보너스가 특징입니다. 치고 빠지기에 능하며, 창병에게 돌격 피해를 반사당하므로 정면 돌격을 피해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 500
+        }
+      ]
+    },
+    "1402": {
+      "id": 1402,
+      "type": "CAVALRY",
+      "name": "용기병",
+      "cost": {
+        "gold": 180,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 12,
+        "magic": 0,
+        "attackRange": 8,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SIEGE": 0.8,
+        "FOOTMAN": 0.8,
+        "SPEARMAN": 1.8
+      },
+      "description": [
+        "평피갑과 검, 기병용 박모양 방패로 무장한 정규 기병입니다.",
+        "여전히 빠른 기동력과 강력한 돌격력을 자랑합니다. 창병을 피해 적의 진형을 붕괴시키고 주요 병종을 노리는 데 효율적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1403": {
+      "id": 1403,
+      "type": "CAVALRY",
+      "name": "극기병",
+      "cost": {
+        "gold": 220,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 15,
+        "magic": 0,
+        "attackRange": 9,
+        "defenseRange": 12
+      },
+      "attacks": {
+        "ARCHER": 1.6,
+        "SIEGE": 1.4,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.7,
+        "CAVALRY_LIGHT": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "SIEGE": 0.9,
+        "FOOTMAN": 0.7,
+        "SPEARMAN": 1.5,
+        "CAVALRY_LIGHT": 0.8
+      },
+      "description": [
+        "중피갑과 극, 기병용 철테 방패 1로 무장한 정예 기병입니다.",
+        "극의 다용도성으로 인해 다른 기병과 보병 모두에게 효과적인 돌격과 전투를 펼칠 수 있습니다. 장시간 근접전은 피해야 합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2500
+        }
+      ]
+    },
+    "1404": {
+      "id": 1404,
+      "type": "CAVALRY",
+      "name": "도기병",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 180,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 17,
+        "defense": 10,
+        "health": 110,
+        "morale": 68,
+        "speed": 115,
+        "charge": 42
+      },
+      "equipment": {
+        "weapon": "cavalry_dao",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "war_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.1,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2.2
+      },
+      "description": [
+        "도(刀)로 무장한 기병입니다.",
+        "균형잡힌 돌격력과 기동력을 지닙니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1405": {
+      "id": 1405,
+      "type": "CAVALRY",
+      "name": "호위 기병",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 260,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 20,
+        "defense": 16,
+        "health": 140,
+        "morale": 80,
+        "speed": 105,
+        "charge": 50
+      },
+      "equipment": {
+        "weapon": "cavalry_spear",
+        "armor": "heavy_iron",
+        "shield": "heavy_cavalry_shield",
+        "mount": "elite_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "disciplined",
+        "bodyguard"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.1
+      },
+      "description": [
+        "장군 호위용 정예 기병입니다.",
+        "우수한 전투력으로 장군을 보호합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1406": {
+      "id": 1406,
+      "type": "CAVALRY",
+      "name": "강족 약탈꾼",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 160,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 16,
+        "defense": 9,
+        "health": 105,
+        "morale": 68,
+        "speed": 122,
+        "charge": 40
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "light_leather",
+        "shield": "cavalry_shield",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "raider",
+        "desert_fighter"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "SPEARMAN": 0.4
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2
+      },
+      "description": [
+        "강족의 약탈 기병입니다.",
+        "사막 지형에서 매우 빠르게 이동합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "서북"
+        }
+      ]
+    },
+    "1407": {
+      "id": 1407,
+      "type": "CAVALRY",
+      "name": "선비족 기마대",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 220,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 12,
+        "health": 125,
+        "morale": 75,
+        "speed": 118,
+        "charge": 48
+      },
+      "equipment": {
+        "weapon": "cavalry_spear",
+        "armor": "medium_iron",
+        "shield": "cavalry_shield",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "steppe_fighter"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.3
+      },
+      "description": [
+        "선비족의 정예 기병입니다.",
+        "초원 지형에서 전투력 보너스를 받습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "북방"
+        }
+      ]
+    },
+    "1408": {
+      "id": 1408,
+      "type": "CAVALRY",
+      "name": "흉노족 기병",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 210,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 18,
+        "defense": 11,
+        "health": 120,
+        "morale": 73,
+        "speed": 120,
+        "charge": 46
+      },
+      "equipment": {
+        "weapon": "cavalry_dao",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "raider",
+        "steppe_fighter"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2.2
+      },
+      "description": [
+        "흉노족의 기병입니다.",
+        "빠른 기동력으로 적을 교란합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "북방"
+        }
+      ]
+    },
+    "1409": {
+      "id": 1409,
+      "type": "CAVALRY",
+      "name": "흉노족 마갑기병",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 300,
+        "rice": 230
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 21,
+        "defense": 19,
+        "health": 155,
+        "morale": 82,
+        "speed": 100,
+        "charge": 58
+      },
+      "equipment": {
+        "weapon": "cavalry_lance",
+        "armor": "heavy_iron_barding",
+        "shield": "heavy_cavalry_shield",
+        "mount": "armored_steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "armored",
+        "steppe_fighter"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.7,
+        "FOOTMAN": 1.4,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "SPEARMAN": 2.1
+      },
+      "description": [
+        "흉노족의 중장 마갑기병입니다.",
+        "강력한 돌격력과 높은 방어력을 겸비합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "북방"
+        }
+      ]
+    },
+    "1410": {
+      "id": 1410,
+      "type": "CAVALRY",
+      "name": "기마 사냥꾼",
+      "faction": "han",
+      "tier": 2,
+      "cost": {
+        "gold": 190,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 15,
+        "defense": 9,
+        "health": 100,
+        "morale": 68,
+        "speed": 118,
+        "range": 140,
+        "ammo": 28,
+        "charge": 28
+      },
+      "equipment": {
+        "weapon": "cavalry_bow",
+        "armor": "medium_leather",
+        "shield": "none",
+        "mount": "light_horse"
+      },
+      "abilities": [
+        "ranged_attack",
+        "skirmisher",
+        "flanking"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1.2,
+        "SPEARMAN": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "기마 궁수입니다.",
+        "이동 사격으로 적을 교란하는데 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1400
+        }
+      ]
+    },
+    "1411": {
+      "id": 1411,
+      "type": "CAVALRY",
+      "name": "기마사냥대(騎馬射獵隊)",
+      "faction": "han",
+      "tier": 3,
+      "cost": {
+        "gold": 200,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 16,
+        "defense": 10,
+        "health": 105,
+        "morale": 70,
+        "speed": 120,
+        "range": 145,
+        "ammo": 30,
+        "charge": 30
+      },
+      "equipment": {
+        "weapon": "cavalry_bow",
+        "armor": "medium_leather",
+        "shield": "none",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "ranged_attack",
+        "skirmisher",
+        "flanking",
+        "hit_and_run"
+      ],
+      "formations": [
+        "loose",
+        "cantabrian"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.4,
+        "CAVALRY": 1.2,
+        "SPEARMAN": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "기동 사격에 특화된 경기마궁수입니다.",
+        "빠른 이동과 사격을 반복하며 적을 교란합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1600
+        }
+      ]
+    },
+    "1500": {
+      "id": 1500,
+      "type": "SIEGE",
+      "name": "정란",
+      "cost": {
+        "gold": 100,
+        "rice": 100
+      },
+      "stats": {
+        "tech": 14,
+        "offense": 20,
+        "magic": 0,
+        "attackRange": 200,
+        "defenseRange": 5
+      },
+      "attacks": {
+        "CASTLE": 2,
+        "FOOTMAN": 1.5,
+        "ARCHER": 1.5,
+        "CAVALRY": 0.5
+      },
+      "defenses": {
+        "CASTLE": 0.5,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.8,
+        "CAVALRY": 2
+      },
+      "description": [
+        "기본적인 공성 병기입니다. 멀리서 성벽과 적 부대를 공격합니다.",
+        "매우 느리고 근접전에 취약하며 기병에게 쉽게 무력화됩니다."
+      ],
+      "constraints": []
+    },
+    "1501": {
+      "id": 1501,
+      "type": "MIXED",
+      "name": "표창병",
+      "cost": {
+        "gold": 100,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 9,
+        "magic": 0,
+        "attackRange": 40,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1.2,
+        "ARCHER": 0.8
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.8,
+        "ARCHER": 1.2
+      },
+      "description": [
+        "경피갑을 착용하며 투창과 단병기를 사용하는 경급 복합 병종입니다.",
+        "근접전과 원거리 공격이 모두 가능하나, 보유 탄약량이 적어 지속력은 떨어집니다. 투창은 높은 관통 피해를 가합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 500
+        }
+      ]
+    },
+    "1502": {
+      "id": 1502,
+      "type": "MIXED",
+      "name": "월도병",
+      "cost": {
+        "gold": 150,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 13,
+        "magic": 0,
+        "attackRange": 120,
+        "defenseRange": 11
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1,
+        "ARCHER": 0.9
+      },
+      "defenses": {
+        "FOOTMAN": 0.8,
+        "CAVALRY": 1,
+        "ARCHER": 1.1
+      },
+      "description": [
+        "평피갑을 착용하며 활과 도를 사용하는 정규 복합 병종입니다.",
+        "궁병과 보병의 역할을 겸비하며, 전장에서 유연한 대응이 가능합니다. 하지만 전문 병종에 비해 숙련도는 떨어집니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "1503": {
+      "id": 1503,
+      "type": "MIXED",
+      "name": "투석병",
+      "cost": {
+        "gold": 80,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 1,
+        "offense": 7,
+        "magic": 0,
+        "attackRange": 80,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 0.9,
+        "ARCHER": 1
+      },
+      "defenses": {
+        "FOOTMAN": 1,
+        "CAVALRY": 1.1,
+        "ARCHER": 0.9
+      },
+      "description": [
+        "의복을 착용하며 투석기(슬링)를 사용하는 경급 원거리 병종입니다.",
+        "빠른 공격 속도와 낮은 관통 피해를 가하며, 짧은 사거리에서 적의 진형을 교란하는 데 사용됩니다. 근접전 능력은 거의 없습니다."
+      ],
+      "constraints": []
+    },
+    "1504": {
+      "id": 1504,
+      "type": "MIXED",
+      "name": "취사병",
+      "cost": {
+        "gold": 120,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 10,
+        "magic": 0,
+        "attackRange": 30,
+        "defenseRange": 10
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.1,
+        "ARCHER": 0.9
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 1,
+        "ARCHER": 1.1
+      },
+      "description": [
+        "남만 지역(남중)에서 모집 가능한 정규 복합 병종입니다. 중등갑을 착용하며 화살총과 단병기를 사용합니다.",
+        "맹독을 바른 독침으로 적에게 지속적인 피해를 입힙니다. 근접전 능력도 어느 정도 갖췄으나, 화염에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegions",
+          "value": "남중"
+        }
+      ]
+    },
+    "1601": {
+      "id": 1601,
+      "type": "SIEGE",
+      "name": "투석차",
+      "cost": {
+        "gold": 200,
+        "rice": 300
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 20,
+        "magic": 0,
+        "attackRange": 300,
+        "defenseRange": 5
+      },
+      "attacks": {
+        "CASTLE": 2,
+        "FOOTMAN": 1.5,
+        "ARCHER": 1.5,
+        "CAVALRY": 0.5
+      },
+      "defenses": {
+        "CASTLE": 0.5,
+        "FOOTMAN": 0.8,
+        "ARCHER": 0.8,
+        "CAVALRY": 2
+      },
+      "description": [
+        "중장갑을 갖춘 공성 병기입니다. 멀리서 거대한 돌덩이를 발사하여 적의 성벽과 병력을 파괴합니다.",
+        "매우 느리고 근접전에 취약하며 기병에게 쉽게 무력화됩니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        }
+      ]
+    },
+    "1602": {
+      "id": 1602,
+      "type": "SIEGE",
+      "name": "강노차",
+      "cost": {
+        "gold": 250,
+        "rice": 350
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 25,
+        "magic": 0,
+        "attackRange": 350,
+        "defenseRange": 7
+      },
+      "attacks": {
+        "CASTLE": 1.5,
+        "FOOTMAN_HEAVY": 1.8,
+        "ARCHER_ARMOR": 1.8,
+        "CAVALRY_ARMOR": 1.5
+      },
+      "defenses": {
+        "CASTLE": 0.8,
+        "FOOTMAN_HEAVY": 0.7,
+        "ARCHER_ARMOR": 0.7,
+        "CAVALRY_ARMOR": 0.8
+      },
+      "description": [
+        "강화된 중장갑을 갖춘 공성 병기입니다. 거대한 화살을 발사하여 적의 중장갑 부대를 효과적으로 제압합니다.",
+        "투석차보다 빠르지만, 여전히 근접전에 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 3000
+        }
+      ]
+    },
+    "1701": {
+      "id": 1701,
+      "type": "WIZARD",
+      "name": "책사",
+      "cost": {
+        "gold": 100,
+        "rice": 50
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 5,
+        "magic": 0.7,
+        "attackRange": 100,
+        "defenseRange": 5
+      },
+      "attacks": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1.1,
+        "ARCHER": 1.1,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "FOOTMAN": 0.9,
+        "CAVALRY": 0.9,
+        "ARCHER": 0.9,
+        "SIEGE": 0.8
+      },
+      "description": [
+        "계략에 능통한 참모진입니다. 사상전을 통해 적의 사기를 꺾거나 혼란을 유발합니다.",
+        "병종 상성에 관계없이 적 부대에 피해를 줄 수 있으나, 근접전에는 매우 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "1702": {
+      "id": 1702,
+      "type": "WIZARD",
+      "name": "도사",
+      "cost": {
+        "gold": 150,
+        "rice": 80
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 8,
+        "magic": 0.8,
+        "attackRange": 120,
+        "defenseRange": 6
+      },
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.2,
+        "SIEGE": 1.3
+      },
+      "defenses": {
+        "FOOTMAN": 0.8,
+        "CAVALRY": 0.8,
+        "SIEGE": 0.7
+      },
+      "description": [
+        "도가 사상을 가진 국가만 모집 가능한 정예 책사입니다. 자연의 이치를 이용한 계략에 능통합니다.",
+        "특히 병가(militarism) 사상의 유닛에게 추가 피해를 입힐 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "taoism"
+        }
+      ]
+    },
+    "1703": {
+      "id": 1703,
+      "type": "WIZARD",
+      "name": "천사군",
+      "cost": {
+        "gold": 80,
+        "rice": 120
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 6,
+        "magic": 0.9,
+        "attackRange": 100,
+        "defenseRange": 8
+      },
+      "attacks": {
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.1
+      },
+      "defenses": {
+        "SIEGE": 0.5,
+        "FOOTMAN": 0.9
+      },
+      "description": [
+        "오두미도 사상을 가진 국가만 모집 가능한 특수 책사입니다. 종교적 광신으로 적의 사기를 쉽게 꺾습니다.",
+        "전투 능력은 낮으나, 계략의 성공률이 높고 쌀 소모량이 적어 대규모 운용에 적합합니다."
+      ],
+      "constraints": [
+        {
+          "type": "country_type_unlock",
+          "value": "taoism_religious"
+        }
+      ]
+    },
+    "2006": {
+      "id": 2006,
+      "type": "FOOTMAN",
+      "name": "백성의 군대",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 140,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 17,
+        "defense": 13,
+        "health": 120,
+        "morale": 78,
+        "speed": 76,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "fanatic",
+        "high_morale",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1
+      },
+      "description": [
+        "백성을 위해 싸우는 황건의 정예병입니다.",
+        "높은 사기와 신념으로 무장했습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        }
+      ]
+    },
+    "2007": {
+      "id": 2007,
+      "type": "FOOTMAN",
+      "name": "황천의 전조",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 150,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 14,
+        "health": 125,
+        "morale": 80,
+        "speed": 74,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "glaive",
+        "armor": "medium_iron",
+        "shield": "none"
+      },
+      "abilities": [
+        "fanatic",
+        "high_morale",
+        "two_handed"
+      ],
+      "formations": [
+        "loose",
+        "circle"
+      ],
+      "attacks": {
+        "CAVALRY": 1.3,
+        "FOOTMAN": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "황천을 위해 싸우는 광신도입니다.",
+        "양손 무기로 강력한 공격력을 발휘합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        }
+      ]
+    },
+    "2008": {
+      "id": 2008,
+      "type": "SPEARMAN",
+      "name": "의지의 방패",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 150,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 15,
+        "defense": 18,
+        "health": 135,
+        "morale": 82,
+        "speed": 68,
+        "charge": 8
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "heavy_leather",
+        "shield": "tower_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "fanatic",
+        "shielded"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square",
+        "turtle"
+      ],
+      "attacks": {
+        "CAVALRY": 1.9,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "ARCHER": 0.5
+      },
+      "description": [
+        "황건의 방어형 정예 창병입니다.",
+        "강력한 방어력으로 아군을 보호합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        }
+      ]
+    },
+    "2009": {
+      "id": 2009,
+      "type": "SPEARMAN",
+      "name": "탈환대",
+      "faction": "yellow_turbans",
+      "tier": 2,
+      "cost": {
+        "gold": 130,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 14,
+        "defense": 15,
+        "health": 125,
+        "morale": 76,
+        "speed": 70,
+        "charge": 8
+      },
+      "equipment": {
+        "weapon": "spear",
+        "armor": "medium_leather",
+        "shield": "large_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "fanatic",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square"
+      ],
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "ARCHER": 0.7
+      },
+      "description": [
+        "백성의 땅을 되찾기 위한 창병입니다.",
+        "기병 방어와 진형 유지에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        }
+      ]
+    },
+    "2010": {
+      "id": 2010,
+      "type": "CAVALRY",
+      "name": "백파 기병",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 190,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 18,
+        "defense": 11,
+        "health": 115,
+        "morale": 78,
+        "speed": 118,
+        "charge": 44
+      },
+      "equipment": {
+        "weapon": "cavalry_dao",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "war_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "fanatic"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2.1
+      },
+      "description": [
+        "백파군의 기병대입니다.",
+        "광신적 돌격으로 적진을 유린합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        }
+      ]
+    },
+    "2011": {
+      "id": 2011,
+      "type": "CAVALRY",
+      "name": "고결한 귀족대",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 210,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 13,
+        "health": 125,
+        "morale": 80,
+        "speed": 112,
+        "charge": 46
+      },
+      "equipment": {
+        "weapon": "cavalry_spear",
+        "armor": "medium_iron",
+        "shield": "cavalry_shield",
+        "mount": "war_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "fanatic",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.2
+      },
+      "description": [
+        "황건에 동참한 귀족 출신 기병입니다.",
+        "우수한 훈련과 장비를 갖췄습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        }
+      ]
+    },
+    "2012": {
+      "id": 2012,
+      "type": "CAVALRY",
+      "name": "갑자습격대(甲子襲擊隊)",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 200,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 12,
+        "health": 120,
+        "morale": 78,
+        "speed": 118,
+        "charge": 46
+      },
+      "equipment": {
+        "weapon": "cavalry_dao",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "war_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "fanatic",
+        "night_fighter"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2.1
+      },
+      "description": [
+        "황건군의 정예 기습 기병입니다.",
+        "야간 기습에 특화되어 있으며 광신적 돌격으로 적을 압도합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        },
+        {
+          "type": "reqTech",
+          "value": 1800
+        }
+      ]
+    },
+    "2013": {
+      "id": 2013,
+      "type": "FOOTMAN",
+      "name": "황노모범대(黃老模範隊)",
+      "faction": "yellow_turbans",
+      "tier": 3,
+      "cost": {
+        "gold": 150,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 17,
+        "defense": 14,
+        "health": 125,
+        "morale": 80,
+        "speed": 74,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_iron",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "fanatic",
+        "high_morale",
+        "disciplined",
+        "inspire"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1
+      },
+      "description": [
+        "황로학(黃老學)으로 무장한 모범 병사입니다.",
+        "뛰어난 사기로 아군을 고무시키며 끝까지 싸웁니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        },
+        {
+          "type": "reqTech",
+          "value": 1600
+        }
+      ]
+    },
+    "2014": {
+      "id": 2014,
+      "type": "FOOTMAN",
+      "name": "학자대(學者隊)",
+      "faction": "yellow_turbans",
+      "tier": 2,
+      "cost": {
+        "gold": 120,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 14,
+        "defense": 12,
+        "health": 115,
+        "morale": 72,
+        "speed": 74,
+        "charge": 12
+      },
+      "equipment": {
+        "weapon": "staff",
+        "armor": "robes_reinforced",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "fanatic",
+        "morale_boost",
+        "inspire"
+      ],
+      "formations": [
+        "loose",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.1,
+        "MORALE": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.9,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "태평도 경전을 학습한 병사들입니다.",
+        "학문으로 무장하여 아군의 사기를 높이는 능력이 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "yellow_turbans"
+        },
+        {
+          "type": "reqTech",
+          "value": 1200
+        }
+      ]
+    },
+    "3004": {
+      "id": 3004,
+      "type": "FOOTMAN",
+      "name": "백호 전사대",
+      "faction": "bandits",
+      "tier": 3,
+      "cost": {
+        "gold": 170,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 21,
+        "defense": 13,
+        "health": 130,
+        "morale": 74,
+        "speed": 78,
+        "charge": 18
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_iron",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "raider",
+        "berserker",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.3,
+        "FOOTMAN": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1
+      },
+      "description": [
+        "엄백호의 정예 전사입니다.",
+        "맹렬한 공격으로 적을 압도합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        }
+      ]
+    },
+    "3005": {
+      "id": 3005,
+      "type": "FOOTMAN",
+      "name": "월의 후예",
+      "faction": "bandits",
+      "tier": 3,
+      "cost": {
+        "gold": 180,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 20,
+        "defense": 14,
+        "health": 135,
+        "morale": 76,
+        "speed": 76,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "jian_sword",
+        "armor": "heavy_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "raider",
+        "armor_piercing",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.3,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1
+      },
+      "description": [
+        "오월 지역 도적의 정예병입니다.",
+        "검술에 능하며 중장갑 적에게 효과적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        }
+      ]
+    },
+    "3006": {
+      "id": 3006,
+      "type": "FOOTMAN",
+      "name": "월부족 전사",
+      "faction": "bandits",
+      "tier": 2,
+      "cost": {
+        "gold": 140,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 17,
+        "defense": 12,
+        "health": 120,
+        "morale": 68,
+        "speed": 78,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "raider",
+        "coastal_fighter"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "오월 부족의 전사입니다.",
+        "해안 지역 전투에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        }
+      ]
+    },
+    "3007": {
+      "id": 3007,
+      "type": "CAVALRY",
+      "name": "도기병",
+      "faction": "bandits",
+      "tier": 2,
+      "cost": {
+        "gold": 170,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 17,
+        "defense": 9,
+        "health": 105,
+        "morale": 65,
+        "speed": 118,
+        "charge": 40
+      },
+      "equipment": {
+        "weapon": "cavalry_dao",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "light_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "raider",
+        "flanking"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.1,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2.1
+      },
+      "description": [
+        "도적의 기마대입니다.",
+        "빠른 약탈과 후방 습격에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        }
+      ]
+    },
+    "3008": {
+      "id": 3008,
+      "type": "CAVALRY",
+      "name": "호위 검기병",
+      "faction": "bandits",
+      "tier": 3,
+      "cost": {
+        "gold": 210,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 12,
+        "health": 120,
+        "morale": 72,
+        "speed": 112,
+        "charge": 44
+      },
+      "equipment": {
+        "weapon": "cavalry_sword",
+        "armor": "medium_iron",
+        "shield": "cavalry_shield",
+        "mount": "war_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "raider",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.2
+      },
+      "description": [
+        "도적 두목의 호위 기병입니다.",
+        "우수한 전투력으로 두목을 보호합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        }
+      ]
+    },
+    "3009": {
+      "id": 3009,
+      "type": "CAVALRY",
+      "name": "강족 습격대",
+      "faction": "bandits",
+      "tier": 2,
+      "cost": {
+        "gold": 170,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 16,
+        "defense": 9,
+        "health": 108,
+        "morale": 68,
+        "speed": 122,
+        "charge": 38
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "light_leather",
+        "shield": "cavalry_shield",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "raider",
+        "desert_fighter"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "SIEGE": 1.5,
+        "SPEARMAN": 0.4
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "SPEARMAN": 2
+      },
+      "description": [
+        "강족 도적의 기습 기병입니다.",
+        "사막에서 매우 빠르게 이동하며 약탈합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        }
+      ]
+    },
+    "3010": {
+      "id": 3010,
+      "type": "FOOTMAN",
+      "name": "도 보병대(刀步兵隊)",
+      "faction": "bandits",
+      "tier": 2,
+      "cost": {
+        "gold": 110,
+        "rice": 130
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 15,
+        "defense": 10,
+        "health": 110,
+        "morale": 62,
+        "speed": 76,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "raider",
+        "fast_march"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "ARCHER": 1.2,
+        "CAVALRY": 0.8
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "도적의 기본 보병 부대입니다.",
+        "빠른 행군과 약탈에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        },
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "3011": {
+      "id": 3011,
+      "type": "FOOTMAN",
+      "name": "호위 검병(護衛劍兵)",
+      "faction": "bandits",
+      "tier": 3,
+      "cost": {
+        "gold": 160,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 15,
+        "health": 130,
+        "morale": 72,
+        "speed": 74,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "jian_sword",
+        "armor": "heavy_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "raider",
+        "armor_piercing",
+        "bodyguard"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "FOOTMAN_HEAVY": 1.3,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1
+      },
+      "description": [
+        "도적 두목을 호위하는 검병입니다.",
+        "관통력 높은 검으로 중장갑 적에게 효과적입니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        },
+        {
+          "type": "reqTech",
+          "value": 1600
+        }
+      ]
+    },
+    "3012": {
+      "id": 3012,
+      "type": "SPEARMAN",
+      "name": "호위 창병(護衛槍兵)",
+      "faction": "bandits",
+      "tier": 3,
+      "cost": {
+        "gold": 150,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 14,
+        "defense": 16,
+        "health": 125,
+        "morale": 70,
+        "speed": 70,
+        "charge": 8
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "medium_iron",
+        "shield": "large_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "bodyguard"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square"
+      ],
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "ARCHER": 0.7
+      },
+      "description": [
+        "도적 진영을 방어하는 창병입니다.",
+        "기병 돌격을 막아내며 진지를 지킵니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        },
+        {
+          "type": "reqTech",
+          "value": 1500
+        }
+      ]
+    },
+    "3013": {
+      "id": 3013,
+      "type": "SPEARMAN",
+      "name": "극 보병(戟步兵)",
+      "faction": "bandits",
+      "tier": 3,
+      "cost": {
+        "gold": 160,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 16,
+        "defense": 14,
+        "health": 130,
+        "morale": 70,
+        "speed": 72,
+        "charge": 10
+      },
+      "equipment": {
+        "weapon": "ji_polearm",
+        "armor": "medium_iron",
+        "shield": "none"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "versatile",
+        "raider"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square"
+      ],
+      "attacks": {
+        "CAVALRY": 1.6,
+        "FOOTMAN": 1.1
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "ARCHER": 1
+      },
+      "description": [
+        "극을 사용하는 도적 병종입니다.",
+        "다용도 장병기로 기병과 보병 모두에게 대응 가능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "bandits"
+        },
+        {
+          "type": "reqTech",
+          "value": 1700
+        }
+      ]
+    },
+    "4006": {
+      "id": 4006,
+      "type": "FOOTMAN",
+      "name": "무릉 전사",
+      "faction": "nanman",
+      "tier": 2,
+      "cost": {
+        "gold": 120,
+        "rice": 150
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 16,
+        "defense": 12,
+        "health": 115,
+        "morale": 66,
+        "speed": 78,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_rattan",
+        "shield": "rattan_shield"
+      },
+      "abilities": [
+        "forest_fighter",
+        "fire_vulnerable",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.4,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "FIRE": 2.5,
+        "CAVALRY": 1
+      },
+      "description": [
+        "무릉 지역의 남만 전사입니다.",
+        "숲 지형에서 뛰어난 전투력을 발휘합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        }
+      ]
+    },
+    "4007": {
+      "id": 4007,
+      "type": "FOOTMAN",
+      "name": "계곡의 부족 전사",
+      "faction": "nanman",
+      "tier": 2,
+      "cost": {
+        "gold": 130,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 17,
+        "defense": 13,
+        "health": 120,
+        "morale": 68,
+        "speed": 80,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "axe",
+        "armor": "light_rattan",
+        "shield": "rattan_shield"
+      },
+      "abilities": [
+        "forest_fighter",
+        "fire_vulnerable",
+        "ambush"
+      ],
+      "formations": [
+        "loose",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.3,
+        "FOOTMAN_SHIELD": 1.4
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "FIRE": 2.5,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "계곡 부족의 전사입니다.",
+        "도끼로 무장하여 방패 파괴에 능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        }
+      ]
+    },
+    "4008": {
+      "id": 4008,
+      "type": "SPEARMAN",
+      "name": "남만의 방패",
+      "faction": "nanman",
+      "tier": 3,
+      "cost": {
+        "gold": 160,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 16,
+        "defense": 18,
+        "health": 140,
+        "morale": 72,
+        "speed": 72,
+        "charge": 10
+      },
+      "equipment": {
+        "weapon": "long_spear",
+        "armor": "heavy_rattan",
+        "shield": "large_rattan_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "forest_fighter",
+        "fire_vulnerable"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square",
+        "turtle"
+      ],
+      "attacks": {
+        "CAVALRY": 1.9,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.3,
+        "ARCHER": 0.4,
+        "FIRE": 2.5
+      },
+      "description": [
+        "남만의 정예 방어 창병입니다.",
+        "강력한 방어력을 지니나 불에 매우 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        }
+      ]
+    },
+    "4009": {
+      "id": 4009,
+      "type": "ARCHER",
+      "name": "은신독사대",
+      "faction": "nanman",
+      "tier": 3,
+      "cost": {
+        "gold": 180,
+        "rice": 170
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 16,
+        "defense": 8,
+        "health": 95,
+        "morale": 68,
+        "speed": 80,
+        "range": 110,
+        "ammo": 35
+      },
+      "equipment": {
+        "weapon": "blowpipe",
+        "armor": "light_rattan",
+        "shield": "none"
+      },
+      "abilities": [
+        "ranged_attack",
+        "poison",
+        "stealth",
+        "forest_fighter"
+      ],
+      "formations": [
+        "loose",
+        "ranged_mixed"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.3,
+        "MORALE": 1.5
+      },
+      "defenses": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "독침 화살통을 사용하는 남만 궁수입니다.",
+        "독으로 적의 사기를 크게 떨어뜨립니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        }
+      ]
+    },
+    "4010": {
+      "id": 4010,
+      "type": "SIEGE",
+      "name": "전투 상코끼리",
+      "faction": "nanman",
+      "tier": 5,
+      "cost": {
+        "gold": 500,
+        "rice": 450
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 35,
+        "defense": 28,
+        "health": 350,
+        "morale": 95,
+        "speed": 75,
+        "charge": 90
+      },
+      "equipment": {
+        "weapon": "armored_tusks",
+        "armor": "elephant_armor",
+        "shield": "none"
+      },
+      "abilities": [
+        "monster",
+        "fear",
+        "unstoppable_charge",
+        "trample",
+        "armored"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN": 2.2,
+        "CAVALRY": 1.6,
+        "SPEARMAN": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "FIRE": 1.6
+      },
+      "description": [
+        "갑옷을 입은 최정예 전투 코끼리입니다.",
+        "모든 진형을 정면 돌파하는 최강의 괴수입니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        }
+      ]
+    },
+    "4011": {
+      "id": 4011,
+      "type": "FOOTMAN",
+      "name": "남만 전사대(南蠻戰士隊)",
+      "faction": "nanman",
+      "tier": 2,
+      "cost": {
+        "gold": 110,
+        "rice": 140
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 15,
+        "defense": 11,
+        "health": 115,
+        "morale": 66,
+        "speed": 78,
+        "charge": 14
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "medium_rattan",
+        "shield": "rattan_shield"
+      },
+      "abilities": [
+        "forest_fighter",
+        "fire_vulnerable",
+        "tribal_warrior"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "ARCHER": 1.4,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "FIRE": 2.5,
+        "CAVALRY": 1
+      },
+      "description": [
+        "남만 부족의 전사 부대입니다.",
+        "등갑으로 화살에 강하나 불에 매우 취약합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        },
+        {
+          "type": "reqTech",
+          "value": 1000
+        }
+      ]
+    },
+    "4012": {
+      "id": 4012,
+      "type": "FOOTMAN",
+      "name": "계곡 부족 전사대(溪谷部族戰士隊)",
+      "faction": "nanman",
+      "tier": 2,
+      "cost": {
+        "gold": 130,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 2,
+        "offense": 17,
+        "defense": 12,
+        "health": 120,
+        "morale": 68,
+        "speed": 80,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "axe",
+        "armor": "light_rattan",
+        "shield": "rattan_shield"
+      },
+      "abilities": [
+        "forest_fighter",
+        "fire_vulnerable",
+        "ambush",
+        "mountain_fighter"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "ARCHER": 1.3,
+        "FOOTMAN_SHIELD": 1.4
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "FIRE": 2.5,
+        "TERRAIN": 0.5
+      },
+      "description": [
+        "계곡 지역 부족의 전사입니다.",
+        "도끼로 무장하여 방패 파괴에 능하며 지형 활용에 탁월합니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        },
+        {
+          "type": "reqTech",
+          "value": 1200
+        }
+      ]
+    },
+    "4013": {
+      "id": 4013,
+      "type": "SPEARMAN",
+      "name": "투창 호위 창병(投槍護衛槍兵)",
+      "faction": "nanman",
+      "tier": 3,
+      "cost": {
+        "gold": 150,
+        "rice": 190
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 16,
+        "defense": 15,
+        "health": 130,
+        "morale": 72,
+        "speed": 74,
+        "range": 55,
+        "ammo": 10,
+        "charge": 12
+      },
+      "equipment": {
+        "weapon": "throwing_spear",
+        "armor": "heavy_rattan",
+        "shield": "large_rattan_shield"
+      },
+      "abilities": [
+        "charge_defense",
+        "anti_cavalry",
+        "skirmisher",
+        "fire_vulnerable"
+      ],
+      "formations": [
+        "loose",
+        "spear_wall",
+        "square"
+      ],
+      "attacks": {
+        "CAVALRY": 1.8,
+        "FOOTMAN": 0.9
+      },
+      "defenses": {
+        "CAVALRY": 0.4,
+        "ARCHER": 0.5,
+        "FIRE": 2.5
+      },
+      "description": [
+        "투창과 창을 겸비한 남만 호위병입니다.",
+        "기병 방어와 투척 공격을 모두 수행할 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "faction",
+          "value": "nanman"
+        },
+        {
+          "type": "reqTech",
+          "value": 1700
+        }
+      ]
+    },
+    "5001": {
+      "id": 5001,
+      "type": "WIZARD",
+      "name": "도사",
+      "faction": "common",
+      "tier": 4,
+      "cost": {
+        "gold": 280,
+        "rice": 220
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 6,
+        "defense": 10,
+        "health": 70,
+        "morale": 75,
+        "speed": 68,
+        "magic": 90
+      },
+      "equipment": {
+        "weapon": "staff",
+        "armor": "robes",
+        "shield": "none"
+      },
+      "abilities": [
+        "magic_attack",
+        "strategy",
+        "morale_boost",
+        "healing"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "MORALE": 2.2
+      },
+      "defenses": {
+        "FOOTMAN": 1.4,
+        "CAVALRY": 1.2,
+        "MAGIC": 0.6
+      },
+      "description": [
+        "도교 도술을 구사하는 책사입니다.",
+        "강력한 계략으로 전세를 뒤집을 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2500
+        }
+      ]
+    },
+    "5002": {
+      "id": 5002,
+      "type": "WIZARD",
+      "name": "방사",
+      "faction": "common",
+      "tier": 3,
+      "cost": {
+        "gold": 240,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 5,
+        "defense": 9,
+        "health": 65,
+        "morale": 72,
+        "speed": 66,
+        "magic": 85
+      },
+      "equipment": {
+        "weapon": "scrolls",
+        "armor": "scholar_robes",
+        "shield": "none"
+      },
+      "abilities": [
+        "magic_attack",
+        "strategy",
+        "fire_magic"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "MORALE": 2,
+        "RATTAN_ARMOR": 1.8
+      },
+      "defenses": {
+        "FOOTMAN": 1.5,
+        "CAVALRY": 1.3
+      },
+      "description": [
+        "화공 계략에 특화된 방사입니다.",
+        "불 계략으로 적을 혼란에 빠뜨립니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2200
+        }
+      ]
+    },
+    "6000": {
+      "id": 6000,
+      "type": "FOOTMAN",
+      "name": "무당비익(無當飛翼)",
+      "faction": "shu",
+      "tier": 5,
+      "cost": {
+        "gold": 300,
+        "rice": 320
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 24,
+        "defense": 20,
+        "health": 150,
+        "morale": 90,
+        "speed": 80,
+        "charge": 18
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "heavy_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "mountain_master",
+        "fearless",
+        "regional_elite",
+        "rapid_march"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "circle"
+      ],
+      "attacks": {
+        "ARCHER": 1.4,
+        "FOOTMAN": 1.3,
+        "CAVALRY": 1
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "CAVALRY": 0.9,
+        "TERRAIN": 0.5
+      },
+      "description": [
+        "촉 지역의 최정예 산악 보병입니다.",
+        "험준한 지형에서 무적의 전투력을 자랑하며 빠른 행군이 가능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 3000
+        },
+        {
+          "type": "maxCount",
+          "value": 3
+        }
+      ]
+    },
+    "6001": {
+      "id": 6001,
+      "type": "CAVALRY",
+      "name": "호표기(虎豹騎)",
+      "faction": "wei",
+      "tier": 5,
+      "cost": {
+        "gold": 380,
+        "rice": 300
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 26,
+        "defense": 22,
+        "health": 170,
+        "morale": 92,
+        "speed": 105,
+        "charge": 70
+      },
+      "equipment": {
+        "weapon": "cavalry_lance",
+        "armor": "elite_iron_barding",
+        "shield": "heavy_cavalry_shield",
+        "mount": "elite_war_horse"
+      },
+      "abilities": [
+        "elite_charge",
+        "fearless",
+        "disciplined",
+        "cao_family_guard"
+      ],
+      "formations": [
+        "loose",
+        "wedge",
+        "diamond"
+      ],
+      "attacks": {
+        "ARCHER": 1.9,
+        "SIEGE": 1.7,
+        "FOOTMAN": 1.5,
+        "SPEARMAN": 0.7
+      },
+      "defenses": {
+        "ARCHER": 0.4,
+        "SPEARMAN": 1.8
+      },
+      "description": [
+        "위나라의 최정예 기병대입니다.",
+        "압도적인 돌격력을 자랑하는 정예 중기병입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 3000
+        },
+        {
+          "type": "maxCount",
+          "value": 2
+        }
+      ]
+    },
+    "6002": {
+      "id": 6002,
+      "type": "FOOTMAN",
+      "name": "함석영(陷石營)",
+      "faction": "shu",
+      "tier": 5,
+      "cost": {
+        "gold": 320,
+        "rice": 340
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 28,
+        "defense": 18,
+        "health": 145,
+        "morale": 88,
+        "speed": 76,
+        "charge": 22
+      },
+      "equipment": {
+        "weapon": "glaive",
+        "armor": "heavy_iron",
+        "shield": "none"
+      },
+      "abilities": [
+        "formation_breaker",
+        "berserker",
+        "fearless",
+        "two_handed"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.5,
+        "FOOTMAN_HEAVY": 1.6,
+        "CAVALRY": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "CAVALRY": 0.9
+      },
+      "description": [
+        "진형 돌파 전문 정예병입니다.",
+        "양손 장병기로 적의 진형을 강제로 돌파합니다."
+      ],
+      "constraints": [
+        {
+          "type": "maxCount",
+          "value": 1
+        }
+      ]
+    },
+    "6003": {
+      "id": 6003,
+      "type": "ARCHER",
+      "name": "백마의종(白馬義從)",
+      "faction": "yuan",
+      "tier": 5,
+      "cost": {
+        "gold": 280,
+        "rice": 260
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 22,
+        "defense": 10,
+        "health": 110,
+        "morale": 85,
+        "speed": 125,
+        "range": 150,
+        "ammo": 32,
+        "charge": 32
+      },
+      "equipment": {
+        "weapon": "cavalry_bow",
+        "armor": "medium_leather",
+        "shield": "none",
+        "mount": "white_horse"
+      },
+      "abilities": [
+        "mounted_archery",
+        "rapid_fire",
+        "skirmisher",
+        "fearless"
+      ],
+      "formations": [
+        "loose",
+        "cantabrian"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.5,
+        "CAVALRY": 1.3,
+        "ARCHER": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 0.8
+      },
+      "description": [
+        "백마를 탄 기마궁수 정예대입니다.",
+        "빠른 기동 사격으로 적을 압도합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2800
+        },
+        {
+          "type": "maxCount",
+          "value": 3
+        }
+      ]
+    },
+    "6004": {
+      "id": 6004,
+      "type": "CAVALRY",
+      "name": "선등(先登)",
+      "faction": "wu",
+      "tier": 5,
+      "cost": {
+        "gold": 340,
+        "rice": 280
+      },
+      "stats": {
+        "tech": 8,
+        "offense": 25,
+        "defense": 20,
+        "health": 160,
+        "morale": 90,
+        "speed": 112,
+        "charge": 65
+      },
+      "equipment": {
+        "weapon": "cavalry_spear",
+        "armor": "heavy_iron",
+        "shield": "heavy_cavalry_shield",
+        "mount": "war_horse"
+      },
+      "abilities": [
+        "vanguard",
+        "fearless",
+        "disciplined",
+        "amphibious"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.4,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.5,
+        "SPEARMAN": 2
+      },
+      "description": [
+        "오나라 선봉 정예 기병입니다.",
+        "선봉전과 수륙 양면 작전에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "maxCount",
+          "value": 2
+        }
+      ]
+    },
+    "6005": {
+      "id": 6005,
+      "type": "CAVALRY",
+      "name": "병주랑기(并州狼騎)",
+      "faction": "han",
+      "tier": 4,
+      "cost": {
+        "gold": 280,
+        "rice": 240
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 22,
+        "defense": 16,
+        "health": 140,
+        "morale": 82,
+        "speed": 120,
+        "charge": 55
+      },
+      "equipment": {
+        "weapon": "cavalry_spear",
+        "armor": "medium_iron",
+        "shield": "cavalry_shield",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "steppe_fighter",
+        "regional_elite"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.3,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.2
+      },
+      "description": [
+        "병주 지역의 정예 기병입니다.",
+        "흉노족과의 전투로 단련된 북방의 맹수입니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "병주"
+        },
+        {
+          "type": "reqTech",
+          "value": 2000
+        },
+        {
+          "type": "maxCount",
+          "value": 4
+        }
+      ]
+    },
+    "6100": {
+      "id": 6100,
+      "type": "FOOTMAN",
+      "name": "사사자(死士)",
+      "faction": "common",
+      "tier": 4,
+      "cost": {
+        "gold": 200,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 26,
+        "defense": 8,
+        "health": 100,
+        "morale": 100,
+        "speed": 85,
+        "charge": 20
+      },
+      "equipment": {
+        "weapon": "dual_dao",
+        "armor": "light_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "suicide_attack",
+        "fearless",
+        "last_stand",
+        "berserker"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.8,
+        "CAVALRY": 1.2,
+        "GENERAL": 2
+      },
+      "defenses": {
+        "ARCHER": 1.2,
+        "CAVALRY": 1.4
+      },
+      "description": [
+        "목숨을 버리고 싸우는 결사대입니다.",
+        "죽음을 각오한 공격으로 적장 암살에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1800
+        },
+        {
+          "type": "maxCount",
+          "value": 2
+        },
+        {
+          "type": "oneTimeUse",
+          "value": true
+        }
+      ]
+    },
+    "6101": {
+      "id": 6101,
+      "type": "FOOTMAN",
+      "name": "야습대(夜襲隊)",
+      "faction": "common",
+      "tier": 3,
+      "cost": {
+        "gold": 180,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 20,
+        "defense": 12,
+        "health": 115,
+        "morale": 75,
+        "speed": 82,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "dao",
+        "armor": "black_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "night_fighter",
+        "stealth",
+        "ambush",
+        "fire_attack"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "SIEGE": 1.8,
+        "ARCHER": 1.4,
+        "FOOTMAN": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "NIGHT": 0.3
+      },
+      "description": [
+        "야간 기습 전문 부대입니다.",
+        "밤에 적 진영을 습격하여 혼란을 일으킵니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1500
+        },
+        {
+          "type": "timeRestriction",
+          "value": "night_only"
+        },
+        {
+          "type": "maxCount",
+          "value": 3
+        }
+      ]
+    },
+    "6102": {
+      "id": 6102,
+      "type": "FOOTMAN",
+      "name": "도하선봉(渡河先鋒)",
+      "faction": "common",
+      "tier": 3,
+      "cost": {
+        "gold": 160,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 18,
+        "defense": 14,
+        "health": 125,
+        "morale": 78,
+        "speed": 70,
+        "charge": 12
+      },
+      "equipment": {
+        "weapon": "spear",
+        "armor": "medium_leather",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "amphibious",
+        "vanguard",
+        "river_crossing",
+        "fearless"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "ARCHER": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "WATER": 0.4
+      },
+      "description": [
+        "강을 건너는 도하전 전문 부대입니다.",
+        "수전과 도하 작전에 특화되어 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1400
+        },
+        {
+          "type": "terrainBonus",
+          "value": "river"
+        },
+        {
+          "type": "maxCount",
+          "value": 4
+        }
+      ]
+    },
+    "6103": {
+      "id": 6103,
+      "type": "SIEGE",
+      "name": "발석거(發石車)",
+      "faction": "common",
+      "tier": 4,
+      "cost": {
+        "gold": 280,
+        "rice": 300
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 12,
+        "defense": 8,
+        "health": 90,
+        "morale": 60,
+        "speed": 40,
+        "range": 300
+      },
+      "equipment": {
+        "weapon": "catapult",
+        "armor": "light_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "siege_attack",
+        "artillery",
+        "splash_damage"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "CASTLE": 4,
+        "FOOTMAN": 1.5,
+        "SIEGE": 1.2
+      },
+      "defenses": {
+        "CAVALRY": 1.8,
+        "ARCHER": 1.6
+      },
+      "description": [
+        "돌을 던지는 투석기입니다.",
+        "성벽 파괴와 광역 공격이 가능하나 기동성이 없습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        },
+        {
+          "type": "setupTime",
+          "value": 3
+        },
+        {
+          "type": "maxCount",
+          "value": 2
+        }
+      ]
+    },
+    "6104": {
+      "id": 6104,
+      "type": "SIEGE",
+      "name": "연노차(連弩車)",
+      "faction": "common",
+      "tier": 4,
+      "cost": {
+        "gold": 320,
+        "rice": 280
+      },
+      "stats": {
+        "tech": 7,
+        "offense": 16,
+        "defense": 10,
+        "health": 100,
+        "morale": 65,
+        "speed": 45,
+        "range": 250
+      },
+      "equipment": {
+        "weapon": "repeating_ballista",
+        "armor": "medium_leather",
+        "shield": "wooden_mantlet"
+      },
+      "abilities": [
+        "siege_attack",
+        "anti_infantry",
+        "rapid_fire",
+        "suppression"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN": 2,
+        "CAVALRY": 1.8,
+        "ARCHER": 1.5
+      },
+      "defenses": {
+        "CAVALRY": 1.6,
+        "ARCHER": 1.4
+      },
+      "description": [
+        "대형 연노를 탑재한 공성 차량입니다.",
+        "보병 학살에 특화되어 있으나 이동이 느립니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2400
+        },
+        {
+          "type": "setupTime",
+          "value": 2
+        },
+        {
+          "type": "maxCount",
+          "value": 3
+        }
+      ]
+    },
+    "6200": {
+      "id": 6200,
+      "type": "CAVALRY",
+      "name": "오환돌기(烏桓突騎)",
+      "faction": "wuhuan",
+      "tier": 4,
+      "cost": {
+        "gold": 260,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 23,
+        "defense": 14,
+        "health": 135,
+        "morale": 80,
+        "speed": 125,
+        "charge": 58
+      },
+      "equipment": {
+        "weapon": "cavalry_lance",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "steppe_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "flanking",
+        "steppe_fighter",
+        "tribal_fury"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.9,
+        "SIEGE": 1.7,
+        "FOOTMAN": 1.4,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.3
+      },
+      "description": [
+        "오환족의 정예 돌격 기병입니다.",
+        "초원에서 무적의 기동력을 자랑합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        },
+        {
+          "type": "maxCount",
+          "value": 4
+        }
+      ]
+    },
+    "6201": {
+      "id": 6201,
+      "type": "CAVALRY",
+      "name": "저족기(氐族騎)",
+      "faction": "di",
+      "tier": 3,
+      "cost": {
+        "gold": 200,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 19,
+        "defense": 12,
+        "health": 125,
+        "morale": 76,
+        "speed": 115,
+        "charge": 48
+      },
+      "equipment": {
+        "weapon": "cavalry_spear",
+        "armor": "medium_leather",
+        "shield": "cavalry_shield",
+        "mount": "mountain_horse"
+      },
+      "abilities": [
+        "charge_bonus",
+        "mountain_fighter",
+        "tribal_loyalty"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.7,
+        "FOOTMAN": 1.2,
+        "SPEARMAN": 0.5
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "TERRAIN": 0.6
+      },
+      "description": [
+        "저족의 산악 기병입니다.",
+        "험준한 지형에서도 기동력을 유지합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "서북"
+        },
+        {
+          "type": "maxCount",
+          "value": 5
+        }
+      ]
+    },
+    "6202": {
+      "id": 6202,
+      "type": "FOOTMAN",
+      "name": "산월용사(山越勇士)",
+      "faction": "shanyue",
+      "tier": 3,
+      "cost": {
+        "gold": 140,
+        "rice": 160
+      },
+      "stats": {
+        "tech": 3,
+        "offense": 21,
+        "defense": 11,
+        "health": 120,
+        "morale": 74,
+        "speed": 82,
+        "charge": 18
+      },
+      "equipment": {
+        "weapon": "axe",
+        "armor": "light_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "mountain_fighter",
+        "forest_fighter",
+        "berserker",
+        "tribal_fury"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "ARCHER": 1.4,
+        "FOOTMAN": 1.3,
+        "FOOTMAN_SHIELD": 1.5
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "TERRAIN": 0.5
+      },
+      "description": [
+        "산월족의 용맹한 전사입니다.",
+        "산악과 숲 지형에서 무서운 전투력을 발휘합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqRegion",
+          "value": "강동"
+        },
+        {
+          "type": "maxCount",
+          "value": 6
+        }
+      ]
+    },
+    "6300": {
+      "id": 6300,
+      "type": "FOOTMAN",
+      "name": "설전병(雪戰兵)",
+      "faction": "common",
+      "tier": 3,
+      "cost": {
+        "gold": 160,
+        "rice": 180
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 17,
+        "defense": 15,
+        "health": 130,
+        "morale": 72,
+        "speed": 68,
+        "charge": 12
+      },
+      "equipment": {
+        "weapon": "spear",
+        "armor": "padded_winter",
+        "shield": "round_shield"
+      },
+      "abilities": [
+        "winter_fighter",
+        "cold_resistant",
+        "disciplined"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall",
+        "square"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 0.9
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "COLD": 0.3
+      },
+      "description": [
+        "눈 속 전투에 특화된 병종입니다.",
+        "겨울철에만 모집 가능하며 한랭 지역에서 강력합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1600
+        },
+        {
+          "type": "seasonRestriction",
+          "value": "winter_only"
+        },
+        {
+          "type": "maxCount",
+          "value": 4
+        }
+      ]
+    },
+    "6301": {
+      "id": 6301,
+      "type": "ARCHER",
+      "name": "화공대(火攻隊)",
+      "faction": "common",
+      "tier": 4,
+      "cost": {
+        "gold": 220,
+        "rice": 200
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 18,
+        "defense": 8,
+        "health": 95,
+        "morale": 68,
+        "speed": 74,
+        "range": 130,
+        "ammo": 20
+      },
+      "equipment": {
+        "weapon": "fire_arrows",
+        "armor": "medium_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "fire_attack",
+        "siege_attack",
+        "morale_damage",
+        "weather_dependent"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "RATTAN_ARMOR": 3,
+        "SIEGE": 1.8,
+        "FOOTMAN": 1.3,
+        "MORALE": 1.6
+      },
+      "defenses": {
+        "FOOTMAN": 1.2,
+        "CAVALRY": 1.1
+      },
+      "description": [
+        "화공 전문 부대입니다.",
+        "건조한 날씨에만 사용 가능하며 적의 사기를 크게 떨어뜨립니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        },
+        {
+          "type": "weatherRestriction",
+          "value": "dry_only"
+        },
+        {
+          "type": "maxCount",
+          "value": 2
+        }
+      ]
+    },
+    "6302": {
+      "id": 6302,
+      "type": "SIEGE",
+      "name": "수전선(水戰船)",
+      "faction": "common",
+      "tier": 4,
+      "cost": {
+        "gold": 350,
+        "rice": 300
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 20,
+        "defense": 18,
+        "health": 200,
+        "morale": 70,
+        "speed": 50,
+        "range": 200
+      },
+      "equipment": {
+        "weapon": "naval_weapons",
+        "armor": "ship_armor",
+        "shield": "none"
+      },
+      "abilities": [
+        "naval_unit",
+        "fire_attack",
+        "ramming",
+        "transport"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "NAVAL": 2,
+        "SIEGE": 1.5,
+        "FOOTMAN": 1.3
+      },
+      "defenses": {
+        "ARCHER": 0.8,
+        "FIRE": 1.4
+      },
+      "description": [
+        "전투용 전선입니다.",
+        "수전에만 사용 가능하며 병력 수송도 가능합니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2200
+        },
+        {
+          "type": "terrainRestriction",
+          "value": "water_only"
+        },
+        {
+          "type": "maxCount",
+          "value": 3
+        }
+      ]
+    },
+    "6400": {
+      "id": 6400,
+      "type": "FOOTMAN",
+      "name": "왜 용병(倭傭兵)",
+      "faction": "mercenary",
+      "tier": 3,
+      "cost": {
+        "gold": 240,
+        "rice": 0
+      },
+      "stats": {
+        "tech": 4,
+        "offense": 22,
+        "defense": 13,
+        "health": 125,
+        "morale": 70,
+        "speed": 76,
+        "charge": 16
+      },
+      "equipment": {
+        "weapon": "katana",
+        "armor": "medium_leather",
+        "shield": "small_shield"
+      },
+      "abilities": [
+        "mercenary",
+        "coastal_fighter",
+        "high_morale"
+      ],
+      "formations": [
+        "loose",
+        "shield_wall"
+      ],
+      "attacks": {
+        "ARCHER": 1.3,
+        "FOOTMAN": 1.2
+      },
+      "defenses": {
+        "ARCHER": 0.7,
+        "CAVALRY": 1
+      },
+      "description": [
+        "금으로만 고용 가능한 왜 용병입니다.",
+        "양곡이 필요 없으나 유지비가 비쌉니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 1800
+        },
+        {
+          "type": "upkeepMultiplier",
+          "value": 1.5
+        },
+        {
+          "type": "maxCount",
+          "value": 3
+        }
+      ]
+    },
+    "6401": {
+      "id": 6401,
+      "type": "CAVALRY",
+      "name": "서역 용기(西域傭騎)",
+      "faction": "mercenary",
+      "tier": 4,
+      "cost": {
+        "gold": 400,
+        "rice": 0
+      },
+      "stats": {
+        "tech": 6,
+        "offense": 24,
+        "defense": 16,
+        "health": 145,
+        "morale": 75,
+        "speed": 118,
+        "charge": 62
+      },
+      "equipment": {
+        "weapon": "cavalry_lance",
+        "armor": "medium_iron",
+        "shield": "cavalry_shield",
+        "mount": "exotic_horse"
+      },
+      "abilities": [
+        "mercenary",
+        "charge_bonus",
+        "exotic_tactics"
+      ],
+      "formations": [
+        "loose",
+        "wedge"
+      ],
+      "attacks": {
+        "ARCHER": 1.8,
+        "SIEGE": 1.6,
+        "FOOTMAN": 1.4,
+        "SPEARMAN": 0.6
+      },
+      "defenses": {
+        "ARCHER": 0.6,
+        "SPEARMAN": 2.1
+      },
+      "description": [
+        "서역에서 온 용병 기병입니다.",
+        "강력하나 충성도가 낮아 배신할 수 있습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2400
+        },
+        {
+          "type": "upkeepMultiplier",
+          "value": 2
+        },
+        {
+          "type": "loyaltyPenalty",
+          "value": -10
+        },
+        {
+          "type": "maxCount",
+          "value": 2
+        }
+      ]
+    },
+    "6402": {
+      "id": 6402,
+      "type": "ARCHER",
+      "name": "강족 사수(羌族射手)",
+      "faction": "mercenary",
+      "tier": 3,
+      "cost": {
+        "gold": 280,
+        "rice": 0
+      },
+      "stats": {
+        "tech": 5,
+        "offense": 19,
+        "defense": 8,
+        "health": 100,
+        "morale": 68,
+        "speed": 76,
+        "range": 165,
+        "ammo": 30
+      },
+      "equipment": {
+        "weapon": "composite_bow",
+        "armor": "medium_leather",
+        "shield": "none"
+      },
+      "abilities": [
+        "mercenary",
+        "accurate",
+        "desert_fighter"
+      ],
+      "formations": [
+        "loose"
+      ],
+      "attacks": {
+        "FOOTMAN": 1.4,
+        "CAVALRY": 1.2
+      },
+      "defenses": {
+        "FOOTMAN": 1.1,
+        "CAVALRY": 1
+      },
+      "description": [
+        "강족 출신 용병 궁수입니다.",
+        "뛰어난 명중률을 자랑하나 유지비가 높습니다."
+      ],
+      "constraints": [
+        {
+          "type": "reqTech",
+          "value": 2000
+        },
+        {
+          "type": "upkeepMultiplier",
+          "value": 1.8
+        },
+        {
+          "type": "maxCount",
+          "value": 4
+        }
+      ]
+    }
+  }
+}

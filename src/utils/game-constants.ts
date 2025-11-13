@@ -4,7 +4,7 @@
  */
 
 export class GameConstants {
-  static readonly MAX_TURN = 30;
+  static readonly MAX_TURN = 50;
   static readonly MAX_CHIEF_TURN = 12;
   static readonly DEFAULT_TURN_TERM = 60; // 60분 (분 단위로 저장)
   static readonly DEFAULT_START_YEAR = 180;

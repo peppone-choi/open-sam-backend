@@ -104,6 +104,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
           let affinityDiff = Math.abs(generalAffinity - lordAffinity);
           affinityDiff = Math.min(affinityDiff, Math.abs(affinityDiff - 150));
 
+          // affinityDiff는 이미 abs 처리되어 항상 양수이므로 안전
           let score = Math.log2(affinityDiff + 1);
           score += rng.nextFloat1();
 

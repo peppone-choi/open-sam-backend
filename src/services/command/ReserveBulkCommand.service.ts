@@ -1,6 +1,6 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 
-const MAX_TURN = 30;
+const MAX_TURN = 50;
 
 export class ReserveBulkCommandService {
   static async execute(data: any, user?: any) {

@@ -14,7 +14,7 @@ export class InciteCommand extends GeneralCommand {
   protected static actionName = '선동';
   public static reqArg = true;
 
-  protected static statType = 'leadership';
+  protected static statType = 'charm'; // 선동은 매력 주력 (+ 지력 보조)
   protected static injuryGeneral = true;
 
   protected argTest(): boolean {
@@ -47,9 +47,18 @@ export class InciteCommand extends GeneralCommand {
       genScore = general.getStrength();
     } else if (statType === 'intel') {
       genScore = general.getIntel();
+    } else if (statType === 'politics') {
+      genScore = general.getPolitics();
+    } else if (statType === 'charm') {
+      // 선동은 매력 70% + 지력 30% 복합
+      const charm = general.getCharm();
+      const intel = general.getIntel();
+      genScore = charm * 0.7 + intel * 0.3;
     }
 
-    let prob = genScore / (GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
+    // 0으로 나누기 방지
+    const coef = Math.max(1, GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat || 400);
+    let prob = genScore / coef;
     
     if (typeof general.onCalcDomestic === 'function') {
       prob = general.onCalcDomestic('계략', 'success', prob);
@@ -82,6 +91,13 @@ export class InciteCommand extends GeneralCommand {
         genScore = destGeneral.getStrength();
       } else if (statType === 'intel') {
         genScore = destGeneral.getIntel();
+      } else if (statType === 'politics') {
+        genScore = destGeneral.getPolitics();
+      } else if (statType === 'charm') {
+        // 선동 방어도 매력 70% + 지력 30%
+        const charm = destGeneral.getCharm();
+        const intel = destGeneral.getIntel();
+        genScore = charm * 0.7 + intel * 0.3;
       }
       maxGenScore = Math.max(maxGenScore, genScore);
       
@@ -90,11 +106,14 @@ export class InciteCommand extends GeneralCommand {
       }
     }
 
-    let prob = maxGenScore / (GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat);
+    // 0으로 나누기 방지
+    const coef = Math.max(1, GameConst.sabotageProbCoefByStat || GameConstCompat.sabotageProbCoefByStat || 400);
+    let prob = maxGenScore / coef;
     prob += probCorrection;
     prob += (Math.log2(affectGeneralCount + 1) - 1.25) * (GameConst.sabotageDefenceCoefByGeneralCnt || GameConstCompat.sabotageDefenceCoefByGeneralCnt);
 
-    prob += (destCity?.secu || 0) / (destCity?.secu_max || 1) / 5;
+    const secuMax = Math.max(1, destCity?.secu_max || 1);
+    prob += (destCity?.secu || 0) / secuMax / 5;
     prob += (destCity?.supply || false) ? 0.1 : 0;
     return prob;
   }
@@ -115,24 +134,25 @@ export class InciteCommand extends GeneralCommand {
 
   protected initWithArg(): void {
     this.setNation();
-    this.setDestCity(this.arg.destCityID);
-    
-    if (this.destCity) {
-      this.setDestNation(this.destCity.nation);
-    }
-
     const [reqGold, reqRice] = this.getCost();
 
+    // fullConditionConstraints를 먼저 설정
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.NotOccupiedDestCity(),
-      ConstraintHelper.NotNeutralDestCity(),
+      ConstraintHelper.NotSameDestCity(),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
-      ConstraintHelper.DisallowDiplomacyBetweenStatus({ 7: '불가침국입니다.' }),
+      ConstraintHelper.ReqGeneralValue('leadership', '통솔', '>=', 80),
+      ConstraintHelper.ReqGeneralValue('intel', '지력', '>=', 80),
     ];
+    
+    // setDestCity, setDestNation은 비동기 작업이므로 나중에 처리
+    this.setDestCity(this.arg.destCityID);
+    if (this.destCity) {
+      this.setDestNation(this.destCity.nation);
+    }
   }
 
   public getCommandDetailTitle(): string {
@@ -143,6 +163,8 @@ export class InciteCommand extends GeneralCommand {
       'leadership': '통솔경험',
       'strength': '무력경험',
       'intel': '지력경험',
+      'politics': '정치경험',
+      'charm': '매력경험',
     };
     const statTypeName = statTypeBase[statType];
     const [reqGold, reqRice] = this.getCost();
@@ -301,7 +323,9 @@ export class InciteCommand extends GeneralCommand {
       general.increaseVarWithLimit('rice', -reqRice, 0);
       general.addExperience(exp);
       general.addDedication(ded);
-      general.increaseVar(statType + '_exp', 1);
+      // 선동은 매력 70% + 지력 30%
+      general.increaseVar('charm_exp', 1);
+      general.increaseVar('intel_exp', 0.5);
 
       this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
       general.checkStatChange();
@@ -342,7 +366,9 @@ export class InciteCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    general.increaseVar(statType + '_exp', 1);
+    // 선동은 매력 70% + 지력 30%
+    general.increaseVar('charm_exp', 1);
+    general.increaseVar('intel_exp', 0.5);
     
     try {
       if (typeof general.increaseRankVar === 'function') {
@@ -388,10 +414,13 @@ export class InciteCommand extends GeneralCommand {
       const distances = searchDistance(currentCityID, 3, false);
       
       for (const [cityID, dist] of Object.entries(distances)) {
-        distanceList.push({
-          city: Number(cityID),
-          distance: dist
-        });
+        const cityNum = Number(cityID);
+        if (!isNaN(cityNum)) {
+          distanceList.push({
+            city: cityNum,
+            distance: dist
+          });
+        }
       }
     } catch (error) {
       console.error('exportJSVars 실패:', error);

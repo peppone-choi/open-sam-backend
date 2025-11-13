@@ -41,7 +41,8 @@ export class RestCommand extends GeneralCommand {
     const logger = general.getLogger();
     const date = general.getTurnTime('HM');
     
-    logger.pushGeneralActionLog(`아무것도 실행하지 않았습니다. <1>${date}</>`);
+    logger.pushGeneralActionLog(`아무것도 하지 않았습니다. <1>${date}</>`);
+    console.log(`[휴식] 장수 ${general.getName()} (ID: ${general.getID()}) 실행 완료`);
 
     this.setResultTurn(new LastTurn());
     

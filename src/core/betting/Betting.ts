@@ -95,7 +95,7 @@ export class Betting {
     await this.loadInfo();
     const bettingID = this.info.id;
     const gameStor = KVStorage.getStorage(`game_env:${this.sessionId}`);
-    const year = await gameStor.getValue('year') || 180;
+    const year = await gameStor.getValue('year') || 184;
     const month = await gameStor.getValue('month') || 1;
     this.info.closeYearMonth = Util.joinYearMonth(year, month);
     const bettingStor = KVStorage.getStorage(`betting:${this.sessionId}`);
@@ -130,7 +130,7 @@ export class Betting {
     }
 
     const gameStor = KVStorage.getStorage(`game_env:${this.sessionId}`);
-    const year = await gameStor.getValue('year') || 180;
+    const year = await gameStor.getValue('year') || 184;
     const month = await gameStor.getValue('month') || 1;
     const yearMonth = Util.joinYearMonth(year, month);
 
