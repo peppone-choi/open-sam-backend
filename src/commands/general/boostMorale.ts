@@ -33,6 +33,7 @@ export class BoostMoraleCommand extends GeneralCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
@@ -47,7 +48,8 @@ export class BoostMoraleCommand extends GeneralCommand {
 
   public getCost(): [number, number] {
     const general = this.generalObj;
-    return [Math.round(general.getVar('crew') / 100), 0];
+    const crew = Math.max(1, general.getVar('crew')); // 0으로 나누기 방지
+    return [Math.round(crew / 100), 0];
   }
 
   public getPreReqTurn(): number {
@@ -69,8 +71,16 @@ export class BoostMoraleCommand extends GeneralCommand {
     const maxAtmosByCommand = 100;
     const trainSideEffectByAtmosTurn = 0.9;
 
+    // 0으로 나누기 방지: crew가 0일 수 있음
+    const crew = Math.max(1, general.getVar('crew'));
+    
+    // 사기진작은 통솔 70% + 매력 30%
+    const leadership = general.getLeadership();
+    const charm = general.getCharm();
+    const moralePower = leadership * 0.7 + charm * 0.3;
+    
     const score = Math.max(0, Math.min(
-      Math.round(general.getLeadership() * 100 / general.getVar('crew') * atmosDelta),
+      Math.round(moralePower * 100 / crew * atmosDelta),
       Math.max(0, maxAtmosByCommand - general.getVar('atmos'))
     ));
 
@@ -95,7 +105,9 @@ export class BoostMoraleCommand extends GeneralCommand {
 
     general.addExperience(exp);
     general.addDedication(ded);
+    // 사기진작은 통솔 70% + 매력 30%
     general.increaseVar('leadership_exp', 1);
+    general.increaseVar('charm_exp', 0.5);
     
     this.setResultTurn(new LastTurn((this.constructor as typeof BoostMoraleCommand).getName(), this.arg));
     general.checkStatChange();

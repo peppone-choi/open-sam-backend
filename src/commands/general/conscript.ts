@@ -79,6 +79,7 @@ export class ConscriptCommand extends GeneralCommand {
     this.minConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqCityCapacity('pop', '주민', 100),
       ConstraintHelper.ReqCityTrust(20),
     ];
@@ -87,9 +88,13 @@ export class ConscriptCommand extends GeneralCommand {
   protected initWithArg(): void {
     const general = this.generalObj;
 
+    // 징병은 통솔 70% + 매력 30%
     const leadership = general.getLeadership(true);
+    const charm = general.getCharm(true);
+    const recruitPower = leadership * 0.7 + charm * 0.3;
+    
     const currCrewType = general.getCrewTypeObj();
-    let maxCrew = leadership * 100;
+    let maxCrew = recruitPower * 100;
 
     // 병종 정보 가져오기 - 동기 require 사용
     let reqCrewType: any = { id: this.arg.crewType, name: '병종', armType: 0 };
@@ -122,6 +127,7 @@ export class ConscriptCommand extends GeneralCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqCityCapacity('pop', '주민', 100 + this.reqCrew),
       ConstraintHelper.ReqCityTrust(20),
       ConstraintHelper.ReqGeneralGold(reqGold),
@@ -162,7 +168,8 @@ export class ConscriptCommand extends GeneralCommand {
       reqGold = general.onCalcDomestic('징병', 'cost', reqGold);
     }
     
-    let reqRice = this.maxCrew / 100;
+    // 0으로 나누기 방지
+    let reqRice = Math.max(1, this.maxCrew) / 100;
 
     reqGold = Math.round(reqGold);
     reqRice = Math.round(reqRice);
@@ -205,16 +212,21 @@ export class ConscriptCommand extends GeneralCommand {
       setAtmos = general.onCalcDomestic('징병', 'atmos', setAtmos);
     }
 
+    const date = `${this.env.year}년 ${this.env.month}월`;
+    const reqCrewText = reqCrew.toLocaleString(); // 천 단위 구분자
+    
     if (reqCrewType?.id === currCrewType?.id && currCrew > 0) {
-      logger.pushGeneralActionLog(`${crewTypeName} ${reqCrew}명을 추가${actionName}했습니다.`);
-      const train = (currCrew * general.getVar('train') + reqCrew * setTrain) / (currCrew + reqCrew);
-      const atmos = (currCrew * general.getVar('atmos') + reqCrew * setAtmos) / (currCrew + reqCrew);
+      logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 추가${actionName}했습니다. <1>${date}</>`);
+      // 0으로 나누기 방지: 분모가 0이 될 수 없지만 안전장치 추가
+      const totalCrew = Math.max(1, currCrew + reqCrew);
+      const train = (currCrew * general.getVar('train') + reqCrew * setTrain) / totalCrew;
+      const atmos = (currCrew * general.getVar('atmos') + reqCrew * setAtmos) / totalCrew;
 
       general.increaseVar('crew', reqCrew);
       general.setVar('train', train);
       general.setVar('atmos', atmos);
     } else {
-      logger.pushGeneralActionLog(`${crewTypeName} ${reqCrew}명을 ${actionName}했습니다.`);
+      logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 ${actionName}했습니다. <1>${date}</>`);
       general.setVar('crewtype', reqCrewType?.id || 0);
       general.setVar('crew', reqCrew);
       general.setVar('train', setTrain);
@@ -227,8 +239,9 @@ export class ConscriptCommand extends GeneralCommand {
       reqCrewDown = general.onCalcDomestic('징병', 'pop_down', reqCrewDown);
     }
 
-    const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
-    const newTrust = Math.max(0, (this.city?.trust || 50) - (reqCrewDown / (this.city?.pop || 10000)) / costOffset * 100);
+    const costOffset = Math.max(0.01, (this.constructor as typeof ConscriptCommand).costOffset); // 0으로 나누기 방지
+    const cityPop = Math.max(1, this.city?.pop || 10000); // 0으로 나누기 방지
+    const newTrust = Math.max(0, (this.city?.trust || 50) - (reqCrewDown / cityPop) / costOffset * 100);
 
     // 도시 정보 업데이트 (주민 감소, 신뢰도 하락)
     try {
@@ -250,12 +263,12 @@ export class ConscriptCommand extends GeneralCommand {
       throw new Error('징병 처리 중 도시 업데이트 실패');
     }
 
-    const exp = Math.round(reqCrew / 100);
-    const ded = Math.round(reqCrew / 100);
+    const exp = Math.round(Math.max(1, reqCrew) / 100);
+    const ded = Math.round(Math.max(1, reqCrew) / 100);
 
     // 병종 숙련도 증가
     if (typeof general.addDex === 'function') {
-      general.addDex(reqCrewType, reqCrew / 50, false);
+      general.addDex(reqCrewType, Math.max(1, reqCrew) / 50, false);
     }
 
     const [reqGold, reqRice] = this.getCost();
@@ -264,7 +277,9 @@ export class ConscriptCommand extends GeneralCommand {
     general.addDedication(ded);
     general.increaseVarWithLimit('gold', -reqGold, 0);
     general.increaseVarWithLimit('rice', -reqRice, 0);
+    // 징병은 통솔 70% + 매력 30%
     general.increaseVar('leadership_exp', 1);
+    general.increaseVar('charm_exp', 0.5);
     
     this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
     general.checkStatChange();

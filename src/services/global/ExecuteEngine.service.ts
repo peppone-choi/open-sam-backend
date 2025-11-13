@@ -15,10 +15,10 @@ import { SessionStateService } from '../sessionState.service';
 import { getCommand, getNationCommand } from '../../commands';
 import { GeneralLog } from '../../models/general-log.model';
 
-const MAX_TURN = 30;
+const MAX_TURN = 50;
 const MAX_CHIEF_TURN = 12;
 const LOCK_KEY = 'execute_engine_lock';
-const LOCK_TTL = parseInt(process.env.EXECUTE_ENGINE_LOCK_TTL || '30', 10); // 기본 30초 (환경 변수로 조정 가능)
+const LOCK_TTL = parseInt(process.env.EXECUTE_ENGINE_LOCK_TTL || '120', 10); // 기본 120초 (환경 변수로 조정 가능)
 const LOCK_HEARTBEAT_INTERVAL = Math.max(5, Math.floor(LOCK_TTL / 3)); // TTL의 1/3 (최소 5초)
 
 let redisClient: Redis | null = null;
@@ -164,24 +164,39 @@ export class ExecuteEngineService {
     if (sessionData.game_env.year !== undefined) sessionData.year = sessionData.game_env.year;
     if (sessionData.game_env.month !== undefined) sessionData.month = sessionData.game_env.month;
     
-    // turnterm이 없으면 기본값 설정
-    if (!sessionData.turnterm) {
-      console.log(`[${new Date().toISOString()}] ⚠️ Missing turnterm, setting default to 60 minutes`);
-      sessionData.turnterm = 60;
-      sessionData.game_env.turnterm = 60;
+    // turnterm 확인 - 우선순위: sessionData.turnterm > game_env.turnterm > session.turnterm > 기본값 60
+    let turnterm = sessionData.turnterm || sessionData.game_env?.turnterm || session.turnterm;
+    
+    // turnterm이 없으면 기본값 설정 (테스트: 1분, 프로덕션: 60분)
+    if (!turnterm) {
+      const defaultTurnterm = process.env.NODE_ENV === 'production' ? 60 : 1;
+      console.log(`[${new Date().toISOString()}] ⚠️ Missing turnterm, setting default to ${defaultTurnterm} minutes`);
+      turnterm = defaultTurnterm;
+      sessionData.turnterm = defaultTurnterm;
+      sessionData.game_env.turnterm = defaultTurnterm;
+      session.turnterm = defaultTurnterm;
       session.data = sessionData;
       session.markModified('data');
       await sessionRepository.saveDocument(session);
     }
     
     // turnterm 유효성 검사 (1분~1440분 사이만 허용)
-    if (sessionData.turnterm && (sessionData.turnterm < 1 || sessionData.turnterm > 1440)) {
-      console.log(`[${new Date().toISOString()}] ⚠️ Invalid turnterm: ${sessionData.turnterm}, resetting to 60`);
-      sessionData.turnterm = 60;
-      sessionData.game_env.turnterm = 60;
+    if (turnterm < 1 || turnterm > 1440) {
+      const defaultTurnterm = process.env.NODE_ENV === 'production' ? 60 : 1;
+      console.log(`[${new Date().toISOString()}] ⚠️ Invalid turnterm: ${turnterm}, resetting to ${defaultTurnterm}`);
+      turnterm = defaultTurnterm;
+      sessionData.turnterm = defaultTurnterm;
+      sessionData.game_env.turnterm = defaultTurnterm;
+      session.turnterm = defaultTurnterm;
       session.data = sessionData;
       session.markModified('data');
       await sessionRepository.saveDocument(session);
+    }
+    
+    // sessionData.turnterm 동기화 (없으면 설정)
+    if (!sessionData.turnterm && turnterm) {
+      sessionData.turnterm = turnterm;
+      sessionData.game_env.turnterm = turnterm;
     }
     
     // 턴 시각 이전이면 아무것도 하지 않음
@@ -288,23 +303,27 @@ export class ExecuteEngineService {
       const executionStartTime = Date.now();
       console.log(`[${new Date().toISOString()}] 🚀 Starting turn execution for session: ${sessionId}`);
       
-      result = await this.executeAllCommands(sessionId, session, sessionData);
+      // executeAllCommands는 내부에서 락을 해제함 (세션 상태 업데이트 직후)
+      result = await this.executeAllCommands(sessionId, session, sessionData, lockKey, () => {
+        // 락 해제 콜백
+        if (lockAcquired) {
+          redis.del(lockKey).then(() => {
+            lockAcquired = false;
+            console.log(`[${new Date().toISOString()}] 🔓 Lock released (after session state update): ${lockKey}`);
+          }).catch(err => {
+            console.error(`[${new Date().toISOString()}] Failed to release lock:`, err);
+          });
+        }
+        
+        // heartbeat 중지
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+      });
       
       const executionDuration = Date.now() - executionStartTime;
       console.log(`[${new Date().toISOString()}] ✅ Turn execution completed in ${executionDuration}ms for session: ${sessionId}`);
-      
-      // heartbeat 중지 (실행 완료 전에)
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-      }
-      
-      // 락 해제 (실행 완료 전에)
-      if (lockAcquired) {
-        await redis.del(lockKey);
-        lockAcquired = false;
-        console.log(`[${new Date().toISOString()}] 🔓 Lock released (execution complete): ${lockKey}`);
-      }
       
       return {
         success: true,
@@ -321,17 +340,18 @@ export class ExecuteEngineService {
         reason: error.message
       };
     } finally {
-      // heartbeat 중지
+      // heartbeat 중지 (혹시 아직 안 멈췄다면)
       if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
         heartbeatInterval = null;
       }
       
-      // 락 해제
+      // 락 해제 (혹시 executeAllCommands에서 해제 못했다면)
       if (lockAcquired) {
         try {
           await redis.del(lockKey);
-          console.log(`[${new Date().toISOString()}] Lock released: ${lockKey}`);
+          lockAcquired = false;
+          console.log(`[${new Date().toISOString()}] 🔓 Lock released (finally block - safety): ${lockKey}`);
         } catch (error) {
           console.error(`[${new Date().toISOString()}] Failed to release lock:`, error);
         }
@@ -340,16 +360,27 @@ export class ExecuteEngineService {
   }
 
   /**
-   * 모든 커맨드 실행 (executeAllCommand)
+   * 모든 커맨드 실행 (개인 턴타임 방식)
+   * 
+   * 각 장수는 개별 turntime을 가지며, turntime이 현재 시각을 지나면 커맨드가 실행됨
+   * 
+   * @param lockKey - 락 키 (세션 상태 업데이트 후 해제용)
+   * @param releaseLock - 락 해제 콜백 (세션 상태 업데이트 직후 호출)
    */
-  private static async executeAllCommands(sessionId: string, session: any, sessionData: any) {
+  private static async executeAllCommands(
+    sessionId: string, 
+    session: any, 
+    sessionData: any,
+    lockKey?: string,
+    releaseLock?: () => void
+  ) {
     const now = new Date();
     const turntermInMinutes = sessionData.turnterm || 60; // 분 단위
     const turnterm = turntermInMinutes * 60; // 초 단위로 변환
     
-    // starttime이 없으면 현재 turntime으로 설정 (초기화)
-    // 중요: starttime은 게임이 실제로 시작된 시간이어야 하므로, 
-    // turntime이 과거라면 turntime을 starttime으로 설정하는 것이 맞습니다
+    // ========================================
+    // 1. 세션 초기화 (게임 시간 계산용)
+    // ========================================
     if (!sessionData.starttime) {
       const initialTurntime = sessionData.turntime || now;
       sessionData.starttime = initialTurntime instanceof Date ? initialTurntime : new Date(initialTurntime);
@@ -358,201 +389,75 @@ export class ExecuteEngineService {
       console.log(`[${new Date().toISOString()}] ⚠️ starttime was missing, initialized to: ${sessionData.starttime}`);
     }
     
-    // turntime을 Date 객체로 변환 (문자열일 수도 있음)
+    // 현재 게임 년/월 계산 (세션 기준)
     const rawTurntime = sessionData.turntime || now;
     const turntimeDate = rawTurntime instanceof Date ? rawTurntime : new Date(rawTurntime);
-    
-    // 중요: turntime이 현재 시간보다 미래이면, 현재 시간을 기준으로 turnDate를 호출해야 합니다
-    // 그렇지 않으면 매 틱마다 년/월이 증가할 수 있습니다
     const initialTurnDateTime = turntimeDate.getTime() > now.getTime() ? now : turntimeDate;
     
-    // turnDate를 먼저 호출하여 현재 년/월을 정확히 계산
-    // 이는 while 루프 전에 현재 상태를 정확히 파악하기 위함입니다
-    const beforeYear = sessionData.year || 180;
+    const beforeYear = sessionData.year || sessionData.game_env?.year || 184;
     const beforeMonth = sessionData.month || 1;
     ExecuteEngineService.turnDate(initialTurnDateTime, sessionData);
     
-    // 년/월이 변경되었을 때만 저장 (불필요한 DB 업데이트 방지)
+    // 년/월이 변경되었으면 저장
     if (sessionData.year !== beforeYear || sessionData.month !== beforeMonth) {
-      session.data = sessionData; // turnDate 변경사항 반영
-      await sessionRepository.saveDocument(session); // DB에 저장
+      session.data = sessionData;
+      session.markModified('data');
+      await sessionRepository.saveDocument(session);
+      console.log(`[${new Date().toISOString()}] 📅 Game date updated: ${sessionData.year}년 ${sessionData.month}월`);
     }
     
-    // turnterm은 분 단위로 전달해야 함
-    let prevTurn = ExecuteEngineService.cutTurn(turntimeDate, turntermInMinutes);
-    let nextTurn = ExecuteEngineService.addTurn(prevTurn, turntermInMinutes);
-    
-    const maxActionTime = 50; // 최대 실행 시간 (초)
+    // ========================================
+    // 2. 개인 턴타임 처리
+    // ========================================
+    // turntime이 현재 시각을 지난 장수들만 처리
+    const maxActionTime = 10; // 최대 실행 시간 (초)
     const limitActionTime = new Date(now.getTime() + maxActionTime * 1000);
     
     let executed = false;
     let currentTurn: string | null = null;
-    let processedMonths = 0;
 
-    // 현재 턴 이전 월턴까지 모두 처리
-    while (nextTurn <= now) {
-      processedMonths++;
-      if (processedMonths > 100) {
-        console.log(`[${new Date().toISOString()}] ⚠️ Too many months to process (${processedMonths}), stopping to prevent infinite loop`);
-        break;
-      }
-
-      // 전 달의 장수 명령 실행 (prevTurn ~ nextTurn)
-      // 중요: 월턴(nextTurn)이 시작되기 전에 전 달의 모든 장수 명령을 처리해야 함
-      // 년/월은 아직 업데이트되지 않았으므로, 현재 년/월을 사용합니다
-      // (turnDate는 나중에 호출됩니다)
-      const [executionOver, lastTurn] = await this.executeGeneralCommandUntil(
-        sessionId,
-        nextTurn,
-        limitActionTime,
-        sessionData.year || 180,
-        sessionData.month || 1,
-        turnterm,
-        sessionData
-      );
-
-      if (executionOver) {
-        if (lastTurn) {
-          executed = true;
-          currentTurn = lastTurn;
-          sessionData.turntime = lastTurn;
-          sessionData.game_env.turntime = lastTurn;
-          session.data = sessionData;
-          await sessionRepository.saveDocument(session);
-        }
-        return { executed, turntime: currentTurn || sessionData.turntime };
-      }
-
-      // 월 처리 이벤트 (전 달의 장수 명령 처리 후 다음 달로)
-      // turnDate로 년/월을 증가시킴
-      // PHP 코드를 보면 turnDate($nextTurn)을 호출합니다
-      // 이는 nextTurn 시점의 년/월을 계산하는 것입니다
-      // nextTurn은 다음 달의 시작 시간이므로, turnDate는 다음 달의 년/월을 계산합니다
-      // 하지만 실제로는 prevTurn이 처리된 달의 끝 시간이므로,
-      // turnDate는 prevTurn을 기준으로 호출해야 합니다 (현재 처리된 달의 년/월)
-      // 그러나 PHP에서는 turnDate($nextTurn)을 호출하므로, 이는 다음 달의 년/월을 계산합니다
-      // 따라서 우리도 nextTurn을 기준으로 호출하되, 년/월이 실제로 증가했는지 확인해야 합니다
-      // 하지만 turnDate는 절대적인 시간 기반이므로, nextTurn을 기준으로 호출하면 다음 달의 년/월이 계산됩니다
-      // 따라서 우리는 prevTurn을 기준으로 호출해야 합니다 (현재 처리된 달의 년/월)
-      // 하지만 PHP에서는 turnDate($nextTurn)을 호출하므로, 우리도 nextTurn을 기준으로 호출합니다
-      // 단, 년/월이 실제로 증가했는지 확인하기 위해 turnDate 내부에서 이미 체크하고 있습니다
-      ExecuteEngineService.turnDate(nextTurn, sessionData);
-      session.data = sessionData; // sessionData 변경사항을 session에 반영
-      await sessionRepository.saveDocument(session); // DB에 저장 (년/월 업데이트 반영)
-      await this.runEventHandler(sessionId, 'PRE_MONTH', sessionData);
-      await this.preUpdateMonthly(sessionId, sessionData);
-      
-      // 서버 부하 체크 및 refreshLimit 조정
-      try {
-        const { CheckOverhead } = await import('./TrafficManager.service');
-        await CheckOverhead(sessionId);
-      } catch (error: any) {
-        logger.error('[ExecuteEngine] Error checking overhead', {
-          error: error.message
-        });
-      }
-      
-      // 분기 통계 (1월)
-      if (sessionData.month === 1) {
-        await this.checkStatistic(sessionId, sessionData);
-      }
-      
-      await this.runEventHandler(sessionId, 'MONTH', sessionData);
-      await this.postUpdateMonthly(sessionId, sessionData);
-      
-      // 트래픽 업데이트 (월별 통계)
-      try {
-        const { updateTraffic } = await import('./TrafficManager.service');
-        await updateTraffic(sessionId);
-      } catch (error: any) {
-        logger.error('[ExecuteEngine] Error updating traffic', {
-          error: error.message
-        });
-      }
-      
-      // 토너먼트 자동 진행
-      try {
-        const { processTournament } = await import('../tournament/TournamentEngine.service');
-        await processTournament(sessionId);
-      } catch (error: any) {
-        logger.error('[ExecuteEngine] Error processing tournament', {
-          error: error.message
-        });
-      }
-      
-      // 다음 달로
-      prevTurn = nextTurn;
-      nextTurn = ExecuteEngineService.addTurn(prevTurn, turntermInMinutes);
-      sessionData.turntime = prevTurn.toISOString();
-      sessionData.game_env.turntime = prevTurn.toISOString();
-      session.data = sessionData; // turntime 업데이트 반영
-      await sessionRepository.saveDocument(session); // DB에 저장
-    }
-    
-    // while 루프가 실행되었다면 (여러 달을 처리했다면), 마지막 년/월만 브로드캐스트
-    // 이렇게 하면 한 번에 여러 달을 처리할 때 과도한 이벤트 발생을 방지합니다
-    if (processedMonths > 0) {
-      GameEventEmitter.broadcastGameEvent(sessionId, 'month:changed', {
-        year: sessionData.year,
-        month: sessionData.month,
-        turntime: prevTurn.toISOString()
-      });
-    }
-
-    // 현재 시간의 월턴 이후 분 단위 장수 처리
-    // turnDate는 while 루프 안에서 이미 처리되었으므로, 여기서는 현재 시간의 년/월만 확인
-    // PHP에서는 turnDate($prevTurn)를 호출하지만, 이는 년/월이 변경되지 않은 경우에도 호출됩니다
-    // 하지만 년/월이 변경되지 않았다면 DB 업데이트를 하지 않아도 됩니다
-    // 중요: prevTurn이 현재 시간보다 미래이면, 현재 시간을 기준으로 turnDate를 호출해야 합니다
-    // 그렇지 않으면 turntime이 미래일 때 매 틱마다 년/월이 증가할 수 있습니다
-    const turnDateTime = prevTurn.getTime() > now.getTime() ? now : prevTurn;
-    const beforeYearFinal = sessionData.year || 180;
-    const beforeMonthFinal = sessionData.month || 1;
-    ExecuteEngineService.turnDate(turnDateTime, sessionData);
-    // 년/월이 변경되었을 때만 저장 (불필요한 DB 업데이트 방지)
-    if (sessionData.year !== beforeYearFinal || sessionData.month !== beforeMonthFinal) {
-      session.data = sessionData; // turnDate 변경사항 반영
-      await sessionRepository.saveDocument(session); // DB에 저장
-    }
-    
+    // turntime <= now 인 장수들의 커맨드 실행
     const [executionOver, lastTurn] = await this.executeGeneralCommandUntil(
       sessionId,
-      now,
+      now, // 현재 시각까지의 모든 장수 처리
       limitActionTime,
-      sessionData.year,
-      sessionData.month,
+      sessionData.year || 184,
+      sessionData.month || 1,
       turnterm,
       sessionData
     );
 
+    if (executionOver) {
+      // 시간 초과로 중단됨 - 다음 실행 때 나머지 처리
+      if (lastTurn) {
+        executed = true;
+        currentTurn = lastTurn;
+      }
+      return { executed, turntime: currentTurn || sessionData.turntime };
+    }
+
+    // ========================================
+    // 3. 세션 턴타임 업데이트 (참고용)
+    // ========================================
+    // 주의: 세션 turntime은 게임 시간(년/월) 계산에만 사용됨
+    // 개별 장수들은 각자의 turntime을 가지고 있음
+    
     if (lastTurn) {
       executed = true;
       currentTurn = lastTurn;
     }
 
-    // 다음 턴 시간 계산 (turnterm을 더해서)
-    // 현재 턴 시간을 기준으로 다음 턴 시간 계산
-    const nextTurntermInMinutes = sessionData.turnterm || 60;
-    const nextTurntermInSeconds = nextTurntermInMinutes * 60;
+    // 세션 turntime을 현재 시각으로 업데이트 (다음 실행 기준점)
+    sessionData.turntime = now.toISOString();
+    sessionData.game_env.turntime = now.toISOString();
     
-    // 현재 턴 시간 결정: lastTurn이 있으면 사용, 없으면 prevTurn 사용
-    const currentTurntime = currentTurn 
-      ? new Date(currentTurn) 
-      : (prevTurn || new Date(sessionData.turntime || now));
-    
-    // 다음 턴 시간 = 현재 턴 시간 + turnterm
-    // addTurn은 분 단위를 받으므로 nextTurntermInMinutes 사용
-    const nextTurnAt = ExecuteEngineService.addTurn(currentTurntime, nextTurntermInMinutes);
-    
-    // turntime을 다음 턴 시간으로 업데이트
-    sessionData.turntime = nextTurnAt.toISOString();
-    sessionData.game_env.turntime = nextTurnAt.toISOString();
-
     session.data = sessionData;
-    session.markModified('data'); // Mixed 타입 변경사항 추적
+    session.markModified('data');
     await sessionRepository.saveDocument(session);
 
-    // 캐시 무효화 (년/월 변경 시)
+    // ========================================
+    // 4. 캐시 무효화 및 브로드캐스트
+    // ========================================
     try {
       const { cacheManager } = await import('../../cache/CacheManager');
       await cacheManager.delete(`session:state:${sessionId}`);
@@ -561,24 +466,46 @@ export class ExecuteEngineService {
       // 캐시 무효화 실패해도 계속 진행
     }
 
-    // 턴 실행 완료 시 Socket.IO 브로드캐스트 및 상태 업데이트
     if (executed) {
+      // ========================================
+      // 5. 보급선 계산 및 전방 상태 업데이트
+      // ========================================
+      try {
+        const { checkSupply } = await import('../../utils/supply-line');
+        await checkSupply(sessionId);
+        console.log(`[${new Date().toISOString()}] ✅ Supply lines updated for session: ${sessionId}`);
+      } catch (error: any) {
+        console.error(`[${new Date().toISOString()}] ❌ Failed to update supply lines:`, error);
+        // 보급선 업데이트 실패해도 계속 진행
+      }
+      
       // 세션 상태 업데이트
       await SessionStateService.updateSessionState(sessionId, {
         year: sessionData.year,
         month: sessionData.month,
-        turntime: nextTurnAt,
+        turntime: now,
         lastExecuted: new Date()
       });
+      
+      // ✅ 세션 상태 업데이트 완료 - 이제 락을 해제해도 안전함
+      // 브로드캐스트는 락 없이 진행 (다른 인스턴스가 접근 가능)
+      if (releaseLock) {
+        releaseLock();
+      }
       
       GameEventEmitter.broadcastTurnComplete(
         sessionId,
         sessionData.year * 12 + sessionData.month,
-        nextTurnAt
+        now
       );
+    } else {
+      // 실행된 커맨드가 없어도 락 해제
+      if (releaseLock) {
+        releaseLock();
+      }
     }
 
-    return { executed, turntime: nextTurnAt.toISOString() };
+    return { executed, turntime: now.toISOString() };
   }
 
   /**
@@ -620,114 +547,189 @@ export class ExecuteEngineService {
         ? generalTurntime 
         : new Date(generalTurntime);
       
-      // turntime이 date보다 이전이거나 같으면 처리 대상
+      // turntime이 date(현재 시각)보다 이전이거나 같으면 처리 대상
       if (generalTurntimeDate <= date) {
         eligibleGenerals.push(general);
-      } else if (generalTurntimeDate > date) {
-        // turntime이 date(월턴)보다 미래면
-        // 하지만 현재 시간보다는 과거거나 같으면 처리 대상 (월턴이 지났으므로)
-        const now = new Date();
-        if (generalTurntimeDate <= now) {
-          // 월턴은 지났지만 turntime은 아직 안 지남 - 이건 정상 (월턴 후에 처리됨)
-          // 여기서는 처리하지 않음
-        } else {
-          // turntime이 현재 시간보다도 미래면 잘못된 상태
-          // 월턴 시점으로 리셋하고 처리 대상에 추가
-          generalsToFix.push({ no: general.no || general.data?.no, turntime: generalTurntimeDate, willReset: true });
-          eligibleGenerals.push(general); // 리셋 후 처리 대상
-        }
       }
     }
     
-    // 정렬
+    // 정렬: 플레이어 우선, 그 다음 turntime 순서
     eligibleGenerals.sort((a: any, b: any) => {
-      const aTime = a.turntime ? new Date(a.turntime) : sessionTurntime;
-      const bTime = b.turntime ? new Date(b.turntime) : sessionTurntime;
-      return aTime.getTime() - bTime.getTime();
+      const aIsPlayer = (a.npc === 0 || a.data?.npc === 0);
+      const bIsPlayer = (b.npc === 0 || b.data?.npc === 0);
+      
+      // 플레이어가 NPC보다 우선
+      if (aIsPlayer && !bIsPlayer) return -1;
+      if (!aIsPlayer && bIsPlayer) return 1;
+      
+      // 같은 타입이면 turntime 순서
+      const aTime = a.turntime || a.data?.turntime;
+      const bTime = b.turntime || b.data?.turntime;
+      if (!aTime && !bTime) return 0;
+      if (!aTime) return 1;
+      if (!bTime) return -1;
+      
+      const aDate = aTime instanceof Date ? aTime : new Date(aTime);
+      const bDate = bTime instanceof Date ? bTime : new Date(bTime);
+      return aDate.getTime() - bDate.getTime();
     });
     
 
     let currentTurn: string | null = null;
-
-    for (const general of eligibleGenerals) {
-      // lean()으로 가져온 문서는 Mongoose 문서가 아니므로 다시 조회
-      let generalDoc: any;
-      try {
-        generalDoc = await generalRepository.findById(general._id);
-        if (!generalDoc) {
-          // 장수가 삭제되었거나 존재하지 않으면 건너뛰기
-          continue;
-        }
-      } catch (error: any) {
-        // findById 실패 시 (장수가 삭제됨) 건너뛰기
-        logger.warn(`[ExecuteEngine] General not found: ${general._id}`, { error: error.message });
-        continue;
-      }
+    let processedCount = 0;
+    
+    // 배치 크기 설정: 동시에 처리할 장수 수 (최대값)
+    const BATCH_SIZE = 50; // DB 부하 최소화 (1000명 장수 대응) - 병렬 처리 증가
+    
+    console.log(`[Turn] Processing ${eligibleGenerals.length} generals in batches of ${BATCH_SIZE}`);
+    
+    // 배치 단위로 병렬 처리
+    for (let i = 0; i < eligibleGenerals.length; i += BATCH_SIZE) {
+      const batch = eligibleGenerals.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(eligibleGenerals.length / BATCH_SIZE);
       
-      // turntime이 미래로 설정되어 있으면 월턴 시점으로 리셋
-      const generalTurntime = generalDoc.data?.turntime;
-      if (generalTurntime) {
-        const generalTurntimeDate = generalTurntime instanceof Date 
-          ? generalTurntime 
-          : new Date(generalTurntime);
-        const now = new Date();
-        if (generalTurntimeDate > now && generalTurntimeDate > date) {
-          // turntime이 현재 시간과 월턴 모두보다 미래면 월턴 시점으로 리셋
-          const generalNo = generalDoc.no;
-          await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
-            turntime: date.toISOString()
+      console.log(`[Turn] Processing batch ${batchNum}/${totalBatches} (${batch.length} generals)`);
+      
+      // 배치 명령 당기기용 수집
+      const batchPullCommands: Array<{ sessionId: string, generalId: number, isNPC: boolean, generalName: string, beforeLogTime: Date | null }> = [];
+      const batchPullNationCommands: Array<{ sessionId: string, nationId: number, officerLevel: number }> = [];
+      
+      await Promise.all(batch.map(async (general) => {
+        const isPlayer = general.npc === 0 || general.data?.npc === 0;
+        processedCount++;
+        
+        // 진행도 로깅 (200명마다)
+        if (processedCount % 200 === 0) {
+          console.log(`[Turn] Progress: ${processedCount}/${eligibleGenerals.length} generals processed`);
+        }
+        
+        // lean() 결과를 직접 사용 (재조회 제거 - 성능 개선)
+        const generalDoc: any = general;
+        
+        // turntime이 미래로 설정되어 있으면 월턴 시점으로 리셋
+        const generalTurntime = generalDoc.data?.turntime;
+        if (generalTurntime) {
+          const generalTurntimeDate = generalTurntime instanceof Date 
+            ? generalTurntime 
+            : new Date(generalTurntime);
+          const now = new Date();
+          if (generalTurntimeDate > now && generalTurntimeDate > date) {
+            // 로컬 객체만 업데이트 (DB는 나중에 한번에)
+            generalDoc.data.turntime = date.toISOString();
+            if (generalDoc.turntime) {
+              generalDoc.turntime = date.toISOString();
+            }
+          }
+        }
+
+        const generalNo = generalDoc.no || generalDoc.data?.no;
+        const isPlayerGeneral = generalDoc.npc === 0 || generalDoc.data?.npc === 0;
+      
+      // 밀린 턴을 모두 처리 (turntime이 현재 시각을 지날 때까지 반복)
+      let turnsExecuted = 0;
+      const maxTurnsPerGeneral = isPlayerGeneral ? 50 : 10; // 플레이어: 50턴, NPC: 10턴
+      const now = new Date();
+      
+      while (turnsExecuted < maxTurnsPerGeneral) {
+        const currActionTime = new Date();
+        if (currActionTime > limitActionTime) {
+          return [true, currentTurn];
+        }
+        
+        // 현재 장수의 turntime 확인
+        const currentGeneralTurntime = generalDoc.turntime || generalDoc.data?.turntime;
+        if (!currentGeneralTurntime) {
+          break;
+        }
+        
+        const turntimeDate = currentGeneralTurntime instanceof Date 
+          ? currentGeneralTurntime 
+          : new Date(currentGeneralTurntime);
+        
+        // turntime이 현재 시각보다 미래면 처리 완료
+        if (turntimeDate > now) {
+          break;
+        }
+        
+        turnsExecuted++;
+
+        // 유저인 경우 턴 실행 전 로그 시간 기록
+        const isNPC = (generalDoc.npc || generalDoc.data?.npc || 0) >= 2;
+        const generalName = generalDoc.name || generalDoc.data?.name || '';
+        const beforeLogTime = !isNPC ? new Date() : null;
+
+        // 장수 턴 실행 (전역 게임 년/월 사용)
+        const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, year, month, turnterm, gameEnv);
+
+        currentTurn = generalDoc.turntime || new Date().toISOString();
+        
+        // 턴이 처리되었으면 명령 당기기 (배치에 추가)
+        if (turnExecuted) {
+          batchPullCommands.push({ sessionId, generalId: generalNo, isNPC, generalName, beforeLogTime });
+          const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
+          const officerLevel = generalDoc.data?.officer_level || 0;
+          if (nationId && officerLevel >= 5) {
+            batchPullNationCommands.push({ sessionId, nationId, officerLevel });
+          }
+        } else {
+          // 명령이 없어도 turntime은 업데이트해야 함 (무한 루프 방지)
+          console.log(`[Turn] General ${generalNo}: No command executed, but updating turntime`);
+        }
+        
+        // turntime 업데이트 (명령 유무와 관계없이 항상 실행)
+        const deleted = await this.updateTurnTime(sessionId, generalDoc, turnterm, gameEnv);
+        
+        if (deleted) {
+          break; // 장수가 삭제되면 루프 종료
+        }
+        
+        // updateTurnTime이 generalDoc.turntime을 업데이트했으므로
+        // data.turntime도 동기화
+        if (generalDoc.data && generalDoc.turntime) {
+          generalDoc.data.turntime = generalDoc.turntime;
+        }
+      }
+        
+        // 장수 정보 업데이트 브로드캐스트
+        if (generalNo) {
+          GameEventEmitter.broadcastGeneralUpdate(sessionId, generalNo, {
+            turntime: currentTurn
           });
-          // 로컬 객체도 업데이트
-          generalDoc.turntime = date.toISOString();
         }
-      }
-
-      const currActionTime = new Date();
-      if (currActionTime > limitActionTime) {
-        return [true, currentTurn];
-      }
-
-      // 장수 턴 실행 (전역 게임 년/월 사용)
-      await this.executeGeneralTurn(sessionId, generalDoc, year, month, turnterm, gameEnv);
-
-      currentTurn = generalDoc.turntime || new Date().toISOString();
-
-      // 장수 정보 업데이트 브로드캐스트 (전역 년/월 사용)
-      const generalNo = generalDoc.no;
-      if (generalNo) {
-        GameEventEmitter.broadcastGeneralUpdate(sessionId, generalNo, {
-          turntime: currentTurn
-        });
-      }
-      
-      // 턴 당기기 (0번 턴 삭제, 1->0, 2->1, ...)
-      // generalNo를 사용해야 함 (data.no와 no가 다를 수 있음)
-      await this.pullGeneralCommand(sessionId, generalNo, 1);
-      const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
-      const officerLevel = generalDoc.data?.officer_level || 0;
-      await this.pullNationCommand(sessionId, nationId, officerLevel, 1);
-      
-      // 턴 시간 업데이트
-      const deleted = await this.updateTurnTime(sessionId, generalDoc, turnterm, gameEnv);
-      
-      // updateTurnTime에서 장수가 삭제되었으면 save() 스킵
-      if (deleted) {
-        continue;
-      }
-      
-      try {
-        // 레포지토리를 통한 저장
-        const generalNo = generalDoc.data?.no || generalDoc.no;
-        // generalDoc이 Mongoose 문서인지 plain object인지 확인
-        const generalData = generalDoc.data || (typeof generalDoc.toObject === 'function' ? generalDoc.toObject() : generalDoc);
-        await generalRepository.updateBySessionAndNo(sessionId, generalNo, generalData);
-      } catch (error: any) {
-        // save() 실패 시 (장수가 삭제됨) 건너뛰기
-        if (error.name === 'DocumentNotFoundError' || error.message?.includes('No document found')) {
-          logger.warn(`[ExecuteEngine] General deleted during save: ${generalDoc._id}`);
-          continue;
+        
+        const deleted = turnsExecuted > 0 && !generalDoc._id; // 마지막에 삭제되었는지 확인
+        
+        // updateTurnTime에서 장수가 삭제되었으면 save() 스킵
+        if (deleted) {
+          return;
         }
-        throw error;
+        
+        try {
+          // 레포지토리를 통한 저장 (L1/L2 캐시 활용)
+          const generalNo = generalDoc.data?.no || generalDoc.no;
+          const generalData = generalDoc.data || generalDoc;
+          await generalRepository.updateBySessionAndNo(sessionId, generalNo, generalData);
+        } catch (error: any) {
+          // save() 실패 시 (장수가 삭제됨) 건너뛰기
+          if (error.name === 'DocumentNotFoundError' || error.message?.includes('No document found')) {
+            logger.warn(`[ExecuteEngine] General deleted during save: ${generalDoc._id}`);
+            return;
+          }
+          throw error;
+        }
+      }));
+      
+      // 배치 명령 당기기 실행 (병렬 처리)
+      if (batchPullCommands.length > 0 || batchPullNationCommands.length > 0) {
+        await Promise.all([
+          ...batchPullCommands.map(cmd => 
+            this.pullGeneralCommand(cmd.sessionId, cmd.generalId, 1, cmd.isNPC, cmd.generalName, cmd.beforeLogTime)
+          ),
+          ...batchPullNationCommands.map(cmd =>
+            this.pullNationCommand(cmd.sessionId, cmd.nationId, cmd.officerLevel, 1)
+          )
+        ]);
       }
     }
 
@@ -745,7 +747,9 @@ export class ExecuteEngineService {
     month: number,
     turnterm: number,
     gameEnv: any
-  ) {
+  ): Promise<boolean> {
+    const generalId = general.no;
+    
     // 전역 게임 년/월 사용 (모든 장수가 공유)
     // 장수별 턴 카운터 초기화 (없으면 0)
     if (general.turn_count === undefined || general.turn_count === null) {
@@ -756,14 +760,12 @@ export class ExecuteEngineService {
     let generalYear = year;
     let generalMonth = month;
     
-    const generalId = general.no;
-    
     // 전처리 (부상 경감, 병력/군량 소모 등)
     await this.preprocessCommand(sessionId, general, generalYear, generalMonth);
     
     // 블럭 처리
     if (await this.processBlocked(sessionId, general, generalYear, generalMonth)) {
-      return;
+      return true; // 블럭되어도 턴은 소모
     }
 
     // 국가 커맨드 실행 (수뇌부만)
@@ -775,7 +777,22 @@ export class ExecuteEngineService {
     }
 
     // 장수 커맨드 실행 (0번 턴) - 휴식 포함
-    await this.processGeneralCommand(sessionId, general, generalYear, generalMonth, gameEnv);
+    let commandExecuted = false;
+    try {
+      commandExecuted = await this.processGeneralCommand(sessionId, general, generalYear, generalMonth, gameEnv);
+    } catch (error: any) {
+      logger.error(`Command execution failed for general ${general.no}`, {
+        error: error.message,
+        stack: error.stack
+      });
+      // 실패해도 계속 진행 (턴은 소모됨)
+      commandExecuted = true;
+    }
+    
+    // 명령이 실행되지 않았으면 (유저가 명령 미등록) 턴 소모 안 함
+    if (!commandExecuted) {
+      return false;
+    }
 
     // 계승 포인트 증가
     if (!general.inheritance) general.inheritance = {};
@@ -801,6 +818,63 @@ export class ExecuteEngineService {
       general.age_month = 0; // 1년 경과 시 age_month 리셋
       general.turn_count = 0; // 턴 카운터 리셋
     }
+    
+    // 커맨드 실행 완료 후 관련 캐시 무효화 및 브로드캐스트
+    const generalNo = general.no || general.data?.no;
+    const cityId = general.city || general.data?.city || 0;
+    // nationId는 위(line 739)에서 이미 선언됨 - 재사용
+    
+    // 도시/국가 정보가 변경되었을 수 있으므로 캐시 무효화
+    if (cityId) {
+      try {
+        const { cacheManager } = await import('../../cache/CacheManager');
+        await cacheManager.delete(`city:${sessionId}:${cityId}`);
+      } catch (error: any) {
+        // 캐시 무효화 실패해도 계속 진행
+      }
+    }
+    
+    if (nationId) {
+      try {
+        const { cacheManager } = await import('../../cache/CacheManager');
+        await cacheManager.delete(`nation:${sessionId}:${nationId}`);
+      } catch (error: any) {
+        // 캐시 무효화 실패해도 계속 진행
+      }
+    }
+    
+    // NPC가 아닌 경우에만 실시간 업데이트 브로드캐스트
+    const isNPC = (general.npc || general.data?.npc || 0) >= 2;
+    if (!isNPC && generalNo) {
+      GameEventEmitter.broadcastGeneralUpdate(sessionId, generalNo, {
+        // 주요 변경 가능 필드들
+        gold: general.gold,
+        rice: general.rice,
+        crew: general.crew,
+        atmos: general.atmos,
+        train: general.train,
+        injury: general.injury,
+        age: general.age,
+        turntime: general.turntime,
+        leadership: general.leadership,
+        strength: general.strength,
+        intel: general.intel,
+        politics: general.politics,
+        charm: general.charm,
+        turn_count: general.turn_count,
+        age_month: general.age_month
+      });
+      
+      // 도시/국가 변경 브로드캐스트
+      if (cityId) {
+        GameEventEmitter.broadcastCityUpdate(sessionId, cityId, { updated: true });
+      }
+      if (nationId) {
+        GameEventEmitter.broadcastNationUpdate(sessionId, nationId, { updated: true });
+      }
+    }
+    
+    return true; // 턴 처리 완료
   }
 
   /**
@@ -976,6 +1050,19 @@ export class ExecuteEngineService {
         const rng = this.createRNG(sessionId, year, month, general.no, action);
         const result = await command.run(rng);
         
+        // 로그 flush
+        try {
+          const generalObj = command.getGeneral?.();
+          if (generalObj && typeof generalObj.getLogger === 'function') {
+            const logger = generalObj.getLogger();
+            if (logger && typeof logger.flush === 'function') {
+              await logger.flush();
+            }
+          }
+        } catch (error: any) {
+          console.error('Failed to flush logger:', error);
+        }
+        
         if (result) {
           // 성공 시 setNextAvailable 호출
           await command.setNextAvailable?.();
@@ -1043,7 +1130,7 @@ export class ExecuteEngineService {
     year: number,
     month: number,
     gameEnv: any
-  ) {
+  ): Promise<boolean> {
     // generalId는 top-level no 또는 data.no일 수 있음
     const generalId = general.no || general.data?.no;
     
@@ -1059,22 +1146,42 @@ export class ExecuteEngineService {
       'data.turn_idx': 0
     });
 
-    // 명령이 없으면 휴식으로 자동 생성
+    let action = '휴식';
+    let arg = {};
+    
+    // 명령이 없는 경우
     if (!generalTurn) {
-      generalTurn = await generalTurnRepository.create({
-        session_id: sessionId,
-        data: {
-          general_id: generalId,
-          turn_idx: 0,
-          action: '휴식',
-          brief: '휴식',
-          arg: {}
-        }
-      });
+      const npcType = general.npc || general.data?.npc || 0;
+      const owner = general.owner || general.data?.owner || '0';
+      const generalName = general.name || general.data?.name || `General ${generalId}`;
+      
+      // owner가 'NPC', '0', 0, null, undefined이면 AI 조종
+      // owner가 유저 ID (숫자 > 0 또는 문자열)이면 플레이어 조종
+      const isNPCOwned = !owner || owner === '0' || owner === 0 || owner === 'NPC';
+      const hasUserOwner = !isNPCOwned;
+      
+      if (hasUserOwner) {
+        // 유저가 빙의했는데 명령이 없으면 휴식으로 처리 (PHP와 동일)
+        console.log(`[Turn] ${generalName} (Player-controlled): No command, resting`);
+        const date = `${year}년 ${month}월`;
+        await this.pushGeneralActionLog(
+          sessionId,
+          generalId,
+          `아무것도 실행하지 않았습니다. <1>${date}</>`,
+          year,
+          month
+        );
+        return true; // 휴식으로 턴 처리됨
+      }
+      
+      // 유저가 빙의하지 않은 NPC는 명령이 없으면 AI가 결정
+      console.log(`[Turn] ${generalName} (NPC, type=${npcType}): No command, will try AI decision`);
+      action = '휴식';
+      arg = {};
+    } else {
+      action = generalTurn.data?.action || '휴식';
+      arg = generalTurn.data?.arg || {};
     }
-
-    let action = generalTurn.data?.action || '휴식';
-    let arg = generalTurn.data?.arg || {};
 
     // killturn 처리 (PHP 로직과 동일)
     const killturn = gameEnv.killturn || 30;
@@ -1096,8 +1203,12 @@ export class ExecuteEngineService {
       general.killturn = killturn;
     }
 
-    // NPC (npc === 2)인 경우 AI가 자동으로 커맨드 결정
-    if (npcType === 2 && action === '휴식') {
+    // NPC이고 유저가 빙의하지 않았고 명령이 휴식(또는 없음)인 경우 AI가 자동으로 커맨드 결정
+    const owner = general.owner || general.data?.owner || '0';
+    const isNPCOwned = !owner || owner === '0' || owner === 0 || owner === 'NPC';
+    const isAIControlled = isNPCOwned; // owner가 'NPC', '0', 0, null이면 AI가 조종
+    
+    if (isAIControlled && (action === '휴식' || !generalTurn)) {
       try {
         const { AIEngine, AIDifficulty } = await import('../../core/ai-engine');
         
@@ -1115,7 +1226,16 @@ export class ExecuteEngineService {
         const city = general._cached_city || null;
         const nation = general._cached_nation || null;
         
+        console.log(`[AI] General ${generalId} (${general.name || general.data?.name}):`, {
+          npcType,
+          hasCity: !!city,
+          cityId: city?.city,
+          hasNation: !!nation,
+          nationId: nation?.nation
+        });
+        
         if (!city) {
+          console.log(`[AI] General ${generalId}: No city, skipping AI decision`);
           return;
         }
         
@@ -1125,6 +1245,13 @@ export class ExecuteEngineService {
           nation,
           { year, month, session_id: sessionId, ...gameEnv }
         );
+        
+        console.log(`[AI] General ${generalId} decision:`, {
+          command: decision?.command,
+          reason: decision?.reason,
+          priority: decision?.priority,
+          args: decision?.args
+        });
         
         if (decision && decision.command !== 'neutral') {
           // AI가 결정한 커맨드를 0번 턴에 설정
@@ -1143,6 +1270,8 @@ export class ExecuteEngineService {
             }
           );
           
+          console.log(`[AI] General ${generalId}: Command set to ${decision.command}`);
+          
           // generalTurn 다시 조회
           generalTurn = await generalTurnRepository.findOneByFilter({
             session_id: sessionId,
@@ -1155,20 +1284,35 @@ export class ExecuteEngineService {
             action = generalTurn.data?.action || generalTurn.action || '휴식';
             arg = generalTurn.data?.arg || generalTurn.arg || {};
           }
+        } else {
+          console.log(`[AI] General ${generalId}: No action (neutral or null)`, { decision });
         }
       } catch (error: any) {
         // AI 실패 시 휴식
+        console.error(`[AI] General ${generalId} error:`, error.message);
         return;
       }
     }
 
-    // action이 여전히 휴식이면 종료
+    // 휴식인 경우 로그만 남기고 턴 소비
     if (action === '휴식') {
-      return;
+      console.log(`[Turn] General ${generalId} (${general.name || general.data?.name}): Resting`);
+      
+      // PHP와 동일하게 날짜 포함 (년 월 형식)
+      const date = `${year}년 ${month}월`;
+      await this.pushGeneralActionLog(
+        sessionId,
+        generalId,
+        `아무것도 실행하지 않았습니다. <1>${date}</>`,
+        year,
+        month
+      );
+      return true; // 휴식도 턴 처리됨
     }
 
     const CommandClass = getCommand(action);
     if (!CommandClass) {
+      console.error(`[Turn] General ${generalId}: Unknown command '${action}'`);
       await this.pushGeneralActionLog(
         sessionId,
         general.no,
@@ -1176,13 +1320,51 @@ export class ExecuteEngineService {
         year,
         month
       );
-      return;
+      return true; // 에러도 턴 소모
     }
+    
+    console.log(`[Turn] General ${generalId} (${general.name || general.data?.name}): Executing ${action}`, arg);
 
+    let command: any = null; // catch 블록에서도 접근 가능하도록 선언
+    
     try {
       await this.loadCityAndNation(general, sessionId);
-      const env = { year, month, session_id: sessionId, ...gameEnv };
-      let command = new CommandClass(general, env, arg);
+      
+      // 국가 소유 도시 목록 로드 (병과 제약조건 체크용)
+      const nationId = general.nation || general.data?.nation || 0;
+      let ownedCities: any[] = [];
+      if (nationId > 0) {
+        try {
+          const cities = await cityRepository.findByFilter({
+            session_id: sessionId,
+            'data.nation': nationId
+          });
+          ownedCities = cities.map((city: any) => ({
+            city: city.data?.city || city.city,
+            name: city.data?.name || city.name,
+            nation: city.data?.nation || city.nation,
+            region: city.data?.region || city.region,
+            level: city.data?.level || city.level,
+            secu: city.data?.secu || city.secu
+          }));
+        } catch (error: any) {
+          logger.warn(`[ExecuteEngine] Failed to load owned cities: ${error.message}`);
+        }
+      }
+      
+      const env = { 
+        year, 
+        month, 
+        session_id: sessionId, 
+        ownedCities,  // 제약조건에서 사용
+        ...gameEnv 
+      };
+      
+      // GeneralAdapter로 래핑 (Plain Object와 Mongoose Document 모두 지원)
+      const { GeneralAdapter } = await import('../../adapters/GeneralAdapter');
+      const generalAdapter = new GeneralAdapter(general);
+      
+      command = new CommandClass(generalAdapter, env, arg);
       
       // PHP 로직: while(true)로 조건 체크 및 실행 반복
       while (true) {
@@ -1206,6 +1388,19 @@ export class ExecuteEngineService {
         const rng = this.createRNG(sessionId, year, month, generalId, action);
         const result = await command.run(rng);
         
+        // 로그 flush
+        try {
+          const generalObj = command.getGeneral?.();
+          if (generalObj && typeof generalObj.getLogger === 'function') {
+            const logger = generalObj.getLogger();
+            if (logger && typeof logger.flush === 'function') {
+              await logger.flush();
+            }
+          }
+        } catch (error: any) {
+          console.error('Failed to flush logger:', error);
+        }
+        
         if (result) {
           // 성공 시 setNextAvailable 호출
           await command.setNextAvailable?.();
@@ -1225,10 +1420,10 @@ export class ExecuteEngineService {
         general.clearActivatedSkill();
       }
       
-      // 로거 flush (ActionLogger인 경우)
-      if (command && typeof command.logger?.flush === 'function') {
-        await command.logger.flush();
-      }
+      // 로거 flush는 while 루프 안에서 이미 처리됨 (1270번 줄)
+      // 중복 flush 방지를 위해 제거
+      
+      return true; // 명령 실행 완료
       
     } catch (error: any) {
       console.error(`Command ${action} failed:`, error);
@@ -1240,14 +1435,20 @@ export class ExecuteEngineService {
         month
       );
       
-      // 에러 시에도 로거 flush
-      if (command && typeof command.logger?.flush === 'function') {
-        try {
-          await command.logger.flush();
-        } catch (flushError) {
-          console.error('Logger flush error:', flushError);
+      // 에러 시 로거 flush (에러 발생 시에만 필요)
+      try {
+        const generalObj = command?.getGeneral?.();
+        if (generalObj && typeof generalObj.getLogger === 'function') {
+          const logger = generalObj.getLogger();
+          if (logger && typeof logger.flush === 'function') {
+            await logger.flush();
+          }
         }
+      } catch (flushError) {
+        console.error('Logger flush error:', flushError);
       }
+      
+      return true; // 에러도 턴 소모
     }
   }
 
@@ -1256,7 +1457,7 @@ export class ExecuteEngineService {
    * PHP: new RandUtil(new LiteHashDRBG(Util::simpleSerialize(...)))
    */
   private static createRNG(sessionId: string, year: number, month: number, generalId: number, commandName: string): any {
-    // 간단한 RNG 구현 (실제로는 LiteHashDRBG 사용해야 함)
+    // RandUtil 인스턴스 생성
     const seed = `${sessionId}_${year}_${month}_${generalId}_${commandName}`;
     let seedValue = 0;
     for (let i = 0; i < seed.length; i++) {
@@ -1264,22 +1465,18 @@ export class ExecuteEngineService {
       seedValue = seedValue & seedValue; // Convert to 32bit integer
     }
     
-    const rng = {
-      choiceUsingWeightPair: (pairs: any[]) => {
+    const { RandUtil } = require('../../utils/RandUtil');
+    const rng = new RandUtil(Math.abs(seedValue));
+    
+    // 레거시 호환을 위한 추가 메서드
+    if (!rng.choiceUsingWeightPair) {
+      rng.choiceUsingWeightPair = (pairs: any[]) => {
         if (!pairs || pairs.length === 0) return null;
-        const total = pairs.reduce((sum, [val, weight]) => sum + (weight || 0), 0);
-        let random = Math.abs(Math.sin(seedValue++)) * total;
-        for (const [val, weight] of pairs) {
-          random -= (weight || 0);
-          if (random <= 0) return val;
-        }
-        return pairs[0][0];
-      },
-      choiceUsingWeight: (obj: any) => {
-        const pairs = Object.entries(obj).map(([key, weight]) => [key, weight as number]);
-        return rng.choiceUsingWeightPair(pairs);
-      }
-    };
+        const weights = pairs.map(([, w]) => w || 0);
+        const values = pairs.map(([v]) => v);
+        return rng.weightedSample(values, weights);
+      };
+    }
     
     return rng;
   }
@@ -1290,7 +1487,7 @@ export class ExecuteEngineService {
    */
   private static async updateTurnTime(sessionId: string, general: any, turnterm: number, gameEnv: any): Promise<boolean> {
     // 전역 게임 년/월 사용
-    const year = gameEnv.year || 180;
+    const year = gameEnv.year || 184;
     const month = gameEnv.month || 1;
     const killturn = general.killturn;
     
@@ -1350,7 +1547,8 @@ export class ExecuteEngineService {
     }
 
     // addTurn은 분 단위를 받아야 함
-    const turntermInMinutes = gameEnv.turnterm || 60;
+    const defaultTurnterm = process.env.NODE_ENV === 'production' ? 60 : 1;
+    const turntermInMinutes = gameEnv.turnterm || defaultTurnterm;
     let newTurntime = ExecuteEngineService.addTurn(currentTurntime, turntermInMinutes);
 
     // PHP: nextTurnTimeBase를 사용한 개인별 턴타임 조정
@@ -1396,8 +1594,9 @@ export class ExecuteEngineService {
 
   /**
    * 턴 당기기 (장수)
+   * 유저인 경우 general_action_log의 최근 메시지들을 console.log로 출력
    */
-  private static async pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
+  private static async pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number, isNPC: boolean = false, generalName: string = '', beforeLogTime: Date | null = null) {
     if (turnCnt === 0 || turnCnt >= MAX_TURN) {
       return;
     }
@@ -1419,6 +1618,34 @@ export class ExecuteEngineService {
       'data.general_id': generalId,
       'data.turn_idx': { $lt: 0 }
     });
+
+    // 유저인 경우 턴 실행 후 생성된 모든 로그를 출력
+    if (!isNPC && beforeLogTime) {
+      try {
+        const { GeneralRecord } = await import('../../models/general_record.model');
+        
+        // 턴 실행 후 생성된 모든 로그 가져오기 (모든 log_type)
+        const logs = await GeneralRecord.find({
+          session_id: sessionId,
+          general_id: generalId,
+          created_at: { $gte: beforeLogTime }
+        })
+          .sort({ created_at: 1 }) // 시간순 정렬
+          .limit(20) // 최대 20개
+          .lean();
+
+        const displayName = generalName ? `[${generalName}]` : `[ID:${generalId}]`;
+        
+        for (const log of logs) {
+          if (log.text) {
+            const logTypeLabel = log.log_type ? `[${log.log_type}]` : '';
+            console.log(`${displayName}${logTypeLabel} ${log.text}`);
+          }
+        }
+      } catch (error) {
+        // 로그 조회 실패는 무시
+      }
+    }
   }
 
   /**
@@ -1632,7 +1859,7 @@ export class ExecuteEngineService {
    */
   public static turnDate(turntime: Date | string, gameEnv: any): { year: number; month: number; turn: number } {
     // starttime과 startyear 가져오기
-    const startyear = gameEnv.startyear || 180;
+    const startyear = gameEnv.startyear || gameEnv.startYear || 184;
     const turntermInMinutes = gameEnv.turnterm || 60; // 분 단위
     
     // curtime을 Date 객체로 변환
@@ -1640,18 +1867,23 @@ export class ExecuteEngineService {
     const curturn = ExecuteEngineService.cutTurn(curtime, turntermInMinutes);
     
     let starttime = gameEnv.starttime ? new Date(gameEnv.starttime) : null;
-    
-    // starttime이 없거나, 비정상적으로 오래된 경우 리셋
-    // 비정상 기준: 현재 시간과 10년 이상 차이나거나, year가 비정상적으로 큼
-    const MAX_YEAR_DIFF = 10; // 최대 10년
-    const MAX_REASONABLE_YEAR = 10000; // 합리적인 최대 년도
     const now = new Date();
     
+    // starttime 유효성 검증
+    // 1. starttime이 없는 경우
+    // 2. year가 비정상적으로 큰 경우
+    // 3. starttime이 1000년 이전인 경우 (게임 년도로 잘못 설정된 경우)
+    const MAX_REASONABLE_YEAR = 10000;
+    const MIN_REASONABLE_STARTTIME = new Date('1000-01-01').getTime();
+    
     const needsReset = !starttime || 
-                       Math.abs(now.getTime() - starttime.getTime()) > (MAX_YEAR_DIFF * 365 * 24 * 60 * 60 * 1000) ||
-                       (gameEnv.year && gameEnv.year > MAX_REASONABLE_YEAR);
+                       (gameEnv.year && gameEnv.year > MAX_REASONABLE_YEAR) ||
+                       (starttime.getTime() < MIN_REASONABLE_STARTTIME);
     
     if (needsReset) {
+      const reason = !starttime ? 'missing' : 
+                     (starttime.getTime() < MIN_REASONABLE_STARTTIME ? 'too old (likely game year instead of real time)' : 'invalid year');
+      
       // starttime을 현재 시간으로 리셋
       starttime = curturn;
       gameEnv.starttime = curturn.toISOString();
@@ -1659,7 +1891,7 @@ export class ExecuteEngineService {
       gameEnv.year = startyear;
       gameEnv.month = 1;
       
-      console.warn(`[${new Date().toISOString()}] ⚠️ starttime was invalid, reset to current time. year/month reset to ${startyear}/1`);
+      console.warn(`[${new Date().toISOString()}] ⚠️ starttime was ${reason}, reset to current time. year/month reset to ${startyear}/1`);
     }
     
     const starttimeCut = ExecuteEngineService.cutTurn(starttime, turntermInMinutes);
@@ -1671,18 +1903,22 @@ export class ExecuteEngineService {
     
     // ⚠️ CRITICAL FIX: 오버플로우 방지
     // 비정상적으로 큰 num이 계산되었다면 starttime이 손상된 것
-    const MAX_REASONABLE_TURNS = 10 * 365 * 24 * 60 / turntermInMinutes; // 10년치 턴
+    // 일반적으로 starttime이 게임 년도(예: 0187-01-01)로 잘못 설정된 경우 발생
+    const MAX_REASONABLE_TURNS = 50 * 365 * 24 * 60 / turntermInMinutes; // 50년치 턴으로 완화
     if (num > MAX_REASONABLE_TURNS) {
       console.error(`[${new Date().toISOString()}] ⚠️ CRITICAL: Calculated ${num} turns (> ${MAX_REASONABLE_TURNS}), starttime corruption detected!`);
       console.error(`starttime: ${starttime.toISOString()}, curturn: ${curturn.toISOString()}`);
+      console.error(`This usually happens when starttime is set to game year instead of real time.`);
       
-      // starttime을 현재 시간으로 강제 리셋
-      starttime = curturn;
-      gameEnv.starttime = curturn.toISOString();
+      // starttime을 현재 시간으로 강제 리셋하고 년/월을 startyear로 초기화
+      const correctedStarttime = curturn;
+      gameEnv.starttime = correctedStarttime.toISOString();
       gameEnv.year = startyear;
       gameEnv.month = 1;
       
-      // 리셋 후 다시 계산
+      console.log(`[${new Date().toISOString()}] ✅ Fixed: starttime reset to ${correctedStarttime.toISOString()}, year/month reset to ${startyear}/1`);
+      
+      // 수정된 값 반환 (호출한 쪽에서 DB 저장)
       return { year: startyear, month: 1, turn: 1 };
     }
     
@@ -1805,6 +2041,7 @@ export class ExecuteEngineService {
 
   /**
    * 장수 액션 로그 추가
+   * PHP의 general_record 테이블과 호환되도록 GeneralRecord 모델 사용
    */
   private static async pushGeneralActionLog(
     sessionId: string,
@@ -1813,25 +2050,27 @@ export class ExecuteEngineService {
     year: number,
     month: number
   ) {
-    const date = `${year}년 ${month}월`;
-    const fullMessage = `${message} <1>${date}</>`;
-    
     try {
-      const maxId = await GeneralLog.findOne({ session_id: sessionId })
-        .sort({ id: -1 })
-        .limit(1);
+      const { GeneralRecord } = await import('../../models/general_record.model');
       
-      const newId = (maxId?.id || 0) + 1;
-
-      await GeneralLog.create({
-        id: newId,
+      const record = await GeneralRecord.create({
         session_id: sessionId,
         general_id: generalId,
         log_type: 'action',
-        message: fullMessage,
-        data: { year, month },
+        year: year,
+        month: month,
+        text: message,
         created_at: new Date()
       });
+      
+      // 웹소켓으로 실시간 브로드캐스트
+      GameEventEmitter.broadcastLogUpdate(
+        sessionId,
+        generalId,
+        'action',
+        record.id || record._id,
+        message
+      );
     } catch (error) {
       console.error('pushGeneralActionLog error:', error);
     }

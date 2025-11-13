@@ -33,16 +33,35 @@ export async function checkSupply(sessionId: string): Promise<void> {
 
   // 국가별 수도 조회
   const nations = await Nation.find({ session_id: sessionId })
-    .select('nation data')
+    .select('nation data capital')
     .lean();
 
   const capitals: Record<number, number> = {};
+  const nationCityCount: Record<number, number> = {};
+  
   for (const nation of nations) {
     const nationId = nation.nation || 0;
     if (nationId === 0) continue;
-    const capital = nation.data?.capital || 0;
+    
+    // 국가별 도시 수 카운트
+    nationCityCount[nationId] = 0;
+    for (const city of Object.values(cityMap)) {
+      if (city.nation === nationId) {
+        nationCityCount[nationId]++;
+      }
+    }
+    
+    const capital = nation.capital || nation.data?.capital || 0;
     if (capital && cityMap[capital] && cityMap[capital].nation === nationId) {
       capitals[nationId] = capital;
+    } else if (nationCityCount[nationId] === 1) {
+      // 도시가 1개인 국가는 그 도시를 수도로 설정
+      for (const city of Object.values(cityMap)) {
+        if (city.nation === nationId) {
+          capitals[nationId] = city.id;
+          break;
+        }
+      }
     }
   }
 
@@ -71,7 +90,10 @@ export async function checkSupply(sessionId: string): Promise<void> {
             cityNeighborsMap[cityData.id] = cityData.neighbors;
           }
         }
+        console.log(`[checkSupply] Loaded ${Object.keys(cityNeighborsMap).length} cities with neighbors from ${citiesJsonPath}`);
       }
+    } else {
+      console.warn(`[checkSupply] Cities JSON not found: ${citiesJsonPath}`);
     }
   } catch (error: any) {
     console.error('Failed to load city neighbors from scenario data:', error);
@@ -97,22 +119,32 @@ export async function checkSupply(sessionId: string): Promise<void> {
     if (capital) {
       capital.supply = true;
       queue.push({ id: capitalId, nation: parseInt(nationId) });
+      console.log(`[checkSupply] Nation ${nationId}: Capital ${capitalId} set as supply source`);
+    } else {
+      console.warn(`[checkSupply] Nation ${nationId}: Capital ${capitalId} not found in cityMap`);
     }
   }
 
   // BFS로 인접 도시 탐색
+  let suppliedCount = 0;
   while (queue.length > 0) {
     const current = queue.shift()!;
     const neighbors = cityNeighborsMap[current.id] || [];
+    
+    if (neighbors.length === 0) {
+      console.warn(`[checkSupply] City ${current.id} has no neighbors!`);
+    }
     
     for (const neighborId of neighbors) {
       const neighbor = cityMap[neighborId];
       if (neighbor && !neighbor.supply && neighbor.nation === current.nation) {
         neighbor.supply = true;
         queue.push({ id: neighborId, nation: current.nation });
+        suppliedCount++;
       }
     }
   }
+  console.log(`[checkSupply] BFS completed. Supplied ${suppliedCount} cities via BFS`);
   
   // 보급 가능 도시 업데이트
   const supplyCities: number[] = [];
@@ -132,18 +164,24 @@ export async function checkSupply(sessionId: string): Promise<void> {
     supplyCities.push(city.city);
   }
 
-  // DB 업데이트
+  // DB 업데이트 (올바른 순서로)
+  // 1. 먼저 모든 국가 도시를 보급 끊김으로 설정
+  const resetResult = await City.updateMany(
+    { session_id: sessionId, nation: { $ne: 0 } },
+    { $set: { supply: 0 } }
+  );
+  console.log(`[checkSupply] Reset ${resetResult.modifiedCount} cities to supply=0`);
+
+  // 2. 보급이 연결된 도시(수도에서 연결된 도시 + 공백지)만 supply = 1로 설정
   if (supplyCities.length > 0) {
-    await City.updateMany(
+    const updateResult = await City.updateMany(
       { session_id: sessionId, city: { $in: supplyCities } },
       { $set: { supply: 1 } }
     );
+    console.log(`[checkSupply] Set ${updateResult.modifiedCount}/${supplyCities.length} cities to supply=1`, supplyCities);
+  } else {
+    console.warn(`[checkSupply] No cities with supply! All cities disconnected?`);
   }
-
-  await City.updateMany(
-    { session_id: sessionId, nation: { $ne: 0 }, supply: { $ne: 1 } },
-    { $set: { supply: 0 } }
-  );
 }
 
 /**

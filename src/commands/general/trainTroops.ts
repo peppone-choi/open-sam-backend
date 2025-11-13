@@ -23,12 +23,14 @@ export class TrainTroopsCommand extends GeneralCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
     ];
 
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralTrainMargin(GameConst.maxTrainByCommand),
     ];
@@ -69,8 +71,10 @@ export class TrainTroopsCommand extends GeneralCommand {
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
+    // 0으로 나누기 방지
+    const crew = Math.max(1, general.getVar('crew'));
     const score = Util.clamp(
-      Util.round(general.getLeadership() * 100 / general.getVar('crew') * GameConst.trainDelta),
+      Util.round(general.getLeadership() * 100 / crew * GameConst.trainDelta),
       0,
       Util.clamp(GameConst.maxTrainByCommand - general.getVar('train'), 0)
     );
@@ -107,7 +111,7 @@ export class TrainTroopsCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

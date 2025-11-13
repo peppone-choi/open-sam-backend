@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { Board, Comment, General } from '../models';
+import { checkPermission } from '../utils/permission-helper';
 
 const BoardModel = Board as any;
 const CommentModel = Comment as any;
@@ -26,18 +27,18 @@ router.post('/get-articles', authenticate, async (req, res) => {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
-    const nationId = general.data?.nation || general.nation || 0;
-    if (!nationId || nationId === 0) {
-      return res.status(403).json({ result: false, reason: '국가에 소속되어있지 않습니다.' });
-    }
-
     const isSecret = req.body.isSecret || false;
-    const officerLevel = general.data?.officer_level || general.officerLevel || 0;
-    const permission = officerLevel >= 5 ? 2 : officerLevel >= 1 ? 1 : 0;
-
-    if (isSecret && permission < 2) {
-      return res.status(403).json({ result: false, reason: '권한이 부족합니다. 수뇌부가 아닙니다.' });
+    
+    // 권한 체크 (PHP func.php:390-434)
+    const perm = checkPermission(general);
+    if (isSecret && !perm.canAccessSecret) {
+      return res.status(403).json({ result: false, reason: perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.' });
     }
+    if (!perm.canAccessBoard) {
+      return res.status(403).json({ result: false, reason: perm.message });
+    }
+
+    const nationId = general.data?.nation || general.nation || 0;
 
     const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
 
@@ -118,14 +119,23 @@ router.post('/post-article', authenticate, async (req, res) => {
     }
 
     const general = await GeneralModel.findOne({ owner: String(userId) })
-      .select('no data.nation data.name')
+      .select('no data.nation data.name data.officer_level data.permission data.penalty')
       .lean();
 
-    if (!general || !general.data?.nation || general.data.nation === 0) {
-      return res.status(403).json({ result: false, reason: '국가에 소속되어있지 않습니다.' });
+    if (!general) {
+      return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
     }
 
     const { title, text, isSecret } = req.body;
+
+    // 권한 체크
+    const perm = checkPermission(general);
+    if (isSecret && !perm.canAccessSecret) {
+      return res.status(403).json({ result: false, reason: perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.' });
+    }
+    if (!perm.canAccessBoard) {
+      return res.status(403).json({ result: false, reason: perm.message });
+    }
     const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
 
     // 게시물 번호 생성

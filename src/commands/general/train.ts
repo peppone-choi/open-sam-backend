@@ -25,6 +25,8 @@ export class TrainCommand extends GeneralCommand {
 
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralValue('train', '훈련', '>=', 20),
       ConstraintHelper.ReqGeneralValue('atmos', '사기', '>=', 20),
@@ -102,16 +104,19 @@ export class TrainCommand extends GeneralCommand {
     }
 
     // 경험치
-    const exp = general.getVar('crew') / 400;
+    const crew = Math.max(1, general.getVar('crew'));
+    const exp = crew / 400;
 
     // 병종 숙련도 증가
     general.addDex(general.getCrewTypeObj(), score, false);
 
-    // 능력치 증가 (확률적으로 통솔/무력/지력 중 하나)
+    // 능력치 증가 (확률적으로 통무지정매 중 하나)
     const incStat = rng.choiceUsingWeight({
       'leadership_exp': general.getLeadership(false, false, false, false),
       'strength_exp': general.getStrength(false, false, false, false),
-      'intel_exp': general.getIntel(false, false, false, false)
+      'intel_exp': general.getIntel(false, false, false, false),
+      'politics_exp': general.getPolitics(false, false, false, false),
+      'charm_exp': general.getCharm(false, false, false, false)
     });
 
     const [reqGold, reqRice] = this.getCost();

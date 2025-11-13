@@ -15,6 +15,7 @@ import { eventRepository } from '../../repositories/event.repository';
 import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import { troopRepository } from '../../repositories/troop.repository';
 import { worldHistoryRepository } from '../../repositories/world-history.repository';
+import { SessionSync } from '../../utils/session-sync';
 
 /**
  * 시나리오 초기화 서비스 (CQRS 통합 버전)
@@ -30,15 +31,63 @@ export class ScenarioResetService {
    * 시나리오 초기화 실행
    * @param sessionId 세션 ID
    * @param scenarioId 시나리오 ID (예: "sangokushi-huangjin")
+   * @param options 추가 옵션 (turnterm 등)
    */
-  static async resetScenario(sessionId: string, scenarioId: string): Promise<void> {
+  static async resetScenario(sessionId: string, scenarioId: string, options?: { turnterm?: number }): Promise<void> {
     console.log(`[ScenarioReset] Start resetting session ${sessionId} with scenario ${scenarioId}`);
     console.log(`[ScenarioReset] Scenarios directory: ${this.SCENARIOS_DIR}`);
 
-    // 1. 시나리오 메타데이터 로드
-    const scenarioPath = path.join(this.SCENARIOS_DIR, scenarioId, 'scenario.json');
-    console.log(`[ScenarioReset] Loading scenario: ${scenarioPath}`);
-    const scenarioMetadata = await this.loadScenarioFile(scenarioPath);
+    // 1. 시나리오 ID 파싱 (예: "sangokushi/scenario-1010" -> dir=sangokushi, file=scenario_1010.json)
+    let scenarioDir: string;
+    let phpScenarioFile: string | null = null;
+    
+    if (scenarioId.includes('/')) {
+      const parts = scenarioId.split('/');
+      scenarioDir = parts[0];
+      const fileId = parts[1]; // scenario-1010
+      phpScenarioFile = fileId.replace('-', '_') + '.json'; // scenario_1010.json
+    } else {
+      scenarioDir = scenarioId;
+    }
+    
+    // 2. 시나리오 메타데이터 로드
+    let scenarioMetadata: any = {};
+    
+    if (phpScenarioFile) {
+      // PHP 시나리오 파일 직접 로드
+      const phpScenarioPath = path.join(this.SCENARIOS_DIR, scenarioDir, phpScenarioFile);
+      console.log(`[ScenarioReset] Loading PHP scenario: ${phpScenarioPath}`);
+      
+      // 파일 존재 확인
+      try {
+        await fs.access(phpScenarioPath);
+        scenarioMetadata = await this.loadScenarioFile(phpScenarioPath);
+      } catch (err) {
+        throw new Error(`PHP scenario file not found: ${phpScenarioPath}`);
+      }
+    } else {
+      // 기존 scenario.json 방식
+      const scenarioPath = path.join(this.SCENARIOS_DIR, scenarioDir, 'scenario.json');
+      console.log(`[ScenarioReset] Loading scenario: ${scenarioPath}`);
+      
+      // scenario.json 존재 확인
+      try {
+        await fs.access(scenarioPath);
+        scenarioMetadata = await this.loadScenarioFile(scenarioPath);
+      } catch (err) {
+        // scenario.json이 없으면 PHP 시나리오 파일 찾기
+        const phpScenarioFiles = await fs.readdir(path.join(this.SCENARIOS_DIR, scenarioDir)).catch(() => []);
+        const foundPhpFile = phpScenarioFiles.find(f => f.startsWith('scenario_') && f.endsWith('.json'));
+        
+        if (foundPhpFile) {
+          const phpScenarioPath = path.join(this.SCENARIOS_DIR, scenarioDir, foundPhpFile);
+          console.log(`[ScenarioReset] Found PHP scenario file: ${phpScenarioPath}`);
+          scenarioMetadata = await this.loadScenarioFile(phpScenarioPath);
+        } else {
+          throw new Error(`No scenario file found in directory: ${scenarioDir}`);
+        }
+      }
+    }
 
     // 2. 세션 찾기
     const session = await sessionRepository.findBySessionId(sessionId);
@@ -50,7 +99,7 @@ export class ScenarioResetService {
     await this.clearSessionData(sessionId);
 
     // 4. 세션 초기화
-    await this.initializeSession(session, scenarioMetadata);
+    await this.initializeSession(session, scenarioMetadata, options);
 
     // 5. 도시 생성 (기본 cities.json 로드)
     await this.initializeCities(sessionId, scenarioId, scenarioMetadata);
@@ -171,7 +220,7 @@ export class ScenarioResetService {
   /**
    * 세션 초기화
    */
-  private static async initializeSession(session: any, scenarioMetadata: any): Promise<void> {
+  private static async initializeSession(session: any, scenarioMetadata: any, options?: { turnterm?: number }): Promise<void> {
     console.log(`[ScenarioReset] Initializing session with scenario: ${scenarioMetadata.name}`);
 
     session.data = session.data || {};
@@ -189,17 +238,10 @@ export class ScenarioResetService {
     
     console.log(`[ScenarioReset] Detected startYear: ${startYear} (from metadata.startYear: ${scenarioMetadata.metadata?.startYear})`);
     
-    session.data.game_env.startYear = startYear;
-    session.data.game_env.startyear = startYear;
-    session.data.year = startYear;
-    session.data.game_env.year = startYear;
-    session.data.month = 1;
-    session.data.game_env.month = 1;
-    
-    // 최상위 레벨 필드도 업데이트 (init.service.ts와 동일)
-    session.year = startYear;
-    session.month = 1;
-    session.startyear = startYear;
+    // SessionSync 유틸리티로 모든 위치에 동기화
+    SessionSync.syncStartyear(session, startYear);
+    SessionSync.syncYear(session, startYear);
+    SessionSync.syncMonth(session, 1);
     
     console.log(`[ScenarioReset] Set year to ${startYear}, month to 1`);
 
@@ -208,24 +250,19 @@ export class ScenarioResetService {
     // turnDate()는 (현재시간 - starttime) / turnterm으로 경과 턴을 계산하고,
     // 경과 턴 수를 게임 내 월/년으로 변환함
     const now = new Date();
-    const starttime = now; // 현재 시간을 게임 시작 시간으로 설정
-    session.data.game_env.starttime = starttime.toISOString();
-    session.starttime = starttime; // 최상위 레벨에도 저장
+    SessionSync.syncStarttime(session, now);
     
     // 턴 시간 (현재 시간 + 1분 후)
     const nextTurn = new Date(now.getTime() + 60 * 1000);
-    session.data.turntime = nextTurn.toISOString();
-    session.data.game_env.turntime = nextTurn.toISOString();
-    session.turntime = nextTurn; // 최상위 레벨에도 저장
+    SessionSync.syncTurntime(session, nextTurn);
     
-    // 턴 텀 설정
-    const turnterm = scenarioMetadata.gameSettings?.turnterm || scenarioMetadata.turnterm || 60;
-    session.data.game_env.turnterm = turnterm;
-    session.turnterm = turnterm; // 최상위 레벨에도 저장
+    // 턴 텀 설정 - 우선순위: options > scenarioMetadata > 기본값 60
+    const turnterm = options?.turnterm || scenarioMetadata.gameSettings?.turnterm || scenarioMetadata.turnterm || 60;
+    SessionSync.syncTurnterm(session, turnterm);
     
-    console.log(`[ScenarioReset] Set starttime to ${starttime.toISOString()} (${startYear}년 1월 1일)`);
+    console.log(`[ScenarioReset] Set starttime to ${now.toISOString()} (${startYear}년 1월 1일)`);
     console.log(`[ScenarioReset] Set turntime to ${nextTurn.toISOString()} (1 minute from now)`);
-    console.log(`[ScenarioReset] Set turnterm to ${turnterm} minutes`);
+    console.log(`[ScenarioReset] Set turnterm to ${turnterm} minutes (from: ${options?.turnterm ? 'options' : 'scenario metadata'})`);
 
     // 최대 장수 설정
     const maxGeneral = scenarioMetadata.gameSettings?.defaultMaxGeneral || 
@@ -234,11 +271,14 @@ export class ScenarioResetService {
     session.data.game_env.maxgeneral = maxGeneral;
     console.log(`[ScenarioReset] Set maxgeneral to ${maxGeneral}`);
 
+    // 임관 모드 설정
+    session.data.game_env.join_mode = scenarioMetadata.gameSettings?.join_mode || 'full';
+    console.log(`[ScenarioReset] Set join_mode to ${session.data.game_env.join_mode}`);
+
     // 서버 상태를 폐쇄(준비중)로 설정
     // 시나리오 리셋 후에는 관리자가 수동으로 서버를 오픈해야 함
     session.status = 'preparing';
-    session.data.game_env.isunited = 2;  // 2 = 폐쇄
-    session.data.isunited = 2;
+    SessionSync.syncIsunited(session, 2); // 2 = 폐쇄
     
     console.log(`[ScenarioReset] Set status to 'preparing' (폐쇄), isunited: 2`);
 
@@ -246,6 +286,24 @@ export class ScenarioResetService {
     session.markModified('data');
 
     await sessionRepository.saveDocument(session);
+    
+    // 저장 후 실제 DB 값 확인
+    const savedSession = await sessionRepository.findBySessionId(session.session_id);
+    const savedData = savedSession?.data || {};
+    const savedGameEnv = savedData.game_env || {};
+    
+    console.log(`[ScenarioReset] 📊 DB 저장 확인:`);
+    console.log(`   - data.startyear: ${savedData.startyear}`);
+    console.log(`   - data.year: ${savedData.year}`);
+    console.log(`   - data.month: ${savedData.month}`);
+    console.log(`   - data.starttime: ${savedData.starttime}`);
+    console.log(`   - data.turntime: ${savedData.turntime}`);
+    console.log(`   - data.isunited: ${savedData.isunited}`);
+    console.log(`   - game_env.startyear: ${savedGameEnv.startyear}`);
+    console.log(`   - game_env.year: ${savedGameEnv.year}`);
+    console.log(`   - game_env.month: ${savedGameEnv.month}`);
+    console.log(`   - game_env.starttime: ${savedGameEnv.starttime}`);
+    console.log(`   - game_env.isunited: ${savedGameEnv.isunited}`);
   }
 
   /**
@@ -259,23 +317,46 @@ export class ScenarioResetService {
     console.log(`[ScenarioReset] Initializing cities`);
 
     // cities 컬렉션 로드
-    const cities = await this.loadScenarioDataFile(scenarioId, 'cities');
+    // PHP 시나리오는 scenario.json이 없으므로 기본 cities.json 사용
+    let cities;
+    try {
+      cities = await this.loadScenarioDataFile(scenarioId, 'cities');
+    } catch (err) {
+      // PHP 시나리오인 경우 기본 cities.json 사용
+      const scenarioDir = scenarioId.includes('/') ? scenarioId.split('/')[0] : scenarioId;
+      const citiesPath = path.join(this.SCENARIOS_DIR, scenarioDir, 'data', 'cities.json');
+      console.log(`[ScenarioReset] Loading cities from: ${citiesPath}`);
+      const citiesData = await this.loadScenarioFile(citiesPath);
+      // cities.json은 {cities: [...]} 구조
+      cities = citiesData.cities || citiesData;
+    }
     console.log(`[ScenarioReset] Found ${cities.length} cities`);
 
     // 시나리오에 정의된 국가별 도시 소유권 맵 생성
     const cityOwnershipMap = new Map<string, number>(); // cityName -> nationId
 
-    if (scenarioMetadata.data?.scenario?.nations) {
-      for (const nationData of scenarioMetadata.data.scenario.nations) {
-        const nationId = nationData.id;
-        const nationName = nationData.name;
-        const cities = nationData.cities || [];
-        
-        if (cities.length > 0) {
-          console.log(`[ScenarioReset] Mapping ${cities.length} cities to nation ${nationId} (${nationName})`);
-          for (const cityName of cities) {
-            cityOwnershipMap.set(cityName, nationId);
-          }
+    // PHP JSON 구조: nation (단수형, 배열 형식)
+    const nationsData = scenarioMetadata.nation || scenarioMetadata.data?.scenario?.nations || [];
+    let nationIdCounter = 1;
+    
+    for (const nationTemplate of nationsData) {
+      let nationId, nationName, cityNames;
+      
+      if (Array.isArray(nationTemplate)) {
+        // PHP 배열 포맷: [name, color, gold, rice, description, ???, policy, ???, cities]
+        [nationName, , , , , , , , cityNames] = nationTemplate;
+        nationId = nationIdCounter++;
+        cityNames = cityNames || [];
+      } else {
+        nationId = nationTemplate.id || nationIdCounter++;
+        nationName = nationTemplate.name;
+        cityNames = nationTemplate.cities || [];
+      }
+      
+      if (cityNames.length > 0) {
+        console.log(`[ScenarioReset] Mapping ${cityNames.length} cities to nation ${nationId} (${nationName})`);
+        for (const cityName of cityNames) {
+          cityOwnershipMap.set(cityName, nationId);
         }
       }
     }
@@ -345,87 +426,57 @@ export class ScenarioResetService {
   ): Promise<void> {
     console.log(`[ScenarioReset] Creating nations`);
 
-    const nationsData = scenarioMetadata.data?.scenario?.nations || [];
+    // PHP JSON 구조: nation (단수형, 배열 형식)
+    const nationsData = scenarioMetadata.nation || scenarioMetadata.data?.scenario?.nations || [];
+    console.log(`[ScenarioReset] Found ${nationsData.length} nations in scenario`);
+    
     if (nationsData.length === 0) {
       console.warn('[ScenarioReset] No nations in scenario');
       return;
     }
 
     const nationsToCreate = [];
+    let nationIdCounter = 1;
 
     for (const nationTemplate of nationsData) {
-      const nationId = nationTemplate.id;
-      const nationName = nationTemplate.name || '무명';
-      const nationColor = nationTemplate.color || '#808080';
-      const cityNames = nationTemplate.cities || [];
+      // PHP JSON 포맷: [name, color, gold, rice, description, tech, policy, nationLevel, cities]
+      let nationId, nationName, nationColor, gold, rice, description, tech, policy, nationLevel, cityNames;
       
-      console.log(`[ScenarioReset] Creating nation ${nationId}: ${nationName}, color: ${nationColor}`);
-
-      // capital 필드 처리: 문자열(도시 이름)이면 도시 ID로 변환
-      let capitalId = 0;
-      if (nationTemplate.capital) {
-        // 1. capital이 자신의 cities 배열에 포함되어 있는지 검증
-        const capitalName = typeof nationTemplate.capital === 'string' 
-          ? nationTemplate.capital 
-          : null;
-        
-        if (capitalName && !cityNames.includes(capitalName)) {
-          console.error(`  ❌ ${nationName} 수도 '${capitalName}'이(가) 자신의 영토에 없음!`);
-          throw new Error(
-            `Invalid scenario: Nation '${nationName}' capital '${capitalName}' is not in its cities list`
-          );
-        }
-        
-        // 2. 도시 ID로 변환
-        if (typeof nationTemplate.capital === 'string') {
-          // 도시 이름으로 조회
-          const capitalCity = await cityRepository.findOneByFilter({
-            session_id: sessionId,
-            name: nationTemplate.capital,
-            nation: nationId  // 자신의 영토인지 다시 한번 확인
-          });
-          if (capitalCity) {
-            capitalId = capitalCity.city;
-            console.log(`  - ${nationName} 수도: ${nationTemplate.capital} (ID: ${capitalId})`);
-          } else {
-            console.error(`  ❌ ${nationName} 수도 '${nationTemplate.capital}' 찾을 수 없거나 다른 국가 영토임`);
-            throw new Error(
-              `Invalid scenario: Nation '${nationName}' capital '${capitalName}' not found or belongs to another nation`
-            );
-          }
-        } else if (typeof nationTemplate.capital === 'number') {
-          // 숫자로 지정된 경우도 검증
-          const capitalCity = await cityRepository.findOneByFilter({
-            session_id: sessionId,
-            city: nationTemplate.capital,
-            nation: nationId
-          });
-          if (capitalCity) {
-            capitalId = nationTemplate.capital;
-          } else {
-            console.error(`  ❌ ${nationName} 수도 ID ${nationTemplate.capital}이(가) 자신의 영토에 없음`);
-            throw new Error(
-              `Invalid scenario: Nation '${nationName}' capital ID ${nationTemplate.capital} not found or belongs to another nation`
-            );
-          }
-        }
+      if (Array.isArray(nationTemplate)) {
+        // PHP 배열 포맷
+        [nationName, nationColor, gold, rice, description, tech, policy, nationLevel, cityNames] = nationTemplate;
+        nationId = nationIdCounter++;
+        cityNames = cityNames || [];
+        tech = tech || 0;
+        nationLevel = nationLevel || 2; // 기본값 2 (일반 국가)
+      } else {
+        // 객체 포맷 (기존 호환)
+        nationId = nationTemplate.id || nationIdCounter++;
+        nationName = nationTemplate.name || '무명';
+        nationColor = nationTemplate.color || '#808080';
+        cityNames = nationTemplate.cities || [];
+        gold = nationTemplate.treasury?.gold || 10000;
+        rice = nationTemplate.treasury?.rice || 10000;
+        description = nationTemplate.description || '';
+        tech = nationTemplate.tech || 0;
+        policy = nationTemplate.policy || 'neutral';
+        nationLevel = nationTemplate.level || 2;
       }
+      
+      console.log(`[ScenarioReset] Creating nation ${nationId}: ${nationName}, color: ${nationColor}, cities: ${cityNames.length}`);
 
-      // 수도가 지정되지 않았으면 첫 번째 도시를 수도로
-      if (capitalId === 0 && cityNames.length > 0) {
+      // 수도 결정: 첫 번째 도시를 수도로
+      let capitalId = 0;
+      if (cityNames.length > 0) {
         const firstCity = await cityRepository.findOneByFilter({
           session_id: sessionId,
           name: cityNames[0]
         });
         if (firstCity) {
           capitalId = firstCity.city;
-          console.log(`  - ${nationName} 수도(자동): ${cityNames[0]} (ID: ${capitalId})`);
+          console.log(`  - ${nationName} 수도: ${cityNames[0]} (ID: ${capitalId})`);
         }
       }
-
-      const treasury = nationTemplate.treasury || {};
-      const gold = treasury.gold || 10000;
-      const rice = treasury.rice || 10000;
 
       const nationData = {
         session_id: sessionId,
@@ -433,24 +484,26 @@ export class ScenarioResetService {
         name: nationName,
         color: nationColor,
         capital: capitalId,
-        gold: gold,
-        rice: rice,
+        gold: gold || 10000,
+        rice: rice || 10000,
+        level: nationLevel || 2, // 국가 크기 (1=소형, 2=일반, 3=대형, 4=제국 등)
         data: {
           nation: nationId,
           name: nationName,
           color: nationColor,
-          level: nationTemplate.level || 0,
+          level: nationLevel || 2, // 국가 크기
           capital: capitalId,
-          capital_name: nationTemplate.capital || '',
-          type: nationTemplate.policy || 'neutral',
-          infoText: nationTemplate.description || '',
-          leader: 0,
+          capital_name: cityNames[0] || '',
+          type: policy || 'neutral', // 국가 타입 (병가, 법가, 유가 등)
+          infoText: description || '',
+          leader: 0, // 지도자 ID (장수 생성 후 설정됨)
           chief: {},
           bills: [],
+          gennum: 0,
           bill_history: [],
           diplomacy: {},
           environment: {},
-          tech: nationTemplate.tech || 0,
+          tech: tech || 0,
           tech_level: 0,
           gold: gold,
           rice: rice,
@@ -488,11 +541,32 @@ export class ScenarioResetService {
   ): Promise<void> {
     console.log(`[ScenarioReset] Creating generals`);
 
-    const generalsData = scenarioMetadata.data?.scenario?.generals || [];
-    if (generalsData.length === 0) {
+    // PHP JSON 구조: general, general_ex, general_neutral
+    const generalsDataMain = scenarioMetadata.general || scenarioMetadata.data?.scenario?.general || [];
+    const generalsDataEx = scenarioMetadata.general_ex || scenarioMetadata.data?.scenario?.general_ex || [];
+    const generalsDataNeutral = scenarioMetadata.general_neutral || scenarioMetadata.data?.scenario?.general_neutral || [];
+    
+    console.log(`[ScenarioReset] Found generals - main: ${generalsDataMain.length}, ex: ${generalsDataEx.length}, neutral: ${generalsDataNeutral.length}`);
+    
+    // 모든 장수 데이터를 NPC 타입과 함께 저장
+    const allGeneralsData: Array<{data: any, npcType: number}> = [
+      ...generalsDataMain.map(g => ({ data: g, npcType: 2 })),      // general: npcType = 2
+      ...generalsDataEx.map(g => ({ data: g, npcType: 2 })),        // general_ex: npcType = 2
+      ...generalsDataNeutral.map(g => ({ data: g, npcType: 6 }))    // general_neutral: npcType = 6
+    ];
+    
+    if (allGeneralsData.length === 0) {
       console.log('[ScenarioReset] No generals in scenario');
       return;
     }
+
+    // 세션에서 turnterm 가져오기
+    const session = await sessionRepository.findBySessionId(sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+    const turnterm = session.data?.game_env?.turnterm || 60;
+    const now = new Date();
 
     // 국가별 수도 찾기
     const nationCapitalMap = new Map<number, any>();
@@ -511,56 +585,153 @@ export class ScenarioResetService {
     }
 
     const generalsToCreate = [];
+    let generalIdCounter = 1; // 장수 ID 자동 생성용
     
-    for (const genTemplate of generalsData) {
-      const nationNo = genTemplate.nation || 0;
-      const cityId = genTemplate.city || 0;
+    for (const genEntry of allGeneralsData) {
+      const genTemplate = genEntry.data;
+      const npcTypeFromCategory = genEntry.npcType; // general 구분에 따른 NPC 타입
+      // PHP JSON 포맷 (최대 14개 요소): 
+      // [affinity, name, picturePath, nationName, locatedCity, 
+      //  leadership, strength, intel, officerLevel, birth, death, ego, char, text]
+      let affinity, name, picturePath, nationName, locatedCity, leadership, strength, intel, officerLevel, birthYear, deathYear, personality, special, text;
+      let nationNo, id, npc;
+      
+      if (Array.isArray(genTemplate)) {
+        // PHP 배열 포맷
+        affinity = genTemplate[0];               // 친화도/소속 (사용 안 함)
+        name = genTemplate[1];                   // 이름
+        picturePath = genTemplate[2];            // 초상화 ID
+        nationName = genTemplate[3];             // 국가 이름 또는 번호
+        locatedCity = genTemplate[4];            // 배치 도시 (null)
+        leadership = genTemplate[5] || 50;       // 통솔
+        strength = genTemplate[6] || 50;         // 무력
+        intel = genTemplate[7] || 50;            // 지력
+        officerLevel = genTemplate[8] || 0;      // 관직 레벨
+        birthYear = genTemplate[9];              // 출생년
+        deathYear = genTemplate[10];             // 사망년
+        personality = genTemplate[11];           // 성격 (ego)
+        special = genTemplate[12];               // 특기 (char)
+        text = genTemplate[13];                  // 메시지
+        
+        // nationName이 숫자면 그대로, 아니면 국가 이름에서 ID 찾기
+        if (typeof nationName === 'number') {
+          nationNo = nationName;
+        } else if (typeof nationName === 'string') {
+          // 국가 이름으로 ID 찾기 (TODO: 나중에 구현)
+          nationNo = parseInt(nationName) || 0;
+        } else {
+          nationNo = 0; // 재야
+        }
+        
+        // 999는 재야
+        if (nationNo === 999) {
+          nationNo = 0;
+        }
+        
+        // ID는 picturePath 사용
+        id = picturePath || generalIdCounter;
+        
+        // NPC 타입은 배열 구분으로 결정 (나중에 설정)
+        
+        // nationNo가 999면 재야로 처리
+        if (nationNo === 999) {
+          nationNo = 0;
+        }
+      } else {
+        // 객체 포맷 (기존 호환)
+        nationNo = genTemplate.nation || 0;
+        name = genTemplate.name || '무명';
+        id = genTemplate.no || genTemplate.id;
+        npc = genTemplate.npc || 2;
+        leadership = genTemplate.stats?.leadership || genTemplate.leadership || 50;
+        strength = genTemplate.stats?.strength || genTemplate.strength || 50;
+        intel = genTemplate.stats?.intel || genTemplate.intel || 50;
+        officerLevel = genTemplate.officerLevel || 0;
+        birthYear = genTemplate.birthYear || 20;
+        deathYear = genTemplate.deathYear || 250;
+        personality = genTemplate.personality || '평범';
+        special = genTemplate.special || null;
+      }
+      
+      // 정치와 매력 계산 (PHP에는 없으므로 통솔/무력/지력에서 유추)
+      // 정치 = (통솔 + 지력) / 2
+      // 매력 = (통솔 + 지력) / 2.5 (정치보다 약간 낮게)
+      const politics = Math.round((leadership + intel) / 2);
+      const charm = Math.round((leadership + intel) / 2.5);
+      
+      // birthYear에서 age 계산
+      const startYear = scenarioMetadata.startYear || 181;
+      const age = startYear - birthYear;
+      
+      // NPC 타입은 general/general_ex/general_neutral 구분으로 결정
+      npc = npcTypeFromCategory;
+      
+      // officer_level은 배열에서 파싱된 값 사용 (기본값 0)
+      if (officerLevel === undefined || officerLevel === null) {
+        officerLevel = 0;
+      }
+      
+      // 재야는 officer_level = 0
+      if (nationNo === 0 || nationNo === 999) {
+        officerLevel = 0;
+      }
+      
+      const cityId = 0; // PHP에서는 city가 배열에 없음
       
       // 배치 도시 결정
       let assignedCityId = 0;
-      if (cityId > 0) {
-        // 명시적으로 지정된 도시
-        assignedCityId = cityId;
-      } else if (nationNo > 0) {
+      if (nationNo > 0) {
         // 국가의 수도에 배치
         const capital = nationCapitalMap.get(nationNo);
         assignedCityId = capital?.city || 0;
       }
-
-      const stats = genTemplate.stats || {};
+      
+      // NPC마다 다른 turntime 부여 (turnterm 내에서 랜덤 분산)
+      const rng = Math.abs((id || 0) * 1103515245 + 12345);
+      const randomOffsetSeconds = rng % (turnterm * 60);
+      const npcTurntime = new Date(now.getTime() + randomOffsetSeconds * 1000);
+      
+      // ID 검증 및 자동 증가
+      if (!id || id === null || id === undefined) {
+        id = generalIdCounter;
+      }
+      generalIdCounter = Math.max(generalIdCounter, id) + 1; // 다음 ID는 현재 최대값 + 1
+      
       const generalData = {
         session_id: sessionId,
-        no: genTemplate.no || genTemplate.id,
-        name: genTemplate.name || '무명',
-        owner: 'NPC',           // NPC 장수
-        npc: 2,                 // AI NPC
+        no: id,
+        name: name,
+        owner: 'NPC',
+        npc: npc || 2,
         nation: nationNo,
         city: assignedCityId,
         belong: nationNo,
-        turntime: new Date(),
+        turntime: npcTurntime,
         owner_name: null,
         gold: 1000,
         rice: 1000,
         train: 0,
-        atmos: 0,
+        atmos: 50,
         turnidx: 0,
         belong_history: [],
         data: {
-          no: genTemplate.no || genTemplate.id,
-          name: genTemplate.name || '무명',
+          no: id,
+          name: name,
           nation: nationNo,
           city: assignedCityId,
           belong: nationNo,
-          leadership: stats.leadership || 50,
-          strength: stats.strength || 50,
-          intel: stats.intel || 50,
+          leadership: leadership,
+          strength: strength,
+          intel: intel,
+          politics: politics,
+          charm: charm,
           experience: 0,
-          dedication: stats.charm || 50,
-          age: genTemplate.age || 20,
-          birth_year: genTemplate.age || 20,
-          death_year: genTemplate.deathYear || 250,
-          special: genTemplate.special || null,
-          personality: genTemplate.personality || '평범',
+          dedication: 50,
+          age: age,
+          birth_year: birthYear,
+          death_year: deathYear,
+          special: special,
+          personality: personality,
           gold: 1000,
           rice: 1000,
           crew: 1000,
@@ -569,13 +740,15 @@ export class ScenarioResetService {
           crew_intel: 0,
           horse: 0,
           horse_type: 0,
-          atmos: 0,
+          atmos: 50,
           train: 0,
           injury: 0,
           general_type: nationNo === 0 ? 0 : 5,
           leadership_exp: 0,
           strength_exp: 0,
-          intel_exp: 0
+          intel_exp: 0,
+          officer_level: officerLevel,
+          turntime: npcTurntime.toISOString()
         }
       };
 
@@ -584,5 +757,47 @@ export class ScenarioResetService {
 
     await generalRepository.bulkCreate(generalsToCreate);
     console.log(`[ScenarioReset] Created ${generalsToCreate.length} generals`);
+    
+    // 국가별 gennum 업데이트 & 첫 번째 장수를 군주로 설정
+    const nationGenCount = new Map<number, number>();
+    const nationFirstGeneral = new Map<number, number>(); // 국가별 첫 번째 장수 ID
+    
+    for (const general of generalsToCreate) {
+      const nationId = general.nation;
+      if (nationId > 0) {
+        nationGenCount.set(nationId, (nationGenCount.get(nationId) || 0) + 1);
+        // 첫 번째 장수 기록
+        if (!nationFirstGeneral.has(nationId)) {
+          nationFirstGeneral.set(nationId, general.no);
+        }
+      }
+    }
+    
+    // 각 국가의 gennum 업데이트
+    for (const [nationId, count] of nationGenCount.entries()) {
+      await nationRepository.updateOneByFilter(
+        { session_id: sessionId, 'data.nation': nationId },
+        { 'data.gennum': count, gennum: count }
+      );
+      console.log(`[ScenarioReset] Updated nation ${nationId} gennum to ${count}`);
+    }
+    
+    // 각 국가의 첫 번째 장수를 군주로 설정 (officer_level = 12) + 국가의 leader 설정
+    for (const [nationId, generalNo] of nationFirstGeneral.entries()) {
+      await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+        'data.officer_level': 12,
+        'data.npc': 1, // 군주는 NPC 타입 1
+        officer_level: 12,
+        npc: 1
+      });
+      console.log(`[ScenarioReset] Set general ${generalNo} as ruler of nation ${nationId}`);
+      
+      // 국가의 leader 필드 업데이트
+      await nationRepository.updateOneByFilter(
+        { session_id: sessionId, 'data.nation': nationId },
+        { 'data.leader': generalNo, leader: generalNo }
+      );
+      console.log(`[ScenarioReset] Set nation ${nationId} leader to general ${generalNo}`);
+    }
   }
 }
