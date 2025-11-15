@@ -58,12 +58,12 @@ export class DummySession {
   }
 
   get generalID(): number | null {
-    // TODO: UniqueConst 구현 필요
+    // FUTURE: UniqueConst 마이그레이션 (v2.0)
     return null;
   }
 
   get generalName(): string | null {
-    // TODO: UniqueConst 구현 필요
+    // FUTURE: UniqueConst 마이그레이션 (v2.0)
     return null;
   }
 

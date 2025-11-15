@@ -64,7 +64,7 @@ export class DisbandCommand extends GeneralCommand {
       return false;
     }
 
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const josaYi = JosaUtil.pick(generalName, '이');
 
     const nation = this.nation;
@@ -92,7 +92,7 @@ export class DisbandCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn((this.constructor as typeof DisbandCommand).getName(), this.arg));
 
     const nationGenerals = await deleteNation(general, false);
-    general.setVar('makelimit', 12);
+    general.data.makelimit = 12;
     
     for (const oldGeneral of nationGenerals) {
       await oldGeneral.save();

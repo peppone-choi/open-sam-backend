@@ -95,12 +95,21 @@ export class che_불가침파기수락 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
@@ -128,13 +137,15 @@ export class che_불가침파기수락 extends NationCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYiGeneral} <D><b>${destNationName}</b></>${josaWa}의 불가침 조약을 <M>파기</> 하였습니다.`);
     logger.pushGlobalHistoryLog(`<Y><b>【파기】</b></><D><b>${nationName}</b></>${josaYiNation} <D><b>${destNationName}</b></>${josaWa}의 불가침 조약을 <M>파기</> 하였습니다.`);
 
+    logger.pushNationalHistoryLog(`<D><b>${destNationName}</b></>${josaWa}의 불가침 파기`);
+
     josaWa = JosaUtil.pick(nationName, '와');
     destLogger.pushGeneralActionLog(`<D><b>${nationName}</b></>${josaWa}의 불가침 파기에 성공했습니다.`, ActionLogger.PLAIN);
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaWa}의 불가침 파기 성공`);
 
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destLogger.flush();
 
     return true;
   }
-}
+}

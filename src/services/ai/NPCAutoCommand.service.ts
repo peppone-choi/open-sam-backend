@@ -139,7 +139,7 @@ export class NPCAutoCommandService {
    * 명령 간략 설명 생성
    */
   private static getBrief(action: string, args: any): string {
-    // TODO: 각 커맨드별로 brief 생성 로직 구현
+    
     if (action === '휴식') {
       return '휴식';
     }

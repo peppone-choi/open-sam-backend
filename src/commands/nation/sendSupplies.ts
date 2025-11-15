@@ -116,9 +116,15 @@ export class che_물자원조 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general!.getID();
     const date = general!.getTurnTime('HM');
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
@@ -218,11 +224,11 @@ export class che_물자원조 extends NationCommand {
       [destNationID]
     );
 
-    general!.addExperience(5);
-    general!.addDedication(5);
+    general.addExperience(5);
+    general.addDedication(5);
 
     this.setResultTurn(new LastTurn(che_물자원조.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     return true;
   }
@@ -248,7 +254,7 @@ export class che_물자원조 extends NationCommand {
       nationList.push(nationTarget);
     }
 
-    const currentNationLevel = getNationStaticInfo(this.generalObj!.getNationID())['level'];
+    const currentNationLevel = getNationStaticInfo(this.generalObj.getNationID())['level'];
 
     const getNationLevelList = global.getNationLevelList;
     const levelInfo: any = {};
@@ -282,4 +288,4 @@ export class che_물자원조 extends NationCommand {
       }
     };
   }
-}
+}

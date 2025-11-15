@@ -92,7 +92,7 @@ export class FoundNationCommand extends GeneralCommand {
     const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const logger = general.getLogger();
     const josaYi = JosaUtil.pick(generalName, '이');
 
@@ -194,7 +194,7 @@ export class FoundNationCommand extends GeneralCommand {
         );
         
         // 병력 손실만 반영
-        general.setVar('crew', Math.max(0, general.getVar('crew') - battleResult.attackerLoss));
+        general.data.crew = Math.max(0, (general.data.crew ?? 0) - battleResult.attackerLoss);
         await this.saveGeneral();
         
         return false;
@@ -212,7 +212,7 @@ export class FoundNationCommand extends GeneralCommand {
       }
       
       // 병력 손실 반영
-      general.setVar('crew', Math.max(0, general.getVar('crew') - battleResult.attackerLoss));
+      general.data.crew = Math.max(0, (general.data.crew ?? 0) - battleResult.attackerLoss);
       
       // 도시 점령은 건국 성공 후에 처리 (아래에서 cityRepository.updateOneByFilter)
     }
@@ -282,8 +282,9 @@ export class FoundNationCommand extends GeneralCommand {
 
     // InheritancePoint 처리
     try {
-      general.increaseInheritancePoint('active_action', 1);
-      general.increaseInheritancePoint('unifier', 250);
+      // TODO: general.increaseInheritancePoint('active_action', 1);
+      // TODO: general.increaseInheritancePoint('unifier', 250);
+      // InheritancePoint 시스템이 아직 구현되지 않음
     } catch (error: any) {
       console.error('InheritancePoint 실패:', error);
     }

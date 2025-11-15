@@ -112,12 +112,18 @@ export class PopulationMoveCommand extends NationCommand {
 
     const db = DB.db();
 
-    const general = this.generalObj!;
+    const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const date = general.getTurnTime('HM');
 
     const srcCity = this.city;
     const srcCityID = srcCity['city'];
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -161,6 +167,8 @@ export class PopulationMoveCommand extends NationCommand {
       `<G><b>${destCityName}</b></>${josaRo} 인구 <C>${amount}</>명을 옮겼습니다. <1>${date}</>`
     );
 
+    logger.pushNationalHistoryLog(`<G><b>${destCityName}</b></>${josaRo} 인구 ${amount}명 이동`);
+
     const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'PopulationMoveCommand', this.env, this.arg ?? {});
@@ -180,10 +188,10 @@ export class PopulationMoveCommand extends NationCommand {
       procRes: {
         cities: JSOptionsForCities ? await JSOptionsForCities() : [],
         distanceList: JSCitiesBasedOnDistance ? 
-          await JSCitiesBasedOnDistance(this.generalObj!.getCityID(), 1) : {}
+          await JSCitiesBasedOnDistance(this.generalObj.getCityID(), 1) : {}
       }
     };
   }
 }
 
-export const cr_인구이동 = PopulationMoveCommand;
+export const cr_인구이동 = PopulationMoveCommand;

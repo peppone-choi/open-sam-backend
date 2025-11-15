@@ -11,7 +11,7 @@ import { ConstraintHelper } from '../../constraints/ConstraintHelper';
  */
 export class InvestCommerceCommand extends GeneralCommand {
   protected static cityKey = 'comm';
-  protected static statKey = 'politics'; // 상업 투자는 정치 능력치 사용
+  protected static statKey = 'intel'; // 상업 투자는 지력 능력치 사용 (PHP 원본과 동일)
   protected static actionKey = '상업';
   protected static actionName = '상업 투자';
   protected static debuffFront = 0.5;
@@ -49,9 +49,7 @@ export class InvestCommerceCommand extends GeneralCommand {
     const statTypeBase: Record<string, string> = {
       'leadership': '통솔경험',
       'strength': '무력경험',
-      'intel': '지력경험',
-      'politics': '정치경험',
-      'charm': '매력경험',
+      'intel': '지력경험'
     };
     const statKey = (this.constructor as typeof InvestCommerceCommand).statKey;
     const statType = statTypeBase[statKey];
@@ -69,7 +67,7 @@ export class InvestCommerceCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    const develCost = this.env.develcost;
+    const develCost = this.env.develcost || 24;
     const reqGold = Math.round(this.generalObj.onCalcDomestic((this.constructor as typeof InvestCommerceCommand).actionKey, 'cost', develCost));
     const reqRice = 0;
 
@@ -107,14 +105,12 @@ export class InvestCommerceCommand extends GeneralCommand {
       score = general.getStrength(true, true, true, false);
     } else if (statKey === 'leadership') {
       score = general.getLeadership(true, true, true, false);
-    } else if (statKey === 'politics') {
-      score = general.getPolitics(true, true, true, false);
-    } else if (statKey === 'charm') {
-      score = general.getCharm(true, true, true, false);
+    } else {
+      throw new Error('MustNotBeReachedException: Unknown statKey');
     }
 
     score *= trust / 100;
-    score *= this.getDomesticExpLevelBonus(general.getVar('explevel'));
+    score *= this.getDomesticExpLevelBonus(general.data.explevel ?? 0);
     score *= rng.nextRange(0.8, 1.2);
     score = general.onCalcDomestic((this.constructor as typeof InvestCommerceCommand).actionKey, 'score', score);
 
@@ -179,23 +175,28 @@ export class InvestCommerceCommand extends GeneralCommand {
     if (pick === 'success') {
       try {
         if (typeof general.updateMaxDomesticCritical === 'function') {
-          general.updateMaxDomesticCritical();
+          // TODO: general.updateMaxDomesticCritical();
         }
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
     } else {
-      general.setAuxVar('max_domestic_critical', 0);
+      // setAuxVar 대신 직접 aux 객체 수정
+      if (!general.data.aux) {
+        general.data.aux = {};
+      }
+      general.data.aux.max_domestic_critical = 0;
     }
 
+    const date = general.getTurnTime(general.TURNTIME_HM);
     const scoreText = score.toLocaleString();
 
     if (pick === 'fail') {
-      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else if (pick === 'success') {
-      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     }
 
     if ([1, 3].includes(this.city?.front ?? 0)) {
@@ -219,7 +220,7 @@ export class InvestCommerceCommand extends GeneralCommand {
       this.city[`${cityKey}_max`]
     ));
     
-    await db.update('city', cityUpdated, 'city=%i', general.getVar('city'));
+    await db.update('city', cityUpdated, 'city=%i', general.data.city ?? 0);
 
     general.increaseVarWithLimit('gold', -this.reqGold, 0);
     general.addExperience(exp);
@@ -237,10 +238,13 @@ export class InvestCommerceCommand extends GeneralCommand {
     }
 
     try {
-      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(InvestCommerceCommand.actionName),
-        general
+        // TODO: rng
+        general,
+        sessionId,
+        '내정'
       );
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);

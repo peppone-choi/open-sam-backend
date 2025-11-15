@@ -1,4 +1,4 @@
 export const CityConst = {
   getCityList: () => [],
-  byID: (id: number) => null as any,
+  byID: (id: number) => ({ city: id, name: `City_${id}` }),
 };

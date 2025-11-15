@@ -65,7 +65,7 @@ router.get(
   '/generals',
   requirePermission(AdminPermission.MANAGE_GENERALS),
   asyncHandler(async (req, res) => {
-    // TODO: General 목록 조회
+    // FUTURE: General 목록 조회
     res.json({ message: 'List generals' });
   })
 );
@@ -74,7 +74,7 @@ router.get(
   '/generals/:id',
   requirePermission(AdminPermission.MANAGE_GENERALS),
   asyncHandler(async (req, res) => {
-    // TODO: General 상세 조회
+    // FUTURE: General 상세 조회
     res.json({ message: `Get general ${req.params.id}` });
   })
 );
@@ -83,7 +83,7 @@ router.put(
   '/generals/:id',
   requirePermission(AdminPermission.MANAGE_GENERALS),
   asyncHandler(async (req, res) => {
-    // TODO: General 수정
+    // FUTURE: General 수정
     res.json({ message: `Update general ${req.params.id}` });
   })
 );
@@ -92,7 +92,7 @@ router.delete(
   '/generals/:id',
   requireSuperAdmin,
   asyncHandler(async (req, res) => {
-    // TODO: General 삭제
+    // FUTURE: General 삭제
     res.json({ message: `Delete general ${req.params.id}` });
   })
 );
@@ -152,7 +152,7 @@ router.get(
   '/system/stats',
   requireAdmin,
   asyncHandler(async (req, res) => {
-    // TODO: 데이터베이스 통계
+    // FUTURE: 데이터베이스 통계
     res.json({
       generals: 0,
       cities: 0,

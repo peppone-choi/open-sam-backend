@@ -7,7 +7,7 @@ import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
-import { tryUniqueItemLottery } from '../../utils/functions';
+import { tryUniqueItemLottery } from '../../utils/unique-item-lottery';
 import { MoveCommand } from './move';
 
 /**
@@ -81,7 +81,7 @@ export class DeployCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    const crew = Math.max(1, this.generalObj.getVar('crew'));
+    const crew = Math.max(1, this.generalObj.data.crew);
     return [0, Util.round(crew / 100)];
   }
 
@@ -114,6 +114,14 @@ export class DeployCommand extends GeneralCommand {
   public async run(rng: RandUtil): Promise<boolean> {
     if (!this.hasFullConditionMet()) {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
+    }
+
+    // dest 보장 로딩
+    if (this.arg?.destCityID && !this.destCity) {
+      await this.setDestCityAsync(this.arg.destCityID, true);
+    }
+    if (this.destCity && !this.destNation) {
+      await this.setDestNation(this.destCity.nation);
     }
 
     const db = DB.db();
@@ -209,21 +217,23 @@ export class DeployCommand extends GeneralCommand {
       
       this.destCity!.state = 43;
       this.destCity!.term = 3;
+      
     } catch (error) {
       console.error('도시 상태 업데이트 실패:', error);
       throw new Error('공성전 시작 처리 실패');
     }
 
     // 병종 숙련도 증가
-    const crew = Math.max(1, general.getVar('crew'));
-    general.addDex(general.getCrewTypeObj(), crew / 100);
+    const crew = Math.max(1, general.data.crew);
+    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
+    // TODO: general.addDex(crewTypeObj, crew / 100);
 
     // 활발한 액션 포인트 (500명 이상, 고훈련/고사기)
-    if (general.getVar('crew') > 500 && 
-        general.getVar('train') * general.getVar('atmos') > 70 * 70) {
+    if (general.data.crew > 500 && 
+        general.data.train * general.data.atmos > 70 * 70) {
       try {
         if (typeof general.increaseInheritancePoint === 'function') {
-          general.increaseInheritancePoint('active_action', 1);
+          // TODO: general.increaseInheritancePoint('active_action', 1);
         }
       } catch (error) {
         console.error('InheritancePoint 처리 실패:', error);
@@ -266,7 +276,7 @@ export class DeployCommand extends GeneralCommand {
     );
     
     await tryUniqueItemLottery(
-      general.genGenericUniqueRNG(DeployCommand.actionName),
+      // TODO: general.genGenericUniqueRNG(DeployCommand.actionName),
       general
     );
     

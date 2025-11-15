@@ -161,12 +161,16 @@ export abstract class BaseCommand {
         generalObj.getNationID(),
         env.year,
         env.month,
-        env.session_id || generalObj.getSessionID(),
-        true // autoFlush
+        env.session_id || 'sangokushi_default',
+        true  // autoFlush 명시적으로 true
       );
+      generalObj.__currentLogger = this.logger;
     } else {
       // fallback: General의 간단한 로거 사용
       this.logger = generalObj.getLogger?.() || null;
+      if (this.logger) {
+        generalObj.__currentLogger = this.logger;
+      }
     }
 
     this.init();
@@ -203,7 +207,7 @@ export abstract class BaseCommand {
       }
     
     const { cityRepository } = require('../../repositories/city.repository');
-    const cityId = this.generalObj.getVar('city');
+    const cityId = this.generalObj.data.city;
     const sessionId = this.env.session_id;
     
     if (cityId && sessionId) {
@@ -218,17 +222,29 @@ export abstract class BaseCommand {
         // City 모델은 최상위 필드 우선 사용
         const cityObj = cityDoc.toObject?.() || cityDoc;
         this.city = {
+          ...cityObj.data, // data 필드를 먼저 spread (기본값)
+          // 최상위 필드로 덮어쓰기 (우선순위 높음)
           city: cityObj.city ?? cityObj.data?.city,
           name: cityObj.name ?? cityObj.data?.name,
           nation: cityObj.nation ?? cityObj.data?.nation,
           level: cityObj.level ?? cityObj.data?.level,
           pop: cityObj.pop ?? cityObj.data?.pop,
+          pop_max: cityObj.pop_max ?? cityObj.data?.pop_max,
           agri: cityObj.agri ?? cityObj.data?.agri,
+          agri_max: cityObj.agri_max ?? cityObj.data?.agri_max,
           comm: cityObj.comm ?? cityObj.data?.comm,
+          comm_max: cityObj.comm_max ?? cityObj.data?.comm_max,
           secu: cityObj.secu ?? cityObj.data?.secu,
+          secu_max: cityObj.secu_max ?? cityObj.data?.secu_max,
           def: cityObj.def ?? cityObj.data?.def,
+          def_max: cityObj.def_max ?? cityObj.data?.def_max,
           wall: cityObj.wall ?? cityObj.data?.wall,
-          ...cityObj.data // data 필드의 나머지 속성도 포함
+          wall_max: cityObj.wall_max ?? cityObj.data?.wall_max,
+          supply: cityObj.supply ?? cityObj.data?.supply,
+          front: cityObj.front ?? cityObj.data?.front,
+          trust: cityObj.trust ?? cityObj.data?.trust,
+          trade: cityObj.trade ?? cityObj.data?.trade,
+          occupied: cityObj.occupied ?? cityObj.data?.occupied
         };
         this.generalObj.setRawCity?.(this.city);
       }
@@ -441,7 +457,7 @@ export abstract class BaseCommand {
   }
 
   public getOfficerLevel(): number {
-    return this.generalObj.getVar('officer_level');
+    return this.generalObj.data.officer_level;
   }
 
   public getBrief(): string {
@@ -723,6 +739,28 @@ export abstract class BaseCommand {
     const generalNo = this.generalObj.getID();
     
     console.log(`[BaseCommand.saveGeneral] 장수 저장 시작: session=${sessionId}, no=${generalNo}`);
+    
+    // ✅ PHP와 동일한 검증: nation > 0이면 officer_level은 최소 1이어야 함
+    const generalData = this.generalObj.data || this.generalObj;
+    const nation = generalData.nation || 0;
+    let officerLevel = generalData.officer_level;
+    
+    // nation이 있는데 officer_level이 0이거나 없으면 1로 설정
+    if (nation > 0 && (!officerLevel || officerLevel === 0)) {
+      console.warn(`[BaseCommand.saveGeneral] ⚠️ 데이터 정합성 수정: nation=${nation}인데 officer_level=${officerLevel} → 1로 수정`);
+      generalData.officer_level = 1;
+      if (this.generalObj.data) {
+        this.generalObj.data.officer_level = 1;
+      }
+    }
+    // nation이 0인데 officer_level이 1 이상이면 0으로 설정
+    else if (nation === 0 && officerLevel && officerLevel > 0) {
+      console.warn(`[BaseCommand.saveGeneral] ⚠️ 데이터 정합성 수정: nation=0인데 officer_level=${officerLevel} → 0으로 수정`);
+      generalData.officer_level = 0;
+      if (this.generalObj.data) {
+        this.generalObj.data.officer_level = 0;
+      }
+    }
     
     // generalObj가 Mongoose 문서인 경우
     if (this.generalObj.save && typeof this.generalObj.save === 'function') {

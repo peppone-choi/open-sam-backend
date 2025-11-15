@@ -181,7 +181,7 @@ export class UniversalEngine {
    * 커맨드 실행
    */
   private async executeCommand(command: IUniversalCommand): Promise<void> {
-    // TODO: 커맨드 타입별 실행 로직
+    
     command.status = 'executing';
 
     // 여기서 실제 게임 로직 수행

@@ -95,7 +95,7 @@ export class APIHelper {
       // 외부 API 허용 확인 (정적 속성은 생성자 함수에서 접근)
       const apiConstructor = apiClass as typeof BaseAPI & (new (rootPath: string, args: Record<string, any>) => BaseAPI);
       if (apiConstructor.allowExternalAPI === false) {
-        // TODO: 외부 IP 체크 로직
+        // FUTURE: 외부 IP 체크 로직
       }
 
       // 인자 검증

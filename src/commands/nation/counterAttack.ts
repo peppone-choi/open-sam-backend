@@ -133,23 +133,33 @@ export class CounterAttackCommand extends NationCommand {
 
     const db = DB.db();
 
-    const general = this.generalObj!;
+    const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const date = general.getTurnTime('HM');
 
     const year = this.env['year'];
     const month = this.env['month'];
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
 
     const josaYi = JosaUtil.pick(generalName, '이');
+    const josaYiNation = JosaUtil.pick(nationName, '이');
     const commandName = this.constructor.getName();
     const josaUl = JosaUtil.pick(commandName, '을');
 
@@ -203,8 +213,9 @@ export class CounterAttackCommand extends NationCommand {
       await destNationLogger.flush();
     }
 
-    logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 <G><b>${cmd.getName()}</b></> <M>${commandName}</>${josaUl} 발동`);
+    logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 <G><b>${cmd.getName()}</b></> <M>${commandName}</>${josaUl} 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <G><b>${cmd.getName()}</b></> <M>${commandName}</>${josaUl} 발동`);
+    logger.pushGlobalHistoryLog(`<Y><b>【반격】</b></><D><b>${nationName}</b></>${josaYiNation} <D><b>${destNationName}</b></>에 <G><b>${cmd.getName()}</b></> 전략으로 반격합니다.`);
 
     const KVStorage = global.KVStorage;
     const nationStor = KVStorage?.getStorage ? KVStorage.getStorage(db, nationID, 'nation_env') : null;
@@ -232,7 +243,7 @@ export class CounterAttackCommand extends NationCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    const generalObj = this.generalObj!;
+    const generalObj = this.generalObj;
     const nationID = generalObj.getNationID();
 
     const availableCommandTypeList: any = {};
@@ -307,4 +318,4 @@ export class CounterAttackCommand extends NationCommand {
   }
 }
 
-export const che_피장파장 = CounterAttackCommand;
+export const che_피장파장 = CounterAttackCommand;

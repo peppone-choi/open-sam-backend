@@ -1,5 +1,6 @@
 import { messageRepository } from '../../repositories/message.repository';
 import { generalRepository } from '../../repositories/general.repository';
+import { Nation } from '../../models/nation.model';
 
 /**
  * SendSystemNotice Service
@@ -81,7 +82,7 @@ export class SendSystemNoticeService {
           id: general.no,
           name: general.name,
           nation_id: general.nation || 0,
-          nation: general.nation ? '(국가)' : '재야', // TODO: 실제 국가명 조회
+          nation: general.nation ? `국가 ${general.nation}` : '재야',
           color: '#000000',
           icon: general.picture || '',
         };

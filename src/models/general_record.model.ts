@@ -42,4 +42,13 @@ GeneralRecordSchema.index({ session_id: 1, general_id: 1, log_type: 1, year: 1, 
 GeneralRecordSchema.index({ session_id: 1, general_id: 1, log_type: 1 });
 GeneralRecordSchema.index({ created_at: -1 }); // 최근 로그 조회용
 
+// Virtual 'id' 필드 추가 (_id를 id로 매핑, PHP 호환성)
+GeneralRecordSchema.virtual('id').get(function() {
+  return this._id?.toString();
+});
+
+// toJSON/toObject에 virtuals 포함
+GeneralRecordSchema.set('toJSON', { virtuals: true });
+GeneralRecordSchema.set('toObject', { virtuals: true });
+
 export const GeneralRecord = mongoose.models.GeneralRecord || mongoose.model<IGeneralRecord>('GeneralRecord', GeneralRecordSchema);

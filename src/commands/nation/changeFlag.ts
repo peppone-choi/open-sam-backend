@@ -85,6 +85,9 @@ export class che_국기변경 extends NationCommand {
     const actionName = this.constructor.getName();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
@@ -97,8 +100,8 @@ export class che_국기변경 extends NationCommand {
 
     const logger = general!.getLogger();
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
@@ -112,14 +115,14 @@ export class che_국기변경 extends NationCommand {
     },  'nation=%i', [nationID]);
 
     logger.pushGeneralActionLog(`<span style='color:${color};'><b>국기</b></span>를 변경하였습니다 <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<span style='color:${color};'><b>국기</b></span>를 변경`);
+    logger.pushGeneralHistoryLog(`<span style='color:${color};'><b>국기</b></span>를 변경 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <span style='color:${color};'><b>국기</b></span>를 변경하였습니다`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <span style='color:${color};'><b>국기</b></span>를 변경하였습니다`);
     logger.pushGlobalHistoryLog(`<S><b>【국기변경】</b></><D><b>${nationName}</b></>${josaYiNation} <span style='color:${color};'><b>국기</b></span>를 변경하였습니다.`);
 
-    general!.increaseInheritancePoint('active_action', 1);
+    // TODO: general.increaseInheritancePoint('active_action', 1);
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -150,4 +153,4 @@ export class che_국기변경 extends NationCommand {
       orange: '#FFA500'
     };
   }
-}
+}

@@ -36,6 +36,20 @@ export class GetJoinInfoService {
         .sort({ 'data.nation': 1 })
         ;
 
+      // KVStorage에서 scout_msg 가져오기
+      const { kvStorageRepository } = await import('../../repositories/kvstorage.repository');
+      const scoutMsgDocs = await kvStorageRepository.findByPattern('nation_env:*:scout_msg');
+      
+      const scoutMsgMap: Record<number, string> = {};
+      scoutMsgDocs.forEach((doc: any) => {
+        // storage_id를 사용 (예: 'nation_env:1:scout_msg')
+        const storageId = doc.storage_id || doc._id;
+        const match = storageId.match(/nation_env:(\d+):scout_msg/);
+        if (match) {
+          scoutMsgMap[parseInt(match[1])] = doc.value || doc.data?.value || '';
+        }
+      });
+
       const nationList = nations
         .map((nation: any) => {
           const nationId = nation.nation ?? 0;
@@ -46,7 +60,7 @@ export class GetJoinInfoService {
             name: nation.name || '무명',
             color: nation.color || '#000000',
             scout: nation.scout || 50,
-            scoutmsg: nation.scoutmsg || ''
+            scoutmsg: scoutMsgMap[nationId] || ''
           };
         })
         .filter((nation: any) => nation !== null);

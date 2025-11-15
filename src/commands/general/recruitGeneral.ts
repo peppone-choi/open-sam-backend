@@ -107,7 +107,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
     const general = this.generalObj;
     const sessionId = general.getSessionID();
     const date = general.getTurnTime('HM');
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
 
     const destNation = this.destNation;
     const gennum = destNation.gennum;
@@ -128,13 +128,13 @@ export class RecruitGeneralCommand extends GeneralCommand {
       exp = 100;
     }
 
-    general.setVar('nation', destNationID);
-    general.setVar('officer_level', 1);
-    general.setVar('officer_city', 0);
-    general.setVar('belong', 1);
+    general.data.nation = destNationID;
+    general.data.officer_level = 1;
+    general.data.officer_city = 0;
+    general.data.belong = 1;
 
     if (this.destGeneralObj !== null) {
-      general.setVar('city', this.destGeneralObj.getCityID());
+      general.data.city = this.destGeneralObj.getCityID();
     } else {
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
@@ -142,7 +142,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
         'data.officer_level': 12
       });
       const targetCityID = lordGeneral?.data?.city || destNation.capital || 0;
-      general.setVar('city', targetCityID);
+      general.data.city = targetCityID;
     }
 
     await nationRepository.updateByNationNum(sessionId, destNationID, {
@@ -158,7 +158,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
@@ -176,9 +176,9 @@ export class RecruitGeneralCommand extends GeneralCommand {
     }
 
     try {
-      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(RecruitGeneralCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(RecruitGeneralCommand.actionName),
         general
       );
     } catch (error) {

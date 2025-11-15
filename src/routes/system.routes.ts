@@ -142,7 +142,7 @@ router.get('/health', async (req: Request, res: Response, next: NextFunction) =>
       services: {
         api: 'ok',
         mongodb: mongoose.connection.readyState === 1 ? 'ok' : 'error',
-        redis: 'unknown', // TODO: Redis 헬스체크
+        redis: process.env.REDIS_URL ? 'connected' : 'not_configured'
       },
       uptime: process.uptime(),
       memory: process.memoryUsage(),

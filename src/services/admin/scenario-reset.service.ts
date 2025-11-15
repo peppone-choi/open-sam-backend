@@ -275,6 +275,13 @@ export class ScenarioResetService {
     session.data.game_env.join_mode = scenarioMetadata.gameSettings?.join_mode || 'full';
     console.log(`[ScenarioReset] Set join_mode to ${session.data.game_env.join_mode}`);
 
+    // 게임 기본 설정 (PHP game_env와 동일)
+    session.data.game_env.develcost = scenarioMetadata.gameSettings?.develcost || 100;  // 내정/이동 비용
+    session.data.game_env.killturn = scenarioMetadata.gameSettings?.killturn || 30;     // 삭턴
+    session.data.game_env.scenario = scenarioMetadata.gameSettings?.scenario || 0;      // 시나리오 번호
+    session.data.game_env.allow_rebellion = scenarioMetadata.gameSettings?.allow_rebellion ?? true; // 모반 허용
+    console.log(`[ScenarioReset] Set game_env: develcost=${session.data.game_env.develcost}, killturn=${session.data.game_env.killturn}`);
+
     // 서버 상태를 폐쇄(준비중)로 설정
     // 시나리오 리셋 후에는 관리자가 수동으로 서버를 오픈해야 함
     session.status = 'preparing';
@@ -372,6 +379,32 @@ export class ScenarioResetService {
       const initialState = cityTemplate.initialState || {};
       const position = cityTemplate.position || {};
 
+      // PHP CityConstBase.php와 동일하게 모든 값에 100을 곱함
+      const popMax = (initialState.population || 100) * 100;
+      const agriMax = (initialState.agriculture || 100) * 100;
+      const commMax = (initialState.commerce || 100) * 100;
+      const secuMax = (initialState.security || 50) * 100;
+      const defMax = (initialState.defense || 100) * 100;
+      const wallMax = (initialState.wall || 100) * 100;
+      
+      // 레벨별 초기값 (scenario.json cityLevels.buildCost 기준)
+      // 0:무(황무지), 1:향, 2:수, 3:진, 4:관, 5:이, 6:소, 7:중, 8:대, 9:특, 10:경
+      const cityLevel = cityTemplate.levelId || 2;
+      const levelInitValues: Record<number, any> = {
+        0: { pop: 10, agri: 0, comm: 0, secu: 10, def: 10, wall: 10 },               // 무 (황무지, 거의 무인)
+        1: { pop: 1000, agri: 50, comm: 50, secu: 50, def: 100, wall: 100 },         // 향
+        2: { pop: 5000, agri: 100, comm: 100, secu: 100, def: 500, wall: 500 },      // 수
+        3: { pop: 5000, agri: 100, comm: 100, secu: 100, def: 500, wall: 500 },      // 진
+        4: { pop: 10000, agri: 100, comm: 100, secu: 100, def: 1000, wall: 1000 },   // 관
+        5: { pop: 50000, agri: 1000, comm: 1000, secu: 1000, def: 1000, wall: 1000 }, // 이
+        6: { pop: 100000, agri: 1000, comm: 1000, secu: 1000, def: 2000, wall: 2000 }, // 소
+        7: { pop: 100000, agri: 1000, comm: 1000, secu: 1000, def: 3000, wall: 3000 }, // 중
+        8: { pop: 150000, agri: 1000, comm: 1000, secu: 1000, def: 4000, wall: 4000 }, // 대
+        9: { pop: 150000, agri: 1000, comm: 1000, secu: 1000, def: 5000, wall: 5000 }, // 특
+        10: { pop: 200000, agri: 1500, comm: 1500, secu: 1500, def: 7000, wall: 7000 } // 경
+      };
+      const initValues = levelInitValues[cityLevel] || levelInitValues[2];
+      
       const cityData = {
         session_id: sessionId,
         city: cityTemplate.id,
@@ -380,32 +413,35 @@ export class ScenarioResetService {
         region: cityTemplate.regionId || 1,
         x: position.x || 0,
         y: position.y || 0,
-        level: cityTemplate.levelId || 2,
-        pop: initialState.population || 10000,
-        pop_max: (initialState.population || 10000) * 10,
-        agri: initialState.agriculture || 100,
-        agri_max: (initialState.agriculture || 100) * 10,
-        comm: initialState.commerce || 100,
-        comm_max: (initialState.commerce || 100) * 10,
-        secu: initialState.security || 50,
-        secu_max: 100,
-        def: initialState.defense || 100,
-        def_max: (initialState.defense || 100) * 10,
-        wall: initialState.wall || 100,
-        wall_max: (initialState.wall || 100) * 10,
-        trade: 0,
-        supply: 0,
+        level: cityLevel,
+        pop: initValues.pop,
+        pop_max: popMax,
+        agri: initValues.agri,
+        agri_max: agriMax,
+        comm: initValues.comm,
+        comm_max: commMax,
+        secu: initValues.secu,
+        secu_max: secuMax,
+        def: initValues.def,
+        def_max: defMax,
+        wall: initValues.wall,
+        wall_max: wallMax,
+        trade: 100,
+        supply: 1,
         state: 0,
+        trust: 50,
         data: {
           name: cityName,
-          level: cityTemplate.levelId || 2,
+          level: cityLevel,
           region: cityTemplate.regionId || 1,
-          pop: initialState.population || 10000,
-          agri: initialState.agriculture || 100,
-          comm: initialState.commerce || 100,
-          secu: initialState.security || 50,
-          def: initialState.defense || 100,
-          wall: initialState.wall || 100
+          pop: initValues.pop,
+          agri: initValues.agri,
+          comm: initValues.comm,
+          secu: initValues.secu,
+          def: initValues.def,
+          wall: initValues.wall,
+          trust: 50,
+          trade: 100
         }
       };
 
@@ -529,6 +565,29 @@ export class ScenarioResetService {
 
     await nationRepository.bulkCreate(nationsToCreate);
     console.log(`[ScenarioReset] Created ${nationsToCreate.length} nations`);
+
+    // KVStorage에 scout_msg 저장 (임관 권유문)
+    const { kvStorageRepository } = await import('../../repositories/kvstorage.repository');
+    for (const nationData of nationsToCreate) {
+      const nationId = nationData.nation;
+      const scoutMsg = nationData.data.infoText || '';
+      
+      if (scoutMsg) {
+        await kvStorageRepository.upsert(
+          { 
+            session_id: sessionId, 
+            storage_id: `nation_env:${nationId}:scout_msg` 
+          },
+          {
+            session_id: sessionId,
+            storage_id: `nation_env:${nationId}:scout_msg`,
+            value: scoutMsg,
+            data: { value: scoutMsg }
+          }
+        );
+        console.log(`[ScenarioReset] Saved scout_msg for nation ${nationId} (${nationData.name})`);
+      }
+    }
   }
 
   /**
@@ -606,7 +665,7 @@ export class ScenarioResetService {
         leadership = genTemplate[5] || 50;       // 통솔
         strength = genTemplate[6] || 50;         // 무력
         intel = genTemplate[7] || 50;            // 지력
-        officerLevel = genTemplate[8] || 0;      // 관직 레벨
+        officerLevel = genTemplate[8];           // 관직 레벨 (undefined 허용, 나중에 처리)
         birthYear = genTemplate[9];              // 출생년
         deathYear = genTemplate[10];             // 사망년
         personality = genTemplate[11];           // 성격 (ego)
@@ -646,7 +705,7 @@ export class ScenarioResetService {
         leadership = genTemplate.stats?.leadership || genTemplate.leadership || 50;
         strength = genTemplate.stats?.strength || genTemplate.strength || 50;
         intel = genTemplate.stats?.intel || genTemplate.intel || 50;
-        officerLevel = genTemplate.officerLevel || 0;
+        officerLevel = genTemplate.officerLevel;  // undefined 허용, 나중에 처리
         birthYear = genTemplate.birthYear || 20;
         deathYear = genTemplate.deathYear || 250;
         personality = genTemplate.personality || '평범';
@@ -663,17 +722,37 @@ export class ScenarioResetService {
       const startYear = scenarioMetadata.startYear || 181;
       const age = startYear - birthYear;
       
+      // ✅ 시나리오 시작 년도에 아직 태어나지 않은 장수는 스킵
+      if (birthYear > startYear) {
+        console.log(`[ScenarioReset] Skipping ${name} - not born yet (birth: ${birthYear}, scenario: ${startYear})`);
+        continue;
+      }
+      
+      // ✅ 시나리오 시작 년도에 이미 죽은 장수는 스킵
+      if (deathYear && deathYear < startYear) {
+        console.log(`[ScenarioReset] Skipping ${name} - already dead (death: ${deathYear}, scenario: ${startYear})`);
+        continue;
+      }
+      
+      // ✅ 나이가 음수이거나 너무 많으면 스킵 (데이터 오류)
+      if (age < 0 || age > 100) {
+        console.log(`[ScenarioReset] Skipping ${name} - invalid age ${age} (birth: ${birthYear}, scenario: ${startYear})`);
+        continue;
+      }
+      
       // NPC 타입은 general/general_ex/general_neutral 구분으로 결정
       npc = npcTypeFromCategory;
       
-      // officer_level은 배열에서 파싱된 값 사용 (기본값 0)
-      if (officerLevel === undefined || officerLevel === null) {
-        officerLevel = 0;
-      }
-      
-      // 재야는 officer_level = 0
+      // ✅ officer_level 처리: 재야는 0, 국가 소속은 최소 1
       if (nationNo === 0 || nationNo === 999) {
+        // 재야는 무조건 0
         officerLevel = 0;
+      } else {
+        // 국가 소속: 시나리오 값이 있으면 사용, 없거나 0이면 1로 설정
+        if (officerLevel === undefined || officerLevel === null || officerLevel === 0) {
+          officerLevel = 1; // 기본 관직
+        }
+        // 시나리오에 명시적으로 관직이 있으면 그대로 사용
       }
       
       const cityId = 0; // PHP에서는 city가 배열에 없음
@@ -684,6 +763,12 @@ export class ScenarioResetService {
         // 국가의 수도에 배치
         const capital = nationCapitalMap.get(nationNo);
         assignedCityId = capital?.city || 0;
+        
+        // 국가 소속인데 도시가 없으면 이 장수는 스킵 (시나리오에 등장하지 않음)
+        if (assignedCityId === 0) {
+          console.log(`[ScenarioReset] Skipping general ${name} (nation ${nationNo}) - no capital city`);
+          continue;
+        }
       }
       
       // NPC마다 다른 turntime 부여 (turnterm 내에서 랜덤 분산)
@@ -696,6 +781,12 @@ export class ScenarioResetService {
         id = generalIdCounter;
       }
       generalIdCounter = Math.max(generalIdCounter, id) + 1; // 다음 ID는 현재 최대값 + 1
+      
+      // ✅ PHP와 동일한 최종 검증: DB 삽입 직전 officer_level 재확인
+      // PHP: if(!$officerLevel || $isNewGeneral) { $officerLevel = $nationID?1:0; }
+      if (!officerLevel) {
+        officerLevel = nationNo > 0 ? 1 : 0;
+      }
       
       const generalData = {
         session_id: sessionId,
@@ -710,10 +801,13 @@ export class ScenarioResetService {
         owner_name: null,
         gold: 1000,
         rice: 1000,
+        crew: 0,  // 초기 병사 0
         train: 0,
         atmos: 50,
         turnidx: 0,
         belong_history: [],
+        officer_level: officerLevel,  // ✅ 최상위 필드에도 저장
+        permission: 0,
         data: {
           no: id,
           name: name,
@@ -734,7 +828,7 @@ export class ScenarioResetService {
           personality: personality,
           gold: 1000,
           rice: 1000,
-          crew: 1000,
+          crew: 0,  // 초기 병사 수 0 (징병/모병 필요)
           crew_leadership: 0,
           crew_strength: 0,
           crew_intel: 0,
@@ -748,6 +842,7 @@ export class ScenarioResetService {
           strength_exp: 0,
           intel_exp: 0,
           officer_level: officerLevel,
+          permission: 0,
           turntime: npcTurntime.toISOString()
         }
       };
@@ -757,6 +852,15 @@ export class ScenarioResetService {
 
     await generalRepository.bulkCreate(generalsToCreate);
     console.log(`[ScenarioReset] Created ${generalsToCreate.length} generals`);
+    
+    // ✅ 생성된 장수 검증: nation > 0인데 officer_level = 0인 경우 경고
+    const invalidGenerals = generalsToCreate.filter(g => g.nation > 0 && g.officer_level === 0);
+    if (invalidGenerals.length > 0) {
+      console.warn(`[ScenarioReset] ⚠️ WARNING: ${invalidGenerals.length} generals with nation > 0 but officer_level = 0`);
+      invalidGenerals.forEach(g => {
+        console.warn(`  - ${g.name} (no=${g.no}, nation=${g.nation}, officer_level=${g.officer_level})`);
+      });
+    }
     
     // 국가별 gennum 업데이트 & 첫 번째 장수를 군주로 설정
     const nationGenCount = new Map<number, number>();

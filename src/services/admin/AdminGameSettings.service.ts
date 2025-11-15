@@ -223,9 +223,9 @@ export class AdminGameSettingsService {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
 
-      // 허용된 턴 기간 체크
-      const allowedTerms = [1, 2, 5, 10, 20, 30, 60, 120];
-      if (!allowedTerms.includes(turnTerm)) {
+      // 허용된 턴 기간 체크 (분 단위)
+      const allowedTermsMinutes = [1, 2, 5, 10, 20, 30, 60, 120];
+      if (!allowedTermsMinutes.includes(turnTerm)) {
         return {
           success: false,
           message: '허용되지 않는 턴 기간입니다 (1/2/5/10/20/30/60/120분만 가능)',

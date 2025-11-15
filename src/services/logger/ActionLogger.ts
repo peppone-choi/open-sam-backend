@@ -52,6 +52,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.generalHistoryLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -68,6 +73,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.generalActionLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -83,6 +93,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.generalBattleResultLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -98,6 +113,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.generalBattleDetailLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -113,6 +133,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.nationalHistoryLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -128,6 +153,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.globalActionLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -143,6 +173,11 @@ export class ActionLogger {
 
     const formatted = this.formatText(text, formatType);
     this.globalHistoryLog.push(formatted);
+    
+    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
+    if (this.autoFlush) {
+      this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
+    }
   }
 
   /**
@@ -286,7 +321,26 @@ export class ActionLogger {
     }));
 
     // 일괄 insert
-    await GeneralRecord.insertMany(records);
+    const savedRecords = await GeneralRecord.insertMany(records);
+
+    // WebSocket으로 실시간 브로드캐스트
+    try {
+      const { GameEventEmitter } = await import('../gameEventEmitter');
+      for (let i = 0; i < savedRecords.length; i++) {
+        const record = savedRecords[i];
+        const text = logs[i];
+        GameEventEmitter.broadcastLogUpdate(
+          this.sessionId,
+          this.generalId,
+          logType as 'action' | 'history',
+          record._id?.toString() || record.id || 0,
+          text
+        );
+      }
+      logger.info(`[ActionLogger] Broadcasted ${logs.length} ${logType} logs via WebSocket for general ${this.generalId}`);
+    } catch (error) {
+      logger.error(`[ActionLogger] Failed to broadcast logs via WebSocket:`, error);
+    }
 
     logger.info(`[ActionLogger] Saved ${logs.length} ${logType} logs for general ${this.generalId}`);
   }
@@ -354,7 +408,21 @@ export class ActionLogger {
       text: text,
     }));
 
-    await GeneralRecord.insertMany(records);
+    const savedRecords = await GeneralRecord.insertMany(records);
+
+    // WebSocket으로 실시간 브로드캐스트
+    const { GameEventEmitter } = await import('../gameEventEmitter');
+    for (let i = 0; i < savedRecords.length; i++) {
+      const record = savedRecords[i];
+      const text = logs[i];
+      GameEventEmitter.broadcastLogUpdate(
+        this.sessionId,
+        0, // 전역 로그는 general_id = 0
+        'history',
+        record._id?.toString() || record.id || 0,
+        text
+      );
+    }
 
     logger.info(`[ActionLogger] Saved ${logs.length} global action logs`);
   }

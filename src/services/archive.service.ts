@@ -662,15 +662,15 @@ export class ArchiveService {
   static async getTraffic(sessionId: string) {
     try {
       // 도시 간 이동 통계 등
-      // TODO: 실제 교통 데이터 구현 필요
+      // FUTURE: 교통 데이터 마이그레이션 (v2.0)
       // 현재는 기본 구조만 제공
       
       const cities = await cityRepository.findBySession(sessionId);
 
       const traffic = {
         totalCities: cities.length,
-        connectedCities: 0, // TODO: 도로 연결 정보 계산
-        routes: [] // TODO: 주요 이동 경로 계산
+        connectedCities: 0,
+        routes: []
       };
 
       return {

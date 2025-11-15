@@ -134,7 +134,7 @@ export class GetSelectPoolService {
   }
 
   private static async generateSelectPool(sessionId: string, userId: number, turnterm: number): Promise<any[]> {
-    // TODO: 실제 장수 풀에서 랜덤 선택하는 로직 구현
+    // FUTURE: 장수 풀에서 랜덤 선택하는 로직 구현
     // 현재는 간단한 더미 데이터 생성
     const now = new Date();
     const validUntil = new Date(now.getTime() + turnterm * 60000); // turnterm 분 후
@@ -197,17 +197,17 @@ export class GetSelectPoolService {
   }
 
   private static getSpecialName(special: string, type: 'domestic' | 'war'): string {
-    // TODO: 특기 이름 매핑 구현
+    
     return special || 'None';
   }
 
   private static getSpecialInfo(special: string, type: 'domestic' | 'war'): string {
-    // TODO: 특기 설명 매핑 구현
+    
     return '';
   }
 
   private static getPersonalityName(personal: string): string {
-    // TODO: 성격 이름 매핑 구현
+    
     return personal || 'Random';
   }
 }

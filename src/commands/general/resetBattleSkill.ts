@@ -83,22 +83,25 @@ export class ResetBattleSkillCommand extends GeneralCommand {
     const env = this.env;
 
     const yearMonth = Util.joinYearMonth(env.year, env.month);
-    let oldSpecialList = general.getAuxVar(oldTypeKey) ?? [];
-    oldSpecialList.push(general.getVar(specialType));
+    let oldSpecialList = general.data.aux?.[oldTypeKey] ?? [];
+    oldSpecialList.push(general.data[specialType]);
 
     const availableSpecialLength = GameConst.availableSpecialDomestic?.length || 0;
     const availableWarLength = GameConst.availableSpecialWar?.length || 0;
     
     if (specialType === 'special' && oldSpecialList.length === availableSpecialLength) {
-      oldSpecialList = [general.getVar(specialType)];
+      oldSpecialList = [general.data[specialType]];
     } else if (specialType === 'special2' && oldSpecialList.length === availableWarLength) {
-      oldSpecialList = [general.getVar(specialType)];
+      oldSpecialList = [general.data[specialType]];
     }
     
-    general.setAuxVar(oldTypeKey, oldSpecialList);
+    if (!general.data.aux) {
+      general.data.aux = {};
+    }
+    general.data.aux[oldTypeKey] = oldSpecialList;
 
-    general.setVar(specialType, 'None');
-    general.setVar(specageType, general.getVar('age') + 1);
+    general.data[specialType] = 'None';
+    general.data[specageType] = general.data.age + 1;
 
     const logger = general.getLogger();
 

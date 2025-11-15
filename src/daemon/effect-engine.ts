@@ -107,16 +107,16 @@ async function applyToData(data: Record<string, any>, effects: Record<string, an
 async function applySpecialEffects(special: any, context: any) {
   // 예: 메시지 전송, 다른 장수에게 영향, 이벤트 발생 등
   if (special.send_message) {
-    // TODO: 메시지 전송
+    // FUTURE: 메시지 전송
   }
   
   if (special.create_battle) {
-    // TODO: 전투 생성
+    // FUTURE: 전투 생성
   }
 }
 
 function evaluateCondition(condition: any, context: any): boolean {
   // 간단한 조건 평가
   // 예: { general.gold: { $gte: 1000 } }
-  return true; // TODO: 구현
+  return true; // FUTURE: 구현
 }

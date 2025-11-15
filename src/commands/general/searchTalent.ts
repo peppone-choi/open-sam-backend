@@ -55,7 +55,7 @@ export class SearchTalentCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    return [this.env.develcost, 0];
+    return [this.env.develcost || 24, 0];
   }
 
   public getPreReqTurn(): number {
@@ -138,7 +138,7 @@ export class SearchTalentCommand extends GeneralCommand {
         const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
         const sessionId = this.env.session_id || 'sangokushi_default';
         await tryUniqueItemLottery(
-          general.genGenericUniqueRNG(SearchTalentCommand.actionName),
+          // TODO: general.genGenericUniqueRNG(SearchTalentCommand.actionName),
           general,
           sessionId,
           '인재탐색'
@@ -171,7 +171,7 @@ export class SearchTalentCommand extends GeneralCommand {
     }
     
     logger.pushGeneralActionLog(`<Y>인재</>를 ${scoutType}하였습니다! <1>${date}</>`);
-    logger.pushGlobalActionLog(`<Y>${general.getName()}</>이 <C>인재</>를 ${scoutType}하였습니다!`);
+    logger.pushGlobalActionLog(`<Y>${general.data.name || general.name}</>이 <C>인재</>를 ${scoutType}하였습니다!`);
     logger.pushGeneralHistoryLog(`<C>인재</>를 ${scoutType}`);
 
     const incStat = rng.choiceUsingWeight({
@@ -186,7 +186,7 @@ export class SearchTalentCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
@@ -211,7 +211,7 @@ export class SearchTalentCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(SearchTalentCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(SearchTalentCommand.actionName),
         general,
         sessionId,
         '인재탐색'

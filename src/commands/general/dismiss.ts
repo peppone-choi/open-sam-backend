@@ -62,13 +62,13 @@ export class DismissCommand extends GeneralCommand {
     const exp = 70;
     const ded = 100;
 
-    const crewUp = general.onCalcDomestic('징집인구',  'score', general.getVar('crew'));
+    const crewUp = general.onCalcDomestic('징집인구',  'score', general.data.crew);
 
     await db.update('city', {
       pop: db.sqleval('pop + %i', crewUp)
     },  'city=%i', [general.getCityID()]);
 
-    general.setVar('crew', 0);
+    general.data.crew = 0;
     general.addExperience(exp);
     general.addDedication(ded);
     this.setResultTurn(new LastTurn((this.constructor as typeof DismissCommand).getName(), this.arg));

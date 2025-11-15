@@ -75,6 +75,7 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     });
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     score *= this.criticalScoreEx(rng, pick);
     score = Math.round(score);
@@ -85,23 +86,26 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     if (pick === 'success') {
       try {
         if (typeof general.updateMaxDomesticCritical === 'function') {
-          general.updateMaxDomesticCritical();
+          // TODO: general.updateMaxDomesticCritical();
         }
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
     } else {
-      general.setAuxVar('max_domestic_critical', 0);
+      if (!general.data.aux) {
+        general.data.aux = {};
+      }
+      general.data.aux.max_domestic_critical = 0;
     }
 
     const scoreText = score.toLocaleString();
 
     if (pick === 'fail') {
-      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else if (pick === 'success') {
-      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     }
 
     if (!this.nation) {
@@ -114,7 +118,7 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
     const genCount = Math.max(
       10, // GameConst::$initialNationGenLimit
-      await db.queryFirstField('SELECT gennum FROM nation WHERE nation=%i', general.getVar('nation'))
+      await db.queryFirstField('SELECT gennum FROM nation WHERE nation=%i', general.data.nation ?? 0)
     );
 
     // 0으로 나누기 방지: genCount는 최소 10
@@ -124,7 +128,7 @@ export class ResearchTechCommand extends InvestCommerceCommand {
       const nationUpdated = {
         tech: this.nation.tech + techIncrease
       };
-      await db.update('nation', nationUpdated, 'nation=%i', general.getVar('nation'));
+      await db.update('nation', nationUpdated, 'nation=%i', general.data.nation ?? 0);
     } catch (error) {
       console.error('국가 기술 업데이트 실패:', error);
       throw new Error(`기술 연구 실패: ${error.message}`);
@@ -146,9 +150,9 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     }
 
     try {
-      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(ResearchTechCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(ResearchTechCommand.actionName),
         general
       );
     } catch (error) {

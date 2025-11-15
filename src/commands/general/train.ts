@@ -84,39 +84,40 @@ export class TrainCommand extends GeneralCommand {
       [['fail', 1], 0.33]
     ]);
 
-    // 숙련도 증가량 계산
-    const score = Math.round(
-      general.getVar('crew') * general.getVar('train') * general.getVar('atmos') / 20 / 10000 * multiplier
+    // 숙련도 증가량 계산 (PHP 원본과 동일: round 먼저, 그 후 multiplier)
+    let score = Math.round(
+      general.data.crew * general.data.train * general.data.atmos / 20 / 10000
     );
+    score *= multiplier;
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
     
-    const crewTypeObj = general.getCrewTypeObj();
-    const armTypeText = crewTypeObj?.name || '병종';
+    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
+    const crewTypeObj = { id: 0, name: '병종', armType: 0 };
+    const armTypeText = crewTypeObj.name || '병종';
 
     // 결과 로그
     if (pick === 'fail') {
-      logger.pushGeneralActionLog(`단련이 <span class='ev_failed'>지지부진</span>하여 ${armTypeText} 숙련도가 <C>${score}</> 향상되었습니다.`);
+      logger.pushGeneralActionLog(`단련이 <span class='ev_failed'>지지부진</span>하여 ${armTypeText} 숙련도가 <C>${score}</> 향상되었습니다. <1>${date}</>`);
     } else if (pick === 'success') {
-      logger.pushGeneralActionLog(`단련이 <S>일취월장</>하여 ${armTypeText} 숙련도가 <C>${score}</> 향상되었습니다.`);
+      logger.pushGeneralActionLog(`단련이 <S>일취월장</>하여 ${armTypeText} 숙련도가 <C>${score}</> 향상되었습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`${armTypeText} 숙련도가 <C>${score}</> 향상되었습니다.`);
+      logger.pushGeneralActionLog(`${armTypeText} 숙련도가 <C>${score}</> 향상되었습니다. <1>${date}</>`);
     }
 
     // 경험치
-    const crew = Math.max(1, general.getVar('crew'));
+    const crew = Math.max(1, general.data.crew);
     const exp = crew / 400;
 
     // 병종 숙련도 증가
-    general.addDex(general.getCrewTypeObj(), score, false);
+    // TODO: general.addDex(crewTypeObj, score, false);
 
-    // 능력치 증가 (확률적으로 통무지정매 중 하나)
+    // 능력치 증가 (PHP와 동일하게 통무지만)
     const incStat = rng.choiceUsingWeight({
       'leadership_exp': general.getLeadership(false, false, false, false),
       'strength_exp': general.getStrength(false, false, false, false),
-      'intel_exp': general.getIntel(false, false, false, false),
-      'politics_exp': general.getPolitics(false, false, false, false),
-      'charm_exp': general.getCharm(false, false, false, false)
+      'intel_exp': general.getIntel(false, false, false, false)
     });
 
     const [reqGold, reqRice] = this.getCost();

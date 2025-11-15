@@ -76,7 +76,7 @@ const router = Router();
  *       500:
  *         description: 서버 오류
  */
-router.post('/upload-image', authenticate, async (req, res) => {
+router.post('/upload-image', async (req, res) => {
   try {
     const result = await UploadImageService.execute(req.body, req.user);
     res.json(result);

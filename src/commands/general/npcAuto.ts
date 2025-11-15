@@ -89,7 +89,7 @@ export class NpcAutoCommand extends GeneralCommand {
       }
       
       logger.pushGeneralActionLog(`NPC 전용 명령을 이용해 ${cityName}로 이동했습니다.`);
-      general.setVar('city', destCityID);
+      general.data.city = destCityID;
 
       this.setResultTurn(new LastTurn(NpcAutoCommand.getName(), this.arg));
     }

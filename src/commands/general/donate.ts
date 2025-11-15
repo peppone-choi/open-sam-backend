@@ -110,7 +110,7 @@ export class DonateCommand extends GeneralCommand {
     const resKey = isGold ? 'gold' : 'rice';
     const resName = isGold ? '금' : '쌀';
 
-    amount = Util.valueFit(amount, 0, general.getVar(resKey));
+    amount = Util.valueFit(amount, 0, general.data[resKey] ?? 0);
     const amountText = amount.toLocaleString();
 
     const logger = general.getLogger();
@@ -122,6 +122,7 @@ export class DonateCommand extends GeneralCommand {
     general.increaseVarWithLimit(resKey, -amount, 0);
 
     logger.pushGeneralActionLog(`${resName} <C>${amountText}</>을 헌납했습니다. <1>${date}</>`);
+    logger.pushGeneralHistoryLog(`${resName} ${amountText}을 헌납`);
 
     const exp = 70;
     const ded = 100;

@@ -62,7 +62,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
 
     const relYear = env.year - env.startyear;
 
@@ -84,9 +84,9 @@ export class RandomJoinNationCommand extends GeneralCommand {
 
     if (nationDocs.length > 0) {
       // NPC이고 역사 시나리오인 경우 - 친화도 기반 선택
-      if (general.getNPCType() >= 2 && !env.fiction && env.scenario >= 1000 && env.scenario < 2000) {
+      if ((general.data.npc ?? general.npc ?? 0) >= 2 && !env.fiction && env.scenario >= 1000 && env.scenario < 2000) {
         let maxScore = 1 << 30;
-        const generalAffinity = general.getVar('affinity');
+        const generalAffinity = general.data.affinity;
 
         for (const nationDoc of nationDocs) {
           const nation = nationDoc.data;
@@ -184,13 +184,13 @@ export class RandomJoinNationCommand extends GeneralCommand {
       exp = 100;
     }
 
-    general.setVar('nation', destNationID);
-    general.setVar('officer_level', 1);
-    general.setVar('officer_city', 0);
-    general.setVar('belong', 1);
+    general.data.nation = destNationID;
+    general.data.officer_level = 1;
+    general.data.officer_city = 0;
+    general.data.belong = 1;
 
     if (this.destGeneralObj !== null) {
-      general.setVar('city', this.destGeneralObj.getCityID());
+      general.data.city = this.destGeneralObj.getCityID();
     } else {
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
@@ -198,7 +198,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
         'data.officer_level': 12
       });
       const targetCityID = lordGeneral?.data?.city || 1;
-      general.setVar('city', targetCityID);
+      general.data.city = targetCityID;
     }
 
     const currentNation = await nationRepository.findByNationNum(sessionId, destNationID);
@@ -208,7 +208,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
@@ -229,7 +229,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(RandomJoinNationCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(RandomJoinNationCommand.actionName),
         general,
         sessionId,
         '랜덤임관'

@@ -85,7 +85,16 @@ export async function scanSyncQueue(
  */
 export async function getSyncQueueItem(key: string): Promise<any | null> {
   try {
-    return await cacheManager.getL2(key);
+    const data: any = await cacheManager.getL2(key);
+    if (!data) {
+      logger.debug('동기화 큐 아이템 없음 (TTL 만료 또는 삭제됨)', { key });
+      return null;
+    }
+    if (!data.data) {
+      logger.warn('동기화 큐 아이템에 data 필드 없음', { key, itemKeys: Object.keys(data) });
+      return null;
+    }
+    return data;
   } catch (error: any) {
     logger.error('동기화 큐 아이템 조회 실패', {
       key,

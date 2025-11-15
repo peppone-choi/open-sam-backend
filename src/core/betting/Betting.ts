@@ -457,7 +457,7 @@ export class Betting {
 
         await inheritStor.setValue('previous', [nextPoint, previousPoints[1]]);
 
-        // TODO: UserLogger 사용 (로그 기록)
+        // FUTURE: UserLogger 사용 (로그 기록)
         logger.info('[Betting] Inheritance point reward given', {
           sessionId: this.sessionId,
           userID,

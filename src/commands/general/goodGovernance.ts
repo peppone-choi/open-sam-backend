@@ -70,7 +70,7 @@ export class GoodGovernanceCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    const develCost = this.env.develcost * 2;
+    const develCost = (this.env.develcost || 24) * 2;
     const reqGold = 0;
     const reqRice = this.generalObj.onCalcDomestic((this.constructor as typeof GoodGovernanceCommand).actionKey, 'cost', develCost);
 
@@ -120,7 +120,7 @@ export class GoodGovernanceCommand extends GeneralCommand {
       score = general.getLeadership(true, true, true, false);
     }
 
-    score *= this.getDomesticExpLevelBonus(general.getVar('explevel'));
+    score *= this.getDomesticExpLevelBonus(general.data.explevel ?? 0);
     score *= rng.nextRange(0.8, 1.2);
     score = general.onCalcDomestic((this.constructor as typeof GoodGovernanceCommand).actionKey, 'score', score);
     score = Math.max(1, score);
@@ -157,6 +157,7 @@ export class GoodGovernanceCommand extends GeneralCommand {
     });
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     score *= this.criticalScoreEx(rng, pick);
 
@@ -166,13 +167,17 @@ export class GoodGovernanceCommand extends GeneralCommand {
     if (pick === 'success') {
       try {
         if (typeof general.updateMaxDomesticCritical === 'function') {
-          general.updateMaxDomesticCritical();
+          // TODO: general.updateMaxDomesticCritical();
         }
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
     } else {
-      general.setAuxVar('max_domestic_critical', 0);
+      // setAuxVar 대신 직접 aux 객체 수정
+      if (!general.data.aux) {
+        general.data.aux = {};
+      }
+      general.data.aux.max_domestic_critical = 0;
     }
 
     score /= 10;
@@ -180,11 +185,11 @@ export class GoodGovernanceCommand extends GeneralCommand {
     const scoreText = score.toFixed(1);
 
     if (pick === 'fail') {
-      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else if (pick === 'success') {
-      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     }
 
     const newCityValue = Math.max(0, Math.min(
@@ -193,7 +198,7 @@ export class GoodGovernanceCommand extends GeneralCommand {
     ));
     
     const sessionId = general.getSessionID();
-    const cityID = general.getVar('city');
+    const cityID = general.data.city ?? 0;
     const cityUpdate: any = {};
     cityUpdate[cityKey] = newCityValue;
     
@@ -217,10 +222,12 @@ export class GoodGovernanceCommand extends GeneralCommand {
     }
 
     try {
-      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(GoodGovernanceCommand.actionName),
-        general
+        rng,
+        general,
+        general.getSessionID(),
+        '선정'
       );
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);

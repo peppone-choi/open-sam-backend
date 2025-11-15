@@ -98,7 +98,7 @@ export class RecruitCommand extends GeneralCommand {
     
     const reqGold = Math.round(
       env.develcost +
-      (destGeneral.getVar('experience') + destGeneral.getVar('dedication')) / 1000
+      (destGeneral.data.experience + destGeneral.data.dedication) / 1000
     ) * 10;
     
     return [reqGold, 0];
@@ -145,10 +145,11 @@ export class RecruitCommand extends GeneralCommand {
     const destGeneralID = destGeneral.getID();
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     // 등용 성공률 계산
-    const scoutPower = this.nation.scout * 3 + general.getStat('intel');
-    const destScoutPower = destGeneral.getNation().scout * 3 + destGeneral.getStat('intel');
+    const scoutPower = this.nation.scout * 3 + general.getIntel(); // TODO: general.getStat('intel') -> getIntel() 사용
+    const destScoutPower = destGeneral.getNation().scout * 3 + destGeneral.getIntel(); // TODO: destGeneral.getStat('intel') -> getIntel() 사용
     
     let recruitProb = 0.3; // 기본 30%
     
@@ -168,17 +169,19 @@ export class RecruitCommand extends GeneralCommand {
 
     if (success) {
       // 등용 성공
-      logger.pushGeneralActionLog(`<Y><b>${destGeneralName}</b></>을(를) 등용하였습니다!`);
+      logger.pushGeneralActionLog(`<Y><b>${destGeneralName}</b></>을(를) 등용하였습니다! <1>${date}</>`);
+      logger.pushGeneralHistoryLog(`${destGeneralName} 등용 성공`);
       
       // 대상 장수를 아군으로
-      destGeneral.setVar('nation', general.getNationID());
-      destGeneral.setVar('city', general.getVar('city'));
-      destGeneral.setVar('belongs', general.getNationID());
+      destGeneral.data.nation = general.getNationID();
+      destGeneral.data.city = general.data.city;
+      destGeneral.data.belongs = general.getNationID();
       
       await destGeneral.save();
     } else {
       // 등용 실패
-      logger.pushGeneralActionLog(`<Y><b>${destGeneralName}</b></>이(가) 등용을 거절했습니다.`);
+      logger.pushGeneralActionLog(`<Y><b>${destGeneralName}</b></>이(가) 등용을 거절했습니다. <1>${date}</>`);
+      logger.pushGeneralHistoryLog(`${destGeneralName} 등용 실패`);
       
       try {
         const { messageRepository } = await import('../../repositories/message.repository');
@@ -188,7 +191,7 @@ export class RecruitCommand extends GeneralCommand {
           from_general: general.getID(),
           to_general: destGeneralID,
           nation: general.getNationID(),
-          message: `${general.getName()}이(가) 등용을 제안했습니다.`,
+          message: `${general.data.name || general.name}이(가) 등용을 제안했습니다.`,
           created_at: new Date()
         });
       } catch (error) {
@@ -215,7 +218,7 @@ export class RecruitCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(RecruitCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(RecruitCommand.actionName),
         general,
         sessionId,
         '등용'

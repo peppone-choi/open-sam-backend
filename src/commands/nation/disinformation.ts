@@ -97,14 +97,20 @@ export class DisinformationCommand extends NationCommand {
 
     const db = DB.db();
 
-    const general = this.generalObj!;
+    const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const date = general.getTurnTime('HM');
 
     const year = this.env['year'];
     const month = this.env['month'];
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -168,7 +174,7 @@ export class DisinformationCommand extends NationCommand {
           moveCityID = rng.choice(destNationCityList);
         }
 
-        targetGeneral.setVar('city', moveCityID);
+        targetGeneral.data.city = moveCityID;
         await await targetGeneral.save();
       }
     }
@@ -186,7 +192,7 @@ export class DisinformationCommand extends NationCommand {
       await destNationLogger.flush();
     }
 
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>허보</>를 발동`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>허보</>를 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>허보</>를 발동`);
 
     const globalDelay = this.generalObj?.onCalcStrategic ?
@@ -222,4 +228,4 @@ export class DisinformationCommand extends NationCommand {
   }
 }
 
-export const che_허보 = DisinformationCommand;
+export const che_허보 = DisinformationCommand;

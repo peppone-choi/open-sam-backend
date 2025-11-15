@@ -125,7 +125,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const josaYi = JosaUtil.pick(generalName, '이');
 
     const destNation = this.destNation;
@@ -149,13 +149,13 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       exp = 700;
     }
 
-    general.setVar('nation', destNationID);
-    general.setVar('officer_level', 1);
-    general.setVar('officer_city', 0);
-    general.setVar('belong', 1);
+    general.data.nation = destNationID;
+    general.data.officer_level = 1;
+    general.data.officer_city = 0;
+    general.data.belong = 1;
     
     if (this.destGeneral) {
-      general.setVar('city', this.destGeneral.data?.city || this.destGeneral.data?.location || 0);
+      general.data.city = this.destGeneral.data?.city || this.destGeneral.data?.location || 0;
     } else {
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
@@ -163,7 +163,7 @@ export class JoinGeneralNationCommand extends GeneralCommand {
         'data.officer_level': 12
       });
       const capital = lordGeneral?.data?.city || this.destNation?.capital || 1;
-      general.setVar('city', capital);
+      general.data.city = capital;
     }
 
     // Repository 패턴 사용
@@ -179,12 +179,12 @@ export class JoinGeneralNationCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
     }
-    // general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    // // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
 
     general.addExperience(exp);
     this.setResultTurn(new LastTurn(JoinGeneralNationCommand.getName(), this.arg));

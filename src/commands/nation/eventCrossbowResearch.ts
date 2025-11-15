@@ -69,6 +69,9 @@ export class event_원융노병연구 extends NationCommand {
 
     const db = DB.db();
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const nationID = general!.getNationID();
 
     const actionName = this.constructor.actionName;
@@ -80,8 +83,8 @@ export class event_원융노병연구 extends NationCommand {
 
     const logger = general!.getLogger();
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const generalName = general!.getName();
     const josaYi = JosaUtil.pick(generalName, '이');
@@ -102,11 +105,11 @@ export class event_원융노병연구 extends NationCommand {
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <M>${actionName}</> 완료`);
 
     const InheritanceKey = global.InheritanceKey;
-    general!.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     return true;
   }
-}
+}

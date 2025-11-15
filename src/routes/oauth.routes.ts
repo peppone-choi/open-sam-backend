@@ -72,7 +72,7 @@ router.get('/kakao/callback', async (req, res) => {
 
     // 상태 토큰 검증 (CSRF 방지)
     if (state) {
-      // TODO: 상태 토큰 검증 로직 구현
+      // FUTURE: 상태 토큰 검증 로직 구현
     }
 
     // 카카오 액세스 토큰 획득

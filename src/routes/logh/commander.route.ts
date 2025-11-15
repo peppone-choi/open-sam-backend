@@ -23,7 +23,7 @@ router.get('/my-commander', authenticate, validateSession, async (req, res) => {
       return res.status(400).json({ error: 'Session ID required' });
     }
 
-    // TODO: userId로 commander 매핑 필요 (현재는 첫 번째 커맨더 반환)
+    // FUTURE: userId로 commander 매핑 필요 (현재는 첫 번째 커맨더 반환)
     const commander = await LoghCommander.findOne({ session_id: sessionId, isActive: true });
 
     if (!commander) {

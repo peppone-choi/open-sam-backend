@@ -20,7 +20,7 @@ export class FileDB {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    // TODO: 실제 SQLite 라이브러리 사용 (better-sqlite3 등)
+    // FUTURE: SQLite 라이브러리 사용 (better-sqlite3, v2.0)
     // const Database = require('better-sqlite3');
     // const db = new Database(dbPath);
 

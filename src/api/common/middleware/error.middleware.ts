@@ -17,7 +17,7 @@ export function errorMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  // TODO: 에러 로깅
+  // FUTURE: 에러 로깅
   console.error('Error:', err);
 
   if (err instanceof AppError) {
@@ -26,7 +26,7 @@ export function errorMiddleware(
     });
   }
 
-  // TODO: 프로덕션에서는 상세 에러 숨기기
+  // FUTURE: 프로덕션에서는 상세 에러 숨기기
   res.status(500).json({
     error: 'Internal server error'
   });

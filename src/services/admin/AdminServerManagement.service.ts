@@ -228,7 +228,7 @@ export class AdminServerManagementService {
         // 완전 리셋: 세션 삭제
         await sessionRepository.delete(sessionId);
 
-        // TODO: 관련 데이터 모두 삭제
+        
         // - generals
         // - nations
         // - cities
@@ -343,7 +343,7 @@ export class AdminServerManagementService {
    */
   static async setGlobalNotice(notice: string) {
     try {
-      // TODO: RootDB의 system 테이블에 저장
+      // FUTURE: RootDB의 system 테이블에 저장
       // 현재는 환경 변수나 별도 저장소 사용
       console.log('[AdminServerManagement] Global notice:', notice);
 

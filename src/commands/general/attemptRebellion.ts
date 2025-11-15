@@ -64,19 +64,19 @@ export class AttemptRebellionCommand extends GeneralCommand {
     const lordID = lordDoc.data?.no || 0;
     const lordGeneral = await General.createObjFromDB(lordID, sessionId);
 
-    const generalName = general.getVar('name') || '무명';
-    const lordName = lordGeneral.getVar('name') || '무명';
+    const generalName = general.data.name || '무명';
+    const lordName = lordGeneral.data.name || '무명';
     const nationName = this.nation?.name || '';
 
     const logger = general.getLogger();
     const lordLogger = lordGeneral.getLogger();
 
-    general.setVar('officer_level', 12);
-    general.setVar('officer_city', 0);
-    lordGeneral.setVar('officer_level', 1);
-    lordGeneral.setVar('officer_city', 0);
-    const currentExp = lordGeneral.getVar('experience') || 0;
-    lordGeneral.setVar('experience', Math.floor(currentExp * 0.7));
+    general.data.officer_level = 12;
+    general.data.officer_city = 0;
+    lordGeneral.data.officer_level = 1;
+    lordGeneral.data.officer_city = 0;
+    const currentExp = lordGeneral.data.experience || 0;
+    lordGeneral.data.experience = Math.floor(currentExp * 0.7);
 
     const josaYi = JosaUtil.pick(generalName, '이');
     logger.pushGlobalHistoryLog(`<Y><b>【모반】</b></><Y>${generalName}</>${josaYi} <D><b>${nationName}</b></>의 군주 자리를 찬탈했습니다.`);
@@ -92,7 +92,7 @@ export class AttemptRebellionCommand extends GeneralCommand {
     
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);

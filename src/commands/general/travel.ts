@@ -112,7 +112,8 @@ export class TravelCommand extends GeneralCommand {
     }
 
     const logger = general.getLogger();
-    logger.pushGeneralActionLog(finalText);
+    const date = general.getTurnTime(general.TURNTIME_HM);
+    logger.pushGeneralActionLog(`${finalText} <1>${date}</>`);
 
     general.addExperience(exp);
 
@@ -130,7 +131,7 @@ export class TravelCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(TravelCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(TravelCommand.actionName),
         general,
         sessionId,
         '유랑'

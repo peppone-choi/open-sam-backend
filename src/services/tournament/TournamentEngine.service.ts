@@ -29,6 +29,7 @@ import { ActionLogger } from '../../utils/ActionLogger';
 import { Betting } from '../../core/betting/Betting';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { tournamentRepository } from '../../repositories/tournament.repository';
+import { General } from '../../models/general.model';
 
 // Helper 함수들
 function getTwo(tournament: number, phase: number): [number, number] {
@@ -412,16 +413,27 @@ async function qualify(sessionId: string, tnmtType: number, tnmt: number, phase:
       await gameStor.setValue('phase', 0);
       await gameStor.setValue('tournament', 3);
 
-      // 각 그룹에서 상위 4명 진출 처리
+      // 각 그룹에서 상위 4명 진출 처리 (gd = win*3+draw 기준으로 정렬)
       for (let grpIdx = 0; grpIdx < 8; grpIdx++) {
-        const promoters = await Tournament
+        const candidates = await Tournament
           .find({
             session_id: sessionId,
             grp: grpIdx
           })
-          .sort({ gl: -1, win: -1, draw: -1 })
-          .limit(4)
           ;
+
+        // gd = win*3+draw 계산 후 정렬
+        const promoters = candidates
+          .map(gen => ({
+            ...gen,
+            gd: (gen.win || 0) * 3 + (gen.draw || 0)
+          }))
+          .sort((a, b) => {
+            if (b.gd !== a.gd) return b.gd - a.gd;
+            if (b.gl !== a.gl) return b.gl - a.gl;
+            return 0;
+          })
+          .slice(0, 4);
 
         for (let grpRank = 0; grpRank < promoters.length; grpRank++) {
           const grpGen = promoters[grpRank];
@@ -567,16 +579,27 @@ async function finallySingle(sessionId: string, tnmtType: number, tnmt: number, 
       await gameStor.setValue('tournament', 5);
       await gameStor.setValue('phase', 0);
 
-      // 각 그룹에서 상위 2명 진출 처리
+      // 각 그룹에서 상위 2명 진출 처리 (gd = win*3+draw 기준으로 정렬)
       for (let grpIdx = 10; grpIdx < 18; grpIdx++) {
-        const promoters = await Tournament
+        const candidates = await Tournament
           .find({
             session_id: sessionId,
             grp: grpIdx
           })
-          .sort({ gl: -1, win: -1, draw: -1 })
-          .limit(2)
           ;
+
+        // gd = win*3+draw 계산 후 정렬
+        const promoters = candidates
+          .map(gen => ({
+            ...gen,
+            gd: (gen.win || 0) * 3 + (gen.draw || 0)
+          }))
+          .sort((a, b) => {
+            if (b.gd !== a.gd) return b.gd - a.gd;
+            if (b.gl !== a.gl) return b.gl - a.gl;
+            return 0;
+          })
+          .slice(0, 2);
 
         for (let grpRank = 0; grpRank < promoters.length; grpRank++) {
           const grpGen = promoters[grpRank];
@@ -934,8 +957,10 @@ async function fight(
       ? (gen2.leadership + gen2.strength + gen2.intel) * 7 / 15
       : gen2[tp];
 
-    let energy1 = Util.round(stat1 * getLog(gen1.lvl, gen2.lvl) * 10);
-    let energy2 = Util.round(stat2 * getLog(gen1.lvl, gen2.lvl) * 10);
+    const e1 = Util.round(stat1 * getLog(gen1.lvl, gen2.lvl) * 10);
+    const e2 = Util.round(stat2 * getLog(gen1.lvl, gen2.lvl) * 10);
+    let energy1 = e1;
+    let energy2 = e2;
 
     let gd1 = 0;
     let gd2 = 0;
@@ -968,9 +993,9 @@ async function fight(
           sel = 2; // 무승부
           break;
         } else {
-          // 재대결
-          energy1 = Util.round(energy1 / 2);
-          energy2 = Util.round(energy2 / 2);
+          // 재대결 - 초기 값의 절반으로 재설정
+          energy1 = Util.round(e1 / 2);
+          energy2 = Util.round(e2 / 2);
         }
       } else if (energy1 <= 0) {
         sel = 1; // gen2 승리

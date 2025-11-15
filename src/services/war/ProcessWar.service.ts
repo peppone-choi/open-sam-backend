@@ -639,7 +639,7 @@ export class ProcessWarService {
       
       if (defenderNation && defenderNation.capital === cityId) {
         console.log(`[ProcessWar] 수도 함락! 국가 ${oldNationId} 멸망 처리 필요`);
-        // 국가 멸망 처리 (별도 구현 필요)
+        // 국가 멸망 처리 (별도 마이그레이션 (v2.0))
       }
     } catch (error) {
       console.error('[ProcessWar] 도시 점령 처리 실패:', error);

@@ -36,4 +36,4 @@ export class RestCommand extends NationCommand {
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
     return true;
   }
-}
+}

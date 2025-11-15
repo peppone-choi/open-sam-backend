@@ -114,9 +114,15 @@ export class che_발령 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -126,7 +132,7 @@ export class che_발령 extends NationCommand {
 
     const logger = general!.getLogger();
 
-    destGeneral!.setVar('city', destCityID);
+    destGeneral!.data.city = destCityID;
 
     const josaUl = JosaUtil.pick(destGeneralName, '을');
     const josaRo = JosaUtil.pick(destCityName, '로');
@@ -145,17 +151,25 @@ export class che_발령 extends NationCommand {
       cutTurn(destGeneral!.getTurnTime(), this.env['turnterm'])
     ) {
       const newYearMonth = yearMonth + 1;
-      destGeneral!.setAuxVar('last발령', newYearMonth);
+      if (!destGeneral!.data.aux) {
+        destGeneral!.data.aux = {};
+      }
+      destGeneral!.data.aux.last발령 = newYearMonth;
     } else {
-      destGeneral!.setAuxVar('last발령', yearMonth);
+      if (!destGeneral!.data.aux) {
+        destGeneral!.data.aux = {};
+      }
+      destGeneral!.data.aux.last발령 = yearMonth;
     }
 
     logger.pushGeneralActionLog(
       `<Y>${destGeneralName}</>${josaUl} <G><b>${destCityName}</b></>${josaRo} 발령했습니다. <1>${date}</>`
     );
 
+    logger.pushNationalHistoryLog(`<Y>${destGeneralName}</>${josaUl} <G><b>${destCityName}</b></>${josaRo} 발령`);
+
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destGeneral!.applyDB(db);
 
     // StaticEventHandler
@@ -182,7 +196,7 @@ export class che_발령 extends NationCommand {
     return {
       procRes: {
         distanceList: await global.JSCitiesBasedOnDistance(
-          this.generalObj!.getCityID(),
+          this.generalObj.getCityID(),
           1
         ),
         cities: await global.JSOptionsForCities(),
@@ -207,4 +221,4 @@ export class che_발령 extends NationCommand {
       }
     };
   }
-}
+}

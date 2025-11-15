@@ -76,7 +76,7 @@ export class DiplomaticMessage extends Message {
       return [DiplomaticMessage.INVALID, '송신자가 외교서신을 처리할 수 없습니다.'];
     }
 
-    // TODO: checkSecretPermission 구현
+    // FUTURE: checkSecretPermission 구현
     const permission = general?.permission || 0;
     if (!general || permission < 4) {
       return [DiplomaticMessage.INVALID, '해당 국가의 외교권자가 아닙니다.'];
@@ -89,13 +89,13 @@ export class DiplomaticMessage extends Message {
    * 불가침 처리
    */
   protected async noAggression(): Promise<[number, string]> {
-    // TODO: KVStorage 구현
+    // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
 
-    // TODO: General.createObjFromDB 구현
+    // FUTURE: General.createObjFromDB 구현
     // const destGeneralObj = await General.createObjFromDB(this.dest.generalID);
 
-    // TODO: buildNationCommandClass 구현
+    // FUTURE: buildNationCommandClass 구현
     // const commandObj = buildNationCommandClass(
     //   'che_불가침수락',
     //   destGeneralObj,
@@ -125,7 +125,7 @@ export class DiplomaticMessage extends Message {
    * 불가침 파기 처리
    */
   protected async cancelNA(): Promise<[number, string]> {
-    // TODO: 구현 (noAggression과 유사)
+    // FUTURE: 구현 (noAggression과 유사)
     return [DiplomaticMessage.ACCEPTED, ''];
   }
 
@@ -133,7 +133,7 @@ export class DiplomaticMessage extends Message {
    * 종전 처리
    */
   protected async stopWar(): Promise<[number, string]> {
-    // TODO: 구현 (noAggression과 유사)
+    // FUTURE: 구현 (noAggression과 유사)
     return [DiplomaticMessage.ACCEPTED, ''];
   }
 
@@ -146,11 +146,11 @@ export class DiplomaticMessage extends Message {
     }
 
     const db = DB.db();
-    // TODO: KVStorage 구현
+    // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     // const [year, month] = gameStor.getValuesAsArray(['year', 'month']);
 
-    // TODO: DB 쿼리
+    // FUTURE: DB 쿼리
     // const general = await db.queryFirstRow(
     //   'SELECT name, nation, officer_level, permission, penalty, belong FROM general WHERE no = ? AND nation = ?',
     //   [receiverID, this.dest.nationID]
@@ -165,7 +165,7 @@ export class DiplomaticMessage extends Message {
 
     const [result, reason] = await this.checkDiplomaticMessageValidation(general);
     if (result !== DiplomaticMessage.ACCEPTED) {
-      // TODO: ActionLogger 구현
+      // FUTURE: ActionLogger 구현
       // const logger = new ActionLogger(receiverID, 0, year, month);
       // logger.pushGeneralActionLog(`${reason} ${this.diplomacyName} 실패`, ActionLogger.PLAIN);
       if (result === DiplomaticMessage.DECLINED) {
@@ -190,7 +190,7 @@ export class DiplomaticMessage extends Message {
     }
 
     if (actionResult[0] !== DiplomaticMessage.ACCEPTED) {
-      // TODO: ActionLogger 구현
+      // FUTURE: ActionLogger 구현
       // const logger = new ActionLogger(receiverID, 0, year, month);
       // logger.pushGeneralActionLog(actionResult[1], ActionLogger.PLAIN);
       if (actionResult[0] === DiplomaticMessage.DECLINED) {
@@ -206,7 +206,7 @@ export class DiplomaticMessage extends Message {
     this.msgOption.used = true;
     this.validDiplomacy = false;
 
-    // TODO: 메시지 생성 및 전송
+    // FUTURE: 메시지 생성 및 전송
     // const josaYi = JosaUtil.pick(this.src.nationName, '이');
     // const newMsg = new Message(
     //   MessageType.national,
@@ -246,11 +246,11 @@ export class DiplomaticMessage extends Message {
     }
 
     const db = DB.db();
-    // TODO: KVStorage 구현
+    // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     // const [year, month] = gameStor.getValuesAsArray(['year', 'month']);
 
-    // TODO: DB 쿼리
+    // FUTURE: DB 쿼리
     // const general = await db.queryFirstRow(
     //   'SELECT name, nation, officer_level, permission, penalty, belong FROM general WHERE no = ? AND nation = ?',
     //   [receiverID, this.dest.nationID]
@@ -260,13 +260,13 @@ export class DiplomaticMessage extends Message {
     const [result, reason] = await this.checkDiplomaticMessageValidation(general);
 
     if (result === DiplomaticMessage.INVALID) {
-      // TODO: ActionLogger 구현
+      // FUTURE: ActionLogger 구현
       // const logger = new ActionLogger(receiverID, 0, year, month);
       // logger.pushGeneralActionLog(`${reason} ${this.diplomacyName} 거절 불가.`, ActionLogger.PLAIN);
       return [result, reason];
     }
 
-    // TODO: ActionLogger 구현
+    // FUTURE: ActionLogger 구현
     // const josaYi = JosaUtil.pick(this.dest.nationName, '이');
     // const logger = new ActionLogger(receiverID, 0, year, month);
     // logger.pushGeneralActionLog(`<D>${this.src.nationName}</>의 ${this.diplomacyName} 제안을 거절했습니다.`, ActionLogger.PLAIN);

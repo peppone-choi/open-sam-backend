@@ -63,6 +63,7 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
     const commanderExecutor = {
       no: commander.no,
       session_id: commander.session_id,
+      data: commander,
       getVar: (key: string) => (commander as any)[key],
       setVar: (key: string, value: any) => {
         (commander as any)[key] = value;

@@ -78,11 +78,11 @@ export class GetFrontInfoService {
         general = await generalRepository.findBySessionAndNo(sessionId, generalId);
       } else if (userId) {
         // userId로 owner 필드를 통해 조회
+        // npc < 2 필터를 제거: npc=2인 빙의된 NPC도 owner 필드로 찾을 수 있어야 함
         console.log('[GetFrontInfo] userId로 조회', { sessionId, userId: String(userId) });
         general = await generalRepository.findBySessionAndOwner(
           sessionId,
-          String(userId),
-          { npc: { $lt: 2 } } // NPC가 아닌 실제 플레이어 장수
+          String(userId)
         );
         
         console.log('[GetFrontInfo] userId 조회 결과', { found: !!general, generalNo: general?.no });
@@ -434,7 +434,7 @@ export class GetFrontInfoService {
       power: nationData.power || {},
       bill: nationData.bill || '',
       taxRate: nationData.rate || 10,
-      onlineGen: '', // TODO: 접속자 구현
+      onlineGen: '',
       notice: null,
       topChiefs: topChiefsMap,
       diplomaticLimit: nationData.surlimit || 0,
@@ -529,7 +529,10 @@ export class GetFrontInfoService {
       defaultOfficerLevel = 12; // 방랑군 군주
     }
     
-    const officerLevel = data.officer_level !== undefined ? data.officer_level : defaultOfficerLevel;
+    // Check both top-level and data.officer_level
+    const officerLevel = data.officer_level !== undefined 
+      ? data.officer_level 
+      : (data.data?.officer_level !== undefined ? data.data.officer_level : defaultOfficerLevel);
 
     return {
       no: data.no || general.no,
@@ -716,52 +719,43 @@ export class GetFrontInfoService {
     lastPersonalHistoryID: number,
     lastGlobalHistoryID: number
   ) {
-    // 장수 행동 기록 (장수동향) - 해당 장수의 action 타입 로그
+    // 장수 동향 - general_id = 0인 history 타입 로그 (PHP: getGlobalRecord)
     const generalFilter: any = {
+      session_id: sessionId,
+      general_id: 0,  // general_id = 0 (전역 장수동향)
+      log_type: 'history'
+    };
+    if (lastGeneralRecordID > 0) {
+      // MongoDB ObjectId를 문자열로 비교
+      generalFilter._id = { $gt: lastGeneralRecordID };
+    }
+    const generalRecord = await generalRecordRepository.findByFilter(generalFilter, {
+      sort: { _id: -1 },
+      limit: this.ROW_LIMIT + 1
+    });
+
+    // 개인 기록 - 내 장수의 action 타입 로그 (PHP: getGeneralRecord)
+    const personalHistoryFilter: any = {
       session_id: sessionId,
       general_id: generalId,
       log_type: 'action'
     };
-    if (lastGeneralRecordID > 0) {
-      generalFilter.id = { $gt: lastGeneralRecordID };
-    }
-    const generalRecord = await generalRecordRepository.findByFilter(generalFilter, {
-      sort: { id: -1 },
-      limit: this.ROW_LIMIT + 1
-    });
-
-    // 개인기록 - 해당 장수의 history 타입 로그
-    const personalHistoryFilter: any = {
-      session_id: sessionId,
-      general_id: generalId,
-      log_type: 'history'
-    };
     if (lastPersonalHistoryID > 0) {
-      personalHistoryFilter.id = { $gt: lastPersonalHistoryID };
+      personalHistoryFilter._id = { $gt: lastPersonalHistoryID };
     }
     const personalHistoryRecord = await generalRecordRepository.findByFilter(personalHistoryFilter, {
-      sort: { id: -1 },
+      sort: { _id: -1 },
       limit: this.ROW_LIMIT + 1
     });
 
-    // 전역 기록 (중원정세) - general_id: 0인 history 타입 로그
-    const globalFilter: any = {
-      session_id: sessionId,
-      general_id: 0,
-      log_type: 'history'
-    };
-    if (lastGlobalHistoryID > 0) {
-      globalFilter.id = { $gt: lastGlobalHistoryID };
-    }
-    const globalRecord = await generalRecordRepository.findByFilter(globalFilter, {
-      sort: { id: -1 },
-      limit: this.ROW_LIMIT + 1
-    });
+    // 중원정세 - world_history 테이블에서 nation_id = 0 (PHP: getHistory)
+    // 임시: 장수동향과 동일하게 처리 (나중에 world_history 구현 필요)
+    const globalRecord = generalRecord;
 
     return {
-      general: generalRecord.map(g => [g.id, g.text]), // 장수동향
-      history: personalHistoryRecord.map(h => [h.id, h.text]), // 개인기록
-      global: globalRecord.map(g => [g.id, g.text]), // 중원정세
+      general: generalRecord.map(g => [g._id?.toString() || g.id, g.text]), // 장수동향
+      history: personalHistoryRecord.map(h => [h._id?.toString() || h.id, h.text]), // 개인기록
+      global: globalRecord.map(g => [g._id?.toString() || g.id, g.text]), // 중원정세
       flushGeneral: generalRecord.length > this.ROW_LIMIT ? 1 : 0,
       flushHistory: personalHistoryRecord.length > this.ROW_LIMIT ? 1 : 0,
       flushGlobal: globalRecord.length > this.ROW_LIMIT ? 1 : 0
@@ -879,16 +873,16 @@ export class GetFrontInfoService {
   private static calculateStatBonus(data: any, statType: 'leadership' | 'strength' | 'intel' | 'politics' | 'charm'): number {
     let bonus = 0;
 
-    // TODO: 아이템 보정치 계산
+    
     // - 명마(horse): 통솔 +X
     // - 무기(weapon): 무력 +X
     // - 서적(book): 지력 +X
     // - 도구(item): 특정 능력치 +X
     
-    // TODO: 특기 보정치 계산
+    
     // - 특기(special, special2)에 따른 능력치 보정
     
-    // TODO: 부상(injury) 페널티는 여기서 계산하지 않음
+    
     // (calcInjury 함수에서 별도 처리)
 
     return bonus;

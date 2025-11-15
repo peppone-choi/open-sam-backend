@@ -109,7 +109,7 @@ export class JoinNationCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
 
     const destNation = this.destNation;
     const gennum = destNation.gennum;
@@ -130,16 +130,16 @@ export class JoinNationCommand extends GeneralCommand {
       exp = 100;
     }
 
-    general.setVar('nation', destNationID);
-    general.setVar('officer_level', 1);
-    general.setVar('officer_city', 0);
-    general.setVar('belong', 1);
-    general.setVar('troop', 0);
+    general.data.nation = destNationID;
+    general.data.officer_level = 1;
+    general.data.officer_city = 0;
+    general.data.belong = 1;
+    general.data.troop = 0;
 
-    console.log(`[JoinNation] 장수 #${general.getID()} ${general.getName()}: nation=${destNationID}, officer_level=1 설정완료`);
+    console.log(`[JoinNation] 장수 #${general.getID()} ${general.data.name || general.name}: nation=${destNationID}, officer_level=1 설정완료`);
 
     if (this.destGeneralObj !== null) {
-      general.setVar('city', this.destGeneralObj.getCityID());
+      general.data.city = this.destGeneralObj.getCityID();
     } else {
       const { generalRepository } = await import('../../repositories/general.repository');
       const sessionId = env.session_id || 'sangokushi_default';
@@ -151,7 +151,7 @@ export class JoinNationCommand extends GeneralCommand {
       });
       
       const targetCityID = lordDoc?.data?.city || destNation.capital || 1;
-      general.setVar('city', targetCityID);
+      general.data.city = targetCityID;
     }
 
     const { nationRepository } = await import('../../repositories/nation.repository');
@@ -172,7 +172,7 @@ export class JoinNationCommand extends GeneralCommand {
 
     // InheritancePoint 처리
     try {
-      general.increaseInheritancePoint('active_action', 1);
+      // TODO: general.increaseInheritancePoint('active_action', 1);
     } catch (error: any) {
       console.error('InheritancePoint 실패:', error);
     }
@@ -199,10 +199,10 @@ export class JoinNationCommand extends GeneralCommand {
 
     console.log(`[JoinNation] 저장 전 데이터 확인:`, {
       no: general.getID(),
-      name: general.getName(),
-      nation: general.getVar('nation'),
-      officer_level: general.getVar('officer_level'),
-      city: general.getVar('city')
+      name: general.data.name || general.name,
+      nation: general.data.nation,
+      officer_level: general.data.officer_level,
+      city: general.data.city
     });
 
     await this.saveGeneral();

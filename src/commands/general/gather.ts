@@ -6,7 +6,7 @@ import { RandUtil } from '../../utils/RandUtil';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
-import { tryUniqueItemLottery } from '../../utils/functions';
+import { tryUniqueItemLottery } from '../../utils/unique-item-lottery';
 
 /**
  * 집합 커맨드
@@ -121,7 +121,7 @@ export class GatherCommand extends GeneralCommand {
     );
     
     await tryUniqueItemLottery(
-      general.genGenericUniqueRNG(GatherCommand.actionName),
+      // TODO: general.genGenericUniqueRNG(GatherCommand.actionName),
       general
     );
     

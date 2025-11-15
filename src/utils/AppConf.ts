@@ -11,7 +11,7 @@ export class AppConf {
    * 서버 설정 반환 (deprecated)
    */
   static getList(): any[] {
-    // TODO: ServConfig::getServerList() 구현 필요
+    // FUTURE: ServConfig::getServerList() 마이그레이션 (v2.0)
     return [];
   }
 
@@ -19,7 +19,7 @@ export class AppConf {
    * 루트 DB 객체 생성
    */
   static requireRootDB(): any {
-    // TODO: RootDB::db() 구현 필요
+    // FUTURE: RootDB::db() 마이그레이션 (v2.0)
     throw new Error('RootDB.php가 설정되지 않았습니다.');
   }
 
@@ -27,7 +27,7 @@ export class AppConf {
    * DB 객체 생성
    */
   static requireDB(): any {
-    // TODO: DB::db() 구현 필요
+    // FUTURE: DB::db() 마이그레이션 (v2.0)
     throw new Error('DB.php가 설정되지 않았습니다.');
   }
 
@@ -44,7 +44,7 @@ export class AppConf {
    * 웹 아이콘 경로
    */
   static getUserIconPathWeb(filepath: string = ''): string {
-    // TODO: ServConfig::$serverWebPath 구현 필요
+    // FUTURE: ServConfig::$serverWebPath 마이그레이션 (v2.0)
     const serverWebPath = '/'; // 기본값
     const path = `${serverWebPath}/${AppConf.userIconPath}`;
     return filepath ? `${path}/${filepath}` : path;

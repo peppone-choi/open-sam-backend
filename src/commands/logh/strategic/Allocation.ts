@@ -43,7 +43,7 @@ export class AllocationCommand extends BaseLoghCommand {
     constraints.push(
       ConstraintHelper.Custom(
         (input: ILoghCommandContext) => {
-          // TODO: 구체적인 제약 조건 구현
+          // FUTURE: 구체적인 제약 조건 구현 (v2.0)
           return true;
         },
         '재편성/보충 실행 중 불가'
@@ -64,7 +64,7 @@ export class AllocationCommand extends BaseLoghCommand {
     // CP 소모
     commander.consumeCommandPoints(this.getRequiredCommandPoints());
 
-    // TODO: 커맨드별 구체적인 실행 로직 구현
+    // FUTURE: 커맨드별 구체적인 실행 로직 구현 (v2.0)
     // 현재는 기본 구현만 제공
 
     await commander.save();
@@ -83,6 +83,6 @@ export class AllocationCommand extends BaseLoghCommand {
   }
 
   async onTurnEnd(context: ILoghCommandContext): Promise<void> {
-    // TODO: 턴 종료 시 처리 로직 (필요한 경우)
+    // FUTURE: 턴 종료 시 처리 로직 (필요한 경우, v2.0)
   }
 }

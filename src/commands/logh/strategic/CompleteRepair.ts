@@ -118,7 +118,7 @@ export class CompleteRepairCommand extends BaseLoghCommand {
       };
     }
 
-    // TODO: 행성에 조병공창 시설이 있는지 확인 (나중에 Facility 시스템 구현 후)
+    // FUTURE: 행성에 조병공창 시설이 있는지 확인 (나중에 Facility 시스템 구현 후)
     
     // 수리 비용 계산
     const repairCost = this.calculateRepairCost(fleet.ships);

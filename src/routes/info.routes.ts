@@ -217,6 +217,7 @@ router.post('/betting', authenticate, async (req, res) => {
 router.post('/city', authenticate, async (req, res) => {
   try {
     const { session_id: sessionId, cityID } = req.body;
+    const userId = req.user?.userId;
     
     if (!sessionId || cityID === undefined) {
       return res.status(400).json({ 
@@ -238,6 +239,48 @@ router.post('/city', authenticate, async (req, res) => {
       return res.json({ 
         result: false, 
         error: '도시를 찾을 수 없습니다.' 
+      });
+    }
+    
+    // 장수 조회 (권한 체크용)
+    const general = await General.findOne({
+      session_id: sessionId,
+      owner: userId?.toString()
+    }).lean();
+    
+    if (!general) {
+      return res.json({ result: false, error: '장수를 찾을 수 없습니다' });
+    }
+    
+    const myNationId = general.data?.nation || general.nation || 0;
+    const cityNationId = city.data?.nation || city.nation || 0;
+    
+    // 권한 체크: 아군 도시, 공백지, 또는 스파이한 도시만 볼 수 있음
+    const isMyNation = myNationId === cityNationId;
+    const isNeutral = cityNationId === 0;
+    
+    let canView = isMyNation || isNeutral;
+    
+    // 타국 도시는 스파이 여부 확인
+    if (!canView && myNationId > 0) {
+      const myNation = await Nation.findOne({
+        session_id: sessionId,
+        nation: myNationId
+      }).select('data.spy spy').lean();
+      
+      if (myNation) {
+        const spyData = myNation.data?.spy || myNation.spy;
+        if (spyData) {
+          const spyCities = typeof spyData === 'string' ? JSON.parse(spyData || '{}') : spyData;
+          canView = spyCities[cityID] !== undefined;
+        }
+      }
+    }
+    
+    if (!canView) {
+      return res.json({
+        result: false,
+        error: '타국 도시는 첩보를 넣어야 볼 수 있습니다.'
       });
     }
 

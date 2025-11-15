@@ -9,6 +9,7 @@ import { IConstraint } from '../../constraints/ConstraintHelper';
 export interface ILoghCommandExecutor {
   no: number; // Commander ID
   session_id: string;
+  data: any; // Commander data object (name, supplies, position, etc.)
   getVar(key: string): any;
   setVar(key: string, value: any): void;
   increaseVar(key: string, value: number): void;

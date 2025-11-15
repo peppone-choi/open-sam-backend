@@ -13,8 +13,14 @@ export class NewTroopService {
     const troopName = data.troopName;
     
     try {
-      if (!troopName || troopName.length === 0 || troopName.length > 18) {
-        return { success: false, message: '부대 이름은 1~18자여야 합니다' };
+      if (!troopName || troopName.trim().length === 0) {
+        return { success: false, message: '부대 이름을 입력하세요' };
+      }
+      
+      // 한글 고려한 길이 체크 (한글 1자 = 2바이트로 계산)
+      const byteLength = Buffer.byteLength(troopName, 'utf8');
+      if (byteLength > 54) { // 한글 18자 = 54바이트
+        return { success: false, message: '부대 이름이 너무 깁니다 (최대 18자)' };
       }
       if (!generalId) {
         return { success: false, message: '장수 ID가 필요합니다' };

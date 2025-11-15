@@ -157,6 +157,11 @@ export const DEFAULT_NATION_POLICY_VALUES: NationPolicyValues = {
 };
 
 /**
+ * Alias for backward compatibility
+ */
+export const DEFAULT_NATION_POLICY = DEFAULT_NATION_POLICY_VALUES;
+
+/**
  * 서버/국가 정책 오버라이드
  */
 export interface NationPolicyOverride {
@@ -278,9 +283,9 @@ export class AutorunNationPolicy implements NationPolicyValues {
 
     // 동적 계산: NPC 전쟁 자원 (기본 병종 비용 기반)
     if (this.reqNPCWarGold === 0 || this.reqNPCWarRice === 0) {
-      // TODO: GameUnitConst 구현 후 실제 병종 비용 계산
+      // FUTURE: GameUnitConst 구현 후 실제 병종 비용 계산
       // 현재는 임시로 고정값 사용
-      const defaultStatNPCMax = 80; // TODO: GameConst에서 가져오기
+      const defaultStatNPCMax = 80; // FUTURE: GameConst에서 가져오기
       const estimatedGoldPerCrew = 100;
       const estimatedRicePerCrew = 50;
 
@@ -296,8 +301,8 @@ export class AutorunNationPolicy implements NationPolicyValues {
 
     // 동적 계산: 유저장 긴급 전쟁 자원
     if (this.reqHumanWarUrgentGold === 0 || this.reqHumanWarUrgentRice === 0) {
-      // TODO: GameUnitConst 구현 후 실제 병종 비용 계산
-      const defaultStatMax = 100; // TODO: GameConst에서 가져오기
+      // FUTURE: GameUnitConst 구현 후 실제 병종 비용 계산
+      const defaultStatMax = 100; // FUTURE: GameConst에서 가져오기
       const estimatedGoldPerCrew = 100;
       const estimatedRicePerCrew = 50;
 

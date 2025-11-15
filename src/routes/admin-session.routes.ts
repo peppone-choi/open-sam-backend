@@ -7,6 +7,7 @@ import { Nation } from '../models/nation.model';
 import { City } from '../models/city.model';
 import { GeneralTurn } from '../models/general_turn.model';
 import { NationTurn } from '../models/nation_turn.model';
+import { Message } from '../models/message.model';
 
 const router = Router();
 
@@ -261,6 +262,7 @@ router.post('/reset', authenticate, requireAdmin, async (req: Request, res: Resp
     await City.deleteMany({ session_id: sessionId });
     await GeneralTurn.deleteMany({ session_id: sessionId });
     await NationTurn.deleteMany({ session_id: sessionId });
+    await Message.deleteMany({ session_id: sessionId });
     
     // 세션 초기화
     // startYear 우선순위: session.startyear > data.game_env.startyear > data.startyear > 기본값 184
@@ -277,6 +279,10 @@ router.post('/reset', authenticate, requireAdmin, async (req: Request, res: Resp
     session.data.game_env.year = startyear;
     session.data.game_env.month = 1;
     session.data.game_env.isunited = 2;
+    session.data.game_env.develcost = session.data.game_env.develcost || 100;
+    session.data.game_env.killturn = session.data.game_env.killturn || 30;
+    session.data.game_env.scenario = session.data.game_env.scenario || 0;
+    session.data.game_env.allow_rebellion = session.data.game_env.allow_rebellion ?? true;
     session.year = startyear;
     session.month = 1;
     session.startyear = startyear;

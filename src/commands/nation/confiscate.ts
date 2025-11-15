@@ -116,8 +116,14 @@ export class che_몰수 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const date = general!.getTurnTime('HM');
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
 
@@ -127,7 +133,7 @@ export class che_몰수 extends NationCommand {
     const resName = isGold ? '금' : '쌀';
     const destGeneral = this.destGeneralObj;
 
-    amount = Math.max(0, Math.min(amount, destGeneral!.getVar(resKey)));
+    amount = Math.max(0, Math.min(amount, destGeneral!.data[resKey] ?? 0));
     const amountText = amount.toLocaleString();
 
     if (destGeneral!.getNPCType() >= 2 && rng.nextBool(GameConst.npcSeizureMessageProb)) {
@@ -149,7 +155,7 @@ export class che_몰수 extends NationCommand {
         nationID,
         nation['name'],
         nation['color'],
-        GetImageURL(destGeneral!.getVar('imgsvr'), destGeneral!.getVar('picture'))
+        GetImageURL(destGeneral!.data.imgsvr, destGeneral!.data.picture)
       );
 
       await Message.send(src, src, text, new Date(), new Date('9999-12-31'), []);
@@ -174,8 +180,10 @@ export class che_몰수 extends NationCommand {
       `<Y>${destGeneral!.getName()}</>에게서 ${resName} <C>${amountText}</>${josaUl} 몰수했습니다. <1>${date}</>` as any
     );
 
+    logger.pushNationalHistoryLog(`<Y>${destGeneral!.getName()}</>에게서 ${resName} ${amountText} 몰수`);
+
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destGeneral!.applyDB(db);
 
     // StaticEventHandler
@@ -226,4 +234,4 @@ export class che_몰수 extends NationCommand {
       }
     };
   }
-}
+}

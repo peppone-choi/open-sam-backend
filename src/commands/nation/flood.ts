@@ -97,14 +97,20 @@ export class FloodCommand extends NationCommand {
 
     const db = DB.db();
 
-    const general = this.generalObj!;
+    const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const date = general.getTurnTime('HM');
 
     const year = this.env['year'];
     const month = this.env['month'];
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -172,8 +178,10 @@ export class FloodCommand extends NationCommand {
       [destCityID]
     );
 
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>수몰</>을 발동`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>수몰</>을 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>수몰</>을 발동`);
+    const josaYiNation = JosaUtil.pick(nationName, '이');
+    logger.pushGlobalHistoryLog(`<M><b>【수공】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>에 <M>수몰</>을 발동하였습니다.`);
 
     const globalDelay = this.generalObj?.onCalcStrategic ? 
       this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9) : 9;
@@ -208,4 +216,4 @@ export class FloodCommand extends NationCommand {
   }
 }
 
-export const che_수몰 = FloodCommand;
+export const che_수몰 = FloodCommand;

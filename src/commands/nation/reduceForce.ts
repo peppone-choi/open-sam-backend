@@ -110,6 +110,9 @@ export class ReduceForceCommand extends NationCommand {
     const general = this.generalObj;
     const date = general.getTurnTime();
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity.city;
     const destCityName = destCity.name;
@@ -146,12 +149,12 @@ export class ReduceForceCommand extends NationCommand {
     }, 'nation=%i', [nationID]);
 
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>을 감축했습니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>을 <M>감축</>`);
-    logger.pushNationalHistoryLog(`<Y>${general.getName()}</>이 <G><b>${destCityName}</b></>을 <M>감축</>`);
-    logger.pushGlobalActionLog(`<Y>${general.getName()}</>이 <G><b>${destCityName}</b></>을 <M>감축</>하였습니다.`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>을 <M>감축</> <1>${date}</>`);
+    logger.pushNationalHistoryLog(`<Y>${general.data.name || general.name}</>이 <G><b>${destCityName}</b></>을 <M>감축</>`);
+    logger.pushGlobalActionLog(`<Y>${general.data.name || general.name}</>이 <G><b>${destCityName}</b></>을 <M>감축</>하였습니다.`);
     logger.pushGlobalHistoryLog(`<M><b>【감축】</b></><D><b>${nationName}</b></>이 <G><b>${destCityName}</b></>을 <M>감축</>하였습니다.`);
 
-    general.increaseInheritancePoint('active_action', 1);
+    // TODO: general.increaseInheritancePoint('active_action', 1);
     this.setResultTurn(new LastTurn(ReduceForceCommand.getName(), this.arg, 0));
     await await this.saveGeneral();
 
@@ -165,4 +168,4 @@ export class ReduceForceCommand extends NationCommand {
 
     return true;
   }
-}
+}

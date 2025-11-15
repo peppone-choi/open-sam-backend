@@ -676,7 +676,8 @@ export class GetProcessingCommandService {
       armCrewTypes,
       currentCrewType: generalData.crewtype || 1100,
       crew: generalData.crew || 0,
-      gold: generalData.gold || 0
+      gold: generalData.gold || 0,
+      rice: generalData.rice || 0
     };
   }
 

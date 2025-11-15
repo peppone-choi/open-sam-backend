@@ -45,7 +45,7 @@ export class RaiseEventService {
         userId: user.userId 
       });
 
-      // TODO: 실제 이벤트 처리 로직 구현
+      // FUTURE: 실제 이벤트 처리 로직 구현 (v2.0)
       // 현재는 성공 응답만 반환
       return {
         result: true,

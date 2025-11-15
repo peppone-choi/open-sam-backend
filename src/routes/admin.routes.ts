@@ -196,7 +196,7 @@ router.post('/error-log', async (req, res) => {
     const { from = 0, limit = 100 } = req.body;
     
     // 에러 로그 조회 (파일 또는 DB)
-    // TODO: 실제 로그 파일 읽기 또는 DB에서 조회
+    // FUTURE: 실제 로그 파일 읽기 또는 DB에서 조회
     const errorLogs: any[] = [];
     
     // 예시: 로그 파일이 있다면 읽기
@@ -315,6 +315,7 @@ router.post('/game-info', async (req, res) => {
       maxnation: gameEnv.maxnation || 12,
       isunited: isunited,
       status: currentStatus, // 추가!
+      allowNpcPossess: gameEnv.allow_npc_possess || false,
     };
     
     console.log('[Admin] Returning isunited:', gameInfo.isunited);
@@ -341,7 +342,7 @@ router.post('/game-info', async (req, res) => {
 router.post('/update-game', async (req, res) => {
   try {
     const { action, data } = req.body;
-    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const sessionId = req.query.session_id || req.body.session_id || data?.session_id || 'sangokushi_default';
     
     const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
@@ -457,6 +458,16 @@ router.post('/update-game', async (req, res) => {
       return res.json({
         result: true,
         message: result.message
+      });
+    } else if (action === 'allowNpcPossess') {
+      // 오리지널 캐릭터 플레이 허용 설정
+      session.data.game_env.allow_npc_possess = data.allowNpcPossess;
+      session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: '오리지널 캐릭터 플레이 설정이 변경되었습니다'
       });
     } else if (action === 'turnterm') {
       // AdminGameSettings 서비스를 사용하여 turnterm 변경 (장수 턴타임 재계산 포함)
@@ -1337,7 +1348,7 @@ router.post('/pay-salary', async (req, res) => {
       });
     }
     
-    // TODO: processGoldIncome/processRiceIncome 로직 포팅 필요
+    // FUTURE: processGoldIncome/processRiceIncome 로직 포팅 필요
     // 현재는 기본 응답만 반환
     
     res.json({

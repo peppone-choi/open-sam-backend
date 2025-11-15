@@ -157,6 +157,6 @@ export class FlagshipChangeCommand extends BaseLoghCommand {
   }
 
   async onTurnEnd(context: ILoghCommandContext): Promise<void> {
-    // TODO: 턴 종료 시 처리 로직 (필요한 경우)
+    // FUTURE: 턴 종료 시 처리 로직 (필요한 경우, v2.0)
   }
 }

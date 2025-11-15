@@ -48,7 +48,7 @@ export class StepDownCommand extends GeneralCommand {
     const sessionId = general.getSessionID();
     const date = general.getTurnTime('HM');
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const josaYi = JosaUtil.pick(generalName, '이');
 
     const nationID = this.nation?.nation || 0;
@@ -60,29 +60,30 @@ export class StepDownCommand extends GeneralCommand {
     logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>에서 하야`) as any;
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <D><b>${nationName}</b></>에서 <R>하야</>했습니다.`);
 
-    general.setVar('experience', general.getVar('experience') * (1 - 0.1 * general.getVar('betray')));
-    general.addExperience(0, false);
-    general.setVar('dedication', general.getVar('dedication') * (1 - 0.1 * general.getVar('betray')));
-    general.addDedication(0, false);
+    general.data.experience = (general.data.experience ?? 0) * (1 - 0.1 * (general.data.betray ?? 0));
+    general.addExperience(0);
+    general.data.dedication = (general.data.dedication ?? 0) * (1 - 0.1 * (general.data.betray ?? 0));
+    general.addDedication(0);
     
     const maxBetrayCnt = GameConst.maxBetrayCnt || 10;
     general.increaseVarWithLimit('betray', 1, null, maxBetrayCnt);
-    general.setVar('permission', 'normal');
+    general.data.permission = 'normal';
 
-    const newGold = Util.valueFit(general.getVar('gold'), null, GameConst.defaultGold);
-    const newRice = Util.valueFit(general.getVar('rice'), null, GameConst.defaultRice);
+    const newGold = Util.valueFit(general.data.gold, null, GameConst.defaultGold);
+    const newRice = Util.valueFit(general.data.rice, null, GameConst.defaultRice);
 
-    const lostGold = general.getVar('gold') - newGold;
-    const lostRice = general.getVar('rice') - newRice;
+    const lostGold = general.data.gold - newGold;
+    const lostRice = general.data.rice - newRice;
 
-    general.setVar('gold', newGold);
-    general.setVar('rice', newRice);
+    general.data.gold = newGold;
+    general.data.rice = newRice;
 
     const currentNation = await nationRepository.findByNationNum(sessionId, nationID);
+    const npcType = general.data.npc ?? general.npc ?? 0;
     await nationRepository.updateByNationNum(sessionId, nationID, {
       gold: (currentNation?.gold || 0) + lostGold,
       rice: (currentNation?.rice || 0) + lostRice,
-      gennum: (currentNation?.gennum || 0) - (general.getNPCType() !== 5 ? 1 : 0)
+      gennum: (currentNation?.gennum || 0) - (npcType !== 5 ? 1 : 0)
     });
 
     try {
@@ -92,13 +93,13 @@ export class StepDownCommand extends GeneralCommand {
       console.error('refreshNationStaticInfo 실패:', error);
     }
 
-    general.setVar('nation', 0);
-    general.setVar('officer_level', 0);
-    general.setVar('officer_city', 0);
-    general.setVar('belong', 0);
-    general.setVar('makelimit', 12);
+    general.data.nation = 0;
+    general.data.officer_level = 0;
+    general.data.officer_city = 0;
+    general.data.belong = 0;
+    general.data.makelimit = 12;
 
-    if (general.getVar('troop') === generalID) {
+    if (general.data.troop === generalID) {
       await generalRepository.updateManyByFilter(
         { session_id: sessionId, 'data.troop': generalID },
         { 'data.troop': 0 }
@@ -114,16 +115,16 @@ export class StepDownCommand extends GeneralCommand {
         console.error('부대 삭제 실패:', error);
       }
     }
-    general.setVar('troop', 0);
+    general.data.troop = 0;
 
     try {
-      if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
-      }
+      // TODO: general.increaseInheritancePoint('active_action', 1);
+      // InheritancePoint 시스템이 아직 구현되지 않음
       
-      if (general.getNPCType() < 2) {
-        const belongCount = general.getVar('belong') || 0;
-        general.setVar('max_belong', Math.max(belongCount, general.getVar('max_belong') || 0));
+      const npcType = general.data.npc ?? general.npc ?? 0;
+      if (npcType < 2) {
+        const belongCount = general.data.belong || 0;
+        general.data.max_belong = Math.max(belongCount, general.data.max_belong || 0);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);

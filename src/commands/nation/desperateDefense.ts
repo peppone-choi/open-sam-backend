@@ -75,9 +75,12 @@ export class DesperateDefenseCommand extends NationCommand {
 
     const db = DB.db();
 
-    const general = this.generalObj!;
+    const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const date = general.getTurnTime('HM');
 
     const nationID = general.getNationID();
@@ -90,6 +93,7 @@ export class DesperateDefenseCommand extends NationCommand {
     general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const josaYi = JosaUtil.pick(generalName, '이');
+    const josaYiNation = JosaUtil.pick(nationName, '이');
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <M>필사즉생</>을 발동하였습니다.`;
 
@@ -114,26 +118,27 @@ export class DesperateDefenseCommand extends NationCommand {
           targetLogger.pushGeneralActionLog(broadcastMessage, 0);
         }
 
-        if (targetGeneral.getVar('train') < 100) {
-          targetGeneral.setVar('train', 100);
+        if (targetGeneral.data.train < 100) {
+          targetGeneral.data.train = 100;
         }
-        if (targetGeneral.getVar('atmos') < 100) {
-          targetGeneral.setVar('atmos', 100);
+        if (targetGeneral.data.atmos < 100) {
+          targetGeneral.data.atmos = 100;
         }
 
         await await targetGeneral.save();
       }
     }
 
-    if (general.getVar('train') < 100) {
-      general.setVar('train', 100);
+    if (general.data.train < 100) {
+      general.data.train = 100;
     }
-    if (general.getVar('atmos') < 100) {
-      general.setVar('atmos', 100);
+    if (general.data.atmos < 100) {
+      general.data.atmos = 100;
     }
 
     logger.pushGeneralHistoryLog('<M>필사즉생</>을 발동');
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <M>필사즉생</>을 발동`);
+    logger.pushGlobalHistoryLog(`<R><b>【결사】</b></><D><b>${nationName}</b></>${josaYi} <M>필사즉생</>을 발동하여 전군의 사기를 끌어올렸습니다.`);
 
     const globalDelay = this.generalObj?.onCalcStrategic ?
       this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9) : 9;
@@ -157,4 +162,4 @@ export class DesperateDefenseCommand extends NationCommand {
   }
 }
 
-export const che_필사즉생 = DesperateDefenseCommand;
+export const che_필사즉생 = DesperateDefenseCommand;

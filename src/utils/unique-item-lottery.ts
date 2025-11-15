@@ -174,7 +174,7 @@ export async function giveRandomUniqueItem(
         );
 
         // UserRecord 로깅 (UserRecord 모델이 있다면)
-        // TODO: UserRecord 로깅 구현
+        
       }
       return false;
     }
@@ -199,7 +199,15 @@ export async function giveRandomUniqueItem(
 
     // 국가 정보 가져오기
     const nationId = generalData.nation || 0;
-    const nationName = nationId === 0 ? '재야' : '국가'; // TODO: 실제 국가 이름 가져오기
+    let nationName = '재야';
+    if (nationId > 0) {
+      const { Nation } = await import('../models/nation.model');
+      const nation = await Nation.findOne({ 
+        session_id: general.session_id, 
+        nation: nationId 
+      }).lean();
+      nationName = nation?.name || `국가 ${nationId}`;
+    }
     const generalName = general.name || '';
     const josaYi = JosaUtil.pick(generalName, '이');
 

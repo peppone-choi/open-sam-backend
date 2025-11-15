@@ -120,7 +120,7 @@ export class SelectPickedGeneralService {
       }
 
       // 회원 정보 가져오기 (picture, imgsvr)
-      // TODO: RootDB에서 실제로 가져오기
+      // FUTURE: RootDB에서 가져오기 (v2.0)
       const ownerInfo = {
         name: user?.name || 'Unknown',
         picture: user?.picture || null,
@@ -266,7 +266,7 @@ export class SelectPickedGeneralService {
 
       const cityName = city?.data?.name || '도시';
 
-      // TODO: ActionLogger로 로그 남기기
+      // FUTURE: ActionLogger 구현 (v2.0)
       console.log(`[SelectPickedGeneral] ${ownerInfo.name}이 ${selectInfo.generalName}으로 등장`);
 
       return {

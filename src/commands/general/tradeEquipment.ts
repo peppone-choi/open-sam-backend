@@ -53,7 +53,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
     this.setNation();
 
     this.minConditionConstraints = [
-      ConstraintHelper.ReqCityTrader(general.getNPCType()),
+      ConstraintHelper.ReqCityTrader(general.data.npc ?? general.npc ?? 0),
     ];
   }
 
@@ -67,7 +67,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     this.fullConditionConstraints = [
-      ConstraintHelper.ReqCityTrader(general.getNPCType()),
+      ConstraintHelper.ReqCityTrader(general.data.npc ?? general.npc ?? 0),
       ConstraintHelper.ReqCityCapacity('secu', '치안 수치', itemClass.getReqSecu()),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
@@ -77,11 +77,11 @@ export class TradeEquipmentCommand extends GeneralCommand {
       this.fullConditionConstraints.push(
         ConstraintHelper.ReqGeneralValue(itemType, itemTypeName, '!=', 'None')
       );
-    } else if (itemCode === general.getVar(itemType)) {
+    } else if (itemCode === general.data[itemType]) {
       this.fullConditionConstraints.push(
         ConstraintHelper.AlwaysFail('이미 가지고 있습니다.')
       );
-    } else if (!this.buildItemClass(general.getVar(itemType)).isBuyable()) {
+    } else if (!this.buildItemClass(general.data[itemType]).isBuyable()) {
       this.fullConditionConstraints.push(
         ConstraintHelper.AlwaysFail('이미 진귀한 것을 가지고 있습니다.')
       );
@@ -140,7 +140,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
 
     if (itemCode === 'None') {
       buying = false;
-      itemCode = general.getVar(itemType);
+      itemCode = general.data[itemType];
     } else {
       buying = true;
     }
@@ -156,16 +156,16 @@ export class TradeEquipmentCommand extends GeneralCommand {
     if (buying) {
       logger.pushGeneralActionLog(`<C>${itemName}</>${josaUl} 구입했습니다. <1>${date}</>`);
       general.increaseVarWithLimit('gold', -cost, 0);
-      general.setItem(itemType, itemCode);
-      await general.onArbitraryAction(general, rng, '장비매매', '구매', { itemCode });
+      general.setVar(itemType, itemCode);
+      // TODO: await general.onArbitraryAction(general, rng, '장비매매', '구매', { itemCode });
     } else {
       logger.pushGeneralActionLog(`<C>${itemName}</>${josaUl} 판매했습니다. <1>${date}</>`);
       general.increaseVarWithLimit('gold', cost / 2);
-      await general.onArbitraryAction(general, rng, '장비매매', '판매', { itemCode });
-      general.setItem(itemType, null);
+      // TODO: await general.onArbitraryAction(general, rng, '장비매매', '판매', { itemCode });
+      general.setVar(itemType, null);
 
       if (!itemObj.isBuyable()) {
-        const generalName = general.getName();
+        const generalName = general.data.name || general.name;
         const josaYi = JosaUtil.pick(generalName, '이');
         const staticNation2 = general.getStaticNation();
         const nationName2 = staticNation2?.name || '무명';
@@ -234,21 +234,27 @@ export class TradeEquipmentCommand extends GeneralCommand {
     }
 
     const ownItem: any = {};
-    for (const [itemType, item] of Object.entries(general.getItems() as any)) {
-      ownItem[itemType] = {
-        id: item.getRawClassName?.() || '',
-        name: item.getName?.() || '',
-        reqSecu: item.getReqSecu?.() || 0,
-        cost: item.getCost?.() || 0,
-        info: item.getInfo?.() || '',
-        isBuyable: item.isBuyable?.() || false,
-      };
+    // TODO: getItems() 메서드가 없으므로 직접 아이템 필드를 조회
+    const itemTypes = ['horse', 'weapon', 'book', 'item'];
+    for (const itemType of itemTypes) {
+      const itemCode = general.data[itemType] || general[itemType];
+      if (itemCode && itemCode !== 'None') {
+        const item = this.buildItemClass(itemCode);
+        ownItem[itemType] = {
+          id: item.getRawClassName?.() || itemCode,
+          name: item.getName?.() || '',
+          reqSecu: item.getReqSecu?.() || 0,
+          cost: item.getCost?.() || 0,
+          info: item.getInfo?.() || '',
+          isBuyable: item.isBuyable?.() || false,
+        };
+      }
     }
 
     return {
       procRes: {
         citySecu,
-        gold: general.getVar('gold'),
+        gold: general.data.gold,
         itemList,
         ownItem,
       }

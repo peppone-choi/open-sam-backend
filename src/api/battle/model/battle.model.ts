@@ -13,7 +13,7 @@ export interface IBattleDocument extends Document {
   
   // 전투 정보
   cityId?: string;
-  battleType: 'field' | 'siege' | 'ambush'; // TODO: 전투 타입 정의
+  battleType: 'field' | 'siege' | 'ambush'; // FUTURE: 전투 타입 정의
   
   // 병력 정보
   attackerTroops: number;

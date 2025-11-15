@@ -48,7 +48,7 @@ export class BoostMoraleCommand extends GeneralCommand {
 
   public getCost(): [number, number] {
     const general = this.generalObj;
-    const crew = Math.max(1, general.getVar('crew')); // 0으로 나누기 방지
+    const crew = Math.max(1, general.data.crew); // 0으로 나누기 방지
     return [Math.round(crew / 100), 0];
   }
 
@@ -72,7 +72,7 @@ export class BoostMoraleCommand extends GeneralCommand {
     const trainSideEffectByAtmosTurn = 0.9;
 
     // 0으로 나누기 방지: crew가 0일 수 있음
-    const crew = Math.max(1, general.getVar('crew'));
+    const crew = Math.max(1, general.data.crew);
     
     // 사기진작은 통솔 70% + 매력 30%
     const leadership = general.getLeadership();
@@ -81,24 +81,26 @@ export class BoostMoraleCommand extends GeneralCommand {
     
     const score = Math.max(0, Math.min(
       Math.round(moralePower * 100 / crew * atmosDelta),
-      Math.max(0, maxAtmosByCommand - general.getVar('atmos'))
+      Math.max(0, maxAtmosByCommand - general.data.atmos)
     ));
 
     const scoreText = score.toLocaleString();
 
-    const sideEffect = Math.max(0, Math.floor(general.getVar('train') * trainSideEffectByAtmosTurn));
+    const sideEffect = Math.max(0, Math.floor(general.data.train * trainSideEffectByAtmosTurn));
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
-    logger.pushGeneralActionLog(`사기치가 <C>${scoreText}</> 상승했습니다.`);
+    logger.pushGeneralActionLog(`사기치가 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
 
     const exp = 100;
     const ded = 70;
 
     general.increaseVar('atmos', score);
-    general.setVar('train', sideEffect);
+    general.data.train = sideEffect;
 
-    general.addDex(general.getCrewTypeObj(), score, false);
+    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
+    // TODO: general.addDex(crewTypeObj, score, false);
 
     const [reqGold] = this.getCost();
     general.increaseVarWithLimit('gold', -reqGold, 0);
@@ -123,7 +125,7 @@ export class BoostMoraleCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(BoostMoraleCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(BoostMoraleCommand.actionName),
         general,
         sessionId,
         '사기진작'

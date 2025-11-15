@@ -78,7 +78,7 @@ export class DummyGeneral implements Partial<IGeneral> {
   }
 
   getLogger(): any {
-    // TODO: ActionLogger 구현
+    // FUTURE: ActionLogger 구현
     if (!this.logger) {
       this.logger = {
         pushGlobalActionLog: () => {},

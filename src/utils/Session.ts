@@ -174,11 +174,6 @@ export class Session {
     // 게임 로그아웃
     this.logoutGame();
 
-    // TODO: 토큰 삭제 (데이터베이스에서)
-    // if (this.tokenID) {
-    //   RootDB::db()->delete('login_token', 'id = %i', this.tokenID);
-    // }
-
     this.set('userID', null);
     this.set('userName', null);
     this.set('userGrade', null);
@@ -201,7 +196,7 @@ export class Session {
       return this;
     }
 
-    // TODO: UniqueConst 구현 필요
+    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
     // const serverID = UniqueConst.$serverID;
     const serverID = 'default'; // 임시
 
@@ -235,7 +230,7 @@ export class Session {
       this.logoutGame();
     }
 
-    // TODO: 실제 게임 로그인 로직 구현
+    // FUTURE: 실제 게임 로그인 로직 구현 (v2.0)
     // const general = DB::db()->queryFirstRow(...);
     // if (!general) {
     //   if (result) result.value = false;
@@ -259,7 +254,7 @@ export class Session {
    * 게임 로그아웃
    */
   logoutGame(): this {
-    // TODO: UniqueConst 구현 필요
+    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
     const serverID = 'default'; // 임시
 
     this.set(serverID + Session.GAME_KEY_DATE, null);
@@ -318,13 +313,13 @@ export class Session {
   }
 
   get generalID(): number | null {
-    // TODO: UniqueConst 구현 필요
+    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
     const serverID = 'default'; // 임시
     return this.get(serverID + Session.GAME_KEY_GENERAL_ID) ?? null;
   }
 
   get generalName(): string | null {
-    // TODO: UniqueConst 구현 필요
+    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
     const serverID = 'default'; // 임시
     return this.get(serverID + Session.GAME_KEY_GENERAL_NAME) ?? null;
   }

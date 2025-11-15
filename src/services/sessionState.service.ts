@@ -5,10 +5,19 @@
 
 import { Session } from '../models/session.model';
 import { logger } from '../common/logger';
-import { cacheManager } from '../cache/CacheManager';
 import { getSocketManager } from '../socket/socketManager';
 import Redis from 'ioredis';
 import { sessionRepository } from '../repositories/session.repository';
+
+// Lazy-load cache manager to avoid blocking server startup
+let _cacheManager: any = null;
+function getCacheManager(): any {
+  if (!_cacheManager) {
+    const { cacheManager } = require('../cache/CacheManager');
+    _cacheManager = cacheManager;
+  }
+  return _cacheManager;
+}
 
 // Redis 클라이언트 (락 관리용)
 let redisClient: Redis | null = null;
@@ -64,7 +73,7 @@ export class SessionStateService {
     try {
       // 캐시에서 조회
       const cacheKey = `session:state:${sessionId}`;
-      const cached = await cacheManager.get<SessionState>(cacheKey);
+      const cached: SessionState | null = await getCacheManager().get(cacheKey);
       if (cached) {
         return cached;
       }
@@ -98,7 +107,7 @@ export class SessionStateService {
       };
 
       // 캐시에 저장
-      await cacheManager.set(cacheKey, state, this.CACHE_TTL);
+      await getCacheManager().set(cacheKey, state, this.CACHE_TTL);
 
       return state;
     } catch (error: any) {
@@ -270,7 +279,7 @@ export class SessionStateService {
    */
   static async invalidateCache(sessionId: string): Promise<void> {
     const cacheKey = `session:state:${sessionId}`;
-    await cacheManager.delete(cacheKey);
+    await getCacheManager().delete(cacheKey);
   }
 
   /**

@@ -15,25 +15,25 @@ export class GetChiefCenterService {
     const generalId = user?.generalId || data.general_id;
     
     try {
-      if (!generalId) {
-        const general = await generalRepository.findBySessionAndOwner(
+      let actualGeneralId = generalId;
+      
+      if (!actualGeneralId) {
+        const foundGeneral = await generalRepository.findBySessionAndOwner(
           sessionId,
-          String(userId),
-          { npc: { $lt: 2 } }
+          String(userId)
         );
         
-        if (!general) {
+        if (!foundGeneral) {
           return {
             result: false,
             reason: '장수를 찾을 수 없습니다'
           };
         }
+        
+        actualGeneralId = foundGeneral.no || foundGeneral.data?.no;
       }
       
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, actualGeneralId);
       
       if (!general) {
         return {

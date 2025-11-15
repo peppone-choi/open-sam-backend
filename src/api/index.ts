@@ -88,6 +88,7 @@ export const mountRoutes = (app: Express) => {
   app.use('/api/message', messageRoutes);
   app.use('/api/vote', voteRoutes);
   app.use('/api/inheritance', inheritanceRoutes);
+  app.use('/api/inherit', inheritanceRoutes); // alias for frontend compatibility
   app.use('/api/inheritaction', inheritactionRoutes);
   app.use('/api/misc', miscRoutes);
   
@@ -113,7 +114,7 @@ export const mountRoutes = (app: Express) => {
   // ============================================
   
   // TEMPORARILY DISABLED - Missing dependencies
-  // TODO: Re-enable after fixing:
+  // FUTURE: Re-enable after fixing:
   // - src/api/battle (missing StartBattle.service, battle.model)
   // - src/api/command (CommandService method mismatch)
   // - src/api/v2 (missing entity implementation)

@@ -9,7 +9,7 @@ const NgDiplomacyModel = NgDiplomacy as any;
 const router = Router();
 
 // NgDiplomacy 모델이 없을 수 있으므로 임시로 직접 처리
-// TODO: NgDiplomacy 모델 확인 및 생성
+// FUTURE: NgDiplomacy 모델 확인 및 생성
 
 /**
  * 외교문서 목록 조회

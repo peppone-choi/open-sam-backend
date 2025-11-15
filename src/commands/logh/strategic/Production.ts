@@ -126,7 +126,7 @@ export class ProductionCommand extends BaseLoghCommand {
       };
     }
 
-    // TODO: 조병공창 시설 존재 여부 확인 (Facility 시스템 구현 후)
+    // FUTURE: 조병공창 시설 존재 여부 확인 (Facility 시스템 구현 후)
     // 현재는 industry 수치로 임시 대체
     const industry = planet.stats?.industry || 0;
     if (industry < 10) {
@@ -156,9 +156,9 @@ export class ProductionCommand extends BaseLoghCommand {
       });
     }
 
-    // TODO: 행성 자원(resources) 체크 (Planet 모델에 resources 필드 추가 필요)
+    // FUTURE: 행성 자원(resources) 체크 (Planet 모델에 resources 필드 추가 필요)
     // 현재는 커맨더의 supplies로 임시 대체
-    const commanderSupplies = commander.getVar('supplies') || 0;
+    const commanderSupplies = commander.data.supplies || 0;
     if (commanderSupplies < totalCost) {
       return {
         success: false,
@@ -170,17 +170,17 @@ export class ProductionCommand extends BaseLoghCommand {
     commander.consumeCommandPoints(this.getRequiredCommandPoints());
 
     // 자원 소비
-    commander.setVar('supplies', commanderSupplies - totalCost);
+    commander.data.supplies = commanderSupplies - totalCost;
 
     // 생산 큐에 등록 (커맨더 customData에 저장)
-    const productionQueue = commander.getVar('production_queue') || [];
+    const productionQueue = commander.data.production_queue || [];
     productionQueue.push({
       planetId,
       orders: productionDetails,
       startedAt: Date.now(),
       completesAt: Date.now() + (totalTime * 2500), // 게임시간 → 밀리초
     });
-    commander.setVar('production_queue', productionQueue);
+    commander.data.production_queue = productionQueue;
 
     await commander.save();
 

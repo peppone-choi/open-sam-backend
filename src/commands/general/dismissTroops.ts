@@ -57,7 +57,7 @@ export class DismissTroopsCommand extends GeneralCommand {
     const exp = 70;
     const ded = 100;
 
-    const crew = general.getVar('crew') || 0;
+    const crew = general.data.crew || 0;
     const crewUp = general.onCalcDomestic('징집인구', 'score', crew);
 
     // MongoDB에서는 $inc를 사용하여 증가시킵니다
@@ -72,7 +72,7 @@ export class DismissTroopsCommand extends GeneralCommand {
       }
     );
 
-    general.setVar('crew', 0);
+    general.data.crew = 0;
     general.addExperience(exp);
     general.addDedication(ded);
     this.setResultTurn(new LastTurn(DismissTroopsCommand.getName(), this.arg));

@@ -63,6 +63,9 @@ export class che_무작위수도이전 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general!.getID();
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
@@ -85,6 +88,9 @@ export class che_무작위수도이전 extends NationCommand {
     const destCityID = rng.choice(cities);
     this.setDestCity(destCityID, true);
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityName = destCity['name'];
 
@@ -93,8 +99,8 @@ export class che_무작위수도이전 extends NationCommand {
 
     const josaRo = JosaUtil.pick(destCityName, '로');
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
@@ -117,7 +123,7 @@ export class che_무작위수도이전 extends NationCommand {
       [oldCityID]
     );
 
-    general!.setVar('city', destCityID);
+    general.data.city = destCityID;
     const generalList = await db.queryFirstColumn(
       'SELECT no FROM general WHERE nation=%i AND no!=%i',
       [general!.getNationID(), general!.getID()]
@@ -138,9 +144,9 @@ export class che_무작위수도이전 extends NationCommand {
     const refreshNationStaticInfo = global.refreshNationStaticInfo;
     await refreshNationStaticInfo();
 
-    general!.increaseInheritancePoint('active_action', 1);
+    // TODO: general.increaseInheritancePoint('active_action', 1);
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaRo} 국가를 옮겼습니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaRo} <M>무작위 수도 이전</>`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaRo} <M>무작위 수도 이전</> <1>${date}</>`);
     logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaRo} <M>무작위 수도 이전</>`
     );
@@ -152,7 +158,7 @@ export class che_무작위수도이전 extends NationCommand {
     );
 
     this.setResultTurn(new LastTurn(che_무작위수도이전.getName(), this.arg, 0));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     return true;
   }
-}
+}

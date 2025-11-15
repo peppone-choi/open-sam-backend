@@ -438,11 +438,11 @@ export class LoadScenarioDataService {
         faction,
         commanderId: commander.no,
         fleetType: 'fleet', // 기본 함대 타입
-        ships: [], // TODO: ship-specifications에서 함선 구성 로드
+        ships: [],
         totalShips: fleetData.ships || 0,
         totalUnits: Math.floor((fleetData.ships || 0) / 300), // 1 unit = 300 ships
         maxUnits: 60, // fleet 타입 최대
-        crew: [], // TODO: 승무원 할당
+        crew: [],
         totalCrew: 0,
         maxCrewSlots: 10,
         fuel: 1000, // 초기 연료

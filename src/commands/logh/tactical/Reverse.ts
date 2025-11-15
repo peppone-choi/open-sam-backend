@@ -120,7 +120,7 @@ export class ReverseTacticalCommand {
 
     // 전술 맵 크기 확인 (기본값 10000x10000)
     const mapSize = { width: 10000, height: 10000 };
-    // TODO: TacticalMap에서 실제 크기 가져오기
+    // FUTURE: TacticalMap에서 실제 크기 가져오기
 
     // 맵 경계 체크
     const clampedTarget = this.clampToMapBounds(targetPos, mapSize);

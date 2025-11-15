@@ -89,13 +89,16 @@ export class che_부대탈퇴지시 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
 
     const destGeneral = this.destGeneralObj;
     const destGeneralName = destGeneral!.getName();
     const logger = this.getLogger();
 
-    const troopID = destGeneral!.getVar('troop');
+    const troopID = destGeneral!.data.troop ?? 0;
     if (troopID === 0) {
       const josaUn = JosaUtil.pick(destGeneralName, '은');
       logger.pushGeneralActionLog(`<Y>${destGeneralName}</>${josaUn} 부대원이 아닙니다.`);
@@ -110,13 +113,15 @@ export class che_부대탈퇴지시 extends NationCommand {
       return true;
     }
 
-    destGeneral!.setVar('troop', 0);
+    destGeneral!.data.troop = 0;
 
     logger.pushGeneralActionLog(`<Y>${destGeneralName}</>에게 부대 탈퇴를 지시했습니다.`);
     destGeneral!.getLogger().pushGeneralActionLog(`<Y>${generalName}</>에게 부대 탈퇴를 지시 받았습니다.`);
 
+    logger.pushNationalHistoryLog(`<Y>${destGeneralName}</>에게 부대 탈퇴 지시`);
+
     this.setResultTurn(new LastTurn(che_부대탈퇴지시.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destGeneral!.applyDB(db);
 
     // StaticEventHandler
@@ -164,4 +169,4 @@ export class che_부대탈퇴지시 extends NationCommand {
       }
     };
   }
-}
+}

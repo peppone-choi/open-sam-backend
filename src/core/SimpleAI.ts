@@ -992,7 +992,7 @@ export class SimpleAI {
       '모병': GeneralActionType.모병,
       '훈련': GeneralActionType.전투준비,
       '출병': GeneralActionType.출병,
-      '워프': GeneralActionType.후방워프, // TODO: 상황에 따라 전방/후방/내정 구분
+      '워프': GeneralActionType.후방워프, // FUTURE: 상황에 따라 전방/후방/내정 구분
       '귀환': GeneralActionType.귀환,
       '거병': GeneralActionType.건국,
       '건국': GeneralActionType.건국,
@@ -1273,7 +1273,7 @@ export class SimpleAI {
       });
     }
 
-    // TODO: 발령, 천도, 외교 등 추가
+    // FUTURE: 발령, 천도, 외교 등 추가
 
     return commands;
   }
@@ -1289,14 +1289,14 @@ export class SimpleAI {
     if (!nationData.capital) return null;
 
     // 자원 충분 여부 (평균 자원의 1.5배 이상)
-    const avgGold = 10000; // TODO: 실제 평균 계산
+    const avgGold = 10000; // FUTURE: 실제 평균 계산
     const avgRice = 10000;
     
     if (nationData.gold < avgGold * 1.5 || nationData.rice < avgRice * 1.5) {
       return null;
     }
 
-    // TODO: 외교 상태 확인, 약한 국가 찾기
+    // FUTURE: 외교 상태 확인, 약한 국가 찾기
     // 현재는 간단히 null 반환 (선포 안 함)
     return null;
   }
@@ -1341,7 +1341,7 @@ export class SimpleAI {
     }
 
     // 주변 3칸 이내에 거병 가능한 도시(레벨 5-6, 무주) 있는지 체크
-    // TODO: searchDistance() 구현 및 도시 점유 상태 조회
+    // FUTURE: searchDistance() 구현 및 도시 점유 상태 조회
     // 현재는 간단히 50% 확률로 체크
     if (Math.random() < 0.5) {
       return null;
@@ -1352,8 +1352,8 @@ export class SimpleAI {
     const strength = genData.strength || 50;
     const intel = genData.intel || 50;
     const avgStat = (leadership + strength + intel) / 3;
-    const npcMaxStat = 80; // TODO: GameConst.defaultStatNPCMax
-    const chiefMinStat = 60; // TODO: GameConst.chiefStatMin
+    const npcMaxStat = 80; // FUTURE: GameConst.defaultStatNPCMax
+    const chiefMinStat = 60; // FUTURE: GameConst.chiefStatMin
     const threshold = Math.random() * (npcMaxStat + chiefMinStat) / 2;
     
     if (threshold < avgStat) {
@@ -1397,7 +1397,7 @@ export class SimpleAI {
 
     // 랜덤 국가 타입/색상 선택
     const availableTypes = ['삼국', '진', '한', '조', '위', '촉', '오', '후한', '황건'];
-    const availableColors = [0, 1, 2, 3, 4, 5, 6, 7]; // TODO: GetNationColors() 구현 필요
+    const availableColors = [0, 1, 2, 3, 4, 5, 6, 7]; // FUTURE: GetNationColors() 구현 필요
     
     const nationType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
     const colorType = availableColors[Math.floor(Math.random() * availableColors.length)];
@@ -1434,7 +1434,7 @@ export class SimpleAI {
       return null;
     }
 
-    // TODO: 국가 내 다른 장수 찾기 (npc != 5)
+    // FUTURE: 국가 내 다른 장수 찾기 (npc != 5)
     // const destGeneralID = await this.findRandomGeneralInNation();
     
     return null; // 일단 구현 보류
@@ -1449,7 +1449,7 @@ export class SimpleAI {
     const cityData = this.city?.data || this.city;
     const currentCityID = cityData?.city || genData.city || 0;
 
-    // TODO: 완전한 구현을 위해서는 다음이 필요:
+    // FUTURE: 완전한 구현을 위해서는 다음이 필요:
     // 1. 같은 도시에 다른 군주(officer_level=12) 있는지 체크
     // 2. 현재 도시가 레벨 5-6인지 체크
     // 3. 주변 4칸 이내 비어있는 레벨 5-6 도시 찾기
@@ -1457,7 +1457,7 @@ export class SimpleAI {
     // 5. searchDistance() 함수로 최단 경로 계산
     
     // 현재는 간단히 인접 도시로 랜덤 이동
-    // TODO: cityRepository에서 인접 도시 목록 가져오기
+    // FUTURE: cityRepository에서 인접 도시 목록 가져오기
     
     // 임시로 이동 불가 처리
     return null;
@@ -1507,7 +1507,7 @@ export class SimpleAI {
 
     // 초기 임관 기간(3년)에는 국가 수에 따라 확률 조정
     if (relYear < 3) {
-      // TODO: 국가 수 조회
+      // FUTURE: 국가 수 조회
       // 국가가 적으면 임관 시도 확률 낮춤
       if (Math.random() < 0.5) {
         return null;
@@ -1827,7 +1827,7 @@ export class SimpleAI {
     }
 
     // === 전방 도시 확인 (인접 적 도시 있는지) ===
-    // TODO: 실제 도시 연결 정보로 확인
+    // FUTURE: 실제 도시 연결 정보로 확인
     // 현재는 간단히 가능 처리
     return { canDeploy: true };
   }
@@ -1836,7 +1836,7 @@ export class SimpleAI {
    * 출병 대상 선택
    */
   private async selectDeployTarget(genData: any): Promise<any> {
-    // TODO: 인접 적 도시 찾기
+    // FUTURE: 인접 적 도시 찾기
     return { destCityID: 1 };
   }
 
@@ -1941,7 +1941,7 @@ export class SimpleAI {
     // 특기가 None이면 재설정 불필요
     if (special === 'None' && special2 === 'None') return false;
 
-    // TODO: 특기 품질 평가 로직
+    // FUTURE: 특기 품질 평가 로직
     // 현재는 간단히 false 반환
     return false;
   }

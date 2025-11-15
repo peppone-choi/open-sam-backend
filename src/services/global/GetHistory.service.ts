@@ -51,7 +51,7 @@ export class GetHistoryService {
       return {
         success: true,
         result: true,
-        data: {
+        history: {
           server_id: history.server_id,
           year: history.year,
           month: history.month,

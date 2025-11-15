@@ -217,6 +217,13 @@ export function getUnitByID(id: number, scenarioId: string = 'sangokushi'): Game
   return unitCache!.get(id) || null;
 }
 
+export const GameUnitConst = {
+  byID: (id: number, scenarioId: string = 'sangokushi') => {
+    return getUnitByID(id, scenarioId) || { id, name: '병종', armType: 0, cost: 1 };
+  },
+  allType: () => ARM_TYPE_NAMES
+};
+
 export function getUnitsByType(armType: number, scenarioId: string = 'sangokushi'): GameUnitDetail[] {
   buildUnitCache(scenarioId);
   return typeCache!.get(armType) || [];

@@ -58,7 +58,7 @@ export class che_의병모집 extends NationCommand {
     const genCount = Util.valueFit(this.nation['gennum'], GameConst.initialNationGenLimit);
     let nextTerm = Util.round(Math.sqrt(genCount * 10) * 10);
 
-    nextTerm = this.generalObj!.onCalcStrategic(che_의병모집.getName(), 'delay', nextTerm);
+    nextTerm = this.generalObj.onCalcStrategic(che_의병모집.getName(), 'delay', nextTerm);
     return nextTerm;
   }
 
@@ -71,6 +71,9 @@ export class che_의병모집 extends NationCommand {
     const env = this.env;
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general!.getID();
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
@@ -78,6 +81,9 @@ export class che_의병모집 extends NationCommand {
     const year = this.env['year'];
     const month = this.env['month'];
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
@@ -120,13 +126,13 @@ export class che_의병모집 extends NationCommand {
       await nationGeneralLogger.flush();
     }
 
-    logger.pushGeneralHistoryLog(`<M>${commandName}</>${josaUl} 발동`);
+    logger.pushGeneralHistoryLog(`<M>${commandName}</>${josaUl} 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <M>${commandName}</>${josaUl} 발동`
     );
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const KVStorage = global.KVStorage;
     const gameStor = KVStorage.getStorage(db, 'game_env');
@@ -151,7 +157,7 @@ export class che_의병모집 extends NationCommand {
     for (const pickedNPC of pickedNPCs) {
       const newNPC = pickedNPC.getGeneralBuilder();
 
-      newNPC.setCityID(general!.getCityID());
+      newNPC.setCityID(general.getCityID());
       newNPC.setNationID(general!.getNationID());
 
       newNPC.setSpecial('None', 'None');
@@ -172,14 +178,14 @@ export class che_의병모집 extends NationCommand {
       'nation',
       {
         gennum: db.sqleval('gennum + %i', [createGenCnt]),
-        strategic_cmd_limit: this.generalObj!.onCalcStrategic(che_의병모집.getName(), 'globalDelay', 9)
+        strategic_cmd_limit: this.generalObj.onCalcStrategic(che_의병모집.getName(), 'globalDelay', 9)
       },
       'nation=%i',
       [nationID]
     );
 
     this.setResultTurn(new LastTurn(che_의병모집.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -191,4 +197,4 @@ export class che_의병모집 extends NationCommand {
 
     return true;
   }
-}
+}

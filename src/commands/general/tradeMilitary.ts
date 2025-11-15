@@ -105,7 +105,7 @@ export class TradeMilitaryCommand extends GeneralCommand {
     const exchangeFee = 0.05;
 
     if (tradeRate === null || tradeRate === undefined) {
-      if (general.getNPCType() >= 2) {
+      if (general.data.npc ?? general.npc ?? 0 >= 2) {
         tradeRate = 1.0;
       } else {
         throw new Error('Trade rate not available');
@@ -126,34 +126,35 @@ export class TradeMilitaryCommand extends GeneralCommand {
     if (buyRice) {
       buyKey = 'rice';
       sellKey = 'gold';
-      sellAmount = Math.min(this.arg.amount * tradeRate, general.getVar('gold'));
+      sellAmount = Math.min(this.arg.amount * tradeRate, general.data.gold);
       tax = sellAmount * exchangeFee;
-      if (sellAmount + tax > general.getVar('gold')) {
+      if (sellAmount + tax > general.data.gold) {
         // 0으로 나누기 방지
         const denominator = Math.max(0.01, sellAmount + tax);
-        sellAmount *= general.getVar('gold') / denominator;
-        tax = general.getVar('gold') - sellAmount;
+        sellAmount *= general.data.gold / denominator;
+        tax = general.data.gold - sellAmount;
       }
       buyAmount = sellAmount / tradeRate;
       sellAmount += tax;
     } else {
       buyKey = 'gold';
       sellKey = 'rice';
-      sellAmount = Math.min(this.arg.amount, general.getVar('rice'));
+      sellAmount = Math.min(this.arg.amount, general.data.rice);
       buyAmount = sellAmount * tradeRate;
       tax = buyAmount * exchangeFee;
       buyAmount -= tax;
     }
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     const buyAmountText = buyAmount.toLocaleString();
     const sellAmountText = sellAmount.toLocaleString();
 
     if (buyRice) {
-      logger.pushGeneralActionLog(`군량 <C>${buyAmountText}</>을 사서 자금 <C>${sellAmountText}</>을 썼습니다.`);
+      logger.pushGeneralActionLog(`군량 <C>${buyAmountText}</>을 사서 자금 <C>${sellAmountText}</>을 썼습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`군량 <C>${sellAmountText}</>을 팔아 자금 <C>${buyAmountText}</>을 얻었습니다.`);
+      logger.pushGeneralActionLog(`군량 <C>${sellAmountText}</>을 팔아 자금 <C>${buyAmountText}</>을 얻었습니다. <1>${date}</>`);
     }
 
     general.increaseVar(buyKey, buyAmount);
@@ -192,9 +193,9 @@ export class TradeMilitaryCommand extends GeneralCommand {
     }
 
     try {
-      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(TradeMilitaryCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(TradeMilitaryCommand.actionName),
         general
       );
     } catch (error) {

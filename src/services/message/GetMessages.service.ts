@@ -124,6 +124,7 @@ export class GetMessagesService {
         ];
       } else if (type === 'public') {
         query['data.type'] = 'public';
+        query['data.dest_nation_id'] = nationId; // 내 국가의 회의실만
       } else if (type === 'national') {
         query['data.type'] = 'national';
         query['data.dest_nation_id'] = nationId;

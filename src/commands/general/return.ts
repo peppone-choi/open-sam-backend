@@ -59,12 +59,12 @@ export class ReturnCommand extends GeneralCommand {
 
     const general = this.generalObj;
 
-    const officerLevel = general.getVar('officer_level');
+    const officerLevel = general.data.officer_level;
     let destCityID: number;
 
     // 관직이 태수/도독/대도독이면 관직 도시로
     if (officerLevel >= 2 && officerLevel <= 4) {
-      destCityID = general.getVar('officer_city');
+      destCityID = general.data.officer_city;
     } else {
       // 그 외에는 수도로
       if (!this.nation) {
@@ -75,13 +75,14 @@ export class ReturnCommand extends GeneralCommand {
 
     const destCityName = CityConst.byID(destCityID).name;
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
-    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 귀환했습니다.`);
+    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 귀환했습니다. <1>${date}</>`);
 
     const exp = 70;
     const ded = 100;
 
-    general.setVar('city', destCityID);
+    general.data.city = destCityID;
     general.addExperience(exp);
     general.addDedication(ded);
     general.increaseVar('leadership_exp', 1);
@@ -100,7 +101,7 @@ export class ReturnCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(ReturnCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(ReturnCommand.actionName),
         general,
         sessionId,
         '귀환'

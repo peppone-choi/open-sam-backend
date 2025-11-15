@@ -75,7 +75,7 @@ export class ProcureSupplyCommand extends GeneralCommand {
     const leadership = general.getLeadership();
     let score = politics * 0.6 + leadership * 0.4;
     score *= 3; // 기존 3개 합산 수준 유지
-    score *= this.getDomesticExpLevelBonus(general.getVar('explevel'));
+    score *= this.getDomesticExpLevelBonus(general.data.explevel);
     score *= rng.nextRange(0.8, 1.2);
 
     let successRatio = 0.1;
@@ -99,6 +99,7 @@ export class ProcureSupplyCommand extends GeneralCommand {
     const ded = score * 1.0 / 3;
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     if (!this.city) {
       throw new Error('도시 정보가 없습니다');
@@ -122,11 +123,11 @@ export class ProcureSupplyCommand extends GeneralCommand {
     const scoreText = score.toLocaleString();
 
     if (pick === 'fail') {
-      logger.pushGeneralActionLog(`조달을 <span class='ev_failed'>실패</span>하여 ${resName}을 <C>${scoreText}</> 조달했습니다.`);
+      logger.pushGeneralActionLog(`조달을 <span class='ev_failed'>실패</span>하여 ${resName}을 <C>${scoreText}</> 조달했습니다. <1>${date}</>`);
     } else if (pick === 'success') {
-      logger.pushGeneralActionLog(`조달을 <S>성공</>하여 ${resName}을 <C>${scoreText}</> 조달했습니다.`);
+      logger.pushGeneralActionLog(`조달을 <S>성공</>하여 ${resName}을 <C>${scoreText}</> 조달했습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`${resName}을 <C>${scoreText}</> 조달했습니다.`);
+      logger.pushGeneralActionLog(`${resName}을 <C>${scoreText}</> 조달했습니다. <1>${date}</>`);
     }
 
     const incStat = rng.choiceUsingWeight({

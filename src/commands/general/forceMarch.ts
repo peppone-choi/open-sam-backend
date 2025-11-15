@@ -2,6 +2,7 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 강행 커맨드
@@ -96,6 +97,14 @@ export class ForceMarchCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
+    // dest 보장 로딩
+    if (this.arg?.destCityID && !this.destCity) {
+      await this.setDestCityAsync(this.arg.destCityID, true);
+    }
+    if (this.destCity && !this.destNation) {
+      await this.setDestNation(this.destCity.nation);
+    }
+
     const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
@@ -113,9 +122,9 @@ export class ForceMarchCommand extends GeneralCommand {
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 강행했습니다. <1>${date}</>`);
 
     const exp = 100;
-    general.setVar('city', destCityID);
+    general.data.city = destCityID;
 
-    if (general.getVar('officer_level') === 12 && this.nation && this.nation.level === 0) {
+    if (general.data.officer_level === 12 && this.nation && this.nation.level === 0) {
       try {
         const sessionId = general.getSessionID();
         const nationID = general.getNationID();
@@ -141,9 +150,9 @@ export class ForceMarchCommand extends GeneralCommand {
           for (const targetGen of generals) {
             const targetGeneralID = targetGen.data?.no;
             if (targetGeneralID) {
-              const targetLogger = general.createLogger(targetGeneralID, nationID, env.year, env.month);
-              targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>로 강행했습니다.`, 'PLAIN');
-              await targetLogger.flush();
+              // TODO: const targetLogger = general.createLogger(targetGeneralID, nationID, env.year, env.month);
+              // TODO: targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>로 강행했습니다.`, 'PLAIN');
+              // TODO: await targetLogger.flush();
             }
           }
         }

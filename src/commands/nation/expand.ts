@@ -27,6 +27,9 @@ export class che_증축 extends NationCommand {
 
   protected init(): void {
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
 
     if (general!.getNationID() === 0) {
       this.minConditionConstraints = [ConstraintHelper.NotBeNeutral()];
@@ -63,7 +66,7 @@ export class che_증축 extends NationCommand {
     const name = this.constructor.getName();
 
     const [reqGold, reqRice] = this.getCost().map((v) => v.toLocaleString());
-    const amount = (this.env['develcost'] * 5).toLocaleString();
+    const amount = ((this.env['develcost'] || 24) * 5).toLocaleString();
     const reqTurn = this.getPreReqTurn() + 1;
 
     return `${name}/${reqTurn}턴(금 ${reqGold}, 쌀 ${reqRice})`;
@@ -71,7 +74,7 @@ export class che_증축 extends NationCommand {
 
   public getCost(): [number, number] {
     const amount =
-      this.env['develcost'] * GameConst.expandCityCostCoef + GameConst.expandCityDefaultCost;
+      (this.env['develcost'] || 24) * GameConst.expandCityCostCoef + GameConst.expandCityDefaultCost;
 
     return [amount, amount];
   }
@@ -124,6 +127,9 @@ export class che_증축 extends NationCommand {
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -133,9 +139,9 @@ export class che_증축 extends NationCommand {
 
     const logger = general!.getLogger();
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
-    general!.increaseInheritancePoint('active_action', 1);
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
+    // TODO: general.increaseInheritancePoint('active_action', 1);
 
     const josaUl = JosaUtil.pick(destCityName, '을');
     const josaYi = JosaUtil.pick(generalName, '이');
@@ -169,7 +175,7 @@ export class che_증축 extends NationCommand {
     );
 
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaUl} 증축했습니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaUl} <M>증축</>`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaUl} <M>증축</> <1>${date}</>`);
     logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>증축</>`
     );
@@ -181,7 +187,7 @@ export class che_증축 extends NationCommand {
     );
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -193,4 +199,4 @@ export class che_증축 extends NationCommand {
 
     return true;
   }
-}
+}

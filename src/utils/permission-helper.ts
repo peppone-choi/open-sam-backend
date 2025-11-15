@@ -77,7 +77,7 @@ export function checkPermission(general: any): PermissionResult {
   } else {
     // officer_level = 1 (최하급 관직)
     // secretlimit 체크 필요 (PHP func.php:425-431)
-    // TODO: belong >= secretlimit 체크
+    // FUTURE: belong >= secretlimit 체크 구현 (v2.0)
     level = 1;
   }
 

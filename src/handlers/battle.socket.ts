@@ -414,9 +414,14 @@ export class BattleSocketHandler {
       const attackerNationId = battle.attackerNationId;
       const defenderNationId = battle.defenderNationId;
 
-      // 공격자가 승리하고 도시 공격이면 도시 점령 처리
+      // 1. 전투 참여 장수들 경험치/명성 지급
+      await this.awardBattleRewards(battle, result);
+
+      // 2. 전투 결과 로그 저장
+      await this.saveBattleResultLogs(battle, result);
+
+      // 3. 공격자가 승리하고 도시 공격이면 도시 점령 처리
       if (winner === 'attacker' && targetCityId) {
-        // 공격자 장수 ID (첫 번째 장수 사용)
         const attackerGeneralId = battle.attackerUnits?.[0]?.generalId || 0;
 
         if (attackerGeneralId > 0) {
@@ -432,6 +437,120 @@ export class BattleSocketHandler {
       console.log(`[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`);
     } catch (error: any) {
       console.error('[BattleEventHook] 전투 종료 처리 중 오류:', error);
+    }
+  }
+
+  /**
+   * 전투 참여 장수들에게 경험치/명성 지급
+   */
+  private async awardBattleRewards(battle: any, result: any) {
+    try {
+      const { General } = await import('../models/general.model');
+      const sessionId = battle.session_id;
+      
+      // 승자 측 장수들
+      const winnerUnits = battle.winner === 'attacker' ? battle.attackerUnits : battle.defenderUnits;
+      // 패자 측 장수들
+      const loserUnits = battle.winner === 'attacker' ? battle.defenderUnits : battle.attackerUnits;
+
+      // 승자 장수들에게 보상
+      for (const unit of winnerUnits) {
+        if (!unit.generalId || unit.generalId === 0) continue;
+
+        const general = await General.findOne({ 
+          session_id: sessionId, 
+          no: unit.generalId 
+        });
+
+        if (general) {
+          // 기본 경험치: 500 + 적 피해량 / 10
+          const enemyCasualties = battle.winner === 'attacker' ? 
+            (result.defenderCasualties || 0) : 
+            (result.attackerCasualties || 0);
+          const baseExp = 500 + Math.floor(enemyCasualties / 10);
+          
+          general.addExperience(baseExp);
+          general.addDedication(Math.floor(baseExp / 2));
+
+          await general.save();
+          console.log(`[BattleReward] 승리 장수 ${general.name}(${unit.generalId}): 경험치 +${baseExp}`);
+        }
+      }
+
+      // 패자 장수들에게 소량의 경험치
+      for (const unit of loserUnits) {
+        if (!unit.generalId || unit.generalId === 0) continue;
+
+        const general = await General.findOne({ 
+          session_id: sessionId, 
+          no: unit.generalId 
+        });
+
+        if (general) {
+          const loseExp = 100;
+          general.addExperience(loseExp);
+          await general.save();
+          console.log(`[BattleReward] 패배 장수 ${general.name}(${unit.generalId}): 경험치 +${loseExp}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('[BattleReward] 경험치 지급 중 오류:', error);
+    }
+  }
+
+  /**
+   * 전투 결과 로그 저장
+   */
+  private async saveBattleResultLogs(battle: any, result: any) {
+    try {
+      const { ActionLogger } = await import('../services/logger/ActionLogger');
+      const { LogFormatType } = await import('../types/log.types');
+      const sessionId = battle.session_id;
+      const year = battle.year || 184;
+      const month = battle.month || 1;
+
+      const allUnits = [...battle.attackerUnits, ...battle.defenderUnits];
+
+      for (const unit of allUnits) {
+        if (!unit.generalId || unit.generalId === 0) continue;
+
+        const isWinner = (battle.winner === 'attacker' && battle.attackerUnits.includes(unit)) ||
+                        (battle.winner === 'defender' && battle.defenderUnits.includes(unit));
+
+        const logger = new ActionLogger(
+          unit.generalId,
+          unit.nationId || 0,
+          year,
+          month,
+          sessionId,
+          false
+        );
+
+        // 전투 결과 로그
+        const resultText = isWinner ? 
+          `전투 승리! (${battle.battleType || '일반전투'})` : 
+          `전투 패배 (${battle.battleType || '일반전투'})`;
+        logger.pushGeneralBattleResultLog(resultText, LogFormatType.PLAIN);
+
+        // 전투 상세 로그
+        const detailLines = [
+          `=== 전투 상세 (${battle.battleId}) ===`,
+          `지형: ${battle.terrain || '평지'}`,
+          `총 턴 수: ${battle.currentTurn}`,
+          `최종 병력: ${unit.troops || 0}명`,
+          `결과: ${isWinner ? '승리' : '패배'}`
+        ];
+
+        for (const line of detailLines) {
+          logger.pushGeneralBattleDetailLog(line, LogFormatType.PLAIN);
+        }
+
+        // 로그 저장
+        await logger.flush();
+        console.log(`[BattleLog] 장수 ${unit.generalId} 전투 로그 저장 완료`);
+      }
+    } catch (error: any) {
+      console.error('[BattleLog] 로그 저장 중 오류:', error);
     }
   }
 }

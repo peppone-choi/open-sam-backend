@@ -99,9 +99,6 @@ export class Setting {
     if (!fs.existsSync(this.basepath) || !fs.statSync(this.basepath).isDirectory()) {
       return false;
     }
-
-    // TODO: .htaccess 템플릿 렌더링 구현
-    // 현재는 Node.js 환경이므로 .htaccess 대신 다른 방법 사용 필요
     
     return true;
   }

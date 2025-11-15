@@ -129,11 +129,20 @@ export class che_불가침수락 extends NationCommand {
     const env = this.env;
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
@@ -171,6 +180,11 @@ export class che_불가침수락 extends NationCommand {
       `<D><b>${destNationName}</b></>${josaWa} ${year}년 ${month}월까지 불가침 성공`
     );
 
+    logger.pushNationalHistoryLog(`<D><b>${destNationName}</b></>${josaWa} ${year}년 ${month}월까지 불가침`);
+    
+    const josaYiNation = JosaUtil.pick(nationName, '이');
+    logger.pushGlobalHistoryLog(`<Y><b>【불가침】</b></><D><b>${nationName}</b></>${josaYiNation} <D><b>${destNationName}</b></>${josaWa} <C>${year}</>년 <C>${month}</>월까지 <S>불가침 조약</> 체결하였습니다.`);
+
     const josaWaSrc = JosaUtil.pick(nationName, '와');
     destLogger.pushGeneralActionLog(
       `<D><b>${nationName}</b></>${josaWaSrc} <C>${year}</>년 <C>${month}</>월까지 불가침에 성공했습니다.`,
@@ -180,9 +194,9 @@ export class che_불가침수락 extends NationCommand {
       `<D><b>${nationName}</b></>${josaWaSrc} ${year}년 ${month}월까지 불가침 성공`
     );
 
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destLogger.flush();
 
     return true;
   }
-}
+}

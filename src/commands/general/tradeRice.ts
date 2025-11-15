@@ -4,7 +4,7 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { Util } from '../../utils/Util';
-import { GameConst } from '../../const/GameConst';
+import { GameConst } from '../../constants/GameConst';
 
 /**
  * 군량매매 커맨드
@@ -100,7 +100,7 @@ export class TradeRiceCommand extends GeneralCommand {
 
     let actualTradeRate: number;
     if (tradeRate === null) {
-      if (general.getNPCType() >= 2) {
+      if (general.data.npc ?? general.npc ?? 0 >= 2) {
         actualTradeRate = 1.0;
       } else {
         throw new Error('교역율이 설정되지 않았습니다.');
@@ -121,20 +121,20 @@ export class TradeRiceCommand extends GeneralCommand {
     if (buyRice) {
       buyKey = 'rice';
       sellKey = 'gold';
-      sellAmount = Util.valueFit(this.arg.amount * actualTradeRate, null, general.getVar('gold'));
+      sellAmount = Util.valueFit(this.arg.amount * actualTradeRate, null, general.data.gold);
       tax = sellAmount * GameConst.exchangeFee;
-      if (sellAmount + tax > general.getVar('gold')) {
+      if (sellAmount + tax > general.data.gold) {
         // 0으로 나누기 방지
         const denominator = Math.max(0.01, sellAmount + tax);
-        sellAmount *= general.getVar('gold') / denominator;
-        tax = general.getVar('gold') - sellAmount;
+        sellAmount *= general.data.gold / denominator;
+        tax = general.data.gold - sellAmount;
       }
       buyAmount = sellAmount / actualTradeRate;
       sellAmount += tax;
     } else {
       buyKey = 'gold';
       sellKey = 'rice';
-      sellAmount = Util.valueFit(this.arg.amount, null, general.getVar('rice'));
+      sellAmount = Util.valueFit(this.arg.amount, null, general.data.rice);
       buyAmount = sellAmount * actualTradeRate;
       tax = buyAmount * GameConst.exchangeFee;
       buyAmount -= tax;

@@ -48,7 +48,7 @@ export class InstantRetreatService {
       }
 
       // 4. 접경귀환 커맨드 실행 조건 체크
-      // TODO: buildGeneralCommandClass 구현 필요
+      // FUTURE: buildGeneralCommandClass 마이그레이션 (v2.0)
       // 현재는 기본 체크만 수행
       const nation = general.getVar('nation') || 0;
       if (nation === 0) {

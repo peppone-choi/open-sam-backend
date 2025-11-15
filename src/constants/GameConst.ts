@@ -1,6 +1,6 @@
 export class GameConst {
-  static readonly defaultGold = 10000;
-  static readonly defaultRice = 10000;
+  static readonly defaultGold = 1000;
+  static readonly defaultRice = 1000;
   static readonly defaultCrew = 1000;
   
   static readonly maxGold = 1000000;
@@ -35,14 +35,21 @@ export class GameConst {
   static readonly maxCityTrust = 100;
   static readonly minCityTrust = 0;
   static readonly defaultCityTrust = 50;
+  
+  static readonly minAvailableRecruitPop = 30000;
+  static readonly expandCityPopIncreaseAmount = 100000;
 
   static readonly maxTrain = 100;
   static readonly minTrain = 0;
   static readonly defaultTrain = 50;
+  static readonly defaultTrainLow = 40;
+  static readonly defaultTrainHigh = 70;
 
   static readonly maxAtmos = 100;
   static readonly minAtmos = 0;
   static readonly defaultAtmos = 50;
+  static readonly defaultAtmosLow = 40;
+  static readonly defaultAtmosHigh = 70;
 
   static readonly maxDex = 100;
   static readonly minDex = 0;
@@ -166,10 +173,6 @@ export class GameConst {
   static readonly generalMinimumRice = 10000;
   static readonly maxTrainByCommand = 10;
   static readonly maxAtmosByCommand = 10;
-  static readonly defaultTrainLow = 30;
-  static readonly defaultAtmosLow = 30;
-  static readonly defaultTrainHigh = 80;
-  static readonly defaultAtmosHigh = 80;
 
   // Training effectiveness coefficient
   static readonly trainDelta = 1.0;

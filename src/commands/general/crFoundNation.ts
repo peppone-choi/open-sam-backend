@@ -103,7 +103,7 @@ export class CrFoundNationCommand extends GeneralCommand {
     const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const logger = general.getLogger();
 
     const initYearMonth = Util.joinYearMonth(env.init_year, env.init_month);
@@ -177,7 +177,7 @@ export class CrFoundNationCommand extends GeneralCommand {
 
     // InheritancePoint 처리
     try {
-      general.increaseInheritancePoint('active_action', 1);
+      // TODO: general.increaseInheritancePoint('active_action', 1);
     } catch (error: any) {
       console.error('InheritancePoint 실패:', error);
     }

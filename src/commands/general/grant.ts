@@ -161,7 +161,7 @@ export class GrantCommand extends GeneralCommand {
     amount = Util.valueFit(
       amount, 
       0, 
-      general.getVar(resKey) - (isGold ? GameConst.generalMinimumGold : GameConst.generalMinimumRice)
+      (general.data[resKey] ?? 0) - (isGold ? GameConst.generalMinimumGold : GameConst.generalMinimumRice)
     );
     const amountText = amount.toLocaleString();
 
@@ -171,7 +171,7 @@ export class GrantCommand extends GeneralCommand {
     general.increaseVarWithLimit(resKey, -amount, 0);
 
     destGeneral.getLogger().pushGeneralActionLog(
-      `<Y>${general.getName()}</>에게서 ${resName} <C>${amountText}</>을 증여 받았습니다.`, 
+      `<Y>${general.data.name || general.name}</>에게서 ${resName} <C>${amountText}</>을 증여 받았습니다.`, 
       ActionLogger.PLAIN
     );
     logger.pushGeneralActionLog(

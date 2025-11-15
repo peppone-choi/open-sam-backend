@@ -119,8 +119,14 @@ export class che_포상 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const date = general!.getTurnTime('HM');
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
 
@@ -156,8 +162,10 @@ export class che_포상 extends NationCommand {
       `<Y>${destGeneral!.getName()}</>에게 ${resName} <C>${amountText}</>${josaUl} 수여했습니다. <1>${date}</>`
     );
 
+    logger.pushNationalHistoryLog(`<Y>${destGeneral!.getName()}</>에게 ${resName} ${amountText} 포상`);
+
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destGeneral!.applyDB(db);
 
     // StaticEventHandler
@@ -208,4 +216,4 @@ export class che_포상 extends NationCommand {
       }
     };
   }
-}
+}

@@ -6,7 +6,7 @@ import { Util } from '../../utils/Util';
 import { LastTurn } from '../../types/LastTurn';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { GameConst } from '../../constants/GameConst';
-import { tryUniqueItemLottery } from '../../utils/functions';
+import { tryUniqueItemLottery } from '../../utils/unique-item-lottery';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
 
 /**
@@ -43,7 +43,7 @@ export class BattleStanceCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    const crew = Math.max(1, this.generalObj.getVar('crew')); // 0으로 나누기 방지
+    const crew = Math.max(1, this.generalObj.data.crew); // 0으로 나누기 방지
     
     if (!this.nation) {
       throw new Error('국가 정보가 없습니다');
@@ -106,9 +106,10 @@ export class BattleStanceCommand extends GeneralCommand {
     general.addExperience(exp);
     general.addDedication(ded);
 
-    const crew = Math.max(1, general.getVar('crew')); // 0으로 나누기 방지
+    const crew = Math.max(1, general.data.crew); // 0으로 나누기 방지
 
-    general.addDex(general.getCrewTypeObj(), crew / 100 * 3, false);
+    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
+    // TODO: general.addDex(crewTypeObj, crew / 100 * 3, false);
 
     const [reqGold, reqRice] = this.getCost();
     general.increaseVarWithLimit('gold', -reqGold, 0);
@@ -117,8 +118,8 @@ export class BattleStanceCommand extends GeneralCommand {
     this.setResultTurn(turnResult);
     general.checkStatChange();
     await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, BattleStanceCommand, this.env, this.arg ?? {});
-    await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general, general.session_id || '');
-    await await this.saveGeneral();
+    // TODO: await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general, general.session_id || '');
+    await this.saveGeneral();
 
     return true;
   }

@@ -32,7 +32,7 @@ export function setupSessionMiddleware() {
         maxAge: 24 * 60 * 60 * 1000, // 24시간
         sameSite: 'lax' as const,
       },
-      // TODO: Redis나 MongoDB를 세션 저장소로 사용 가능
+      // FUTURE: Redis나 MongoDB를 세션 저장소로 사용 가능
       // store: new RedisStore({ client: redisClient })
     });
   }

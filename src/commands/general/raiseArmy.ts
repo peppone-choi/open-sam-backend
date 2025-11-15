@@ -73,13 +73,13 @@ export class RaiseArmyCommand extends GeneralCommand {
     logger.pushGeneralHistoryLog(`<G><b>${cityName}</b></>에서 거병`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>이(가) <G><b>${cityName}</b></>에서 거병`);
 
-    // tryUniqueItemLottery
-    const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-    await tryUniqueItemLottery(
-      general.genGenericUniqueRNG(RaiseArmyCommand.actionName),
-      general,
-      sessionId
-    );
+    // TODO: tryUniqueItemLottery - genGenericUniqueRNG 미구현
+    // const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+    // await tryUniqueItemLottery(
+    //   general.genGenericUniqueRNG(RaiseArmyCommand.actionName),
+    //   general,
+    //   sessionId
+    // );
 
     return true;
   }

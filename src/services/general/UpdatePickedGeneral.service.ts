@@ -188,7 +188,7 @@ export class UpdatePickedGeneralService {
         }
       );
 
-      // TODO: ActionLogger로 로그 남기기
+      // FUTURE: ActionLogger 구현 (v2.0)
       console.log(`[UpdatePickedGeneral] ${oldGeneralName} -> ${selectInfo.generalName}`);
 
       return {

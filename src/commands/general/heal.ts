@@ -45,7 +45,7 @@ export class HealCommand extends GeneralCommand {
     const exp = 10;
     const ded = 7;
 
-    general.setVar('injury', 0);
+    general.data.injury = 0;
     general.addExperience(exp);
     general.addDedication(ded);
     this.setResultTurn(new LastTurn(HealCommand.getName(), this.arg));

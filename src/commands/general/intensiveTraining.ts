@@ -71,7 +71,7 @@ export class IntensiveTrainingCommand extends GeneralCommand {
     const date = general.getTurnTime('TURNTIME_HM');
 
     // 0으로 나누기 방지
-    const crew = Math.max(1, general.getVar('crew'));
+    const crew = Math.max(1, general.data.crew);
     const score = Util.round(
       general.getLeadership() * 100 / crew * GameConst.trainDelta * 2 / 3
     );
@@ -87,7 +87,8 @@ export class IntensiveTrainingCommand extends GeneralCommand {
     general.increaseVarWithLimit('train', score, 0, GameConst.maxTrainByCommand);
     general.increaseVarWithLimit('atmos', score, 0, GameConst.maxAtmosByCommand);
 
-    general.addDex(general.getCrewTypeObj(), score * 2, false);
+    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
+    // TODO: general.addDex(crewTypeObj, score * 2, false);
 
     general.addExperience(exp);
     general.addDedication(ded);

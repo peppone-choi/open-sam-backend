@@ -125,18 +125,20 @@ export class MoveCommand extends GeneralCommand {
     const destCityID = this.destCity.city;
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     // 이동 로그
-    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 이동했습니다.`);
+    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 이동했습니다. <1>${date}</>`);
+
 
     // 경험치
     const exp = 50;
 
     // 도시 변경
-    general.setVar('city', destCityID);
+    general.data.city = destCityID;
 
     // 군주이고 국가 레벨이 0이면 전체 병력 이동
-    if (general.getVar('officer_level') === 12 && this.nation && this.nation.level === 0) {
+    if (general.data.officer_level === 12 && this.nation && this.nation.level === 0) {
       try {
         const sessionId = general.getSessionID();
         const nationID = general.getNationID();
@@ -182,7 +184,7 @@ export class MoveCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(MoveCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(MoveCommand.actionName),
         general,
         sessionId,
         '이동'

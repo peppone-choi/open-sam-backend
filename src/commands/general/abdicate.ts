@@ -96,7 +96,7 @@ export class AbdicateCommand extends GeneralCommand {
     }
 
     const destGeneral = this.destGeneralObj;
-    const destGeneralPenaltyList = JSON.parse(destGeneral.getVar('penalty') || '{}');
+    const destGeneralPenaltyList = JSON.parse(destGeneral.data.penalty || '{}');
     
     const penaltyKeyList = ['NoChief', 'NoFoundNation', 'NoAmbassador'];
     
@@ -107,18 +107,20 @@ export class AbdicateCommand extends GeneralCommand {
       }
     }
 
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const destGeneralName = destGeneral.getName();
     const nationName = this.nation?.name || '';
 
     const logger = general.getLogger();
     const destLogger = destGeneral.getLogger();
 
-    destGeneral.setVar('officer_level', 12);
-    destGeneral.setVar('officer_city', 0);
-    general.setVar('officer_level', 1);
-    general.setVar('officer_city', 0);
-    general.multiplyVar('experience', 0.7);
+    destGeneral.data.officer_level = 12;
+    destGeneral.data.officer_city = 0;
+    general.data.officer_level = 1;
+    general.data.officer_city = 0;
+    // multiplyVar: experience *= 0.7
+    general.data.experience = (general.data.experience || 0) * 0.7;
+    general.markModified('data');
 
     const josaYi = JosaUtil.pick(generalName, '이');
     logger.pushGlobalHistoryLog(`<Y><b>【선양】</b></><Y>${generalName}</>${josaYi} <D><b>${nationName}</b></>의 군주 자리를 <Y>${destGeneralName}</>에게 선양했습니다.`) as any;
@@ -132,7 +134,7 @@ export class AbdicateCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);

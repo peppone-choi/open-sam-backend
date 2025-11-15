@@ -42,7 +42,7 @@ export class RestCommand extends GeneralCommand {
     const date = general.getTurnTime('HM');
     
     logger.pushGeneralActionLog(`아무것도 하지 않았습니다. <1>${date}</>`);
-    console.log(`[휴식] 장수 ${general.getName()} (ID: ${general.getID()}) 실행 완료`);
+    console.log(`[휴식] 장수 ${general.data.name || general.name} (ID: ${general.getID()}) 실행 완료`);
 
     this.setResultTurn(new LastTurn());
     

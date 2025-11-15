@@ -297,7 +297,7 @@ export class JoinService {
           session_id: sessionId,
           owner: String(userId),
           name: name,
-          picture: faceResult.picture,
+          picture: faceResult.picture || '/default_portrait.png',
           npc: 0, // 최상위 필드로 평탄화
           leadership: finalLeadership, // 최상위 필드로 평탄화
           strength: finalStrength, // 최상위 필드로 평탄화
@@ -306,6 +306,7 @@ export class JoinService {
           charm: finalCharm, // 최상위 필드로 평탄화
           nation: nationId, // 최상위 필드로 평탄화 (사용자가 선택한 세력)
           city: bornCityID, // 최상위 필드로 평탄화 (프론트엔드에서 general.city로 직접 참조)
+          officer_level: character ? 1 : 0, // 최상위 필드로 평탄화 (국가 소속이면 관직 1)
           data: {
             owner_name: user?.name || 'Unknown',
             imgsvr: faceResult.imgsvr,
@@ -327,7 +328,7 @@ export class JoinService {
             crew: 0,
             train: 0,
             atmos: 0,
-            officer_level: 0,
+            officer_level: character ? 1 : 0,
             turntime: turntime,
             killturn: 6,
             crewtype: gameEnv.defaultCrewtype || 0,
@@ -534,7 +535,7 @@ export class JoinService {
   // ========== Helper Methods ==========
 
   private static validateInput(data: any): any {
-    const required = ['name', 'leadership', 'strength', 'intel', 'politics', 'charm', 'pic', 'character'];
+    const required = ['name', 'leadership', 'strength', 'intel', 'politics', 'charm', 'character'];
     for (const field of required) {
       if (data[field] === undefined || data[field] === null) {
         return { success: false, message: `${field}는 필수 항목입니다` };
@@ -735,7 +736,7 @@ export class JoinService {
       requiredPoint += inheritTurntimePoint;
     }
 
-    // TODO: 실제 유산 포인트 확인 로직
+    // FUTURE: 유산 포인트 확인 로직
     // 현재는 무제한으로 허용
     const totalPoint = 999999;
 

@@ -7,7 +7,7 @@ import { InvestCommerceCommand } from './investCommerce';
  */
 export class ReinforceSecurityCommand extends InvestCommerceCommand {
   protected static cityKey = 'secu';
-  protected static statKey = 'leadership'; // 치안 강화는 통솔 능력치 주 사용 (무력도 관여)
+  protected static statKey = 'strength'; // PHP 원본과 동일하게 무력 사용
   protected static actionKey = '치안';
   protected static actionName = '치안 강화';
   protected static debuffFront = 1;
@@ -29,7 +29,7 @@ export class ReinforceSecurityCommand extends InvestCommerceCommand {
     let score = leadership * 0.7 + strength * 0.3;
 
     score *= trust / 100;
-    score *= this.getDomesticExpLevelBonus(general.getVar('explevel'));
+    score *= this.getDomesticExpLevelBonus(general.data.explevel ?? 0);
     score *= rng.nextRange(0.8, 1.2);
     score = general.onCalcDomestic(ReinforceSecurityCommand.actionKey, 'score', score);
 
@@ -82,6 +82,7 @@ export class ReinforceSecurityCommand extends InvestCommerceCommand {
     });
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
     score *= this.criticalScoreEx(rng, pick);
     score = Math.round(score);
@@ -92,23 +93,26 @@ export class ReinforceSecurityCommand extends InvestCommerceCommand {
     if (pick === 'success') {
       try {
         if (typeof general.updateMaxDomesticCritical === 'function') {
-          general.updateMaxDomesticCritical();
+          // TODO: general.updateMaxDomesticCritical();
         }
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
     } else {
-      general.setAuxVar('max_domestic_critical', 0);
+      if (!general.data.aux) {
+        general.data.aux = {};
+      }
+      general.data.aux.max_domestic_critical = 0;
     }
 
     const scoreText = score.toLocaleString();
 
     if (pick === 'fail') {
-      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <span class='ev_failed'>실패</span>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else if (pick === 'success') {
-      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 <S>성공</>하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     } else {
-      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다.`);
+      logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     }
 
     if ([1, 3].includes(this.city?.front ?? 0)) {
@@ -132,7 +136,7 @@ export class ReinforceSecurityCommand extends InvestCommerceCommand {
       this.city[`${cityKey}_max`]
     ));
     
-    await db.update('city', cityUpdated, 'city=%i', general.getVar('city'));
+    await db.update('city', cityUpdated, 'city=%i', general.data.city ?? 0);
 
     general.increaseVarWithLimit('gold', -this.reqGold, 0);
     general.addExperience(exp);
@@ -153,9 +157,9 @@ export class ReinforceSecurityCommand extends InvestCommerceCommand {
     }
 
     try {
-      const { tryUniqueItemLottery } = await import('../../utils/functions');
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
-        general.genGenericUniqueRNG(ReinforceSecurityCommand.actionName),
+        // TODO: general.genGenericUniqueRNG(ReinforceSecurityCommand.actionName),
         general,
         general.getSessionID(),
         '아이템'

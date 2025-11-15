@@ -3,6 +3,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { GetNationListService } from '../services/global/GetNationList.service';
 import { GetMapService } from '../services/global/GetMap.service';
 import { GetGlobalMenuService } from '../services/global/GetGlobalMenu.service';
+import { GetDiplomacyService } from '../services/global/GetDiplomacy.service';
 import { Session } from '../models/session.model';
 
 const router = Router();
@@ -204,6 +205,30 @@ router.post('/general-list', async (req: Request, res: Response, next: NextFunct
       result: true,
       generalList
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/global/diplomacy:
+ *   post:
+ *     summary: 외교 관계 정보 조회
+ *     tags: [Global]
+ *     responses:
+ *       200:
+ *         description: 외교 관계 정보
+ */
+router.post('/diplomacy', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionId = req.body.session_id || req.query.session_id || req.body.serverID || req.query.serverID || 'sangokushi_default';
+    
+    const result = await GetDiplomacyService.execute({
+      session_id: sessionId
+    }, req.user);
+    
+    res.json(result);
   } catch (error) {
     next(error);
   }

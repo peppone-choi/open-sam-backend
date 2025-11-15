@@ -72,16 +72,16 @@ export class TrainTroopsCommand extends GeneralCommand {
     const date = general.getTurnTime('TURNTIME_HM');
 
     // 0으로 나누기 방지
-    const crew = Math.max(1, general.getVar('crew'));
+    const crew = Math.max(1, general.data.crew);
     const score = Util.clamp(
       Util.round(general.getLeadership() * 100 / crew * GameConst.trainDelta),
       0,
-      Util.clamp(GameConst.maxTrainByCommand - general.getVar('train'), 0)
+      Util.clamp(GameConst.maxTrainByCommand - general.data.train, 0)
     );
     const scoreText = score.toLocaleString();
 
     const sideEffect = Util.valueFit(
-      Math.floor(general.getVar('atmos') * GameConst.atmosSideEffectByTraining),
+      Math.floor(general.data.atmos * GameConst.atmosSideEffectByTraining),
       0
     );
 
@@ -93,9 +93,10 @@ export class TrainTroopsCommand extends GeneralCommand {
     const ded = 70;
 
     general.increaseVar('train', score);
-    general.setVar('atmos', sideEffect);
+    general.data.atmos = sideEffect;
 
-    general.addDex(general.getCrewTypeObj(), score, false);
+    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
+    // TODO: general.addDex(crewTypeObj, score, false);
 
     general.addExperience(exp);
     general.addDedication(ded);

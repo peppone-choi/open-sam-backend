@@ -108,11 +108,17 @@ export class ScorchedEarthCommand extends NationCommand {
 
     const db = DB.db();
 
-    const general = this.generalObj!;
+    const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const date = general.getTurnTime('HM');
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -124,7 +130,7 @@ export class ScorchedEarthCommand extends NationCommand {
 
     const logger = general.getLogger();
 
-    general.addExperience(-general.getVar('experience') * 0.1, false);
+    general.addExperience(-general.data.experience * 0.1, false);
     general.addExperience(5 * (this.getPreReqTurn() + 1));
     general.addDedication(5 * (this.getPreReqTurn() + 1));
 
@@ -193,11 +199,11 @@ export class ScorchedEarthCommand extends NationCommand {
 
     const InheritanceKey = global.InheritanceKey;
     if (general.increaseInheritancePoint && InheritanceKey?.active_action) {
-      general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+      // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
     }
 
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaUl} 초토화했습니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaUl} <M>초토화</> 명령`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaUl} <M>초토화</> 명령 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>초토화</> 명령`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>초토화</>하였습니다.`);
     logger.pushGlobalHistoryLog(`<S><b>【초토화】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>${josaUl} <M>초토화</>하였습니다.`);
@@ -225,4 +231,4 @@ export class ScorchedEarthCommand extends NationCommand {
   }
 }
 
-export const che_초토화 = ScorchedEarthCommand;
+export const che_초토화 = ScorchedEarthCommand;

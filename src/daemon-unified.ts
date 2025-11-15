@@ -278,7 +278,8 @@ async function syncToDB() {
         // 큐 아이템 조회
         const queueData = await getSyncQueueItem(item.key);
         if (!queueData || !queueData.data) {
-          // Invalid sync queue item - 삭제
+          // Invalid sync queue item - 로그 추가하고 삭제
+          logger.warn('Invalid sync queue item', { key: item.key });
           await removeFromSyncQueue(item.key);
           continue;
         }

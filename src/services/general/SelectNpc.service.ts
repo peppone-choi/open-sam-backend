@@ -6,14 +6,19 @@ import mongoose from 'mongoose';
 
 /**
  * SelectNpc Service
- * NPC 선택 및 빙의 (npcmode==1 전용)
+ * 오리지널 캐릭터 선택 (npcmode==1 전용)
  * PHP: j_select_npc.php
  */
 export class SelectNpcService {
   static async execute(data: any, user?: any) {
-    const userId = user?.id;
+    const userId = user?.userId || user?.id;
     const sessionId = data.session_id || 'sangokushi_default';
     const pick = parseInt(data.pick); // NPC general no
+
+    console.log('[SelectNpc] user:', JSON.stringify(user));
+    console.log('[SelectNpc] userId:', userId);
+    console.log('[SelectNpc] sessionId:', sessionId);
+    console.log('[SelectNpc] pick:', pick);
 
     if (!userId) {
       return {
@@ -39,16 +44,23 @@ export class SelectNpcService {
         };
       }
 
-      const sessionData = session.config || session.data || {};
-      const npcmode = sessionData.npcmode || 0;
-      const maxgeneral = sessionData.maxgeneral || 50;
+      const sessionData = session.data || {};
+      const gameEnv = sessionData.game_env || {};
+      const npcmode = gameEnv.npcmode || 0;
+      const allowNpcPossess = gameEnv.allow_npc_possess || false;
+      const maxgeneral = gameEnv.maxgeneral || 50;
       const year = sessionData.year || 184;
       const month = sessionData.month || 1;
 
-      if (npcmode !== 1) {
+      console.log('[SelectNpc] npcmode:', npcmode);
+      console.log('[SelectNpc] allow_npc_possess:', allowNpcPossess);
+      console.log('[SelectNpc] maxgeneral:', maxgeneral);
+
+      // npcmode가 1이거나 allow_npc_possess가 true여야 함
+      if (npcmode !== 1 && !allowNpcPossess) {
         return {
           result: false,
-          reason: '빙의 가능한 서버가 아닙니다'
+          reason: '오리지널 캐릭터 플레이가 허용되지 않은 서버입니다'
         };
       }
 
@@ -74,14 +86,15 @@ export class SelectNpcService {
         'data.valid_until': { $gte: now }
       });
 
-      if (!token || !token.pick_result) {
+      if (!token) {
         return {
           result: false,
           reason: '유효한 장수 목록이 없습니다.'
         };
       }
 
-      const pickResult = token.pick_result;
+      const tokenData = token.data || {};
+      const pickResult = tokenData.pick_result || token.pick_result || {};
       
       if (!pickResult[pick]) {
         return {
@@ -93,15 +106,14 @@ export class SelectNpcService {
       const pickedNPC = pickResult[pick];
 
       // 선택한 NPC 장수 조회 및 업데이트
-      // owner 필드가 없거나 '0' 이하인 NPC 찾기
-      const npcGeneral = await generalRepository.findBySessionAndNo({
+      const npcGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
-        'data.no': pick,
+        no: pick,
         npc: 2,
         $or: [
           { owner: { $exists: false } },
           { owner: '0' },
-          { owner: { $lt: '1' } }
+          { owner: 0 }
         ]
       });
 
@@ -115,14 +127,25 @@ export class SelectNpcService {
       // 회원 정보 가져오기
       const ownerName = user?.name || 'Unknown';
       
-      // TODO: RootDB에서 penalty 정보 가져오기
+      // FUTURE: RootDB에서 penalty 정보 가져오기
       const penalty: any = {};
 
       // aux 업데이트
       const aux = npcGeneral.data?.aux || {};
       const yearMonth = year * 12 + month;
+      
+      // 처음 빙의하는 경우 (pickYearMonth가 없음) next_change를 과거로 설정하여 바로 다시 뽑기 가능
+      // 이미 한 번 뽑은 경우 (pickYearMonth가 있음) 12턴 대기
+      const isFirstPick = !aux.pickYearMonth;
       aux.pickYearMonth = yearMonth;
-      aux.next_change = new Date(Date.now() + 12 * (sessionData.turnterm || 60) * 60000).toISOString(); // 분 단위
+      
+      if (isFirstPick) {
+        // 처음 뽑는 경우: 과거 시간으로 설정 (바로 다시 뽑기 가능)
+        aux.next_change = new Date(Date.now() - 1000).toISOString();
+      } else {
+        // 이미 한 번 뽑은 경우: 12턴 후로 설정
+        aux.next_change = new Date(Date.now() + 12 * (gameEnv.turnterm || 60) * 60000).toISOString();
+      }
 
       // 장수 업데이트
       const genData = npcGeneral.data || {};
@@ -131,15 +154,56 @@ export class SelectNpcService {
       genData.penalty = penalty;
       genData.killturn = 6;
       genData.defence_train = 80;
-      genData.permission = 'normal';
+      
+      // NPC의 기존 officer_level 무조건 보존 (0도 유효한 값)
+      // 최상위 필드 우선, 없으면 data 필드 확인
+      let existingOfficerLevel = npcGeneral.officer_level;
+      if (existingOfficerLevel === undefined || existingOfficerLevel === null) {
+        existingOfficerLevel = npcGeneral.data?.officer_level;
+      }
+      if (existingOfficerLevel === undefined || existingOfficerLevel === null) {
+        // 정말로 관직 정보가 없는 경우만 nation 상태에 따라 설정
+        const nation = genData.nation ?? npcGeneral.nation ?? 0;
+        existingOfficerLevel = nation > 0 ? 1 : 0; // 국가 소속이면 1, 재야면 0
+      }
+      genData.officer_level = existingOfficerLevel;
+      
+      // permission 설정 - 기존 값 보존 (0도 유효한 값)
+      let existingPermission = npcGeneral.permission;
+      if (existingPermission === undefined || existingPermission === null) {
+        existingPermission = npcGeneral.data?.permission;
+      }
+      if (existingPermission === undefined || existingPermission === null) {
+        // 정말로 permission 정보가 없는 경우만 officer_level에 따라 자동 계산
+        const officerLevel = genData.officer_level;
+        if (officerLevel >= 11) {
+          existingPermission = 4; // 군주급
+        } else if (officerLevel >= 5) {
+          existingPermission = 2; // 고위 관직
+        } else if (officerLevel >= 1) {
+          existingPermission = 0; // 일반 관직
+        } else {
+          existingPermission = 0; // 재야
+        }
+      }
+      genData.permission = existingPermission;
 
-      npcGeneral.npc = 1; // 빙의된 NPC
-      npcGeneral.owner = userId.toString();
-      npcGeneral.data = genData;
-      await npcGeneral.save();
+      // generalRepository.updateBySessionAndNo 사용
+      // 최상위 필드와 data 필드 모두 업데이트
+      const officerLevel = genData.officer_level;
+      const permission = genData.permission;
+      
+      await generalRepository.updateBySessionAndNo(sessionId, pick, {
+        npc: 1, // 선택된 오리지널 캐릭터
+        owner: userId.toString(),
+        owner_name: ownerName,
+        officer_level: officerLevel,  // ✅ 최상위 필드에도 저장
+        permission: permission,  // ✅ 최상위 필드에도 저장
+        data: genData
+      });
 
       // general_access_log 삽입
-      // TODO: GeneralAccessLog 모델 구현 후 추가
+      // FUTURE: GeneralAccessLog 모델 구현 후 추가
 
       // 토큰 삭제
       await SelectNpcToken.deleteMany({
@@ -150,8 +214,8 @@ export class SelectNpcService {
         ]
       });
 
-      // TODO: ActionLogger로 로그 남기기
-      console.log(`[SelectNpc] ${ownerName}이 ${pickedNPC.name}에 빙의`);
+      // FUTURE: ActionLogger 구현 (v2.0)
+      console.log(`[SelectNpc] ${ownerName}이 ${pickedNPC.name} 오리지널 캐릭터로 플레이 시작`);
 
       return {
         result: true,

@@ -371,7 +371,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -407,7 +407,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -603,7 +603,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -890,7 +890,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -1446,7 +1446,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "묵가"
+          "value": "mohism"
         }
       ]
     },
@@ -2923,7 +2923,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "오두미도"
+          "value": "taoism_religious"
         }
       ]
     },
@@ -2976,7 +2976,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3028,7 +3028,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3083,7 +3083,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3137,7 +3137,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3192,7 +3192,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3248,7 +3248,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3308,7 +3308,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3366,7 +3366,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3422,7 +3422,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "황건적"
+          "value": "taiping"
         }
       ]
     },
@@ -3474,7 +3474,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -3527,7 +3527,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         },
         {
           "type": "reqCities",
@@ -3585,7 +3585,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         },
         {
           "type": "reqCities",
@@ -3647,7 +3647,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -3703,7 +3703,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -3757,7 +3757,7 @@
       "constraints": [
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         },
         {
           "type": "reqCities",
@@ -3818,7 +3818,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -3875,7 +3875,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -3932,7 +3932,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },
@@ -3990,7 +3990,7 @@
         },
         {
           "type": "country_type_unlock",
-          "value": "도적"
+          "value": "bandits"
         }
       ]
     },

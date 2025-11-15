@@ -134,7 +134,7 @@ export class HandleAFKService {
    * 장수 현재 위치 가져오기
    */
   private static getGeneralPosition(battle: any, generalId: number): { x: number; y: number } {
-    // TODO: 실제 유닛 위치 추적 시스템 필요
+    // FUTURE: 유닛 위치 추적 시스템 필요
     // 현재는 임시로 기본값 반환
     const isAttacker = battle.attacker.generals.includes(generalId);
     

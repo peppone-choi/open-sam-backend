@@ -70,7 +70,7 @@ export class WanderCommand extends GeneralCommand {
     const general = this.generalObj;
     const sessionId = general.getSessionID();
 
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const nationID = general.getNationID();
     
     if (!this.nation) {
@@ -79,8 +79,9 @@ export class WanderCommand extends GeneralCommand {
     const nationName = this.nation.name;
 
     const logger = general.getLogger();
+    const date = general.getTurnTime(general.TURNTIME_HM);
 
-    logger.pushGeneralActionLog('영토를 버리고 방랑의 길을 떠납니다.');
+    logger.pushGeneralActionLog(`영토를 버리고 방랑의 길을 떠납니다. <1>${date}</>`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>이 방랑의 길을 떠납니다.`);
     logger.pushGlobalHistoryLog(`<R><b>【방랑】</b></><D><b>${generalName}</b></>은 <R>방랑</>의 길을 떠납니다.`);
     logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>을 버리고 방랑`);
@@ -103,8 +104,8 @@ export class WanderCommand extends GeneralCommand {
       { session_id: sessionId, 'data.nation': nationID },
       { 'data.makelimit': 12 }
     );
-    general.setVar('makelimit', 12);
-    general.setVar('officer_city', 0);
+    general.data.makelimit = 12;
+    general.data.officer_city = 0;
 
     // 다른 장수들의 관직 초기화
     await generalRepository.updateManyByFilter(
@@ -150,7 +151,7 @@ export class WanderCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);

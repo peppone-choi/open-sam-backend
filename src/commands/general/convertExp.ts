@@ -130,7 +130,7 @@ export class ConvertExpCommand extends GeneralCommand {
 
     const logger = general.getLogger();
 
-    const srcDex = general.getVar('dex' + this.srcArmType);
+    const srcDex = general.data['dex' + this.srcArmType] ?? 0;
     const cutDex = Util.toInt(srcDex * ConvertExpCommand.decreaseCoeff);
     const cutDexText = cutDex.toLocaleString();
     const addDex = Util.toInt(cutDex * ConvertExpCommand.convertCoeff);
@@ -181,7 +181,7 @@ export class ConvertExpCommand extends GeneralCommand {
       ownDexList.push({
         armType: armTypeNum,
         name: armName,
-        amount: general.getVar('dex' + armType),
+        amount: general.data['dex' + armType] ?? 0,
       });
     }
 

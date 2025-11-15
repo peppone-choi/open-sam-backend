@@ -54,7 +54,7 @@ export class ReplenishmentCommand extends BaseLoghCommand {
     
     for (const ship of currentShips) {
       const current = ship.count || 0;
-      const max = maxShipsPerType; // TODO: 함선 종류별 최대 수량 (나중에 spec에서 가져오기)
+      const max = maxShipsPerType; // FUTURE: 함선 종류별 최대 수량 (나중에 spec에서 가져오기)
       
       if (current < max) {
         replenishments.push({
@@ -120,7 +120,7 @@ export class ReplenishmentCommand extends BaseLoghCommand {
       };
     }
 
-    // TODO: 행성 창고에서 함선 재고 확인 (Warehouse 시스템 구현 후)
+    // FUTURE: 행성 창고에서 함선 재고 확인 (Warehouse 시스템 구현 후)
     // 현재는 자동으로 보충 가능하다고 가정
 
     // CP 소모

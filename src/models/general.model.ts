@@ -180,12 +180,22 @@ GeneralSchema.methods.getSessionID = function(): string {
 };
 
 GeneralSchema.methods.getLogger = function(): any {
-  // TODO: Implement logger
-  return {
-    pushGeneralActionLog: (message: string) => {
-      console.log(`[General ${this.no}] ${message}`);
-    }
-  };
+  // BaseCommand에서 주입한 턴별 logger가 있으면 재사용 (중복 로그 방지)
+  if (this.__currentLogger) {
+    return this.__currentLogger;
+  }
+  
+  // 폴백: BaseCommand 외부에서 호출된 경우 기본값으로 새 logger 생성
+  const sessionId = this.session_id || 'sangokushi_default';
+  const generalId = this.no || this.data?.no || 0;
+  const nationId = this.data?.nation ?? this.nation ?? 0;
+  
+  // 기본 년/월 (실제 게임 턴 정보는 BaseCommand에서 주입됨)
+  const year = 184;
+  const month = 1;
+  
+  // 매번 새 인스턴스 반환 (캐싱 안 함)
+  return new ActionLogger(generalId, nationId, year, month, sessionId, true);
 };
 
 GeneralSchema.methods.getLastTurn = function(): any {
@@ -272,7 +282,7 @@ GeneralSchema.methods.addDedication = function(ded: number): void {
 };
 
 GeneralSchema.methods.checkStatChange = async function(): Promise<void> {
-  // TODO: Implement stat change logic
+  // FUTURE: Implement stat change logic
 };
 
 GeneralSchema.methods.applyDB = async function(db: any): Promise<void> {
@@ -285,7 +295,7 @@ GeneralSchema.methods.onCalcDomestic = function(turnType: string, varType: strin
   // 기본적으로는 value를 그대로 반환하지만,
   // 특수 아이템이나 능력이 있으면 값을 조정
   
-  // TODO: 특수 아이템/능력 목록을 가져와서 onCalcDomestic을 호출
+  // FUTURE: 특수 아이템/능력 목록을 가져와서 onCalcDomestic을 호출
   // 현재는 기본값 반환
   // const actionList = this.getActionList();
   // for (const iObj of actionList) {
@@ -327,7 +337,7 @@ function getStatValue(general: any, statName: string, withInjury = true, withIAc
   const maxLevel = 150;
   statValue = Math.max(0, Math.min(statValue, maxLevel));
   
-  // TODO: withIActionObj - 아이템/특성의 영향 적용
+  // FUTURE: withIActionObj - 아이템/특성의 영향 적용
   // if (withIActionObj) {
   //   const actionList = general.getActionList();
   //   for (const actionObj of actionList) {

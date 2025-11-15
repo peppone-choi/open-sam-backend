@@ -95,6 +95,9 @@ export class che_백성동원 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general!.getID();
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
@@ -102,6 +105,9 @@ export class che_백성동원 extends NationCommand {
     const year = this.env['year'];
     const month = this.env['month'];
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -112,8 +118,8 @@ export class che_백성동원 extends NationCommand {
     const logger = general!.getLogger();
     logger.pushGeneralActionLog(`백성동원 발동! <1>${date}</>`);
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const josaYi = JosaUtil.pick(generalName, '이');
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>백성동원</>을 하였습니다.`;
@@ -135,15 +141,17 @@ export class che_백성동원 extends NationCommand {
       wall: db.sqleval('GREATEST(wall_max * 0.8, wall)'),
     },  'city=%i', [destCityID]);
 
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>백성동원</>을 발동`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>백성동원</>을 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>백성동원</>을 발동`);
+    const josaYiNation = JosaUtil.pick(nationName, '이');
+    logger.pushGlobalHistoryLog(`<Y><b>【의병】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>에서 <M>백성동원</>을 실시했습니다.`);
 
     await db.update('nation', {
       strategic_cmd_limit: this.generalObj.onCalcStrategic(this.constructor.getName(),  'globalDelay', [9])
     },  'nation=%i', [nationID]);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -164,4 +172,4 @@ export class che_백성동원 extends NationCommand {
       },
     };
   }
-}
+}

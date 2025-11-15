@@ -85,6 +85,9 @@ export class che_국호변경 extends NationCommand {
     const actionName = this.constructor.getName();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
@@ -107,8 +110,8 @@ export class che_국호변경 extends NationCommand {
 
     const josaRo = JosaUtil.pick(newNationName, '로');
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
@@ -122,14 +125,14 @@ export class che_국호변경 extends NationCommand {
     },  'nation=%i', [nationID]);
 
     logger.pushGeneralActionLog(`국호를 <D><b>${newNationName}</b></>${josaRo} 변경합니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`국호를 <D><b>${newNationName}</b></>${josaRo} 변경`) as any;
+    logger.pushGeneralHistoryLog(`국호를 <D><b>${newNationName}</b></>${josaRo} 변경 <1>${date}</>`) as any;
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} 국호를 <D><b>${newNationName}</b></>${josaRo} 변경`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} 국호를 <D><b>${newNationName}</b></>${josaRo} 변경합니다.`);
     logger.pushGlobalHistoryLog(`<S><b>【국호변경】</b></><D><b>${nationName}</b></>${josaYiNation} 국호를 <D><b>${newNationName}</b></>${josaRo} 변경합니다.`) as any;
 
-    general!.increaseInheritancePoint('active_action', 1);
+    // TODO: general.increaseInheritancePoint('active_action', 1);
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -141,4 +144,4 @@ export class che_국호변경 extends NationCommand {
 
     return true;
   }
-}
+}

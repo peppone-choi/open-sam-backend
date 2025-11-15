@@ -7,6 +7,7 @@ import { ReadyUpService } from '../services/battle/ReadyUp.service';
 import { GetBattleHistoryService } from '../services/battle/GetBattleHistory.service';
 import { ResolveTurnService } from '../services/battle/ResolveTurn.service';
 import { StartSimulationService } from '../services/battle/StartSimulation.service';
+import { battleRepository } from '../repositories/battle.repository';
 
 const router = Router();
 
@@ -1249,8 +1250,104 @@ router.post('/detail', async (req, res) => {
 /**
  * @swagger
  * /api/battle/center:
+ *   get:
+ *     summary: 전투 센터 - 진행 중인 전투 및 최근 완료된 전투 목록 조회
+ *     description: |
+ *       진행 중인 전투와 최근 완료된 전투 목록을 조회합니다.
+ *       
+ *       **조회 데이터:**
+ *       - 진행 중인 전투 (DEPLOYING, IN_PROGRESS)
+ *       - 최근 완료된 전투 (COMPLETED, 최근 30일)
+ *       - 국가 및 도시 정보 포함
+ *       
+ *       **필터링:**
+ *       - status: 'ongoing' | 'finished' | 'all' (기본값: 'all')
+ *       - limit: 조회 개수 (기본값: 50)
+ *       
+ *       **정렬:**
+ *       - 진행 중인 전투 우선
+ *       - 시작/종료 시간 내림차순
+ *     tags: [Battle]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: session_id
+ *         schema:
+ *           type: string
+ *         description: 게임 세션 ID
+ *         example: sangokushi_default
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ongoing, finished, all]
+ *         description: 전투 상태 필터
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *         description: 조회 개수
+ *     responses:
+ *       200:
+ *         description: 전투 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                   example: true
+ *                 battles:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: 전투 ID
+ *                       battleId:
+ *                         type: string
+ *                         description: 전투 UUID
+ *                       attackerNation:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: number
+ *                           name:
+ *                             type: string
+ *                           color:
+ *                             type: string
+ *                       defenderNation:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: number
+ *                           name:
+ *                             type: string
+ *                           color:
+ *                             type: string
+ *                       city:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: number
+ *                           name:
+ *                             type: string
+ *                       status:
+ *                         type: string
+ *                         enum: [ongoing, finished]
+ *                       startDate:
+ *                         type: string
+ *                         format: date-time
+ *                       endDate:
+ *                         type: string
+ *                         format: date-time
+ *       500:
+ *         description: 서버 오류
  *   post:
- *     summary: 전투 센터 (진행 중인 전투 목록)
+ *     summary: 전투 센터 (진행 중인 전투 목록) - Legacy
  *     tags: [Battle]
  *     security:
  *       - bearerAuth: []
@@ -1258,6 +1355,103 @@ router.post('/detail', async (req, res) => {
  *       200:
  *         description: 전투 목록
  */
+router.get('/center', async (req, res) => {
+  try {
+    const sessionId = (req.query.session_id as string) || 'sangokushi_default';
+    const statusFilter = (req.query.status as string) || 'all';
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    // @ts-ignore - Model types need investigation
+    const { Nation } = await import('../models/nation.model');
+    // @ts-ignore - Model types need investigation
+    const { City } = await import('../models/city.model');
+
+    // 전투 상태별 필터
+    let statusQuery: any = {};
+    if (statusFilter === 'ongoing') {
+      statusQuery = { status: { $in: ['preparing', 'deploying', 'in_progress'] } };
+    } else if (statusFilter === 'finished') {
+      statusQuery = { status: 'completed' };
+    }
+
+    // 전투 목록 조회
+    // @ts-ignore - Model types need investigation
+    const { Battle } = await import('../models/battle.model');
+    // @ts-ignore - Model find type issue
+    const battles: any[] = await Battle.find({
+      session_id: sessionId,
+      ...statusQuery
+    }).sort({ startedAt: -1 }).limit(limit).lean().exec();
+
+    // 국가 및 도시 정보 조회
+    const nationIds = new Set<number>();
+    const cityIds = new Set<number>();
+
+    battles.forEach((battle: any) => {
+      nationIds.add(battle.attackerNationId);
+      nationIds.add(battle.defenderNationId);
+      cityIds.add(battle.targetCityId);
+    });
+
+    // @ts-ignore - Model find type issue
+    const nations: any[] = await Nation.find({
+      session_id: sessionId,
+      nation: { $in: Array.from(nationIds) }
+    }).lean().exec();
+
+    // @ts-ignore - Model find type issue
+    const cities: any[] = await City.find({
+      session_id: sessionId,
+      city: { $in: Array.from(cityIds) }
+    }).lean().exec();
+
+    // Map으로 변환
+    const nationMap = new Map(nations.map((n: any) => [n.nation, n]));
+    const cityMap = new Map(cities.map((c: any) => [c.city, c]));
+
+    // 응답 데이터 구성
+    const battleList = battles.map((battle: any) => {
+      const attackerNation: any = nationMap.get(battle.attackerNationId);
+      const defenderNation: any = nationMap.get(battle.defenderNationId);
+      const city: any = cityMap.get(battle.targetCityId);
+
+      return {
+        id: battle.battleId || battle._id,
+        battleId: battle.battleId,
+        attackerNation: {
+          id: battle.attackerNationId,
+          name: attackerNation?.name || '알 수 없음',
+          color: attackerNation?.color || '#888888'
+        },
+        defenderNation: {
+          id: battle.defenderNationId,
+          name: defenderNation?.name || '알 수 없음',
+          color: defenderNation?.color || '#888888'
+        },
+        city: {
+          id: battle.targetCityId,
+          name: city?.name || '알 수 없음'
+        },
+        status: ['preparing', 'deploying', 'in_progress'].includes(battle.status) ? 'ongoing' : 'finished',
+        startDate: battle.startedAt || battle.createdAt,
+        endDate: battle.completedAt,
+        currentPhase: battle.currentPhase,
+        currentTurn: battle.currentTurn,
+        maxTurns: battle.maxTurns,
+        winner: battle.winner
+      };
+    });
+
+    res.json({
+      result: true,
+      battles: battleList
+    });
+  } catch (error: any) {
+    console.error('Error in GET /api/battle/center:', error);
+    res.status(500).json({ result: false, message: error.message });
+  }
+});
+
 router.post('/center', async (req, res) => {
   try {
     const { GetBattleCenterService } = await import('../services/battle/GetBattleCenter.service');

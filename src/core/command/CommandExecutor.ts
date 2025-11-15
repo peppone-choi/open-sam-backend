@@ -160,7 +160,7 @@ export class CommandExecutor {
     cost?: { gold: number; rice: number };
   }> {
     try {
-      // TODO: General, Session 로드
+      // FUTURE: General, Session 로드
       const general: any = null;
       const session: any = null;
       const env = session?.toEnvObject();

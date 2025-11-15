@@ -103,7 +103,7 @@ export class MoveFleetCommand extends BaseLoghCommand {
     const warpTurns = this.calculateWarpTurns(distance);
 
     // 보급품 체크
-    const currentSupplies = commander.getVar('supplies') || 0;
+    const currentSupplies = commander.data.supplies || 0;
     if (currentSupplies < warpCost) {
       return {
         success: false,
@@ -116,8 +116,8 @@ export class MoveFleetCommand extends BaseLoghCommand {
     commander.consumeCommandPoints(this.getRequiredCommandPoints());
 
     // 함대 위치 업데이트 (턴 처리 시 실제 반영)
-    commander.setVar('target_position', targetPos);
-    commander.setVar('warp_turns_remaining', warpTurns);
+    commander.data.target_position = targetPos;
+    commander.data.warp_turns_remaining = warpTurns;
 
     await commander.save();
 
@@ -143,20 +143,20 @@ export class MoveFleetCommand extends BaseLoghCommand {
   async onTurnEnd(context: ILoghCommandContext): Promise<void> {
     const { commander } = context;
 
-    const turnsRemaining = commander.getVar('warp_turns_remaining') || 0;
+    const turnsRemaining = commander.data.warp_turns_remaining || 0;
 
     if (turnsRemaining > 0) {
-      commander.setVar('warp_turns_remaining', turnsRemaining - 1);
+      commander.data.warp_turns_remaining = turnsRemaining - 1;
 
       if (turnsRemaining === 1) {
         // 도착!
-        const targetPos = commander.getVar('target_position');
+        const targetPos = commander.data.target_position;
         if (targetPos) {
-          commander.setVar('position_x', targetPos.x);
-          commander.setVar('position_y', targetPos.y);
-          commander.setVar('position_z', targetPos.z);
-          commander.setVar('target_position', null);
-          commander.setVar('warp_turns_remaining', 0);
+          commander.data.position_x = targetPos.x;
+          commander.data.position_y = targetPos.y;
+          commander.data.position_z = targetPos.z;
+          commander.data.target_position = null;
+          commander.data.warp_turns_remaining = 0;
 
           // 도착
         }

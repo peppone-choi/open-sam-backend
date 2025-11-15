@@ -35,7 +35,7 @@ export const getCacheManager = (): CacheManager => {
  */
 export const getRedisService = (): RedisService => {
   if (!singletons.redisService) {
-    singletons.redisService = null as any; // TODO
+    throw new Error('RedisService not initialized');
   }
   return singletons.redisService;
 };
@@ -74,5 +74,5 @@ export const getGameSessionRepository = (): GameSessionRepository => {
  * CommandService 팩토리
  */
 export const makeCommandService = (): CommandService => {
-  return null as any; // TODO: CommandService(getCommandRepository(), getCommandQueue(), getGameSessionRepository());
+  throw new Error('CommandService not implemented - use CommandRepository directly');
 };

@@ -140,7 +140,7 @@ export class GameLoopService {
       f.faction === 'alliance'
     );
 
-    // TODO: 더 정교한 종료 조건 추가 가능
+    
     return empireFleets.length === 0 || allianceFleets.length === 0;
   }
 
@@ -274,7 +274,7 @@ export class GameLoopService {
             completedCommands.map(c => c.commandType)
           );
 
-          // TODO: 완료된 커맨드 효과 적용
+          
           // 예: 워프 항행 완료 → 함대 위치 업데이트
           // 예: 작전 페이즈 완료 → 다음 페이즈 진행
 

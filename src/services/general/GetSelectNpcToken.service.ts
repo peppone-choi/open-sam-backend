@@ -14,7 +14,7 @@ export class GetSelectNpcTokenService {
   private static readonly KEEP_CNT = 3;
 
   static async execute(data: any, user?: any) {
-    const userId = user?.id;
+    const userId = user?.userId || user?.id;
     const sessionId = data.session_id || 'sangokushi_default';
     const refresh = data.refresh === true || data.refresh === 'true';
     const keepResult = data.keep || [];
@@ -36,14 +36,21 @@ export class GetSelectNpcTokenService {
         };
       }
 
-      const sessionData = session.config || session.data || {};
-      const npcmode = sessionData.npcmode || 0;
-      const turnterm = sessionData.turnterm || 60; // 분 단위
+      const sessionData = session.data || {};
+      const gameEnv = sessionData.game_env || {};
+      const npcmode = gameEnv.npcmode || 0;
+      const allowNpcPossess = gameEnv.allow_npc_possess || npcmode === 1 || false;
+      const turnterm = gameEnv.turnterm || 300; // 초 단위
 
-      if (npcmode !== 1) {
+      console.log('[GetSelectNpcToken] npcmode:', npcmode);
+      console.log('[GetSelectNpcToken] allow_npc_possess:', gameEnv.allow_npc_possess);
+      console.log('[GetSelectNpcToken] allowNpcPossess:', allowNpcPossess);
+
+      // allow_npc_possess가 true면 npcmode도 1로 간주
+      if (!allowNpcPossess && !gameEnv.allow_npc_possess) {
         return {
           result: false,
-          reason: '빙의 가능한 서버가 아닙니다'
+          reason: '오리지널 캐릭터 플레이가 허용되지 않은 서버입니다'
         };
       }
 
@@ -97,6 +104,12 @@ export class GetSelectNpcTokenService {
             };
           }
 
+          // ✅ 첫 번째 다시 뽑기인지 확인 (pick_more_from이 2010년 이전이면 첫 번째)
+          const isFirstRefresh = pickMoreFromTime.getFullYear() < 2010;
+          const nextPickMoreFrom = isFirstRefresh 
+            ? new Date(now.getTime() + pickMoreSecond * 1000)  // 첫 번째 이후부터 유예 시간 적용
+            : pickMoreFrom;  // 이미 계산된 미래 시간 사용
+
           // 새로 뽑기
           const newPick = await this.generateNpcPick(sessionId, userId, pickResult);
           
@@ -108,7 +121,7 @@ export class GetSelectNpcTokenService {
         {
           $set: {
             'data.valid_until': validUntil,
-            'data.pick_more_from': pickMoreFrom,
+            'data.pick_more_from': nextPickMoreFrom,
             'data.pick_result': { ...pickResult, ...newPick }
           }
         }
@@ -117,8 +130,8 @@ export class GetSelectNpcTokenService {
           return {
             result: true,
             pick: { ...pickResult, ...newPick },
-            pickMoreFrom: pickMoreFrom.toISOString(),
-            pickMoreSeconds: pickMoreSecond,
+            pickMoreFrom: nextPickMoreFrom.toISOString(),
+            pickMoreSeconds: isFirstRefresh ? pickMoreSecond : 0,
             validUntil: validUntil.toISOString()
           };
         } else {
@@ -143,31 +156,35 @@ export class GetSelectNpcTokenService {
         };
       }
 
-      // 새로 생성
+      // 새로 생성 - 처음에는 바로 다시 뽑기 가능
       const pickResult = await this.generateNpcPick(sessionId, userId, {});
+      const firstPickMoreFrom = new Date('2000-01-01T01:00:00.000Z'); // 과거 시간
       
-      // 만료된 토큰 삭제
-      await SelectNpcToken.deleteMany({
-        session_id: sessionId,
-        'data.valid_until': { $lt: now }
-      });
-
-      // 새 토큰 생성
-      await SelectNpcToken.create({
-        session_id: sessionId,
-        data: {
-          owner: userId.toString(),
-          valid_until: validUntil,
-          pick_more_from: pickMoreFrom,
+      // upsert로 토큰 생성/업데이트
+      await SelectNpcToken.findOneAndUpdate(
+        {
+          session_id: sessionId,
+          'data.id': userId
+        },
+        {
+          session_id: sessionId,
           pick_result: pickResult,
-          nonce: Math.floor(Math.random() * 0xfffffff)
-        }
-      });
+          data: {
+            id: userId,
+            owner: userId.toString(),
+            valid_until: validUntil,
+            pick_more_from: firstPickMoreFrom, // 처음에는 과거 시간
+            pick_result: pickResult,
+            nonce: Math.floor(Math.random() * 0xfffffff)
+          }
+        },
+        { upsert: true, new: true }
+      );
 
       return {
         result: true,
         pick: pickResult,
-        pickMoreFrom: '2000-01-01T01:00:00.000Z', // 처음 생성 시
+        pickMoreFrom: firstPickMoreFrom.toISOString(), // 처음 생성 시
         pickMoreSeconds: 0,
         validUntil: validUntil.toISOString()
       };
@@ -204,10 +221,11 @@ export class GetSelectNpcTokenService {
       }
     }
 
-    // 예약되지 않은 NPC만 선택
+    // 예약되지 않은 NPC만 선택 + 도시가 0인 NPC 제외 (시나리오에 등장하지 않음)
     const availableNpcs = npcGenerals.filter((gen: any) => {
       const genNo = gen.no || gen.data?.no;
-      return genNo && !reservedNpcs.has(genNo) && !keepPick[genNo];
+      const genCity = gen.city || gen.data?.city;
+      return genNo && genCity && genCity > 0 && !reservedNpcs.has(genNo) && !keepPick[genNo];
     });
 
     // 5개 선택 (가중치 기반)

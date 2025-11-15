@@ -87,9 +87,11 @@ export class BorderReturnCommand extends GeneralCommand {
         .map(pair => pair.cityId);
     }
 
+    const date = general.getTurnTime(general.TURNTIME_HM);
+
     // 3칸 이내에 아군 도시가 없으면 실패
     if (nearestCityList.length === 0) {
-      logger.pushGeneralActionLog('3칸 이내에 아국 도시가 없습니다.');
+      logger.pushGeneralActionLog(`3칸 이내에 아국 도시가 없습니다. <1>${date}</>`);
       return false;
     }
 
@@ -97,8 +99,8 @@ export class BorderReturnCommand extends GeneralCommand {
     const destCityID = rng.choice(nearestCityList);
     const destCityName = CityConst.byID(destCityID).name;
 
-    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 접경귀환했습니다.`);
-    general.setVar('city', destCityID);
+    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 접경귀환했습니다. <1>${date}</>`);
+    general.data.city = destCityID;
 
     this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
 

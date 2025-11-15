@@ -96,13 +96,22 @@ export class che_선전포고 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
@@ -114,7 +123,7 @@ export class che_선전포고 extends NationCommand {
     const destLogger = ActionLogger;
 
     logger.pushGeneralActionLog(`<D><b>${destNationName}</b></>에 선전 포고 했습니다.<1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 선전 포고`);
+    logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 선전 포고 <1>${date}</>`);
     logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 선전 포고`
     );
@@ -147,7 +156,7 @@ export class che_선전포고 extends NationCommand {
       nationID,
       nationName,
       nation['color'],
-      GetImageURL(general!.getVar('imgsvr'), general!.getVar('picture'))
+      GetImageURL(general.data.imgsvr, general.data.picture)
     );
 
     const destTarget = new MessageTarget(
@@ -161,7 +170,7 @@ export class che_선전포고 extends NationCommand {
     await Message.send(srcTarget, destTarget, text, new Date(general!.getTurnTime()), new Date('9999-12-31'), []);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await ActionLogger.flush();
 
     // StaticEventHandler
@@ -215,4 +224,4 @@ export class che_선전포고 extends NationCommand {
       }
     };
   }
-}
+}

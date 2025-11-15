@@ -110,8 +110,8 @@ export class AcceptRecruitCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const generalID = general.getID();
-    const generalName = general.getName();
-    const cityID = general.getVar('city');
+    const generalName = general.data.name || general.name;
+    const cityID = general.data.city;
     const nationID = general.getNationID();
 
     const destGeneral = this.destGeneralObj;
@@ -123,7 +123,7 @@ export class AcceptRecruitCommand extends GeneralCommand {
     const destNationID = this.destNation.nation;
     const destNationName = this.destNation.name;
 
-    const isTroopLeader = generalID === general.getVar('troop');
+    const isTroopLeader = generalID === general.data.troop;
 
     destGeneral.addExperience(100);
     destGeneral.addDedication(100);
@@ -154,8 +154,8 @@ export class AcceptRecruitCommand extends GeneralCommand {
       const defaultGold = 1000; // GameConst::$defaultGold
       const defaultRice = 1000; // GameConst::$defaultRice
 
-      if (general.getVar('gold') > defaultGold) {
-        const goldDiff = general.getVar('gold') - defaultGold;
+      if (general.data.gold > defaultGold) {
+        const goldDiff = general.data.gold - defaultGold;
         await nationRepository.updateOneByFilter(
           {
             session_id: general.getSessionID(),
@@ -165,11 +165,11 @@ export class AcceptRecruitCommand extends GeneralCommand {
             $inc: { gold: goldDiff }
           }
         );
-        general.setVar('gold', defaultGold);
+        general.data.gold = defaultGold;
       }
 
-      if (general.getVar('rice') > defaultRice) {
-        const riceDiff = general.getVar('rice') - defaultRice;
+      if (general.data.rice > defaultRice) {
+        const riceDiff = general.data.rice - defaultRice;
         await nationRepository.updateOneByFilter(
           {
             session_id: general.getSessionID(),
@@ -179,14 +179,14 @@ export class AcceptRecruitCommand extends GeneralCommand {
             $inc: { rice: riceDiff }
           }
         );
-        general.setVar('rice', defaultRice);
+        general.data.rice = defaultRice;
       }
 
       // 배신 횟수만큼 명성/공헌 감소 (N*10%)
-      const betrayCount = general.getVar('betray');
-      general.setVar('experience', general.getVar('experience') * (1 - 0.1 * betrayCount));
+      const betrayCount = general.data.betray ?? 0;
+      general.data.experience = (general.data.experience ?? 0) * (1 - 0.1 * betrayCount);
       general.addExperience(0, false);
-      general.setVar('dedication', general.getVar('dedication') * (1 - 0.1 * betrayCount));
+      general.data.dedication = (general.data.dedication ?? 0) * (1 - 0.1 * betrayCount);
       general.addDedication(0, false);
       general.increaseVarWithLimit('betray', 1, null, 5); // GameConst::$maxBetrayCnt
     } else {
@@ -194,8 +194,8 @@ export class AcceptRecruitCommand extends GeneralCommand {
       general.addDedication(100);
     }
 
-    if (general.getNPCType() < 2) {
-      general.setVar('killturn', env.killturn);
+    if (general.data.npc ?? general.npc ?? 0 < 2) {
+      general.data.killturn = env.killturn;
     }
 
     const logger = general.getLogger();
@@ -209,28 +209,29 @@ export class AcceptRecruitCommand extends GeneralCommand {
     destLogger.pushGeneralHistoryLog(`<Y>${generalName}</> 등용에 성공`);
 
     const josaYi = JosaUtil.pick(generalName, '이');
+    logger.pushGlobalHistoryLog(`<Y><b>【망명】</b></><Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>${josaRo} 망명했습니다.`);
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>${josaRo} <S>망명</>하였습니다.`);
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        general.increaseInheritancePoint('active_action', 1);
+        // TODO: general.increaseInheritancePoint('active_action', 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
     }
 
-    if (general.getNPCType() < 2) {
-      const belongCount = general.getVar('belong') || 0;
-      general.setVar('max_belong', Math.max(belongCount, general.getVar('max_belong') || 0));
+    if (general.data.npc ?? general.npc ?? 0 < 2) {
+      const belongCount = general.data.belong || 0;
+      general.data.max_belong = Math.max(belongCount, general.data.max_belong || 0);
     }
 
-    general.setVar('permission', 'normal');
-    general.setVar('belong', 1);
-    general.setVar('officer_level', 1);
-    general.setVar('officer_city', 0);
-    general.setVar('nation', destNationID);
-    general.setVar('city', this.destNation?.capital ?? 0);
-    general.setVar('troop', 0);
+    general.data.permission = 'normal';
+    general.data.belong = 1;
+    general.data.officer_level = 1;
+    general.data.officer_city = 0;
+    general.data.nation = destNationID;
+    general.data.city = this.destNation?.capital ?? 0;
+    general.data.troop = 0;
 
     if (isTroopLeader) {
       // 부대원들의 부대 해제

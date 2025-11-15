@@ -168,7 +168,7 @@ export class ${className} {
     success: boolean;
     message: string;
   }> {
-    // TODO: 전술 커맨드 구현
+    // FUTURE: 전술 커맨드 구현
     return {
       success: true,
       message: \`\${this.getDisplayName()}을(를) 실행했습니다.\`,

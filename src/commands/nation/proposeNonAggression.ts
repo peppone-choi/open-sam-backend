@@ -111,14 +111,23 @@ export class che_불가침제의 extends NationCommand {
     const env = this.env;
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
     const josaRo = JosaUtil.pick(nationName, '로');
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
@@ -131,6 +140,8 @@ export class che_불가침제의 extends NationCommand {
 
     logger.pushGeneralActionLog(`<D><b>${destNationName}</b></>${josaRo} 불가침 제의 서신을 보냈습니다.<1>${date}</>`);
 
+    logger.pushNationalHistoryLog(`<D><b>${destNationName}</b></>${josaRo} ${year}년 ${month}월까지 불가침 제의`);
+
     const { GetImageURL } = await import('../../func');
 
     const src = {
@@ -139,7 +150,7 @@ export class che_불가침제의 extends NationCommand {
       nationID: nationID,
       nationName: nationName,
       color: nation['color'],
-      image: GetImageURL(general!.getVar('imgsvr'), general!.getVar('picture'))
+      image: GetImageURL(general.data.imgsvr, general.data.picture)
     };
 
     const dest = {
@@ -158,7 +169,7 @@ export class che_불가침제의 extends NationCommand {
     const josaWa = JosaUtil.pick(nationName, '와');
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destLogger.flush();
 
     return true;
@@ -211,4 +222,4 @@ export class che_불가침제의 extends NationCommand {
       }
     };
   }
-}
+}

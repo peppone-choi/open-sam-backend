@@ -112,7 +112,7 @@ router.post('/by-token', async (req, res) => {
       });
     }
     
-    // TODO: 실제로는 login_token 테이블에서 조회해야 함
+    // FUTURE: 실제로는 login_token 테이블에서 조회해야 함
     // 현재는 JWT 토큰으로 간단히 처리
     try {
       const secret = process.env.JWT_SECRET || 'secret';

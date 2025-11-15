@@ -108,6 +108,14 @@ export class SpyCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
+    // dest 보장 로딩
+    if (this.arg?.destCityID && !this.destCity) {
+      await this.setDestCityAsync(this.arg.destCityID, true);
+    }
+    if (this.destCity && !this.destNation) {
+      await this.setDestNation(this.destCity.nation);
+    }
+
     const db = DB.db();
     const env = this.env;
     const general = this.generalObj;

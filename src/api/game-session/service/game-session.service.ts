@@ -62,7 +62,7 @@ export class GameSessionService {
    * @param session GameSession
    */
   private async initializeEntities(session: IGameSession): Promise<void> {
-    // TODO: 시나리오 템플릿 로더 구현 필요
+    // FUTURE: 시나리오 템플릿 로더 구현 필요
     // const template = await ScenarioLoader.load(session.scenarioId);
     
     // 임시: 빈 시나리오로 초기화

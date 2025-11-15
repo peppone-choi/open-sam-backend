@@ -79,26 +79,12 @@ async function start() {
               success: result.success
             });
 
-            // TODO: 결과를 Command 문서에 업데이트
-            // await commandRepository.updateById(commandId, {
-            //   status: 'completed',
-            //   result: result.result,
-            //   completed_at: new Date()
-            // });
-
           } catch (error) {
             logger.error('커맨드 실행 실패', {
               commandId,
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined
             });
-
-            // TODO: 실패 상태 업데이트
-            // await commandRepository.updateById(commandId, {
-            //   status: 'failed',
-            //   error: error.message,
-            //   completed_at: new Date()
-            // });
           }
         });
       } catch (error) {

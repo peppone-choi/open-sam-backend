@@ -2,8 +2,91 @@
 import { Router } from 'express';
 import { General } from '../models/general.model';
 import { Session } from '../models/session.model';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
+
+// 유산 포인트 조회
+router.post('/get-point', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    
+    if (!userId) {
+      return res.status(401).json({ result: false, error: '로그인이 필요합니다' });
+    }
+    
+    const general = await General.findOne({ 
+      session_id: sessionId,
+      owner: String(userId) 
+    });
+    
+    if (!general) {
+      return res.status(404).json({ result: false, error: '장수를 찾을 수 없습니다' });
+    }
+
+    const totalPoint = general.data?.inherit_points || 0;
+    
+    res.json({
+      result: true,
+      totalPoint,
+      inheritList: []
+    });
+  } catch (error: any) {
+    res.status(500).json({ result: false, error: error.message });
+  }
+});
+
+// 유산 포인트 사용
+router.post('/use-point', authenticate, async (req, res) => {
+  try {
+    const { amount, type } = req.body;
+    const userId = req.user?.userId || req.user?.id;
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    
+    if (!userId) {
+      return res.status(401).json({ result: false, reason: '로그인이 필요합니다' });
+    }
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ 
+        result: false, 
+        reason: '유효하지 않은 금액입니다' 
+      });
+    }
+
+    const general = await General.findOne({ 
+      session_id: sessionId,
+      owner: String(userId) 
+    });
+    
+    if (!general) {
+      return res.status(404).json({ 
+        result: false, 
+        reason: '장수를 찾을 수 없습니다' 
+      });
+    }
+
+    const currentPoints = general.data?.inherit_points || 0;
+    
+    if (currentPoints < amount) {
+      return res.status(400).json({ 
+        result: false, 
+        reason: `유산 포인트가 부족합니다. 필요: ${amount}, 보유: ${currentPoints}` 
+      });
+    }
+
+    general.data.inherit_points = currentPoints - amount;
+    await general.save();
+
+    res.json({
+      result: true,
+      remainingPoints: general.data.inherit_points
+    });
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
 
 // 턴 시각 변경 (유산 사용)
 /**

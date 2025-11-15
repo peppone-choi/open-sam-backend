@@ -555,8 +555,14 @@ export class ExecuteEngineService {
     
     // 정렬: 플레이어 우선, 그 다음 turntime 순서
     eligibleGenerals.sort((a: any, b: any) => {
-      const aIsPlayer = (a.npc === 0 || a.data?.npc === 0);
-      const bIsPlayer = (b.npc === 0 || b.data?.npc === 0);
+      // npc: 0 = 일반 플레이어, npc: 1 = 오리지널 캐릭터 (유저 플레이)
+      // npc: 2+ = AI 명장
+      const aOwner = a.owner || a.data?.owner;
+      const bOwner = b.owner || b.data?.owner;
+      const aIsPlayer = (a.npc === 0 || a.data?.npc === 0) || 
+                        ((a.npc === 1 || a.data?.npc === 1) && aOwner && aOwner !== '0' && aOwner !== 'NPC');
+      const bIsPlayer = (b.npc === 0 || b.data?.npc === 0) || 
+                        ((b.npc === 1 || b.data?.npc === 1) && bOwner && bOwner !== '0' && bOwner !== 'NPC');
       
       // 플레이어가 NPC보다 우선
       if (aIsPlayer && !bIsPlayer) return -1;
@@ -596,13 +602,10 @@ export class ExecuteEngineService {
       const batchPullNationCommands: Array<{ sessionId: string, nationId: number, officerLevel: number }> = [];
       
       await Promise.all(batch.map(async (general) => {
-        const isPlayer = general.npc === 0 || general.data?.npc === 0;
+        const owner = general.owner || general.data?.owner;
+        const isPlayer = (general.npc === 0 || general.data?.npc === 0) || 
+                        ((general.npc === 1 || general.data?.npc === 1) && owner && owner !== '0' && owner !== 'NPC');
         processedCount++;
-        
-        // 진행도 로깅 (200명마다)
-        if (processedCount % 200 === 0) {
-          console.log(`[Turn] Progress: ${processedCount}/${eligibleGenerals.length} generals processed`);
-        }
         
         // lean() 결과를 직접 사용 (재조회 제거 - 성능 개선)
         const generalDoc: any = general;
@@ -624,7 +627,8 @@ export class ExecuteEngineService {
         }
 
         const generalNo = generalDoc.no || generalDoc.data?.no;
-        const isPlayerGeneral = generalDoc.npc === 0 || generalDoc.data?.npc === 0;
+        const isPlayerGeneral = (generalDoc.npc === 0 || generalDoc.data?.npc === 0) || 
+                               ((generalDoc.npc === 1 || generalDoc.data?.npc === 1) && owner && owner !== '0' && owner !== 'NPC');
       
       // 밀린 턴을 모두 처리 (turntime이 현재 시각을 지날 때까지 반복)
       let turnsExecuted = 0;
@@ -1149,6 +1153,16 @@ export class ExecuteEngineService {
     let action = '휴식';
     let arg = {};
     
+    // 디버그: generalTurn 구조 확인
+    if (generalTurn) {
+      console.log(`[DEBUG] General ${generalId} turn data:`, {
+        action: generalTurn.data?.action || generalTurn.action,
+        arg: generalTurn.data?.arg || generalTurn.arg,
+        hasData: !!generalTurn.data,
+        keys: Object.keys(generalTurn)
+      });
+    }
+    
     // 명령이 없는 경우
     if (!generalTurn) {
       const npcType = general.npc || general.data?.npc || 0;
@@ -1179,8 +1193,10 @@ export class ExecuteEngineService {
       action = '휴식';
       arg = {};
     } else {
-      action = generalTurn.data?.action || '휴식';
-      arg = generalTurn.data?.arg || {};
+      action = generalTurn.data?.action || generalTurn.action || '휴식';
+      arg = generalTurn.data?.arg || generalTurn.arg || {};
+      
+      console.log(`[Turn] General ${generalId} command from DB: action=${action}, arg=`, arg);
     }
 
     // killturn 처리 (PHP 로직과 동일)
@@ -1226,16 +1242,7 @@ export class ExecuteEngineService {
         const city = general._cached_city || null;
         const nation = general._cached_nation || null;
         
-        console.log(`[AI] General ${generalId} (${general.name || general.data?.name}):`, {
-          npcType,
-          hasCity: !!city,
-          cityId: city?.city,
-          hasNation: !!nation,
-          nationId: nation?.nation
-        });
-        
         if (!city) {
-          console.log(`[AI] General ${generalId}: No city, skipping AI decision`);
           return;
         }
         
@@ -1270,25 +1277,13 @@ export class ExecuteEngineService {
             }
           );
           
-          console.log(`[AI] General ${generalId}: Command set to ${decision.command}`);
-          
-          // generalTurn 다시 조회
-          generalTurn = await generalTurnRepository.findOneByFilter({
-            session_id: sessionId,
-            'data.general_id': generalId,
-            'data.turn_idx': 0
-          });
-          
-          if (generalTurn) {
-            // action과 arg 업데이트
-            action = generalTurn.data?.action || generalTurn.action || '휴식';
-            arg = generalTurn.data?.arg || generalTurn.arg || {};
-          }
-        } else {
-          console.log(`[AI] General ${generalId}: No action (neutral or null)`, { decision });
+          // action과 arg 직접 설정 (DB 재조회 불필요)
+          action = decision.command;
+          arg = decision.args || {};
+          console.log(`[AI] General ${generalId} command set: ${action}`, arg);
         }
       } catch (error: any) {
-        // AI 실패 시 휴식
+        // AI 실패 시 휴식 (에러는 로깅)
         console.error(`[AI] General ${generalId} error:`, error.message);
         return;
       }
@@ -1357,6 +1352,7 @@ export class ExecuteEngineService {
         month, 
         session_id: sessionId, 
         ownedCities,  // 제약조건에서 사용
+        develcost: gameEnv.develcost || 100,  // 내정/이동 비용
         ...gameEnv 
       };
       
@@ -1528,7 +1524,10 @@ export class ExecuteEngineService {
 
     // 은퇴 처리 (나이 제한)
     const retirementYear = 70;
-    if ((general.age || 20) >= retirementYear && general.npc === 0) {
+    const owner = general.owner || general.data?.owner;
+    const isPlayerGeneral = (general.npc === 0 || general.data?.npc === 0) || 
+                           ((general.npc === 1 || general.data?.npc === 1) && owner && owner !== '0' && owner !== 'NPC');
+    if ((general.age || 20) >= retirementYear && isPlayerGeneral) {
       // TODO: 환생 처리
       general.age = 15;
       general.killturn = 120;

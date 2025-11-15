@@ -145,7 +145,7 @@ export class ProcessDiplomacyService {
       // 메시지 발송
       const messageText = `외교 서신(#${letterNo})이 ${action === 'alliance' ? '동맹으로' : action === 'war' ? '전쟁으로' : '처리'}되었습니다.`;
       
-      // TODO: Message 클래스 사용하여 메시지 발송
+      // FUTURE: Message 클래스 사용하여 메시지 발송
       // const msg = new Message(...);
       // await msg.send();
 

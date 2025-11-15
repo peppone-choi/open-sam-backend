@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 import { General, IGeneral } from '../models/general.model';
 import { City, ICity } from '../models/city.model';
 import { Nation, INation } from '../models/nation.model';
+import { GeneralLog } from '../models/general-log.model';
+import { Troop } from '../models/troop.model';
+import { Diplomacy } from '../models/diplomacy.model';
+import { NgHistory } from '../models/ng_history.model';
+import { Auction } from '../models/auction.model';
 
 export async function connectDB() {
   try {
@@ -27,6 +32,31 @@ export class DB {
       DB.instance = new DB();
     }
     return DB.instance;
+  }
+
+  // 컬렉션 이름을 Mongoose 모델로 매핑
+  private getModel(collection: string): any {
+    const modelMap: Record<string, any> = {
+      'general': General,
+      'city': City,
+      'nation': Nation,
+      'general_action_log': GeneralLog,
+      'general_battle_log': GeneralLog,
+      'general_history_log': GeneralLog,
+      'global_action_log': GeneralLog,
+      'global_history_log': GeneralLog,
+      'national_history_log': NgHistory,
+      'troop': Troop,
+      'diplomacy': Diplomacy,
+      'ng_auction': Auction,
+      'ng_history': NgHistory
+    };
+    
+    const model = modelMap[collection.toLowerCase()];
+    if (!model) {
+      throw new Error(`Unknown collection: ${collection}`);
+    }
+    return model;
   }
 
   // General 조회
@@ -98,12 +128,12 @@ export class DB {
 
   // 동적 쿼리 메서드
   async query_MAIN(collection: string, filter: any = {}): Promise<any[]> {
-    const model = mongoose.model(collection);
+    const model = this.getModel(collection);
     return await model.find(filter);
   }
 
   async queryFirstRow(collection: string, filter: any = {}): Promise<any | null> {
-    const model = mongoose.model(collection);
+    const model = this.getModel(collection);
     return await model.findOne(filter);
   }
 
@@ -112,7 +142,7 @@ export class DB {
   }
 
   async update(collection: string, updates: any, whereClause?: string, params?: any[] | number): Promise<void> {
-    const model = mongoose.model(collection);
+    const model = this.getModel(collection);
     const filter: any = {};
     
     if (whereClause) {
@@ -180,12 +210,12 @@ export class DB {
   }
 
   async insert(collection: string, data: any): Promise<any> {
-    const model = mongoose.model(collection);
+    const model = this.getModel(collection);
     return await model.create(data);
   }
 
   async delete(collection: string, filter: any): Promise<void> {
-    const model = mongoose.model(collection);
+    const model = this.getModel(collection);
     await model.deleteMany(filter);
   }
 

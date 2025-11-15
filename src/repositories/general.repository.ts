@@ -89,9 +89,13 @@ class GeneralRepository {
     return cacheService.getOrLoad(
       `generals:nation:${sessionId}:${nationId}`,
       async () => {
+        // nation 필드는 최상위 또는 data 내부에 있을 수 있음
         const generals = await General.find({
           session_id: sessionId,
-          nation: nationId
+          $or: [
+            { nation: nationId },
+            { 'data.nation': nationId }
+          ]
         }).lean();
 
         // 개별 장수도 캐시에 저장
@@ -222,8 +226,15 @@ class GeneralRepository {
     const no = existing.data?.no || existing.no || update.no || update.data?.no;
 
     if (sessionId && no) {
-      // 기존 데이터와 업데이트 병합
-      const merged = { ...existing, ...update };
+      // 기존 데이터와 업데이트 병합 (data 필드는 deep merge)
+      const merged = { 
+        ...existing, 
+        ...update,
+        data: {
+          ...existing.data,
+          ...update.data
+        }
+      };
 
       // 캐시에 저장 (sync-queue에 자동 추가됨)
       await saveGeneral(sessionId, no, merged);
@@ -395,8 +406,15 @@ class GeneralRepository {
       return { modifiedCount: 1, matchedCount: 1 };
     }
 
-    // 캐시 업데이트
-    const merged = { ...existing, ...update };
+    // 캐시 업데이트 (data 필드는 deep merge)
+    const merged = { 
+      ...existing, 
+      ...update,
+      data: {
+        ...existing.data,
+        ...update.data
+      }
+    };
     await saveGeneral(sessionId, generalNo, merged);
 
     // 목록 캐시 무효화

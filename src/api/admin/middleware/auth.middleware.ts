@@ -35,7 +35,7 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
       username: decoded.username,
       grade: grade,
       role: grade >= 9 ? 'SUPER_ADMIN' : grade >= 7 ? 'ADMIN' : 'MODERATOR',
-      permissions: Object.values(AdminPermission), // TODO: 실제 권한 체계 구현 시 수정
+      permissions: Object.values(AdminPermission), // FUTURE: 실제 권한 체계 구현 시 수정
     };
     
     next();

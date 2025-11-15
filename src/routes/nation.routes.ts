@@ -18,6 +18,7 @@ import { Nation } from '../models/nation.model';
 import { City } from '../models/city.model';
 import { Diplomacy } from '../models/diplomacy.model';
 import { KVStorage } from '../models/kv-storage.model';
+import GameConstants from '../utils/game-constants';
 
 const router = Router();
 
@@ -2137,7 +2138,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
       } else {
         const dipState = dipStateMap[staticNationID];
         diplomacy = {
-          state: dipState?.state || 2,
+          state: dipState?.state !== undefined ? dipState.state : 0,
           term: dipState?.term || 0
         };
       }
@@ -2169,8 +2170,8 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     // 전쟁 금지 설정 횟수
     const warSettingCnt = {
       remain: availableWarSettingCnt,
-      inc: 1,  // TODO: GameConst로 이동
-      max: 3   // TODO: GameConst로 이동
+      inc: GameConstants.WAR_BLOCK_SETTING_INC,
+      max: GameConstants.WAR_BLOCK_SETTING_MAX
     };
 
     // 재정 계산

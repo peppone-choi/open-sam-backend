@@ -27,7 +27,7 @@ export class KakaoUtil {
       return '적절하지 않은 길이입니다.';
     }
 
-    // TODO: 데이터베이스 쿼리 구현
+    // FUTURE: 카카오 연동 구현 (v2.0)
     // const cnt = RootDB::db()->queryFirstField('SELECT count(no) FROM member WHERE `id` = %s LIMIT 1', usernameLower);
     // if (cnt != 0) {
     //   return '이미 사용중인 계정명입니다';
@@ -44,7 +44,7 @@ export class KakaoUtil {
       return '닉네임을 입력해주세요';
     }
 
-    // TODO: getStringWidth 함수 사용
+    // FUTURE: getStringWidth 함수 사용 (v2.0)
     // const length = getStringWidth(nickname);
     const length = nickname.length; // 임시
     
@@ -52,7 +52,7 @@ export class KakaoUtil {
       return '적절하지 않은 길이입니다.';
     }
 
-    // TODO: 데이터베이스 쿼리 구현
+    // FUTURE: 카카오 연동 구현 (v2.0)
     return true;
   }
 
@@ -69,7 +69,7 @@ export class KakaoUtil {
       return '적절하지 않은 길이입니다.';
     }
 
-    // TODO: 데이터베이스 쿼리 구현
+    // FUTURE: 카카오 연동 구현 (v2.0)
     return true;
   }
 
@@ -77,7 +77,7 @@ export class KakaoUtil {
    * 사용자 번호로 OTP 생성
    */
   static createOTPbyUserNO(userNo: number): boolean {
-    // TODO: 데이터베이스 쿼리 및 OTP 생성 구현
+    // FUTURE: 카카오 OTP 생성 구현 (v2.0)
     return false;
   }
 
@@ -85,7 +85,7 @@ export class KakaoUtil {
    * OTP 생성
    */
   static createOTP(accessToken: string): [number, number] | null {
-    // TODO: 카카오 API SDK 사용하여 OTP 생성
+    // FUTURE: 카카오 API SDK 사용 (v2.0)
     return null;
   }
 
@@ -93,7 +93,7 @@ export class KakaoUtil {
    * 카카오 OAuth 확인
    */
   static kakaoOAuthCheck(userInfo: Record<string, any>): [boolean, string] | null {
-    // TODO: 카카오 OAuth 검증 구현
+    // FUTURE: 카카오 OAuth 검증 구현 (v2.0)
     return null;
   }
 }

@@ -82,7 +82,7 @@ export class che_이호경식 extends NationCommand {
     const genCount = Util.valueFit(this.nation['gennum'], 1);
     let nextTerm = Util.round(Math.sqrt(genCount * 16) * 10);
 
-    nextTerm = this.generalObj!.onCalcStrategic(che_이호경식.getName(), 'delay', nextTerm);
+    nextTerm = this.generalObj.onCalcStrategic(che_이호경식.getName(), 'delay', nextTerm);
     return nextTerm;
   }
 
@@ -102,6 +102,9 @@ export class che_이호경식 extends NationCommand {
     const env = this.env;
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalID = general!.getID();
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
@@ -109,10 +112,16 @@ export class che_이호경식 extends NationCommand {
     const year = this.env['year'];
     const month = this.env['month'];
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
@@ -126,8 +135,8 @@ export class che_이호경식 extends NationCommand {
     const logger = general!.getLogger();
     logger.pushGeneralActionLog(`${commandName} 발동! <1>${date}</>`);
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동하였습니다.`;
 
@@ -159,7 +168,7 @@ export class che_이호경식 extends NationCommand {
     );
     await destNationLogger.flush();
 
-    logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`);
+    logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`
     );
@@ -167,7 +176,7 @@ export class che_이호경식 extends NationCommand {
     await db.update(
       'nation',
       {
-        strategic_cmd_limit: this.generalObj!.onCalcStrategic(che_이호경식.getName(), 'globalDelay', 9)
+        strategic_cmd_limit: this.generalObj.onCalcStrategic(che_이호경식.getName(), 'globalDelay', 9)
       },
       'nation=%i',
       [nationID]
@@ -188,7 +197,7 @@ export class che_이호경식 extends NationCommand {
     await SetNationFront(destNationID);
 
     this.setResultTurn(new LastTurn(che_이호경식.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -238,4 +247,4 @@ export class che_이호경식 extends NationCommand {
       }
     };
   }
-}
+}

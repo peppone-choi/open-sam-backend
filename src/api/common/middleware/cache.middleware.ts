@@ -1,7 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
-import { CacheManager } from '../../../cache/CacheManager';
 
-const cacheManager = CacheManager.getInstance();
+// Lazy-load CacheManager to avoid blocking server startup with Redis connection
+let cacheManager: any = null;
+function getCacheManager() {
+  if (!cacheManager) {
+    try {
+      const { CacheManager } = require('../../../cache/CacheManager');
+      cacheManager = CacheManager.getInstance();
+    } catch (error) {
+      console.error('Failed to load CacheManager:', error);
+      // Return a dummy cache manager that does nothing
+      cacheManager = {
+        get: async () => null,
+        set: async () => {},
+        getStats: () => ({})
+      };
+    }
+  }
+  return cacheManager;
+}
 
 export function cacheMiddleware(ttl: number = 3) {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -12,8 +29,10 @@ export function cacheMiddleware(ttl: number = 3) {
     const cacheKey = `cache:${req.originalUrl}`;
 
     try {
-      // TODO: L1/L2 캐시 조회
-      const cached = await cacheManager.get(cacheKey);
+      const manager = getCacheManager();
+      
+      // FUTURE: L1/L2 캐시 조회
+      const cached = await manager.get(cacheKey);
       
       if (cached) {
         res.set('X-Cache', 'HIT');
@@ -22,10 +41,10 @@ export function cacheMiddleware(ttl: number = 3) {
 
       res.set('X-Cache', 'MISS');
 
-      // TODO: 응답을 캐시에 저장
+      // FUTURE: 응답을 캐시에 저장
       const originalJson = res.json.bind(res);
       res.json = function(data: any) {
-        cacheManager.set(cacheKey, data, ttl).catch(console.error);
+        manager.set(cacheKey, data, ttl).catch(console.error);
         return originalJson(data);
       };
 

@@ -266,7 +266,7 @@ export class EntityManagerFactory {
   }
 
   private static async loadSessionConfig(sessionId: string): Promise<SessionConfig> {
-    // TODO: 실제 구현에서는 DB나 파일에서 로드
+    // FUTURE: 실제 구현에서는 DB나 파일에서 로드
     // 지금은 sangokushi config를 기본으로 사용
     const fs = require('fs');
     const path = require('path');

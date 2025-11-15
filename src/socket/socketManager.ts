@@ -120,6 +120,12 @@ export class SocketManager {
       socket.join(`user:${userId}`);
     }
 
+    // 세션 룸에 자동 조인 (실시간 로그 수신을 위해 필수)
+    if (sessionId) {
+      socket.join(`session:${sessionId}`);
+      console.log(`📡 소켓 ${socket.id}가 세션 룸 session:${sessionId}에 조인했습니다`);
+    }
+
     // LOGH 세션인 경우 LOGH 핸들러로 처리
     if (sessionId && sessionId.startsWith('logh_') && this.loghHandler) {
       this.loghHandler.handleConnection(socket);

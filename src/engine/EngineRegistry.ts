@@ -61,7 +61,7 @@ export class EngineRegistry {
     // 내정
     this.engine.registerHandler(new CultivateFarmHandler(this.engine));
 
-    // TODO: 추가 핸들러
+    
     // - CultivateLandHandler (토지 개간)
     // - BoostCommerceHandler (상업 투자)
     // - BoostSecurityHandler (치안 투자)
@@ -97,7 +97,7 @@ export class EngineRegistry {
     // 군사
     this.engine.registerHandler(new BuildFleetHandler(this.engine));
 
-    // TODO: 추가 핸들러
+    
     // - TrainFleetHandler (함대 훈련)
     // - DeployFleetHandler (함대 배치)
     // - MoveFleetHandler (함대 이동)

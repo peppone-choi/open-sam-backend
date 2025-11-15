@@ -133,14 +133,14 @@ export abstract class AuctionBasicResource extends Auction {
    * 경매 롤백
    */
   protected rollbackAuction(): void {
-    // TODO: 구현
+    // FUTURE: 구현
   }
 
   /**
    * 경매 완료 처리
    */
   protected finishAuction(highestBid: any, bidder: IGeneral): string | null {
-    // TODO: 구현
+    // FUTURE: 구현
     return null;
   }
 }

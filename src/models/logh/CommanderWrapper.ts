@@ -22,6 +22,10 @@ export class CommanderWrapper implements ILoghCommandExecutor {
     return this.commander.session_id;
   }
 
+  get data(): any {
+    return this.commander;
+  }
+
   getVar(key: string): any {
     return this.commander.customData?.[key];
   }

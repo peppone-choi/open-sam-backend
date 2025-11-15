@@ -197,7 +197,7 @@ export class IssueOperationCommand extends BaseLoghCommand {
     };
 
     // 작전 저장 (실제로는 MongoDB OperationPlan 컬렉션에 저장)
-    commander.setVar('current_operation', operationPlan);
+    commander.data.current_operation = operationPlan;
     commander.consumeCommandPoints(this.getRequiredCommandPoints());
 
     await commander.save();
@@ -222,7 +222,7 @@ export class IssueOperationCommand extends BaseLoghCommand {
   async onTurnEnd(context: ILoghCommandContext): Promise<void> {
     const { commander } = context;
 
-    const operation: IOperationPlan | null = commander.getVar('current_operation');
+    const operation: IOperationPlan | null = commander.data.current_operation;
 
     if (!operation || operation.status !== 'executing') {
       return;
@@ -234,7 +234,7 @@ export class IssueOperationCommand extends BaseLoghCommand {
     if (!currentPhase) {
       // 모든 페이즈 완료
       operation.status = 'completed';
-      commander.setVar('current_operation', operation);
+      commander.data.current_operation = operation;
       await commander.save();
       return;
     }
@@ -249,7 +249,7 @@ export class IssueOperationCommand extends BaseLoghCommand {
       );
     }
 
-    commander.setVar('current_operation', operation);
+    commander.data.current_operation = operation;
     await commander.save();
   }
 }

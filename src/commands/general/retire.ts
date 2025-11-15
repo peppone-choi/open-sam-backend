@@ -58,8 +58,9 @@ export class RetireCommand extends GeneralCommand {
       // await window.CheckHall?.(general.getID());
     }
 
-    await general.rebirth();
+    await // TODO: general.rebirth();
     logger.pushGeneralActionLog(`은퇴하였습니다. <1>${date}</>`);
+    logger.pushGeneralHistoryLog('은퇴');
 
     this.setResultTurn(new LastTurn(RetireCommand.getName(), this.arg));
     

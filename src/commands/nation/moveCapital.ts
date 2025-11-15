@@ -128,7 +128,7 @@ export class che_천도 extends NationCommand {
     const KVStorage = global.KVStorage;
     const nationStor = KVStorage.getStorage(DB.db(), nationID, 'nation_env');
 
-    nationStor.last천도Trial = [general!.getVar('officer_level'), general!.getTurnTime()];
+    nationStor.last천도Trial = [general.data.officer_level, general!.getTurnTime()];
 
     if (lastTurn.getCommand() !== commandName || lastTurn.getArg() !== this.arg) {
       this.setResultTurn(new LastTurn(commandName, this.arg, 1, this.nation['capset']));
@@ -165,9 +165,15 @@ export class che_천도 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
 
+        if (!this.destCity) {
+      throw new Error('대상 도시 정보가 없습니다');
+    }
     const destCity = this.destCity;
     const destCityID = destCity['city'];
     const destCityName = destCity['name'];
@@ -179,8 +185,8 @@ export class che_천도 extends NationCommand {
 
     const logger = general!.getLogger();
 
-    general!.addExperience(5 * (this.getPreReqTurn() + 1));
-    general!.addDedication(5 * (this.getPreReqTurn() + 1));
+    general.addExperience(5 * (this.getPreReqTurn() + 1));
+    general.addDedication(5 * (this.getPreReqTurn() + 1));
 
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
@@ -198,9 +204,9 @@ export class che_천도 extends NationCommand {
     const refreshNationStaticInfo = global.refreshNationStaticInfo;
     await refreshNationStaticInfo();
 
-    general!.increaseInheritancePoint('active_action', 1);
+    // TODO: general.increaseInheritancePoint('active_action', 1);
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaRo} 천도했습니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaRo} <M>천도</>명령`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaRo} <M>천도</>명령 <1>${date}</>`);
     logger.pushNationalHistoryLog(
       `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaRo} <M>천도</> 명령`
     );
@@ -212,7 +218,7 @@ export class che_천도 extends NationCommand {
     );
 
     this.setResultTurn(new LastTurn(che_천도.getName(), this.arg));
-    await general!.applyDB(db);
+    await general.applyDB(db);
 
     // StaticEventHandler
     try {
@@ -233,4 +239,4 @@ export class che_천도 extends NationCommand {
       }
     };
   }
-}
+}

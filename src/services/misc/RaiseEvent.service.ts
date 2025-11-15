@@ -61,14 +61,14 @@ export class RaiseEventService {
         }
       }
 
-      // TODO: 실제 이벤트 처리 로직 구현
+      // FUTURE: 실제 이벤트 처리 로직 구현 (v2.0)
       // 현재는 이벤트를 받아서 저장만 함
       // 나중에 게임 데몬에서 처리하도록 큐에 추가해야 함
       
       // 이벤트 로그 저장 (예시)
       console.log(`[RaiseEvent] ${eventName}`, eventArgs);
 
-      // TODO: 이벤트를 게임 큐에 추가하는 로직
+      // FUTURE: 이벤트를 게임 큐에 추가 (v2.0)
       // - Redis나 MongoDB에 이벤트 저장
       // - 게임 데몬이 주기적으로 확인하여 처리
       // - 또는 즉시 처리하는 방식

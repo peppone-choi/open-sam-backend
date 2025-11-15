@@ -209,14 +209,14 @@ export class SystemEngine {
 
       async loadSystemState(systemId: string, ownerRef?: RoleRef): Promise<any> {
         // SystemState 컬렉션에서 조회
-        // TODO: SystemStateRepository 구현 필요
+        // FUTURE: SystemStateRepository 구현 필요
         // 임시로 null 반환
         return null;
       },
 
       async saveSystemState(systemId: string, state: any, ownerRef?: RoleRef): Promise<void> {
         // SystemState 컬렉션에 저장
-        // TODO: SystemStateRepository 구현 필요
+        // FUTURE: SystemStateRepository 구현 필요
       },
 
       emit: async (eventType: string, data: any): Promise<void> => {

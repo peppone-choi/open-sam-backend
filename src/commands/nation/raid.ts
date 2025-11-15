@@ -47,6 +47,7 @@ export class RaidCommand extends NationCommand {
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
+      ConstraintHelper.AvailableStrategicCommand(),
       ConstraintHelper.Custom((input: any, env: any) => {
         const nation = input._cached_nation || {};
         return (nation.strategic_cmd_limit || 0) > 0;
@@ -60,6 +61,7 @@ export class RaidCommand extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
+      ConstraintHelper.AvailableStrategicCommand(),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.Custom((input: any, env: any) => {
         const diplomacy = input._cached_diplomacy || {};
@@ -96,13 +98,9 @@ export class RaidCommand extends NationCommand {
     let nextTerm = Util.round(Math.sqrt(genCount * 16) * 10);
 
     // 장수의 특수 능력으로 delay 조정
-    try {
-      if (this.generalObj && typeof this.generalObj.onCalcStrategic === 'function') {
+    if (typeof this.generalObj?.onCalcStrategic === 'function') {
         nextTerm = this.generalObj.onCalcStrategic(RaidCommand.getName(), 'delay', nextTerm);
       }
-    } catch (error) {
-      console.error('onCalcStrategic 실패:', error);
-    }
     return nextTerm;
   }
 
@@ -121,7 +119,7 @@ export class RaidCommand extends NationCommand {
     const env = this.env;
     const general = this.generalObj;
     const generalID = general.getID();
-    const generalName = general.getName();
+    const generalName = general.data.name || general.name;
     const date = general.getTurnTime(general.TURNTIME_HM);
 
     const year = this.env.year;
@@ -131,6 +129,9 @@ export class RaidCommand extends NationCommand {
     const nationID = nation.nation;
     const nationName = nation.name;
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation.nation;
     const destNationName = destNation.name;
@@ -183,19 +184,15 @@ export class RaidCommand extends NationCommand {
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`);
 
     // 전략 명령 사용 제한 설정
-    let strategicCmdCost = 9;
-    try {
-      if (this.generalObj && typeof this.generalObj.onCalcStrategic === 'function') {
-        strategicCmdCost = this.generalObj.onCalcStrategic(RaidCommand.getName(), 'cost', strategicCmdCost);
-      }
-    } catch (error) {
-      console.error('onCalcStrategic 실패:', error);
+    let strategicCmdLimit = 9;
+    if (typeof this.generalObj?.onCalcStrategic === 'function') {
+      strategicCmdLimit = this.generalObj.onCalcStrategic(RaidCommand.getName(), 'globalDelay', strategicCmdLimit);
     }
     
     const { Nation } = await import('../../models/nation.model');
     await nationRepository.updateOneByFilter(
       { session_id: env.session_id, 'data.nation': nationID },
-      { $inc: { 'data.strategic_cmd_limit': -strategicCmdCost } }
+      { $set: { 'data.strategic_cmd_limit': strategicCmdLimit } }
     );
 
     // 외교 관계에서 선포 기간 3개월 감소
@@ -233,4 +230,3 @@ export class RaidCommand extends NationCommand {
     return true;
   }
 }
-

@@ -133,7 +133,7 @@ describe('CultivateFarmCommand', () => {
     });
   });
 
-  // TODO: 추가 테스트 케이스
+  
   // - 특정 제약 조건 테스트
   // - run() 메서드 실행 테스트
   // - 상태 변경 검증

@@ -1236,4 +1236,21 @@ router.post('/get-boss-info', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/general/get-select-npc-token:
+ *   post:
+ *     summary: NPC 선택 토큰 발급
+ *     tags: [General]
+ */
+router.post('/get-select-npc-token', authenticate, async (req, res) => {
+  try {
+    const { GetSelectNpcTokenService } = await import('../services/general/GetSelectNpcToken.service');
+    const result = await GetSelectNpcTokenService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
 export default router;

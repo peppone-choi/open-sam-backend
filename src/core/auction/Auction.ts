@@ -25,7 +25,7 @@ export abstract class Auction {
   constructor(auctionID: number, general: IGeneral) {
     this.auctionID = auctionID;
     this.general = general;
-    // TODO: DB에서 경매 정보 로드
+    // FUTURE: DB에서 경매 정보 로드
   }
 
   /**
@@ -33,7 +33,7 @@ export abstract class Auction {
    */
   static genObfuscatedName(id: number): string {
     const db = DB.db();
-    // TODO: KVStorage 구현
+    // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     
     // 임시 구현
@@ -65,7 +65,7 @@ export abstract class Auction {
     const db = DB.db();
     const info = this.info;
 
-    // TODO: 실제 구현
+    // FUTURE: 실제 구현
     // if (!info.detail.isReverse) {
     //   const rawHighestBid = await db.queryFirstRow(
     //     'SELECT * FROM ng_auction_bid WHERE auction_id = ? ORDER BY amount DESC LIMIT 1',
@@ -88,7 +88,7 @@ export abstract class Auction {
     const db = DB.db();
     const info = this.info;
 
-    // TODO: 실제 구현
+    // FUTURE: 실제 구현
     return null;
   }
 
@@ -109,7 +109,7 @@ export abstract class Auction {
 
     this.info.closeDate = date;
     const db = DB.db();
-    // TODO: DB 업데이트
+    // FUTURE: DB 업데이트
     // await db.update('ng_auction', this.info.toArray('id'), 'id = ?', this.info.id);
 
     return null;
@@ -119,7 +119,7 @@ export abstract class Auction {
    * 최신 입찰 기준 종료 날짜 연장
    */
   public extendLatestBidCloseDate(date?: Date): string | null {
-    // TODO: 구현
+    // FUTURE: 구현
     return null;
   }
 
@@ -127,7 +127,7 @@ export abstract class Auction {
    * 종료 날짜 연장
    */
   public extendCloseDate(date: Date, force: boolean = false): string | null {
-    // TODO: 구현
+    // FUTURE: 구현
     return null;
   }
 
@@ -136,7 +136,7 @@ export abstract class Auction {
    */
   public applyDB(): void {
     const db = DB.db();
-    // TODO: 구현
+    // FUTURE: 구현
     // await db.update('ng_auction', this.info.toArray('id'), 'id = ?', this.info.id);
   }
 
@@ -144,21 +144,21 @@ export abstract class Auction {
    * 입찰 환불
    */
   public refundBid(bidItem: any, reason: string): void {
-    // TODO: 구현
+    // FUTURE: 구현
   }
 
   /**
    * 경매 종료
    */
   public closeAuction(isRollback: boolean = false): void {
-    // TODO: 구현
+    // FUTURE: 구현
   }
 
   /**
    * 입찰
    */
   public bid(amount: number, tryExtendCloseDate: boolean = false): string | null {
-    // TODO: 구현
+    // FUTURE: 구현
     return null;
   }
 
@@ -166,7 +166,7 @@ export abstract class Auction {
    * 경매 완료 시도
    */
   public tryFinish(): boolean | null {
-    // TODO: 구현
+    // FUTURE: 구현
     return null;
   }
 

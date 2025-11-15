@@ -189,7 +189,9 @@ router.post('/get-server-status', async (req, res) => {
         starttime: gameEnv.starttime || null,
         // 서버 제한
         maxgeneral: gameEnv.maxgeneral || 300,
-        maxnation: gameEnv.maxnation || 12
+        maxnation: gameEnv.maxnation || 12,
+        // NPC 플레이 허용 여부
+        allow_npc_possess: gameEnv.allow_npc_possess || false
       };
     });
 
@@ -252,7 +254,7 @@ router.post('/logout', authenticate, async (req, res) => {
     
     // 로그 기록 (선택사항)
     if (userId) {
-      // TODO: member_log 테이블에 로그 기록
+      // FUTURE: member_log 테이블에 로그 기록
       // await MemberLog.create({ member_no: userId, action_type: 'logout', ... });
     }
     
@@ -441,7 +443,7 @@ router.post('/delete-me', authenticate, async (req, res) => {
     });
     
     // 관련 데이터 정리 (선택사항 - 소프트 삭제 시에는 유지)
-    // TODO: 필요시 장수 데이터 anonymize 처리
+    // FUTURE: 필요시 장수 데이터 anonymize 처리
     // const generals = await General.find({ owner: String(userId) });
     // for (const general of generals) {
     //   general.owner = null; // 또는 익명화
@@ -449,7 +451,7 @@ router.post('/delete-me', authenticate, async (req, res) => {
     // }
     
     // 로그 기록
-    // TODO: member_log 테이블에 삭제 로그 기록
+    // FUTURE: member_log 테이블에 삭제 로그 기록
     // await MemberLog.create({ member_no: userId, action_type: 'delete' });
     
     // 세션 종료

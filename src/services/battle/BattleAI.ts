@@ -325,7 +325,7 @@ export class SimpleBattleAI {
    * 진형 유지 (추후 구현)
    */
   private maintainFormation(unit: IBattleUnit, allies: IBattleUnit[]): { x: number; y: number } | null {
-    // TODO: 진형별 위치 계산
+    
     return null;
   }
 
@@ -333,7 +333,7 @@ export class SimpleBattleAI {
    * 측면 공격 위치 계산 (추후 구현)
    */
   private calculateFlankPosition(unit: IBattleUnit, target: IBattleUnit): { x: number; y: number } {
-    // TODO: 적 측면 위치
+    
     return target.position;
   }
 }

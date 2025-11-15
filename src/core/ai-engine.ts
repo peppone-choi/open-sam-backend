@@ -18,7 +18,7 @@ function mapAICommandToGameCommand(aiCommand: string): string {
     'defense': 'REINFORCE_DEFENSE',         // 수비강화
     'wall': 'REPAIR_WALL',                  // 성벽보수
     'settlement': 'ENCOURAGE_SETTLEMENT',   // 정착장려 (인구)
-    'trust': 'SELECT_CITIZEN',              // 주민선정 (민심)
+    'trust': 'SELECT_CITIZEN',              // 선정 (민심)
     'tech': 'RESEARCH_TECH',                // 기술연구
     
     // 군사 (Military)
@@ -28,6 +28,7 @@ function mapAICommandToGameCommand(aiCommand: string): string {
     
     // 특수 (Special)
     'cure': 'REST_CURE',                    // 요양
+    'raise_army': 'RAISE_ARMY',             // 거병
     'found_nation': 'FOUND_NATION',         // 건국
     'move': 'MOVE'                          // 이동
   };
@@ -134,7 +135,7 @@ const DEFAULT_POLICIES: Record<AIDifficulty, Partial<AIPolicyConfig>> = {
     minWarLeadership: 60,
     minWarCrew: 500,
     properWarTrainAtmos: 50,
-    targetDevelopmentRate: 0.7
+    targetDevelopmentRate: 0.3
   },
   [AIDifficulty.NORMAL]: {
     minNationGold: 5000,
@@ -144,7 +145,7 @@ const DEFAULT_POLICIES: Record<AIDifficulty, Partial<AIPolicyConfig>> = {
     minWarLeadership: 70,
     minWarCrew: 1000,
     properWarTrainAtmos: 70,
-    targetDevelopmentRate: 0.8
+    targetDevelopmentRate: 0.4
   },
   [AIDifficulty.HARD]: {
     minNationGold: 8000,
@@ -154,7 +155,7 @@ const DEFAULT_POLICIES: Record<AIDifficulty, Partial<AIPolicyConfig>> = {
     minWarLeadership: 80,
     minWarCrew: 1500,
     properWarTrainAtmos: 80,
-    targetDevelopmentRate: 0.9
+    targetDevelopmentRate: 0.5
   },
   [AIDifficulty.EXPERT]: {
     minNationGold: 12000,
@@ -164,7 +165,7 @@ const DEFAULT_POLICIES: Record<AIDifficulty, Partial<AIPolicyConfig>> = {
     minWarLeadership: 85,
     minWarCrew: 2000,
     properWarTrainAtmos: 90,
-    targetDevelopmentRate: 0.95
+    targetDevelopmentRate: 0.6
   }
 };
 
@@ -193,13 +194,19 @@ export class AIEngine {
       safeRecruitPopRatio: 0.6,
       minCityPopulation: 5000,
       actionPriorities: [
+        'found_nation',
+        'raise_army',
         'recruit',
         'train',
+        'morale',
         'agriculture',
         'commerce',
+        'trust',
+        'settlement',
         'security',
         'defense',
         'wall',
+        'tech',
         'attack',
         'move'
       ],
@@ -248,24 +255,40 @@ export class AIEngine {
       };
     }
     
-    // 2. 건국 (군주급 NPC가 재야 상태일 때)
+    // 2. 거병/건국 (재야 장수일 때)
     const npcType = general.npc || general.data?.npc || 0;
     const nationId = general.nation || general.data?.nation || 0;
     const officerLevel = general.data?.officer_level || 0;
+    const gold = general.data?.gold || general.gold || 0;
+    const rice = general.data?.rice || general.rice || 0;
+    const leadership = general.data?.leadership || general.leadership || 50;
+    const charm = general.data?.charm || general.charm || 50;
     
-    if (npcType >= 2 && nationId === 0 && officerLevel === 12) {
-      // 방랑군 군주가 건국 가능한지 확인
-      // 실제로는 도시 소유, 자원 등 조건 확인 필요
-      return {
-        command: mapAICommandToGameCommand('found_nation'),
-        args: {
-          nationName: `${general.name || general.data?.name}의 나라`,
-          nationType: 'general',
-          colorType: 0
-        },
-        reason: 'wandering_lord',
-        priority: 95
-      };
+    // 재야 상태 (nation = 0)
+    if (nationId === 0) {
+      // 도시에 있고, 충분한 자원과 능력치가 있으면 거병
+      if (city && city.nation === 0 && leadership >= 60 && charm >= 50 && gold >= 5000 && rice >= 5000) {
+        return {
+          command: 'RAISE_ARMY',
+          args: {},
+          reason: 'neutral_raise_army',
+          priority: 95
+        };
+      }
+      
+      // 군주급 NPC면 건국 (도시 소유 등 조건 완화)
+      if (npcType >= 2 && officerLevel === 12 && leadership >= 70) {
+        return {
+          command: 'FOUND_NATION',
+          args: {
+            nationName: `${general.name || general.data?.name}의 나라`,
+            nationType: 'general',
+            colorType: 0
+          },
+          reason: 'wandering_lord_found',
+          priority: 98
+        };
+      }
     }
     
     // 3. 군주인 경우 국가 커맨드 우선 검토
@@ -531,7 +554,7 @@ export class AIEngine {
     general: any,
     city: any,
     nation: any,
-    env?: any
+    env: any
   ): CommandDecision | null {
     const evaluation = this.evaluateCity(city);
     const rates = this.calculateCityDevelopmentRates(city);
@@ -543,11 +566,16 @@ export class AIEngine {
     const isPolitician = this.generalType & GeneralType.POLITICIAN;
     const isCharmer = this.generalType & GeneralType.CHARMER;
     
+    // 자원 확인
+    const gold = general.data?.gold || general.gold || 0;
+    const rice = general.data?.rice || general.rice || 0;
+    const develCost = env.develcost || 24;
+    
     // 개발이 필요한 항목 찾기
     const developmentNeeds: Array<{ command: string; rate: number; priority: number }> = [];
     
     // 민심 개발 (모든 타입 가능, 통솔장/정치가는 우선순위 높음) - 주민선정
-    if (rates.trust < 0.98) {
+    if (rates.trust < 0.98 && gold >= develCost * 3) {
       const priorityBonus = (isCommander || isPolitician) ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'trust',
@@ -557,7 +585,7 @@ export class AIEngine {
     }
     
     // 인구 개발 (모든 타입 가능, 통솔장/매력가는 우선순위 높음) - 정착장려
-    if (rates.pop < this.policy.targetDevelopmentRate) {
+    if (rates.pop < this.policy.targetDevelopmentRate && rice >= develCost * 2) {
       const priorityBonus = (isCommander || isCharmer) ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'settlement',
@@ -586,7 +614,7 @@ export class AIEngine {
     }
     
     // 농업/상업 (모든 타입 가능, 지장은 우선순위 높음)
-    if (rates.agri < this.policy.targetDevelopmentRate) {
+    if (rates.agri < this.policy.targetDevelopmentRate && gold >= develCost) {
       const priorityBonus = isStrategist ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'agriculture',
@@ -594,8 +622,8 @@ export class AIEngine {
         priority: (1 - rates.agri) * 80 * priorityBonus
       });
     }
-    if (rates.comm < this.policy.targetDevelopmentRate) {
-      const priorityBonus = isStrategist ? 1.5 : 1.0;
+    if (rates.comm < this.policy.targetDevelopmentRate && gold >= develCost) {
+      const priorityBonus = isPolitician ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'commerce',
         rate: rates.comm,
@@ -604,28 +632,28 @@ export class AIEngine {
     }
     
     // 치안/방어/성벽 (모든 타입 가능, 무장은 우선순위 높음)
-    if (rates.secu < this.policy.targetDevelopmentRate) {
-      const priorityBonus = isWarrior ? 1.5 : 1.0;
+    if (rates.secu < this.policy.targetDevelopmentRate && gold >= develCost) {
+      const priorityBonus = isPolitician ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'security',
         rate: rates.secu,
-        priority: (1 - rates.secu) * 70 * priorityBonus
+        priority: (1 - rates.secu) * 75 * priorityBonus
       });
     }
-    if (rates.def < this.policy.targetDevelopmentRate) {
+    if (rates.def < this.policy.targetDevelopmentRate && gold >= develCost) {
       const priorityBonus = isWarrior ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'defense',
         rate: rates.def,
-        priority: (1 - rates.def) * 70 * priorityBonus
+        priority: (1 - rates.def) * 75 * priorityBonus
       });
     }
-    if (rates.wall < this.policy.targetDevelopmentRate) {
+    if (rates.wall < this.policy.targetDevelopmentRate && gold >= develCost) {
       const priorityBonus = isWarrior ? 1.5 : 1.0;
       developmentNeeds.push({
         command: 'wall',
         rate: rates.wall,
-        priority: (1 - rates.wall) * 60 * priorityBonus
+        priority: (1 - rates.wall) * 70 * priorityBonus
       });
     }
     
@@ -675,46 +703,49 @@ export class AIEngine {
     const train = general.data?.train || general.train || 0;
     const atmos = general.data?.atmos || general.atmos || 0;
     const leadership = general.data?.leadership || general.leadership || 50;
+    const gold = general.data?.gold || general.gold || 0;
+    const rice = general.data?.rice || general.rice || 0;
     
     // 통솔이 매우 낮으면 (30 미만) 군사 행동 불가
     if (leadership < 30) {
       return null;
     }
     
-    // 병력이 부족하면 징병 (통솔 40 이상)
+    // 병력이 부족하면 징병 (통솔 40 이상, 자원 충분)
     if (crew < this.policy.minWarCrew && leadership >= 40) {
       const cityData = city.data || city;
       const popRatio = (cityData.pop || 0) / Math.max(cityData.pop_max || 1, 1);
-      if (popRatio >= this.policy.safeRecruitPopRatio) {
+      const recruitCost = 1000; // 대략적 비용
+      
+      if (popRatio >= this.policy.safeRecruitPopRatio && gold >= recruitCost && rice >= 10) {
         return {
           command: mapAICommandToGameCommand('recruit'),
-          args: { crewType: 0, amount: 1000 },
+          args: { crewType: 0, amount: Math.min(1000, Math.floor(leadership * 100)) },
           reason: 'need_crew',
           priority: 90
         };
       }
     }
     
-    // 병사가 있으면 훈련도 체크
+    // 병사가 있으면 훈련도/사기 체크
     if (crew > 0) {
-      // 훈련도가 부족하면 훈련 (통솔 40 이상)
-      if (train < this.policy.properWarTrainAtmos && leadership >= 40) {
+      // 훈련도가 부족하면 훈련 (통솔 40 이상, 자원 충분)
+      if (train < this.policy.properWarTrainAtmos && leadership >= 40 && gold >= 10) {
         return {
           command: mapAICommandToGameCommand('train'),
           args: {},
           reason: 'need_training',
-          priority: 80
+          priority: 85
         };
       }
       
-      // 사기가 부족하면 사기진작
-      if (atmos < this.policy.properWarTrainAtmos && leadership >= 40) {
-        // 사기진작 커맨드가 없으면 훈련으로 대체
+      // 사기가 부족하면 사기진작 (통솔 40 이상, 자원 충분)
+      if (atmos < this.policy.properWarTrainAtmos && leadership >= 40 && gold >= 50 && rice >= 50) {
         return {
-          command: mapAICommandToGameCommand('train'),
+          command: mapAICommandToGameCommand('morale'),
           args: {},
           reason: 'need_morale',
-          priority: 80
+          priority: 85
         };
       }
     }
@@ -748,8 +779,15 @@ export class AIEngine {
     env: any
   ): Promise<CommandDecision | null> {
     switch (actionName) {
+      case 'found_nation':
+        return this.evaluateFoundNation(general, city, nation, env);
+      
+      case 'raise_army':
+        return this.evaluateRaiseArmy(general, city, nation, env);
+      
       case 'recruit':
       case 'train':
+      case 'morale':
         return this.selectBestMilitaryCommand(general, city, nation, env);
       
       case 'agriculture':
@@ -771,6 +809,68 @@ export class AIEngine {
       default:
         return null;
     }
+  }
+  
+  /**
+   * 거병 평가
+   */
+  private evaluateRaiseArmy(
+    general: any,
+    city: any,
+    nation: any,
+    env: any
+  ): CommandDecision | null {
+    const nationId = general.data?.nation || general.nation || 0;
+    const gold = general.data?.gold || general.gold || 0;
+    const rice = general.data?.rice || general.rice || 0;
+    const leadership = general.data?.leadership || general.leadership || 50;
+    const charm = general.data?.charm || general.charm || 50;
+    
+    // 재야이고, 무주 도시에 있고, 자원과 능력치가 충분하면 거병
+    if (nationId === 0 && city && city.nation === 0) {
+      if (leadership >= 60 && charm >= 50 && gold >= 5000 && rice >= 5000) {
+        return {
+          command: 'RAISE_ARMY',
+          args: {},
+          reason: 'neutral_raise_army',
+          priority: 95
+        };
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * 건국 평가
+   */
+  private evaluateFoundNation(
+    general: any,
+    city: any,
+    nation: any,
+    env: any
+  ): CommandDecision | null {
+    const npcType = general.npc || general.data?.npc || 0;
+    const nationId = general.data?.nation || general.nation || 0;
+    const officerLevel = general.data?.officer_level || 0;
+    const leadership = general.data?.leadership || general.leadership || 50;
+    const gold = general.data?.gold || general.gold || 0;
+    
+    // 재야이고, 군주급이고, 높은 능력치
+    if (nationId === 0 && (officerLevel === 12 || npcType >= 2) && leadership >= 70 && gold >= 10000) {
+      return {
+        command: 'FOUND_NATION',
+        args: {
+          nationName: `${general.name || general.data?.name}의 나라`,
+          nationType: 'general',
+          colorType: 0
+        },
+        reason: 'wandering_lord_found',
+        priority: 98
+      };
+    }
+    
+    return null;
   }
   
   /**

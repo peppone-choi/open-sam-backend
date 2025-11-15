@@ -2,6 +2,7 @@ import { logger } from '../common/logger';
 
 interface LogEntry {
   timestamp: Date;
+  sessionId: string;
   generalId?: number;
   nationId?: number;
   action: string;
@@ -19,12 +20,14 @@ export class ActionLogger {
   static ERROR = 'ERROR';
 
   // Instance properties for PHP compatibility
+  private sessionId: string;
   private generalNo?: number;
   private nationId?: number;
   private year?: number;
   private month?: number;
 
-  constructor(generalNo?: number, nationId?: number, year?: number, month?: number) {
+  constructor(generalNo?: number, nationId?: number, year?: number, month?: number, sessionId: string = 'sangokushi_default') {
+    this.sessionId = sessionId;
     this.generalNo = generalNo;
     this.nationId = nationId;
     this.year = year;
@@ -67,9 +70,10 @@ export class ActionLogger {
   /**
    * 일반 액션 로그 기록
    */
-  static log(generalId: number | undefined, action: string, message: string, type: string = ActionLogger.PLAIN): void {
+  static log(generalId: number | undefined, action: string, message: string, type: string = ActionLogger.PLAIN, sessionId: string = 'sangokushi_default'): void {
     const entry: LogEntry = {
       timestamp: new Date(),
+      sessionId,
       generalId,
       action,
       message,
@@ -96,10 +100,12 @@ export class ActionLogger {
     nationId: number,
     action: string,
     message: string,
-    type: string = ActionLogger.PLAIN
+    type: string = ActionLogger.PLAIN,
+    sessionId: string = 'sangokushi_default'
   ): void {
     const entry: LogEntry = {
       timestamp: new Date(),
+      sessionId,
       nationId,
       action,
       message,
@@ -129,21 +135,34 @@ export class ActionLogger {
     
     try {
       const { generalRecordRepository } = await import('../repositories/general-record.repository');
+      const { GameEventEmitter } = await import('../services/gameEventEmitter');
       
-      // DB에 로그 저장
+      // DB에 로그 저장 및 WebSocket 브로드캐스트
       for (const log of this.logs) {
         if (!log.generalId) continue;
         
         // action type에 따라 log_type 결정
         const logType = log.action.includes('history') ? 'history' : 'action';
         
-        await generalRecordRepository.create({
-          session_id: 'sangokushi_default', // TODO: 세션 ID를 동적으로 가져와야 함
+        const savedLog = await generalRecordRepository.create({
+          session_id: log.sessionId,
           general_id: log.generalId,
           log_type: logType,
           text: log.message,
           date: log.timestamp
         });
+        
+        // WebSocket으로 실시간 브로드캐스트
+        if (savedLog) {
+          const logId = savedLog._id?.toString() || savedLog.id || 0;
+          GameEventEmitter.broadcastLogUpdate(
+            log.sessionId,
+            log.generalId,
+            logType as 'action' | 'history',
+            logId,
+            log.message
+          );
+        }
       }
       
       // 로그 초기화
@@ -162,7 +181,7 @@ export class ActionLogger {
     }
     
     try {
-      // TODO: DB에 국가 역사 로그 저장 (WorldHistory 모델)
+      
       // await WorldHistory.insertMany(this.nationalHistoryLogs);
       
       // 로그 초기화

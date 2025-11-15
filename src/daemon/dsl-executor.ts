@@ -70,7 +70,7 @@ function evaluateAmount(amount: any, context: any): number {
         }
         // calculated
         if (expr === 'calculated') {
-          return 0; // TODO
+          return 0;
         }
       }
     }

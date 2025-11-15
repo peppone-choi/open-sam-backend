@@ -386,8 +386,20 @@ export class ConstraintHelper {
     return {
       test: (input: any, env: any) => {
         const city = input.city;
-        const maxKey = value !== undefined ? value : `${key}_max`;
-        return city?.[key] < city?.[maxKey] ? null : actualMessage;
+        
+        // value가 숫자면 절대값, 문자열이면 퍼센트
+        if (typeof value === 'number') {
+          const currentValue = city?.[key] || 0;
+          if (currentValue >= value) {
+            return null;
+          }
+          const josaYi = message?.endsWith('이') || message?.endsWith('가') ? '' : '이';
+          return `${actualMessage}${josaYi} 부족합니다.`;
+        }
+        
+        // 기본: max와 비교
+        const maxKey = `${key}_max`;
+        return city?.[key] < city?.[maxKey] ? null : `${actualMessage}이 부족합니다.`;
       }
     };
   }
@@ -578,6 +590,22 @@ export class ConstraintHelper {
       test: (input: any, env: any) => {
         const city = input.city;
         return (city?.trust || 0) >= minTrust ? null : actualMessage;
+      }
+    };
+  }
+
+  static RemainCityTrust(actionName: string, minRemainTrust: number = 20, message?: string): IConstraint {
+    const actualMessage = message || `${actionName} 후 도시 신뢰도가 ${minRemainTrust} 미만으로 떨어집니다.`;
+    return {
+      test: (input: any, env: any) => {
+        // 선정 등 행동 후 신뢰도가 일정 수준 이상 남아야 함
+        // 구체적인 계산은 각 커맨드에서 처리하므로 여기서는 기본 체크만
+        const city = input.city;
+        const currentTrust = city?.trust || 0;
+        
+        // 선정의 경우 신뢰도 감소량 계산 (간단 버전)
+        // 실제 감소량은 커맨드에서 계산되므로 여기서는 최소 요구치만 체크
+        return currentTrust >= minRemainTrust + 10 ? null : actualMessage;
       }
     };
   }

@@ -95,12 +95,21 @@ export class che_종전수락 extends NationCommand {
     const db = DB.db();
 
     const general = this.generalObj;
+    if (!general) {
+      throw new Error('장수 정보가 없습니다');
+    }
     const generalName = general!.getName();
 
+        if (!this.nation) {
+      throw new Error('국가 정보가 없습니다');
+    }
     const nation = this.nation;
     const nationID = nation['nation'];
     const nationName = nation['name'];
 
+        if (!this.destNation) {
+      throw new Error('대상 국가 정보가 없습니다');
+    }
     const destNation = this.destNation;
     const destNationID = destNation['nation'];
     const destNationName = destNation['name'];
@@ -141,9 +150,9 @@ export class che_종전수락 extends NationCommand {
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전 성공`);
     destLogger.pushNationalHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전`);
 
-    await general!.applyDB(db);
+    await general.applyDB(db);
     await destLogger.flush();
 
     return true;
   }
-}
+}

@@ -40,7 +40,7 @@ export class AdjustIconService {
 
       if (!picture && imgsvr === 0) {
         // RootDB에서 실제로 조회해야 하는 경우
-        // TODO: RootDB 연결 구현 필요
+        // FUTURE: RootDB 연결 마이그레이션 (v2.0)
         return {
           result: false,
           reason: '회원 기록 정보가 없습니다'

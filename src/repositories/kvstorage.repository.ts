@@ -64,6 +64,17 @@ class KVStorageRepository {
   }
 
   /**
+   * 패턴으로 조회 (storage_id 기준)
+   * @param pattern - 검색 패턴 (예: 'nation_env:*:scout_msg')
+   * @returns KVStorage 문서 목록
+   */
+  async findByPattern(pattern: string) {
+    // 패턴을 정규식으로 변환 (예: 'nation_env:*:scout_msg' -> /^nation_env:.*:scout_msg$/)
+    const regexPattern = '^' + pattern.replace(/\*/g, '.*') + '$';
+    return KVStorage.find({ storage_id: { $regex: regexPattern } });
+  }
+
+  /**
    * 생성
    * @param data - KVStorage 데이터
    * @returns 생성된 문서

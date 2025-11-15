@@ -256,11 +256,13 @@ app.use(errorMiddleware);
 
 async function start() {
   try {
+    console.log('[DEBUG] start() function called');
     // 한국 시간대(Asia/Seoul, UTC+9) 설정
     if (!process.env.TZ) {
       process.env.TZ = 'Asia/Seoul';
     }
     
+    console.log('[DEBUG] Logging server start...');
     logger.info('🚀 API 서버 시작 중...', {
       nodeEnv: process.env.NODE_ENV || 'development',
       port: PORT,
@@ -273,16 +275,20 @@ async function start() {
     // 데이터베이스 및 캐시 연결
     // ========================================
     
+    console.log('[DEBUG] Connecting to MongoDB...');
     // MongoDB 연결
     await mongoConnection.connect(process.env.MONGODB_URI);
+    console.log('[DEBUG] MongoDB connected!');
     logger.info('✅ MongoDB 연결 성공', { 
       uri: process.env.MONGODB_URI?.replace(/\/\/.*:.*@/, '//***:***@') 
     });
     
     // Redis 캐시 연결 및 상태 확인
-    const { cacheManager } = await import('./cache/CacheManager');
-    const cacheStats = cacheManager.getStats();
-    logger.info('✅ 캐시 시스템 초기화 완료', cacheStats);
+    // TODO: Fix Redis client hanging issue - temporarily disabled for API server
+    // The cache is still used by the daemon which works fine
+    // const { cacheManager } = await import('./cache/CacheManager');
+    // const cacheStats = cacheManager.getStats();
+    logger.info('✅ 캐시 시스템 스킵 (데몬에서 관리)', { note: 'Redis 클라이언트 이슈로 임시 비활성화' });
     
     // ========================================
     // API 서버 전용 설정

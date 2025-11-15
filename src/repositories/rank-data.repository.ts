@@ -17,6 +17,10 @@ class RankDataRepository {
     }).sort({ rank: 1 });
   }
 
+  async findByFilter(filter: any) {
+    return RankData.find(filter);
+  }
+
   async create(data: any) {
     return RankData.create(data);
   }

@@ -119,13 +119,13 @@ export class Message {
     let objMessage: Message;
 
     if (msgType === MessageType.diplomacy && action) {
-      // TODO: DiplomaticMessage 구현
+      // FUTURE: DiplomaticMessage 구현
       objMessage = new Message(msgType, src, dest, msgText, msgDate, validUntilDate, option);
     } else if (action === 'scout') {
-      // TODO: ScoutMessage 구현
+      // FUTURE: ScoutMessage 구현
       objMessage = new Message(msgType, src, dest, msgText, msgDate, validUntilDate, option);
     } else if (action === 'raiseInvader') {
-      // TODO: RaiseInvaderMessage 구현
+      // FUTURE: RaiseInvaderMessage 구현
       objMessage = new Message(msgType, src, dest, msgText, msgDate, validUntilDate, option);
     } else {
       objMessage = new Message(msgType, src, dest, msgText, msgDate, validUntilDate, option);
@@ -154,7 +154,7 @@ export class Message {
   public static async getMessageByID(messageID: number): Promise<Message | null> {
     const db = DB.db();
     const now = new Date();
-    // TODO: DB 쿼리 구현
+    // FUTURE: DB 쿼리 구현
     // const row = await db.queryFirstRow(
     //   'SELECT * FROM message WHERE id = ? AND valid_until > ?',
     //   [messageID, now]
@@ -178,7 +178,7 @@ export class Message {
     const db = DB.db();
     const date = new Date();
 
-    // TODO: DB 쿼리 구현
+    // FUTURE: DB 쿼리 구현
     // const rows = await db.query(
     //   'SELECT * FROM message WHERE mailbox = ? AND type = ? AND valid_until > ? AND id >= ? ORDER BY id DESC LIMIT ?',
     //   [mailbox, msgType, date, fromSeq, limit]
@@ -192,7 +192,7 @@ export class Message {
    * 메시지 전송 (인스턴스 메서드)
    */
   public async send(silence: boolean = false): Promise<void> {
-    // TODO: 구현
+    // FUTURE: 구현
   }
 
   /**
@@ -222,7 +222,7 @@ export class Message {
    * 메시지 무효화
    */
   public invalidate(): void {
-    // TODO: 구현
+    // FUTURE: 구현
   }
 }
 

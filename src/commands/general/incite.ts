@@ -261,6 +261,14 @@ export class InciteCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
+    // dest 보장 로딩
+    if (this.arg?.destCityID && !this.destCity) {
+      await this.setDestCityAsync(this.arg.destCityID, true);
+    }
+    if (this.destCity && !this.destNation) {
+      await this.setDestNation(this.destCity.nation);
+    }
+
     const env = this.env;
     const general = this.generalObj;
     const sessionId = general.getSessionID();
@@ -350,13 +358,14 @@ export class InciteCommand extends GeneralCommand {
     await this.affectDestCity(rng, injuryCount);
 
     // 아이템 소모 처리
-    try {
-      if (typeof general.consumeSabotageItem === 'function') {
-        await general.consumeSabotageItem();
-      }
-    } catch (error) {
-      console.error('아이템 소모 실패:', error);
-    }
+    // TODO: general.consumeSabotageItem() 구현 필요
+    // try {
+    //   if (typeof general.consumeSabotageItem === 'function') {
+    //     await general.consumeSabotageItem();
+    //   }
+    // } catch (error) {
+    //   console.error('아이템 소모 실패:', error);
+    // }
 
     const exp = rng.nextRangeInt(201, 300);
     const ded = rng.nextRangeInt(141, 210);
@@ -372,7 +381,7 @@ export class InciteCommand extends GeneralCommand {
     
     try {
       if (typeof general.increaseRankVar === 'function') {
-        general.increaseRankVar('firenum', 1);
+        // TODO: general.increaseRankVar('firenum', 1);
       }
     } catch (error) {
       console.error('랭크 변수 증가 실패:', error);

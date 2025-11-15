@@ -26,6 +26,9 @@ export class GameConstants {
   static readonly INHERIT_RESET_ATTR_POINT_BASE = [1000, 1000, 2000, 3000];
   static readonly INHERIT_CHECK_OWNER_POINT = 1000;
   
+  static readonly WAR_BLOCK_SETTING_INC = 1;
+  static readonly WAR_BLOCK_SETTING_MAX = 3;
+  
   static calcResetAttrPoint(level: number): number {
     const base = [...this.INHERIT_RESET_ATTR_POINT_BASE];
     while (base.length <= level) {

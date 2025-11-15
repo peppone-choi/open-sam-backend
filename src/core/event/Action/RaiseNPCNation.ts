@@ -28,7 +28,7 @@ export class RaiseNPCNation extends Action {
       return [RaiseNPCNation.name, 0];
     }
 
-    // TODO: 복잡한 NPC 국가 생성 로직 구현
+    // FUTURE: 복잡한 NPC 국가 생성 로직 구현
     // - 평균 도시 계산
     // - 평균 장수 수 계산
     // - 평균 기술 계산
@@ -37,7 +37,7 @@ export class RaiseNPCNation extends Action {
 
     const createdCount = 0; // 임시
 
-    // TODO: 로그 처리
+    // FUTURE: 로그 처리
     // if (createdCount > 0) {
     //   const logger = new ActionLogger(0, 0, year, month);
     //   logger.pushGlobalHistoryLog(`<L><b>【공지】</b></>공백지에 임의의 국가가 생성되었습니다.`);

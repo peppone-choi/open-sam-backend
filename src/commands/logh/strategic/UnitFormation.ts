@@ -57,7 +57,7 @@ export class UnitFormationCommand extends BaseLoghCommand {
 
     // 파라미터 가져오기
     const planetId = env?.planetId;
-    const fleetName = env?.fleetName || `${commander.getVar('name')}의 함대`;
+    const fleetName = env?.fleetName || `${commander.data.name}의 함대`;
     const shipComposition = env?.shipComposition || []; // [{ type: '전함', count: 100 }, ...]
 
     if (!planetId) {
@@ -116,7 +116,7 @@ export class UnitFormationCommand extends BaseLoghCommand {
       fleetId,
       name: fleetName,
       commanderId: commander.no.toString(),
-      commanderName: commander.getVar('name'),
+      commanderName: commander.data.name,
       faction: commander.getFactionType(),
       ships: shipComposition.map((ship: any) => ({
         type: ship.type,
