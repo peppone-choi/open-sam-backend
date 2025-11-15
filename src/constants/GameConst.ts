@@ -36,7 +36,8 @@ export class GameConst {
   static readonly minCityTrust = 0;
   static readonly defaultCityTrust = 50;
   
-  static readonly minAvailableRecruitPop = 30000;
+  // 징병 허용 최소 인구 (기본 3만 → 2만으로 완화)
+  static readonly minAvailableRecruitPop = 20000;
   static readonly expandCityPopIncreaseAmount = 100000;
 
   static readonly maxTrain = 100;

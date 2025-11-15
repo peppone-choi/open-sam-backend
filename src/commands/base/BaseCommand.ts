@@ -762,14 +762,23 @@ export abstract class BaseCommand {
       }
     }
     
-    // generalObj가 Mongoose 문서인 경우
-    if (this.generalObj.save && typeof this.generalObj.save === 'function') {
-      console.log(`[BaseCommand.saveGeneral] Mongoose save() 호출`);
-      await this.generalObj.save();
+    // generalObj가 Mongoose 문서인 경우에도, 항상 레포지토리 save를 사용해서
+    // data 필드 변경을 markModified('data')로 인식시키고 캐시까지 동기화한다.
+    const isAdapter = typeof (this.generalObj as any).getRaw === 'function';
+
+    // Mongoose 문서인 경우에만 save() 경로 사용
+    if (!isAdapter && this.generalObj.save && typeof this.generalObj.save === 'function') {
+      console.log(`[BaseCommand.saveGeneral] GeneralRepository.save() 호출 (Mongoose 문서)`);
+      await generalRepository.save(this.generalObj);
     } else {
-      // 일반 객체인 경우 레포지토리 사용
-      const updateData = this.generalObj.data || this.generalObj.toObject?.() || this.generalObj;
-      console.log(`[BaseCommand.saveGeneral] Repository 사용, updateData.nation=${updateData.nation}, updateData.officer_level=${updateData.officer_level}`);
+      // GeneralAdapter 또는 Plain Object인 경우: 캐시 기반 업데이트 사용
+      // - adapter.data 또는 plain.data 안에 실제 게임 필드가 들어있으므로
+      //   updateBySessionAndNo에는 { data: ... } 형식으로 전달한다.
+      const dataPayload = (this.generalObj as any).data;
+      const updateData = dataPayload ? { data: dataPayload } : (this.generalObj.toObject?.() || this.generalObj);
+      console.log(
+        `[BaseCommand.saveGeneral] Repository 사용 (cache update), hasData=${!!dataPayload}`
+      );
       await generalRepository.updateBySessionAndNo(sessionId, generalNo, updateData);
     }
     

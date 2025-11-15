@@ -41,10 +41,7 @@ export class GetOfficerInfoService {
         actualGeneralId = userGeneral.data?.no || userGeneral.no;
       }
       
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': actualGeneralId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, actualGeneralId);
       
       if (!general) {
         return {
@@ -123,10 +120,7 @@ export class GetOfficerInfoService {
       const tigersList: any[] = [];
       for (const tiger of tigers) {
         const td = tiger.data || {};
-        const gen = await generalRepository.findBySessionAndNo({
-          session_id: sessionId,
-          'data.no': td.general_id
-        });
+        const gen = await generalRepository.findBySessionAndNo(sessionId, td.general_id);
         if (gen) {
           const gd = gen.data || {};
           tigersList.push({
@@ -147,10 +141,7 @@ export class GetOfficerInfoService {
       const eaglesList: any[] = [];
       for (const eagle of eagles) {
         const ed = eagle.data || {};
-        const gen = await generalRepository.findBySessionAndNo({
-          session_id: sessionId,
-          'data.no': ed.general_id
-        });
+        const gen = await generalRepository.findBySessionAndNo(sessionId, ed.general_id);
         if (gen) {
           const gd = gen.data || {};
           eaglesList.push({

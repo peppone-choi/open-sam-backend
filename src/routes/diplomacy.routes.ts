@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { General, Nation, NgDiplomacy } from '../models';
+import { checkPermission } from '../utils/permission-helper';
 
 const GeneralModel = General as any;
 const NationModel = Nation as any;
@@ -22,7 +23,7 @@ router.post('/get-letter', authenticate, async (req, res) => {
     }
 
     const general = await GeneralModel.findOne({ owner: String(userId) })
-      .select('data.nation')
+      .select('data.nation data.officer_level data.permission data.penalty')
       .lean();
 
     if (!general || !general.data?.nation || general.data.nation === 0) {
@@ -32,13 +33,17 @@ router.post('/get-letter', authenticate, async (req, res) => {
     const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
     const nationId = general.data.nation;
 
-    // 외교문서 조회
-    const letters: any[] = await NgDiplomacyModel.find({
+    const perm = checkPermission(general);
+    const canSeeDetail = perm.level >= 3;
+ 
+     // 외교문서 조회
+     const letters: any[] = await NgDiplomacyModel.find({
       session_id: sessionId,
       $or: [
         { 'data.srcNationId': nationId },
         { 'data.destNationId': nationId },
       ],
+      'data.state': { $ne: 'cancelled' },
     })
       .sort({ 'data.date': -1 })
       .lean();
@@ -70,18 +75,34 @@ router.post('/get-letter', authenticate, async (req, res) => {
 
     const letterList = letters.map((letter: any) => {
       const letterData = letter.data || {};
+      const state = letterData.state || 'proposed';
+      let status: string;
+      if (state === 'activated') {
+        status = 'accepted';
+      } else if (state === 'cancelled') {
+        status = 'rejected';
+      } else if (state === 'replaced') {
+        status = 'replaced';
+      } else {
+        status = 'pending';
+      }
+
+      const rawDetail = letterData.detail || '';
+      const detail = canSeeDetail ? rawDetail : (rawDetail ? '(권한이 부족합니다)' : '');
+
       return {
         no: letterData.no || letter._id,
         fromNation: nationMap[letterData.srcNationId] || `국가 ${letterData.srcNationId}`,
         toNation: nationMap[letterData.destNationId] || `국가 ${letterData.destNationId}`,
         brief: letterData.brief || letterData.text || '',
-        detail: letterData.detail || '',
+        detail,
         date: letterData.date || letter.createdAt || new Date(),
-        status: letterData.status || 'pending',
+        status,
       };
     });
 
     res.json({
+      success: true,
       result: true,
       letters: letterList,
     });
@@ -102,21 +123,32 @@ router.post('/send-letter', authenticate, async (req, res) => {
     }
 
     const general: any = await GeneralModel.findOne({ owner: String(userId) })
-      .select('no data.nation data.officer_level')
+      .select('no data.nation data.officer_level data.permission data.penalty')
       .lean();
 
     if (!general || !general.data?.nation || general.data.nation === 0) {
       return res.status(403).json({ result: false, reason: '국가에 소속되어있지 않습니다.' });
     }
 
-    const officerLevel = general.data?.officer_level || 0;
-    if (officerLevel < 5) {
-      return res.status(403).json({ result: false, reason: '외교 권한이 없습니다. 수뇌부만 외교문서를 보낼 수 있습니다.' });
+    const perm = checkPermission(general);
+    if (perm.level < 4) {
+      return res.status(403).json({ result: false, reason: perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.' });
     }
-
-    const { prevNo, destNationID, brief, detail } = req.body;
+ 
+     const { prevNo, destNationID, brief, detail } = req.body;
     const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
     const srcNationId = general.data.nation;
+
+    if (!destNationID || destNationID === srcNationId) {
+      return res.status(400).json({ result: false, reason: destNationID === srcNationId ? '자국으로 보낼 수 없습니다.' : '올바르지 않은 국가입니다.' });
+    }
+
+    const trimmedBrief = (brief || '').trim();
+    const trimmedDetail = (detail || '').trim();
+
+    if (!trimmedBrief) {
+      return res.status(400).json({ result: false, reason: '요약문이 비어있습니다' });
+    }
 
     // 외교문서 번호 생성
     const lastLetter = await NgDiplomacyModel.findOne({ session_id: sessionId })
@@ -133,10 +165,10 @@ router.post('/send-letter', authenticate, async (req, res) => {
         srcNationId: srcNationId,
         destNationId: destNationID,
         prevNo: prevNo || null,
-        brief: brief || '',
-        detail: detail || '',
+        brief: trimmedBrief,
+        detail: trimmedDetail,
         date: new Date(),
-        status: 'pending',
+        state: 'proposed',
       }
     });
 

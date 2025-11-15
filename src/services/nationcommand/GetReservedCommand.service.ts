@@ -204,24 +204,26 @@ export class GetReservedCommandService {
 
       const sessionData = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = sessionData?.data?.game_env || {};
+ 
+       return {
+         success: true,
+         result: true,
+         lastExecute: gameEnv.turntime || new Date(),
+         year: gameEnv.year || 184,
+         month: gameEnv.month || 1,
+         turnTerm: gameEnv.turnterm || 60, // 분 단위
+         date: new Date(),
+         chiefList: nationChiefList,
+         troopList,
+         isChief: officerLevel > 4,
+         autorun_limit: generalData.autorun_limit || 0,
+         officerLevel,
+        commandList: await this.buildChiefCommandTable(general, gameEnv),
+         mapName: gameEnv.mapName || 'default',
+         unitSet: gameEnv.unitSet || 'default'
+       };
 
-      return {
-        success: true,
-        result: true,
-        lastExecute: gameEnv.turntime || new Date(),
-        year: gameEnv.year || 184,
-        month: gameEnv.month || 1,
-        turnTerm: gameEnv.turnterm || 60, // 분 단위
-        date: new Date(),
-        chiefList: nationChiefList,
-        troopList,
-        isChief: officerLevel > 4,
-        autorun_limit: generalData.autorun_limit || 0,
-        officerLevel,
-        commandList: {},
-        mapName: gameEnv.mapName || 'default',
-        unitSet: gameEnv.unitSet || 'default'
-      };
+
     } catch (error: any) {
       return {
         success: false,
@@ -229,8 +231,88 @@ export class GetReservedCommandService {
       };
     }
   }
+ 
+   private static async buildChiefCommandTable(general: any, gameEnv: any): Promise<any[]> {
+     try {
+       const { NationCommandRegistry } = await import('../../commands');
+       const availableChiefCommand = (global as any).GameConst?.availableChiefCommand || gameEnv.availableChiefCommand || {};
+ 
+       const result: any[] = [];
+ 
+       for (const [category, commandList] of Object.entries(availableChiefCommand)) {
+         if (!Array.isArray(commandList)) continue;
+ 
+         const subList: any[] = [];
+ 
+         for (const commandClassName of commandList as string[]) {
+           try {
+             // PHP: buildNationCommandClass($commandClassName, $general, $env, new LastTurn());
+             const registryKey = String(commandClassName).replace(/^che_/, '');
+             const CommandClass = (NationCommandRegistry as any)[registryKey] || (NationCommandRegistry as any)[commandClassName];
+ 
+             let canDisplay = true;
+             let hasMinCondition = true;
+             let commandName = registryKey;
+             let commandTitle = registryKey;
+             let reqArg = false;
+             let compensation = 0;
+ 
+             if (CommandClass) {
+               try {
+                const env = gameEnv || {};
+                const commandObj = new CommandClass(general, env);
+ 
+                 canDisplay = commandObj.canDisplay?.() ?? true;
+                 hasMinCondition = commandObj.hasMinConditionMet?.() ?? true;
+                 commandName = CommandClass.getName?.() ?? registryKey;
 
-  private static checkSecretPermission(generalData: any): number {
+                 commandTitle = String(commandObj.getCommandDetailTitle?.() ?? commandName);
+                 reqArg = CommandClass.reqArg ?? false;
+                 compensation = commandObj.getCompensationStyle?.() ?? 0;
+               } catch (err) {
+                 commandName = CommandClass.getName?.() ?? registryKey;
+                 commandTitle = String(commandName);
+                 reqArg = CommandClass.reqArg ?? false;
+               }
+             }
+ 
+             if (!canDisplay) continue;
+ 
+             subList.push({
+               value: commandClassName,
+               simpleName: commandName,
+               reqArg: reqArg ? 1 : 0,
+               possible: hasMinCondition,
+               compensation,
+               title: String(commandTitle),
+             });
+           } catch (error) {
+             subList.push({
+               value: commandClassName,
+               simpleName: String(commandClassName).replace(/^che_/, ''),
+               reqArg: 0,
+               possible: true,
+               compensation: 0,
+               title: String(commandClassName),
+             });
+           }
+         }
+ 
+         if (subList.length > 0) {
+           result.push({
+             category,
+             values: subList,
+           });
+         }
+       }
+ 
+       return result;
+     } catch (error) {
+       return [];
+     }
+   }
+ 
+   private static checkSecretPermission(generalData: any): number {
     const officerLevel = generalData.officer_level || 1;
     const permission = generalData.permission || '';
     const penalty = generalData.penalty || 0;

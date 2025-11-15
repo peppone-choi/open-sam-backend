@@ -134,7 +134,7 @@ class TournamentRepository {
    * @param filter - 삭제 조건
    * @returns 삭제 결과
    */
-  async deleteOne(filter: any) {
+  async deleteOne(filter: any): Promise<any> {
     return Tournament.deleteOne(filter);
   }
 
@@ -143,7 +143,7 @@ class TournamentRepository {
    * @param filter - 삭제 조건
    * @returns 삭제 결과
    */
-  async deleteMany(filter: any) {
+  async deleteMany(filter: any): Promise<any> {
     return Tournament.deleteMany(filter);
   }
 

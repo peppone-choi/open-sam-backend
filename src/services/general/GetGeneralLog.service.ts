@@ -101,11 +101,12 @@ export class GetGeneralLogService {
     sessionId: string,
     generalId: number
   ): Promise<any[]> {
-    const logs = await generalRecordRepository.findByFilter({
-      session_id: sessionId,
-      general_id: generalId,
-      type: 'history'
-    }, {
+      const logs = await generalRecordRepository.findByFilter({
+        session_id: sessionId,
+        general_id: generalId,
+        log_type: 'history'
+      }, {
+
       sort: { _id: -1 },
       limit: 100
     });
@@ -129,10 +130,10 @@ export class GetGeneralLogService {
     reqTo?: number
   ): Promise<any[]> {
     const limit = 30;
-    let query: any = {
+      let query: any = {
       session_id: sessionId,
       general_id: generalId,
-      type: 'action'
+      log_log_type: 'action'
     };
 
     if (reqTo) {
@@ -165,7 +166,7 @@ export class GetGeneralLogService {
     let query: any = {
       session_id: sessionId,
       general_id: generalId,
-      type: 'battle_result'
+      log_type: 'battle_result'
     };
 
     if (reqTo) {
@@ -198,7 +199,7 @@ export class GetGeneralLogService {
     let query: any = {
       session_id: sessionId,
       general_id: generalId,
-      type: 'battle_detail'
+      log_type: 'battle_detail'
     };
 
     if (reqTo) {

@@ -165,10 +165,8 @@ export class TournamentService {
       }
 
       // 장수 정보 조회
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalNo
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalNo);
+
 
       if (!general) {
         return {

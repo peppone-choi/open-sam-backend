@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { CommandService } from '../../../core/command/CommandService';
 import { authenticate } from '../../../middleware/auth';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 /**
  * CQRS 커맨드 라우터

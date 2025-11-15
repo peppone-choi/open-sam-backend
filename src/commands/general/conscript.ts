@@ -194,7 +194,19 @@ export class ConscriptCommand extends GeneralCommand {
     const db = DB.db();
     const general = this.generalObj;
 
-    const reqCrew = this.maxCrew;
+    // 징병 수가 0이 되는 이상 상황을 방어하기 위해
+    // 여기서 한 번 더 징병 수를 재계산한다.
+    let reqCrew = this.maxCrew;
+    if (!reqCrew || reqCrew <= 0) {
+      const leadership = typeof general.getLeadership === 'function'
+        ? general.getLeadership(true)
+        : (general.getVar?.('leadership') ?? 0);
+      const fallbackMax = Math.max(100, leadership * 100);
+      const requested = typeof this.arg?.amount === 'number' ? this.arg.amount : fallbackMax;
+      reqCrew = Math.max(100, Math.min(requested, fallbackMax));
+      this.maxCrew = reqCrew;
+    }
+
     const reqCrewType = this.reqCrewType;
     const currCrew = general.data.crew ?? 0;
     const currCrewType = this.currCrewType;
@@ -215,7 +227,7 @@ export class ConscriptCommand extends GeneralCommand {
     }
 
     const date = `${this.env.year}년 ${this.env.month}월`;
-    const reqCrewText = reqCrew.toLocaleString(); // 천 단위 구분자
+    const reqCrewText = Math.max(1, reqCrew).toLocaleString(); // 천 단위 구분자, 최소 1명 보장
     
     if (reqCrewType?.id === currCrewType?.id && currCrew > 0) {
       logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 추가${actionName}했습니다. <1>${date}</>`);

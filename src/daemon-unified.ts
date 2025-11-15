@@ -290,12 +290,25 @@ async function syncToDB() {
         switch (type) {
           case 'session':
             // data 필드는 Mixed 타입이므로 개별 업데이트하여 충돌 방지
+            // 주의: isunited(서버 상태)는 어드민/시나리오 리셋에서만 변경해야 하므로
+            // sync-queue를 통해서는 절대 덮어쓰지 않도록 필터링한다.
             const { session_id: sSessionId, data: sData, ...restSessionFields } = data;
-            const sessionUpdate: any = sanitizeForUpdate(restSessionFields, ['session_id']);
+
+            // 상위 필드에서 isunited 제거
+            const sessionUpdate: any = sanitizeForUpdate(restSessionFields, ['session_id', 'isunited']);
             
             // data 필드 내부의 각 속성을 개별적으로 설정
             if (sData) {
               const sanitizedData = sanitizeForUpdate(sData);
+
+              // data.isunited 및 data.game_env.isunited는 sync-queue에서 무시
+              if (sanitizedData.isunited !== undefined) {
+                delete sanitizedData.isunited;
+              }
+              if (sanitizedData.game_env && sanitizedData.game_env.isunited !== undefined) {
+                delete sanitizedData.game_env.isunited;
+              }
+
               Object.keys(sanitizedData).forEach(key => {
                 sessionUpdate[`data.${key}`] = sanitizedData[key];
               });

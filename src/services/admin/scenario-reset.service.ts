@@ -16,6 +16,10 @@ import { nationTurnRepository } from '../../repositories/nation-turn.repository'
 import { troopRepository } from '../../repositories/troop.repository';
 import { worldHistoryRepository } from '../../repositories/world-history.repository';
 import { SessionSync } from '../../utils/session-sync';
+import { cacheService } from '../../common/cache/cache.service';
+import { scanSyncQueue, getSyncQueueItem, removeFromSyncQueue } from '../../common/cache/sync-queue.helper';
+import { selectNpcTokenRepository } from '../../repositories/select-npc-token.repository';
+import { selectPoolRepository } from '../../repositories/select-pool.repository';
 
 /**
  * 시나리오 초기화 서비스 (CQRS 통합 버전)
@@ -98,9 +102,12 @@ export class ScenarioResetService {
     // 3. 기존 데이터 삭제
     await this.clearSessionData(sessionId);
 
+    // 3-1. 이 세션과 관련된 sync-queue 항목 제거 (이전 상태 잔존 방지)
+    await this.clearSyncQueueForSession(sessionId);
+ 
     // 4. 세션 초기화
     await this.initializeSession(session, scenarioMetadata, options);
-
+ 
     // 5. 도시 생성 (기본 cities.json 로드)
     await this.initializeCities(sessionId, scenarioId, scenarioMetadata);
 
@@ -111,9 +118,20 @@ export class ScenarioResetService {
     await this.createGenerals(sessionId, scenarioId, scenarioMetadata);
 
     console.log(`[ScenarioReset] Successfully reset session ${sessionId}`);
-  }
 
-  /**
+    // 초기화 이후 해당 세션 관련 캐시 무효화 (세션/도시/국가/장수 목록 등)
+    try {
+      await cacheService.invalidate(
+        [`session:byId:${sessionId}`],
+        ['sessions:*', 'cities:*', 'nations:*', 'generals:*']
+      );
+      console.log(`[ScenarioReset] Cache invalidated for session ${sessionId}`);
+    } catch (err: any) {
+      console.warn(`[ScenarioReset] Failed to invalidate cache for session ${sessionId}:`, err?.message || err);
+    }
+   }
+ 
+   /**
    * 시나리오 파일 로드
    */
   private static async loadScenarioFile(filePath: string): Promise<any> {
@@ -193,31 +211,37 @@ export class ScenarioResetService {
     console.log(`[ScenarioReset] Deleted ${nationTurnResult.deletedCount} nation turns`);
 
     // 3. 명령, 메시지, 이벤트 등 게임 진행 데이터 삭제
-    const [
-      commandResult,
-      messageResult,
-      battleResult,
-      eventResult,
-      troopResult,
-      worldHistoryResult
-    ] = await Promise.all([
-      commandRepository.deleteBySession(sessionId),
-      messageRepository.deleteBySession(sessionId),
-      battleRepository.deleteBySession(sessionId),
-      eventRepository.deleteBySession(sessionId),
-      troopRepository.deleteBySession(sessionId),
-      worldHistoryRepository.deleteBySession(sessionId)
-    ]);
-
-    console.log(`[ScenarioReset] Deleted ${commandResult.deletedCount} commands`);
+     const [
+       commandResult,
+       messageResult,
+       battleResult,
+       eventResult,
+       troopResult,
+       worldHistoryResult,
+       selectNpcTokenResult,
+       selectPoolResult
+     ] = await Promise.all([
+       commandRepository.deleteBySession(sessionId),
+       messageRepository.deleteBySession(sessionId),
+       battleRepository.deleteBySession(sessionId),
+       eventRepository.deleteBySession(sessionId),
+       troopRepository.deleteBySession(sessionId),
+       worldHistoryRepository.deleteBySession(sessionId),
+       selectNpcTokenRepository.deleteBySession(sessionId),
+       selectPoolRepository.deleteBySession(sessionId)
+     ]);
+ 
+     console.log(`[ScenarioReset] Deleted ${commandResult.deletedCount} commands`);
     console.log(`[ScenarioReset] Deleted ${messageResult.deletedCount} messages`);
-    console.log(`[ScenarioReset] Deleted ${battleResult.deletedCount} battles`);
-    console.log(`[ScenarioReset] Deleted ${eventResult.deletedCount} events`);
-    console.log(`[ScenarioReset] Deleted ${troopResult.deletedCount} troops`);
-    console.log(`[ScenarioReset] Deleted ${worldHistoryResult.deletedCount} world history records`);
-  }
-
-  /**
+     console.log(`[ScenarioReset] Deleted ${battleResult.deletedCount} battles`);
+     console.log(`[ScenarioReset] Deleted ${eventResult.deletedCount} events`);
+     console.log(`[ScenarioReset] Deleted ${troopResult.deletedCount} troops`);
+     console.log(`[ScenarioReset] Deleted ${worldHistoryResult.deletedCount} world history records`);
+     console.log(`[ScenarioReset] Deleted ${selectNpcTokenResult.deletedCount} select_npc_tokens`);
+     console.log(`[ScenarioReset] Deleted ${selectPoolResult.deletedCount} select_pools`);
+   }
+ 
+   /**
    * 세션 초기화
    */
   private static async initializeSession(session: any, scenarioMetadata: any, options?: { turnterm?: number }): Promise<void> {
@@ -311,11 +335,31 @@ export class ScenarioResetService {
     console.log(`   - game_env.month: ${savedGameEnv.month}`);
     console.log(`   - game_env.starttime: ${savedGameEnv.starttime}`);
     console.log(`   - game_env.isunited: ${savedGameEnv.isunited}`);
-  }
-
-  /**
-   * 도시 초기화
-   */
+   }
+ 
+   /**
+    * 해당 세션에 대한 sync-queue 항목 제거
+    */
+   private static async clearSyncQueueForSession(sessionId: string): Promise<void> {
+     try {
+       console.log(`[ScenarioReset] Clearing sync queue for session ${sessionId}`);
+       const items = await scanSyncQueue();
+       const tasks = items.map(async (item) => {
+         const queueData = await getSyncQueueItem(item.key);
+         const data = queueData?.data;
+         if (data?.session_id === sessionId) {
+           await removeFromSyncQueue(item.key);
+         }
+       });
+       await Promise.all(tasks);
+     } catch (err: any) {
+       console.warn(`[ScenarioReset] Failed to clear sync queue for session ${sessionId}:`, err?.message || err);
+     }
+   }
+ 
+   /**
+    * 도시 초기화
+    */
   private static async initializeCities(
     sessionId: string,
     scenarioId: string,

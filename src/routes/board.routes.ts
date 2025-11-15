@@ -119,7 +119,7 @@ router.post('/post-article', authenticate, async (req, res) => {
     }
 
     const general = await GeneralModel.findOne({ owner: String(userId) })
-      .select('no data.nation data.name data.officer_level data.permission data.penalty')
+      .select('no picture nation data.nation data.name data.imgsvr data.officer_level data.permission data.penalty')
       .lean();
 
     if (!general) {
@@ -137,6 +137,24 @@ router.post('/post-article', authenticate, async (req, res) => {
       return res.status(403).json({ result: false, reason: perm.message });
     }
     const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
+    const nationId = (general.data && general.data.nation) != null ? general.data.nation : (general.nation ?? 0);
+    const authorName = (general.data && general.data.name) || general.name || '무명';
+
+    // 장수 초상 경로 구성 (GeneralBasicCard와 동일한 규칙 활용)
+    let authorIcon = '';
+    const picture = general.picture || (general.data && general.data.picture) || '';
+    const imgsvr = (general.data && general.data.imgsvr) || 0;
+    if (picture) {
+      if (typeof picture === 'string' && (picture.startsWith('http://') || picture.startsWith('https://') || picture.startsWith('/'))) {
+        authorIcon = picture;
+      } else if (imgsvr && imgsvr > 0) {
+        authorIcon = `/api/general/icon/${imgsvr}/${picture}`;
+      } else {
+        authorIcon = `/image/general/${picture}.png`;
+      }
+    } else {
+      authorIcon = '/default_portrait.png';
+    }
 
     // 게시물 번호 생성
     const lastArticle = await BoardModel.findOne({ session_id: sessionId })
@@ -149,11 +167,12 @@ router.post('/post-article', authenticate, async (req, res) => {
       session_id: sessionId,
       data: {
         no: articleNo,
-        nation: general.data.nation,
+        nation: nationId,
         isSecret: isSecret || false,
         date: new Date(),
-        generalNo: general.no || general.data?.no,
-        author: general.data?.name || general.name || '무명',
+        generalNo: general.no || (general.data && general.data.no),
+        author: authorName,
+        authorIcon,
         title: title || '',
         text: text || '',
       }
@@ -161,10 +180,66 @@ router.post('/post-article', authenticate, async (req, res) => {
 
     res.json({ result: true, reason: 'success', article: article });
   } catch (error: any) {
-    console.error('Error in board/post-article:', error);
-    res.status(500).json({ result: false, reason: error.message || 'Internal server error' });
-  }
-});
+     console.error('Error in board/post-article:', error);
+     res.status(500).json({ result: false, reason: error.message || 'Internal server error' });
+   }
+ });
 
-export default router;
+ /**
+  * 댓글 작성 (회의실/기밀실 공용)
+  */
+ router.post('/comment', authenticate, async (req, res) => {
+   try {
+     const userId = req.user?.userId || req.user?.id;
+     if (!userId) {
+       return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
+     }
+
+    const general: any = await GeneralModel.findOne({ owner: String(userId) })
+      .select('no picture nation data.nation data.name data.officer_level data.permission data.penalty')
+      .lean();
+
+
+     if (!general) {
+       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+     }
+
+      const { documentNo, text, isSecret } = req.body;
+
+      // 권한 체크
+      const perm = checkPermission(general);
+      if (isSecret && !perm.canAccessSecret) {
+        return res.status(403).json({ result: false, reason: perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.' });
+      }
+      if (!perm.canAccessBoard) {
+        return res.status(403).json({ result: false, reason: perm.message });
+      }
+
+      const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
+      const nationId = (general.data && general.data.nation) != null ? general.data.nation : (general.nation ?? 0);
+      const authorName = (general.data && general.data.name) || general.name || '무명';
+
+      const comment = await CommentModel.create({
+        session_id: sessionId,
+        data: {
+          nation: nationId,
+          isSecret: isSecret || false,
+          date: new Date(),
+          documentNo,
+          generalNo: general.no || (general.data && general.data.no),
+          author: authorName,
+          text: text || '',
+        },
+      });
+
+
+     res.json({ result: true, reason: 'success', comment });
+   } catch (error: any) {
+     console.error('Error in board/comment:', error);
+     res.status(500).json({ result: false, reason: error.message || 'Internal server error' });
+   }
+ });
+ 
+ export default router;
+
 

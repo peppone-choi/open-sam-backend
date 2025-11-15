@@ -20,10 +20,8 @@ export class SetLeaderCandidateService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -38,10 +36,8 @@ export class SetLeaderCandidateService {
         return { success: false, message: '부대장만 후보를 지정할 수 있습니다' };
       }
 
-      const candidate = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': candidateId
-      });
+      const candidate = await generalRepository.findBySessionAndNo(sessionId, candidateId);
+
 
       if (!candidate) {
         return { success: false, message: '후보 장수를 찾을 수 없습니다' };

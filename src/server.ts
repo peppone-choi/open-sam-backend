@@ -17,7 +17,10 @@ import { autoExtractToken } from './middleware/auth';
 import { initializeSocket } from './socket/socketManager';
 import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
 import sessionRoutes from './routes/session.routes';
+import { Session } from './models/session.model';
 import generalRoutes from './routes/general.routes';
+import generalGameRoutes from './routes/general-game.routes';
+import globalGameRoutes from './routes/global-game.routes';
 import battleRoutes from './routes/battle.routes';
 import battlemapRoutes from './routes/battlemap-editor.routes';
 import auctionRoutes from './routes/auction.routes';
@@ -110,6 +113,8 @@ export async function createApp(): Promise<Express> {
   // 추가 라우트 (테스트용)
   app.use('/api/session', sessionRoutes);
   app.use('/api/general', generalRoutes);
+  app.use('/api/general', generalGameRoutes);
+  app.use('/api/global', globalGameRoutes);
   app.use('/api/battle', battleRoutes);
   app.use('/api/battlemap', battlemapRoutes);
   app.use('/api/auction', auctionRoutes);
@@ -254,6 +259,74 @@ app.use('/api/scenarios', scenarioRoutes);
 // 에러 핸들링 미들웨어 (맨 마지막)
 app.use(errorMiddleware);
 
+async function ensureDefaultSession() {
+  try {
+    const existingCount = await Session.countDocuments();
+    if (existingCount > 0) {
+      logger.info('기존 세션이 존재하여 기본 세션 자동 생성 스킵', {
+        existingCount,
+      });
+      return;
+    }
+
+    const defaultSessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
+    const defaultStartYear = parseInt(process.env.DEFAULT_SESSION_START_YEAR || '180', 10);
+    const turnterm = parseInt(process.env.DEFAULT_TURNTERM_MINUTES || '60', 10); // 분 단위
+
+    const now = new Date();
+    const turntime = new Date(now.getTime() + turnterm * 60 * 1000).toISOString();
+
+    const sessionData: any = {
+      session_id: defaultSessionId,
+      name: `OPENSAM ${defaultStartYear}년`,
+      game_mode: 'turn',
+      scenario_id: 'sangokushi',
+      scenario_name: '【공백지】 일반',
+      status: 'preparing',
+      data: {
+        scenario: '【공백지】 일반',
+        turnterm,
+        isunited: 2, // 폐쇄 상태로 시작
+        startyear: defaultStartYear,
+        year: defaultStartYear,
+        month: 1,
+        scenarioText: `OPENSAM 공백지 ${defaultStartYear}년`,
+        isLocked: false,
+        turntime,
+        lastExecuted: now.toISOString(),
+        game_env: {
+          serverName: `OPENSAM ${defaultStartYear}년`,
+          scenario: '【공백지】 일반',
+          turnterm,
+          isunited: 2,
+          startyear: defaultStartYear,
+          year: defaultStartYear,
+          month: 1,
+          maxgeneral: 300,
+          maxnation: 12,
+          starttime: now.toISOString(),
+          turntime,
+          msg: '',
+        },
+      },
+      created_at: now,
+      updated_at: now,
+    };
+
+    const session = await Session.create(sessionData);
+
+    logger.info('초기 기본 세션 자동 생성 완료', {
+      sessionId: session.session_id,
+      startyear: defaultStartYear,
+      turnterm,
+    });
+  } catch (error) {
+    logger.error('기본 세션 자동 생성 실패', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 async function start() {
   try {
     console.log('[DEBUG] start() function called');
@@ -282,6 +355,9 @@ async function start() {
     logger.info('✅ MongoDB 연결 성공', { 
       uri: process.env.MONGODB_URI?.replace(/\/\/.*:.*@/, '//***:***@') 
     });
+
+    // sessions 컬렉션에 세션이 하나도 없으면 기본 세션 자동 생성
+    await ensureDefaultSession();
     
     // Redis 캐시 연결 및 상태 확인
     // TODO: Fix Redis client hanging issue - temporarily disabled for API server
@@ -369,7 +445,8 @@ async function start() {
       console.log('========================================\n');
       
       // 개발 모드에서 JSON 파일 감시 시작
-      if (process.env.NODE_ENV !== 'production') {
+      // ⚠️ 기본은 비활성화, ENABLE_FILE_WATCHER=1 일 때만 켭니다.
+      if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_FILE_WATCHER === '1') {
         const defaultSessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
         const defaultScenarioId = process.env.DEFAULT_SCENARIO_ID || 'sangokushi';
         FileWatcherService.startWatching(defaultScenarioId, defaultSessionId);

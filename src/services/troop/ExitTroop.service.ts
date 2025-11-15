@@ -13,22 +13,23 @@ export class ExitTroopService {
     
     try {
       if (!generalId) {
-        return { success: false, message: '장수 ID가 필요합니다' };
+        return { success: false, result: false, message: '장수 ID가 필요합니다', reason: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
-        return { success: false, message: '장수를 찾을 수 없습니다' };
+        return { success: false, result: false, message: '장수를 찾을 수 없습니다', reason: '장수를 찾을 수 없습니다' };
       }
+
 
       const troopId = general.data?.troop || 0;
       if (troopId === 0) {
-        return { success: false, message: '부대에 소속되어 있지 않습니다' };
+        return { success: false, result: false, message: '부대에 소속되어 있지 않습니다', reason: '부대에 소속되어 있지 않습니다' };
       }
+
 
       // 부대장이면 부대 해체
       if (troopId === generalId) {
@@ -50,7 +51,8 @@ export class ExitTroopService {
 
       return { success: true, result: true };
     } catch (error: any) {
-      return { success: false, message: error.message };
+      return { success: false, result: false, message: error.message, reason: error.message };
     }
+
   }
 }

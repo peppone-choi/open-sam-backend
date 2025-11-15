@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { Session } from '../../utils/Session';
+import { Session, SessionData } from '../../utils/Session';
 
 // express-session 사용 가능 여부 확인
 let useExpressSession = false;
@@ -39,8 +39,8 @@ export function setupSessionMiddleware() {
   
   // express-session이 없으면 빈 미들웨어 (기본 Session 사용)
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.session) {
-      req.session = {} as any;
+    if (!(req as any).session) {
+      (req as any).session = {} as SessionData;
     }
     next();
   };

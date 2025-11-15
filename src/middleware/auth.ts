@@ -10,13 +10,7 @@ export interface JwtPayload {
   generalId?: number;
   acl?: string;
   grade?: number; // 사용자 등급 (5 이상이 어드민)
-}
-
-// Express Request에 user 속성 추가
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: JwtPayload;
-  }
+  role?: string; // 역할 추가
 }
 
 /**
@@ -32,22 +26,31 @@ export const authenticate = async (
     // Authorization 헤더 확인
     const authHeader = req.headers.authorization;
     
+    // 쿠키에서 토큰 확인 (Authorization 헤더가 없는 경우)
+    const cookieToken = req.cookies?.authToken;
+    
     console.log('========================================');
     console.log('[Auth] 인증 시도!');
     console.log('Path:', req.path);
     console.log('Authorization Header:', authHeader ? authHeader.substring(0, 30) + '...' : 'NONE');
+    console.log('Cookie Token:', cookieToken ? cookieToken.substring(0, 30) + '...' : 'NONE');
     console.log('========================================');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('[Auth] ❌ 인증 실패 - Authorization 헤더 없음');
+    let token: string;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Bearer 토큰 방식
+      token = authHeader.substring(7);
+    } else if (cookieToken) {
+      // 쿠키 기반 인증 방식
+      token = cookieToken;
+    } else {
+      console.log('[Auth] ❌ 인증 실패 - 토큰 없음');
       return res.status(401).json({ 
         success: false,
         message: '인증 토큰이 없습니다' 
       });
     }
-
-    // 토큰 추출
-    const token = authHeader.substring(7); // 'Bearer ' 이후
     
     // 토큰 블랙리스트 체크
     const { tokenBlacklist } = await import('../utils/tokenBlacklist');
@@ -59,7 +62,7 @@ export const authenticate = async (
     }
     
     // JWT 검증
-    const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        const secret = process.env.JWT_SECRET || 'secret';
     const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
     
     console.log('[Auth] ✅ 인증 성공!');
@@ -106,7 +109,7 @@ export const optionalAuth = async (
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+      const secret = process.env.JWT_SECRET || 'secret';
       const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
       req.user = decoded;
     }
@@ -158,7 +161,7 @@ export const autoExtractToken = async (
     // 3. 토큰이 있으면 검증하고 req.user에 저장
     if (token) {
       try {
-        const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const secret = process.env.JWT_SECRET || 'secret';
         const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
         req.user = decoded;
       } catch (error) {

@@ -5,7 +5,7 @@ import { requireAdmin, requirePermission, requireSuperAdmin } from '../middlewar
 import { AdminPermission } from '../@types/admin.types';
 import { asyncHandler } from '../../../common/utils/async-handler';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // 게임 설정 컨트롤러
 const gameConfigService = new GameConfigService();

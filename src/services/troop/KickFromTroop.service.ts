@@ -19,10 +19,8 @@ export class KickFromTroopService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -37,10 +35,8 @@ export class KickFromTroopService {
         return { success: false, message: '부대장만 추방할 수 있습니다' };
       }
 
-      const targetGeneral = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': targetGeneralID
-      });
+      const targetGeneral = await generalRepository.findBySessionAndNo(sessionId, targetGeneralID);
+
 
       if (!targetGeneral) {
         return { success: false, message: '대상 장수를 찾을 수 없습니다' };

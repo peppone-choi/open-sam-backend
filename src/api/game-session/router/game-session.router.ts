@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { GameSessionController } from '../controller/game-session.controller';
+import { requireAdmin } from '../../admin/middleware/auth.middleware';
 
 /**
  * GameSession Router
@@ -7,6 +8,10 @@ import { GameSessionController } from '../controller/game-session.controller';
  * Entity 시스템 기반 게임 세션 관리 API
  */
 const router = Router();
+
+// 모든 GameSession 라우트는 관리자 전용
+router.use(requireAdmin);
+
 const controller = new GameSessionController();
 
 /**

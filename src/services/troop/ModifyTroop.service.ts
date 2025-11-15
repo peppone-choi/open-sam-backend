@@ -24,10 +24,8 @@ export class ModifyTroopService {
         return { success: false, message: '수정할 부대 정보가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };

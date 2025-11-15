@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Schema, model, Document } from 'mongoose';
 import { ICommand, CommandType, CommandStatus } from '../@types/command.types';
 
 /**
@@ -108,4 +108,5 @@ CommandSchema.index({ status: 1, completionTime: 1 });
 // 턴제 모드 스케줄 조회 최적화
 CommandSchema.index({ sessionId: 1, status: 1, scheduledAt: 1 });
 
-export const CommandModel = model<ICommandDocument>('Command', CommandSchema);
+export const CommandModel = (mongoose.models.Command as any) || model<ICommandDocument>('Command', CommandSchema);
+

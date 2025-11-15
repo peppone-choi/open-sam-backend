@@ -198,11 +198,17 @@ export class GetSelectNpcTokenService {
   }
 
   private static async generateNpcPick(sessionId: string, userId: number, keepPick: any): Promise<any> {
-    // NPC 장수 목록 조회 (npc=2인 장수들)
-    const npcGenerals = await generalRepository.findByFilter({
-      session_id: sessionId,
-      npc: 2
-    }).limit(100);
+      // NPC 장수 목록 조회
+      // - 기존 구현은 npc: 2 (최상위 필드)만 보고 있었는데,
+      //   실제 데이터는 data.npc에 저장되는 경우가 많으므로 둘 다 지원한다.
+      const npcGenerals = await generalRepository.findByFilter({
+        session_id: sessionId,
+        $or: [
+          { npc: 2 },
+          { 'data.npc': { $gte: 2 } },
+        ],
+      }).limit(100);
+
 
     // 다른 사용자가 예약한 NPC 제외
     const reservedNpcs = new Set<number>();

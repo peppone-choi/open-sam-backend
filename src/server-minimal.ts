@@ -15,6 +15,8 @@ import { mongoConnection } from './db/connection';
 import { logger } from './common/logger';
 import { requestLogger } from './common/middleware/request-logger.middleware';
 import { errorMiddleware } from './common/middleware/error.middleware';
+import gatewayRoutes from './routes/gateway.routes';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -77,6 +79,10 @@ async function start() {
         message: 'Game daemon should be started separately with: npm run dev:daemon'
       });
     });
+    
+    // 인증 및 게이트웨이 라우트 추가
+    app.use('/api/auth', authRoutes);
+    app.use('/api/gateway', gatewayRoutes);
     
     // 에러 핸들러
     app.use(errorMiddleware);

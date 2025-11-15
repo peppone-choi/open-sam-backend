@@ -226,7 +226,9 @@ export class EncourageSettlementCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
         // TODO: general.genGenericUniqueRNG(EncourageSettlementCommand.actionName),
-        general
+        null,
+        general,
+        this.env.session_id || general.getSessionID?.() || 'sangokushi_default'
       );
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);

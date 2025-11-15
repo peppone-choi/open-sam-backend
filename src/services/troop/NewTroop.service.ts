@@ -10,40 +10,38 @@ export class NewTroopService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
-    const troopName = data.troopName;
+    const troopName = data.troopName || data.name; // name도 허용 (프론트 호환)
     
     try {
       if (!troopName || troopName.trim().length === 0) {
-        return { success: false, message: '부대 이름을 입력하세요' };
+        return { success: false, result: false, message: '부대 이름을 입력하세요', reason: '부대 이름을 입력하세요' };
       }
       
       // 한글 고려한 길이 체크 (한글 1자 = 2바이트로 계산)
       const byteLength = Buffer.byteLength(troopName, 'utf8');
       if (byteLength > 54) { // 한글 18자 = 54바이트
-        return { success: false, message: '부대 이름이 너무 깁니다 (최대 18자)' };
+        return { success: false, result: false, message: '부대 이름이 너무 깁니다 (최대 18자)', reason: '부대 이름이 너무 깁니다 (최대 18자)' };
       }
       if (!generalId) {
-        return { success: false, message: '장수 ID가 필요합니다' };
+        return { success: false, result: false, message: '장수 ID가 필요합니다', reason: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
-        return { success: false, message: '장수를 찾을 수 없습니다' };
+        return { success: false, result: false, message: '장수를 찾을 수 없습니다', reason: '장수를 찾을 수 없습니다' };
       }
+ 
+       const troopId = general.data?.troop || 0;
+       if (troopId !== 0) {
+         return { success: false, result: false, message: '이미 부대에 소속되어 있습니다', reason: '이미 부대에 소속되어 있습니다' };
+       }
+ 
+       const nationId = general.data?.nation || 0;
+       if (nationId === 0) {
+         return { success: false, result: false, message: '국가에 소속되어 있지 않습니다', reason: '국가에 소속되어 있지 않습니다' };
+       }
 
-      const troopId = general.data?.troop || 0;
-      if (troopId !== 0) {
-        return { success: false, message: '이미 부대에 소속되어 있습니다' };
-      }
-
-      const nationId = general.data?.nation || 0;
-      if (nationId === 0) {
-        return { success: false, message: '국가에 소속되어 있지 않습니다' };
-      }
 
       await troopRepository.create({
         session_id: sessionId,
@@ -60,9 +58,9 @@ export class NewTroopService {
         { $set: { 'data.troop': generalId } }
       );
 
-      return { success: true, result: true };
-    } catch (error: any) {
-      return { success: false, message: error.message };
-    }
-  }
-}
+       return { success: true, result: true };
+     } catch (error: any) {
+       return { success: false, result: false, message: error.message, reason: error.message };
+     }
+   }
+ }

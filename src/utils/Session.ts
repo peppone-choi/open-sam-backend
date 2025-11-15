@@ -58,8 +58,8 @@ export class Session {
    * Request에서 Session 인스턴스 가져오기
    */
   static getInstance(req: Request): Session {
-    if (!req.session) {
-      req.session = {} as any;
+    if (!(req as any).session) {
+      (req as any).session = {} as SessionData;
     }
     return new Session(req);
   }
@@ -114,7 +114,7 @@ export class Session {
    * 값 가져오기
    */
   get(name: string): any {
-    const session = this.req.session as SessionData;
+    const session = (this.req as any).session as SessionData;
     return session[name] ?? null;
   }
 
@@ -126,7 +126,7 @@ export class Session {
       return;
     }
 
-    const session = this.req.session as SessionData;
+    const session = (this.req as any).session as SessionData;
     if (value === null) {
       delete session[name];
     } else {
@@ -334,12 +334,7 @@ export class Session {
   }
 }
 
-// Express Request에 session 속성 추가
-declare module 'express-serve-static-core' {
-  interface Request {
-    session?: SessionData;
-  }
-}
+
 
 
 
