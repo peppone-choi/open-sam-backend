@@ -83,10 +83,8 @@ export class GetBettingListService {
       };
     } catch (error: any) {
       console.error('GetBettingList 오류:', error);
-      return {
-        success: false,
-        message: error.message
-      };
+      // 시스템 오류는 라우터에서 5xx로 처리할 수 있도록 그대로 throw
+      throw error;
     }
   }
 }

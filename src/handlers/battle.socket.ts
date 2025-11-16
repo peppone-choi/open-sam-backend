@@ -4,6 +4,8 @@ import { Battle, BattleStatus, BattlePhase, ITurnAction } from '../models/battle
 import { BattleCalculator, BattleContext } from '../core/battle-calculator';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
 
+const HQ_COMMAND_RADIUS = 250; // 총사령관 지휘 기본 반경 (px 기준, 임시 값)
+
 export class BattleSocketHandler {
   private io: Server;
   private battleTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -49,8 +51,26 @@ export class BattleSocketHandler {
         return;
       }
 
+      // 참가자 역할 초기화/업데이트
+      if (!battle.participants) {
+        battle.participants = [];
+      }
+      const existing = battle.participants.find((p: any) => p.generalId === generalId);
+      if (!existing) {
+        // 아주 단순한 규칙: 첫 참가자를 FIELD_COMMANDER, 나머지는 SUB_COMMANDER로 두되
+        // 이후 UI/명령으로 변경 가능하게 여지를 남긴다.
+        const isFirstParticipant = battle.participants.length === 0;
+        battle.participants.push({
+          generalId,
+          role: isFirstParticipant ? 'FIELD_COMMANDER' : 'SUB_COMMANDER',
+          controlledUnitGeneralIds: [],
+        } as any);
+        await battle.save();
+      }
+
       socket.join(`battle:${battleId}`);
       console.log(`장수 ${generalId}가 전투 ${battleId}에 참가했습니다`);
+
 
       socket.emit('battle:joined', {
         battleId: battle.battleId,
@@ -59,7 +79,8 @@ export class BattleSocketHandler {
         currentTurn: battle.currentTurn,
         attackerUnits: battle.attackerUnits,
         defenderUnits: battle.defenderUnits,
-        terrain: battle.terrain
+        terrain: battle.terrain,
+        participants: battle.participants,
       });
 
       this.io.to(`battle:${battleId}`).emit('battle:player_joined', {
@@ -303,35 +324,74 @@ export class BattleSocketHandler {
   private async handleRealtimeCommand(socket: Socket, data: { 
     battleId: string; 
     generalId: number; 
-    command: 'move' | 'attack' | 'hold' | 'retreat';
+    command: 'move' | 'attack' | 'hold' | 'retreat' | 'volley';
     targetPosition?: { x: number; y: number };
     targetGeneralId?: number;
   }) {
     try {
       const { battleId, generalId, command, targetPosition, targetGeneralId } = data;
-
+ 
       const battle = await Battle.findOne({ battleId });
       if (!battle) {
         socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
         return;
       }
-
+ 
       if (battle.status !== BattleStatus.IN_PROGRESS) {
         socket.emit('battle:error', { message: '전투가 진행 중이 아닙니다' });
         return;
       }
 
+      const participants = battle.participants || [];
+      const me = participants.find((p: any) => p.generalId === generalId);
+      if (!me) {
+        socket.emit('battle:error', { message: '전투 참가자로 등록되지 않았습니다' });
+        return;
+      }
+      if (me.role === 'STAFF') {
+        socket.emit('battle:error', { message: '참모(STAFF)는 직접 전투 명령을 내릴 수 없습니다' });
+        return;
+      }
+ 
       // 해당 장수의 유닛 찾기
       const allUnits = [...battle.attackerUnits, ...battle.defenderUnits];
       const unit = allUnits.find(u => u.generalId === generalId);
-
+ 
       if (!unit) {
         socket.emit('battle:error', { message: '해당 장수를 찾을 수 없습니다' });
         return;
       }
 
+      // SUB_COMMANDER인 경우, 자신이 위임받은 유닛인지 확인 (없다면 자신의 일반 유닛 1개만 허용)
+      if (me.role === 'SUB_COMMANDER') {
+        const controlled = (me.controlledUnitGeneralIds || []);
+        const isControlled = controlled.length === 0
+          ? true // 아직 위임 정보가 없다면 일단 자기 일반 유닛은 허용
+          : controlled.includes(unit.generalId);
+        if (!isControlled) {
+          socket.emit('battle:error', { message: '이 부대에 대한 지휘권이 없습니다' });
+          return;
+        }
+      }
+
+      // 총사령관 지휘 반경 체크 (FIELD_COMMANDER 또는 SUB_COMMANDER 모두 영향 받음)
+      const fieldCommander = participants.find((p: any) => p.role === 'FIELD_COMMANDER');
+      if (fieldCommander) {
+        const hqUnit = allUnits.find(u => u.generalId === fieldCommander.generalId);
+        if (hqUnit) {
+          const dx = (unit.position?.x || 0) - (hqUnit.position?.x || 0);
+          const dy = (unit.position?.y || 0) - (hqUnit.position?.y || 0);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > HQ_COMMAND_RADIUS * 2) {
+            socket.emit('battle:error', { message: '총사령관의 지휘 범위를 크게 벗어나 직접 명령을 전달할 수 없습니다' });
+            return;
+          }
+        }
+      }
+ 
       // AI 제어 해제 (유저가 직접 컨트롤)
       unit.isAIControlled = false;
+
 
       // 명령 적용
       switch (command) {
@@ -349,6 +409,21 @@ export class BattleSocketHandler {
               unit.targetPosition = target.position;
               unit.stance = 'aggressive';
             }
+          }
+          break;
+
+        case 'volley':
+          // 일제 사격: 다음 공격 1회에 한해 강한 사격 적용
+          unit.isVolleyMode = true;
+          if (targetGeneralId !== undefined) {
+            const target = allUnits.find(u => u.generalId === targetGeneralId);
+            if (target) {
+              unit.targetPosition = target.position;
+              unit.stance = 'aggressive';
+            }
+          } else if (targetPosition) {
+            unit.targetPosition = targetPosition;
+            unit.stance = 'aggressive';
           }
           break;
 

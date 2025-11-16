@@ -47,7 +47,7 @@ function loadConstants() {
  * - 최근 기록 (역사, 전역 기록, 개인 행동 기록)
  */
 export class GetFrontInfoService {
-  static readonly ROW_LIMIT = 15;
+  static readonly ROW_LIMIT = 10;
 
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
@@ -340,11 +340,15 @@ export class GetFrontInfoService {
 
     const crew = {
       generalCnt: generals.length,
-      crewNow: generals.reduce((sum: number, g: any) => sum + (g.crew ?? 0), 0),
+      crewNow: generals.reduce((sum: number, g: any) => {
+        const curCrew = g.crew ?? g.data?.crew ?? 0;
+        return sum + (typeof curCrew === 'number' && !isNaN(curCrew) ? curCrew : 0);
+      }, 0),
       crewMax: generals.reduce((sum: number, g: any) => {
-        const leadership = g.leadership ?? 50;
-        return sum + (leadership * 100);
-      }, 0)
+        const leadership = g.leadership ?? g.data?.leadership ?? 50;
+        const safeLeadership = (typeof leadership === 'number' && !isNaN(leadership)) ? leadership : 50;
+        return sum + safeLeadership * 100;
+      }, 0),
     };
 
     // 고위 관직자 조회 (군주=12, 부군주=11)
@@ -590,8 +594,36 @@ export class GetFrontInfoService {
       dedication: data.dedication || 0,
       officer_city: data.officer_city || 0,
       defence_train: data.defence_train || 0,
-      crewtype: data.crewtype || 'None',
+      crewtype: (() => {
+        let crewtype = data.crewtype ?? 0;
+        const crew = data.crew || 0;
+        const resultTurn = data.result_turn || data.data?.result_turn;
+        const cmd = resultTurn?.command;
+        const argCrewType = resultTurn?.arg?.crewType;
+
+        // 징병/모병 직후인데 crewtype이 0이면 결과 턴의 병종으로 보정
+        if (!crewtype && crew > 0 && argCrewType &&
+          ['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(cmd)) {
+          crewtype = argCrewType;
+        }
+
+        if (!crewtype) {
+          return 'None';
+        }
+
+        try {
+          const { GameUnitConst } = require('../../const/GameUnitConst');
+          const unit = GameUnitConst.byID(Number(crewtype));
+          return {
+            id: unit.id || Number(crewtype),
+            label: unit.name || String(crewtype),
+          };
+        } catch (e) {
+          return crewtype;
+        }
+      })(),
       crew: data.crew || 0,
+
       train: data.train || 0,
       atmos: data.atmos || 50,
       turntime: data.turntime || new Date(),

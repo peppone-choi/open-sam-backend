@@ -83,12 +83,25 @@ export class BattlePhysics {
       x: dirX * effectiveSpeed,
       y: dirY * effectiveSpeed
     };
-
+ 
     // 방향 업데이트 (0~360도)
     unit.facing = Math.atan2(dy, dx) * (180 / Math.PI);
 
+    // 현재 이동 속도 기반 돌격 상태 보정 (기병 전용)
+    if (unit.unitType === UnitType.CAVALRY) {
+      const speed = Math.sqrt(unit.velocity.x * unit.velocity.x + unit.velocity.y * unit.velocity.y);
+      const threshold = unit.moveSpeed * 0.7; // 최대 속도의 70% 이상이면 돌격
+      if (speed >= threshold && unit.stance !== 'retreat') {
+        unit.isCharging = true;
+      } else if (speed < threshold * 0.3) {
+        // 충분히 느려지면 돌격 해제
+        unit.isCharging = false;
+      }
+    }
+ 
     // 피로도 업데이트 (달리기 중)
     this.updateFatigue(unit, true, false);
+
 
     // 맵 경계 제한
     this.clampToMapBounds(unit);
@@ -158,16 +171,50 @@ export class BattlePhysics {
 
   /**
    * 공격 범위 체크
+   * - 거리 + 병종별 시야각(FOV) 적용
    */
   isInAttackRange(attacker: IBattleUnit, target: IBattleUnit): boolean {
     const dx = target.position.x - attacker.position.x;
     const dy = target.position.y - attacker.position.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // 충돌 반경 고려
+    // 충돌 반경 고려한 거리 체크
     const effectiveRange = attacker.attackRange + target.collisionRadius;
-    return distance <= effectiveRange;
+    if (distance > effectiveRange) {
+      return false;
+    }
+
+    // 병종별 시야각 (궁병/마법/공성만 제한, 근접은 360도)
+    const fov = this.getAttackFov(attacker); // 도 단위
+    if (fov >= 360 || fov <= 0) {
+      return true;
+    }
+
+    // 공격자가 바라보는 방향과 목표 방향의 각도 차이 계산
+    const facing = attacker.facing ?? 0;
+    const angleToTarget = Math.atan2(dy, dx) * (180 / Math.PI);
+    let diff = Math.abs(angleToTarget - facing);
+    if (diff > 180) diff = 360 - diff;
+
+    return diff <= fov / 2;
   }
+
+  /**
+   * 병종별 시야각(FOV) 설정 (도 단위)
+   * - 근접 계열: 360도
+   * - 궁병/마법/공성: 전방 120도 정도로 제한
+   */
+  private getAttackFov(attacker: IBattleUnit): number {
+    switch (attacker.unitType) {
+      case UnitType.ARCHER:
+      case UnitType.WIZARD:
+      case UnitType.SIEGE:
+        return 120;
+      default:
+        return 360;
+    }
+  }
+
 
   /**
    * 공격 처리
@@ -188,11 +235,17 @@ export class BattlePhysics {
     // 데미지 계산
     const damage = this.calculateDamage(attacker, target);
 
+    // Volley는 한 번 사용 후 해제
+    if (attacker.isVolleyMode) {
+      attacker.isVolleyMode = false;
+    }
+ 
     // 쿨다운 적용
     attacker.lastAttackTime = currentTime;
-
+ 
     return damage;
   }
+
 
   /**
    * 데미지 계산 (병종 상성 + 포메이션 + 방향 + 특성 + 피로도 포함)
@@ -234,6 +287,11 @@ export class BattlePhysics {
       if (effect.attackMultiplier) {
         baseDamage *= effect.attackMultiplier;
       }
+    }
+
+    // Volley(일제 사격) 보너스 - 원거리 계열에 한해 약간의 추가 화력
+    if (attacker.isVolleyMode && (attacker.unitType === UnitType.ARCHER || attacker.unitType === UnitType.WIZARD || attacker.unitType === UnitType.SIEGE)) {
+      baseDamage *= 1.3;
     }
 
     // 돌격 보너스

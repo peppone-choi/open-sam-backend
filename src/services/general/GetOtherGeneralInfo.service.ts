@@ -41,9 +41,22 @@ export class GetOtherGeneralInfoService {
         intel: general.data?.intel,
         experience: general.data?.experience,
         dedication: general.data?.dedication,
-        crew: general.data?.crew,
-        crewtype: general.data?.crewtype,
-        atmos: general.data?.atmos,
+         crew: general.data?.crew,
+         crewtype: (() => {
+           let crewtype = general.data?.crewtype ?? 0;
+           const crew = general.data?.crew || 0;
+           const resultTurn = general.data?.result_turn;
+           const cmd = resultTurn?.command;
+           const argCrewType = resultTurn?.arg?.crewType;
+
+           if (!crewtype && crew > 0 && argCrewType &&
+             ['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(cmd)) {
+             crewtype = argCrewType;
+           }
+           return crewtype;
+         })(),
+         atmos: general.data?.atmos,
+
         train: general.data?.train,
         // 금, 쌀, 아이템 등 민감한 정보는 제외
       };

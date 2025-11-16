@@ -47,9 +47,11 @@ router.post('/general', authenticate, async (req, res) => {
     const result = await GetGeneralInfoService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('GetGeneralInfo error:', error);
+    res.status(500).json({ result: false, reason: error.message || '장수 정보 조회 중 서버 오류가 발생했습니다' });
   }
 });
+
 
 /**
  * @swagger
@@ -87,9 +89,11 @@ router.post('/officer', authenticate, async (req, res) => {
     const result = await GetOfficerInfoService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('GetOfficerInfo error:', error);
+    res.status(500).json({ result: false, reason: error.message || '관직자 정보 조회 중 서버 오류가 발생했습니다' });
   }
 });
+
 
 /**
  * @swagger
@@ -127,9 +131,11 @@ router.post('/tournament', authenticate, async (req, res) => {
     const result = await GetTournamentInfoService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('GetTournamentInfo error:', error);
+    res.status(500).json({ result: false, reason: error.message || '토너먼트 정보 조회 중 서버 오류가 발생했습니다' });
   }
 });
+
 
 /**
  * @swagger
@@ -171,19 +177,24 @@ router.post('/betting', authenticate, async (req, res) => {
     if (result.result) {
       res.json({
         result: true,
-        bettingList: result.bettingList || []
+        bettingList: result.bettingList || [],
+        year: result.year,
+        month: result.month
       });
     } else {
+      // 도메인 실패 (세션 없음 등)는 200 + result:false
       res.json({
         result: false,
         bettingList: [],
-        reason: result.reason || ''
+        reason: result.message || result.reason || ''
       });
     }
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('GetBettingList error:', error);
+    res.status(500).json({ result: false, reason: error.message || '배팅 정보 조회 중 서버 오류가 발생했습니다' });
   }
 });
+
 
 /**
  * @swagger

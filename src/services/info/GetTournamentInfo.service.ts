@@ -12,10 +12,8 @@ export class GetTournamentInfoService {
       // TournamentService 재사용
       return await TournamentService.getTournamentInfo(sessionId);
     } catch (error: any) {
-      return {
-        result: false,
-        reason: error.message || '토너먼트 정보 조회 중 오류가 발생했습니다'
-      };
+      // 시스템 오류는 라우터에서 5xx로 처리할 수 있도록 그대로 throw
+      throw error;
     }
   }
 }

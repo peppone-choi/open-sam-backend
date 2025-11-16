@@ -11,10 +11,40 @@ const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
 export class GetReservedCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
-    
+    const userId = user?.userId || user?.id || data.user_id;
+    let generalId: any = user?.generalId || data.general_id;
+
+    // generalId가 문자열로 올 수 있으므로 안전하게 숫자로 변환
+    if (generalId !== undefined && generalId !== null) {
+      generalId = Number(generalId);
+      if (!Number.isInteger(generalId) || generalId <= 0) {
+        generalId = undefined;
+      }
+    }
+
     try {
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+      let actualGeneralId = generalId;
+
+      // 토큰에 generalId가 없으면 owner 기준으로 현재 장수 검색 (다른 서비스와 동일 패턴)
+      if (!actualGeneralId) {
+        if (!userId) {
+          throw new Error('장수 정보를 찾을 수 없습니다.');
+        }
+
+        const userGeneral = await generalRepository.findBySessionAndOwner(
+          sessionId,
+          String(userId),
+          { npc: { $lt: 2 } },
+        );
+
+        if (!userGeneral) {
+          throw new Error('장수 정보를 찾을 수 없습니다.');
+        }
+
+        actualGeneralId = userGeneral.data?.no || userGeneral.no;
+      }
+
+      const general = await generalRepository.findBySessionAndNo(sessionId, actualGeneralId);
 
       if (!general) {
         throw new Error('장수 정보를 찾을 수 없습니다.');

@@ -136,7 +136,19 @@ export class GetGeneralInfoService {
         gold: generalData.gold || 0,
         rice: generalData.rice || 0,
         crew: generalData.crew || 0,
-        crewtype: generalData.crewtype || '',
+        crewtype: (() => {
+          let crewtype = generalData.crewtype ?? 0;
+          const crew = generalData.crew || 0;
+          const resultTurn = generalData.result_turn;
+          const cmd = resultTurn?.command;
+          const argCrewType = resultTurn?.arg?.crewType;
+
+          if (!crewtype && crew > 0 && argCrewType &&
+            ['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(cmd)) {
+            crewtype = argCrewType;
+          }
+          return crewtype;
+        })(),
         train: generalData.train || 0,
         atmos: generalData.atmos || 0,
         injury: generalData.injury || 0,
@@ -162,10 +174,8 @@ export class GetGeneralInfoService {
         general: generalInfo
       };
     } catch (error: any) {
-      return {
-        result: false,
-        reason: error.message || '장수 정보 조회 중 오류가 발생했습니다'
-      };
+      // 시스템 오류는 라우터에서 5xx로 처리할 수 있도록 그대로 throw
+      throw error;
     }
   }
 }

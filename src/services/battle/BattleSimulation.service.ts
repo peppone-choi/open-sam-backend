@@ -3,6 +3,7 @@ import { battleRepository } from '../../repositories/battle.repository';
 import { BattlePhysics } from './BattlePhysics';
 import { SimpleBattleAI, AIDecision } from './BattleAI';
 import { getSocketManager } from '../../socket/socketManager';
+import { AttackDirection, calculateAttackDirection } from './FormationSystem';
 
 /**
  * 실시간 전투 시뮬레이션
@@ -216,15 +217,37 @@ export class BattleSimulationService {
         if (damage !== null) {
           defender.troops = Math.max(0, defender.troops - damage);
           
-          // 사기 하락 (피해 비율에 따라)
+          // 사기 하락 (피해 비율 + 공격 방향에 따라)
           const damageRatio = damage / defender.maxTroops;
-          defender.morale = Math.max(0, defender.morale - damageRatio * 10);
+          let moralePenalty = damageRatio * 10;
 
+          const direction = calculateAttackDirection(
+            attacker.position.x,
+            attacker.position.y,
+            defender.position.x,
+            defender.position.y,
+            defender.facing || 0,
+          );
+
+          if (direction === AttackDirection.SIDE_LEFT || direction === AttackDirection.SIDE_RIGHT) {
+            moralePenalty *= 1.5; // 측면 공격: 사기 1.5배 하락
+          } else if (direction === AttackDirection.REAR) {
+            moralePenalty *= 2.0; // 후방 공격: 사기 2배 하락
+          }
+
+          defender.morale = Math.max(0, defender.morale - moralePenalty);
+
+          // 사기가 크게 떨어지면 자동 후퇴 상태 전환 (토탈워식 붕괴)
+          if (defender.morale < 20 && defender.stance !== 'retreat') {
+            defender.stance = 'retreat';
+            defender.isAIControlled = true;
+          }
+ 
           console.log(`[Attack] ${attacker.generalName} → ${defender.generalName}: ${damage} 데미지 (남은 병력: ${defender.troops})`);
         }
       }
     }
-
+ 
     // 방어자 → 공격자
     for (const defender of defenders) {
       for (const attacker of attackers) {
@@ -233,12 +256,34 @@ export class BattleSimulationService {
           attacker.troops = Math.max(0, attacker.troops - damage);
           
           const damageRatio = damage / attacker.maxTroops;
-          attacker.morale = Math.max(0, attacker.morale - damageRatio * 10);
+          let moralePenalty = damageRatio * 10;
 
+          const direction = calculateAttackDirection(
+            defender.position.x,
+            defender.position.y,
+            attacker.position.x,
+            attacker.position.y,
+            attacker.facing || 0,
+          );
+
+          if (direction === AttackDirection.SIDE_LEFT || direction === AttackDirection.SIDE_RIGHT) {
+            moralePenalty *= 1.5;
+          } else if (direction === AttackDirection.REAR) {
+            moralePenalty *= 2.0;
+          }
+
+          attacker.morale = Math.max(0, attacker.morale - moralePenalty);
+
+          if (attacker.morale < 20 && attacker.stance !== 'retreat') {
+            attacker.stance = 'retreat';
+            attacker.isAIControlled = true;
+          }
+ 
           console.log(`[Attack] ${defender.generalName} → ${attacker.generalName}: ${damage} 데미지 (남은 병력: ${attacker.troops})`);
         }
       }
     }
+
   }
 
   /**
@@ -303,9 +348,11 @@ export class BattleSimulationService {
     if (!socketManager) return;
 
     const state = {
-      battleId: battle.battleId,
-      currentTurn: battle.currentTurn,
-      attackerUnits: battle.attackerUnits.map(u => ({
+       battleId: battle.battleId,
+       currentTurn: battle.currentTurn,
+       participants: battle.participants,
+       attackerUnits: battle.attackerUnits.map(u => ({
+
         generalId: u.generalId,
         generalName: u.generalName,
         position: u.position,

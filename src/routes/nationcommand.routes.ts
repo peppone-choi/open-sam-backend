@@ -67,7 +67,8 @@ router.get('/get-reserved-command', authenticate, async (req, res) => {
     const result = await GetReservedCommandService.execute(req.query, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('GetReservedCommand error:', error);
+    res.status(500).json({ result: false, reason: error.message || 'NationCommand 조회 중 서버 오류가 발생했습니다' });
   }
 });
 
@@ -139,7 +140,8 @@ router.post('/push-command', authenticate, async (req, res) => {
     const result = await PushCommandService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('PushCommand error:', error);
+    res.status(500).json({ result: false, reason: error.message || 'NationCommand 생성 중 서버 오류가 발생했습니다' });
   }
 });
 
@@ -211,7 +213,8 @@ router.post('/repeat-command', authenticate, async (req, res) => {
     const result = await RepeatCommandService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('RepeatCommand error:', error);
+    res.status(500).json({ result: false, reason: error.message || 'NationCommand 생성 중 서버 오류가 발생했습니다' });
   }
 });
 
@@ -283,7 +286,8 @@ router.post('/reserve-bulk-command', authenticate, async (req, res) => {
     const result = await ReserveBulkCommandService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('ReserveBulkCommand error:', error);
+    res.status(500).json({ result: false, reason: error.message || 'NationCommand 생성 중 서버 오류가 발생했습니다' });
   }
 });
 
@@ -355,7 +359,8 @@ router.post('/reserve-command', authenticate, async (req, res) => {
     const result = await ReserveCommandService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    console.error('ReserveCommand error:', error);
+    res.status(500).json({ result: false, reason: error.message || 'NationCommand 생성 중 서버 오류가 발생했습니다' });
   }
 });
 

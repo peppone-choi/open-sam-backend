@@ -47,19 +47,18 @@ export class ConscriptCommand extends GeneralCommand {
       return false;
     }
 
-    // 병종 ID 검증
-    try {
-      const { GameUnitConst } = require('../../constants/GameUnitConst');
-      if (GameUnitConst.byID) {
-        const crewTypeData = GameUnitConst.byID(crewType);
-        if (!crewTypeData && crewType !== 0) {
-          // crewType 0은 기본 병종으로 허용
-          return false;
-        }
-      }
-    } catch (error) {
-      // GameUnitConst 없으면 기본 검증만
-    }
+     // 병종 ID 검증
+     try {
+       const { GameUnitConst } = require('../../const/GameUnitConst');
+       const crewTypeData = GameUnitConst.byID(crewType);
+       if (!crewTypeData && crewType !== 0) {
+         // crewType 0은 기본 병종으로 허용
+         return false;
+       }
+     } catch (error) {
+       // GameUnitConst 로드 실패 시 기본 검증만 수행
+     }
+
     
     if (amount < 0) {
       return false;
@@ -93,15 +92,17 @@ export class ConscriptCommand extends GeneralCommand {
     // 징병은 통솔만 사용 (PHP 원본과 동일)
     const leadership = general.getLeadership(true);
     
-    // TODO: const currCrewType = general.getCrewTypeObj();
-    const currCrewType: any = null; // 임시: 병종 시스템 미구현
+    // 현재 병종 정보 (기존 병종 유지 여부 판단용)
+    const currCrewType: any = typeof general.getCrewTypeObj === 'function'
+      ? general.getCrewTypeObj()
+      : { id: general.data?.crewtype ?? 0, name: '병종', armType: Math.floor((general.data?.crewtype ?? 0) / 1000) };
     let maxCrew = leadership * 100;
 
-    // 병종 정보 가져오기 - 동기 require 사용
+    // 병종 정보 가져오기 - units.json 기반
     let reqCrewType: any = { id: this.arg.crewType, name: '병종', armType: 0 };
     try {
-      const { GameUnitConst } = require('../../constants/GameUnitConst');
-      const crewTypeData = GameUnitConst.byID ? GameUnitConst.byID(this.arg.crewType) : null;
+      const { GameUnitConst } = require('../../const/GameUnitConst');
+      const crewTypeData = GameUnitConst.byID(this.arg.crewType);
       if (crewTypeData) {
         reqCrewType = {
           id: crewTypeData.id || this.arg.crewType,
@@ -111,7 +112,7 @@ export class ConscriptCommand extends GeneralCommand {
         };
       }
     } catch (error) {
-      // GameUnitConst 없으면 기본값 사용
+      // GameUnitConst 로드 실패 시 기본값 사용
     }
 
     if (reqCrewType?.id === currCrewType?.id) {
@@ -156,27 +157,42 @@ export class ConscriptCommand extends GeneralCommand {
     }
 
     // 비용 계산 (기술 레벨 반영)
-    const baseCost = this.reqCrewType?.cost || 1;
-    const techLevel = this.nation?.tech || 0;
-    const costWithTech = baseCost * (1 - techLevel / 1000); // 기술 1당 0.1% 할인
-    
-    let reqGold = this.maxCrew * costWithTech;
+    // PHP GameUnitDetail::costWithTech(tech, crew)와 동일한 개념:
+    //   costWithTech = cost * getTechCost(tech) * crew / 100
+    // 여기서 crew는 실제 병력 수(this.maxCrew)이며,
+    // getTechCost(tech) = 1 + getTechLevel(tech) * 0.15 (TS: techRaw/1000 기준)
+    const baseCost = this.reqCrewType?.cost || 1; // units.json 기준 gold 비용
+    const techRaw = this.nation?.tech || 0;
+    const techLevel = Math.floor(techRaw / 1000);
+    const techCostMultiplier = 1 + techLevel * 0.15;
+
+    const crew = Math.max(100, this.maxCrew || 0);
+
+    let reqGold = (baseCost * techCostMultiplier * crew) / 100;
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     reqGold *= costOffset;
-    
-    // onCalcDomestic 보정 적용
+
+    // onCalcDomestic 보정 적용 (PHP: onCalcDomestic('징병','cost',...))
     const general = this.generalObj;
     if (general && typeof general.onCalcDomestic === 'function') {
-      reqGold = general.onCalcDomestic('징병', 'cost', reqGold);
+      reqGold = general.onCalcDomestic('징병', 'cost', reqGold, {
+        armType: this.reqCrewType?.armType ?? 0,
+      });
     }
-    
-    // 0으로 나누기 방지
-    let reqRice = Math.max(1, this.maxCrew) / 100;
+
+    // 군량: crew / 100, onCalcDomestic('징병','rice',...)
+    let reqRice = crew / 100;
+    if (general && typeof general.onCalcDomestic === 'function') {
+      reqRice = general.onCalcDomestic('징병', 'rice', reqRice, {
+        armType: this.reqCrewType?.armType ?? 0,
+      });
+    }
 
     reqGold = Math.round(reqGold);
     reqRice = Math.round(reqRice);
     return [reqGold, reqRice];
   }
+
 
   public getPreReqTurn(): number {
     return 0;

@@ -28,6 +28,8 @@ export interface IBattleUnit {
   morale: number;
   training: number;
   techLevel: number;
+  nationId?: number;
+  commanderId?: number | null;
   
   // 좌표 기반 위치 (800 x 600 맵)
   position: { x: number; y: number };
@@ -51,6 +53,7 @@ export interface IBattleUnit {
   // 특수 상태
   isCharging?: boolean;
   isAIControlled?: boolean;
+  isVolleyMode?: boolean;
   
   // 피로도 시스템 (토탈 워 기반)
   fatigue?: number;              // 피로도 (0-100)
@@ -82,7 +85,16 @@ export interface ITurnHistory {
   battleLog: string[];
 }
 
+export type BattleParticipantRole = 'FIELD_COMMANDER' | 'SUB_COMMANDER' | 'STAFF';
+
+export interface IBattleParticipant {
+  generalId: number;
+  role: BattleParticipantRole;
+  controlledUnitGeneralIds?: number[];
+}
+ 
 export interface IBattleMap {
+
   width: number;
   height: number;
   entryDirection: string;
@@ -139,6 +151,8 @@ export interface IBattle extends Document {
   readyPlayers: number[];
   
   turnHistory: ITurnHistory[];
+
+  participants?: IBattleParticipant[];
   
   // 좌표 기반 맵 정보
   map: IBattleMap;
@@ -169,6 +183,9 @@ const BattleUnitSchema = new Schema({
   morale: { type: Number, default: 80 },
   training: { type: Number, default: 80 },
   techLevel: { type: Number, default: 50 },
+
+  nationId: { type: Number },
+  commanderId: { type: Number },
   
   // 좌표 기반 위치
   position: {
@@ -201,6 +218,7 @@ const BattleUnitSchema = new Schema({
   // 특수 상태
   isCharging: { type: Boolean, default: false },
   isAIControlled: { type: Boolean, default: false },
+  isVolleyMode: { type: Boolean, default: false },
   
   // 피로도 시스템
   fatigue: { type: Number, default: 0, min: 0, max: 100 },
@@ -309,6 +327,12 @@ const BattleSchema = new Schema({
   readyPlayers: [{ type: Number }],
   
   turnHistory: [TurnHistorySchema],
+
+  participants: [{
+    generalId: { type: Number, required: true },
+    role: { type: String, enum: ['FIELD_COMMANDER', 'SUB_COMMANDER', 'STAFF'], required: true },
+    controlledUnitGeneralIds: [{ type: Number }]
+  }],
   
   // 좌표 기반 맵
   map: { type: BattleMapSchema, required: true },

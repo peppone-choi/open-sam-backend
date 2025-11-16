@@ -44,6 +44,8 @@ export class StartBattleService {
           morale: general.morale || 80,
           training: general.train || 80,
           techLevel: 50,
+          nationId: attackerNationId,
+          commanderId: general.no,
           
           // 좌표 (배치 단계에서 설정)
           position: { x: 0, y: 0 },
@@ -91,6 +93,8 @@ export class StartBattleService {
           morale: general.morale || 80,
           training: general.train || 80,
           techLevel: 50,
+          nationId: defenderNationId,
+          commanderId: general.no,
           
           // 좌표
           position: { x: 0, y: 0 },
