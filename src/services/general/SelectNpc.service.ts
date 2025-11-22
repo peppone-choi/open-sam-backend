@@ -2,7 +2,7 @@
 import { SelectNpcToken } from '../../models/select_npc_token.model';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
-import mongoose from 'mongoose';
+import { userRepository } from '../../repositories/user.repository';
 
 /**
  * SelectNpc Service
@@ -127,8 +127,15 @@ export class SelectNpcService {
       // 회원 정보 가져오기
       const ownerName = user?.name || 'Unknown';
       
-      // FUTURE: RootDB에서 penalty 정보 가져오기
-      const penalty: any = {};
+      let penalty: any = {};
+      try {
+        const userDoc = await userRepository.findById(String(userId));
+        if (userDoc?.penalty) {
+          penalty = userDoc.penalty;
+        }
+      } catch (penaltyError) {
+        console.warn('[SelectNpc] penalty 정보 조회 실패:', penaltyError);
+      }
 
       // aux 업데이트
       const aux = npcGeneral.data?.aux || {};

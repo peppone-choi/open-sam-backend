@@ -15,8 +15,11 @@ import { GameLoopManager } from '../services/logh/GameLoop.service';
 import { LoghCommander } from '../models/logh/Commander.model';
 import { CommanderWrapper } from '../models/logh/CommanderWrapper';
 import { CommandRegistry } from '../core/command/CommandRegistry';
+import galaxyRouter from './logh/galaxy.route';
+import { LOGH_MESSAGES } from '../constants/messages';
 
 const router = Router();
+router.use('/galaxy', galaxyRouter);
 
 /**
  * 세션 정보 가져오기 (미들웨어에서 설정)
@@ -39,7 +42,7 @@ router.get('/map/grid', async (req, res) => {
     if (!mapGrid) {
       return res.status(404).json({
         success: false,
-        message: 'Map grid not found',
+        message: LOGH_MESSAGES.mapGridNotFound,
       });
     }
 
@@ -148,7 +151,7 @@ router.get('/fleets/:fleetId', async (req, res) => {
     if (!fleet) {
       return res.status(404).json({
         success: false,
-        message: 'Fleet not found',
+        message: LOGH_MESSAGES.fleetNotFound,
       });
     }
 
@@ -187,14 +190,14 @@ router.post('/fleets', async (req, res) => {
     if (!name || !faction) {
       return res.status(400).json({
         success: false,
-        message: 'name and faction are required',
+        message: LOGH_MESSAGES.nameFactionRequired,
       });
     }
 
     if (!['empire', 'alliance'].includes(faction)) {
       return res.status(400).json({
         success: false,
-        message: 'faction must be "empire" or "alliance"',
+        message: LOGH_MESSAGES.invalidFaction,
       });
     }
 
@@ -211,7 +214,7 @@ router.post('/fleets', async (req, res) => {
       if (!planet) {
         return res.status(404).json({
           success: false,
-          message: `Planet not found: ${planetId}`,
+          message: LOGH_MESSAGES.planetNotFound(planetId),
         });
       }
 
@@ -222,7 +225,7 @@ router.post('/fleets', async (req, res) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: 'Either planetId or (x, y) coordinates are required',
+        message: LOGH_MESSAGES.coordinatesRequired,
       });
     }
 
@@ -262,7 +265,7 @@ router.post('/fleets', async (req, res) => {
 
     res.json({
       success: true,
-      message: `Fleet created successfully at (${strategicPosition.x}, ${strategicPosition.y})`,
+      message: LOGH_MESSAGES.fleetCreated(strategicPosition.x, strategicPosition.y),
       data: fleet,
     });
   } catch (error: any) {
@@ -288,7 +291,7 @@ router.post('/fleets/:fleetId/move', async (req, res) => {
     if (typeof x !== 'number' || typeof y !== 'number') {
       return res.status(400).json({
         success: false,
-        message: 'Invalid coordinates',
+        message: LOGH_MESSAGES.invalidCoordinates,
       });
     }
 
@@ -373,7 +376,7 @@ router.get('/tactical-maps/:tacticalMapId', async (req, res) => {
     if (!tacticalMap) {
       return res.status(404).json({
         success: false,
-        message: 'Tactical map not found',
+        message: LOGH_MESSAGES.tacticalMapNotFound,
       });
     }
 
@@ -411,7 +414,7 @@ router.post('/fleets/:fleetId/tactical-move', async (req, res) => {
     if (typeof x !== 'number' || typeof y !== 'number') {
       return res.status(400).json({
         success: false,
-        message: 'Invalid coordinates',
+        message: LOGH_MESSAGES.invalidCoordinates,
       });
     }
 
@@ -449,7 +452,7 @@ router.post('/fleets/:fleetId/formation', async (req, res) => {
     if (!fleet) {
       return res.status(404).json({
         success: false,
-        message: 'Fleet not found',
+        message: LOGH_MESSAGES.fleetNotFound,
       });
     }
 
@@ -516,7 +519,7 @@ router.get('/commanders/:commanderNo', async (req, res) => {
     if (!commander) {
       return res.status(404).json({
         success: false,
-        message: 'Commander not found',
+        message: LOGH_MESSAGES.commanderNotFound,
       });
     }
 
@@ -550,7 +553,7 @@ router.post('/commanders/:commanderNo/execute-command', async (req, res) => {
     if (!commandType) {
       return res.status(400).json({
         success: false,
-        message: 'commandType is required',
+        message: LOGH_MESSAGES.commandTypeRequired,
       });
     }
 
@@ -563,7 +566,7 @@ router.post('/commanders/:commanderNo/execute-command', async (req, res) => {
     if (!commander) {
       return res.status(404).json({
         success: false,
-        message: 'Commander not found',
+        message: LOGH_MESSAGES.commanderNotFound,
       });
     }
 
@@ -672,7 +675,7 @@ router.post('/game-loop/start', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Game loop started',
+      message: LOGH_MESSAGES.gameLoopStarted,
     });
   } catch (error: any) {
     res.status(500).json({
@@ -693,7 +696,7 @@ router.post('/game-loop/stop', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Game loop stopped',
+      message: LOGH_MESSAGES.gameLoopStopped,
     });
   } catch (error: any) {
     res.status(500).json({

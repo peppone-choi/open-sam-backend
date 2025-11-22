@@ -76,7 +76,8 @@ export class ResetAttrService {
       return {
         success: true,
         result: true,
-        message: 'ResetAttr executed successfully'
+        message: '능력치 초기화가 완료되었습니다.'
+
       };
     } catch (error: any) {
       return {

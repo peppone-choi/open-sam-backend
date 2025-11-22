@@ -5,6 +5,8 @@ import { Session } from '../models/session.model';
 import { authenticate } from '../middleware/auth';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import { AccountSecurityService } from '../services/gateway/AccountSecurity.service';
+import { ApiError } from '../errors/ApiError';
 
 const router = Router();
 
@@ -316,51 +318,15 @@ router.post('/change-password', authenticate, async (req, res) => {
       });
     }
 
-    if (!password || !newPassword) {
-      return res.status(400).json({
-        result: false,
-        reason: '현재 비밀번호와 새 비밀번호를 입력해주세요'
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        result: false,
-        reason: '새 비밀번호는 최소 6자 이상이어야 합니다'
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        result: false,
-        reason: '사용자를 찾을 수 없습니다'
-      });
-    }
-
-    // 현재 비밀번호 확인
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(401).json({
-        result: false,
-        reason: '현재 비밀번호가 올바르지 않습니다'
-      });
-    }
-
-    // 새 비밀번호 해시
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-    // 비밀번호 업데이트
-    await User.findByIdAndUpdate(userId, {
-      password: hashedNewPassword
-    });
+    await AccountSecurityService.changePassword(String(userId), password, newPassword, globalSalt);
 
     res.json({
       result: true,
       reason: '비밀번호가 변경되었습니다'
     });
   } catch (error: any) {
-    res.status(500).json({
+    const status = error instanceof ApiError ? error.status : 500;
+    res.status(status).json({
       result: false,
       reason: error.message || '서버 오류가 발생했습니다'
     });
@@ -388,9 +354,6 @@ router.post('/change-password', authenticate, async (req, res) => {
  *               password:
  *                 type: string
  *                 description: 계정 삭제를 위한 비밀번호 확인
- *               globalSalt:
- *                 type: string
- *                 description: 전역 솔트 (선택)
  *     responses:
  *       200:
  *         description: 계정 삭제 성공
@@ -399,7 +362,7 @@ router.post('/change-password', authenticate, async (req, res) => {
  */
 router.post('/delete-me', authenticate, async (req, res) => {
   try {
-    const { password, globalSalt } = req.body;
+    const { password } = req.body;
     const userId = req.user?.userId;
 
     if (!userId) {
@@ -409,50 +372,7 @@ router.post('/delete-me', authenticate, async (req, res) => {
       });
     }
 
-    if (!password) {
-      return res.status(400).json({
-        result: false,
-        reason: '비밀번호를 입력해주세요'
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        result: false,
-        reason: '사용자를 찾을 수 없습니다'
-      });
-    }
-
-    // 비밀번호 확인
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(401).json({
-        result: false,
-        reason: '비밀번호가 올바르지 않습니다'
-      });
-    }
-
-    // 계정 소프트 삭제 (30일 후 삭제)
-    const deleteAfter = new Date();
-    deleteAfter.setDate(deleteAfter.getDate() + 30);
-    
-    await User.findByIdAndUpdate(userId, {
-      delete_after: deleteAfter,
-      deleted: true
-    });
-    
-    // 관련 데이터 정리 (선택사항 - 소프트 삭제 시에는 유지)
-    // FUTURE: 필요시 장수 데이터 anonymize 처리
-    // const generals = await General.find({ owner: String(userId) });
-    // for (const general of generals) {
-    //   general.owner = null; // 또는 익명화
-    //   await general.save();
-    // }
-    
-    // 로그 기록
-    // FUTURE: member_log 테이블에 삭제 로그 기록
-    // await MemberLog.create({ member_no: userId, action_type: 'delete' });
+    const deleteAfter = await AccountSecurityService.scheduleDeletion(String(userId), password);
     
     // 세션 종료
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -463,10 +383,12 @@ router.post('/delete-me', authenticate, async (req, res) => {
 
     res.json({
       result: true,
-      reason: '계정이 삭제되었습니다'
+      reason: '계정 삭제가 예약되었습니다',
+      deleteAfter
     });
   } catch (error: any) {
-    res.status(500).json({
+    const status = error instanceof ApiError ? error.status : 500;
+    res.status(status).json({
       result: false,
       reason: error.message || '서버 오류가 발생했습니다'
     });

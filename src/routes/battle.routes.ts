@@ -7,9 +7,18 @@ import { ReadyUpService } from '../services/battle/ReadyUp.service';
 import { GetBattleHistoryService } from '../services/battle/GetBattleHistory.service';
 import { ResolveTurnService } from '../services/battle/ResolveTurn.service';
 import { StartSimulationService } from '../services/battle/StartSimulation.service';
+import { AutoBattleService } from '../services/battle/AutoBattle.service';
+import type { BattleConfig } from '../battle/types';
 import { battleRepository } from '../repositories/battle.repository';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
 
 const router = Router();
+
+function toPlain<T>(doc: T | null | undefined): any | null {
+  if (!doc) return null;
+  return typeof (doc as any).toObject === 'function' ? (doc as any).toObject() : doc;
+}
 
 /**
  * @swagger
@@ -184,6 +193,64 @@ router.post('/start', async (req, res) => {
     } else {
       res.status(400).json(result);
     }
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/battle/auto-resolve:
+ *   post:
+ *     summary: 빠른 자동 전투 시뮬레이션
+ *     description: 새 AutoBattle 엔진을 이용해 공격/수비 데이터를 즉시 계산합니다. 프론트나 툴에서 JSON을 보내면 즉시 승패/로그가 반환됩니다.
+ *     tags: [Battle]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               attackers:
+ *                 type: object
+ *                 description: 공격측 정보 (nation, generals 등)
+ *               defenders:
+ *                 type: object
+ *               city:
+ *                 type: object
+ *               maxTurns:
+ *                 type: number
+ *               seed:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 시뮬레이션 성공
+ *       400:
+ *         description: 잘못된 입력
+ */
+router.post('/auto-resolve', async (req, res) => {
+  try {
+    const payload = req.body as Partial<BattleConfig>;
+    const attackers = payload?.attackers;
+    const defenders = payload?.defenders;
+
+    if (!attackers || !defenders || !attackers.generals?.length || !defenders.generals?.length) {
+      res.status(400).json({ success: false, message: '공격·방어 데이터가 모두 필요합니다.' });
+      return;
+    }
+
+    const normalizedConfig: BattleConfig = {
+      attackers: { ...attackers, side: 'attackers' },
+      defenders: { ...defenders, side: 'defenders' },
+      city: payload.city,
+      maxTurns: payload.maxTurns,
+      scenarioId: payload.scenarioId ?? 'sangokushi',
+      seed: payload.seed
+    };
+
+    const result = AutoBattleService.simulate(normalizedConfig);
+    res.json({ success: true, result });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1361,11 +1428,6 @@ router.get('/center', async (req, res) => {
     const statusFilter = (req.query.status as string) || 'all';
     const limit = parseInt(req.query.limit as string) || 50;
 
-    // @ts-ignore - Model types need investigation
-    const { Nation } = await import('../models/nation.model');
-    // @ts-ignore - Model types need investigation
-    const { City } = await import('../models/city.model');
-
     // 전투 상태별 필터
     let statusQuery: any = {};
     if (statusFilter === 'ongoing') {
@@ -1393,21 +1455,34 @@ router.get('/center', async (req, res) => {
       cityIds.add(battle.targetCityId);
     });
 
-    // @ts-ignore - Model find type issue
-    const nations: any[] = await Nation.find({
-      session_id: sessionId,
-      nation: { $in: Array.from(nationIds) }
-    }).lean().exec();
+    const uniqueNationIds = Array.from(nationIds).filter((id): id is number => typeof id === 'number' && !Number.isNaN(id));
+    const uniqueCityIds = Array.from(cityIds).filter((id): id is number => typeof id === 'number' && !Number.isNaN(id));
 
-    // @ts-ignore - Model find type issue
-    const cities: any[] = await City.find({
-      session_id: sessionId,
-      city: { $in: Array.from(cityIds) }
-    }).lean().exec();
+    const nationEntries = await Promise.all(
+      uniqueNationIds.map(async (nationId) => {
+        const doc = await nationRepository.findByNationNum(sessionId, nationId);
+        return [nationId, toPlain(doc)] as const;
+      })
+    );
+    const nationMap = new Map<number, any>();
+    nationEntries.forEach(([nationId, nation]) => {
+      if (nation) {
+        nationMap.set(nationId, nation);
+      }
+    });
 
-    // Map으로 변환
-    const nationMap = new Map(nations.map((n: any) => [n.nation, n]));
-    const cityMap = new Map(cities.map((c: any) => [c.city, c]));
+    const cityEntries = await Promise.all(
+      uniqueCityIds.map(async (cityId) => {
+        const city = await cityRepository.findByCityNum(sessionId, cityId);
+        return [cityId, city] as const;
+      })
+    );
+    const cityMap = new Map<number, any>();
+    cityEntries.forEach(([cityId, city]) => {
+      if (city) {
+        cityMap.set(cityId, city);
+      }
+    });
 
     // 응답 데이터 구성
     const battleList = battles.map((battle: any) => {
@@ -1420,13 +1495,13 @@ router.get('/center', async (req, res) => {
         battleId: battle.battleId,
         attackerNation: {
           id: battle.attackerNationId,
-          name: attackerNation?.name || '알 수 없음',
-          color: attackerNation?.color || '#888888'
+          name: attackerNation?.name || attackerNation?.data?.name || '알 수 없음',
+          color: attackerNation?.color || attackerNation?.data?.color || '#888888'
         },
         defenderNation: {
           id: battle.defenderNationId,
-          name: defenderNation?.name || '알 수 없음',
-          color: defenderNation?.color || '#888888'
+          name: defenderNation?.name || defenderNation?.data?.name || '알 수 없음',
+          color: defenderNation?.color || defenderNation?.data?.color || '#888888'
         },
         city: {
           id: battle.targetCityId,

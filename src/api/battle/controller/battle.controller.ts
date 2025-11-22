@@ -11,8 +11,9 @@ export class BattleController {
       const commanderId = req.query.commanderId as string;
 
       if (!sessionId) {
-        throw new HttpException(400, 'sessionId is required');
+        throw new HttpException(400, '세션 식별자가 필요합니다.');
       }
+
 
       let battles;
       if (commanderId) {
@@ -29,32 +30,36 @@ export class BattleController {
 
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      throw new HttpException(501, 'Battle getById is not implemented yet');
+      throw new HttpException(501, '전투 상세 조회 API가 아직 구현되지 않았습니다.');
     } catch (error) {
+
       next(error);
     }
   };
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      throw new HttpException(501, 'Battles are created by Game Daemon');
+      throw new HttpException(501, '전투 생성은 게임 데몬에서만 수행됩니다.');
     } catch (error) {
+
       next(error);
     }
   };
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      throw new HttpException(501, 'Battles are updated by Game Daemon');
+      throw new HttpException(501, '전투 업데이트는 게임 데몬에서만 수행됩니다.');
     } catch (error) {
+
       next(error);
     }
   };
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      throw new HttpException(501, 'Battles are deleted by Game Daemon');
+      throw new HttpException(501, '전투 삭제는 게임 데몬에서만 수행됩니다.');
     } catch (error) {
+
       next(error);
     }
   };

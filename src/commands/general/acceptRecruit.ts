@@ -230,7 +230,8 @@ export class AcceptRecruitCommand extends GeneralCommand {
     general.data.officer_level = 1;
     general.data.officer_city = 0;
     general.data.nation = destNationID;
-    general.data.city = this.destNation?.capital ?? 0;
+    const recruitCityId = this.destNation?.capital ?? 0;
+    await this.updateGeneralCity(recruitCityId);
     general.data.troop = 0;
 
     if (isTroopLeader) {

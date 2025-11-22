@@ -252,7 +252,7 @@ const FleetSchema = new Schema<IFleet>(
 );
 
 // 상수 (은하영웅전설 VII 매뉴얼 기준)
-export const SHIPS_PER_UNIT = 300; // 1 함선 유닛 = 300척 (매뉴얼 명시: "1 艦艇ユニットは 300 隻を表します")
+export const SHIPS_PER_UNIT = 300; // 1 함선 유닛 = 300척 (매뉴얼 명시: "1 함선 유닛은 300척을 의미")
 export const CREW_PER_SHIP = 100; // 함선 1척당 승무원 100명 (역산: 900척 = 90,000명 승무원)
 // 참고: 육전대 유닛의 정확한 인원수는 매뉴얼에 명시되지 않음
 // 추정: 1 유닛 ≈ 연대급 (Regiment) = 약 1,000~3,000명

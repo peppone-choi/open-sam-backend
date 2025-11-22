@@ -71,7 +71,8 @@ export class BuyRandomUniqueService {
       return {
         success: true,
         result: true,
-        message: 'BuyRandomUnique executed successfully'
+        message: '무작위 고유 장비를 구매했습니다.'
+
       };
     } catch (error: any) {
       return {

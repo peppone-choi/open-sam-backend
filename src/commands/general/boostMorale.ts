@@ -3,6 +3,7 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { GameConst } from '../../constants/GameConst';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 /**
  * 사기 진작 커맨드
@@ -41,15 +42,30 @@ export class BoostMoraleCommand extends GeneralCommand {
     ];
   }
 
+  private getUnitStacks(): any[] {
+    return this.getCachedUnitStacks();
+  }
+
   public getCommandDetailTitle(): string {
     const name = (this.constructor as typeof GeneralCommand).getName();
     return `${name}(통솔경험, 자금↓)`;
   }
 
   public getCost(): [number, number] {
-    const general = this.generalObj;
-    const crew = Math.max(1, general.data.crew); // 0으로 나누기 방지
+    const unitStacks = this.getUnitStacks();
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const crew = Math.max(1, totalCrew || this.generalObj?.data?.crew || 1);
     return [Math.round(crew / 100), 0];
+  }
+
+  private getStackTroopCount(stack: any): number {
+    const hp = stack?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack?.unit_size ?? 100;
+    const stackCount = stack?.stack_count ?? 0;
+    return unitSize * stackCount;
   }
 
   public getPreReqTurn(): number {
@@ -66,27 +82,35 @@ export class BoostMoraleCommand extends GeneralCommand {
     }
 
     const general = this.generalObj;
+    const unitStacks = this.getUnitStacks();
+    const primaryStack = unitStacks[0];
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
 
     const atmosDelta = 0.005;
     const maxAtmosByCommand = 100;
     const trainSideEffectByAtmosTurn = 0.9;
 
     // 0으로 나누기 방지: crew가 0일 수 있음
-    const crew = Math.max(1, general.data.crew);
+    const crew = Math.max(1, totalCrew || general.data.crew);
     
     // 사기진작은 통솔 70% + 매력 30%
     const leadership = general.getLeadership();
     const charm = general.getCharm();
     const moralePower = leadership * 0.7 + charm * 0.3;
     
+    // 현재 평균 사기 (UnitStack 기준)
+    const currentMorale = primaryStack?.morale ?? general.data.atmos ?? 50;
+    
     const score = Math.max(0, Math.min(
       Math.round(moralePower * 100 / crew * atmosDelta),
-      Math.max(0, maxAtmosByCommand - general.data.atmos)
+      Math.max(0, maxAtmosByCommand - currentMorale)
     ));
 
     const scoreText = score.toLocaleString();
 
-    const sideEffect = Math.max(0, Math.floor(general.data.train * trainSideEffectByAtmosTurn));
+    // 훈련도 부작용 (UnitStack 기준)
+    const currentTrain = primaryStack?.train ?? general.data.train ?? 50;
+    const sideEffect = Math.max(0, Math.floor(currentTrain * trainSideEffectByAtmosTurn));
 
     const logger = general.getLogger();
     const date = general.getTurnTime(general.TURNTIME_HM);
@@ -96,11 +120,20 @@ export class BoostMoraleCommand extends GeneralCommand {
     const exp = 100;
     const ded = 70;
 
+    // 레거시 general.data 업데이트 (하위 호환성)
     general.increaseVar('atmos', score);
     general.data.train = sideEffect;
 
-    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
-    // TODO: general.addDex(crewTypeObj, score, false);
+    // UnitStack 업데이트
+    await this.applyMoraleToStacks(unitStacks, score, sideEffect);
+
+    const crewTypeObj = typeof general.getCrewTypeObj === 'function'
+      ? general.getCrewTypeObj()
+      : { id: general.data?.crewtype ?? 0, name: general.data?.crewtype_name ?? '병종', armType: general.data?.crewtype ?? 0 };
+
+    if (typeof general.addDex === 'function') {
+      general.addDex(crewTypeObj, score, false);
+    }
 
     const [reqGold] = this.getCost();
     general.increaseVarWithLimit('gold', -reqGold, 0);
@@ -137,5 +170,22 @@ export class BoostMoraleCommand extends GeneralCommand {
     await this.saveGeneral();
 
     return true;
+  }
+
+  private async applyMoraleToStacks(stacks: any[], moraleBoost: number, newTrain: number): Promise<void> {
+    if (!stacks.length) return;
+    
+    for (const stack of stacks) {
+      const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
+      if (!stackDoc) continue;
+      
+      // 사기 증가 (최대 100)
+      stackDoc.morale = Math.min(100, stackDoc.morale + moraleBoost);
+      
+      // 훈련도 감소 (부작용)
+      stackDoc.train = newTrain;
+      
+      await stackDoc.save();
+    }
   }
 }

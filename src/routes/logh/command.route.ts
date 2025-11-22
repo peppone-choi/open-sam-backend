@@ -24,17 +24,18 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
     const { command, params } = req.body;
 
     if (!command) {
-      return res.status(400).json({ error: 'Command name required' });
+      return res.status(400).json({ error: '실행할 커맨드 이름이 필요합니다.' });
     }
 
     // 커맨더 조회 (TODO: userId 매핑)
+
     const commander = await LoghCommander.findOne({
       session_id: sessionId,
       isActive: true,
     });
 
     if (!commander) {
-      return res.status(404).json({ error: 'Commander not found' });
+      return res.status(404).json({ error: '활성화된 제독 정보를 찾을 수 없습니다.' });
     }
 
     // 함대 조회
@@ -56,7 +57,7 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
         commandInstance = new IssueOperationCommand();
         break;
       default:
-        return res.status(400).json({ error: `Unknown command: ${command}` });
+        return res.status(400).json({ error: `알 수 없는 커맨드입니다: ${command}` });
     }
 
     // 커맨더를 ILoghCommandExecutor 인터페이스로 래핑
@@ -128,7 +129,7 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
       effects: result.effects,
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: '커맨드 처리 중 오류가 발생했습니다.' });
   }
 });
 

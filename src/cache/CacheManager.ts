@@ -1,9 +1,15 @@
 import NodeCache from 'node-cache';
 import { createClient, RedisClientType } from 'redis';
 import { logger } from '../common/logger';
+import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
+
+
+const isTestEnv = process.env.NODE_ENV === 'test';
+const shouldUseRedisL2 = process.env.CACHE_ENABLE_REDIS !== 'false' && !isTestEnv;
 
 /**
  * 3단계 캐싱 시스템
+
  * 
  * L1: 메모리 (NodeCache) - TTL 3초 (초고속, 최신 데이터)
  * L2: Redis - TTL 360초 (고속, 안정적 데이터)
@@ -24,6 +30,7 @@ export class CacheManager {
   private l2Connected: boolean = false;
   private l2Connecting: boolean = false;
   private redisInitPromise: Promise<void> | null = null;
+  private readonly useRedis: boolean;
 
   private constructor() {
     // L1: 메모리 캐시 (3초 TTL - 빠른 갱신)
@@ -33,8 +40,13 @@ export class CacheManager {
       useClones: false // 성능 최적화
     });
 
+    this.useRedis = shouldUseRedisL2;
     // L2: Redis 연결 (비동기 시작)
-    this.redisInitPromise = this.initRedis();
+    if (this.useRedis) {
+      this.redisInitPromise = this.initRedis();
+    } else if (!isTestEnv) {
+      logger.info('Redis L2 캐시 비활성화: 테스트 모드 또는 CACHE_ENABLE_REDIS=false');
+    }
   }
 
   /**
@@ -43,6 +55,10 @@ export class CacheManager {
    * 연결 실패 시 L1 캐시만 사용합니다.
    */
   private async initRedis(): Promise<void> {
+    if (!this.useRedis) {
+      return;
+    }
+
     if (this.l2Connecting) {
       return this.redisInitPromise || Promise.resolve();
     }
@@ -79,21 +95,25 @@ export class CacheManager {
           stack: err.stack 
         });
         this.l2Connected = false;
+        redisHealthMonitor.recordDisconnected('cache-manager:error', err instanceof Error ? err.message : undefined);
       });
 
       this.l2Cache.on('connect', () => {
         logger.info('Redis L2 캐시 연결 성공');
         this.l2Connected = true;
+        redisHealthMonitor.recordConnected('cache-manager:connect');
       });
 
       this.l2Cache.on('ready', () => {
         logger.info('Redis L2 캐시 준비 완료');
         this.l2Connected = true;
+        redisHealthMonitor.recordConnected('cache-manager:ready');
       });
 
       this.l2Cache.on('reconnecting', () => {
         logger.info('Redis 재연결 중...');
         this.l2Connected = false;
+        redisHealthMonitor.recordReconnecting('cache-manager:reconnecting');
       });
 
       await this.l2Cache.connect();
@@ -104,6 +124,7 @@ export class CacheManager {
         stack: error.stack 
       });
       this.l2Connected = false;
+      redisHealthMonitor.recordDisconnected('cache-manager:init', error?.message);
     } finally {
       this.l2Connecting = false;
     }
@@ -113,6 +134,10 @@ export class CacheManager {
    * Redis 연결이 준비될 때까지 대기
    */
   public async waitForRedis(timeoutMs: number = 5000): Promise<boolean> {
+    if (!this.useRedis) {
+      return false;
+    }
+
     const startTime = Date.now();
     
     // Redis 초기화가 진행 중이면 대기
@@ -126,6 +151,7 @@ export class CacheManager {
         ]);
       } catch (error: any) {
         logger.warn('Redis 대기 타임아웃', { error: error.message });
+        redisHealthMonitor.recordDelay(Date.now() - startTime, 'waitForRedis:init-timeout');
         return false;
       }
     }
@@ -136,6 +162,10 @@ export class CacheManager {
         return true;
       }
       await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (!this.l2Connected) {
+      redisHealthMonitor.recordDelay(Date.now() - startTime, 'waitForRedis:unavailable');
     }
     
     return this.l2Connected;
@@ -160,9 +190,10 @@ export class CacheManager {
    * L2 캐시만 조회 (Redis)
    */
   async getL2<T>(key: string): Promise<T | null> {
-    if (!this.l2Connected || !this.l2Cache) {
+    if (!this.useRedis || !this.l2Connected || !this.l2Cache) {
       return null;
     }
+
 
     try {
       const l2Data = await this.l2Cache.get(key);
@@ -190,9 +221,10 @@ export class CacheManager {
    * L2 캐시에 저장
    */
   async setL2<T>(key: string, value: T, ttl: number = 360): Promise<void> {
-    if (!this.l2Connected || !this.l2Cache) {
+    if (!this.useRedis || !this.l2Connected || !this.l2Cache) {
       return;
     }
+
 
     try {
       await this.l2Cache.setEx(key, ttl, JSON.stringify(value));
@@ -258,7 +290,7 @@ export class CacheManager {
     this.l1Cache.del(key);
 
     // L2
-    if (this.l2Connected && this.l2Cache) {
+    if (this.useRedis && this.l2Connected && this.l2Cache) {
       try {
         await this.l2Cache.del(key);
       } catch (error) {
@@ -268,6 +300,7 @@ export class CacheManager {
         });
       }
     }
+
   }
 
   /**
@@ -288,7 +321,7 @@ export class CacheManager {
     });
 
     // L2: Redis SCAN
-    if (this.l2Connected && this.l2Cache) {
+    if (this.useRedis && this.l2Connected && this.l2Cache) {
       try {
         const keys = await this.l2Cache.keys(pattern);
         if (keys.length > 0) {
@@ -301,6 +334,7 @@ export class CacheManager {
         });
       }
     }
+
   }
 
   /**
@@ -326,8 +360,12 @@ export class CacheManager {
    * Redis 클라이언트 접근 (데몬용 SCAN 등)
    */
   getRedisClient(): RedisClientType | null {
+    if (!this.useRedis) {
+      return null;
+    }
     return this.l2Connected && this.l2Cache ? this.l2Cache : null;
   }
+
 
   /**
    * Redis SCAN 실행 (패턴 매칭)

@@ -337,10 +337,13 @@ export class FireAttackCommand extends GeneralCommand {
       const itemObj = general.getItem?.();
       if (itemObj && itemObj.tryConsumeNow) {
         if (await itemObj.tryConsumeNow(general, 'GeneralCommand', '계략')) {
-          const itemName = itemObj.getName();
-          const itemRawName = itemObj.getRawName();
-          logger.pushGeneralActionLog(`<C>${itemName}</을(를) 사용!`, 'PLAIN');
-          // TODO: general.deleteItem();
+          const itemName = itemObj.getName?.() || '아이템';
+          logger.pushGeneralActionLog(`<C>${itemName}</>을(를) 사용!`, 'PLAIN');
+          if (typeof general.deleteItem === 'function') {
+            general.deleteItem('item');
+          } else if (typeof general.setVar === 'function') {
+            general.setVar('item', 'None');
+          }
         }
       }
     } catch (error) {

@@ -15,7 +15,7 @@ export class GoodGovernanceCommand extends GeneralCommand {
   protected static cityKey = 'trust';
   protected static statKey = 'politics'; // 선정은 정치 능력치 주 사용 (매력도 관여)
   protected static actionKey = '민심';
-  protected static actionName = '선정';
+  protected static actionName = '주민 선정';
 
   protected reqRice = 0;
 

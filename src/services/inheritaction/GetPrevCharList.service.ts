@@ -27,7 +27,8 @@ export class GetPrevCharListService {
       return {
         success: true,
         result: generals,
-        message: 'GetPrevCharList executed successfully'
+        message: '이전 캐릭터 목록을 불러왔습니다.'
+
       };
     } catch (error: any) {
       return {

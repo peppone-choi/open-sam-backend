@@ -93,7 +93,7 @@ export class FireTacticalCommand {
         if (!params.confirmFriendlyFire) {
           return {
             success: false,
-            message: '⚠️ 아군에게 일제 사격을 가합니다. confirmFriendlyFire 파라미터로 확인해주세요.',
+            message: '⚠️ 아군에게 일제 사격을 가합니다. 사격 허용 여부를 다시 확인해주세요.',
           };
         }
       }

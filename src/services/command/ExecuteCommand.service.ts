@@ -181,8 +181,9 @@ export class ExecuteCommandService {
     return {
       success: true,
       status: 'executed',
-      message: '전투 커맨드가 실행되었습니다. (DeployCommand.ts에서 처리)'
+      message: '전투 커맨드가 실행되었습니다. (배치 전용 로직에서 처리)'
     };
+
   }
 
   private static async deductCosts(context: CommandContext): Promise<void> {

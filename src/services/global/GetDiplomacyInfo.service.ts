@@ -13,14 +13,14 @@ export class GetDiplomacyInfoService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
 
       if (!nationId) {
         return {
           success: false,
-          message: 'Nation ID required'
+          message: '국가 식별자가 필요합니다.'
         };
       }
 
@@ -32,7 +32,7 @@ export class GetDiplomacyInfoService {
       if (!nation) {
         return {
           success: false,
-          message: 'Nation not found'
+          message: '국가를 찾을 수 없습니다.'
         };
       }
 

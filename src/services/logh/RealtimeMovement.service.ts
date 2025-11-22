@@ -6,10 +6,18 @@
 import { Fleet, IFleet } from '../../models/logh/Fleet.model';
 import { MapGrid } from '../../models/logh/MapGrid.model';
 import { RealtimeCombatService } from './RealtimeCombat.service';
+import { GalaxyValidationService } from './GalaxyValidation.service';
 
 interface Position {
   x: number;
   y: number;
+}
+
+interface WarpOutcome {
+  terrainType: string;
+  hazardLevel: number;
+  errorVector: Position;
+  finalDestination: Position;
 }
 
 export class RealtimeMovementService {
@@ -132,6 +140,29 @@ export class RealtimeMovementService {
     return path;
   }
 
+  private static applyWarpVariance(destination: Position, terrain: { terrainType: string; hazardLevel: number }): WarpOutcome {
+    const maxOffset = terrain.hazardLevel > 0 ? terrain.hazardLevel : 0;
+    const randomBetween = (min: number, max: number) =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const errorVector = {
+      x: maxOffset > 0 ? randomBetween(-maxOffset, maxOffset) : 0,
+      y: maxOffset > 0 ? randomBetween(-maxOffset, maxOffset) : 0,
+    };
+
+    const finalDestination = {
+      x: Math.max(0, Math.min(99, destination.x + errorVector.x)),
+      y: Math.max(0, Math.min(49, destination.y + errorVector.y)),
+    };
+
+    return {
+      terrainType: terrain.terrainType,
+      hazardLevel: terrain.hazardLevel,
+      errorVector,
+      finalDestination,
+    };
+  }
+
   /**
    * 함대 이동 명령 (전략 맵)
    */
@@ -143,6 +174,7 @@ export class RealtimeMovementService {
     success: boolean;
     message: string;
     path?: Position[];
+    warpOutcome?: WarpOutcome;
   }> {
     const fleet = await Fleet.findOne({
       session_id: sessionId,
@@ -163,11 +195,39 @@ export class RealtimeMovementService {
       };
     }
 
+    const terrain = await GalaxyValidationService.assessTerrain(sessionId, destination);
+    if (terrain.impassable) {
+      return {
+        success: false,
+        message: `해당 좌표(${terrain.coordinates.x}, ${terrain.coordinates.y})는 ${terrain.terrainType} 지형으로 진입할 수 없습니다.`,
+      };
+    }
+
+    let warpOutcome = this.applyWarpVariance(destination, terrain);
+    const finalTerrain = await GalaxyValidationService.assessTerrain(
+      sessionId,
+      warpOutcome.finalDestination
+    );
+    if (finalTerrain.impassable) {
+      warpOutcome = {
+        terrainType: terrain.terrainType,
+        hazardLevel: terrain.hazardLevel,
+        errorVector: { x: 0, y: 0 },
+        finalDestination: destination,
+      };
+    } else {
+      warpOutcome = {
+        ...warpOutcome,
+        terrainType: finalTerrain.terrainType,
+        hazardLevel: finalTerrain.hazardLevel,
+      };
+    }
+
     // 경로 탐색
     const path = await this.findPath(
       sessionId,
       fleet.strategicPosition,
-      destination
+      warpOutcome.finalDestination
     );
 
     if (!path || path.length === 0) {
@@ -177,7 +237,7 @@ export class RealtimeMovementService {
       };
     }
 
-    fleet.destination = destination;
+    fleet.destination = warpOutcome.finalDestination;
     fleet.movementPath = path;
     fleet.isMoving = true;
     fleet.status = 'moving';
@@ -187,6 +247,7 @@ export class RealtimeMovementService {
       success: true,
       message: '이동 명령이 설정되었습니다.',
       path,
+      warpOutcome,
     };
   }
 

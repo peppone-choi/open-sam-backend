@@ -62,15 +62,15 @@ router.use(sessionMiddleware);
  *                   type: array
  *                   description: 최근 기록
  */
-router.post('/front-info', authenticate, async (req, res) => {
+router.get('/get-front-info', authenticate, async (req, res) => {
   try {
-    const { 
-      serverID, 
-      lastNationNoticeDate, 
-      lastGeneralRecordID, 
-      lastPersonalHistoryID, 
-      lastGlobalHistoryID 
-    } = req.body;
+    const {
+      serverID,
+      lastNationNoticeDate,
+      lastGeneralRecordID,
+      lastPersonalHistoryID,
+      lastGlobalHistoryID
+    } = req.query as any;
 
     // TODO: 실제 데이터베이스에서 데이터 조회 로직 구현
     // 현재는 더미 데이터로 응답
@@ -179,10 +179,10 @@ router.post('/front-info', authenticate, async (req, res) => {
     res.json(response);
   } catch (error: any) {
     console.error('Error in general/front-info:', error);
-    res.status(500).json({ 
-      success: false, 
-      result: false, 
-      message: error.message 
+    res.status(500).json({
+      success: false,
+      result: false,
+      message: error.message
     });
   }
 });

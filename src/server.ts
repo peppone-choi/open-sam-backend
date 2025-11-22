@@ -7,6 +7,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
+import { randomUUID } from 'crypto';
 import { mongoConnection } from './db/connection';
 import { mountRoutes } from './api';
 import { errorMiddleware } from './common/middleware/error.middleware';
@@ -47,6 +48,8 @@ import { FileWatcherService } from './services/file-watcher.service';
 import loghCommanderRoutes from './routes/logh/commander.route';
 import loghFleetRoutes from './routes/logh/fleet.route';
 import loghCommandRoutes from './routes/logh/command.route';
+import gin7Routes from './routes/gin7';
+import { UniqueConst } from './const/UniqueConst';
 
 dotenv.config();
 
@@ -142,6 +145,9 @@ export async function createApp(): Promise<Express> {
   // LOGH 실시간 시스템 라우트
   const loghMainRoutes = require('./routes/logh.routes').default;
   app.use('/api/logh', loghMainRoutes);
+
+  // GIN7 専用 API
+  app.use('/api/gin7', gin7Routes);
 
   // 에러 미들웨어
   app.use(errorMiddleware);
@@ -255,6 +261,7 @@ app.use('/api/oauth', oauthRoutes);
 app.use('/api/archive', archiveRoutes);
 app.use('/api/tournament', tournamentRoutes);
 app.use('/api/scenarios', scenarioRoutes);
+app.use('/api/gin7', gin7Routes);
 
 // 에러 핸들링 미들웨어 (맨 마지막)
 app.use(errorMiddleware);

@@ -9,6 +9,7 @@ import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
 import { tryUniqueItemLottery } from '../../utils/unique-item-lottery';
 import { MoveCommand } from './move';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * 출병 커맨드
@@ -47,12 +48,26 @@ export class DeployCommand extends GeneralCommand {
     const relYear = this.env.year - this.env.startyear;
 
     this.minConditionConstraints = [
-      ConstraintHelper.NotOpeningPart(relYear + 2),
+      ConstraintHelper.NotOpeningPart(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];
+  }
+
+  private getUnitStacks(): any[] {
+    return this.getCachedUnitStacks();
+  }
+
+  private getStackTroopCount(stack: any): number {
+    const hp = stack?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack?.unit_size ?? 100;
+    const stackCount = stack?.stack_count ?? 0;
+    return unitSize * stackCount;
   }
 
   protected initWithArg(): void {
@@ -61,7 +76,7 @@ export class DeployCommand extends GeneralCommand {
 
     // fullConditionConstraints를 먼저 설정 (setDestCity는 비동기이므로 나중에 처리)
     this.fullConditionConstraints = [
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.NotOpeningPart(),
       ConstraintHelper.NotSameDestCity(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
@@ -81,7 +96,9 @@ export class DeployCommand extends GeneralCommand {
   }
 
   public getCost(): [number, number] {
-    const crew = Math.max(1, this.generalObj.data.crew);
+    const unitStacks = this.getUnitStacks();
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const crew = Math.max(1, totalCrew || this.generalObj?.data?.crew || 1);
     return [0, Util.round(crew / 100)];
   }
 
@@ -140,9 +157,8 @@ export class DeployCommand extends GeneralCommand {
     let defenderCityID = finalTargetCityID;
     
     try {
-      // 현재 도시에서 목표 도시까지의 경로상 적 도시 찾기
-      const City = await import('../../models/city.model').then(m => m.City);
-      const cities = await City.find({ session_id: this.env.session_id || 'sangokushi_default' });
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const cities = (await cityRepository.findBySession(sessionId)) || [];
       
       // BFS로 최단 경로상의 적 도시 찾기
       const queue: number[] = [attackerCityID];
@@ -207,7 +223,6 @@ export class DeployCommand extends GeneralCommand {
 
     // 도시 상태 변경 (공성전 시작)
     try {
-      const { cityRepository } = await import('../../repositories/city.repository');
       const sessionId = this.env.session_id || 'sangokushi_default';
       
       await cityRepository.updateByCityNum(sessionId, defenderCityID, {
@@ -223,14 +238,25 @@ export class DeployCommand extends GeneralCommand {
       throw new Error('공성전 시작 처리 실패');
     }
 
+    // 병종 숙련도 증가 (UnitStack 기반)
+    const unitStacks = this.getUnitStacks();
+    const primaryStack = unitStacks[0];
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const crew = Math.max(1, totalCrew || general.data.crew);
+    
     // 병종 숙련도 증가
-    const crew = Math.max(1, general.data.crew);
-    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
-    // TODO: general.addDex(crewTypeObj, crew / 100);
+    if (primaryStack && typeof general.addDex === 'function') {
+      const crewTypeObj = {
+        armType: Math.floor((primaryStack.crew_type_id || 0) / 1000)
+      };
+      general.addDex(crewTypeObj, crew / 100, false);
+    }
 
     // 활발한 액션 포인트 (500명 이상, 고훈련/고사기)
-    if (general.data.crew > 500 && 
-        general.data.train * general.data.atmos > 70 * 70) {
+    const effectiveTrain = primaryStack?.train ?? general.data.train ?? 50;
+    const effectiveMorale = primaryStack?.morale ?? general.data.atmos ?? 50;
+    
+    if (totalCrew > 500 && effectiveTrain * effectiveMorale > 70 * 70) {
       try {
         if (typeof general.increaseInheritancePoint === 'function') {
           // TODO: general.increaseInheritancePoint('active_action', 1);
@@ -249,19 +275,9 @@ export class DeployCommand extends GeneralCommand {
       const warRngSeed = `${this.env.year}_${this.env.month}_${general.getID()}_${defenderCityID}_${Date.now()}`;
       const warRng = new RandUtil(warRngSeed);
       
-      // 전투 결과 처리
-      const processWar = await import('../../services/war/ProcessWar.service')
-        .then(m => m.ProcessWarService || m.processWar)
-        .catch(() => null);
-      
-      if (processWar && typeof processWar === 'function') {
-        await processWar(warRng, general, this.nation, this.destCity);
-      } else if (processWar && typeof processWar.process === 'function') {
-        await processWar.process(warRng, general, this.nation, this.destCity);
-      } else {
-        // 전투 서비스가 없으면 기본 로직
-        logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 시작되었습니다.`);
-      }
+        // 전투 결과 처리
+        const { ProcessWarService } = await import('../../services/war/ProcessWar.service');
+        await ProcessWarService.process(warRng, general, this.nation, this.destCity);
     } catch (error) {
       console.error('전투 처리 실패:', error);
       logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 시작되었습니다.`);
@@ -291,11 +307,10 @@ export class DeployCommand extends GeneralCommand {
     const distanceList: any[] = [];
     
     try {
-      // 현재 세션의 모든 도시 정보
-      const City = require('../../models/city.model').City;
-      City.find({ session_id: this.env.session_id || 'sangokushi_default' })
-        .then((cityList: any[]) => {
-          cityList.forEach(city => {
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      cityRepository.findBySession(sessionId)
+        .then((cityList: any[] | null) => {
+          cityList?.forEach(city => {
             cities.push({
               city: city.city,
               name: city.name,

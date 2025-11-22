@@ -127,7 +127,8 @@ export class ConstraintHelper {
   static AllowWar(): IConstraint {
     return {
       test: (input: any, env: any) => {
-        return input.nation?.war === 1 ? null : '전쟁이 금지되어 있습니다.';
+        const warFlag = input.nation?.war ?? 0;
+        return warFlag === 0 ? null : '전쟁이 금지되어 있습니다.';
       }
     };
   }
@@ -140,12 +141,12 @@ export class ConstraintHelper {
     };
   }
 
-  static NotOpeningPart(years?: number): IConstraint {
+  static NotOpeningPart(): IConstraint {
     return {
       test: (input: any, env: any) => {
-        if (years === undefined) return null;
-        const relYear = env?.year - env?.startyear;
-        return relYear >= years ? null : `초반 제한 중입니다. (${years}년 후)`;
+        const openingPartYear = env?.opening_part_year ?? 3;
+        const relYear = (env?.year ?? 0) - (env?.startyear ?? 0);
+        return relYear >= openingPartYear ? null : '초반 제한 중에는 불가능합니다.';
       }
     };
   }

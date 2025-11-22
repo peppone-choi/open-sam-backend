@@ -22,7 +22,7 @@ export class ReadyUpService {
       }
 
       if (battle.currentPhase !== BattlePhase.PLANNING) {
-        return { success: false, message: 'Planning 단계가 아닙니다' };
+        return { success: false, message: '계획 단계가 아닙니다' };
       }
 
       // 전체 장수 목록
@@ -58,20 +58,21 @@ export class ReadyUpService {
 
         return {
           success: true,
-          message: 'Ready-Up 완료. 턴 해결이 시작됩니다.',
+          message: '모든 참가자가 준비를 마쳤습니다. 턴 해결을 시작합니다.',
           allReady: true,
           readyPlayers: battle.readyPlayers,
           autoResolving: true
         };
       }
 
-      return {
-        success: true,
-        message: 'Ready-Up 완료',
-        allReady: false,
-        readyPlayers: battle.readyPlayers,
-        waitingFor: allGeneralIds.filter(id => !battle.readyPlayers.includes(id))
-      };
+    return {
+      success: true,
+      message: '준비가 완료되었습니다.',
+      allReady: false,
+      readyPlayers: battle.readyPlayers,
+      waitingFor: allGeneralIds.filter(id => !battle.readyPlayers.includes(id))
+    };
+
     } catch (error: any) {
       return { success: false, message: error.message };
     }

@@ -2,6 +2,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { COMMON_ERRORS } from '../../constants/messages';
 
 /**
  * GetMap Service
@@ -20,7 +21,7 @@ export class GetMapService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: COMMON_ERRORS.sessionNotFound
         };
       }
 

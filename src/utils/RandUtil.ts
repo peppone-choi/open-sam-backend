@@ -1,26 +1,74 @@
+import { RNG } from './RNG';
+
 export class RandUtil {
   private seed: number;
+  private externalRng: RNG | null = null;
 
-  constructor(seed?: number) {
-    this.seed = seed ?? Date.now();
+  constructor(seed?: number | string | RNG) {
+    this.setSeed(seed);
   }
 
-  setSeed(seed: number): void {
-    this.seed = seed;
+  setSeed(seed?: number | string | RNG): void {
+    if (RandUtil.isRng(seed)) {
+      this.externalRng = seed;
+      this.seed = RandUtil.defaultSeed();
+      return;
+    }
+
+    this.externalRng = null;
+    this.seed = RandUtil.normalizeSeed(seed);
   }
 
   getSeed(): number {
     return this.seed;
   }
 
+  private static isRng(candidate: any): candidate is RNG {
+    return !!candidate && typeof candidate.nextFloat1 === 'function' && typeof candidate.nextInt === 'function';
+  }
+
+  private static normalizeSeed(seed?: number | string): number {
+    if (typeof seed === 'number' && Number.isFinite(seed)) {
+      const normalized = Math.abs(Math.floor(seed)) % 233280;
+      return normalized > 0 ? normalized : RandUtil.defaultSeed();
+    }
+
+    if (typeof seed === 'string') {
+      return RandUtil.normalizeSeed(RandUtil.hashString(seed));
+    }
+
+    return RandUtil.defaultSeed();
+  }
+
+  private static hashString(value: string): number {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) {
+      hash = (hash << 5) - hash + value.charCodeAt(i);
+      hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+  }
+
+  private static defaultSeed(): number {
+    const fallback = Math.abs(Date.now() % 233280);
+    return fallback > 0 ? fallback : 1;
+  }
+
+  
   next(): number {
+    if (this.externalRng) {
+      const value = this.externalRng.nextFloat1();
+      // nextFloat1() may return 1.0 depending on implementation, clamp to [0, 1)
+      return Math.min(Math.max(value, 0), 1 - Number.EPSILON);
+    }
     this.seed = (this.seed * 9301 + 49297) % 233280;
     return this.seed / 233280;
   }
-
+  
   nextInt(min: number, max: number): number {
     return Math.floor(this.next() * (max - min + 1)) + min;
   }
+
 
   nextRange(min: number, max: number): number {
     return this.next() * (max - min) + min;
@@ -34,7 +82,12 @@ export class RandUtil {
     return this.next() < probability;
   }
 
+  nextBool(probability: number = 0.5): boolean {
+    return this.nextBoolean(probability);
+  }
+  
   choice<T>(arr: T[]): T {
+
     if (arr.length === 0) {
       throw new Error('Cannot choose from empty array');
     }

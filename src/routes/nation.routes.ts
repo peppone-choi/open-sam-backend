@@ -13,14 +13,22 @@ import { SetRateService } from '../services/nation/SetRate.service';
 import { SetScoutMsgService } from '../services/nation/SetScoutMsg.service';
 import { SetSecretLimitService } from '../services/nation/SetSecretLimit.service';
 import { SetTroopNameService } from '../services/nation/SetTroopName.service';
-import { General } from '../models/general.model';
-import { Nation } from '../models/nation.model';
-import { City } from '../models/city.model';
+import { GetNationStratFinanService } from '../services/nation/GetNationStratFinan.service';
 import { Diplomacy } from '../models/diplomacy.model';
 import { KVStorage } from '../models/kv-storage.model';
 import GameConstants from '../utils/game-constants';
+import { generalRepository } from '../repositories/general.repository';
+import { nationRepository } from '../repositories/nation.repository';
+import { cityRepository } from '../repositories/city.repository';
 
 const router = Router();
+
+function toPlain<T>(doc: T | null | undefined): any | null {
+  if (!doc) {
+    return null;
+  }
+  return typeof (doc as any).toObject === 'function' ? (doc as any).toObject() : doc;
+}
 
 /**
  * @swagger
@@ -714,6 +722,28 @@ router.post('/info', authenticate, async (req, res) => {
     // POST 요청도 GET과 동일하게 처리 (query 또는 body에서 파라미터 추출)
     const params = { ...req.query, ...req.body };
     const result = await GetNationInfoService.execute(params, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/nation/strat_finan:
+ *   post:
+ *     summary: 국가 재정 예상 조회 (전략)
+ *     description: 국가의 예상 수입/지출 정보를 조회합니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 성공
+ */
+router.post('/strat_finan', authenticate, async (req, res) => {
+  try {
+    const result = await GetNationStratFinanService.execute(req.body, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -2077,14 +2107,19 @@ router.post('/generals', authenticate, async (req, res) => {
 router.post('/stratfinan', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
-    
-    // 장수 정보 가져오기
-    const general: any = await General.findOne({ owner: req.user.userId, session_id: sessionId });
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다' });
+    }
+
+    const generalDoc: any = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const general = toPlain(generalDoc);
     if (!general) {
       return res.json({ result: false, reason: '장수를 찾을 수 없습니다' });
     }
 
-    const nationId = general.data?.nation || 0;
+    const nationId = general.data?.nation || general.nation || 0;
     if (nationId === 0) {
       return res.json({ result: false, reason: '국가에 소속되어있지 않습니다' });
     }
@@ -2097,8 +2132,8 @@ router.post('/stratfinan', authenticate, async (req, res) => {
       return res.json({ result: false, reason: '권한이 부족합니다. 수뇌부가 아니거나 사관년도가 부족합니다' });
     }
 
-    // Nation 조회
-    const nation: any = await Nation.findOne({ session_id: sessionId, nation: nationId });
+    const nationDoc: any = await nationRepository.findByNationNum(sessionId, nationId);
+    const nation = toPlain(nationDoc);
     if (!nation) {
       return res.json({ result: false, reason: '국가를 찾을 수 없습니다' });
     }
@@ -2108,17 +2143,14 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     const year = sessionKV?.data?.year || sessionKV?.value?.year || 0;
     const month = sessionKV?.data?.month || sessionKV?.value?.month || 0;
 
-    // 모든 국가 정보 조회
-    const allNations: any[] = await Nation.find({ session_id: sessionId });
+    const rawNationList: any[] = (await nationRepository.findBySession(sessionId)) || [];
+    const allNations = rawNationList.map(toPlain).filter(Boolean);
 
-    // 국가별 도시 수 집계
-    const cityCounts = await City.aggregate([
-      { $match: { session_id: sessionId } },
-      { $group: { _id: '$nation', count: { $sum: 1 } } }
-    ]);
+    const sessionCities: any[] = (await cityRepository.findBySession(sessionId)) || [];
     const cityCntMap: Record<number, number> = {};
-    cityCounts.forEach((item: any) => {
-      cityCntMap[item._id] = item.count;
+    sessionCities.forEach((city: any) => {
+      const cityNation = city.nation ?? city.data?.nation ?? 0;
+      cityCntMap[cityNation] = (cityCntMap[cityNation] || 0) + 1;
     });
 
     // 외교 관계 조회
@@ -2176,26 +2208,27 @@ router.post('/stratfinan', authenticate, async (req, res) => {
 
     // 재정 계산
     const { getGoldIncome, getRiceIncome, getWallIncome, getWarGoldIncome, getOutcome } = await import('../utils/income-util');
-    
-    // 국가 도시 목록 조회
-    const cityList: any[] = await City.find({
-      session_id: sessionId,
-      nation: nationId
-    }).lean();
+
+    const cityList: any[] = sessionCities.filter(
+      (city: any) => (city.nation ?? city.data?.nation ?? 0) === nationId
+    );
 
     // 관직자 수 집계 (officer_level IN (2,3,4) AND city = officer_city)
     const officersCnt: Record<number, number> = {};
-    const generalsForOfficers: any[] = await General.find({
-      session_id: sessionId,
-      'data.nation': nationId,
-      'data.officer_level': { $in: [2, 3, 4] }
-    }).select('data').lean();
-    
+    const generalsForOfficers: any[] = await generalRepository
+      .findByFilter({
+        session_id: sessionId,
+        'data.nation': nationId,
+        'data.officer_level': { $in: [2, 3, 4] }
+      })
+      .select('data')
+      .lean();
+
     for (const general of generalsForOfficers) {
       const officerLevel = general.data?.officer_level || 0;
       const officerCity = general.data?.officer_city || 0;
       const generalCity = general.data?.city || 0;
-      
+
       if (officerLevel >= 2 && officerLevel <= 4 && officerCity === generalCity && officerCity > 0) {
         officersCnt[officerCity] = (officersCnt[officerCity] || 0) + 1;
       }
@@ -2245,11 +2278,14 @@ router.post('/stratfinan', authenticate, async (req, res) => {
     );
 
     // 지출 계산
-    const generalsForOutcome: any[] = await General.find({
-      session_id: sessionId,
-      'data.nation': nationId
-    }).select('data').lean();
-    
+    const generalsForOutcome: any[] = await generalRepository
+      .findByFilter({
+        session_id: sessionId,
+        'data.nation': nationId
+      })
+      .select('data')
+      .lean();
+
     const outcome = getOutcome(billRate, generalsForOutcome);
 
     const income = {

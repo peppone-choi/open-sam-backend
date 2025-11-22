@@ -349,7 +349,7 @@ export class BattleSocketHandler {
         return;
       }
       if (me.role === 'STAFF') {
-        socket.emit('battle:error', { message: '참모(STAFF)는 직접 전투 명령을 내릴 수 없습니다' });
+        socket.emit('battle:error', { message: '참모는 직접 전투 명령을 내릴 수 없습니다.' });
         return;
       }
  

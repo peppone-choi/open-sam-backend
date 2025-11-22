@@ -36,17 +36,19 @@ async function processTurns() {
         continue;
       }
       
+      const sessionStart = Date.now();
       try {
         const result = await ExecuteEngineService.execute({ session_id: sessionId });
+        const durationMs = Date.now() - sessionStart;
         
         if (result.success && result.updated) {
-          logger.info(`[Turn Processor] Session ${sessionId}: Turn processed, next turntime=${result.turntime}`);
+          logger.info(`[Turn Processor] Session ${sessionId}: Turn processed, next turntime=${result.turntime}`, { durationMs });
           
           // Socket.IO로 턴 완료 브로드캐스트 (ExecuteEngine에서 이미 브로드캐스트하므로 중복 방지)
         } else if (result.locked) {
-          logger.debug(`[Turn Processor] Session ${sessionId}: Locked (another instance processing)`);
+          logger.debug(`[Turn Processor] Session ${sessionId}: Locked (another instance processing)`, { durationMs });
         } else if (!result.updated) {
-          logger.debug(`[Turn Processor] Session ${sessionId}: No turns to process (turntime=${result.turntime})`);
+          logger.debug(`[Turn Processor] Session ${sessionId}: No turns to process (turntime=${result.turntime})`, { durationMs });
         }
       } catch (error: any) {
         logger.error(`[Turn Processor] Session ${sessionId}: Error`, {

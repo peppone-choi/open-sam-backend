@@ -65,9 +65,10 @@ export abstract class AuctionBasicResource extends Auction {
     const prevAuction = await Auction.findOne({
       session_id: sessionId,
       hostGeneralId: generalId,
-      type: { $in: ['BuyRice', 'SellRice'] },
+      type: { $in: [AuctionType.BuyRice, AuctionType.SellRice] },
       finished: false
     }).lean();
+
 
     if (prevAuction) {
       return '아직 경매가 끝나지 않았습니다.';
@@ -83,7 +84,11 @@ export abstract class AuctionBasicResource extends Auction {
 
     // AuctionInfo 생성
     const auctionType = this.auctionType;
-    const obfuscatedName = Auction.genObfuscatedName(generalId);
+    const hostDisplayName =
+      general.name ||
+      general.data?.name ||
+      (typeof general.getVar === 'function' ? general.getVar('name') : undefined) ||
+      Auction.genObfuscatedName(generalId);
     
     const auctionInfo = {
       session_id: sessionId,
@@ -91,7 +96,8 @@ export abstract class AuctionBasicResource extends Auction {
       finished: false,
       target: String(amount),
       hostGeneralId: generalId,
-      hostName: obfuscatedName,
+      hostName: hostDisplayName,
+
       reqResource: bidderRes.value,
       openDate: now,
       closeDate: closeDate,
@@ -106,11 +112,9 @@ export abstract class AuctionBasicResource extends Auction {
     // 경매 열기 (openAuction 메서드 사용)
     const openResult = await Auction.openAuction(auctionInfo, general);
     if (typeof openResult === 'string') {
-      // 자원 롤백 (경매 생성 실패 시)
-      general.increaseVarWithLimit(hostRes.value, amount, 0);
-      await general.applyDB(db);
       return openResult;
     }
+
 
     // 자원 차감 (경매 생성 성공 후)
     general.increaseVarWithLimit(hostRes.value, -amount, 0);

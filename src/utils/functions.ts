@@ -5,6 +5,7 @@ export function getDexLevelList(level: number): any[] {
 
 // tryUniqueItemLottery와 giveRandomUniqueItem은 unique-item-lottery.ts로 이동
 export { tryUniqueItemLottery, giveRandomUniqueItem } from './unique-item-lottery';
+export { buildItemClass } from './item-class';
 
 /**
  * 명예의 전당 체크
@@ -42,8 +43,9 @@ export function getNationType(type: string | number): string {
   return typeMap[type] || 'Normal';
 }
 
-import { City } from '../models/city.model';
 import { calculateDistanceList } from './cityDistance';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
 
 /**
  * 도시 거리 검색
@@ -59,8 +61,13 @@ export async function searchDistance(
     query.session_id = sessionId;
   }
 
-  // 모든 도시 조회
-  const cities = await City.find(query).select('city data').lean();
+  let cities: any[] | null = null;
+  if (sessionId) {
+    cities = await cityRepository.findBySession(sessionId);
+  } else {
+    cities = await cityRepository.findByFilter(query);
+  }
+  cities = cities || [];
   
   // 도시 경로 정보 구성
   const cityConst: Record<number, { path?: Record<number, string> }> = {};
@@ -117,10 +124,8 @@ export function getVirtualPower(
   return Math.floor(statTotal * 10 + crewPower);
 }
 
-import { Nation } from '../models';
-
 // 국가 정적 정보 캐시 (PHP의 static $nationList와 동일한 역할)
-let nationListCache: Record<number, any> | null = null;
+let nationListCache: Record<string, Record<number, any>> = {};
 
 /**
  * 국가의 정적 정보 조회 (PHP func.php의 getNationStaticInfo)
@@ -154,27 +159,17 @@ export async function getNationStaticInfo(
     };
   }
   
-  // 캐시 초기화가 필요한 경우
+  const cacheKey = sessionId || 'sangokushi_default';
   if (forceRefresh) {
-    nationListCache = null;
+    delete nationListCache[cacheKey];
   }
   
   // 전체 목록 요청 (-1) 또는 캐시가 없을 때 전체 목록 로드
-  if (nationID === -1 || nationListCache === null) {
-    const query: any = {};
-    if (sessionId) {
-      query.session_id = sessionId;
-    }
-    
-    const nations = await Nation
-      .find(query)
-      .select('nation name color type level capital gennum power session_id')
-      .lean();
-    
-    nationListCache = {};
+  if (nationID === -1 || !nationListCache[cacheKey]) {
+    const nations = (await nationRepository.findBySession(cacheKey)) || [];
+    const map: Record<number, any> = {};
     nations.forEach((nation: any) => {
-      // session_id가 있으면 필터링에 사용
-      const nationData = {
+      map[nation.nation] = {
         nation: nation.nation,
         name: nation.name,
         color: nation.color,
@@ -184,33 +179,24 @@ export async function getNationStaticInfo(
         gennum: nation.gennum,
         power: nation.power
       };
-      
-      // session_id별로 캐싱할 수도 있지만, 일단 전체 캐시로 처리
-      nationListCache![nation.nation] = nationData;
     });
+    nationListCache[cacheKey] = map;
   }
   
-  // 전체 목록 반환
   if (nationID === -1) {
-    return nationListCache;
+    return nationListCache[cacheKey];
   }
   
-  // 개별 국가 조회
-  if (nationListCache && nationListCache[nationID]) {
-    return nationListCache[nationID];
+  const sessionCache = nationListCache[cacheKey] || {};
+  if (sessionCache[nationID]) {
+    return sessionCache[nationID];
   }
   
-  // 캐시에 없으면 DB에서 직접 조회 (새로 생성된 국가일 수 있음)
-  const query: any = { nation: nationID };
-  if (sessionId) {
-    query.session_id = sessionId;
-  }
-  
-  const nation = await Nation.findOne(query).select('nation name color type level capital gennum power').lean();
-  if (!nation) {
+  const nationDoc = await nationRepository.findByNationNum(cacheKey, nationID);
+  if (!nationDoc) {
     return null;
   }
-  
+  const nation = typeof (nationDoc as any).toObject === 'function' ? (nationDoc as any).toObject() : nationDoc;
   const nationData = {
     nation: nation.nation,
     name: nation.name,
@@ -222,11 +208,8 @@ export async function getNationStaticInfo(
     power: nation.power
   };
   
-  // 캐시에 추가
-  if (nationListCache) {
-    nationListCache[nationID] = nationData;
-  }
-  
+  sessionCache[nationID] = nationData;
+  nationListCache[cacheKey] = sessionCache;
   return nationData;
 }
 
@@ -235,21 +218,6 @@ export async function getNationStaticInfo(
  * PHP func.php의 refreshNationStaticInfo()와 동일한 역할
  */
 export function refreshNationStaticInfo(): void {
-  nationListCache = null;
+  nationListCache = {};
 }
 
-/**
- * 아이템 클래스 빌드
- */
-export function buildItemClass(itemId: number, itemData?: any): any {
-  return {
-    id: itemId,
-    ...itemData,
-    getEffect: function() {
-      return this.effect || {};
-    },
-    getName: function() {
-      return this.name || `Item ${this.id}`;
-    }
-  };
-}

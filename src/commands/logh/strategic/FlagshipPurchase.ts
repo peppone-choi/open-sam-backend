@@ -86,7 +86,7 @@ export class FlagshipPurchaseCommand extends BaseLoghCommand {
     if (!flagshipType || !FLAGSHIP_TYPES[flagshipType]) {
       return {
         success: false,
-        message: '기함 종류를 지정해주세요. (battleship, cruiser, destroyer, carrier)',
+        message: '기함 종류를 선택해야 합니다. (전함·순양함·구축함·항모)',
       };
     }
 

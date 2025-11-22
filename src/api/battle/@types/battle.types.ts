@@ -62,7 +62,7 @@ export interface IBattleSession {
 /**
  * 전투 유닛 (격자 상 실체)
  */
-export interface IBattleUnit {
+export interface IApiBattleUnit {
   id: string;
   battleId: string;
   

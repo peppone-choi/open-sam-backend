@@ -2,12 +2,10 @@
 import { Router } from 'express';
 import { User } from '../models/user.model';
 import * as jwt from 'jsonwebtoken';
-import * as crypto from 'crypto';
+import { createAPIHandler } from '../common/middleware/api.middleware';
+import { ReqNonceAPI } from '../api/login/ReqNonceAPI';
 
 const router = Router();
-
-// Nonce 저장소 (실제로는 Redis나 DB에 저장해야 함)
-const nonceStore = new Map<string, { nonce: string; expiresAt: Date }>();
 
 /**
  * @swagger
@@ -27,39 +25,11 @@ const nonceStore = new Map<string, { nonce: string; expiresAt: Date }>();
  *                 result:
  *                   type: boolean
  *                   example: true
- *                 nonce:
+ *                 loginNonce:
  *                   type: string
  *                   description: 로그인에 사용할 nonce
  */
-router.post('/req-nonce', async (req, res) => {
-  try {
-    // Nonce 생성
-    const nonce = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5분 유효
-    
-    // 클라이언트 IP 기반으로 저장 (실제로는 세션 ID 등을 사용)
-    const ipHeader = req.headers['x-forwarded-for'];
-    const clientId = typeof req.ip === 'string' 
-      ? req.ip 
-      : (Array.isArray(ipHeader) ? ipHeader[0] : (typeof ipHeader === 'string' ? ipHeader : 'unknown'));
-    nonceStore.set(clientId, { nonce, expiresAt });
-    
-    // 5분 후 자동 삭제
-    setTimeout(() => {
-      nonceStore.delete(clientId);
-    }, 5 * 60 * 1000);
-    
-    res.json({
-      result: true,
-      nonce
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      result: false,
-      reason: error.message || '서버 오류가 발생했습니다'
-    });
-  }
-});
+router.post('/req-nonce', createAPIHandler(ReqNonceAPI));
 
 /**
  * @swagger

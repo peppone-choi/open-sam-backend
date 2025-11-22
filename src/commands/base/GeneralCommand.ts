@@ -6,11 +6,13 @@
 
 import { BaseCommand } from './BaseCommand';
 import { DB } from '../../config/db';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 export abstract class GeneralCommand extends BaseCommand {
   
   public getNextExecuteKey(): string {
     const constructor = this.constructor as typeof BaseCommand;
+
     const turnKey = constructor.getName();
     const generalID = this.getGeneral().getID();
     const executeKey = `next_execute_${generalID}_${turnKey}`;
@@ -55,4 +57,42 @@ export abstract class GeneralCommand extends BaseCommand {
       console.error('setNextAvailable 실패:', error);
     }
   }
+
+  protected async syncGeneralUnitStackCity(cityId: number | null): Promise<void> {
+    const general = this.generalObj;
+    if (!general) return;
+    const sessionId = general.getSessionID?.() ?? this.env?.session_id;
+    const generalNo = general.getID?.() ?? general.no ?? general.data?.no;
+    if (!sessionId || !generalNo) {
+      return;
+    }
+    try {
+      await unitStackRepository.updateOwnerCity(sessionId, 'general', generalNo, cityId);
+    } catch (error) {
+      console.error('syncGeneralUnitStackCity 실패:', error);
+    }
+  }
+
+  protected async updateGeneralCity(cityId: number): Promise<void> {
+    const general = this.generalObj;
+    if (!general) return;
+    general.data.city = cityId;
+    await this.syncGeneralUnitStackCity(cityId);
+  }
+
+  protected async updateOtherGeneralsCity(generalIds: Array<number | string>, cityId: number): Promise<void> {
+    if (!generalIds || generalIds.length === 0) return;
+    const sessionId = this.env?.session_id || this.generalObj?.getSessionID?.();
+    if (!sessionId) return;
+    const normalized = generalIds
+      .map((id) => typeof id === 'number' ? id : Number(id))
+      .filter((id) => Number.isFinite(id));
+    if (!normalized.length) return;
+    try {
+      await unitStackRepository.updateOwnersCity(sessionId, normalized, cityId);
+    } catch (error) {
+      console.error('updateOtherGeneralsCity 실패:', error);
+    }
+  }
 }
+

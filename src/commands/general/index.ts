@@ -47,7 +47,9 @@ export { InvestCommerceCommand } from './investCommerce';
 export { CultivateFarmCommand } from './cultivateFarm';
 export { ReinforceDefenseCommand } from './reinforceDefense';
 export { ReinforceSecurityCommand } from './reinforceSecurity';
+export { ReassignUnitCommand } from './reassignUnit';
 export { ResetAdminSkillCommand } from './resetAdminSkill';
+
 export { ResetBattleSkillCommand } from './resetBattleSkill';
 export { RetireCommand } from './retire';
 export { GoodGovernanceCommand } from './goodGovernance';

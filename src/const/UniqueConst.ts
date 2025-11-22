@@ -2,6 +2,9 @@
  * 유니크 아이템 상수
  */
 
+import { logger } from '../common/logger';
+import { getServerIdentity, ServerIdentityPayload } from '../common/cache/server-identity.helper';
+
 export interface UniqueItem {
   id: number;
   name: string;
@@ -17,13 +20,74 @@ export interface UniqueItem {
   description: string;
 }
 
+export type ServerIdentity = ServerIdentityPayload;
+
 export class UniqueConst {
+  private static context: ServerIdentity = UniqueConst.buildDefaultContext();
+
   private static items: Map<number, UniqueItem> = new Map();
+  private static initialized = false;
+
+  private static buildDefaultContext(sessionId?: string): ServerIdentity {
+    const resolvedSessionId = sessionId || process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
+    return {
+      sessionId: resolvedSessionId,
+      serverId: process.env.SERVER_ID || resolvedSessionId,
+      serverName: process.env.SERVER_NAME || 'OpenSAM',
+      hiddenSeed: process.env.SERVER_HIDDEN_SEED || 'opensam_hidden_seed',
+      season: Number(process.env.SERVER_SEASON_INDEX ?? 0),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  static get serverID(): string {
+    return this.context.serverId;
+  }
+
+  static get serverName(): string {
+    return this.context.serverName;
+  }
+
+  static get seasonIdx(): number {
+    return this.context.season;
+  }
+
+  static get hiddenSeed(): string {
+    return this.context.hiddenSeed;
+  }
+
+  static getContext(): ServerIdentity {
+    return this.context;
+  }
+
+  static async refresh(sessionId?: string): Promise<ServerIdentity> {
+    const targetSessionId = sessionId || this.context.sessionId || process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
+    try {
+      const identity = await getServerIdentity(targetSessionId);
+      this.context = identity;
+      return identity;
+    } catch (error: any) {
+      logger.warn('[세션] 서버 식별자를 불러오지 못해 기본값을 사용합니다.', {
+        sessionId: targetSessionId,
+        error: error?.message || String(error)
+      });
+      this.context = this.buildDefaultContext(targetSessionId);
+      return this.context;
+    }
+  }
+
+  static setContext(identity: ServerIdentity): void {
+    this.context = identity;
+  }
 
   /**
    * 유니크 아이템 초기화
    */
   static initialize(): void {
+    if (this.initialized) {
+      return;
+    }
+    this.initialized = true;
     // 전설 무기
     this.addItem({
       id: 1,

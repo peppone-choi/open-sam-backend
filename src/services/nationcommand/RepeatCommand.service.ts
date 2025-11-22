@@ -42,7 +42,7 @@ export class RepeatCommandService {
       return {
         success: true,
         result: true,
-        message: 'RepeatCommand executed successfully'
+        message: '국가 명령이 반복 배치되었습니다.'
       };
     } catch (error: any) {
       return {

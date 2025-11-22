@@ -1,6 +1,8 @@
 import { IGeneral } from '../models/general.model';
 import { ICity } from '../models/city.model';
 import { INation } from '../models/nation.model';
+import { unitStackRepository } from '../repositories/unit-stack.repository';
+import { IUnitStack } from '../models/unit_stack.model';
 
 /**
  * AI 내부 커맨드명을 실제 게임 커맨드명으로 변환
@@ -180,6 +182,84 @@ export class AIEngine {
   private generalType: number = 0;
   private diplomacyState: DiplomacyState = DiplomacyState.PEACE;
   private cityEvaluations: Map<number, CityEvaluation> = new Map();
+  private cachedGeneralStacks: IUnitStack[] = [];
+  private cachedCityStacks: IUnitStack[] = [];
+  private cachedGeneralCrew = 0;
+  private cachedAverageTrain = 0;
+  private cachedAverageMorale = 0;
+  
+  private getStackTroopCount(stack: Partial<IUnitStack>): number {
+    if (!stack) {
+      return 0;
+    }
+    if (typeof stack.hp === 'number') {
+      return stack.hp;
+    }
+    const unitSize = stack.unit_size ?? 100;
+    const stackCount = stack.stack_count ?? 0;
+    return unitSize * stackCount;
+  }
+  
+  private async getGeneralUnitStacks(general: any, env: any): Promise<IUnitStack[]> {
+    const sessionId = env?.session_id;
+    const generalNo = general?.data?.no ?? general?.no;
+    if (!sessionId || !generalNo) {
+      return [];
+    }
+    try {
+      return await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
+    } catch (error) {
+      console.error('[AI] Failed to load unit stacks:', error);
+      return [];
+    }
+  }
+  
+  private async getCityUnitStacks(cityId: number, env: any): Promise<IUnitStack[]> {
+    const sessionId = env?.session_id;
+    if (!sessionId || !cityId) {
+      return [];
+    }
+    try {
+      return await unitStackRepository.findByOwner(sessionId, 'city', cityId);
+    } catch (error) {
+      console.error('[AI] Failed to load city unit stacks:', error);
+      return [];
+    }
+  }
+  
+  private refreshGeneralStackStats(general: any): void {
+    const fallbackCrew = general.data?.crew || general.crew || 0;
+    const fallbackTrain = general.data?.train || general.train || 0;
+    const fallbackMorale = general.data?.atmos || general.atmos || 0;
+    if (!this.cachedGeneralStacks.length) {
+      this.cachedGeneralCrew = fallbackCrew;
+      this.cachedAverageTrain = fallbackTrain;
+      this.cachedAverageMorale = fallbackMorale;
+      return;
+    }
+
+    let total = 0;
+    let weightedTrain = 0;
+    let weightedMorale = 0;
+    for (const stack of this.cachedGeneralStacks) {
+      const troops = this.getStackTroopCount(stack);
+      if (troops <= 0) {
+        continue;
+      }
+      total += troops;
+      weightedTrain += (stack.train ?? fallbackTrain) * troops;
+      weightedMorale += (stack.morale ?? fallbackMorale) * troops;
+    }
+
+    this.cachedGeneralCrew = total || fallbackCrew;
+    if (total > 0) {
+      this.cachedAverageTrain = weightedTrain / total;
+      this.cachedAverageMorale = weightedMorale / total;
+    } else {
+      this.cachedAverageTrain = fallbackTrain;
+      this.cachedAverageMorale = fallbackMorale;
+    }
+  }
   
   constructor(
     difficulty: AIDifficulty = AIDifficulty.NORMAL,
@@ -199,6 +279,7 @@ export class AIEngine {
         'recruit',
         'train',
         'morale',
+        'garrison',
         'agriculture',
         'commerce',
         'trust',
@@ -242,6 +323,10 @@ export class AIEngine {
     if (cities) {
       await this.evaluateCities(cities, nation);
     }
+
+    this.cachedGeneralStacks = await this.getGeneralUnitStacks(general, env);
+    this.cachedCityStacks = city?.city ? await this.getCityUnitStacks(city.city, env) : [];
+    this.refreshGeneralStackStats(general);
     
     // 1. 요양 (부상이 심한 경우 최우선)
     const injury = general.data?.injury || 0;
@@ -517,15 +602,15 @@ export class AIEngine {
     }
     
     // 병력 확인
-    const crew = general.data?.crew || 0;
-    if (crew < this.policy.minWarCrew) {
+    const crew = this.cachedGeneralCrew || general.data?.crew || 0;
+    if (crew < (this.policy.minWarCrew || 1000)) {
       return false;
     }
     
     // 훈련도/사기 확인
-    const train = general.data?.train || 0;
-    const atmos = general.data?.atmos || 0;
-    if (Math.max(train, atmos) < this.policy.properWarTrainAtmos) {
+    const train = this.cachedAverageTrain || general.data?.train || 0;
+    const atmos = this.cachedAverageMorale || general.data?.atmos || 0;
+    if (Math.max(train, atmos) < (this.policy.properWarTrainAtmos || 70)) {
       return false;
     }
     
@@ -699,9 +784,9 @@ export class AIEngine {
     nation: any,
     env: any
   ): CommandDecision | null {
-    const crew = general.data?.crew || general.crew || 0;
-    const train = general.data?.train || general.train || 0;
-    const atmos = general.data?.atmos || general.atmos || 0;
+    const crew = this.cachedGeneralCrew || general.data?.crew || general.crew || 0;
+    const train = this.cachedAverageTrain || general.data?.train || general.train || 0;
+    const atmos = this.cachedAverageMorale || general.data?.atmos || general.atmos || 0;
     const leadership = general.data?.leadership || general.leadership || 50;
     const gold = general.data?.gold || general.gold || 0;
     const rice = general.data?.rice || general.rice || 0;
@@ -712,7 +797,7 @@ export class AIEngine {
     }
     
     // 병력이 부족하면 징병 (통솔 40 이상, 자원 충분)
-    if (crew < this.policy.minWarCrew && leadership >= 40) {
+    if (crew < (this.policy.minWarCrew || 1000) && leadership >= 40) {
       const cityData = city.data || city;
       const popRatio = (cityData.pop || 0) / Math.max(cityData.pop_max || 1, 1);
       const recruitCost = 1000; // 대략적 비용
@@ -754,8 +839,9 @@ export class AIEngine {
     if ((this.generalType & GeneralType.COMMANDER) && this.diplomacyState >= DiplomacyState.WAR) {
       // 실제로는 인접 적 도시 찾기 필요
       // 여기서는 간단히 공격 가능 여부만 반환
-      if (crew >= this.policy.minWarCrew &&
-          Math.max(train, atmos) >= this.policy.properWarTrainAtmos) {
+        if (crew >= (this.policy.minWarCrew || 1000) &&
+            Math.max(train, atmos) >= (this.policy.properWarTrainAtmos || 70)) {
+
         return {
           command: 'attack',
           args: { fromCityId: city.city || city.data?.city },
@@ -806,9 +892,91 @@ export class AIEngine {
         }
         return null;
       
+      case 'garrison':
+        return this.evaluateGarrisonAction(general, city, nation, env);
+      
       default:
         return null;
     }
+  }
+  
+  private async evaluateGarrisonAction(
+    general: any,
+    city: any,
+    nation: any,
+    env: any
+  ): Promise<CommandDecision | null> {
+    if (!city || !city.city) {
+      return null;
+    }
+
+    const generalNationId = general.data?.nation ?? general.nation ?? general.getNationID?.() ?? 0;
+    const ownsCurrentCity = generalNationId !== 0 && (city.nation ?? 0) === generalNationId;
+
+    const generalStacks = this.cachedGeneralStacks.length
+      ? this.cachedGeneralStacks
+      : await this.getGeneralUnitStacks(general, env);
+    const cityStacks = this.cachedCityStacks.length
+      ? this.cachedCityStacks
+      : await this.getCityUnitStacks(city.city, env);
+    const stackedCrew = generalStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const legacyCrew = general.data?.crew || general.crew || 0;
+    const totalCrew = stackedCrew || legacyCrew;
+    const crewThreshold = Math.max(500, Math.floor((this.policy.minWarCrew || 1000) * 0.8));
+
+    // 1) 전방 도시에서 병력이 과잉이면 일부를 수비대로 이동
+    const cityEval = this.evaluateCity(city);
+    if (
+      ownsCurrentCity &&
+      (cityEval.isFront || cityEval.defense < 0.5) &&
+      totalCrew > crewThreshold &&
+      generalStacks.length > 0
+    ) {
+      const stackToSplit = [...generalStacks]
+        .filter((stack) => (stack.stack_count ?? 0) >= 2)
+        .sort((a, b) => this.getStackTroopCount(b) - this.getStackTroopCount(a))[0];
+      const stackCount = stackToSplit?.stack_count ?? 0;
+      if (stackToSplit && this.getStackTroopCount(stackToSplit) >= 300 && stackCount >= 2) {
+        const splitCount = Math.max(1, Math.floor(stackCount / 2));
+        const stackId = stackToSplit._id?.toString?.();
+        if (stackId) {
+          return {
+            command: 'REASSIGN_UNIT',
+            args: {
+              stackId,
+              splitCount,
+              targetCityId: city.city
+            },
+            reason: 'garrison_front_city',
+            priority: 80
+          };
+        }
+      }
+    }
+
+    // 2) 병력이 부족하고 도시 수비대가 있다면 일부 차출
+    const crewNeedThreshold = Math.max(300, Math.floor((this.policy.minWarCrew || 1000) * 0.5));
+    if (ownsCurrentCity && totalCrew < crewNeedThreshold && cityStacks.length > 0) {
+      const donorStack = [...cityStacks].sort((a, b) => this.getStackTroopCount(b) - this.getStackTroopCount(a))[0];
+      if (donorStack && this.getStackTroopCount(donorStack) >= 200) {
+        const stackCount = donorStack.stack_count ?? 0;
+        const splitCount = stackCount >= 2 ? Math.max(1, Math.floor(stackCount / 2)) : undefined;
+        const stackId = donorStack._id?.toString?.();
+        if (stackId) {
+          return {
+            command: 'REASSIGN_UNIT',
+            args: {
+              stackId,
+              ...(splitCount ? { splitCount } : {})
+            },
+            reason: 'withdraw_city_garrison',
+            priority: 75
+          };
+        }
+      }
+    }
+
+    return null;
   }
   
   /**

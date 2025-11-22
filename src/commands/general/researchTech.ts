@@ -16,7 +16,9 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
   protected init(): void {
     this.setCity();
-    this.setNation(['tech']);
+    // ExecuteEngine.loadCityAndNation()에서 이미 _cached_nation을 채워두므로
+    // 여기서는 추가 필드 로딩 없이 기본 setNation()만 호출한다.
+    this.setNation();
 
     const [reqGold, reqRice] = this.getCost();
 

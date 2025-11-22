@@ -24,9 +24,10 @@ export class GetGeneralLogService {
       if (!reqType) {
         return {
           success: false,
-          message: 'reqType은 필수입니다'
+          message: '조회 유형 값이 필요합니다.'
         };
       }
+
 
       const validTypes = [
         this.GENERAL_HISTORY,
@@ -38,9 +39,10 @@ export class GetGeneralLogService {
       if (!validTypes.includes(reqType)) {
         return {
           success: false,
-          message: `잘못된 reqType: ${reqType}`
+          message: `지원하지 않는 조회 유형입니다: ${reqType}`
         };
       }
+
 
       // 2. 장수 정보 확인 (본인만 조회 가능)
       if (!generalId) {
@@ -133,7 +135,7 @@ export class GetGeneralLogService {
       let query: any = {
       session_id: sessionId,
       general_id: generalId,
-      log_log_type: 'action'
+      log_type: 'action'
     };
 
     if (reqTo) {

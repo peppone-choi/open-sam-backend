@@ -47,7 +47,7 @@ export class ResolveTurnService {
       }
 
       if (battle.currentPhase !== BattlePhase.PLANNING) {
-        return { success: false, message: 'Planning 단계가 아닙니다' };
+        return { success: false, message: '계획 단계가 아닙니다' };
       }
 
       // 해결 단계로 전환

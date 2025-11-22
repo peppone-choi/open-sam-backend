@@ -73,7 +73,8 @@ export class PickSpecificUniqueService {
       return {
         success: true,
         result: true,
-        message: 'PickSpecificUnique executed successfully'
+        message: '지정한 고유 장비를 선택했습니다.'
+
       };
     } catch (error: any) {
       return {

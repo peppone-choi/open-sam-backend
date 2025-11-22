@@ -23,9 +23,10 @@ export class UploadImageService {
       if (!imageData) {
         return {
           success: false,
-          message: 'imageData가 필요합니다'
+          message: '이미지 데이터가 필요합니다.'
         };
       }
+
 
       const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {

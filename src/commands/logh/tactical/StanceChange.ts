@@ -104,7 +104,7 @@ export class StanceChangeTacticalCommand {
     if (!stance) {
       return {
         success: false,
-        message: '자세를 지정해야 합니다. (aggressive, defensive, balanced, hold_fire, evasive)',
+        message: '전투 자세를 선택해야 합니다. (공격·방어·균형 등)',
       };
     }
 

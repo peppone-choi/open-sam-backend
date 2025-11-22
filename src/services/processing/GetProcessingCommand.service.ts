@@ -3,6 +3,7 @@ import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { troopRepository } from '../../repositories/troop.repository';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { CommandFactory } from '../../core/command/CommandFactory';
 import { logger } from '../../common/logger';
 import { GameConst } from '../../constants/GameConst';
@@ -12,6 +13,14 @@ import { GetMapService } from '../global/GetMap.service';
 import { calculateDistanceList } from '../../utils/cityDistance';
 import { GetConstService } from '../global/GetConst.service';
 import { diplomacyRepository } from '../../repositories/diplomacy.repository';
+import type { ICity } from '../../models/city.model';
+import type { IUnitStack } from '../../models/unit_stack.model';
+
+type UnitStackDoc = Partial<IUnitStack> & {
+  _id?: { toString(): string } | string;
+  id?: string;
+};
+
 
 /**
  * GetProcessingCommand Service
@@ -141,7 +150,7 @@ export class GetProcessingCommandService {
 
     // 징병/모병 커맨드
     if (['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(command)) {
-      return await this.getConscriptData(sessionId, generalId, generalData, env, command);
+      return await this.getConscriptData(sessionId, generalId, general, env, command);
     }
 
     // 헌납 커맨드
@@ -226,14 +235,85 @@ export class GetProcessingCommandService {
       return await this.getMovePopulationData(sessionId, generalId);
     }
 
+    // 주둔 재배치 커맨드
+    if (['주둔 재배치', 'reassignUnit', 'REASSIGN_UNIT'].includes(command)) {
+      return await this.getReassignUnitData(sessionId, general);
+    }
+
     // 기본 빈 데이터
     return {};
+  }
+
+  private static async getReassignUnitData(sessionId: string, general: any): Promise<any> {
+    const generalData = general.data || {};
+    const currentCityId = general.city || generalData.city || 0;
+    const currentCity = currentCityId
+      ? ((await cityRepository.findByCityNum(sessionId, currentCityId)) as Partial<ICity> | null)
+      : null;
+
+    const generalStacksRaw = (await unitStackRepository.findByOwner(
+      sessionId,
+      'general',
+      general.no
+    )) as UnitStackDoc[];
+
+    const cityStacksRaw = currentCityId
+      ? ((await unitStackRepository.findByOwner(sessionId, 'city', currentCityId)) as UnitStackDoc[])
+      : [];
+
+    const formatStack = (stack: UnitStackDoc) => ({
+      id: stack._id ? stack._id.toString() : stack.id,
+      crewTypeId: stack.crew_type_id ?? 0,
+      crewTypeName: stack.crew_type_name,
+      unitSize: stack.unit_size ?? 100,
+      stackCount: stack.stack_count ?? 0,
+      troops: this.getStackTroopCount(stack),
+      train: stack.train ?? 0,
+      morale: stack.morale ?? 0,
+      ownerType: stack.owner_type,
+      updatedAt: stack.updated_at,
+    });
+
+    const nationId = generalData.nation || general.nation || 0;
+    let availableCities: Array<{ id: number; name: string }>; 
+    if (nationId) {
+      const nationCities = await cityRepository.findByFilter({ session_id: sessionId, nation: nationId });
+      availableCities = nationCities.map((city: any) => ({
+        id: city.city,
+        name: city.name || `도시 ${city.city}`,
+      }));
+    } else {
+      availableCities = [];
+    }
+
+    if (!availableCities.length && currentCityId) {
+      availableCities.push({
+        id: currentCityId,
+        name: this.resolveCityName(currentCity) || `도시 ${currentCityId}`,
+      });
+    }
+
+    const deduplicatedCities = availableCities.reduce((acc: Array<{ id: number; name: string }>, city) => {
+      if (!acc.find((item) => item.id === city.id)) {
+        acc.push(city);
+      }
+      return acc;
+    }, []);
+
+    return {
+      currentCityId,
+      currentCityName: this.resolveCityName(currentCity) ?? null,
+      generalStacks: generalStacksRaw.map(formatStack),
+      cityStacks: cityStacksRaw.map(formatStack),
+      availableCities: deduplicatedCities,
+    };
   }
 
   /**
    * 등용 커맨드 데이터
    */
   private static async getRecruitData(sessionId: string, generalId: number): Promise<any> {
+
     // 등용 가능한 장수 목록 (NPC < 2, officer_level != 12, 자기 자신 제외)
     const generals = (await generalRepository.findByFilter({
       session_id: sessionId,
@@ -541,10 +621,11 @@ export class GetProcessingCommandService {
   private static async getConscriptData(
     sessionId: string,
     generalId: number,
-    generalData: any,
+    general: any,
     env: any,
     command: string
   ): Promise<any> {
+    const generalData = general?.data || {};
     const { 
       getAllUnitTypes, 
       getUnitsByType, 
@@ -604,6 +685,58 @@ export class GetProcessingCommandService {
     });
     const nationType = nation?.data?.type || nation?.type || 'none';
 
+    const pickNumber = (...values: Array<unknown>): number => {
+      for (const value of values) {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return value;
+        }
+      }
+      return 0;
+    };
+
+    const currentCrew = pickNumber(generalData.crew, general.crew);
+    const currentGold = pickNumber(generalData.gold, general.gold);
+    const currentRice = pickNumber(generalData.rice, general.rice);
+    const generalCityId = general.city ?? generalData.city ?? 0;
+    const currentCrewType =
+      pickNumber(
+        generalData.crewtype,
+        (general as any).crewtype // fallback for legacy fields
+      ) || 1100;
+
+    const generalStacksRaw = (await unitStackRepository.findByOwner(
+      sessionId,
+      'general',
+      generalId
+    )) as UnitStackDoc[];
+
+    const cityStacksRaw = generalCityId
+      ? ((await unitStackRepository.findByOwner(sessionId, 'city', generalCityId)) as UnitStackDoc[])
+      : [];
+
+    const formatStack = (stack: UnitStackDoc) => ({
+      id: stack._id ? stack._id.toString() : stack.id,
+      crewTypeId: stack.crew_type_id ?? 0,
+      crewTypeName: stack.crew_type_name,
+      unitSize: stack.unit_size ?? 100,
+      stackCount: stack.stack_count ?? 0,
+      troops: this.getStackTroopCount(stack),
+      train: stack.train ?? 0,
+      morale: stack.morale ?? 0,
+    });
+
+    const generalStacks = generalStacksRaw.map(formatStack);
+    const cityStacks = cityStacksRaw.map(formatStack);
+
+    const buildStackSummary = (stacks: ReturnType<typeof formatStack>[]) => ({
+      totalTroops: stacks.reduce((sum, stack) => sum + stack.troops, 0),
+      stackCount: stacks.length,
+      stacks,
+    });
+
+    const generalStackSummary = buildStackSummary(generalStacks);
+    const cityStackSummary = buildStackSummary(cityStacks);
+
     // 병종 계열별 데이터 구성
     const armCrewTypes: any[] = [];
     const allArmTypes = getAllUnitTypes();
@@ -632,8 +765,10 @@ export class GetProcessingCommandService {
         // 기술력에 따른 비용 계산 (getTechCost)
         const techLevel = Math.floor(tech / 1000);
         const techCostMultiplier = 1 + techLevel * 0.15; // PHP: getTechCost($tech)
-        const baseCost = Math.round(unit.cost * techCostMultiplier);
-        const baseRice = Math.round(unit.rice * techCostMultiplier);
+        const baseCostRaw = unit.cost * techCostMultiplier;
+        const baseRiceRaw = unit.rice * techCostMultiplier;
+        const baseCost = Math.round(baseCostRaw);
+        const baseRice = Math.round(baseRiceRaw);
         
         crewTypes.push({
           id: unit.id,
@@ -641,7 +776,9 @@ export class GetProcessingCommandService {
           reqYear: unit.reqYear,
           notAvailable: !available,
           baseRice: baseRice,
+          baseRiceRaw,
           baseCost: baseCost,
+          baseCostRaw,
           name: unit.name,
           attack: unit.attack,
           defence: unit.defence,
@@ -650,6 +787,7 @@ export class GetProcessingCommandService {
           img: `/image/game/crewtype${unit.id}.png`, // 실제 이미지 경로
           info: unit.info
         });
+
       }
       
       if (crewTypes.length > 0) {
@@ -674,10 +812,12 @@ export class GetProcessingCommandService {
       leadership,
       fullLeadership,
       armCrewTypes,
-      currentCrewType: generalData.crewtype || 1100,
-      crew: generalData.crew || 0,
-      gold: generalData.gold || 0,
-      rice: generalData.rice || 0
+      currentCrewType,
+      crew: currentCrew,
+      gold: currentGold,
+      rice: currentRice,
+      unitStacks: generalStackSummary,
+      cityStacks: cityStackSummary,
     };
   }
 
@@ -1576,5 +1716,27 @@ export class GetProcessingCommandService {
       amountGuide: [5000, 10000, 20000, 30000, 50000, 100000],
       mapData: mapData.success && mapData.result ? mapData : null,
     };
+  }
+
+  private static resolveCityName(city: unknown): string | undefined {
+    if (city && typeof city === 'object' && 'name' in city) {
+      const { name } = city as Partial<ICity>;
+      if (typeof name === 'string' && name.trim().length > 0) {
+        return name;
+      }
+    }
+    return undefined;
+  }
+
+  private static getStackTroopCount(stack: UnitStackDoc | null | undefined): number {
+    if (!stack) {
+      return 0;
+    }
+    if (typeof stack.hp === 'number' && Number.isFinite(stack.hp)) {
+      return stack.hp;
+    }
+    const unitSize = typeof stack.unit_size === 'number' ? stack.unit_size : 100;
+    const stackCount = typeof stack.stack_count === 'number' ? stack.stack_count : 0;
+    return unitSize * stackCount;
   }
 }

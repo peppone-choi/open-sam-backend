@@ -13,7 +13,7 @@ export class RepeatCommandService {
     }
 
     if (isNaN(amount) || amount < 1 || amount > 12) {
-      return { success: false, message: 'amount는 1 ~ 12 사이여야 합니다' };
+      return { success: false, message: '반복 횟수는 1~12 범위여야 합니다.' };
     }
 
     await repeatGeneralCommand(sessionId, generalId, amount);

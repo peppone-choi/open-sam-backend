@@ -10,8 +10,9 @@ export class GeneralListWithTokenService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
+
       }
 
       return await GeneralListService.execute(data, user);

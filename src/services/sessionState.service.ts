@@ -8,6 +8,7 @@ import { logger } from '../common/logger';
 import { getSocketManager } from '../socket/socketManager';
 import Redis from 'ioredis';
 import { sessionRepository } from '../repositories/session.repository';
+import { randomUUID } from 'crypto';
 
 // Lazy-load cache manager to avoid blocking server startup
 let _cacheManager: any = null;
@@ -65,6 +66,7 @@ export interface SessionState {
 export class SessionStateService {
   private static readonly CACHE_TTL = 60; // 60초
   private static readonly LOCK_TTL = 300; // 5분
+  private static readonly lockTokens: Map<string, string> = new Map();
 
   /**
    * 세션 상태 조회 (캐시 우선)
@@ -334,14 +336,23 @@ export class SessionStateService {
   private static async acquireLock(lockKey: string, ttl: number = this.LOCK_TTL): Promise<boolean> {
     try {
       const redis = getRedisClient();
+      if (!redis) {
+        return false;
+      }
+
+      const token = randomUUID();
       const result = await redis.set(
         lockKey,
-        'locked',
+        token,
         'EX',
         ttl,
         'NX'
       );
-      return result === 'OK';
+      const acquired = result === 'OK';
+      if (acquired) {
+        this.lockTokens.set(lockKey, token);
+      }
+      return acquired;
     } catch (error: any) {
       logger.error('락 획득 실패', {
         lockKey,
@@ -351,10 +362,29 @@ export class SessionStateService {
     }
   }
 
+
   private static async releaseLock(lockKey: string): Promise<void> {
     try {
       const redis = getRedisClient();
-      await redis.del(lockKey);
+      if (!redis) {
+        return;
+      }
+
+      const token = this.lockTokens.get(lockKey);
+      if (!token) {
+        await redis.del(lockKey);
+        return;
+      }
+
+      const releaseScript = `
+        if redis.call("get", KEYS[1]) == ARGV[1] then
+          return redis.call("del", KEYS[1])
+        else
+          return 0
+        end
+      `;
+      await redis.eval(releaseScript, 1, lockKey, token);
+      this.lockTokens.delete(lockKey);
     } catch (error: any) {
       logger.error('락 해제 실패', {
         lockKey,
@@ -362,6 +392,7 @@ export class SessionStateService {
       });
     }
   }
+
 }
 
 

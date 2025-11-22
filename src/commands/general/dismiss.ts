@@ -1,10 +1,11 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { DB } from '../../config/db';
 import { RandUtil } from '../../utils/RandUtil';
 import { LastTurn } from '../../types/LastTurn';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * 소집해제 커맨드
@@ -28,6 +29,20 @@ export class DismissCommand extends GeneralCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.ReqGeneralCrew(),
     ];
+  }
+
+  private getUnitStacks(): any[] {
+    return this.getCachedUnitStacks();
+  }
+
+  private getStackTroopCount(stack: any): number {
+    const hp = stack?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack?.unit_size ?? 100;
+    const stackCount = stack?.stack_count ?? 0;
+    return unitSize * stackCount;
   }
 
   public getCommandDetailTitle(): string {
@@ -62,13 +77,44 @@ export class DismissCommand extends GeneralCommand {
     const exp = 70;
     const ded = 100;
 
-    const crewUp = general.onCalcDomestic('징집인구',  'score', general.data.crew);
+    // UnitStack에서 총 병력 수 계산
+    const unitStacks = this.getUnitStacks();
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    
+    // 레거시 crew 값과 비교하여 최대값 사용 (안전장치)
+    const actualCrew = Math.max(totalCrew, general.data.crew || 0);
 
-    await db.update('city', {
-      pop: db.sqleval('pop + %i', crewUp)
-    },  'city=%i', [general.getCityID()]);
+    const crewUp = general.onCalcDomestic('징집인구', 'score', actualCrew);
 
+    // 도시 인구 증가
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const cityId = general.getCityID();
+    
+    try {
+      await cityRepository.updateByCityNum(sessionId, cityId, {
+        pop: db.sqleval('pop + %i', crewUp)
+      });
+    } catch (error) {
+      console.warn('도시 인구 업데이트 실패 (레거시 방식 시도):', error);
+      await db.update('city', {
+        pop: db.sqleval('pop + %i', crewUp)
+      }, 'city=%i', [cityId]);
+    }
+
+    // UnitStack 전체 삭제
+    for (const stack of unitStacks) {
+      try {
+        await unitStackRepository.deleteById(stack._id?.toString?.() || stack._id);
+      } catch (error) {
+        console.error('UnitStack 삭제 실패:', error);
+      }
+    }
+
+    // 레거시 crew 값도 0으로 설정
     general.data.crew = 0;
+    general.data.train = 0;
+    general.data.atmos = 0;
+
     general.addExperience(exp);
     general.addDedication(ded);
     this.setResultTurn(new LastTurn((this.constructor as typeof DismissCommand).getName(), this.arg));

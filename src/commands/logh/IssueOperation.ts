@@ -53,8 +53,9 @@ export class IssueOperationCommand extends BaseLoghCommand {
 
   getConstraints(): IConstraint[] {
     return [
-      // 준장 이상만 작전 발령 가능 (gin7manual.txt: 職務権限カード)
+      // 준장 이상만 작전 발령 가능 (gin7manual.txt: 직무 권한 카드)
       ConstraintHelper.Custom(
+
         (input: ILoghCommandContext) => {
           const rank = input.commander.getRank();
           const allowedRanks = ['准将', '少将', '中将', '大将', '上級大将', '元帥'];

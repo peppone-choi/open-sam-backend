@@ -1,0 +1,86 @@
+{
+  "attackers": {
+    "side": "attackers",
+    "nation": {
+      "nationId": 1,
+      "name": "위",
+      "type": "che_strength",
+      "tech": 900
+    },
+    "generals": [
+      {
+        "generalId": 1001,
+        "name": "조조",
+        "nationId": 1,
+        "crewTypeId": 110,
+        "crew": 8000,
+        "train": 95,
+        "atmos": 90,
+        "leadership": 98,
+        "strength": 92,
+        "intel": 88,
+        "dex1": 5000,
+        "dex2": 3200,
+        "dex3": 6400,
+        "rice": 12000
+      },
+      {
+        "generalId": 1002,
+        "name": "하후돈",
+        "nationId": 1,
+        "crewTypeId": 112,
+        "crew": 7000,
+        "train": 92,
+        "atmos": 88,
+        "leadership": 90,
+        "strength": 95,
+        "intel": 70,
+        "dex1": 4500,
+        "dex3": 5200,
+        "rice": 9000
+      }
+    ]
+  },
+  "defenders": {
+    "side": "defenders",
+    "nation": {
+      "nationId": 2,
+      "name": "촉",
+      "type": "che_intel",
+      "tech": 850
+    },
+    "generals": [
+      {
+        "generalId": 2001,
+        "name": "유비",
+        "nationId": 2,
+        "crewTypeId": 111,
+        "crew": 7500,
+        "train": 93,
+        "atmos": 95,
+        "leadership": 96,
+        "strength": 82,
+        "intel": 90,
+        "dex1": 5200,
+        "dex2": 4100,
+        "rice": 11000
+      },
+      {
+        "generalId": 2002,
+        "name": "관우",
+        "nationId": 2,
+        "crewTypeId": 113,
+        "crew": 6800,
+        "train": 94,
+        "atmos": 92,
+        "leadership": 91,
+        "strength": 98,
+        "intel": 78,
+        "dex3": 6000,
+        "rice": 9500
+      }
+    ]
+  },
+  "maxTurns": 12,
+  "seed": "demo"
+}

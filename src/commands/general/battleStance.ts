@@ -8,6 +8,7 @@ import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { GameConst } from '../../constants/GameConst';
 import { tryUniqueItemLottery } from '../../utils/unique-item-lottery';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 /**
  * 전투태세 커맨드
@@ -42,8 +43,24 @@ export class BattleStanceCommand extends GeneralCommand {
     ];
   }
 
+  private getUnitStacks(): any[] {
+    return this.getCachedUnitStacks();
+  }
+
+  private getStackTroopCount(stack: any): number {
+    const hp = stack?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack?.unit_size ?? 100;
+    const stackCount = stack?.stack_count ?? 0;
+    return unitSize * stackCount;
+  }
+
   public getCost(): [number, number] {
-    const crew = Math.max(1, this.generalObj.data.crew); // 0으로 나누기 방지
+    const unitStacks = this.getUnitStacks();
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const crew = Math.max(1, totalCrew || this.generalObj?.data?.crew || 1);
     
     if (!this.nation) {
       throw new Error('국가 정보가 없습니다');
@@ -67,6 +84,8 @@ export class BattleStanceCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
+    const unitStacks = this.getUnitStacks();
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
 
     const lastTurn = general.getLastTurn();
     const turnResult = new LastTurn((this.constructor as typeof BattleStanceCommand).getName(), this.arg);
@@ -97,8 +116,19 @@ export class BattleStanceCommand extends GeneralCommand {
 
     logger.pushGeneralActionLog(`전투태세 완료! (${term}/3) <1>${date}</>`);
 
-    general.increaseVarWithLimit('train', 0, GameConst.maxTrainByCommand - 5);
-    general.increaseVarWithLimit('atmos', 0, GameConst.maxAtmosByCommand - 5);
+    const trainCap = GameConst.maxTrainByCommand - 5;
+    const atmosCap = GameConst.maxAtmosByCommand - 5;
+    const currentTrain = general.data?.train ?? 0;
+    const currentAtmos = general.data?.atmos ?? 0;
+
+    if (trainCap > currentTrain) {
+      general.increaseVarWithLimit('train', trainCap - currentTrain, trainCap);
+    }
+    if (atmosCap > currentAtmos) {
+      general.increaseVarWithLimit('atmos', atmosCap - currentAtmos, atmosCap);
+    }
+
+    await this.applyBattleStanceToStacks(unitStacks, trainCap, atmosCap);
 
     const exp = 100 * 3;
     const ded = 70 * 3;
@@ -106,10 +136,15 @@ export class BattleStanceCommand extends GeneralCommand {
     general.addExperience(exp);
     general.addDedication(ded);
 
-    const crew = Math.max(1, general.data.crew); // 0으로 나누기 방지
+    const crew = Math.max(1, totalCrew || general.data.crew || 1); // 0으로 나누기 방지
 
-    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
-    // TODO: general.addDex(crewTypeObj, crew / 100 * 3, false);
+    const crewTypeObj = typeof general.getCrewTypeObj === 'function'
+      ? general.getCrewTypeObj()
+      : { id: general.data?.crewtype ?? 0, name: general.data?.crewtype_name ?? '병종', armType: general.data?.crewtype ?? 0 };
+
+    if (typeof general.addDex === 'function') {
+      general.addDex(crewTypeObj, (crew / 100) * 3, false);
+    }
 
     const [reqGold, reqRice] = this.getCost();
     general.increaseVarWithLimit('gold', -reqGold, 0);
@@ -122,5 +157,18 @@ export class BattleStanceCommand extends GeneralCommand {
     await this.saveGeneral();
 
     return true;
+  }
+
+  private async applyBattleStanceToStacks(stacks: any[], trainCap: number, atmosCap: number): Promise<void> {
+    if (!stacks.length) return;
+
+    for (const stack of stacks) {
+      const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
+      if (!stackDoc) continue;
+
+      stackDoc.train = Math.max(stackDoc.train ?? 0, trainCap);
+      stackDoc.morale = Math.max(stackDoc.morale ?? 0, atmosCap);
+      await stackDoc.save();
+    }
   }
 }

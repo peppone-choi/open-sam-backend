@@ -227,6 +227,10 @@
         "root": "forces",
         "idField": "id"
       },
+      "garrisons": {
+        "file": "data/garrisons.json",
+        "root": "garrisons"
+      },
       "diplomacy": {
         "file": "data/diplomacy.json",
         "root": "relations"

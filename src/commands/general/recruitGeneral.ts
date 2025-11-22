@@ -74,7 +74,7 @@ export class RecruitGeneralCommand extends GeneralCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '임관 모드가 아닙니다.'),
       ConstraintHelper.BeNeutral(),
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.NotOpeningPart(),
       ConstraintHelper.AllowJoinAction()
     ];
     
@@ -133,17 +133,18 @@ export class RecruitGeneralCommand extends GeneralCommand {
     general.data.officer_city = 0;
     general.data.belong = 1;
 
+    let targetCityID: number;
     if (this.destGeneralObj !== null) {
-      general.data.city = this.destGeneralObj.getCityID();
+      targetCityID = this.destGeneralObj.getCityID();
     } else {
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': destNationID,
         'data.officer_level': 12
       });
-      const targetCityID = lordGeneral?.data?.city || destNation.capital || 0;
-      general.data.city = targetCityID;
+      targetCityID = lordGeneral?.data?.city || destNation.capital || 0;
     }
+    await this.updateGeneralCity(targetCityID);
 
     await nationRepository.updateByNationNum(sessionId, destNationID, {
       gennum: (destNation.gennum || 0) + 1

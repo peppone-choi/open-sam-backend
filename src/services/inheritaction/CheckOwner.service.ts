@@ -86,9 +86,9 @@ export class CheckOwnerService {
       await messageRepository.create({
         session_id: sessionId,
         src_general_id: 0,
-        src_general_name: 'System',
+        src_general_name: '시스템',
         src_nation: 0,
-        src_nation_name: 'System',
+        src_nation_name: '시스템',
         src_nation_color: '#000000',
         dest_general_id: generalId,
         dest_general_name: general.name,
@@ -117,9 +117,9 @@ export class CheckOwnerService {
       await messageRepository.create({
         session_id: sessionId,
         src_general_id: 0,
-        src_general_name: 'System',
+        src_general_name: '시스템',
         src_nation: 0,
-        src_nation_name: 'System',
+        src_nation_name: '시스템',
         src_nation_color: '#000000',
         dest_general_id: destGeneralID,
         dest_general_name: destGeneral.name,
@@ -135,7 +135,8 @@ export class CheckOwnerService {
       return {
         success: true,
         result: true,
-        message: 'CheckOwner executed successfully'
+        message: '소유자 확인을 완료했습니다.'
+
       };
     } catch (error: any) {
       return {

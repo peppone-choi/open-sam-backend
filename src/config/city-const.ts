@@ -1,1 +1,2 @@
-export const CityConst = {} as any;
+export { CityConst } from '../const/CityConst';
+

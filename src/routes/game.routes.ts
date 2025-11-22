@@ -1,7 +1,6 @@
 // @ts-nocheck - Type issues need investigation
 import { Router } from 'express';
 import { Session } from '../models/session.model';
-import { City } from '../models/city.model';
 import { General, Nation } from '../models';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { SelectNpcService } from '../services/general/SelectNpc.service';
@@ -15,6 +14,8 @@ import { GetMyBossInfoService } from '../services/game/GetMyBossInfo.service';
 import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
 import { generalRecordRepository } from '../repositories/general-record.repository';
 import { worldHistoryRepository } from '../repositories/world-history.repository';
+import { GetFrontInfoService } from '../services/general/GetFrontInfo.service';
+import { cityRepository } from '../repositories/city.repository';
 
 const router = Router();
 
@@ -378,7 +379,7 @@ router.get('/turn', async (req, res) => {
     const session = await Session.findOne({ session_id: sessionId });
     
     if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
+      return res.status(404).json({ error: '세션을 찾을 수 없습니다.' });
     }
     
     const sessionData = session.data || {};
@@ -700,14 +701,14 @@ router.get('/ranking', async (req, res) => {
 router.get('/cities', async (req, res) => {
   try {
     const sessionId = req.query.session as string || 'sangokushi_default';
-    
-    const cities = await City.find({ session_id: sessionId });
-    
+
+    const cities = (await cityRepository.findBySession(sessionId)) || [];
+
     res.json({
       cities: cities.map(c => ({
         city: c.city,
         name: c.name,
-        data: c.data  // 완전 동적!
+        data: c.data || {}
       }))
     });
   } catch (error: any) {
@@ -842,8 +843,13 @@ router.get('/cities/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const sessionId = req.query.session as string || 'sangokushi_default';
-    
-    const city = await City.findOne({ session_id: sessionId, city: parseInt(id) });
+
+    const cityId = Number(id);
+    if (Number.isNaN(cityId)) {
+      return res.status(400).json({ error: '잘못된 도시 ID 입니다' });
+    }
+
+    const city = await cityRepository.findByCityNum(sessionId, cityId);
     if (!city) {
       return res.status(404).json({ error: '도시를 찾을 수 없습니다' });
     }
@@ -851,7 +857,7 @@ router.get('/cities/:id', async (req, res) => {
     res.json({
       city: city.city,
       name: city.name,
-      data: city.data  // 세션 설정에 따라 구조가 다름!
+      data: city.data || {}
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -957,8 +963,8 @@ router.post('/general-list', authenticate, async (req, res) => {
       ]
     }).lean();
 
-    const cities = await City.find({ session_id: sessionId }).lean();
-    const cityMap = new Map(cities.map((c: any) => [c.city, c.name]));
+    const sessionCities = (await cityRepository.findBySession(sessionId)) || [];
+    const cityMap = new Map(sessionCities.map((c: any) => [c.city, c.name]));
 
     const generalList = generals.map((g: any) => {
       const genData = g.data || {};
@@ -1059,13 +1065,11 @@ router.post('/city-list', authenticate, async (req, res) => {
     });
 
     // 자기 국가의 도시만 조회
-    const cities = await City.find({ 
-      session_id: sessionId,
-      $or: [
-        { 'data.nation': myNation },
-        { nation: myNation }
-      ]
-    }).lean();
+    const sessionCities = (await cityRepository.findBySession(sessionId)) || [];
+    const cities = sessionCities.filter((city: any) => {
+      const nationId = city.nation ?? city.data?.nation ?? 0;
+      return nationId === myNation;
+    });
     
     const cityArgsList = ['city', 'nation', 'name', 'level'];
     const cityList = cities.map((city: any) => {
@@ -1306,7 +1310,7 @@ router.get('/logs/global', async (req, res) => {
     if (!sessionId) {
       return res.status(400).json({ 
         result: false, 
-        reason: 'sessionId is required' 
+        reason: '세션 식별자가 필요합니다.' 
       });
     }
     
@@ -1362,10 +1366,7 @@ router.get('/current-city', optionalAuth, async (req, res) => {
     
     // 도시 조회
     const cityId = general.data?.city || general.city;
-    const city = await City.findOne({
-      session_id: sessionId,
-      'data.city': cityId
-    }).lean();
+    const city = cityId ? await cityRepository.findByCityNum(sessionId, cityId) : null;
     
     if (!city) {
       return res.json({ result: false, reason: '도시를 찾을 수 없습니다' });
@@ -1407,14 +1408,20 @@ router.get('/current-city', optionalAuth, async (req, res) => {
       atmos: g.data?.atmos || g.atmos,
       defenceTrain: g.data?.defence_train || g.defence_train
     }));
+
+    const generalNationId = general.data?.nation || general.nation || 0;
+    const cityInfo = await GetFrontInfoService.generateCityInfo(sessionId, cityId, generalNationId);
+    if (!cityInfo) {
+      return res.json({ result: false, reason: '도시 정보를 생성할 수 없습니다' });
+    }
     
     res.json({ 
       result: true, 
       city: {
-        ...city,
+        ...cityInfo,
         generals: formattedGenerals
       },
-      myNation: general.data?.nation || general.nation
+      myNation: generalNationId
     });
   } catch (error: any) {
     res.status(500).json({ result: false, reason: error.message });

@@ -82,7 +82,7 @@ export class ReturnCommand extends GeneralCommand {
     const exp = 70;
     const ded = 100;
 
-    general.data.city = destCityID;
+    await this.updateGeneralCity(destCityID);
     general.addExperience(exp);
     general.addDedication(ded);
     general.increaseVar('leadership_exp', 1);

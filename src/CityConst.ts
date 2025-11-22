@@ -1,7 +1,2 @@
-export const CityConst = {
-  getCityList: () => [],
-  byID: (cityID: number): any | null => {
-    
-    return null;
-  }
-};
+export { CityConst } from './const/CityConst';
+

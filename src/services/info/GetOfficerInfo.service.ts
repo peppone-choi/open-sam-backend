@@ -62,10 +62,7 @@ export class GetOfficerInfoService {
         };
       }
 
-      const nation = await nationRepository.findOneByFilter({
-        session_id: sessionId,
-        'data.nation': nationId,
-      });
+      const nation = await nationRepository.findByNationNum(sessionId, nationId);
 
       if (!nation) {
         return {

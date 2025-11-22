@@ -76,7 +76,7 @@ async function start() {
       res.json({
         server: 'running',
         mode: 'api-only',
-        message: 'Game daemon should be started separately with: npm run dev:daemon'
+        message: '게임 데몬은 별도 명령어(npm run dev:daemon)로 실행해야 합니다.'
       });
     });
     

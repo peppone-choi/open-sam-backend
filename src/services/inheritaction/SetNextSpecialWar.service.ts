@@ -114,7 +114,8 @@ export class SetNextSpecialWarService {
       return {
         success: true,
         result: true,
-        message: 'SetNextSpecialWar executed successfully'
+        message: '다음 전투 특기를 지정했습니다.'
+
       };
     } catch (error: any) {
       return {

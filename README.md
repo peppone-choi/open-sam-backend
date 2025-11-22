@@ -104,6 +104,13 @@ JWT_SECRET=your-secret-key
 
 자세한 내용은 `/api-docs`에서 확인하세요.
 
-## 📝 License
+## 📌 Backend Recovery Notes
 
-MIT
+- ✅ `tryUniqueItemLottery` · `giveRandomUniqueItem`를 PHP 레거시(`core/hwe/func.php`) 스펙에 맞춰 복구하고, 유산 포인트 환불/로그/RankData 반영을 다시 동작시켰습니다.
+- ✅ `Join.service.ts`, `GetFrontInfo.service.ts`, `AuctionBasicResource` TODO를 처리하여 랭크 데이터 적재, 사용자 아이콘 해석, 세션 상태/접속자 표시, 자원 경매 검증 로직을 보강했습니다.
+- ⚙️ TODO: `Auction` 기반 클래스의 마감/롤백 로직은 아직 스텁이므로, 이후 경매 완결 처리와 입찰 환불 루틴을 채워야 합니다.
+
+## 📝 License
+ 
+ MIT
+

@@ -56,7 +56,7 @@ export class che_몰수 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.NotOpeningPart(),
       ConstraintHelper.SuppliedCity()
     ];
   }
@@ -79,7 +79,7 @@ export class che_몰수 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.NotOpeningPart(),
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ExistsDestGeneral(),
       ConstraintHelper.FriendlyDestGeneral()

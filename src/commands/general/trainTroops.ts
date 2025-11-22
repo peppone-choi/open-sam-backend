@@ -6,6 +6,7 @@ import { LastTurn } from '../../types/LastTurn';
 import { RandUtil } from '../../utils/RandUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 export class TrainTroopsCommand extends GeneralCommand {
   protected static actionName = '훈련';
@@ -34,6 +35,28 @@ export class TrainTroopsCommand extends GeneralCommand {
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralTrainMargin(GameConst.maxTrainByCommand),
     ];
+  }
+
+  private getUnitStacks(): any[] {
+    return this.getCachedUnitStacks();
+  }
+
+  private getStackTroopCount(stack: any): number {
+    const hp = stack?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack?.unit_size ?? 100;
+    const stackCount = stack?.stack_count ?? 0;
+    return unitSize * stackCount;
+  }
+
+  private getAverageStackValue(stacks: any[], key: 'train' | 'morale', fallback: number): number {
+    if (!stacks.length) {
+      return fallback;
+    }
+    const total = stacks.reduce((sum, stack) => sum + (stack?.[key] ?? fallback), 0);
+    return total / stacks.length;
   }
 
   public getCommandDetailTitle(): string {
@@ -70,18 +93,23 @@ export class TrainTroopsCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
+    const unitStacks = this.getUnitStacks();
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+
+    const averageTrain = this.getAverageStackValue(unitStacks, 'train', general.data.train ?? 0);
+    const averageMorale = this.getAverageStackValue(unitStacks, 'morale', general.data.atmos ?? 0);
 
     // 0으로 나누기 방지
-    const crew = Math.max(1, general.data.crew);
+    const crew = Math.max(1, totalCrew || general.data.crew || 1);
     const score = Util.clamp(
       Util.round(general.getLeadership() * 100 / crew * GameConst.trainDelta),
       0,
-      Util.clamp(GameConst.maxTrainByCommand - general.data.train, 0)
+      Util.clamp(GameConst.maxTrainByCommand - averageTrain, 0)
     );
     const scoreText = score.toLocaleString();
 
     const sideEffect = Util.valueFit(
-      Math.floor(general.data.atmos * GameConst.atmosSideEffectByTraining),
+      Math.floor(averageMorale * GameConst.atmosSideEffectByTraining),
       0
     );
 
@@ -94,9 +122,15 @@ export class TrainTroopsCommand extends GeneralCommand {
 
     general.increaseVar('train', score);
     general.data.atmos = sideEffect;
+    await this.applyTrainTroopsToStacks(unitStacks, score, sideEffect);
 
-    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
-    // TODO: general.addDex(crewTypeObj, score, false);
+    const crewTypeObj = typeof general.getCrewTypeObj === 'function'
+      ? general.getCrewTypeObj()
+      : { id: general.data?.crewtype ?? 0, name: general.data?.crewtype_name ?? '병종', armType: general.data?.crewtype ?? 0 };
+
+    if (typeof general.addDex === 'function') {
+      general.addDex(crewTypeObj, score, false);
+    }
 
     general.addExperience(exp);
     general.addDedication(ded);
@@ -115,5 +149,21 @@ export class TrainTroopsCommand extends GeneralCommand {
     await this.saveGeneral();
 
     return true;
+  }
+
+  private async applyTrainTroopsToStacks(stacks: any[], trainGain: number, newMorale: number): Promise<void> {
+    if (!stacks.length) return;
+
+    const clampedMorale = Util.clamp(newMorale, 0, GameConst.maxAtmosByCommand);
+
+    for (const stack of stacks) {
+      const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
+      if (!stackDoc) continue;
+
+      const nextTrain = Math.min(GameConst.maxTrainByCommand, (stackDoc.train ?? 0) + trainGain);
+      stackDoc.train = nextTrain;
+      stackDoc.morale = clampedMorale;
+      await stackDoc.save();
+    }
   }
 }

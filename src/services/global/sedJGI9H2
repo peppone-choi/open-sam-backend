@@ -12,14 +12,14 @@ export class GetCityDetailedInfoService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
 
       if (!cityId) {
         return {
           success: false,
-          message: 'City ID required'
+          message: '도시 식별자가 필요합니다.'
         };
       }
 
@@ -31,7 +31,7 @@ export class GetCityDetailedInfoService {
       if (!city) {
         return {
           success: false,
-          message: 'City not found'
+          message: '도시를 찾을 수 없습니다.'
         };
       }
 

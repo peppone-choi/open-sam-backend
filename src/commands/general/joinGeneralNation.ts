@@ -1,4 +1,3 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
@@ -154,21 +153,23 @@ export class JoinGeneralNationCommand extends GeneralCommand {
     general.data.officer_city = 0;
     general.data.belong = 1;
     
+    let targetCityID: number;
     if (this.destGeneral) {
-      general.data.city = this.destGeneral.data?.city || this.destGeneral.data?.location || 0;
+      targetCityID = this.destGeneral.data?.city || this.destGeneral.data?.location || 0;
     } else {
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': destNationID,
         'data.officer_level': 12
       });
-      const capital = lordGeneral?.data?.city || this.destNation?.capital || 1;
-      general.data.city = capital;
+      targetCityID = lordGeneral?.data?.city || this.destNation?.capital || 1;
     }
+    await this.updateGeneralCity(targetCityID);
 
-    // Repository 패턴 사용
-    const { nationRepository } = await import('../../repositories/nation.repository');
-    await nationRepository.incrementValue(sessionId, destNationID, 'gennum', 1);
+    const nationRepoAny = nationRepository as any;
+    if (typeof nationRepoAny?.incrementValue === 'function') {
+      await nationRepoAny.incrementValue(sessionId, destNationID, 'gennum', 1);
+    }
 
     try {
       const { refreshNationStaticInfo } = await import('../../func/refreshNationStaticInfo');

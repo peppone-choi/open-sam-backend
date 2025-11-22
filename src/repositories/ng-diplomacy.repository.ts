@@ -46,7 +46,21 @@ class NgDiplomacyRepository {
   }
 
   /**
+   * 세션 내 다음 서한 번호 반환
+   * @param sessionId - 세션 ID
+   */
+  async getNextLetterNo(sessionId: string): Promise<number> {
+    const lastLetter = await NgDiplomacy.findOne({ session_id: sessionId })
+      .sort({ 'data.no': -1, createdAt: -1 })
+      .select('data.no')
+      .lean();
+
+    return (lastLetter?.data?.no || 0) + 1;
+  }
+ 
+  /**
    * 국가별 수신 서한 조회
+
    * @param sessionId - 세션 ID
    * @param nationId - 국가 ID
    * @returns 서한 목록

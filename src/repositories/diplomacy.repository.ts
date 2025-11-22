@@ -129,6 +129,22 @@ class DiplomacyRepository {
   }
 
   /**
+   * 전투 사망자 통계 업데이트
+   */
+  async updateDeaths(sessionId: string, meNationId: number, youNationId: number, deaths: number): Promise<void> {
+    const amount = Math.max(0, Math.round(deaths));
+    if (amount === 0) {
+      return;
+    }
+
+    await Diplomacy.updateOne(
+      { session_id: sessionId, me: meNationId, you: youNationId },
+      { $inc: { 'stats.deaths': amount, [`stats.deathsBy.${youNationId}`]: amount } },
+      { upsert: true, strict: false }
+    );
+  }
+
+  /**
    * 세션의 모든 외교 삭제
    * @param sessionId - 세션 ID
    * @returns 삭제 결과

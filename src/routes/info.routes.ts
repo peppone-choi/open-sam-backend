@@ -5,6 +5,10 @@ import { GetGeneralInfoService } from '../services/info/GetGeneralInfo.service';
 import { GetBettingListService } from '../services/betting/GetBettingList.service';
 import { GetOfficerInfoService } from '../services/info/GetOfficerInfo.service';
 import { GetTournamentInfoService } from '../services/info/GetTournamentInfo.service';
+import { GetFrontInfoService } from '../services/general/GetFrontInfo.service';
+import { cityRepository } from '../repositories/city.repository';
+import { generalRepository } from '../repositories/general.repository';
+import { nationRepository } from '../repositories/nation.repository';
 
 const router = Router();
 
@@ -237,14 +241,15 @@ router.post('/city', authenticate, async (req, res) => {
       });
     }
 
-    const { City } = await import('../models/city.model');
-    const { Nation } = await import('../models/nation.model');
-    const { General } = await import('../models/general.model');
+    const numericCityId = parseInt(cityID?.toString?.() ?? '0', 10);
+    if (Number.isNaN(numericCityId)) {
+      return res.status(400).json({
+        result: false,
+        error: '잘못된 도시 ID 입니다.'
+      });
+    }
 
-    const city = await City.findOne({ 
-      session_id: sessionId, 
-      city: parseInt(cityID) 
-    }).lean();
+    const city = await cityRepository.findByCityNum(sessionId, numericCityId);
 
     if (!city) {
       return res.json({ 
@@ -254,17 +259,19 @@ router.post('/city', authenticate, async (req, res) => {
     }
     
     // 장수 조회 (권한 체크용)
-    const general = await General.findOne({
-      session_id: sessionId,
-      owner: userId?.toString()
-    }).lean();
+    const ownerKey = userId?.toString();
+    if (!ownerKey) {
+      return res.json({ result: false, error: '장수를 찾을 수 없습니다' });
+    }
+
+    const general = await generalRepository.findBySessionAndOwner(sessionId, ownerKey);
     
     if (!general) {
       return res.json({ result: false, error: '장수를 찾을 수 없습니다' });
     }
     
-    const myNationId = general.data?.nation || general.nation || 0;
-    const cityNationId = city.data?.nation || city.nation || 0;
+    const myNationId = (general as any).data?.nation || (general as any).nation || 0;
+    const cityNationId = city.data?.nation ?? city.nation ?? 0;
     
     // 권한 체크: 아군 도시, 공백지, 또는 스파이한 도시만 볼 수 있음
     const isMyNation = myNationId === cityNationId;
@@ -274,16 +281,25 @@ router.post('/city', authenticate, async (req, res) => {
     
     // 타국 도시는 스파이 여부 확인
     if (!canView && myNationId > 0) {
-      const myNation = await Nation.findOne({
-        session_id: sessionId,
-        nation: myNationId
-      }).select('data.spy spy').lean();
+      const myNation = await nationRepository.findByNationNum(sessionId, myNationId);
       
       if (myNation) {
-        const spyData = myNation.data?.spy || myNation.spy;
+        const nationData: any = typeof myNation.toObject === 'function' ? myNation.toObject() : myNation;
+        const spyData = nationData.data?.spy ?? nationData.spy;
         if (spyData) {
-          const spyCities = typeof spyData === 'string' ? JSON.parse(spyData || '{}') : spyData;
-          canView = spyCities[cityID] !== undefined;
+          let spyCities: Record<string, any> = {};
+          if (typeof spyData === 'string') {
+            try {
+              spyCities = JSON.parse(spyData || '{}');
+            } catch (error) {
+              spyCities = {};
+            }
+          } else if (typeof spyData === 'object') {
+            spyCities = spyData;
+          }
+          if (spyCities[numericCityId] !== undefined) {
+            canView = true;
+          }
         }
       }
     }
@@ -295,61 +311,17 @@ router.post('/city', authenticate, async (req, res) => {
       });
     }
 
-    // 국가 정보 조회
-    let nationInfo = null;
-    if (city.nation && city.nation > 0) {
-      const nation = await Nation.findOne({ 
-        session_id: sessionId, 
-        nation: city.nation 
-      }).lean();
-      
-      if (nation) {
-        nationInfo = {
-          id: nation.nation,
-          name: nation.name,
-          color: nation.color
-        };
-      }
-    }
-
-    // 관직자 정보 조회
-    const officerList: any = {};
-    for (const level of [2, 3, 4]) {
-      const general = await General.findOne({
-        session_id: sessionId,
-        city: city.city,
-        officer_level: level
-      }).select('no name npc officer_level').lean();
-
-      if (general) {
-        officerList[level] = {
-          officer_level: level,
-          no: general.no,
-          name: general.name,
-          npc: general.npc
-        };
-      } else {
-        officerList[level] = null;
-      }
+    const cityInfo = await GetFrontInfoService.generateCityInfo(sessionId, numericCityId, myNationId);
+    if (!cityInfo) {
+      return res.json({
+        result: false,
+        error: '도시 정보를 생성할 수 없습니다.'
+      });
     }
 
     res.json({
       result: true,
-      city: {
-        id: city.city,
-        name: city.name,
-        nationInfo,
-        level: city.level,
-        trust: city.trust || 0,
-        pop: [city.pop, city.pop_max],
-        agri: [city.agri, city.agri_max],
-        comm: [city.comm, city.comm_max],
-        secu: [city.secu, city.secu_max],
-        def: [city.def, city.def_max],
-        wall: [city.wall, city.wall_max],
-        trade: city.trade || null,
-        officerList
-      }
+      city: cityInfo
     });
   } catch (error: any) {
     console.error('도시 정보 조회 오류:', error);

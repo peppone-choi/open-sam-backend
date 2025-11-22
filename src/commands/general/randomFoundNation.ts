@@ -117,13 +117,21 @@ export class RandomFoundNationCommand extends GeneralCommand {
     if (general.getCityID() === cityID) {
       this.setCity();
     } else {
-      this.generalObj.data.city = cityID;
+      await this.updateGeneralCity(cityID);
       this.setCity();
       
+      const affectedGenerals = await generalRepository.findByFilter({
+        session_id: sessionId,
+        'data.nation': general.getNationID()
+      });
       await generalRepository.updateManyByFilter(
         { session_id: sessionId, 'data.nation': general.getNationID() },
         { city: cityID }
       );
+      const affectedIds = affectedGenerals
+        .map((doc: any) => doc.data?.no ?? doc.no)
+        .filter((id: any) => id !== undefined);
+      await this.updateOtherGeneralsCity(affectedIds, cityID);
     }
 
     const josaYi = JosaUtil.pick(generalName, '이');
@@ -149,60 +157,62 @@ export class RandomFoundNationCommand extends GeneralCommand {
     // 이미 방랑군이 점령한 도시(nation === currentNationID)는 전투 스킵
     if (currentCity && currentCity.nation === 0) {
       const { ProcessWarService } = await import('../../services/war/ProcessWar.service');
-      const { RandUtil } = await import('../../utils/RandUtil');
+      const { resolveFallbackDefender } = await import('../../services/helpers/garrison.helper');
+      const fallbackDefender = resolveFallbackDefender(sessionId, currentCity);
+      if (!fallbackDefender) {
+        logger.pushGeneralActionLog(`<G><b>${cityName}</b></>에는 저항 세력이 없어 건국을 진행합니다.`);
+      }
       const cityLevel = currentCity.level || 1;
       
-      // 호족 세력 생성
-      const localRng = new RandUtil(rng.seed);
-      const localMilitia = (ProcessWarService as any).createLocalMilitia(currentCity, localRng);
-      
       // 방어 세력 타입 결정
-      let defenderType: string;
-      if (cityLevel >= 7) {
-        defenderType = '한 태수';
-      } else if (cityLevel === 6) {
-        defenderType = '한 현령';
-      } else if (cityLevel === 5) {
-        defenderType = '이민족';
-      } else if (cityLevel === 4) {
-        defenderType = '한 관문 수비대';
-      } else if (cityLevel === 3) {
-        defenderType = '한 진영 수비대';
-      } else if (cityLevel === 2) {
-        defenderType = '항구 호족';
-      } else if (cityLevel === 1) {
-        defenderType = '향촌 호족';
-      } else {
-        defenderType = '유민 무리';
-      }
+      const defenderType = fallbackDefender?.label ?? '지역 세력';
+      const militiaUnit = fallbackDefender
+        ? {
+            name: fallbackDefender.unit.name,
+            crew: fallbackDefender.unit.crew,
+            crewtype: fallbackDefender.unit.crewtype,
+            train: fallbackDefender.unit.train,
+            atmos: fallbackDefender.unit.morale,
+            leadership: fallbackDefender.unit.leadership,
+            strength: fallbackDefender.unit.strength,
+            intel: fallbackDefender.unit.intel,
+          }
+        : null;
       
       // 이민족 도시의 경우 특별 메시지
       if (cityLevel === 5) {
-        logger.pushGeneralActionLog(
-          `<G><b>${cityName}</b></>의 ${defenderType} 세력과 전투를 시작합니다! [적 ${localMilitia.crew}명]`
-        );
-        logger.pushGlobalActionLog?.(
-          `<Y>${generalName}</>${josaYi} 이민족 땅 <G><b>${cityName}</b></>를 정복하여 건국을 시도합니다!`
-        );
+        if (militiaUnit) {
+          logger.pushGeneralActionLog(
+            `<G><b>${cityName}</b></>의 ${defenderType} 세력과 전투를 시작합니다! [적 ${militiaUnit.crew}명]`
+          );
+          logger.pushGlobalActionLog?.(
+            `<Y>${generalName}</>${josaYi} 이민족 땅 <G><b>${cityName}</b></>를 정복하여 건국을 시도합니다!`
+          );
+        }
       } else {
-        logger.pushGeneralActionLog(
-          `<G><b>${cityName}</b></>의 ${defenderType}과(와) 전투를 시작합니다! [적 ${localMilitia.crew}명]`
-        );
-        logger.pushGlobalActionLog?.(
-          `<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>의 ${defenderType}과(와) 건국을 위한 전투를 시작합니다!`
-        );
+        if (militiaUnit) {
+          logger.pushGeneralActionLog(
+            `<G><b>${cityName}</b></>의 ${defenderType}과(와) 전투를 시작합니다! [적 ${militiaUnit.crew}명]`
+          );
+          logger.pushGlobalActionLog?.(
+            `<Y>${generalName}</>${josaYi} <G><b>${cityName}</b></>의 ${defenderType}과(와) 건국을 위한 전투를 시작합니다!`
+          );
+        }
       }
 
       // 자동 전투 실행
-      const battleResult = await (ProcessWarService as any).executeAutoBattle(
-        sessionId,
-        general,
-        localMilitia,
-        currentCity,
-        rng
-      );
+      let battleResult = { winner: 'attacker', attackerLoss: 0 } as any;
+      if (militiaUnit) {
+        battleResult = await (ProcessWarService as any).executeAutoBattle(
+          sessionId,
+          general,
+          militiaUnit,
+          currentCity,
+          rng
+        );
+      }
 
-      if (battleResult.winner === 'defender') {
+      if (militiaUnit && battleResult.winner === 'defender') {
         // 전투 패배 - 건국 실패
         logger.pushGeneralActionLog(
           `${defenderType}에게 패배했습니다! 건국에 실패했습니다. [손실: ${battleResult.attackerLoss}명] <1>${date}</>`

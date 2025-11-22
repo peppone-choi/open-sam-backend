@@ -1,9 +1,12 @@
+import { FeatureFlags } from '../config/featureFlags';
+
 /**
  * AppConf - 애플리케이션 설정
  * NOTE: 프로젝트 구조에 맞게 재설계 필요
  */
 
 export class AppConf {
+
   /** 전용 아이콘 경로 */
   static userIconPath = 'd_pic';
 
@@ -19,9 +22,12 @@ export class AppConf {
    * 루트 DB 객체 생성
    */
   static requireRootDB(): any {
-    // FUTURE: RootDB::db() 마이그레이션 (v2.0)
-    throw new Error('RootDB.php가 설정되지 않았습니다.');
+    if (!FeatureFlags.isRootDBEnabled()) {
+      throw new Error('RootDB 연동이 비활성화되어 있습니다 (ROOTDB_ENABLED=false).');
+    }
+    throw new Error('RootDB 연동이 아직 마이그레이션되지 않았습니다.');
   }
+
 
   /**
    * DB 객체 생성

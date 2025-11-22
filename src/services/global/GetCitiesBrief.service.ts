@@ -1,5 +1,7 @@
 import { cityRepository } from '../../repositories/city.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { buildCitySnapshot } from './utils/citySnapshot.util';
+
 
 export class GetCitiesBriefService {
   static async execute(data: any, user?: any) {
@@ -10,31 +12,25 @@ export class GetCitiesBriefService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
+
+      const sessionData = (session.data as any) || {};
+      const scenarioId = session.scenario_id || session.scenarioId || sessionData.scenario_id || sessionData.scenarioId || sessionData.scenarioID;
 
       const cities = await cityRepository.findByFilter({ session_id: sessionId })
         
         ;
 
-      const cityList: any[] = [];
-      for (const city of cities) {
-        cityList.push({
-          city: city.city,
-          name: city.name,
-          nation: city.nation || 0,
-          level: city.level || 0,
-          state: city.state || 0,
-          region: city.region || 0
-        });
-      }
+      const cityList = cities.map(city => buildCitySnapshot(city, { scenarioId }));
 
       return {
         success: true,
         result: true,
         cities: cityList
       };
+
     } catch (error: any) {
       console.error('GetCitiesBrief error:', error);
       return {

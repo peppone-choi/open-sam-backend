@@ -1,9 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -u
+set -o pipefail
 
 # 엔드포인트 테스트 스크립트
 # Usage: ./test-endpoints.sh
 
-BASE_URL="http://localhost:3000"
+BASE_URL="${BASE_URL:-http://localhost:8080}"
 echo "🧪 Testing OpenSAM Backend Endpoints"
 echo "======================================"
 echo ""
@@ -14,21 +17,35 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-test_endpoint() {
-  local method=$1
-  local path=$2
-  local description=$3
-  
-  printf "%-50s " "$description"
-  
-  if [ "$method" = "GET" ]; then
-    response=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL$path")
+request_timeout="${REQUEST_TIMEOUT:-10}"
+
+curl_request() {
+  local method="$1"
+  local url="$2"
+  local extra_opts=("--max-time" "$request_timeout" "-s" "-o" "/dev/null" "-w" "%{http_code}")
+
+  if [[ "$method" == "GET" ]]; then
+    curl "${extra_opts[@]}" "$url"
   else
-    response=$(curl -s -o /dev/null -w "%{http_code}" -X $method "$BASE_URL$path")
+    curl "${extra_opts[@]}" -X "$method" "$url"
   fi
-  
-  if [ "$response" = "200" ] || [ "$response" = "201" ] || [ "$response" = "401" ] || [ "$response" = "400" ]; then
+}
+
+test_endpoint() {
+  local method="$1"
+  local path="$2"
+  local description="$3"
+
+  printf "%-50s " "$description"
+  local url="$BASE_URL$path"
+  local response
+
+  response=$(curl_request "$method" "$url") || response="ERR"
+
+  if [[ "$response" =~ ^(200|201|400|401)$ ]]; then
     echo -e "${GREEN}✓${NC} ($response)"
+  elif [[ "$response" == "ERR" ]]; then
+    echo -e "${RED}✗${NC} (curl error)"
   else
     echo -e "${RED}✗${NC} ($response)"
   fi

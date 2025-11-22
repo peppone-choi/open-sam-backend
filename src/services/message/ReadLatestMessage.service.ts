@@ -20,12 +20,13 @@ export class ReadLatestMessageService {
       }
 
       if (!type || !msgID) {
-        return { success: false, message: 'type과 msgID가 필요합니다' };
+        return { success: false, message: '메시지 유형과 ID가 모두 필요합니다.' };
       }
 
       if (type !== 'private' && type !== 'diplomacy') {
-        return { success: false, message: '잘못된 메시지 타입입니다' };
+        return { success: false, message: '지원하지 않는 메시지 유형입니다.' };
       }
+
 
       // 장수 정보 업데이트
       const fieldName = type === 'private' 

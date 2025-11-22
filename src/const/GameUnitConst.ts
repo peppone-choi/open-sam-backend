@@ -5,6 +5,10 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { getScenarioConstants } from '../utils/scenario-data';
+
+const scenarioConstants = getScenarioConstants();
+const unitTypeConstants = scenarioConstants?.unitTypes ?? {};
 
 export const ARM_TYPE = {
   CASTLE: 0,
@@ -42,6 +46,7 @@ export interface GameUnitDetail {
   defence: number;
   speed: number;
   avoid: number;
+  critical?: number;
   magicCoef: number;
   cost: number;
   rice: number;
@@ -60,6 +65,24 @@ export interface GameUnitDetail {
   info: string[];
 }
 
+function createFallbackUnit(id: number): GameUnitDetail {
+  return {
+    id,
+    armType: ARM_TYPE.FOOTMAN,
+    name: `병종 ${id}`,
+    attack: 100,
+    defence: 100,
+    speed: 7,
+    avoid: 0,
+    magicCoef: 0,
+    cost: 1,
+    rice: 100,
+    reqTech: 0,
+    reqYear: 0,
+    info: []
+  };
+}
+
 /**
  * JSON 파일에서 병종 데이터 로드
  */
@@ -70,19 +93,29 @@ let unitsData: any = null;
 function loadUnitsFromJSON(scenarioId: string = 'sangokushi'): any {
   if (unitsData) return unitsData;
 
-  try {
-    const configDir = path.join(process.cwd(), 'config', 'scenarios', scenarioId, 'data');
-    const unitsPath = path.join(configDir, 'units.json');
-    
-    if (fs.existsSync(unitsPath)) {
-      const fileContent = fs.readFileSync(unitsPath, 'utf-8');
-      unitsData = JSON.parse(fileContent);
-      return unitsData;
+  // 프로젝트 루트를 기준으로 config/scenarios/... 를 찾는다.
+  // dist/에서 실행하든 src/에서 실행하든 동일하게 동작하도록 __dirname 기준으로 계산.
+  const projectRoot = path.resolve(__dirname, '../..');
+  const candidates: string[] = [
+    // 일반 실행/빌드 환경: <projectRoot>/config/scenarios/...
+    path.join(projectRoot, 'config', 'scenarios', scenarioId, 'data', 'units.json'),
+    // 혹시 모를 기존 cwd 기반 경로 (후순위)
+    path.join(process.cwd(), 'config', 'scenarios', scenarioId, 'data', 'units.json'),
+  ];
+
+  for (const unitsPath of candidates) {
+    try {
+      if (fs.existsSync(unitsPath)) {
+        const fileContent = fs.readFileSync(unitsPath, 'utf-8');
+        unitsData = JSON.parse(fileContent);
+        return unitsData;
+      }
+    } catch (error) {
+      console.error('Failed to load units.json from', unitsPath, error);
     }
-  } catch (error) {
-    console.error('Failed to load units.json:', error);
   }
 
+  console.error('units.json not found for scenario', scenarioId, 'searched paths:', candidates);
   return { units: {} };
 }
 
@@ -218,10 +251,12 @@ export function getUnitByID(id: number, scenarioId: string = 'sangokushi'): Game
 }
 
 export const GameUnitConst = {
-  byID: (id: number, scenarioId: string = 'sangokushi') => {
-    return getUnitByID(id, scenarioId) || { id, name: '병종', armType: 0, cost: 1 };
+  byID: (id: number, scenarioId: string = 'sangokushi'): GameUnitDetail => {
+    return getUnitByID(id, scenarioId) ?? createFallbackUnit(id);
   },
-  allType: () => ARM_TYPE_NAMES
+  allType: () => ARM_TYPE_NAMES,
+  CREWTYPE_CASTLE: unitTypeConstants?.CREWTYPE_CASTLE ?? 1000,
+  DEFAULT_CREWTYPE: unitTypeConstants?.DEFAULT_CREWTYPE ?? 1100,
 };
 
 export function getUnitsByType(armType: number, scenarioId: string = 'sangokushi'): GameUnitDetail[] {

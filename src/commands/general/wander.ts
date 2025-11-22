@@ -36,7 +36,7 @@ export class WanderCommand extends GeneralCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.BeLord(),
       ConstraintHelper.NotWanderingNation(),
-      ConstraintHelper.NotOpeningPart(relYear)
+      ConstraintHelper.NotOpeningPart()
     ];
   }
 

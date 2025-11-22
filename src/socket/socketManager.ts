@@ -333,7 +333,57 @@ export class SocketManager {
 
     return Array.from(nationIds);
   }
+
+  async getOnlineGenerals(sessionId: string): Promise<Array<{ nationId: number; generalId: number; name: string }>> {
+    const sessionRoom = this.io.sockets.adapter.rooms.get(`session:${sessionId}`);
+    if (!sessionRoom) {
+      return [];
+    }
+
+    const { General } = await import('../models/general.model');
+    const results: Array<{ nationId: number; generalId: number; name: string }> = [];
+    const processedOwners = new Set<string>();
+
+    for (const socketId of sessionRoom) {
+      const socket = this.io.sockets.sockets.get(socketId);
+      if (!socket) {
+        continue;
+      }
+      const user = socket.user as JwtPayload;
+      const userId = user?.userId;
+      if (!userId || processedOwners.has(userId)) {
+        continue;
+      }
+      processedOwners.add(userId);
+
+      const general = await General.findOne({
+        session_id: sessionId,
+        owner: String(userId),
+        $or: [
+          { 'data.npc': { $lt: 2 } },
+          { npc: { $lt: 2 } },
+          { npc: { $exists: false } }
+        ]
+      }).lean();
+
+      if (!general) {
+        continue;
+      }
+
+      const nationId = general.data?.nation ?? general.nation ?? 0;
+      if (nationId <= 0) {
+        continue;
+      }
+
+      const name = general.name || general.data?.name || '무명';
+      const generalId = general.no ?? general.data?.no ?? 0;
+      results.push({ nationId, generalId, name });
+    }
+
+    return results;
+  }
 }
+
 
 // 싱글톤 인스턴스
 let socketManagerInstance: SocketManager | null = null;

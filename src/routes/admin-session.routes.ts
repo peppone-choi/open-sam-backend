@@ -80,13 +80,13 @@ router.post('/create', authenticate, requireAdmin, async (req: Request, res: Res
     const { sessionId, scenario, turnterm, config } = req.body;
     
     if (!sessionId) {
-      return res.status(400).json({ success: false, message: 'sessionId가 필요합니다' });
+      return res.status(400).json({ success: false, message: '세션 식별자가 필요합니다.' });
     }
     
     // 중복 확인
     const existing = await Session.findOne({ session_id: sessionId });
     if (existing) {
-      return res.status(400).json({ success: false, message: '이미 존재하는 세션 ID입니다' });
+      return res.status(400).json({ success: false, message: '이미 존재하는 세션 식별자입니다.' });
     }
     
     // 세션 생성
@@ -328,7 +328,7 @@ router.post('/update', authenticate, requireAdmin, async (req: Request, res: Res
     const { sessionId, data } = req.body;
     
     if (!sessionId) {
-      return res.status(400).json({ success: false, message: 'sessionId가 필요합니다' });
+      return res.status(400).json({ success: false, message: '세션 식별자가 필요합니다.' });
     }
     
     const session = await Session.findOne({ session_id: sessionId });

@@ -138,8 +138,9 @@ export class JoinNationCommand extends GeneralCommand {
 
     console.log(`[JoinNation] 장수 #${general.getID()} ${general.data.name || general.name}: nation=${destNationID}, officer_level=1 설정완료`);
 
+    let targetCityID: number;
     if (this.destGeneralObj !== null) {
-      general.data.city = this.destGeneralObj.getCityID();
+      targetCityID = this.destGeneralObj.getCityID();
     } else {
       const { generalRepository } = await import('../../repositories/general.repository');
       const sessionId = env.session_id || 'sangokushi_default';
@@ -150,9 +151,9 @@ export class JoinNationCommand extends GeneralCommand {
         'data.officer_level': 12
       });
       
-      const targetCityID = lordDoc?.data?.city || destNation.capital || 1;
-      general.data.city = targetCityID;
+      targetCityID = lordDoc?.data?.city || destNation.capital || 1;
     }
+    await this.updateGeneralCity(targetCityID);
 
     const { nationRepository } = await import('../../repositories/nation.repository');
     const sessionId = env.session_id || 'sangokushi_default';

@@ -19,6 +19,10 @@ export interface INation extends Document {
   type?: string;       // 국가 성향 (병가, 법가, 유가 등)
   leader?: number;     // 지도자 장수 ID
   gennum?: number;     // 소속 장수 수
+  tech?: number;
+  country_type?: number;
+  scout?: number;
+  aux?: Record<string, any>;
   
   // 완전 동적 데이터
   data: Record<string, any>;
@@ -46,6 +50,10 @@ const NationSchema = new Schema<INation>({
   type: { type: String },        // 국가 성향
   leader: { type: Number },      // 지도자 ID
   gennum: { type: Number },      // 장수 수
+  tech: { type: Number, default: 0 },
+  country_type: { type: Number },
+  scout: { type: Number },
+  aux: { type: Schema.Types.Mixed, default: {} },
   
   data: { type: Schema.Types.Mixed, default: {} }
 }, {

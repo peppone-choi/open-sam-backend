@@ -234,6 +234,13 @@ export class WebSocketHandler {
   }
 
   /**
+   * 커스텀 갤럭시 이벤트 전달
+   */
+  emitGalaxyEvent(sessionId: string, event: string, payload: any): void {
+    this.io.to(`session:${sessionId}`).emit(event, payload);
+  }
+
+  /**
    * 함대 파괴 알림
    */
   async notifyFleetDestroyed(

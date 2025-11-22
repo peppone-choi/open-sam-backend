@@ -85,6 +85,7 @@ export class GatherCommand extends GeneralCommand {
       await db.update('general', {
         city: cityID
       }, 'no IN (?)', [generalList]);
+      await this.updateOtherGeneralsCity(generalList, cityID);
     }
 
     // 각 장수에게 로그 추가

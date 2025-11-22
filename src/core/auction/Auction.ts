@@ -1,8 +1,10 @@
 // @ts-nocheck - Type issues need investigation
+import { Types } from 'mongoose';
 import { DB } from '../../config/db';
 import { IGeneral } from '../../models/general.model';
 import { Util } from '../../utils/Util';
 import { AuctionType, ResourceType } from '../../types/auction.types';
+
 
 /**
  * Auction 추상 클래스
@@ -18,15 +20,16 @@ export abstract class Auction {
   protected static readonly MIN_EXTENSION_MINUTES_LIMIT_BY_BID = 5;
   protected static readonly MIN_EXTENSION_MINUTES_BY_EXTENSION_QUERY = 5;
 
-  protected auctionID: number;
+  protected auctionID: string;
   protected general: IGeneral;
   protected info: any; // AuctionInfo
-
-  constructor(auctionID: number, general: IGeneral) {
-    this.auctionID = auctionID;
+ 
+  constructor(auctionID: number | string | Types.ObjectId, general: IGeneral) {
+    this.auctionID = typeof auctionID === 'string' ? auctionID : auctionID.toString();
     this.general = general;
     // FUTURE: DB에서 경매 정보 로드
   }
+
 
   /**
    * 난독화된 이름 생성

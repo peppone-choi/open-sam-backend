@@ -1,3 +1,9 @@
+import { getScenarioConstants } from '../utils/scenario-data';
+
+const scenarioConstants = getScenarioConstants();
+const gameBalance = scenarioConstants?.gameBalance ?? {};
+const factionTypes = scenarioConstants?.factionTypes ?? {};
+
 export class GameConst {
   static readonly defaultGold = 1000;
   static readonly defaultRice = 1000;
@@ -57,6 +63,7 @@ export class GameConst {
 
   static readonly neutralNationID = 0;
   static readonly wanderingNationID = 1;
+  static readonly neutralNationType = factionTypes?.neutral ?? 'che_중립';
 
   static readonly chiefOffice = 1;
   static readonly generalOffice = 2;
@@ -129,6 +136,7 @@ export class GameConst {
 
   static readonly maxBattleUnitsPerSide = 10;
 
+  static readonly armperphase = gameBalance?.armperphase ?? 100;
   static readonly battleMapWidth = 800;
   static readonly battleMapHeight = 600;
 
@@ -161,7 +169,7 @@ export class GameConst {
 
   static readonly initialNationGenLimit = 50;
 
-  static readonly allItems: any[] = [];
+  static readonly allItems: Record<string, Record<string, number>> = loadAllItemsFromScenario();
 
   static readonly exchangeFee = 0.05; // 5% 수수료
   static readonly basegold = 1000;
@@ -172,8 +180,11 @@ export class GameConst {
   static readonly resourceActionAmountGuide = 100;
   static readonly generalMinimumGold = 10000;
   static readonly generalMinimumRice = 10000;
-  static readonly maxTrainByCommand = 10;
-  static readonly maxAtmosByCommand = 10;
+  // 한 커맨드로 도달 가능한 훈련/사기 상한 (기존 코어 기준 0~100 스케일)
+  static readonly maxTrainByCommand = 100;
+  static readonly maxAtmosByCommand = 100;
+  static readonly maxTrainByWar = gameBalance?.maxTrainByWar ?? 110;
+  static readonly maxAtmosByWar = gameBalance?.maxAtmosByWar ?? 150;
 
   // Training effectiveness coefficient
   static readonly trainDelta = 1.0;
@@ -201,4 +212,12 @@ export class GameConst {
 
   // Minimum gold required for betting
   static readonly minGoldRequiredWhenBetting = 1000;
+}
+
+function loadAllItemsFromScenario(): Record<string, Record<string, number>> {
+  const constants = getScenarioConstants();
+  if (constants && typeof constants.allItems === 'object') {
+    return constants.allItems as Record<string, Record<string, number>>;
+  }
+  return {};
 }

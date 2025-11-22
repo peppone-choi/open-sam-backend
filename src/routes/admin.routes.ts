@@ -4,13 +4,17 @@ import { authenticate } from '../middleware/auth';
 import { General } from '../models/general.model';
 import { User } from '../models/user.model';
 import { Session } from '../models/session.model';
-import { Nation } from '../models/nation.model';
-import { City } from '../models/city.model';
 import { SessionStateService } from '../services/sessionState.service';
 import { FileWatcherService } from '../services/file-watcher.service';
 import { ScenarioResetService } from '../services/admin/scenario-reset.service';
 import { syncSessionStatus, type SessionStatus } from '../utils/session-status';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
+import { AdminEconomyService } from '../services/admin/AdminEconomy.service';
+import { AdminErrorLogService } from '../services/admin/AdminErrorLog.service';
+import { ApiError } from '../errors/ApiError';
 import Redis from 'ioredis';
+import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
 
 const router = Router();
 
@@ -97,6 +101,21 @@ router.use(requireAdmin);
 
 /**
  * @swagger
+ * /api/admin/monitoring/redis:
+ *   get:
+ *     summary: Redis 상태 모니터링 스냅샷
+ *     tags: [Admin]
+ */
+router.get('/monitoring/redis', (_req, res) => {
+  const snapshot = redisHealthMonitor.snapshot();
+  res.json({
+    result: true,
+    monitor: snapshot,
+  });
+});
+
+/**
+ * @swagger
  * /api/admin/userlist:
  *   post:
  *     summary: 사용자 목록 조회
@@ -138,7 +157,7 @@ router.post('/userlist', async (req, res) => {
  */
 router.post('/update-user', async (req, res) => {
   try {
-    const { userID, action, data } = req.body;
+    const { userID, action, data = {} } = req.body;
     
     if (!userID) {
       return res.status(400).json({
@@ -155,22 +174,29 @@ router.post('/update-user', async (req, res) => {
       });
     }
     
-    // action에 따른 수정
-    if (action === 'grade') {
-      user.grade = data.grade || user.grade;
-    } else if (action === 'name') {
-      user.name = data.name || user.name;
-    } else if (action === 'acl') {
-      user.acl = data.acl || user.acl;
-    } else if (action === 'block') {
-      user.block = data.block !== undefined ? data.block : user.block;
+    let updated = false;
+    if (action === 'grade' && data.grade !== undefined) {
+      user.grade = data.grade;
+      updated = true;
+    } else if (action === 'name' && data.name) {
+      user.name = data.name;
+      updated = true;
+    } else if (action === 'acl' && data.acl !== undefined) {
+      user.acl = data.acl;
+      updated = true;
+    } else if (action === 'block' && data.block !== undefined) {
+      user.block = data.block;
+      updated = true;
     }
-    
-    // Mixed 타입 필드 변경 알림 (Mongoose가 감지하도록)
-    session.markModified('data.game_env');
-    session.markModified('data');
-    
-    await session.save();
+
+    if (!updated) {
+      return res.status(400).json({
+        result: false,
+        reason: '지원되지 않는 수정이거나 변경할 값이 없습니다'
+      });
+    }
+
+    await user.save();
     
     res.json({
       result: true,
@@ -193,25 +219,18 @@ router.post('/update-user', async (req, res) => {
  */
 router.post('/error-log', async (req, res) => {
   try {
-    const { from = 0, limit = 100 } = req.body;
-    
-    // 에러 로그 조회 (파일 또는 DB)
-    // FUTURE: 실제 로그 파일 읽기 또는 DB에서 조회
-    const errorLogs: any[] = [];
-    
-    // 예시: 로그 파일이 있다면 읽기
-    // const fs = require('fs');
-    // const logPath = path.join(__dirname, '../../logs/error.log');
-    // if (fs.existsSync(logPath)) {
-    //   const logs = fs.readFileSync(logPath, 'utf-8').split('\n').slice(-100);
-    //   errorLogs.push(...logs);
-    // }
+    const from = Number(req.body.from) || 0;
+    const limit = Math.min(Number(req.body.limit) || 100, 500);
+    const result = await AdminErrorLogService.getLogs({ offset: from, limit });
+
     res.json({
       result: true,
-      errorLogs: []
+      total: result.total,
+      errorLogs: result.errorLogs
     });
   } catch (error: any) {
-    res.status(500).json({
+    const status = error instanceof ApiError ? error.status : 500;
+    res.status(status).json({
       result: false,
       reason: error.message
     });
@@ -748,16 +767,17 @@ router.post('/info', async (req, res) => {
     
     // type에 따른 정보 조회
     if (type === 0) {
-      // 전체 통계
-      const generalCount = await General.countDocuments({ session_id: sessionId });
-      const nationCount = await Nation.countDocuments({ session_id: sessionId });
-      const cityCount = await City.countDocuments({ session_id: sessionId });
-      const userCount = await User.countDocuments({});
+      const [generalCount, nations, cities, userCount] = await Promise.all([
+        General.countDocuments({ session_id: sessionId }),
+        nationRepository.findBySession(sessionId),
+        cityRepository.findBySession(sessionId),
+        User.countDocuments({})
+      ]);
       
       infoList = [
         { name: '총 장수', value: generalCount },
-        { name: '총 국가', value: nationCount },
-        { name: '총 도시', value: cityCount },
+        { name: '총 국가', value: (nations || []).length },
+        { name: '총 도시', value: (cities || []).length },
         { name: '총 사용자', value: userCount }
       ];
     } else if (type === 1) {
@@ -774,18 +794,16 @@ router.post('/info', async (req, res) => {
         city: g.data?.city || 0
       }));
     } else if (type === 2) {
-      // 국가 정보
-      const nations = await Nation.find({ session_id: sessionId }).lean();
+      const nations = (await nationRepository.findBySession(sessionId)) || [];
       
       infoList = nations.map((n: any) => ({
         nation: n.data?.nation || n.nation,
         name: n.name || n.data?.name || '',
-        level: n.data?.level || 0,
-        gennum: n.data?.gennum || 0
+        level: n.data?.level || n.level || 0,
+        gennum: n.data?.gennum || n.gennum || 0
       }));
     } else if (type === 3) {
-      // 도시 정보
-      const cities = await City.find({ session_id: sessionId }).lean();
+      const cities = (await cityRepository.findBySession(sessionId)) || [];
       
       infoList = cities.map((c: any) => ({
         id: c.city || c.data?.id || 0,
@@ -1338,25 +1356,21 @@ router.post('/toggle-lock', async (req, res) => {
  */
 router.post('/pay-salary', async (req, res) => {
   try {
-    const { type } = req.body;
+    const type = String(req.body.type || '').toLowerCase();
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
-    if (!type || !['gold', 'rice'].includes(type)) {
+    if (!['gold', 'rice'].includes(type)) {
       return res.status(400).json({
         result: false,
         reason: 'type은 "gold" 또는 "rice"여야 합니다'
       });
     }
-    
-    // FUTURE: processGoldIncome/processRiceIncome 로직 포팅 필요
-    // 현재는 기본 응답만 반환
-    
-    res.json({
-      result: true,
-      reason: `${type} 지급 기능은 추후 구현 예정입니다 (TODO)`
-    });
+
+    const result = await AdminEconomyService.paySalary(sessionId, type as 'gold' | 'rice');
+    res.json(result);
   } catch (error: any) {
-    res.status(500).json({
+    const status = error instanceof ApiError ? error.status : 500;
+    res.status(status).json({
       result: false,
       reason: error.message
     });

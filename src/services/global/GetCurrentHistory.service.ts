@@ -20,7 +20,7 @@ export class GetCurrentHistoryService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
 
@@ -163,27 +163,26 @@ export class GetCurrentHistoryService {
   }
 
   /**
-   * Get global action logs for specific year/month
-   */
+    * Get global action logs for specific year/month
+    */
   private static async getGlobalActionLogWithDate(sessionId: string, year: number, month: number): Promise<any[]> {
     const records = await generalRecordRepository.findByFilter({
       session_id: sessionId,
-      'data.general_id': 0,
-      'data.log_type': 'history',
-      'data.year': year,
-      'data.month': month
+      general_id: 0,
+      log_type: 'history',
+      year: year,
+      month: month
     }, {
-      sort: { 'data.id': -1 },
+      sort: { _id: -1 },
       limit: 100
     });
 
     return records.map(record => {
-      const data = record.data as any;
       return {
-        id: data.id,
-        text: data.text,
-        year: data.year,
-        month: data.month
+        id: record._id,
+        text: record.text,
+        year: record.year,
+        month: record.month
       };
     });
   }

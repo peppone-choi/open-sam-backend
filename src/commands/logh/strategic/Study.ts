@@ -58,7 +58,7 @@ export class StudyCommand extends BaseLoghCommand {
     if (!studyType || !['command', 'tactics', 'strategy', 'politics'].includes(studyType)) {
       return {
         success: false,
-        message: '학습할 능력치를 지정해주세요. (command, tactics, strategy, politics)',
+        message: '학습할 능력치를 선택해야 합니다. (지휘·전술·전략·정치)',
       };
     }
 

@@ -189,17 +189,18 @@ export class RandomJoinNationCommand extends GeneralCommand {
     general.data.officer_city = 0;
     general.data.belong = 1;
 
+    let targetCityID: number;
     if (this.destGeneralObj !== null) {
-      general.data.city = this.destGeneralObj.getCityID();
+      targetCityID = this.destGeneralObj.getCityID();
     } else {
       const lordGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
         'data.nation': destNationID,
         'data.officer_level': 12
       });
-      const targetCityID = lordGeneral?.data?.city || 1;
-      general.data.city = targetCityID;
+      targetCityID = lordGeneral?.data?.city || 1;
     }
+    await this.updateGeneralCity(targetCityID);
 
     const currentNation = await nationRepository.findByNationNum(sessionId, destNationID);
     await nationRepository.updateByNationNum(sessionId, destNationID, {

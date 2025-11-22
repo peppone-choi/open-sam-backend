@@ -122,7 +122,7 @@ export class ForceMarchCommand extends GeneralCommand {
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 강행했습니다. <1>${date}</>`);
 
     const exp = 100;
-    general.data.city = destCityID;
+    await this.updateGeneralCity(destCityID);
 
     if (general.data.officer_level === 12 && this.nation && this.nation.level === 0) {
       try {
@@ -146,6 +146,10 @@ export class ForceMarchCommand extends GeneralCommand {
               'data.city': destCityID
             }
           );
+          const targetIds = generals
+            .map((targetGen: any) => targetGen.data?.no ?? targetGen.no)
+            .filter((id: any) => id !== undefined);
+          await this.updateOtherGeneralsCity(targetIds, destCityID);
           
           for (const targetGen of generals) {
             const targetGeneralID = targetGen.data?.no;

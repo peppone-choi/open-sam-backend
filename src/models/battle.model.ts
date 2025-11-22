@@ -30,6 +30,8 @@ export interface IBattleUnit {
   techLevel: number;
   nationId?: number;
   commanderId?: number | null;
+  originType?: string;
+  originStackId?: string;
   
   // 좌표 기반 위치 (800 x 600 맵)
   position: { x: number; y: number };
@@ -186,6 +188,8 @@ const BattleUnitSchema = new Schema({
 
   nationId: { type: Number },
   commanderId: { type: Number },
+  originType: { type: String },
+  originStackId: { type: String },
   
   // 좌표 기반 위치
   position: {

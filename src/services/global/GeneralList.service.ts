@@ -19,7 +19,7 @@ export class GeneralListService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
 

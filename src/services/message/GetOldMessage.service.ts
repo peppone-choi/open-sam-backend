@@ -18,8 +18,9 @@ export class GetOldMessageService {
     
     try {
       if (!to || !type) {
-        return { success: false, message: 'to와 type이 필요합니다' };
+        return { success: false, message: '조회 범위와 메시지 유형 값이 필요합니다.' };
       }
+
 
       if (!generalId) {
         return { success: false, message: '장수 ID가 필요합니다' };
@@ -27,8 +28,9 @@ export class GetOldMessageService {
 
       const validTypes = ['private', 'public', 'national', 'diplomacy'];
       if (!validTypes.includes(type)) {
-        return { success: false, message: '잘못된 메시지 타입입니다' };
+        return { success: false, message: '지원하지 않는 메시지 유형입니다.' };
       }
+
 
       // 장수 정보 조회
       const general = await generalRepository.findBySessionAndNo({

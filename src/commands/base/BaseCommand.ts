@@ -4,10 +4,11 @@
  * 모든 커맨드의 기본 추상 클래스
  */
 
-import { IGeneral } from '../../models/general.model';
-import { DB } from '../../config/db';
 import { LastTurn as ExternalLastTurn } from '../../types/LastTurn';
 import { ActionLogger } from '../../services/logger/ActionLogger';
+import { CityConst } from '../../const/CityConst';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { INation } from '../../models/nation.model';
 
 export interface ICity {
   city: number;
@@ -25,22 +26,8 @@ export interface ICity {
   [key: string]: any;
 }
 
-export interface INation {
-  nation: number;
-  name: string;
-  color: string;
-  type: number;
-  level: number;
-  capital: number;
-  gold?: number;
-  rice?: number;
-  tech?: number;
-  gennum?: number;
-  aux?: any;
-  [key: string]: any;
-}
-
 export interface IConstraint {
+
   test: (input: IConstraintInput, env: any) => string | null;
   reason?: string;
   message?: string;
@@ -112,6 +99,7 @@ export abstract class BaseCommand {
   protected generalObj: any;
   protected city: ICity | null = null;
   protected nation: INation | null = null;
+  protected cachedUnitStacks: Record<string, any[]> = {};
   protected arg: any = null;
   protected env: any = null;
 
@@ -143,6 +131,20 @@ export abstract class BaseCommand {
     // Override in subclasses if needed
   }
 
+  private static resolveGeneralId(generalObj: any): number {
+    if (typeof generalObj?.getID === 'function') {
+      return generalObj.getID();
+    }
+    return generalObj?.no ?? generalObj?.data?.no ?? 0;
+  }
+
+  private static resolveNationId(generalObj: any): number {
+    if (typeof generalObj?.getNationID === 'function') {
+      return generalObj.getNationID();
+    }
+    return generalObj?.nation ?? generalObj?.data?.nation ?? 0;
+  }
+
   constructor(generalObj: any, env: any, arg: any = null) {
     const constructor = this.constructor as typeof BaseCommand;
     if (!constructor.isInitStatic) {
@@ -153,12 +155,15 @@ export abstract class BaseCommand {
     this.generalObj = generalObj;
     this.env = env;
     this.arg = arg;
+
+    const resolvedGeneralId = BaseCommand.resolveGeneralId(generalObj);
+    const resolvedNationId = BaseCommand.resolveNationId(generalObj);
     
     // ActionLogger 생성 (env에 year, month가 있을 때만)
     if (env?.year && env?.month) {
       this.logger = new ActionLogger(
-        generalObj.getID(),
-        generalObj.getNationID(),
+        resolvedGeneralId,
+        resolvedNationId,
         env.year,
         env.month,
         env.session_id || 'sangokushi_default',
@@ -249,6 +254,44 @@ export abstract class BaseCommand {
         this.generalObj.setRawCity?.(this.city);
       }
     }
+
+    await this.ensureUnitStacksCache();
+  }
+
+  protected async ensureUnitStacksCache(): Promise<void> {
+    const sessionId = this.env?.session_id;
+    if (!sessionId) return;
+    const generalNo = this.generalObj?.getID?.() ?? this.generalObj?.no ?? this.generalObj?.data?.no;
+    if (!generalNo) return;
+    const cacheKey = `${sessionId}:${generalNo}`;
+    if (this.cachedUnitStacks[cacheKey]) {
+      return;
+    }
+    this.cachedUnitStacks[cacheKey] = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
+  }
+
+  protected getCachedUnitStacks(): any[] {
+    const sessionId = this.env?.session_id;
+    if (!sessionId) return [];
+    const generalNo = this.generalObj?.getID?.() ?? this.generalObj?.no ?? this.generalObj?.data?.no;
+    if (!generalNo) return [];
+    const cacheKey = `${sessionId}:${generalNo}`;
+    return this.cachedUnitStacks[cacheKey] || [];
+  }
+
+  protected getUnitStackCacheKey(): string | null {
+    const sessionId = this.env?.session_id;
+    if (!sessionId) return null;
+    const generalNo = this.generalObj?.getID?.() ?? this.generalObj?.no ?? this.generalObj?.data?.no;
+    if (!generalNo) return null;
+    return `${sessionId}:${generalNo}`;
+  }
+
+  protected invalidateUnitStackCache(): void {
+    const cacheKey = this.getUnitStackCacheKey();
+    if (cacheKey && this.cachedUnitStacks[cacheKey]) {
+      delete this.cachedUnitStacks[cacheKey];
+    }
   }
 
   protected async setNation(args: string[] | null = null): Promise<void> {
@@ -300,9 +343,10 @@ export abstract class BaseCommand {
     this.resetTestCache();
     
     // 즉시 fallback 값으로 설정하여 동기적으로 사용 가능하게 함
+    const fallbackCityMeta = CityConst.byID(cityNo, this.env?.scenario_id);
     this.destCity = {
-      city: cityNo,
-      name: `City_${cityNo}`,
+      city: fallbackCityMeta?.city ?? cityNo,
+      name: fallbackCityMeta?.name ?? `City_${cityNo}`,
       nation: 0,
       pop: 0,
       agri: 0,
@@ -365,9 +409,10 @@ export abstract class BaseCommand {
       
       if (!cityDoc) {
         console.error(`setDestCityAsync: City ${cityNo} not found in session ${sessionId}`);
+        const fallbackCityMeta = CityConst.byID(cityNo, this.env?.scenario_id);
         this.destCity = {
-          city: cityNo,
-          name: `City_${cityNo}`,
+          city: fallbackCityMeta?.city ?? cityNo,
+          name: fallbackCityMeta?.name ?? `City_${cityNo}`,
           nation: 0,
           pop: 0,
           agri: 0,
@@ -396,9 +441,10 @@ export abstract class BaseCommand {
       };
     } catch (error) {
       console.error('setDestCityAsync 실패:', error);
+      const fallbackCityMeta = CityConst.byID(cityNo, this.env?.scenario_id);
       this.destCity = {
-        city: cityNo,
-        name: `City_${cityNo}`,
+        city: fallbackCityMeta?.city ?? cityNo,
+        name: fallbackCityMeta?.name ?? `City_${cityNo}`,
         nation: 0,
         pop: 0,
         agri: 0,

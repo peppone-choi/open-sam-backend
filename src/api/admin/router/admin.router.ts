@@ -66,7 +66,8 @@ router.get(
   requirePermission(AdminPermission.MANAGE_GENERALS),
   asyncHandler(async (req, res) => {
     // FUTURE: General 목록 조회
-    res.json({ message: 'List generals' });
+    res.json({ message: '장수 목록 조회 기능이 준비 중입니다.' });
+
   })
 );
 
@@ -75,7 +76,8 @@ router.get(
   requirePermission(AdminPermission.MANAGE_GENERALS),
   asyncHandler(async (req, res) => {
     // FUTURE: General 상세 조회
-    res.json({ message: `Get general ${req.params.id}` });
+    res.json({ message: `장수 ${req.params.id} 상세 조회 기능이 준비 중입니다.` });
+
   })
 );
 
@@ -84,7 +86,8 @@ router.put(
   requirePermission(AdminPermission.MANAGE_GENERALS),
   asyncHandler(async (req, res) => {
     // FUTURE: General 수정
-    res.json({ message: `Update general ${req.params.id}` });
+    res.json({ message: `장수 ${req.params.id} 수정 기능이 준비 중입니다.` });
+
   })
 );
 
@@ -93,7 +96,8 @@ router.delete(
   requireSuperAdmin,
   asyncHandler(async (req, res) => {
     // FUTURE: General 삭제
-    res.json({ message: `Delete general ${req.params.id}` });
+    res.json({ message: `장수 ${req.params.id} 삭제 기능이 준비 중입니다.` });
+
   })
 );
 
@@ -102,34 +106,38 @@ router.get(
   '/cities',
   requirePermission(AdminPermission.MANAGE_CITIES),
   asyncHandler(async (req, res) => {
-    res.json({ message: 'List cities' });
+    res.json({ message: '도시 목록 조회 기능이 준비 중입니다.' });
   })
 );
+
 
 router.put(
   '/cities/:id',
   requirePermission(AdminPermission.MANAGE_CITIES),
   asyncHandler(async (req, res) => {
-    res.json({ message: `Update city ${req.params.id}` });
+    res.json({ message: `도시 ${req.params.id} 수정 기능이 준비 중입니다.` });
   })
 );
+
 
 // Nation 관리
 router.get(
   '/nations',
   requirePermission(AdminPermission.MANAGE_NATIONS),
   asyncHandler(async (req, res) => {
-    res.json({ message: 'List nations' });
+    res.json({ message: '국가 목록 조회 기능이 준비 중입니다.' });
   })
 );
+
 
 router.put(
   '/nations/:id',
   requirePermission(AdminPermission.MANAGE_NATIONS),
   asyncHandler(async (req, res) => {
-    res.json({ message: `Update nation ${req.params.id}` });
+    res.json({ message: `국가 ${req.params.id} 수정 기능이 준비 중입니다.` });
   })
 );
+
 
 // ==================== 시스템 ====================
 

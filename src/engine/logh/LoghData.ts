@@ -2,7 +2,8 @@
 /**
  * 은하영웅전설 Ⅶ 게임 데이터
  *
- * 출처: gin7manual.txt (銀河英雄伝説Ⅶ 일본어 매뉴얼)
+ * 출처: gin7manual.txt (은하영웅전설Ⅶ 일본어 매뉴얼)
+
  *
  * **핵심 개념**:
  * - 다인수 온라인 전략 시뮬레이션
@@ -242,8 +243,9 @@ export interface IPlanet {
 /**
  * 워프 항행 시스템
  *
- * gin7manual.txt: "ワープ航行の概念"
+ * gin7manual.txt: "워프 항행 개념"
  */
+
 export interface IWarpSystem {
   /** 워프 시간 (턴 수) */
   warpTime: number;
@@ -261,7 +263,8 @@ export interface IWarpSystem {
 export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationPoints' | 'famePoints' | 'achievements' | 'commandPoints' | 'authorityCards' | 'fleetId' | 'flagship' | 'position'>> = {
   /** 라인하르트 폰 로엔그람 (은하제국) */
   reinhard: {
-    name: 'ラインハルト・フォン・ローエングラム',
+    name: '라인하르트 폰 로엔그람',
+
     faction: FactionType.EMPIRE,
     rank: Rank.EMPIRE_GRAND_ADMIRAL,
     stats: {
@@ -274,7 +277,8 @@ export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationP
 
   /** 양 웬리 (자유혹성동맹) */
   yang: {
-    name: 'ヤン・ウェンリー',
+    name: '양 웬리',
+
     faction: FactionType.ALLIANCE,
     rank: Rank.ALLIANCE_ADMIRAL,
     stats: {
@@ -287,7 +291,8 @@ export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationP
 
   /** 지크프리트 키르히아이스 (은하제국) */
   kircheis: {
-    name: 'ジークフリード・キルヒアイス',
+    name: '지크프리트 키르히아이즈',
+
     faction: FactionType.EMPIRE,
     rank: Rank.EMPIRE_SENIOR_ADMIRAL,
     stats: {
@@ -300,7 +305,8 @@ export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationP
 
   /** 율리안 민츠 (자유혹성동맹) */
   julian: {
-    name: 'ユリアン・ミンツ',
+    name: '줄리안 민츠',
+
     faction: FactionType.ALLIANCE,
     rank: Rank.ALLIANCE_REAR_ADMIRAL,
     stats: {
@@ -313,7 +319,8 @@ export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationP
 
   /** 오스카 폰 로이엔탈 (은하제국) */
   reuenthal: {
-    name: 'オスカー・フォン・ロイエンタール',
+    name: '오스카 폰 로이엔탈',
+
     faction: FactionType.EMPIRE,
     rank: Rank.EMPIRE_SENIOR_ADMIRAL,
     stats: {
@@ -326,7 +333,8 @@ export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationP
 
   /** 볼프강 미터마이어 (은하제국) */
   mittermeyer: {
-    name: 'ヴォルフガング・ミッターマイヤー',
+    name: '볼프강 미터마이어',
+
     faction: FactionType.EMPIRE,
     rank: Rank.EMPIRE_SENIOR_ADMIRAL,
     stats: {
@@ -341,10 +349,11 @@ export const FAMOUS_COMMANDERS: Record<string, Omit<ILoghCharacter, 'evaluationP
 /**
  * 커맨드 포인트 시스템
  *
- * gin7manual.txt: "コマンドポイント"
+ * gin7manual.txt: "커맨드 포인트"
  * - 캐릭터가 행동할 때 소모
  * - 계급이 높을수록 많이 보유
  */
+
 export const COMMAND_POINTS_BY_RANK: Record<Rank, number> = {
   [Rank.EMPIRE_GRAND_ADMIRAL]: 20,
   [Rank.EMPIRE_SENIOR_ADMIRAL]: 15,
@@ -368,18 +377,21 @@ export const COMMAND_POINTS_BY_RANK: Record<Rank, number> = {
 /**
  * RTS 전술 게임 시스템
  *
- * gin7manual.txt: "戦術ゲーム部分はシリーズ初の RTS 型"
+ * gin7manual.txt: "전술 파트는 시리즈 최초의 RTS 형식"
  */
+
 export interface IRTSBattleSystem {
   /** 함대 유닛 */
   units: {
     unitId: string;
     type: 'fleet' | 'planet' | 'fortress';
     position: { x: number; y: number };
-    commandRange: number; // コマンドレンジサークル
+    commandRange: number; // 커맨드 범위 원형
+
   }[];
 
-  /** 색적 시스템 (索敵) */
+/** 색적 시스템 (탐지) */
+
   detection: {
     range: number;
     fogOfWar: boolean;
@@ -392,26 +404,30 @@ export interface IRTSBattleSystem {
 /**
  * 직무 권한 카드
  *
- * gin7manual.txt: "職務権限カード"
+ * gin7manual.txt: "직무 권한 카드"
  * - 상급 직무에 특수 권한 부여
  */
+
 export const AUTHORITY_CARDS = {
   /** 작전 발령 권한 */
   OPERATION_COMMAND: {
-    name: '作戦発令',
+    name: '작전 발령',
     description: '함대 작전 계획을 발령할 수 있음',
+
     requiredRank: Rank.EMPIRE_COMMODORE,
   },
   /** 인사 권한 */
   PERSONNEL_MANAGEMENT: {
-    name: '人事管理',
+    name: '인사 관리',
     description: '승진, 임명, 파면 권한',
+
     requiredRank: Rank.EMPIRE_VICE_ADMIRAL,
   },
   /** 생산 권한 */
   PRODUCTION_AUTHORITY: {
-    name: '生産権限',
+    name: '생산 권한',
     description: '함선 및 자원 생산 명령',
+
     requiredRank: Rank.EMPIRE_REAR_ADMIRAL,
   },
 };

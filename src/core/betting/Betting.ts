@@ -6,6 +6,7 @@ import { Util } from '../../utils/Util';
 import { GameConst } from '../../const/GameConst';
 import { logger } from '../../common/logger';
 import { GeneralRecord } from '../../models/general_record.model';
+import { Session } from '../../models/session.model';
 
 /**
  * Betting 클래스
@@ -17,6 +18,42 @@ export class Betting {
 
   private info: any; // BettingInfo
   private bettingID: number;
+  private static async persistBettingInfo(sessionId: string, info: any): Promise<void> {
+    if (!info || info.id === undefined || info.id === null) {
+      return;
+    }
+
+    try {
+      const bettingStor = KVStorage.getStorage(`betting:${sessionId}`);
+      await bettingStor.setValue(`id_${info.id}`, info);
+    } catch (error: any) {
+      logger.error('[Betting] Failed to persist betting info to KVStorage', {
+        sessionId,
+        bettingId: info.id,
+        error: error.message
+      });
+    }
+
+    await Betting.syncSessionBetting(sessionId, info);
+  }
+
+  private static async syncSessionBetting(sessionId: string, info: any): Promise<void> {
+    if (!info || info.id === undefined || info.id === null) {
+      return;
+    }
+    try {
+      await Session.updateOne(
+        { session_id: sessionId },
+        { $set: { [`data.betting.id_${info.id}`]: info } }
+      ).exec();
+    } catch (error: any) {
+      logger.warn('[Betting] Failed to sync betting info to session', {
+        sessionId,
+        bettingId: info.id,
+        error: error.message
+      });
+    }
+  }
 
   /**
    * 다음 베팅 ID 생성
@@ -34,8 +71,7 @@ export class Betting {
    */
   static async openBetting(sessionId: string, info: any): Promise<void> {
     const bettingID = info.id;
-    const bettingStor = KVStorage.getStorage(`betting:${sessionId}`);
-    await bettingStor.setValue(`id_${bettingID}`, info);
+    await Betting.persistBettingInfo(sessionId, info);
     logger.info('[Betting] Betting opened', { sessionId, bettingID });
   }
 
@@ -98,8 +134,7 @@ export class Betting {
     const year = await gameStor.getValue('year') || 184;
     const month = await gameStor.getValue('month') || 1;
     this.info.closeYearMonth = Util.joinYearMonth(year, month);
-    const bettingStor = KVStorage.getStorage(`betting:${this.sessionId}`);
-    await bettingStor.setValue(`id_${bettingID}`, this.info);
+    await Betting.persistBettingInfo(this.sessionId, this.info);
     logger.info('[Betting] Betting closed', { sessionId: this.sessionId, bettingID });
   }
 
@@ -521,8 +556,7 @@ export class Betting {
     // 베팅 정보 업데이트
     this.info.finished = true;
     this.info.winner = winnerType;
-    const bettingStor = KVStorage.getStorage(`betting:${this.sessionId}`);
-    await bettingStor.setValue(`id_${this.bettingID}`, this.info);
+    await Betting.persistBettingInfo(this.sessionId, this.info);
 
     logger.info('[Betting] Rewards given', {
       sessionId: this.sessionId,

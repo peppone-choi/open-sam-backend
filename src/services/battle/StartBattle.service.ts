@@ -5,6 +5,8 @@ import { randomUUID } from 'crypto';
 import { battleRepository } from '../../repositories/battle.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
+import { cityDefenseRepository } from '../../repositories/city-defense.repository';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 export class StartBattleService {
   static async execute(data: any, user?: any) {
@@ -21,7 +23,16 @@ export class StartBattleService {
         return { success: false, message: '대상 도시를 찾을 수 없습니다' };
       }
 
+      const cityName = (city as any)?.name ?? `도시${targetCityId}`;
+
+      const defenseState = await cityDefenseRepository.ensure(
+        sessionId,
+        targetCityId,
+        cityName
+      );
+
       const terrain = this.getTerrainFromCity(city);
+
 
       const attackerUnits: IBattleUnit[] = [];
       for (const generalId of attackerGeneralIds) {
@@ -46,6 +57,7 @@ export class StartBattleService {
           techLevel: 50,
           nationId: attackerNationId,
           commanderId: general.no,
+          originType: 'general',
           
           // 좌표 (배치 단계에서 설정)
           position: { x: 0, y: 0 },
@@ -95,6 +107,7 @@ export class StartBattleService {
           techLevel: 50,
           nationId: defenderNationId,
           commanderId: general.no,
+          originType: 'general' as const,
           
           // 좌표
           position: { x: 0, y: 0 },
@@ -123,7 +136,13 @@ export class StartBattleService {
       const entryDirection = 'north';
       
       // 맵 정보 생성
-      const mapInfo = this.createMapInfo(terrain, entryDirection, city);
+      const mapInfo = this.createMapInfo(terrain, entryDirection, city, defenseState);
+      
+      const garrisonStacks = await unitStackRepository.findByOwner(sessionId, 'city', targetCityId);
+      const garrisonUnits = this.buildCityGarrisonUnits(city, defenseState, garrisonStacks, defenderNationId, mapInfo);
+      if (garrisonUnits.length) {
+        defenderUnits.push(...garrisonUnits);
+      }
       
       // 성 공방전인 경우 성문 유닛 추가
       if (mapInfo.castle && mapInfo.castle.gates.length > 0) {
@@ -167,6 +186,15 @@ export class StartBattleService {
 
       const battleId = `battle_${randomUUID()}`;
 
+      const initialAttackerTroops = attackerUnits.reduce((sum, unit) => sum + (unit.maxTroops ?? unit.troops ?? 0), 0);
+      const initialDefenderTroops = defenderUnits.reduce((sum, unit) => sum + (unit.maxTroops ?? unit.troops ?? 0), 0);
+      const garrisonSnapshot = garrisonUnits
+        .filter(unit => unit.originStackId)
+        .map(unit => ({
+          stackId: unit.originStackId!,
+          initialTroops: unit.maxTroops ?? unit.troops ?? 0,
+        }));
+      
       const battle = await battleRepository.create({
         session_id: sessionId,
         battleId,
@@ -188,8 +216,15 @@ export class StartBattleService {
         map: mapInfo as any,
         isRealtime: true,
         tickRate: 20,
-        startedAt: new Date()
+        startedAt: new Date(),
+        meta: {
+          initialAttackerTroops,
+          initialDefenderTroops,
+          garrisonStacks: garrisonSnapshot,
+          cityName,
+        }
       } as any);
+
 
       return {
         success: true,
@@ -216,7 +251,7 @@ export class StartBattleService {
     return TerrainType.PLAINS;
   }
   
-  private static createMapInfo(terrain: TerrainType, entryDirection: string, city: any) {
+  private static createMapInfo(terrain: TerrainType, entryDirection: string, city: any, defenseState?: any) {
     const mapInfo: any = {
       width: 800,
       height: 600,
@@ -227,17 +262,18 @@ export class StartBattleService {
     
     // 성 공방전
     if (terrain === TerrainType.FORTRESS && (city as any).wall > 0) {
-      const wallLevel = (city as any).wall || 50;
-      const gateHP = wallLevel * 100;
+      const wallHp = defenseState?.wall_hp ?? (city as any).wall ?? 50;
+      const gateHp = defenseState?.gate_hp ?? wallHp * 2;
+      const gateMax = defenseState?.gate_max ?? gateHp;
       
       mapInfo.castle = {
         center: { x: 400, y: 300 },
         radius: 120,
         gates: [
-          { id: 'north', position: { x: 400, y: 180 }, width: 40, height: 15, hp: gateHP, maxHp: gateHP },
-          { id: 'south', position: { x: 400, y: 420 }, width: 40, height: 15, hp: gateHP, maxHp: gateHP },
-          { id: 'east', position: { x: 520, y: 300 }, width: 15, height: 40, hp: gateHP, maxHp: gateHP },
-          { id: 'west', position: { x: 280, y: 300 }, width: 15, height: 40, hp: gateHP, maxHp: gateHP }
+          { id: 'north', position: { x: 400, y: 180 }, width: 40, height: 15, hp: gateHp, maxHp: gateMax },
+          { id: 'south', position: { x: 400, y: 420 }, width: 40, height: 15, hp: gateHp, maxHp: gateMax },
+          { id: 'east', position: { x: 520, y: 300 }, width: 15, height: 40, hp: gateHp, maxHp: gateMax },
+          { id: 'west', position: { x: 280, y: 300 }, width: 15, height: 40, hp: gateHp, maxHp: gateMax }
         ],
         targetGateId: this.getTargetGate(entryDirection)
       };
@@ -292,6 +328,94 @@ export class StartBattleService {
       southwest: 'south'
     };
     return gateMapping[direction] || 'north';
+  }
+
+  private static buildCityGarrisonUnits(
+    city: any,
+    defenseState: any,
+    stacks: any[],
+    defenderNationId: number,
+    mapInfo: any
+  ): IBattleUnit[] {
+    if (!stacks || stacks.length === 0) {
+      return [];
+    }
+    const stance: 'hold' | 'defensive' = mapInfo?.castle ? 'hold' : 'defensive';
+    return stacks
+      .map((stack: any, index: number) => {
+        const troops = this.getStackTroopCount(stack);
+        if (troops <= 0) {
+          return null;
+        }
+        const unitType = this.getUnitType(stack.crew_type_id ?? stack.unit_type ?? 0);
+        const unitProps = this.getUnitProperties(unitType, troops);
+        const position = this.getGarrisonPosition(mapInfo);
+        return {
+          generalId: -1000 - index,
+          generalName: `${city?.name || '도시'} 수비대`,
+          troops,
+          maxTroops: troops,
+          leadership: 45,
+          strength: 45,
+          intelligence: 40,
+          unitType,
+          morale: stack.morale ?? 75,
+          training: stack.train ?? 70,
+          techLevel: 40,
+          nationId: defenderNationId,
+          commanderId: null,
+          originType: 'cityStack' as const,
+          originStackId: stack._id?.toString?.() || stack.id,
+          position,
+          velocity: { x: 0, y: 0 },
+          facing: 0,
+          collisionRadius: unitProps.collisionRadius,
+          moveSpeed: unitProps.moveSpeed,
+          attackRange: unitProps.attackRange,
+          attackCooldown: unitProps.attackCooldown,
+          lastAttackTime: 0,
+          formation: unitProps.formation,
+          stance,
+          isCharging: false,
+          isAIControlled: true,
+          specialSkills: ['수비태세']
+        } as IBattleUnit;
+      })
+      .filter((unit): unit is IBattleUnit => Boolean(unit));
+  }
+
+  private static getStackTroopCount(stack: any): number {
+    if (!stack) {
+      return 0;
+    }
+    if (typeof stack.hp === 'number') {
+      return Math.max(0, Math.round(stack.hp));
+    }
+    const unitSize = stack.unit_size ?? 100;
+    const stackCount = stack.stack_count ?? 0;
+    return Math.max(0, unitSize * stackCount);
+  }
+
+  private static getGarrisonPosition(mapInfo: any): { x: number; y: number } {
+    if (mapInfo?.castle) {
+      const center = mapInfo.castle.center;
+      const radius = Math.max(20, mapInfo.castle.radius - 20);
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.random() * radius;
+      return {
+        x: center.x + Math.cos(angle) * dist,
+        y: center.y + Math.sin(angle) * dist,
+      };
+    }
+    const zone = mapInfo?.defenderZone || { x: [300, 500], y: [300, 500] };
+    return {
+      x: this.randomInRange(zone.x[0], zone.x[1]),
+      y: this.randomInRange(zone.y[0], zone.y[1]),
+    };
+  }
+
+  private static randomInRange(min: number, max: number): number {
+    return min + Math.random() * (max - min);
   }
 
   private static getUnitType(crewtype: number): UnitType {

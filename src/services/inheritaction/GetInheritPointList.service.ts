@@ -51,7 +51,8 @@ export class GetInheritPointListService {
       return {
         success: true,
         result: items,
-        message: 'GetInheritPointList executed successfully'
+        message: '계승 포인트 목록을 불러왔습니다.'
+
       };
     } catch (error: any) {
       return {

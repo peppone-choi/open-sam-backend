@@ -51,15 +51,22 @@ export class RetireCommand extends GeneralCommand {
 
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
+    const sessionId = env.session_id || general.session_id || 'sangokushi_default';
 
     const logger = general.getLogger();
 
     if (env.isunited === 0) {
-      // await window.CheckHall?.(general.getID());
+      try {
+        const { CheckHallService } = await import('../../services/admin/CheckHall.service');
+        await CheckHallService.execute(general.getID(), sessionId);
+      } catch (error: any) {
+        console.warn('[RetireCommand] CheckHall execution failed:', error?.message || error);
+      }
     }
 
-    await // TODO: general.rebirth();
+    await general.rebirth();
     logger.pushGeneralActionLog(`은퇴하였습니다. <1>${date}</>`);
+
     logger.pushGeneralHistoryLog('은퇴');
 
     this.setResultTurn(new LastTurn(RetireCommand.getName(), this.arg));

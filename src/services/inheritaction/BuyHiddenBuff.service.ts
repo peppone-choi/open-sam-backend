@@ -110,7 +110,8 @@ export class BuyHiddenBuffService {
       return {
         success: true,
         result: true,
-        message: 'BuyHiddenBuff executed successfully'
+        message: '숨겨진 버프를 구매했습니다.'
+
       };
     } catch (error: any) {
       return {

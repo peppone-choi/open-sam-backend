@@ -32,7 +32,7 @@ export class che_무작위수도이전 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeLord(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.NotOpeningPart(),
       ConstraintHelper.ReqNationAuxValue('can_무작위수도이전', 0, '>', 0, '더이상 변경이 불가능합니다.')
     ];
   }

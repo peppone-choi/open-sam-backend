@@ -18,13 +18,13 @@ export class OAuthService {
   /**
    * 카카오 인증 URL 생성
    */
-  static getKakaoAuthUrl(redirectUri: string): string {
+  static getKakaoAuthUrl(redirectUri: string, stateToken?: string): string {
     const clientId = process.env.KAKAO_CLIENT_ID;
     if (!clientId) {
       throw new Error('KAKAO_CLIENT_ID 환경 변수가 설정되지 않았습니다');
     }
 
-    const state = require('crypto').randomBytes(16).toString('hex');
+    const state = stateToken || require('crypto').randomBytes(16).toString('hex');
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -34,6 +34,7 @@ export class OAuthService {
 
     return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
   }
+
 
   /**
    * 카카오 액세스 토큰 획득

@@ -123,8 +123,9 @@ export class ReserveBulkCommandService {
         result: true,
         briefList,
         reason: 'success',
-        message: 'ReserveBulkCommand executed successfully'
+        message: '국가 명령 예약을 저장했습니다.'
       };
+
     } catch (error: any) {
       return {
         success: false,

@@ -2,6 +2,8 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { IUnitStack } from '../../models/unit_stack.model';
 
 /**
  * 단련 커맨드
@@ -33,6 +35,10 @@ export class TrainCommand extends GeneralCommand {
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];
+  }
+
+  private getUnitStacks(): any[] {
+    return this.getCachedUnitStacks();
   }
 
   public getCommandDetailTitle(): string {
@@ -77,6 +83,12 @@ export class TrainCommand extends GeneralCommand {
 
     const general = this.generalObj;
 
+    const unitStacks = this.getUnitStacks();
+    const primaryStack = unitStacks[0];
+    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const effectiveTrain = primaryStack?.train ?? general.data.train ?? 50;
+    const effectiveMorale = primaryStack?.morale ?? general.data.atmos ?? 50;
+
     // 성공률 계산 (성공 34%, 보통 33%, 실패 33%)
     const [pick, multiplier] = rng.choiceUsingWeightPair([
       [['success', 3], 0.34],
@@ -86,15 +98,16 @@ export class TrainCommand extends GeneralCommand {
 
     // 숙련도 증가량 계산 (PHP 원본과 동일: round 먼저, 그 후 multiplier)
     let score = Math.round(
-      general.data.crew * general.data.train * general.data.atmos / 20 / 10000
+      totalCrew * effectiveTrain * effectiveMorale / 20 / 10000
     );
     score *= multiplier;
 
     const logger = general.getLogger();
     const date = general.getTurnTime(general.TURNTIME_HM);
     
-    // TODO: const crewTypeObj = general.getCrewTypeObj() || { id: 0, name: '병종', armType: 0 };
-    const crewTypeObj = { id: 0, name: '병종', armType: 0 };
+    const crewTypeObj = primaryStack
+      ? { id: primaryStack.crew_type_id, name: primaryStack.crew_type_name, armType: 0 }
+      : { id: 0, name: '병종', armType: 0 };
     const armTypeText = crewTypeObj.name || '병종';
 
     // 결과 로그
@@ -107,11 +120,15 @@ export class TrainCommand extends GeneralCommand {
     }
 
     // 경험치
-    const crew = Math.max(1, general.data.crew);
+    const crew = Math.max(1, totalCrew);
     const exp = crew / 400;
 
     // 병종 숙련도 증가
-    // TODO: general.addDex(crewTypeObj, score, false);
+    if (typeof general.addDex === 'function') {
+
+      general.addDex(crewTypeObj, score, false);
+
+    }
 
     // 능력치 증가 (PHP와 동일하게 통무지만)
     const incStat = rng.choiceUsingWeight({
@@ -128,6 +145,7 @@ export class TrainCommand extends GeneralCommand {
     
     // 경험치/능력치 증가
     general.addExperience(exp);
+    this.applyTrainingToStacks(unitStacks, multiplier);
     general.increaseVar(incStat, 1);
 
     this.setResultTurn(new LastTurn(TrainCommand.getName(), this.arg));
@@ -161,5 +179,26 @@ export class TrainCommand extends GeneralCommand {
     await this.saveGeneral();
 
     return true;
+  }
+
+  private getStackTroopCount(stack: any): number {
+    const hp = stack?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack?.unit_size ?? 100;
+    const stackCount = stack?.stack_count ?? 0;
+    return unitSize * stackCount;
+  }
+
+  private async applyTrainingToStacks(stacks: any[], multiplier: number): Promise<void> {
+    if (!stacks.length) return;
+    for (const stack of stacks) {
+      const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
+      if (!stackDoc) continue;
+      stackDoc.train = Math.min(100, stackDoc.train + 1 * multiplier);
+      stackDoc.morale = Math.min(100, stackDoc.morale + 0.5 * multiplier);
+      await stackDoc.save();
+    }
   }
 }

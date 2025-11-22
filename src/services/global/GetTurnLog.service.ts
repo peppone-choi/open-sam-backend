@@ -13,14 +13,14 @@ export class GetTurnLogService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
 
       if (!generalId) {
         return {
           success: false,
-          message: 'General ID required'
+          message: '장수 식별자가 필요합니다.'
         };
       }
 

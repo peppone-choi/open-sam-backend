@@ -76,6 +76,7 @@ function calcTournamentTerm(turnTerm: number): number {
 export async function processTournament(sessionId: string): Promise<void> {
   try {
     const gameStor = KVStorage.getStorage(`game_env:${sessionId}`);
+    const startedAt = Date.now();
     
     const tournament = await gameStor.getValue('tournament') || 0;
     const phase = await gameStor.getValue('phase') || 0;
@@ -86,10 +87,12 @@ export async function processTournament(sessionId: string): Promise<void> {
 
     // 수동 진행이면 무시
     if (!tnmtAuto) {
+      logger.debug(`[TournamentEngine] Auto mode disabled for ${sessionId}`);
       return;
     }
 
     if (!tnmtTime) {
+      logger.debug(`[TournamentEngine] No scheduled time for tournament in ${sessionId}`);
       return;
     }
 
@@ -98,11 +101,16 @@ export async function processTournament(sessionId: string): Promise<void> {
     const offset = Math.floor((now.getTime() - tnmtTimeDate.getTime()) / 1000);
 
     if (offset < 0) {
+      logger.debug(`[TournamentEngine] Tournament not ready yet for ${sessionId}`, { tnmtTime: tnmtTimeDate.toISOString() });
       return;
     }
 
     const unit = calcTournamentTerm(turnTerm);
-    const iter = Math.floor(offset / unit) + 1;
+    let iter = Math.floor(offset / unit) + 1;
+    if (iter > 600) {
+      logger.warn(`[TournamentEngine] Iteration cap reached for ${sessionId}`, { iter, unit, offset });
+      iter = 600;
+    }
 
     let currentTournament = tournament;
     let currentPhase = phase;
@@ -220,6 +228,15 @@ export async function processTournament(sessionId: string): Promise<void> {
       phase: currentPhase,
       newTime: newTime.toISOString()
     });
+
+    const durationMs = Date.now() - startedAt;
+    logger.info('[TournamentEngine] Execution summary', {
+      sessionId,
+      durationMs,
+      steps: iter,
+      tournament: currentTournament,
+      phase: currentPhase
+    });
   } catch (error: any) {
     logger.error('[TournamentEngine] Error processing tournament', {
       sessionId,
@@ -289,7 +306,7 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
     for (const gen of generals) {
       const genData = gen.data || {};
       const score = scoringCandFunction(genData);
-      freeJoinerCandidate.push([genData, Math.pow(score, 1.5)]);
+      freeJoinerCandidate.push([gen, Math.pow(score, 1.5)]);
     }
 
     const joinersValues: any[] = [];
@@ -300,11 +317,26 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
         break;
       }
 
-      const [general, remaining] = Util.choiceRandomUsingWeightPair(freeJoinerCandidate);
+      const [general] = Util.choiceRandomUsingWeightPair(freeJoinerCandidate);
       const genIdx = freeJoinerCandidate.findIndex(([g]) => g === general);
       if (genIdx >= 0) {
         freeJoinerCandidate.splice(genIdx, 1);
       }
+      if (!general) {
+        break;
+      }
+
+      const generalData = general.data || {};
+      const generalNo = general.no || generalData.no || 0;
+      const generalNpc = general.npc ?? generalData.npc ?? 0;
+      const resolvedName = general.name || generalData.name || '무명';
+      const resolvedLeadership = general.leadership ?? generalData.leadership ?? 10;
+      const resolvedStrength = general.strength ?? generalData.strength ?? 10;
+      const resolvedIntel = general.intel ?? generalData.intel ?? 10;
+      const resolvedLevel = general.lvl ?? generalData.explevel ?? generalData.lvl ?? 10;
+      const resolvedHorse = general.horse ?? generalData.horse ?? 'None';
+      const resolvedWeapon = general.weapon ?? generalData.weapon ?? 'None';
+      const resolvedBook = general.book ?? generalData.book ?? 'None';
 
       // 가장 적은 그룹 찾기
       const minGrpCount = Math.min(...grpCount);
@@ -313,18 +345,18 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
 
       joinersValues.push({
         session_id: sessionId,
-        no: general.no || 0,
-        npc: general.npc || 0,
-        name: general.name || '무명',
-        leadership: general.leadership || 10,
-        strength: general.strength || 10,
-        intel: general.intel || 10,
-        lvl: general.explevel || 10,
+        no: generalNo,
+        npc: generalNpc,
+        name: resolvedName,
+        leadership: resolvedLeadership,
+        strength: resolvedStrength,
+        intel: resolvedIntel,
+        lvl: resolvedLevel,
         grp: grpIdx,
         grp_no: grpCnt,
-        h: general.horse || 'None',
-        w: general.weapon || 'None',
-        b: general.book || 'None',
+        h: resolvedHorse,
+        w: resolvedWeapon,
+        b: resolvedBook,
         win: 0,
         draw: 0,
         lose: 0,
@@ -332,8 +364,8 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
         prmt: 0
       });
 
-      if (general.no) {
-        joinersIdx.push(general.no);
+      if (generalNo > 0) {
+        joinersIdx.push(generalNo);
       }
       grpCount[grpIdx] += 1;
     }
@@ -369,7 +401,13 @@ async function fillLowGenAll(sessionId: string, tnmtType: number): Promise<void>
     // 장수 tournament 플래그 업데이트
     if (joinersIdx.length > 0) {
       await generalRepository.updateManyByFilter(
-        { session_id: sessionId, 'data.no': { $in: joinersIdx } },
+        {
+          session_id: sessionId,
+          $or: [
+            { 'data.no': { $in: joinersIdx } },
+            { no: { $in: joinersIdx } }
+          ]
+        },
         { $set: { 'data.tournament': 1 } }
       );
     }

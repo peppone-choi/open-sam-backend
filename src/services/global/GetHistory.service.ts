@@ -14,7 +14,7 @@ export class GetHistoryService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
         };
       }
 
@@ -28,7 +28,7 @@ export class GetHistoryService {
       if (!history) {
         return {
           success: false,
-          message: 'History not found for specified year/month'
+          message: '요청한 연월의 기록이 없습니다.'
         };
       }
 

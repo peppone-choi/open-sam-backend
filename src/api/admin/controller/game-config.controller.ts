@@ -12,8 +12,9 @@ export class GameConfigController {
     const config = await this.service.getCurrentConfig();
     
     if (!config) {
-      return res.status(404).json({ error: 'Config not found' });
+      return res.status(404).json({ error: '설정 정보를 찾을 수 없습니다.' });
     }
+
     
     res.json({ config });
   }
@@ -29,9 +30,10 @@ export class GameConfigController {
     const config = await this.service.updateUnitAdvantage(advantages, adminId);
     
     res.json({ 
-      message: 'Unit advantage updated successfully',
+      message: '병종 상성 설정이 갱신되었습니다.',
       config: config.unitAdvantage 
     });
+
   }
 
   /**
@@ -45,9 +47,10 @@ export class GameConfigController {
     const config = await this.service.updateUnitInfo(units, adminId);
     
     res.json({ 
-      message: 'Units updated successfully',
+      message: '병종 정보가 갱신되었습니다.',
       units: config.unitAdvantage.units 
     });
+
   }
 
   /**
@@ -61,9 +64,10 @@ export class GameConfigController {
     const config = await this.service.updateBalance(balance, adminId);
     
     res.json({ 
-      message: 'Balance updated successfully',
+      message: '게임 밸런스 설정이 갱신되었습니다.',
       balance: config.balance 
     });
+
   }
 
   /**
@@ -77,9 +81,10 @@ export class GameConfigController {
     const config = await this.service.updateTurnConfig(turnConfig, adminId);
     
     res.json({ 
-      message: 'Turn config updated successfully',
+      message: '턴 설정이 갱신되었습니다.',
       turnConfig: config.turnConfig 
     });
+
   }
 
   /**
@@ -93,8 +98,9 @@ export class GameConfigController {
     const config = await this.service.updateExpConfig(expConfig, adminId);
     
     res.json({ 
-      message: 'Experience config updated successfully',
+      message: '경험치 설정이 갱신되었습니다.',
       expConfig: config.expConfig 
     });
+
   }
 }

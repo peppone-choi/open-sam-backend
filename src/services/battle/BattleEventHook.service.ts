@@ -37,13 +37,13 @@ export async function onCityOccupied(
     });
 
     if (!city) {
-      logger.error('[BattleEventHook] City not found', { sessionId, cityId });
+      logger.error('[BattleEventHook] 도시를 찾을 수 없습니다.', { sessionId, cityId });
       return;
     }
 
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
-      logger.error('[BattleEventHook] Session not found', { sessionId });
+      logger.error('[BattleEventHook] 세션을 찾을 수 없습니다.', { sessionId });
       return;
     }
 
@@ -122,7 +122,7 @@ export async function onNationDestroyed(
   try {
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
-      logger.error('[BattleEventHook] Session not found', { sessionId });
+      logger.error('[BattleEventHook] 세션을 찾을 수 없습니다.', { sessionId });
       return;
     }
 
@@ -139,7 +139,7 @@ export async function onNationDestroyed(
     });
 
     if (!destroyedNation) {
-      logger.error('[BattleEventHook] Nation not found', { sessionId, destroyedNationId });
+      logger.error('[BattleEventHook] 국가를 찾을 수 없습니다.', { sessionId, destroyedNationId });
       return;
     }
 
@@ -293,7 +293,7 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
   try {
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
-      logger.error('[BattleEventHook] Session not found', { sessionId });
+      logger.error('[BattleEventHook] 세션을 찾을 수 없습니다.', { sessionId });
       return;
     }
 
@@ -310,7 +310,7 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
     });
 
     if (!unifiedNation) {
-      logger.error('[BattleEventHook] Nation not found', { sessionId, unifiedNationId });
+      logger.error('[BattleEventHook] 국가를 찾을 수 없습니다.', { sessionId, unifiedNationId });
       return;
     }
 

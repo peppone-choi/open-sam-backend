@@ -11,6 +11,7 @@ import { GeneralTurn } from '../../models/general_turn.model';
 import { GeneralRecord } from '../../models/general_record.model';
 import { KVStorage } from '../../utils/KVStorage';
 import crypto from 'crypto';
+import { generateStatsWithPointSystem } from './StatPointGenerator';
 
 /**
  * Join Service (장수 가입)
@@ -24,7 +25,7 @@ export class JoinService {
     if (!userId) {
       return { 
         success: false, 
-        message: '로그인이 필요합니다. userId를 찾을 수 없습니다.' 
+        message: '로그인이 필요합니다. 사용자 식별자를 찾을 수 없습니다.' 
       };
     }
     
@@ -43,6 +44,11 @@ export class JoinService {
         politics,
         charm,
         trait: selectedTrait,
+        // 새 포인트 기반 생성 시스템용 입력
+        usePointSystem,
+        backgroundId,
+        traitIds,
+        statAdjust,
         pic,
         character,
         inheritSpecial,
@@ -107,8 +113,37 @@ export class JoinService {
       }
 
       // 7. 능력치 검증 및 트레잇 판정
+      let finalLeadershipInput = leadership;
+      let finalStrengthInput = strength;
+      let finalIntelInput = intel;
+      let finalPoliticsInput = politics;
+      let finalCharmInput = charm;
+
+      // 새 포인트 시스템이 켜져 있으면, 배경/트레잇/조정값으로 능력치를 생성한다.
+      if (usePointSystem) {
+        const pointResult = generateStatsWithPointSystem({
+          backgroundId: backgroundId || null,
+          traitIds: Array.isArray(traitIds) ? traitIds : [],
+          adjust: statAdjust || {},
+          gameEnv,
+        });
+
+        if (!pointResult.success || !pointResult.finalStats) {
+          return {
+            success: false,
+            message: pointResult.message || '능력치 생성에 실패했습니다.',
+          };
+        }
+
+        finalLeadershipInput = pointResult.finalStats.leadership;
+        finalStrengthInput = pointResult.finalStats.strength;
+        finalIntelInput = pointResult.finalStats.intel;
+        finalPoliticsInput = pointResult.finalStats.politics;
+        finalCharmInput = pointResult.finalStats.charm;
+      }
+
       const statTotal = gameEnv.defaultStatTotal || 275; // 통무지정매 5개 능력치 기본 275 (평균 55)
-      const totalStats = leadership + strength + intel + politics + charm;
+      const totalStats = finalLeadershipInput + finalStrengthInput + finalIntelInput + finalPoliticsInput + finalCharmInput;
       if (totalStats > statTotal) {
         return { 
           success: false, 
@@ -149,22 +184,22 @@ export class JoinService {
       // 10. 보너스 능력치 계산 (트레잇에 따른 보너스 개수)
       const bonusStats = this.calculateBonusStats(
         inheritBonusStat,
-        leadership,
-        strength,
-        intel,
-        politics,
-        charm,
+        finalLeadershipInput,
+        finalStrengthInput,
+        finalIntelInput,
+        finalPoliticsInput,
+        finalCharmInput,
         userId,
         traitResult.bonusMin,
         traitResult.bonusMax
       );
 
       // 트레잇의 최댓값으로 클램프
-      const finalLeadership = Math.min(leadership + bonusStats.leadership, statMax);
-      const finalStrength = Math.min(strength + bonusStats.strength, statMax);
-      const finalIntel = Math.min(intel + bonusStats.intel, statMax);
-      const finalPolitics = Math.min(politics + bonusStats.politics, statMax);
-      const finalCharm = Math.min(charm + bonusStats.charm, statMax);
+      const finalLeadership = Math.min(finalLeadershipInput + bonusStats.leadership, statMax);
+      const finalStrength = Math.min(finalStrengthInput + bonusStats.strength, statMax);
+      const finalIntel = Math.min(finalIntelInput + bonusStats.intel, statMax);
+      const finalPolitics = Math.min(finalPoliticsInput + bonusStats.politics, statMax);
+      const finalCharm = Math.min(finalCharmInput + bonusStats.charm, statMax);
 
       // 11. 나이 계산 (트레잇 페널티 적용)
       const relYear = Math.max(
@@ -265,6 +300,7 @@ export class JoinService {
       // 17. 얼굴 이미지 설정
       const faceResult = await this.determineFace(
         userId,
+        user,
         gameEnv.show_img_level || 0,
         pic
       );
@@ -319,8 +355,11 @@ export class JoinService {
             intel: finalIntel,
             politics: finalPolitics,
             charm: finalCharm,
-            trait: traitResult.name, // 트레잇
-            trait_desc: traitResult.description, // 트레잇 설명
+            trait: traitResult.name, // 레거시 트레잇(천재/영재/수재/범인)
+            trait_desc: traitResult.description, // 레거시 트레잇 설명
+            // 새 배경/트레잇 시스템 정보
+            background_id: backgroundId || null,
+            traits: Array.isArray(traitIds) ? traitIds : [],
             experience: experience,
             dedication: 0,
             gold: Math.floor((gameEnv.defaultGold || 1000) * traitResult.goldMultiplier),
@@ -490,6 +529,16 @@ export class JoinService {
               month: month || 0,
               date: new Date().toISOString()
             });
+
+            await RankData.updateOne(
+              {
+                session_id: sessionId,
+                'data.general_id': generalNo,
+                'data.type': 'inherit_point_spent_dyn'
+              },
+              { $inc: { 'data.value': inheritResult.requiredPoint } },
+              { upsert: true }
+            );
           }
         } catch (error: any) {
           console.error('Failed to log inheritance point:', error);
@@ -535,6 +584,23 @@ export class JoinService {
   // ========== Helper Methods ==========
 
   private static validateInput(data: any): any {
+    // 새 포인트 시스템을 사용하는 경우: 이름과 캐릭터 플래그만 필수
+    if (data.usePointSystem) {
+      const required = ['name', 'character'];
+      for (const field of required) {
+        if (data[field] === undefined || data[field] === null) {
+          return { success: false, message: `${field}는 필수 항목입니다` };
+        }
+      }
+
+      const nameWidth = this.getStringWidth(data.name);
+      if (nameWidth < 1 || nameWidth > 18) {
+        return { success: false, message: '이름은 1~18자 사이여야 합니다' };
+      }
+
+      return { success: true };
+    }
+
     const required = ['name', 'leadership', 'strength', 'intel', 'politics', 'charm', 'character'];
     for (const field of required) {
       if (data[field] === undefined || data[field] === null) {
@@ -1110,40 +1176,73 @@ export class JoinService {
   }
 
   private static async determineFace(
-    userId: number | string,
+    userId: number | string | undefined,
+    user: any,
     showImgLevel: number,
     usePic: boolean
   ): Promise<{ picture: string | null; imgsvr: number }> {
-    // 이미지 표시 레벨이 1 이상이고 사용자가 이미지 사용을 원하는 경우
-    if (showImgLevel >= 1 && usePic) {
-      try {
-        // User 모델에서 이미지 정보 가져오기
-        // RootDB는 별도 연결이 필요하지만, 일단 User 모델에서 시도
-        const user = await User.findById(userId);
-        
-        if (user) {
-          // User 모델에 picture, imgsvr 필드가 있는 경우
-          const picture = user.picture || user.data?.picture || null;
-          const imgsvr = user.imgsvr || user.data?.imgsvr || 0;
-          
-          if (picture) {
-            return {
-              picture: picture,
-              imgsvr: imgsvr || 0
-            };
-          }
-        }
-      } catch (error: any) {
-        // User 조회 실패 시 기본값 사용
-        console.error('Failed to get user image info:', error);
+    if (!(showImgLevel >= 1 && usePic)) {
+      return { picture: null, imgsvr: 0 };
+    }
+
+    const fallbackUser = (user && typeof user === 'object') ? user : {};
+    let mergedUser = { ...fallbackUser };
+
+    if (userId !== undefined && userId !== null) {
+      const dbUser = await this.lookupUserForFace(userId);
+      if (dbUser) {
+        const plain = typeof dbUser.toObject === 'function' ? dbUser.toObject() : dbUser;
+        mergedUser = { ...plain, ...mergedUser };
       }
     }
 
-    // 기본값: 이미지 없음
+    const grade = mergedUser.grade ?? 0;
+    if (grade < 1) {
+      return { picture: null, imgsvr: 0 };
+    }
+
+    const picture =
+      mergedUser.picture ??
+      mergedUser.data?.picture ??
+      mergedUser.avatarUrl ??
+      mergedUser.data?.avatarUrl ??
+      null;
+    const imgsvr = mergedUser.imgsvr ?? mergedUser.data?.imgsvr ?? 0;
+
+    if (picture) {
+      return {
+        picture,
+        imgsvr: imgsvr || 0
+      };
+    }
+
     return {
       picture: null,
       imgsvr: 0
     };
+  }
+
+  private static async lookupUserForFace(userId: number | string): Promise<any | null> {
+    const idStr = String(userId);
+    try {
+      const userDoc = await User.findById(idStr);
+      if (userDoc) {
+        return userDoc;
+      }
+    } catch (error) {
+      // ignore invalid object ids
+    }
+
+    try {
+      const userByNo = await User.findOne({ no: idStr });
+      if (userByNo) {
+        return userByNo;
+      }
+    } catch (error) {
+      console.error('Failed to lookup user by numeric id:', error);
+    }
+
+    return null;
   }
 
   private static determinePersonality(character: string, rng: number): string {

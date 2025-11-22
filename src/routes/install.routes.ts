@@ -63,9 +63,10 @@ router.post('/database', async (req, res) => {
     if (!mongodb_uri) {
       return res.status(400).json({
         success: false,
-        message: 'MongoDB URI가 필요합니다'
+        message: 'MongoDB 연결 주소가 필요합니다.'
       });
     }
+
 
     const result = await InstallService.testDatabaseConnection(mongodb_uri);
     
@@ -114,9 +115,10 @@ router.post('/admin', async (req, res) => {
     if (!username || !password || !name) {
       return res.status(400).json({
         success: false,
-        message: 'username, password, name이 모두 필요합니다'
+        message: '사용자명·비밀번호·이름을 모두 입력해야 합니다.'
       });
     }
+
 
     // 이미 설치되어 있는지 확인
     const isInstalled = await InstallService.checkInstallation();

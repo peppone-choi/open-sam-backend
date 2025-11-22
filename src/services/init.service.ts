@@ -8,6 +8,8 @@ import { nationRepository } from '../repositories/nation.repository';
 import { sessionRepository } from '../repositories/session.repository';
 import { generalRepository } from '../repositories/general.repository';
 import { SessionSync } from '../utils/session-sync';
+import { unitStackRepository } from '../repositories/unit-stack.repository';
+import { generateInitialGarrisonsForCities } from './helpers/garrison.helper';
 
 /**
  * 세션 초기화 서비스
@@ -132,6 +134,9 @@ export class InitService {
       generalRepository.deleteManyByFilter({ session_id: sessionId }),
     ]);
     console.log(`   ✓ 도시, 국가, 장수 삭제 완료`);
+
+    const unitStackDeleteResult = await unitStackRepository.deleteBySession(sessionId);
+    console.log(`   ✓ 주둔/부대 정보 삭제 완료 (${unitStackDeleteResult.deletedCount} stacks)`);
     
     // 3-2. 관련 데이터 삭제 (에러가 나도 계속 진행)
     try {
@@ -229,6 +234,8 @@ export class InitService {
     }
     
     console.log(`   ✅ 도시 ${createdCount}개 생성 완료 (총 ${cities.length}개 중)`);
+    
+    await this.initializeGarrisons(sessionId, scenarioId, cities);
     
     // 5. 초기 국가 생성
     const nationsData = this.loadScenarioData(scenarioId, 'nations');
@@ -428,6 +435,22 @@ export class InitService {
     console.log(`🎉 세션 초기화 완료!\n`);
     
     return { cityCount };
+  }
+
+  private static async initializeGarrisons(sessionId: string, scenarioId: string, cities: any[]): Promise<void> {
+    const entries = generateInitialGarrisonsForCities(scenarioId, cities);
+    if (!entries.length) {
+      console.log('   ⚠️  주둔병 데이터가 비어있어 스킵합니다');
+      return;
+    }
+
+    let totalStacks = 0;
+    for (const entry of entries) {
+      await unitStackRepository.bulkCreate(sessionId, 'city', entry.cityId, entry.stacks);
+      totalStacks += entry.stacks.length;
+    }
+
+    console.log(`   ✅ 초기 주둔병 ${totalStacks}개 스택 배치 (도시 ${entries.length}곳)`);
   }
   
   // initializeFromTemplate는 제거됨

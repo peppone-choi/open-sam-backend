@@ -60,7 +60,7 @@ export class EspionageCommand extends BaseLoghCommand {
     if (!targetType || !targetId) {
       return {
         success: false,
-        message: '정보 수집 대상을 지정해주세요. (targetType: fleet/planet/commander, targetId)',
+        message: '정보 수집 대상과 식별자를 모두 지정해주세요.',
       };
     }
 
@@ -186,7 +186,7 @@ export class EspionageCommand extends BaseLoghCommand {
       default:
         return {
           success: false,
-          message: '잘못된 대상 유형입니다. (fleet, planet, commander 중 선택)',
+          message: '지원하지 않는 대상 유형입니다.',
         };
     }
 

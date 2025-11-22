@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth';
 import { BetService } from '../services/betting/Bet.service';
 import { GetBettingDetailService } from '../services/betting/GetBettingDetail.service';
 import { GetBettingListService } from '../services/betting/GetBettingList.service';
+import { SettleBettingService } from '../services/betting/SettleBetting.service';
 
 const router = Router();
 
@@ -164,6 +165,23 @@ router.post('/get-list', authenticate, async (req, res) => {
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/settle', authenticate, async (req, res) => {
+  const userGrade = req.user?.grade ?? 0;
+  if (userGrade < 5) {
+    return res.status(403).json({
+      success: false,
+      message: '관리자만 사용할 수 있습니다'
+    });
+  }
+
+  try {
+    const result = await SettleBettingService.execute(req.body);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 

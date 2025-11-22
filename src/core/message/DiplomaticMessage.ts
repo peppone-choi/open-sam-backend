@@ -156,14 +156,26 @@ export class DiplomaticMessage extends Message {
     //   [receiverID, this.dest.nationID]
     // );
 
-    const general: any = {}; // 임시
+    const general = await General.findOne({
+      $or: [
+        {
+          'data.no': receiverID,
+          'data.nation': this.dest.nationID
+        },
+        {
+          no: receiverID,
+          nation: this.dest.nationID
+        }
+      ]
+    }).lean();
 
     if (general) {
       this.dest.generalID = receiverID;
-      this.dest.generalName = general.name;
+      this.dest.generalName = general.name || general.data?.name;
     }
 
     const [result, reason] = await this.checkDiplomaticMessageValidation(general);
+
     if (result !== DiplomaticMessage.ACCEPTED) {
       // FUTURE: ActionLogger 구현
       // const logger = new ActionLogger(receiverID, 0, year, month);
@@ -250,14 +262,20 @@ export class DiplomaticMessage extends Message {
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     // const [year, month] = gameStor.getValuesAsArray(['year', 'month']);
 
-    // FUTURE: DB 쿼리
-    // const general = await db.queryFirstRow(
-    //   'SELECT name, nation, officer_level, permission, penalty, belong FROM general WHERE no = ? AND nation = ?',
-    //   [receiverID, this.dest.nationID]
-    // );
-
-    const general: any = {}; // 임시
+    const general = await General.findOne({
+      $or: [
+        {
+          'data.no': receiverID,
+          'data.nation': this.dest.nationID
+        },
+        {
+          no: receiverID,
+          nation: this.dest.nationID
+        }
+      ]
+    }).lean();
     const [result, reason] = await this.checkDiplomaticMessageValidation(general);
+
 
     if (result === DiplomaticMessage.INVALID) {
       // FUTURE: ActionLogger 구현

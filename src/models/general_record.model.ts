@@ -19,6 +19,7 @@ export interface IGeneralRecord extends Document {
   year: number;
   month: number;
   text: string;
+  data?: Record<string, any>;
   created_at?: Date;
 }
 
@@ -29,6 +30,7 @@ const GeneralRecordSchema = new Schema<IGeneralRecord>({
   year: { type: Number, required: true },
   month: { type: Number, required: true },
   text: { type: String, required: true },
+  data: { type: Schema.Types.Mixed, default: {} },
   created_at: { type: Date, default: Date.now }
 }, {
   timestamps: false,

@@ -208,7 +208,8 @@ export class ResetStatService {
       return {
         success: true,
         result: true,
-        message: 'ResetStat executed successfully'
+        message: '능력치 재분배를 완료했습니다.'
+
       };
     } catch (error: any) {
       return {

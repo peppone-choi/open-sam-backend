@@ -13,8 +13,9 @@ export class GetMoreLogService {
       const { lastID } = data;
       
       if (typeof lastID !== 'number') {
-        return { success: false, message: '잘못된 lastID 파라미터입니다.' };
+        return { success: false, message: '잘못된 마지막 ID 파라미터입니다.' };
       }
+
       
       const logs = await UserRecord.find({
         session_id: sessionId,
@@ -31,7 +32,8 @@ export class GetMoreLogService {
         success: true,
         result: true,
         log: logs,
-        message: 'GetMoreLog executed successfully'
+        message: '추가 로그를 불러왔습니다.'
+
       };
     } catch (error: any) {
       return {

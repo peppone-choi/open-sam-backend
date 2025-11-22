@@ -3,6 +3,8 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { GameConst } from '../../constants/GameConst';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { IUnitStack, IUnitStackDocument } from '../../models/unit_stack.model';
 
 /**
  * 징병 커맨드
@@ -21,6 +23,8 @@ export class ConscriptCommand extends GeneralCommand {
   protected reqCrew = 0;
   protected reqCrewType: any = null;
   protected currCrewType: any = null;
+  protected targetType: 'general' | 'city' = 'general';
+  protected targetStackId?: string;
 
   protected static initStatic(): void {
     this.defaultTrain = GameConst.defaultTrainLow || 20;
@@ -64,9 +68,27 @@ export class ConscriptCommand extends GeneralCommand {
       return false;
     }
 
+    let targetType: 'general' | 'city' = 'general';
+    if (typeof (this.arg as any).targetType === 'string') {
+      const rawTarget = String((this.arg as any).targetType).toLowerCase();
+      if (rawTarget === 'city') {
+        targetType = 'city';
+      }
+    }
+
+    let targetStackId: string | undefined;
+    if (typeof (this.arg as any).targetStackId === 'string') {
+      const trimmed = (this.arg as any).targetStackId.trim();
+      if (trimmed.length > 0 && trimmed !== 'new') {
+        targetStackId = trimmed;
+      }
+    }
+
     this.arg = {
       crewType,
-      amount
+      amount,
+      targetType,
+      ...(targetStackId ? { targetStackId } : {})
     };
     return true;
   }
@@ -91,6 +113,8 @@ export class ConscriptCommand extends GeneralCommand {
 
     // 징병은 통솔만 사용 (PHP 원본과 동일)
     const leadership = general.getLeadership(true);
+    this.targetType = (this.arg?.targetType === 'city') ? 'city' : 'general';
+    this.targetStackId = typeof this.arg?.targetStackId === 'string' ? this.arg.targetStackId : undefined;
     
     // 현재 병종 정보 (기존 병종 유지 여부 판단용)
     const currCrewType: any = typeof general.getCrewTypeObj === 'function'
@@ -99,27 +123,33 @@ export class ConscriptCommand extends GeneralCommand {
     let maxCrew = leadership * 100;
 
     // 병종 정보 가져오기 - units.json 기반
-    let reqCrewType: any = { id: this.arg.crewType, name: '병종', armType: 0 };
+    let reqCrewType: any = { id: this.arg.crewType, name: '병종', armType: 0, cost: 1, rice: 1 };
     try {
       const { GameUnitConst } = require('../../const/GameUnitConst');
-      const crewTypeData = GameUnitConst.byID(this.arg.crewType);
+      const scenarioId = this.env?.scenario_id || this.env?.scenario || 'sangokushi';
+      const crewTypeData = GameUnitConst.byID(this.arg.crewType, scenarioId);
       if (crewTypeData) {
         reqCrewType = {
           id: crewTypeData.id || this.arg.crewType,
           name: crewTypeData.name || '병종',
           armType: crewTypeData.armType || 0,
           cost: crewTypeData.cost || 1,
+          rice: crewTypeData.rice || 1,
         };
       }
     } catch (error) {
       // GameUnitConst 로드 실패 시 기본값 사용
     }
 
-    if (reqCrewType?.id === currCrewType?.id) {
-      maxCrew -= general.data.crew ?? 0;
+    if (this.targetType === 'general') {
+      if (reqCrewType?.id === currCrewType?.id) {
+        maxCrew -= general.data.crew ?? 0;
+      }
+      this.maxCrew = Math.max(100, Math.min(this.arg.amount, maxCrew));
+    } else {
+      this.maxCrew = Math.max(100, this.arg.amount);
     }
 
-    this.maxCrew = Math.max(100, Math.min(this.arg.amount, maxCrew));
     this.reqCrew = Math.max(100, this.arg.amount);
     this.reqCrewType = reqCrewType;
     this.currCrewType = currCrewType;
@@ -127,7 +157,7 @@ export class ConscriptCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
     const minRecruitPop = GameConst.minAvailableRecruitPop || 0;
 
-    this.fullConditionConstraints = [
+    const baseFullConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
@@ -135,9 +165,16 @@ export class ConscriptCommand extends GeneralCommand {
       ConstraintHelper.ReqCityTrust(20),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
-      ConstraintHelper.ReqGeneralCrewMargin(this.reqCrewType?.id),
-      ConstraintHelper.AvailableRecruitCrewType(this.reqCrewType?.id),
     ];
+
+    if (this.targetType === 'general') {
+      baseFullConstraints.push(
+        ConstraintHelper.ReqGeneralCrewMargin(this.reqCrewType?.id),
+        ConstraintHelper.AvailableRecruitCrewType(this.reqCrewType?.id)
+      );
+    }
+
+    this.fullConditionConstraints = baseFullConstraints;
   }
 
   public getBrief(): string {
@@ -162,6 +199,7 @@ export class ConscriptCommand extends GeneralCommand {
     // 여기서 crew는 실제 병력 수(this.maxCrew)이며,
     // getTechCost(tech) = 1 + getTechLevel(tech) * 0.15 (TS: techRaw/1000 기준)
     const baseCost = this.reqCrewType?.cost || 1; // units.json 기준 gold 비용
+    const baseRice = this.reqCrewType?.rice || 1; // units.json 기준 군량 비용
     const techRaw = this.nation?.tech || 0;
     const techLevel = Math.floor(techRaw / 1000);
     const techCostMultiplier = 1 + techLevel * 0.15;
@@ -172,17 +210,14 @@ export class ConscriptCommand extends GeneralCommand {
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     reqGold *= costOffset;
 
+    let reqRice = (baseRice * techCostMultiplier * crew) / 100;
+
     // onCalcDomestic 보정 적용 (PHP: onCalcDomestic('징병','cost',...))
     const general = this.generalObj;
     if (general && typeof general.onCalcDomestic === 'function') {
       reqGold = general.onCalcDomestic('징병', 'cost', reqGold, {
         armType: this.reqCrewType?.armType ?? 0,
       });
-    }
-
-    // 군량: crew / 100, onCalcDomestic('징병','rice',...)
-    let reqRice = crew / 100;
-    if (general && typeof general.onCalcDomestic === 'function') {
       reqRice = general.onCalcDomestic('징병', 'rice', reqRice, {
         armType: this.reqCrewType?.armType ?? 0,
       });
@@ -224,7 +259,6 @@ export class ConscriptCommand extends GeneralCommand {
     }
 
     const reqCrewType = this.reqCrewType;
-    const currCrew = general.data.crew ?? 0;
     const currCrewType = this.currCrewType;
     const crewTypeName = reqCrewType?.name || '병종';
 
@@ -244,23 +278,103 @@ export class ConscriptCommand extends GeneralCommand {
 
     const date = `${this.env.year}년 ${this.env.month}월`;
     const reqCrewText = Math.max(1, reqCrew).toLocaleString(); // 천 단위 구분자, 최소 1명 보장
-    
-    if (reqCrewType?.id === currCrewType?.id && currCrew > 0) {
-      logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 추가${actionName}했습니다. <1>${date}</>`);
-      // 0으로 나누기 방지: 분모가 0이 될 수 없지만 안전장치 추가
-      const totalCrew = Math.max(1, currCrew + reqCrew);
-      const train = (currCrew * (general.data.train ?? 0) + reqCrew * setTrain) / totalCrew;
-      const atmos = (currCrew * (general.data.atmos ?? 0) + reqCrew * setAtmos) / totalCrew;
 
-      general.increaseVar('crew', reqCrew);
-      general.data.train = train;
-      general.data.atmos = atmos;
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const generalNo = general.getID?.() ?? general.no ?? general.data?.no;
+    if (!generalNo) {
+      throw new Error('장수 번호를 확인할 수 없습니다.');
+    }
+    if (this.targetType === 'city') {
+      const cityId = this.city?.city;
+      if (!cityId) {
+        throw new Error('현 위치한 도시를 확인할 수 없습니다.');
+      }
+      const cityName = this.city?.name || `도시 ${cityId}`;
+      if (this.targetStackId) {
+        const stackDoc = await unitStackRepository.findById(this.targetStackId);
+        if (!stackDoc || stackDoc.owner_type !== 'city' || Number(stackDoc.owner_id) !== Number(cityId)) {
+          throw new Error('선택한 도시 수비대를 찾을 수 없습니다.');
+        }
+        if ((stackDoc.crew_type_id ?? 0) !== (reqCrewType?.id ?? 0)) {
+          throw new Error('선택한 수비대의 병종이 일치하지 않습니다.');
+        }
+        logger.pushGeneralActionLog(`${cityName} 수비대에 ${crewTypeName} <C>${reqCrewText}</>명을 추가${actionName}했습니다. <1>${date}</>`);
+        await this.addTroopsToStack(this.targetStackId, reqCrew, setTrain, setAtmos, reqCrewType);
+      } else {
+        logger.pushGeneralActionLog(`${cityName} 수비대에 ${crewTypeName} <C>${reqCrewText}</>명을 ${actionName}했습니다. <1>${date}</>`);
+        const unitSize = 100;
+        const stackCount = Math.max(1, Math.ceil(reqCrew / unitSize));
+        await unitStackRepository.create({
+          session_id: sessionId,
+          owner_type: 'city',
+          owner_id: cityId,
+          commander_no: cityId,
+          commander_name: `${cityName} 수비대`,
+          crew_type_id: reqCrewType?.id || 0,
+          crew_type_name: crewTypeName,
+          unit_size: unitSize,
+          stack_count: stackCount,
+          hp: reqCrew,
+          train: setTrain,
+          morale: setAtmos,
+          city_id: cityId,
+        });
+      }
     } else {
-      logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 ${actionName}했습니다. <1>${date}</>`);
-      general.data.crewtype = reqCrewType?.id || 0;
-      general.data.crew = reqCrew;
-      general.data.train = setTrain;
-      general.data.atmos = setAtmos;
+      const generalStacks = this.getCachedUnitStacks();
+      await this.ensureGeneralUnitStacks(sessionId, generalNo, currCrewType, generalStacks);
+      let targetStack: any = null;
+      if (this.targetStackId) {
+        targetStack = generalStacks.find((stack: any) => {
+          const stackId = this.extractStackId(stack);
+          return stackId === this.targetStackId;
+        });
+        if (!targetStack) {
+          throw new Error('선택한 부대를 찾을 수 없습니다.');
+        }
+        if ((targetStack.crew_type_id ?? 0) !== (reqCrewType?.id ?? 0)) {
+          throw new Error('선택한 부대의 병종이 일치하지 않습니다.');
+        }
+      } else {
+        targetStack = generalStacks.find((stack: any) => stack.crew_type_id === reqCrewType?.id);
+      }
+
+      const sameTypeTroops = targetStack ? this.getStackTroopCount(targetStack) : 0;
+
+      if (targetStack && sameTypeTroops > 0) {
+        logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 추가${actionName}했습니다. <1>${date}</>`);
+        const stackId = this.extractStackId(targetStack) ?? '';
+        const updated = await this.addTroopsToStack(stackId, reqCrew, setTrain, setAtmos, reqCrewType);
+        const cache = this.getCachedUnitStacks();
+        const idx = cache.findIndex((s: any) => this.extractStackId(s) === stackId);
+        if (idx >= 0) {
+          cache[idx] = updated.toObject?.() || updated;
+        }
+      } else {
+        logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 ${actionName}했습니다. <1>${date}</>`);
+        await unitStackRepository.deleteByOwner(sessionId, 'general', generalNo);
+        const unitSize = 100;
+        const stackCount = Math.max(1, Math.ceil(reqCrew / unitSize));
+        const stackDoc = await unitStackRepository.create({
+          session_id: sessionId,
+          owner_type: 'general',
+          owner_id: generalNo,
+          commander_no: generalNo,
+          commander_name: general.name,
+          crew_type_id: reqCrewType?.id || 0,
+          crew_type_name: crewTypeName,
+          unit_size: unitSize,
+          stack_count: stackCount,
+          hp: reqCrew,
+          train: setTrain,
+          morale: setAtmos,
+        });
+        const cache = this.getCachedUnitStacks();
+        cache.length = 0;
+        cache.push(stackDoc.toObject());
+      }
+
+      await this.syncGeneralTroopData(sessionId, generalNo);
     }
 
     // onCalcDomestic 보정 적용 (주민 감소량)
@@ -298,7 +412,7 @@ export class ConscriptCommand extends GeneralCommand {
 
     // 병종 숙련도 증가
     if (typeof general.addDex === 'function') {
-      // TODO: general.addDex(reqCrewType, Math.max(1, reqCrew) / 100, false);
+      general.addDex(reqCrewType, Math.max(1, reqCrew) / 100, false);
     }
 
     const [reqGold, reqRice] = this.getCost();
@@ -344,7 +458,106 @@ export class ConscriptCommand extends GeneralCommand {
     return true;
   }
 
-  public exportJSVars(): any {
+  private async ensureGeneralUnitStacks(sessionId: string, generalNo: number, currCrewType: any, cache: any[]): Promise<void> {
+    if (cache.length > 0) return;
+    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
+    if (stacks.length === 0) {
+      const legacyCrew = this.generalObj?.data?.crew ?? 0;
+      if (legacyCrew > 0) {
+        const unitSize = 100;
+        const stackCount = Math.max(1, Math.ceil(legacyCrew / unitSize));
+        const stackDoc = await unitStackRepository.create({
+          session_id: sessionId,
+          owner_type: 'general',
+          owner_id: generalNo,
+          commander_no: generalNo,
+          commander_name: this.generalObj?.name,
+          crew_type_id: currCrewType?.id || this.generalObj?.data?.crewtype || 0,
+          crew_type_name: currCrewType?.name || '병종',
+          unit_size: unitSize,
+          stack_count: stackCount,
+          hp: legacyCrew,
+          train: this.generalObj?.data?.train ?? 70,
+          morale: this.generalObj?.data?.atmos ?? 70,
+        });
+        cache.push(stackDoc.toObject());
+      }
+    } else {
+      stacks.forEach((stack) => cache.push(stack));
+    }
+  }
+
+  private async addTroopsToStack(stackId: string, addCrew: number, train: number, atmos: number, reqCrewType: any): Promise<IUnitStackDocument> {
+    if (!stackId) {
+      throw new Error('유닛 스택 ID를 확인할 수 없습니다.');
+    }
+    const stackDoc = await unitStackRepository.findById(stackId);
+    if (!stackDoc) {
+      throw new Error('유닛 스택을 찾을 수 없습니다.');
+    }
+    const unitSize = stackDoc.unit_size ?? 100;
+    const prevTroops = stackDoc.hp ?? unitSize * stackDoc.stack_count;
+    const addedStacks = Math.max(1, Math.ceil(addCrew / unitSize));
+    stackDoc.stack_count += addedStacks;
+    const maxTroops = stackDoc.unit_size * stackDoc.stack_count;
+    stackDoc.hp = Math.min(maxTroops, prevTroops + addCrew);
+    const totalTroops = Math.max(1, prevTroops + addCrew);
+    const prevTrain = stackDoc.train ?? train;
+    const prevMorale = stackDoc.morale ?? atmos;
+    stackDoc.train = (prevTroops * prevTrain + addCrew * train) / totalTroops;
+    stackDoc.morale = (prevTroops * prevMorale + addCrew * atmos) / totalTroops;
+    if (reqCrewType?.name) {
+      stackDoc.crew_type_name = reqCrewType.name;
+    }
+    await stackDoc.save();
+    return stackDoc;
+  }
+
+  private async syncGeneralTroopData(sessionId: string, generalNo: number): Promise<void> {
+    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
+    const totalTroops = stacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    this.generalObj.data.crew = totalTroops;
+    if (stacks.length > 0) {
+      const primary = stacks[0];
+      this.generalObj.data.crewtype = primary.crew_type_id;
+      this.generalObj.data.train = primary.train;
+      this.generalObj.data.atmos = primary.morale;
+    } else {
+      this.generalObj.data.crewtype = 0;
+      this.generalObj.data.train = 0;
+      this.generalObj.data.atmos = 0;
+    }
+    if (typeof this.generalObj.markModified === 'function') {
+      this.generalObj.markModified('data');
+    }
+  }
+
+  private getStackTroopCount(stack: Partial<IUnitStack>): number {
+    const hp = (stack as any)?.hp;
+    if (typeof hp === 'number') {
+      return hp;
+    }
+    const unitSize = stack.unit_size ?? 100;
+    const stackCount = stack.stack_count ?? 0;
+    return unitSize * stackCount;
+  }
+
+  private extractStackId(stack: any): string | undefined {
+    if (!stack) {
+      return undefined;
+    }
+    const rawId = stack._id ?? stack.id;
+    if (typeof rawId === 'string') {
+      return rawId;
+    }
+    if (rawId && typeof rawId.toString === 'function') {
+      return rawId.toString();
+    }
+    return undefined;
+  }
+
+   public exportJSVars(): any {
+
     // 병종 데이터 내보내기
     const crewTypeData: any[] = [];
     

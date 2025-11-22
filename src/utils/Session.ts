@@ -5,6 +5,8 @@
 
 import { Request } from 'express';
 import { Util } from './Util';
+import { UniqueConst, ServerIdentity } from '../const/UniqueConst';
+import { logger } from '../common/logger';
 
 export interface SessionData {
   userID?: number;
@@ -18,6 +20,8 @@ export interface SessionData {
   tokenValidUntil?: string;
   generalID?: number | null;
   generalName?: string | null;
+  serverIdentity?: ServerIdentity;
+  activeSessionId?: string;
   [key: string]: any;
 }
 
@@ -51,6 +55,35 @@ export class Session {
     if (!this.get('ip')) {
       this.set('ip', this.getClientIP(true));
       this.set('time', Math.floor(Date.now() / 1000));
+    }
+  }
+
+  private getServerContext(): ServerIdentity {
+    const session = (this.req as any).session as SessionData;
+    if (!session.serverIdentity) {
+      session.serverIdentity = UniqueConst.getContext();
+      session.activeSessionId = session.serverIdentity.serverId;
+    }
+    return session.serverIdentity;
+  }
+
+  async useServerIdentity(sessionId: string): Promise<ServerIdentity> {
+    try {
+      const identity = await UniqueConst.refresh(sessionId);
+      const session = (this.req as any).session as SessionData;
+      session.serverIdentity = identity;
+      session.activeSessionId = identity.serverId;
+      return identity;
+    } catch (error: any) {
+      logger.warn('[세션] 서버 식별자를 불러오지 못해 기본값을 사용합니다.', {
+        sessionId,
+        error: error?.message || String(error)
+      });
+      const fallback = UniqueConst.getContext();
+      const session = (this.req as any).session as SessionData;
+      session.serverIdentity = fallback;
+      session.activeSessionId = fallback.serverId;
+      return fallback;
     }
   }
 
@@ -196,9 +229,7 @@ export class Session {
       return this;
     }
 
-    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
-    // const serverID = UniqueConst.$serverID;
-    const serverID = 'default'; // 임시
+    const serverID = this.getServerContext().serverId;
 
     const globalLoginDate = this.get('time');
     const loginDate = this.get(serverID + Session.GAME_KEY_DATE);
@@ -254,8 +285,7 @@ export class Session {
    * 게임 로그아웃
    */
   logoutGame(): this {
-    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
-    const serverID = 'default'; // 임시
+    const serverID = this.getServerContext().serverId;
 
     this.set(serverID + Session.GAME_KEY_DATE, null);
     this.set(serverID + Session.GAME_KEY_GENERAL_ID, null);
@@ -313,14 +343,12 @@ export class Session {
   }
 
   get generalID(): number | null {
-    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
-    const serverID = 'default'; // 임시
+    const serverID = this.getServerContext().serverId;
     return this.get(serverID + Session.GAME_KEY_GENERAL_ID) ?? null;
   }
 
   get generalName(): string | null {
-    // FUTURE: UniqueConst 마이그레이션 필요 (v2.0)
-    const serverID = 'default'; // 임시
+    const serverID = this.getServerContext().serverId;
     return this.get(serverID + Session.GAME_KEY_GENERAL_NAME) ?? null;
   }
 

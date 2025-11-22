@@ -139,7 +139,7 @@ export class FormationTacticalCommand {
     if (!formation) {
       return {
         success: false,
-        message: '진형을 지정해야 합니다. (standard, offensive, defensive, encircle, retreat, wedge, crane)',
+        message: '사용할 진형을 선택해야 합니다. (표준·공격·방어 등)',
       };
     }
 

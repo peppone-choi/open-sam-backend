@@ -143,7 +143,7 @@ export class TurnTacticalCommand {
     } else {
       return {
         success: false,
-        message: '회전 목표를 지정해야 합니다. (targetAngle 또는 targetX/targetY)',
+        message: '회전 목표를 지정해야 합니다. (각도 또는 좌표를 입력)',
       };
     }
 

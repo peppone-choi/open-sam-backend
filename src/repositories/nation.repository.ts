@@ -106,7 +106,7 @@ class NationRepository {
     const existing = await Nation.findById(nationId).lean();
     
     if (!existing) {
-      throw new Error(`Nation not found: ${nationId}`);
+      throw new Error(`국가를 찾을 수 없습니다.: ${nationId}`);
     }
     
     const sessionId = existing.session_id || update.session_id;

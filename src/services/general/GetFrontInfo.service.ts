@@ -1,4 +1,3 @@
-// @ts-nocheck - Argument count mismatches need review
 import { General } from '../../models/general.model';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
@@ -10,6 +9,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { getNationTypeInfo as getNationTypeInfoFromFactory } from '../../core/nation-type/NationTypeFactory';
+import { cityDefenseRepository } from '../../repositories/city-defense.repository';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
+import { getSocketManager } from '../../socket/socketManager';
+import { IUnitStack } from '../../models/unit_stack.model';
 
 // Constants 로드
 let cachedConstants: any = null;
@@ -33,6 +37,11 @@ function loadConstants() {
   }
   return cachedConstants;
 }
+
+type LeanUnitStack = Partial<IUnitStack> & {
+  _id?: { toString(): string } | string;
+  id?: string;
+};
 
 /**
  * GetFrontInfo Service  
@@ -61,6 +70,22 @@ export class GetFrontInfoService {
       user,
       data: { session_id: data.session_id, user_id: data.user_id, general_id: data.general_id }
     });
+    
+    const session = await sessionRepository.findBySessionId(sessionId);
+    if (!session) {
+      return {
+        success: false,
+        message: '세션을 찾을 수 없습니다'
+      };
+    }
+
+    const sessionStatus = session.status || session.data?.status;
+    if (sessionStatus && ['finished', 'united'].includes(sessionStatus)) {
+      return {
+        success: false,
+        message: '이미 종료된 세션입니다'
+      };
+    }
     
     const lastNationNoticeDate = data.lastNationNoticeDate || '2022-08-19 00:00:00';
     const lastGeneralRecordID = parseInt(data.lastGeneralRecordID) || 0; // 장수동향 (action)
@@ -110,12 +135,14 @@ export class GetFrontInfoService {
       const cityId = general.city || general.data?.city;
 
       // 2. 전역 정보 생성
-      const globalInfo = await this.generateGlobalInfo(sessionId);
+      const onlineGeneralMap = await this.buildOnlineGeneralMap(sessionId);
+      const globalInfo = await this.generateGlobalInfo(sessionId, session);
+ 
+       // 3. 국가 정보 생성
+       const nationInfo = nationId !== 0
+         ? await this.generateNationInfo(sessionId, nationId, lastNationNoticeDate, onlineGeneralMap)
+         : await this.generateDummyNationInfo();
 
-      // 3. 국가 정보 생성
-      const nationInfo = nationId !== 0
-        ? await this.generateNationInfo(sessionId, nationId, lastNationNoticeDate)
-        : await this.generateDummyNationInfo();
 
       // 4. 장수 정보 생성
       const generalInfo = await this.generateGeneralInfo(sessionId, general, nationId, nationInfo);
@@ -209,16 +236,40 @@ export class GetFrontInfoService {
     return data.online_user_cnt || null;
   }
 
+  private static async buildOnlineGeneralMap(sessionId: string): Promise<Map<number, string[]>> {
+    const map = new Map<number, string[]>();
+    try {
+      const socketManager = getSocketManager();
+      if (!socketManager || typeof socketManager.getOnlineGenerals !== 'function') {
+        return map;
+      }
+      const onlineGenerals = await socketManager.getOnlineGenerals(sessionId);
+      for (const info of onlineGenerals) {
+        if (!info || !info.nationId || info.nationId <= 0) {
+          continue;
+        }
+        const list = map.get(info.nationId) || [];
+        list.push(info.name || `장수 ${info.generalId}`);
+        map.set(info.nationId, list);
+      }
+    } catch (error: any) {
+      console.error('[GetFrontInfo] buildOnlineGeneralMap error:', error);
+    }
+    return map;
+  }
+ 
   /**
    * 전역 게임 정보 생성
    */
-  private static async generateGlobalInfo(sessionId: string) {
-    const session = await sessionRepository.findBySessionId(sessionId );
+
+  private static async generateGlobalInfo(sessionId: string, sessionDoc?: any) {
+    const session = sessionDoc ?? await sessionRepository.findBySessionId(sessionId );
     if (!session) {
       throw new Error('세션을 찾을 수 없습니다');
     }
-
+ 
     const data = session.data || {};
+
     const gameEnv = data.game_env || {};
     
     // 장수 통계
@@ -259,9 +310,12 @@ export class GetFrontInfoService {
       ? session.name 
       : null;
     
+    // 시나리오 표시 이름: scenarioText가 있으면 우선 사용, 없으면 scenario
+    const scenarioText = data.scenarioText || data.scenario || '삼국지';
+
     return {
       serverName: sessionDisplayName, // 세션 표시 이름 (없으면 null)
-      scenarioText: data.scenario || '삼국지',
+      scenarioText,
       extendedGeneral: (data.extended_general || 0) as 0 | 1,
       isFiction: (data.is_fiction || 0) as 0 | 1,
       npcMode: (data.npcmode || 0) as 0 | 1 | 2,
@@ -303,7 +357,8 @@ export class GetFrontInfoService {
   private static async generateNationInfo(
     sessionId: string,
     nationId: number,
-    lastNationNoticeDate: string
+    lastNationNoticeDate: string,
+    onlineGeneralMap?: Map<number, string[]>
   ) {
     const nation = await nationRepository.findOneByFilter({
       session_id: sessionId,
@@ -407,6 +462,10 @@ export class GetFrontInfoService {
       nationDataType: nationData.type,
       nationDataDataType: nationData.data?.type
     });
+
+    const notice = await this.getNationNotice(sessionId, nationId, lastNationNoticeDate);
+    const onlineGenList = onlineGeneralMap?.get(nationId) ?? [];
+    const onlineGen = onlineGenList.length ? onlineGenList.join(', ') : '';
     
     return {
       id: nationId,
@@ -438,8 +497,8 @@ export class GetFrontInfoService {
       power: nationData.power || {},
       bill: nationData.bill || '',
       taxRate: nationData.rate || 10,
-      onlineGen: '',
-      notice: null,
+      onlineGen,
+      notice,
       topChiefs: topChiefsMap,
       diplomaticLimit: nationData.surlimit || 0,
       strategicCmdLimit: nationData.strategic_cmd_limit || {},
@@ -490,9 +549,42 @@ export class GetFrontInfoService {
     };
   }
 
+  private static async getNationNotice(
+    sessionId: string,
+    nationId: number,
+    lastNationNoticeDate: string
+  ): Promise<any | null> {
+    try {
+      const doc = await kvStorageRepository.findOneByFilter({
+        session_id: sessionId,
+        storage_id: `nation_${nationId}`
+      });
+      if (!doc) {
+        return null;
+      }
+      const source = doc.data ?? doc.value ?? {};
+      const notice = source.nationNotice || source.notice;
+      if (!notice) {
+        return null;
+      }
+      if (notice.date && lastNationNoticeDate) {
+        const noticeDate = new Date(notice.date);
+        const lastDate = new Date(lastNationNoticeDate);
+        if (!(noticeDate > lastDate)) {
+          return null;
+        }
+      }
+      return notice;
+    } catch (error: any) {
+      console.error('[GetFrontInfo] Failed to read nation notice:', error);
+      return null;
+    }
+  }
+ 
   /**
    * 장수 정보 생성
    */
+
   private static async generateGeneralInfo(
     sessionId: string,
     general: any,
@@ -500,8 +592,44 @@ export class GetFrontInfoService {
     nationInfo?: any
   ) {
     const data = general;
+    const generalNo = data.no || general.no;
+    const generalStacks = (await unitStackRepository.findByOwner(
+      sessionId,
+      'general',
+      generalNo
+    )) as LeanUnitStack[];
+    const formattedStacks = generalStacks.map(stack => ({
+      id: stack._id?.toString() || stack.id,
+      crewTypeId: stack.crew_type_id ?? 0,
+      crewTypeName: stack.crew_type_name,
+      unitSize: stack.unit_size ?? 100,
+      stackCount: stack.stack_count ?? 0,
+      troops: this.getStackTroopCount(stack),
+      train: stack.train ?? 0,
+      morale: stack.morale ?? 0,
+      updatedAt: stack.updated_at,
+    })).sort((a, b) => b.troops - a.troops);
+    const totalStackTroops = formattedStacks.reduce((sum, stack) => sum + stack.troops, 0);
+    const totalStackUnits = formattedStacks.reduce((sum, stack) => sum + (stack.stackCount ?? 0), 0);
+    const averageTrainFromStacks = totalStackTroops > 0
+      ? Math.round(formattedStacks.reduce((sum, stack) => sum + stack.train * stack.troops, 0) / totalStackTroops)
+      : 0;
+    const averageMoraleFromStacks = totalStackTroops > 0
+      ? Math.round(formattedStacks.reduce((sum, stack) => sum + stack.morale * stack.troops, 0) / totalStackTroops)
+      : 0;
+    const unitStackInfo = formattedStacks.length > 0 ? {
+      totalTroops: totalStackTroops,
+      stackCount: totalStackUnits || formattedStacks.length,
+      averageTrain: averageTrainFromStacks,
+      averageMorale: averageMoraleFromStacks,
+      stacks: formattedStacks,
+    } : null;
+    const derivedCrew = (typeof data.crew === 'number' && data.crew > 0) ? data.crew : totalStackTroops;
+    const derivedTrain = totalStackTroops > 0 ? averageTrainFromStacks : (data.train || 0);
+    const derivedAtmos = totalStackTroops > 0 ? averageMoraleFromStacks : (data.atmos || 50);
     
     // 능력치 범위 보정 (40-150 사이로 제한)
+
     // 기존 DB에 잘못된 값이 있을 경우 자동 수정
     // 최상위 필드 우선, 없으면 data.data에서 읽기
     let leadership = data.leadership ?? data.data?.leadership ?? 50;
@@ -622,10 +750,11 @@ export class GetFrontInfoService {
           return crewtype;
         }
       })(),
-      crew: data.crew || 0,
+      crew: derivedCrew || 0,
+      unitStacks: unitStackInfo,
 
-      train: data.train || 0,
-      atmos: data.atmos || 50,
+      train: derivedTrain,
+      atmos: derivedAtmos,
       turntime: data.turntime || new Date(),
       recent_war: data.recent_war || '',
       horse: data.item2 || 'None',
@@ -645,20 +774,19 @@ export class GetFrontInfoService {
   /**
    * 도시 정보 생성
    */
-  private static async generateCityInfo(
+  static async generateCityInfo(
     sessionId: string,
     cityId: number,
     currentNationId: number
   ) {
-    const city = await cityRepository.findOneByFilter({
-      session_id: sessionId,
-      city: cityId
-    });
+    const cityDoc = await cityRepository.findByCityNum(sessionId, cityId);
 
-    if (!city) {
+    if (!cityDoc) {
       return null;
     }
 
+    const cityPlain = cityDoc as any;
+    const city: any = typeof cityPlain.toObject === 'function' ? cityPlain.toObject() : cityPlain;
     const cityNationId = city.nation ?? 0;
 
     // 도시 소속 국가 정보
@@ -666,13 +794,13 @@ export class GetFrontInfoService {
     let nationColor = '#000000';
 
     if (cityNationId !== 0) {
-      const nation = await nationRepository.findOneByFilter({
-        session_id: sessionId,
-        nation: cityNationId
-      });
+      const nationDoc = await nationRepository.findByNationNum(sessionId, cityNationId);
+      const nation = nationDoc
+        ? (typeof nationDoc.toObject === 'function' ? nationDoc.toObject() : nationDoc)
+        : null;
       if (nation) {
-        nationName = nation.name || '무명';
-        const color = nation.color || 0;
+        nationName = nation.name || nation.data?.name || '무명';
+        const color = nation.color ?? nation.data?.color ?? 0;
         nationColor = typeof color === 'string'
           ? color.startsWith('#') ? color : '#' + color
           : typeof color === 'number'
@@ -694,13 +822,24 @@ export class GetFrontInfoService {
       if (level && (level === 2 || level === 3 || level === 4)) {
         officerList[level] = {
           officer_level: level,
-          name: officer.name || '무명',
-          npc: officer.npc || 0
+          no: officer.no || officer.data?.no,
+          name: officer.name || officer.data?.name || '무명',
+          npc: officer.npc || officer.data?.npc || 0
         };
       }
     });
     
-    // 도시 자원 정보
+    const defenseState = await cityDefenseRepository.ensure(
+      sessionId,
+      cityId,
+      city.name || `도시${cityId}`
+    );
+    const garrisonStacks = (await unitStackRepository.findByOwner(
+      sessionId,
+      'city',
+      cityId
+    )) as LeanUnitStack[];
+
     const pop = city.pop ?? 0;
     const popMax = city.pop_max ?? 10000;
     const agri = city.agri ?? 0;
@@ -711,11 +850,45 @@ export class GetFrontInfoService {
     const secuMax = city.secu_max ?? 10000;
     const def = city.def ?? 0;
     const defMax = city.def_max ?? 10000;
-    const wall = city.wall ?? 0;
-    const wallMax = city.wall_max ?? 10000;
+    const baseWall = city.wall ?? 0;
+    const baseWallMax = city.wall_max ?? 10000;
     const trade = city.trade ?? null;
     const level = city.level ?? 0;
     const trust = city.trust ?? 0;
+
+    const wallCurrent = defenseState?.wall_hp ?? baseWall;
+    const wallMaximum = defenseState?.wall_max ?? baseWallMax;
+    const gateCurrent = defenseState?.gate_hp ?? defenseState?.gate_max ?? 0;
+    const gateMaximum = defenseState?.gate_max ?? gateCurrent;
+
+    const garrisonStacksFormatted = garrisonStacks
+      .map((stack) => ({
+        id: stack._id?.toString() || stack.id,
+        crewTypeId: stack.crew_type_id ?? 0,
+        crewTypeName: stack.crew_type_name,
+        troops: this.getStackTroopCount(stack),
+        train: stack.train ?? 0,
+        morale: stack.morale ?? 0,
+        updatedAt: stack.updated_at,
+      }))
+      .sort((a, b) => b.troops - a.troops);
+
+    const garrisonInfo = {
+      totalTroops: garrisonStacksFormatted.reduce((sum, stack) => sum + stack.troops, 0),
+      stackCount: garrisonStacksFormatted.length,
+      stacks: garrisonStacksFormatted.slice(0, 6),
+    };
+
+    const defenseInfo = defenseState
+      ? {
+          wall: [wallCurrent, wallMaximum],
+          gate: [gateCurrent, gateMaximum],
+          towerLevel: defenseState.tower_level ?? 0,
+          repairRate: defenseState.repair_rate ?? 0,
+          lastDamageAt: defenseState.last_damage_at,
+          lastRepairAt: defenseState.last_repair_at,
+        }
+      : null;
 
     const region = city.region ?? 0;
 
@@ -735,9 +908,11 @@ export class GetFrontInfoService {
       comm: [comm, commMax],
       secu: [secu, secuMax],
       def: [def, defMax],
-      wall: [wall, wallMax],
+      wall: [wallCurrent, wallMaximum],
       trade: trade,
-      officerList
+      officerList,
+      defense: defenseInfo,
+      garrison: garrisonInfo,
     };
   }
 
@@ -792,6 +967,18 @@ export class GetFrontInfoService {
       flushHistory: personalHistoryRecord.length > this.ROW_LIMIT ? 1 : 0,
       flushGlobal: globalRecord.length > this.ROW_LIMIT ? 1 : 0
     };
+  }
+
+  private static getStackTroopCount(stack: any): number {
+    if (!stack) {
+      return 0;
+    }
+    if (typeof stack.hp === 'number') {
+      return stack.hp;
+    }
+    const unitSize = stack.unit_size ?? 100;
+    const stackCount = stack.stack_count ?? 0;
+    return unitSize * stackCount;
   }
 
   // 헬퍼 함수들

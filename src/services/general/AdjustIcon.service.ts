@@ -1,5 +1,7 @@
 import { generalRepository } from '../../repositories/general.repository';
-import mongoose from 'mongoose';
+import { userRepository } from '../../repositories/user.repository';
+import { FeatureFlags } from '../../config/featureFlags';
+
 
 /**
  * AdjustIcon Service
@@ -18,29 +20,21 @@ export class AdjustIconService {
     }
 
     try {
-      // RootDB에서 회원 정보 조회 (레거시와 동일)
-      // RootDB는 별도의 connection을 사용하므로 직접 쿼리
-      const rootDb = mongoose.connection.db?.admin() 
-        ? mongoose.connection.db 
-        : null;
+      let picture = user?.picture ?? null;
+      let imgsvr = typeof user?.imgsvr === 'number' ? user.imgsvr : 0;
 
-      if (!rootDb) {
-        // RootDB 연결이 없으면 일반 DB에서 조회 시도
-        // 실제로는 RootDB 모델이나 별도 연결이 필요할 수 있음
+      const userDoc = userId ? await userRepository.findById(String(userId)) : null;
+      if (userDoc) {
+        picture = picture ?? userDoc.picture ?? userDoc.avatarUrl ?? null;
+        imgsvr = userDoc.imgsvr ?? imgsvr ?? 0;
+      } else if (FeatureFlags.isRootDBEnabled()) {
         return {
           result: false,
           reason: 'RootDB 연결이 필요합니다'
         };
       }
 
-      // 실제 구현에서는 RootDB 컬렉션에 직접 접근해야 함
-      // 임시로 사용자 정보에서 가져오기 (user 객체에 picture, imgsvr가 있다고 가정)
-      const picture = user?.picture || null;
-      const imgsvr = user?.imgsvr || 0;
-
       if (!picture && imgsvr === 0) {
-        // RootDB에서 실제로 조회해야 하는 경우
-        // FUTURE: RootDB 연결 마이그레이션 (v2.0)
         return {
           result: false,
           reason: '회원 기록 정보가 없습니다'
@@ -48,6 +42,7 @@ export class AdjustIconService {
       }
 
       // 현재 세션의 모든 장수 아이콘 업데이트 (npc=0인 경우만)
+
       const sessionId = data.session_id || 'sangokushi_default';
       const updateResult = await generalRepository.updateManyByFilter(
         {

@@ -31,9 +31,28 @@ MONGODB_URI=mongodb://localhost:27017/sangokushi
 # Redis 연결 (필수)
 REDIS_URL=redis://localhost:6379
 
+# 서버 식별자
+SERVER_ID=sangokushi_default
+SERVER_NAME=OpenSAM
+SERVER_HIDDEN_SEED=opensam_hidden_seed
+SERVER_SEASON_INDEX=0
+SESSION_IDENTITY_CACHE_TTL=600
+
+# 세션 스토어 설정
+SESSION_STORE=redis # redis 또는 mongo
+SESSION_COLLECTION=sessions
+SESSION_COOKIE_MAX_AGE=86400000
+SESSION_TTL_SECONDS=86400
+SESSION_REDIS_PREFIX=opensam:sess:
+SESSION_COOKIE_NAME=opensam.sid
+SESSION_DISABLE_PERSISTENCE=false
+SESSION_AUTOREMOVE_INTERVAL=10
+SESSION_MONGO_URI=
+
 # JWT 시크릿 (필수)
 JWT_SECRET=your-secret-key-here
 ```
+
 
 ### 2. 의존성 설치
 

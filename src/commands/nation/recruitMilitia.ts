@@ -34,7 +34,7 @@ export class che_의병모집 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.AvailableStrategicCommand('strategic'),
-      ConstraintHelper.NotOpeningPart(relYear)
+      ConstraintHelper.NotOpeningPart()
     ];
   }
 

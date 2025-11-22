@@ -73,7 +73,8 @@ export class SelectSpecialService {
       return {
         success: true,
         result: true,
-        message: 'SelectSpecial executed successfully'
+        message: '선택한 특수 능력을 적용했습니다.'
+
       };
     } catch (error: any) {
       return {

@@ -75,6 +75,22 @@ class KVStorageRepository {
   }
 
   /**
+   * storage_id/value 조합에서 값 가져오기
+   */
+  async getValue(sessionId: string, storageId: string, key?: string): Promise<any> {
+    const document = await KVStorage.findOne({ session_id: sessionId, storage_id: storageId });
+    if (!document) {
+      return null;
+    }
+
+    const source = document.value ?? document.data ?? {};
+    if (key) {
+      return source?.[key] ?? null;
+    }
+    return source;
+  }
+
+  /**
    * 생성
    * @param data - KVStorage 데이터
    * @returns 생성된 문서

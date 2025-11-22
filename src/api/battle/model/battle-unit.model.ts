@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
-import { IBattleUnit } from '../@types/battle.types';
+import { IApiBattleUnit } from '../@types/battle.types';
 
-export interface IBattleUnitDocument extends Omit<IBattleUnit, 'id'>, Document {
+export interface IBattleUnitDocument extends Omit<IApiBattleUnit, 'id'>, Document {
   id: string;
 }
 

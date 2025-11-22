@@ -8,6 +8,8 @@ import { Router } from 'express';
 import { OAuthService } from '../services/oauth.service';
 import { User } from '../models/user.model';
 import * as jwt from 'jsonwebtoken';
+import { OAuthStateService } from '../services/oauth/OAuthState.service';
+import { ApiError } from '../errors/ApiError';
 
 const router = Router();
 
@@ -24,16 +26,18 @@ const router = Router();
  */
 router.get('/kakao/authorize', async (req, res) => {
   try {
-    const redirectUri = req.query.redirect_uri as string || process.env.KAKAO_REDIRECT_URI || 'http://localhost:3000/api/oauth/kakao/callback';
-    
-    const authUrl = OAuthService.getKakaoAuthUrl(redirectUri);
+    const redirectUri = (req.query.redirect_uri as string) || process.env.KAKAO_REDIRECT_URI || 'http://localhost:3000/api/oauth/kakao/callback';
+    const state = await OAuthStateService.issueState({ redirectUri });
+    const authUrl = OAuthService.getKakaoAuthUrl(redirectUri, state);
     
     res.json({
       success: true,
-      authUrl
+      authUrl,
+      state
     });
   } catch (error: any) {
-    res.status(500).json({
+    const status = error instanceof ApiError ? error.status : 500;
+    res.status(status).json({
       success: false,
       message: error.message
     });
@@ -70,10 +74,14 @@ router.get('/kakao/callback', async (req, res) => {
       });
     }
 
-    // 상태 토큰 검증 (CSRF 방지)
-    if (state) {
-      // FUTURE: 상태 토큰 검증 로직 구현
+    if (!state) {
+      return res.status(400).json({
+        success: false,
+        message: '상태 토큰이 누락되었습니다'
+      });
     }
+
+    await OAuthStateService.consumeState(String(state));
 
     // 카카오 액세스 토큰 획득
     const tokenResult = await OAuthService.getKakaoAccessToken(code as string);

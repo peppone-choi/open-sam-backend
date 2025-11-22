@@ -135,14 +135,18 @@ export class MoveCommand extends GeneralCommand {
     const exp = 50;
 
     // 도시 변경
-    general.data.city = destCityID;
+    await this.updateGeneralCity(destCityID);
 
     // 군주이고 국가 레벨이 0이면 전체 병력 이동
     if (general.data.officer_level === 12 && this.nation && this.nation.level === 0) {
       try {
         const sessionId = general.getSessionID();
         const nationID = general.getNationID();
-        
+        const targetGenerals = await generalRepository.findByFilter({
+          session_id: sessionId,
+          'data.nation': nationID,
+          'data.no': { $ne: general.getID() }
+        });
         await generalRepository.updateManyByFilter(
           {
             session_id: sessionId,
@@ -153,6 +157,10 @@ export class MoveCommand extends GeneralCommand {
             'data.city': destCityID
           }
         );
+        const targetIds = targetGenerals
+          .map((doc: any) => doc.data?.no ?? doc.no)
+          .filter((id: any) => id !== undefined);
+        await this.updateOtherGeneralsCity(targetIds, destCityID);
       } catch (error) {
         console.error('방랑군 전체 이동 실패:', error);
       }

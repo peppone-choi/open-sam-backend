@@ -16,13 +16,14 @@ export class SetRecentMessageTypeService {
       }
 
       if (!messageType) {
-        return { success: false, message: 'messageType이 필요합니다' };
+        return { success: false, message: '메시지 유형이 필요합니다.' };
       }
 
       const validTypes = ['private', 'public', 'national', 'diplomacy'];
       if (!validTypes.includes(messageType)) {
-        return { success: false, message: '잘못된 메시지 타입입니다' };
+        return { success: false, message: '지원하지 않는 메시지 유형입니다.' };
       }
+
 
       await generalRepository.updateOneByFilter(
         {

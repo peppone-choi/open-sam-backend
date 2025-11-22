@@ -5,6 +5,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { userRepository } from '../../repositories/user.repository';
 
 /**
  * SelectPickedGeneral Service
@@ -120,12 +121,14 @@ export class SelectPickedGeneralService {
       }
 
       // 회원 정보 가져오기 (picture, imgsvr)
-      // FUTURE: RootDB에서 가져오기 (v2.0)
+      const userDoc = userId ? await userRepository.findById(String(userId)) : null;
       const ownerInfo = {
-        name: user?.name || 'Unknown',
-        picture: user?.picture || null,
-        imgsvr: user?.imgsvr || 0
+        name: userDoc?.name || user?.name || 'Unknown',
+        picture: userDoc?.picture ?? user?.picture ?? null,
+        imgsvr: userDoc?.imgsvr ?? user?.imgsvr ?? 0,
+        penalty: userDoc?.penalty || {}
       };
+
 
       // 장수 생성
       const lastGeneral = await generalRepository.findOneByFilter({ session_id: sessionId  })
@@ -174,8 +177,9 @@ export class SelectPickedGeneralService {
         age: selectInfo.age || 20,
         startage: selectInfo.age || 20,
         npc: 0,
-        penalty: {}
+        penalty: ownerInfo.penalty || {}
       };
+
 
       // dex 추가
       if (selectInfo.dex && Array.isArray(selectInfo.dex)) {

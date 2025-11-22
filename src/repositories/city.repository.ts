@@ -179,7 +179,7 @@ class CityRepository {
     const existing = await this.findById(cityId);
 
     if (!existing) {
-      throw new Error(`City not found: ${cityId}`);
+      throw new Error(`도시를 찾을 수 없습니다.: ${cityId}`);
     }
 
     const sessionId = existing.session_id || update.session_id;

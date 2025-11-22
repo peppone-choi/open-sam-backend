@@ -1,6 +1,8 @@
 import { DB } from '../../config/db';
 import { MessageType } from '../../types/message.types';
 import { MessageTarget } from './MessageTarget';
+import { messageRepository } from '../../repositories/message.repository';
+
 
 /**
  * Message 클래스
@@ -12,7 +14,8 @@ export class Message {
   public static readonly MAILBOX_NATIONAL = 9000;
 
   public mailbox: number | null = null;
-  public id: number | null = null;
+  public id: number | string | null = null;
+
   public isInboxMail: boolean = false;
 
   protected sendCnt: number = 0;
@@ -30,10 +33,11 @@ export class Message {
   /**
    * 전송 정보 설정
    */
-  public setSentInfo(mailbox: number, messageID: number): this {
+  public setSentInfo(mailbox: number, messageID: number | string): this {
     if (!Message.isValidMailBox(mailbox)) {
       throw new Error('올바르지 않은 mailbox');
     }
+
 
     if (mailbox === Message.MAILBOX_PUBLIC) {
       if (this.msgType !== MessageType.public) {
@@ -192,8 +196,28 @@ export class Message {
    * 메시지 전송 (인스턴스 메서드)
    */
   public async send(silence: boolean = false): Promise<void> {
-    // FUTURE: 구현
+    const mailbox = this.resolveMailbox();
+    const sessionId = (this.msgOption as any)?.session_id || 'global';
+
+    const payload = {
+      type: this.msgType,
+      mailbox,
+      message: this.toArray(),
+      silence,
+      validUntil: this.validUntil.toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    const saved = await messageRepository.create({
+      session_id: sessionId,
+      data: payload
+    });
+
+    if (saved?._id) {
+      this.setSentInfo(mailbox, saved._id.toString());
+    }
   }
+
 
   /**
    * 메시지 전송 (정적 메서드)
@@ -218,11 +242,33 @@ export class Message {
     await msg.send();
   }
 
+  private resolveMailbox(): number {
+    if (this.mailbox) {
+      return this.mailbox;
+    }
+
+    if (this.msgType === MessageType.public) {
+      return Message.MAILBOX_PUBLIC;
+    }
+
+    if (this.msgType === MessageType.national || this.msgType === MessageType.diplomacy) {
+      const nationId = this.dest?.nationID ?? this.src?.nationID ?? 0;
+      return nationId + Message.MAILBOX_NATIONAL;
+    }
+
+    return this.dest?.generalID ?? this.src?.generalID ?? 0;
+  }
+
   /**
    * 메시지 무효화
    */
   public invalidate(): void {
-    // FUTURE: 구현
+    this.validUntil = new Date();
+    this.msgOption = {
+      ...(this.msgOption || {}),
+      invalidated: true
+    };
   }
 }
+
 

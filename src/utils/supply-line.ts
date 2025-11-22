@@ -4,9 +4,16 @@
  * PHP: checkSupply, SetNationFront
  */
 
+import { Diplomacy } from '../models/diplomacy.model';
 import { City } from '../models/city.model';
 import { Nation } from '../models/nation.model';
-import { Diplomacy } from '../models/diplomacy.model';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
+
+function toPlain<T>(doc: T | null | undefined): any | null {
+  if (!doc) return null;
+  return typeof (doc as any).toObject === 'function' ? (doc as any).toObject() : doc;
+}
 
 /**
  * 보급선 확인
@@ -14,42 +21,35 @@ import { Diplomacy } from '../models/diplomacy.model';
  * 수도에서 연결된 도시들을 보급 가능으로 설정
  */
 export async function checkSupply(sessionId: string): Promise<void> {
-  // 모든 국가별 도시 정보 수집
-  const cities = await City.find({ session_id: sessionId })
-    .select('city nation')
-    .lean();
+  const rawCities = (await cityRepository.findBySession(sessionId)) || [];
+  const cities = rawCities.map(toPlain).filter(Boolean) as any[];
 
   const cityMap: Record<number, { id: number; nation: number; supply: boolean }> = {};
-  for (const city of cities) {
-    if (city.nation === 0) {
-      continue;
+  cities.forEach((city) => {
+    const cityNation = city.nation ?? city.data?.nation ?? 0;
+    if (cityNation === 0) {
+      return;
     }
     cityMap[city.city] = {
       id: city.city,
-      nation: city.nation || 0,
+      nation: cityNation,
       supply: false
     };
-  }
+  });
 
-  // 국가별 수도 조회
-  const nations = await Nation.find({ session_id: sessionId })
-    .select('nation data capital')
-    .lean();
+  const rawNations = (await nationRepository.findBySession(sessionId)) || [];
+  const nations = rawNations.map(toPlain).filter(Boolean) as any[];
 
   const capitals: Record<number, number> = {};
   const nationCityCount: Record<number, number> = {};
   
+  Object.values(cityMap).forEach((city) => {
+    nationCityCount[city.nation] = (nationCityCount[city.nation] || 0) + 1;
+  });
+
   for (const nation of nations) {
     const nationId = nation.nation || 0;
     if (nationId === 0) continue;
-    
-    // 국가별 도시 수 카운트
-    nationCityCount[nationId] = 0;
-    for (const city of Object.values(cityMap)) {
-      if (city.nation === nationId) {
-        nationCityCount[nationId]++;
-      }
-    }
     
     const capital = nation.capital || nation.data?.capital || 0;
     if (capital && cityMap[capital] && cityMap[capital].nation === nationId) {
@@ -98,9 +98,7 @@ export async function checkSupply(sessionId: string): Promise<void> {
   } catch (error: any) {
     console.error('Failed to load city neighbors from scenario data:', error);
     // 경로 정보를 로드할 수 없으면 DB의 neighbors 필드 사용
-    const citiesWithNeighbors = await City.find({ 
-      session_id: sessionId 
-    }).select('city neighbors data.neighbors').lean();
+    const citiesWithNeighbors = cities;
     
     for (const city of citiesWithNeighbors) {
       const neighbors = city.neighbors || city.data?.neighbors || [];
@@ -154,15 +152,10 @@ export async function checkSupply(sessionId: string): Promise<void> {
     }
   }
 
-  // 공백지 도시는 항상 보급 가능
-  const neutralCities = await City.find({ 
-    session_id: sessionId, 
-    nation: 0 
-  }).select('city').lean();
-  
-  for (const city of neutralCities) {
-    supplyCities.push(city.city);
-  }
+  const neutralCities = cities
+    .filter((city) => (city.nation ?? city.data?.nation ?? 0) === 0)
+    .map((city) => city.city);
+  supplyCities.push(...neutralCities);
 
   // DB 업데이트 (올바른 순서로)
   // 1. 먼저 모든 국가 도시를 보급 끊김으로 설정
@@ -194,13 +187,18 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
     return;
   }
 
-  // 해당 국가의 도시들
-  const nationCities = await City.find({ 
-    session_id: sessionId, 
-    nation: nationId 
-  }).select('city').lean();
+  const rawCities = (await cityRepository.findBySession(sessionId)) || [];
+  const sessionCities = rawCities.map(toPlain).filter(Boolean) as any[];
+  const cityByNation = new Map<number, number[]>();
+  sessionCities.forEach((city: any) => {
+    const cityNation = city.nation ?? city.data?.nation ?? 0;
+    if (!cityByNation.has(cityNation)) {
+      cityByNation.set(cityNation, []);
+    }
+    cityByNation.get(cityNation)!.push(city.city);
+  });
 
-  const cityIds = nationCities.map(c => c.city);
+  const cityIds = cityByNation.get(nationId) || [];
 
   if (cityIds.length === 0) {
     return;
@@ -224,23 +222,11 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
     const state = dip.state || 0;
     
     if (state === 0) {
-      // 선전포고
-      const otherCities = await City.find({
-        session_id: sessionId,
-        nation: otherNation
-      }).select('city').lean();
-      for (const city of otherCities) {
-        enemyCities.add(city.city);
-      }
+      const otherCities = cityByNation.get(otherNation) || [];
+      otherCities.forEach((cityId) => enemyCities.add(cityId));
     } else if (state === 1 && dip.term <= 5) {
-      // 교전 중 (5턴 이내)
-      const otherCities = await City.find({
-        session_id: sessionId,
-        nation: otherNation
-      }).select('city').lean();
-      for (const city of otherCities) {
-        warCities.add(city.city);
-      }
+      const otherCities = cityByNation.get(otherNation) || [];
+      otherCities.forEach((cityId) => warCities.add(cityId));
     }
   }
 
@@ -274,9 +260,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   } catch (error: any) {
     console.error('Failed to load city neighbors from scenario data:', error);
     // 경로 정보를 로드할 수 없으면 DB의 neighbors 필드 사용
-    const citiesWithNeighbors = await City.find({ 
-      session_id: sessionId 
-    }).select('city neighbors data.neighbors').lean();
+    const citiesWithNeighbors = sessionCities;
     
     for (const city of citiesWithNeighbors) {
       const neighbors = city.neighbors || city.data?.neighbors || [];
@@ -321,12 +305,7 @@ export async function SetNationFront(sessionId: string, nationId: number): Promi
   }
 
   // 전방 레벨 2 (공백지 인접)
-  const neutralCities = await City.find({
-    session_id: sessionId,
-    nation: 0
-  }).select('city').lean();
-  
-  const neutralCitySet = new Set(neutralCities.map((c: any) => c.city));
+  const neutralCitySet = new Set((cityByNation.get(0) || []));
   
   if (neutralCitySet.size > 0 && warCities.size === 0 && enemyCities.size === 0) {
     const adjacentNeutralCities = getAdjacentCities(cityIds, neutralCitySet as Set<number>);

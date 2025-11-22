@@ -1,6 +1,9 @@
 import { cityRepository } from '../../repositories/city.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { buildCitySnapshot } from './utils/citySnapshot.util';
+import { COMMON_ERRORS } from '../../constants/messages';
+
 
 export class GetCityDetailedInfoService {
   static async execute(data: any, user?: any) {
@@ -12,14 +15,17 @@ export class GetCityDetailedInfoService {
       if (!session) {
         return {
           success: false,
-          message: 'Session not found'
+          message: COMMON_ERRORS.sessionNotFound
         };
       }
+
+      const sessionData = (session.data as any) || {};
+      const scenarioId = session.scenario_id || session.scenarioId || sessionData.scenario_id || sessionData.scenarioId || sessionData.scenarioID;
 
       if (!cityId) {
         return {
           success: false,
-          message: 'City ID required'
+          message: COMMON_ERRORS.cityIdRequired
         };
       }
 
@@ -28,10 +34,11 @@ export class GetCityDetailedInfoService {
         city: cityId 
       });
 
+
       if (!city) {
         return {
           success: false,
-          message: 'City not found'
+          message: COMMON_ERRORS.cityNotFound
         };
       }
 
@@ -54,18 +61,15 @@ export class GetCityDetailedInfoService {
         };
       });
 
-      const cityData = city.data as any || {};
+      const citySnapshot = buildCitySnapshot(city, { scenarioId });
 
       return {
         success: true,
         result: true,
-        city: {
-          city: city.city,
-          name: city.name,
-          ...cityData
-        },
+        city: citySnapshot,
         generals: generalList
       };
+
     } catch (error: any) {
       console.error('GetCityDetailedInfo error:', error);
       return {

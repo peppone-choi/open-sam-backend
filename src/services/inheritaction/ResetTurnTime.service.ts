@@ -93,7 +93,8 @@ export class ResetTurnTimeService {
       return {
         success: true,
         result: true,
-        message: 'ResetTurnTime executed successfully'
+        message: '턴 시간이 재설정되었습니다.'
+
       };
     } catch (error: any) {
       return {

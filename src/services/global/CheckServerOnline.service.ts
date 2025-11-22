@@ -12,7 +12,8 @@ export class CheckServerOnlineService {
           success: false,
           result: false,
           online: false,
-          message: 'Session not found'
+          message: '세션을 찾을 수 없습니다.'
+
         };
       }
 

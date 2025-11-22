@@ -250,6 +250,7 @@ export class GetCommandTableService {
         '집합',            // GatherCommand (che_집합)
         '소집해제',        // DismissTroopsCommand (che_소집해제)
         '첩보',            // SpyCommand (che_첩보)
+        '주둔 재배치',      // ReassignUnitCommand
       ],
       '인사': [
         '이동',            // MoveCommand (che_이동)

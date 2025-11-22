@@ -111,6 +111,7 @@ export class MockObjects {
         vars.set(key, newValue);
       }),
       
+      getID: jest.fn(() => defaults.no),
       getNationID: jest.fn(() => defaults.nation),
       getCityID: jest.fn(() => defaults.city),
       

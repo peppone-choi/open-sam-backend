@@ -13,7 +13,7 @@ export class StartSimulationService {
 
     try {
       if (!battleId) {
-        return { success: false, message: 'battleId가 필요합니다' };
+        return { success: false, message: '전투 ID가 필요합니다.' };
       }
 
       const battle = await battleRepository.findByBattleId(battleId);

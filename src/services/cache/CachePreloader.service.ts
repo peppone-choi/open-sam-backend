@@ -128,7 +128,7 @@ export class CachePreloaderService {
       // 세션 조회
       const session = await sessionRepository.findById(sessionId);
       if (!session) {
-        logger.warn(`[CachePreloader] Session not found: ${sessionId}`);
+        logger.warn(`[CachePreloader] 세션을 찾을 수 없습니다.: ${sessionId}`);
         return;
       }
 

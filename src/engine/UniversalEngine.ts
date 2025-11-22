@@ -189,9 +189,10 @@ export class UniversalEngine {
     command.status = 'completed';
     command.result = {
       success: true,
-      message: 'Command executed successfully',
+      message: '명령이 정상적으로 실행되었습니다.',
       effects: [],
     };
+
   }
 
   /**

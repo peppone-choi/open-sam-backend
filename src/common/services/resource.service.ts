@@ -12,12 +12,44 @@ export interface Cost {
   allowDebt?: boolean;
 }
 
+export interface SupplySnapshotInput {
+  supply?: number | null;
+  pendingSupply?: number | null;
+}
+
+export interface NormalizedSupplySnapshot {
+  supply: number;
+  pendingSupply: number;
+  supplyDeficit: number;
+}
+
+const toNumeric = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 /**
  * 자원 서비스
  * 
  * 동적 자원 검증, 소비, 변환 처리
  */
 export class ResourceService {
+  static normalizeSupplySnapshot(snapshot: SupplySnapshotInput = {}): NormalizedSupplySnapshot {
+    const supplyValue = toNumeric(snapshot.supply);
+    const pendingValue = toNumeric(snapshot.pendingSupply);
+    const supplyGap = Math.max(0, -supplyValue);
+    const pendingGap = Math.max(0, -pendingValue);
+
+    return {
+      supply: supplyValue < 0 ? 0 : supplyValue,
+      pendingSupply: pendingValue < 0 ? 0 : pendingValue,
+      supplyDeficit: supplyGap + pendingGap
+    };
+  }
+
   /**
    * 비용 검증
    */

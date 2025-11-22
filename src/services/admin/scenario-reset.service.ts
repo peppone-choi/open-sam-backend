@@ -20,6 +20,8 @@ import { cacheService } from '../../common/cache/cache.service';
 import { scanSyncQueue, getSyncQueueItem, removeFromSyncQueue } from '../../common/cache/sync-queue.helper';
 import { selectNpcTokenRepository } from '../../repositories/select-npc-token.repository';
 import { selectPoolRepository } from '../../repositories/select-pool.repository';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { generateInitialGarrisonsForCities } from '../helpers/garrison.helper';
 
 /**
  * 시나리오 초기화 서비스 (CQRS 통합 버전)
@@ -96,7 +98,7 @@ export class ScenarioResetService {
     // 2. 세션 찾기
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
-      throw new Error(`Session not found: ${sessionId}`);
+      throw new Error(`세션을 찾을 수 없습니다.: ${sessionId}`);
     }
 
     // 3. 기존 데이터 삭제
@@ -109,7 +111,8 @@ export class ScenarioResetService {
     await this.initializeSession(session, scenarioMetadata, options);
  
     // 5. 도시 생성 (기본 cities.json 로드)
-    await this.initializeCities(sessionId, scenarioId, scenarioMetadata);
+    const cities = await this.initializeCities(sessionId, scenarioId, scenarioMetadata);
+    await this.initializeGarrisons(sessionId, scenarioId, cities || []);
 
     // 6. 국가 생성 (시나리오의 nations 사용)
     await this.createNations(sessionId, scenarioId, scenarioMetadata);
@@ -211,34 +214,37 @@ export class ScenarioResetService {
     console.log(`[ScenarioReset] Deleted ${nationTurnResult.deletedCount} nation turns`);
 
     // 3. 명령, 메시지, 이벤트 등 게임 진행 데이터 삭제
-     const [
-       commandResult,
-       messageResult,
-       battleResult,
-       eventResult,
-       troopResult,
-       worldHistoryResult,
-       selectNpcTokenResult,
-       selectPoolResult
-     ] = await Promise.all([
-       commandRepository.deleteBySession(sessionId),
-       messageRepository.deleteBySession(sessionId),
-       battleRepository.deleteBySession(sessionId),
-       eventRepository.deleteBySession(sessionId),
-       troopRepository.deleteBySession(sessionId),
-       worldHistoryRepository.deleteBySession(sessionId),
-       selectNpcTokenRepository.deleteBySession(sessionId),
-       selectPoolRepository.deleteBySession(sessionId)
-     ]);
+    const [
+      commandResult,
+      messageResult,
+      battleResult,
+      eventResult,
+      troopResult,
+      worldHistoryResult,
+      selectNpcTokenResult,
+      selectPoolResult,
+      unitStackResult
+    ] = await Promise.all([
+      commandRepository.deleteBySession(sessionId),
+      messageRepository.deleteBySession(sessionId),
+      battleRepository.deleteBySession(sessionId),
+      eventRepository.deleteBySession(sessionId),
+      troopRepository.deleteBySession(sessionId),
+      worldHistoryRepository.deleteBySession(sessionId),
+      selectNpcTokenRepository.deleteBySession(sessionId),
+      selectPoolRepository.deleteBySession(sessionId),
+      unitStackRepository.deleteBySession(sessionId)
+    ]);
  
      console.log(`[ScenarioReset] Deleted ${commandResult.deletedCount} commands`);
     console.log(`[ScenarioReset] Deleted ${messageResult.deletedCount} messages`);
      console.log(`[ScenarioReset] Deleted ${battleResult.deletedCount} battles`);
      console.log(`[ScenarioReset] Deleted ${eventResult.deletedCount} events`);
      console.log(`[ScenarioReset] Deleted ${troopResult.deletedCount} troops`);
-     console.log(`[ScenarioReset] Deleted ${worldHistoryResult.deletedCount} world history records`);
-     console.log(`[ScenarioReset] Deleted ${selectNpcTokenResult.deletedCount} select_npc_tokens`);
-     console.log(`[ScenarioReset] Deleted ${selectPoolResult.deletedCount} select_pools`);
+    console.log(`[ScenarioReset] Deleted ${worldHistoryResult.deletedCount} world history records`);
+    console.log(`[ScenarioReset] Deleted ${selectNpcTokenResult.deletedCount} select_npc_tokens`);
+    console.log(`[ScenarioReset] Deleted ${selectPoolResult.deletedCount} select_pools`);
+    console.log(`[ScenarioReset] Deleted ${unitStackResult.deletedCount} unit stacks`);
    }
  
    /**
@@ -364,7 +370,7 @@ export class ScenarioResetService {
     sessionId: string,
     scenarioId: string,
     scenarioMetadata: any
-  ): Promise<void> {
+  ): Promise<any[]> {
     console.log(`[ScenarioReset] Initializing cities`);
 
     // cities 컬렉션 로드
@@ -494,6 +500,27 @@ export class ScenarioResetService {
 
     await cityRepository.bulkCreate(citiesToCreate);
     console.log(`[ScenarioReset] Created ${citiesToCreate.length} cities`);
+    return cities;
+  }
+
+  private static async initializeGarrisons(
+    sessionId: string,
+    scenarioId: string,
+    cities: any[]
+  ): Promise<void> {
+    const entries = generateInitialGarrisonsForCities(scenarioId, cities);
+    if (!entries.length) {
+      console.log('[ScenarioReset] Garrison data is empty, skipping');
+      return;
+    }
+
+    let totalStacks = 0;
+    for (const entry of entries) {
+      await unitStackRepository.bulkCreate(sessionId, 'city', entry.cityId, entry.stacks);
+      totalStacks += entry.stacks.length;
+    }
+
+    console.log(`[ScenarioReset] Created ${totalStacks} garrison stacks across ${entries.length} cities`);
   }
 
   /**
@@ -666,7 +693,7 @@ export class ScenarioResetService {
     // 세션에서 turnterm 가져오기
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
-      throw new Error(`Session not found: ${sessionId}`);
+      throw new Error(`세션을 찾을 수 없습니다.: ${sessionId}`);
     }
     const turnterm = session.data?.game_env?.turnterm || 60;
     const now = new Date();

@@ -2,6 +2,9 @@
 import { Battle, BattleStatus, BattlePhase } from '../models/battle.model';
 import { Session } from '../models/session.model';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
+import { unitStackRepository } from '../repositories/unit-stack.repository';
+import { cityDefenseRepository } from '../repositories/city-defense.repository';
+
 
 let io: any;
 try {
@@ -343,8 +346,17 @@ async function handleBattleEnded(battle: any, winner: string | undefined) {
     const attackerNationId = battle.attackerNationId;
     const defenderNationId = battle.defenderNationId;
 
+    const { attackerLoss, defenderLoss } = calculateBattleLosses(battle);
+
+    if (targetCityId) {
+      await applyCityGarrisonCasualties(battle, sessionId, targetCityId);
+      const cityName = battle.meta?.cityName ?? `도시${targetCityId}`;
+      await updateCityDefenseAfterBattle(sessionId, targetCityId, cityName, winner, attackerLoss, defenderLoss);
+    }
+
     // 공격자가 승리하고 도시 공격이면 도시 점령 처리
     if (winner === 'attacker' && targetCityId) {
+
       // 공격자 장수 ID (첫 번째 장수 사용)
       const attackerGeneralId = battle.attackerUnits?.[0]?.generalId || 0;
 
@@ -387,6 +399,102 @@ async function startNextTurn(battle: any, timer: BattleTimer) {
   });
 }
 
+function calculateBattleLosses(battle: any) {
+  const initialAttacker = battle.meta?.initialAttackerTroops ?? sumMaxTroops(battle.attackerUnits);
+  const initialDefender = battle.meta?.initialDefenderTroops ?? sumMaxTroops(battle.defenderUnits);
+  const attackerSurvivors = sumCurrentTroops(battle.attackerUnits);
+  const defenderSurvivors = sumCurrentTroops(battle.defenderUnits);
+  return {
+    attackerLoss: Math.max(0, initialAttacker - attackerSurvivors),
+    defenderLoss: Math.max(0, initialDefender - defenderSurvivors)
+  };
+}
+
+function sumMaxTroops(units: any[] = []): number {
+  return units.reduce((sum, unit) => sum + (unit?.maxTroops ?? unit?.troops ?? 0), 0);
+}
+
+function sumCurrentTroops(units: any[] = []): number {
+  return units.reduce((sum, unit) => sum + (unit?.troops ?? 0), 0);
+}
+
+async function applyCityGarrisonCasualties(battle: any, sessionId: string, cityId: number): Promise<void> {
+  const garrisonSnapshot = battle.meta?.garrisonStacks;
+  if (!garrisonSnapshot || garrisonSnapshot.length === 0) {
+    return;
+  }
+  const survivorsByStack = new Map<string, number>();
+  for (const unit of battle.defenderUnits || []) {
+    if (unit.originType === 'cityStack' && unit.originStackId) {
+      survivorsByStack.set(
+        unit.originStackId,
+        (survivorsByStack.get(unit.originStackId) || 0) + (unit.troops || 0)
+      );
+    }
+  }
+
+  for (const snapshot of garrisonSnapshot) {
+    if (!snapshot.stackId) {
+      continue;
+    }
+    const stackId = snapshot.stackId;
+    const stackDoc = await unitStackRepository.findById(stackId);
+    if (!stackDoc) {
+      continue;
+    }
+    const initialTroops = snapshot.initialTroops ?? getStackTroopCount(stackDoc);
+    const survivorTroops = Math.min(initialTroops, survivorsByStack.get(stackId) || 0);
+    const newHp = Math.max(0, Math.round(survivorTroops));
+    if (newHp <= 0) {
+      await unitStackRepository.deleteById(stackId);
+    } else {
+      stackDoc.hp = newHp;
+      stackDoc.stack_count = Math.max(0, Math.ceil(newHp / Math.max(1, stackDoc.unit_size ?? 100)));
+      stackDoc.owner_type = 'city';
+      stackDoc.owner_id = cityId;
+      await stackDoc.save();
+    }
+  }
+}
+
+async function updateCityDefenseAfterBattle(
+  sessionId: string,
+  cityId: number,
+  cityName: string,
+  winner: string | undefined,
+  attackerLoss: number,
+  defenderLoss: number
+): Promise<void> {
+  const state = await cityDefenseRepository.ensure(sessionId, cityId, cityName);
+  if (winner === 'attacker') {
+    await cityDefenseRepository.update(sessionId, cityId, {
+      wall_hp: state.wall_max,
+      gate_hp: state.gate_max,
+      last_repair_at: new Date()
+    });
+    return;
+  }
+  const wallDamage = Math.max(0, Math.round(attackerLoss * 0.05 + defenderLoss * 0.02));
+  const gateDamage = Math.max(0, Math.round(attackerLoss * 0.08));
+  await cityDefenseRepository.update(sessionId, cityId, {
+    wall_hp: Math.max(0, (state.wall_hp ?? state.wall_max) - wallDamage),
+    gate_hp: Math.max(0, (state.gate_hp ?? state.gate_max) - gateDamage),
+    last_damage_at: new Date()
+  });
+}
+
+function getStackTroopCount(stack: any): number {
+  if (!stack) {
+    return 0;
+  }
+  if (typeof stack.hp === 'number') {
+    return stack.hp;
+  }
+  const unitSize = stack.unit_size ?? 100;
+  const stackCount = stack.stack_count ?? 0;
+  return unitSize * stackCount;
+}
+
 export function startBattleProcessor() {
   const CHECK_INTERVAL = 1000;
   
@@ -398,3 +506,4 @@ export function startBattleProcessor() {
   
   setTimeout(() => processBattles(), 1000);
 }
+

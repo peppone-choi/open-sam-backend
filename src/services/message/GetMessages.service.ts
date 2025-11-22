@@ -47,7 +47,7 @@ export class GetMessagesService {
     try {
       if (!type) {
         logger.warn('type 파라미터 없음', { data, user });
-        return { success: false, message: 'type이 필요합니다' };
+        return { success: false, message: '메시지 유형이 필요합니다.' };
       }
 
       const validTypes = ['private', 'public', 'national', 'diplomacy', 'system'];
@@ -59,7 +59,7 @@ export class GetMessagesService {
           data,
           query: data
         });
-        return { success: false, message: `잘못된 메시지 타입입니다: ${type} (유효한 타입: ${validTypes.join(', ')})` };
+        return { success: false, message: `지원하지 않는 메시지 유형입니다: ${type} (가능한 값: ${validTypes.join(', ')})` };
       }
 
       // generalId가 없으면 userId로 찾기

@@ -76,7 +76,7 @@ router.post('/update', authenticate, requireAdmin, async (req: Request, res: Res
       results.updates.push({
         service: 'docker',
         status: 'info',
-        message: 'Docker 재빌드는 수동으로 실행하세요: docker-compose restart',
+        message: '도커 재빌드는 직접 명령(docker-compose restart)으로 실행해주세요.',
       });
     }
     
@@ -212,12 +212,12 @@ router.post('/restart-daemon', authenticate, requireAdmin, async (req: Request, 
     if (process.env.NODE_ENV === 'production') {
       res.json({
         success: true,
-        message: 'Docker 컨테이너 재시작은 다음 명령어로 실행하세요: docker-compose restart daemon',
+        message: '도커 컨테이너 재시작은 docker-compose restart daemon 명령으로 진행해주세요.',
       });
     } else {
       res.json({
         success: false,
-        message: '개발 환경에서는 수동으로 재시작하세요: npm run dev:daemon',
+        message: '개발 환경에서는 npm run dev:daemon 명령으로 직접 재시작하세요.',
       });
     }
   } catch (error) {

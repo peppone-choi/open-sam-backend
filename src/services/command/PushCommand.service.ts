@@ -25,7 +25,7 @@ export class PushCommandService {
     }
 
     if (isNaN(amount) || amount < -12 || amount > 12) {
-      return { success: false, message: 'amount는 -12 ~ 12 사이여야 합니다' };
+      return { success: false, message: '증감 값은 -12 ~ 12 범위여야 합니다.' };
     }
 
     if (amount === 0) {

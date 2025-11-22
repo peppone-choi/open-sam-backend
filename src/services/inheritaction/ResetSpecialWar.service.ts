@@ -81,7 +81,8 @@ export class ResetSpecialWarService {
       return {
         success: true,
         result: true,
-        message: 'ResetSpecialWar executed successfully'
+        message: '특수 전쟁 능력을 초기화했습니다.'
+
       };
     } catch (error: any) {
       return {

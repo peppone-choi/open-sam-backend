@@ -1,15 +1,21 @@
 // @ts-nocheck - Type issues need investigation
 import { Router, Request, Response } from 'express';
-import { City, Nation, General } from '../../models';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
 
 const router = Router();
 
+function toPlain<T>(doc: T | null | undefined): any | null {
+  if (!doc) return null;
+  return typeof (doc as any).toObject === 'function' ? (doc as any).toObject() : doc;
+}
+
 router.post('/map', async (req: Request, res: Response) => {
   try {
-    const { year, month, neutralView, showMe } = req.body;
+    const sessionId = (req.body.session_id as string) || 'sangokushi_default';
 
-    const cities = await City.find({}).lean();
-    const nations = await Nation.find({}).lean();
+    const cities = (await cityRepository.findBySession(sessionId)) || [];
+    const nations = (await nationRepository.findBySession(sessionId)) || [];
 
     const mapData = {
       cities: cities.map(city => ({
@@ -44,8 +50,9 @@ router.post('/map', async (req: Request, res: Response) => {
 
 router.get('/map', async (req: Request, res: Response) => {
   try {
-    const cities = await City.find({}).lean();
-    const nations = await Nation.find({}).lean();
+    const sessionId = (req.query.session_id as string) || 'sangokushi_default';
+    const cities = (await cityRepository.findBySession(sessionId)) || [];
+    const nations = (await nationRepository.findBySession(sessionId)) || [];
 
     res.json({
       result: true,
@@ -62,29 +69,27 @@ router.get('/city-list', async (req: Request, res: Response) => {
   try {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
     
-    // 국가 정보 조회
-    const nations = await Nation.find({ session_id: sessionId }).lean();
+    const nationsRaw = (await nationRepository.findBySession(sessionId)) || [];
+    const citiesRaw = (await cityRepository.findBySession(sessionId)) || [];
+
     const nationMap: Record<number, any> = {};
-    nations.forEach((nation: any) => {
-      const nationId = nation.data?.nation || nation.nation;
+    nationsRaw.forEach((nation: any) => {
+      const data = typeof nation.toObject === 'function' ? nation.toObject() : nation;
+      const nationId = data.data?.nation || data.nation;
       if (nationId) {
         nationMap[nationId] = {
           nation: nationId,
-          name: nation.data?.name || nation.name || '이름 없음',
-          color: nation.data?.color || nation.color || 0,
-          capital: nation.data?.capital || nation.capital || 0,
-          level: nation.data?.level || nation.level || 0,
-          type: nation.data?.type || nation.type || 'None'
+          name: data.data?.name || data.name || '이름 없음',
+          color: data.data?.color || data.color || 0,
+          capital: data.data?.capital || data.capital || 0,
+          level: data.data?.level || data.level || 0,
+          type: data.data?.type || data.type || 'None'
         };
       }
     });
 
-    // 도시 정보 조회 (레거시와 동일한 형식)
-    const cities = await City.find({ session_id: sessionId }).lean();
-    
-    // 레거시 형식: cityArgsList와 cities 배열
     const cityArgsList = ['city', 'nation', 'name', 'level'];
-    const cityList = cities.map((city: any) => {
+    const cityList = citiesRaw.map((city: any) => {
       const cityData = city.data || city;
       return [
         cityData.id || cityData.city || 0,

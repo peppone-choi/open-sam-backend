@@ -100,7 +100,7 @@ export class BorderReturnCommand extends GeneralCommand {
     const destCityName = CityConst.byID(destCityID).name;
 
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 접경귀환했습니다. <1>${date}</>`);
-    general.data.city = destCityID;
+    await this.updateGeneralCity(destCityID);
 
     this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
 

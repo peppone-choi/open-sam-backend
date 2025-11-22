@@ -17,7 +17,7 @@ export class PushCommandService {
       }
 
       if (amount < -12 || amount > 12) {
-        throw new Error('범위를 벗어났습니다 (-12 ~ 12)');
+        throw new Error('증감 값은 -12 ~ 12 범위만 허용됩니다.');
       }
 
       const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
@@ -47,8 +47,9 @@ export class PushCommandService {
       return {
         success: true,
         result: true,
-        message: 'PushCommand executed successfully'
+        message: '국가 명령 조정이 완료되었습니다.'
       };
+
     } catch (error: any) {
       return {
         success: false,

@@ -27,9 +27,10 @@ export class BetService {
       if (!Array.isArray(bettingType)) {
         return {
           success: false,
-          message: 'bettingType은 배열이어야 합니다'
+          message: '베팅 종류 목록은 배열 형태여야 합니다.'
         };
       }
+
 
       const session = await sessionRepository.findBySessionId(sessionId );
       if (!session) {

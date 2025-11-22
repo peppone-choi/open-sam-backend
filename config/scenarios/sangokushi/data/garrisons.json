@@ -1,0 +1,134 @@
+{
+  "garrisons": [],
+  "patterns": {
+    "imperial_guard": {
+      "label": "<R>한 사예교위</>",
+      "stacks": [
+        { "crewTypeId": 1204, "unitSize": 100, "stackCount": 8, "train": 85, "morale": 85 },
+        { "crewTypeId": 1202, "unitSize": 100, "stackCount": 7, "train": 84, "morale": 83 },
+        { "crewTypeId": 1303, "unitSize": 100, "stackCount": 5, "train": 82, "morale": 82 }
+      ],
+      "commander": {
+        "name": "사예교위",
+        "title": "<R>한 사예교위</>",
+        "leadership": 82,
+        "strength": 80,
+        "intel": 78,
+        "crewTypeId": 1204,
+        "train": 85,
+        "morale": 85
+      }
+    },
+    "provincial_guard": {
+      "label": "<Y>한 자사</>",
+      "stacks": [
+        { "crewTypeId": 1201, "unitSize": 100, "stackCount": 6, "train": 80, "morale": 78 },
+        { "crewTypeId": 1301, "unitSize": 100, "stackCount": 4, "train": 78, "morale": 76 }
+      ],
+      "commander": {
+        "name": "한 자사",
+        "title": "<Y>한 자사</>",
+        "leadership": 76,
+        "strength": 72,
+        "intel": 70,
+        "crewTypeId": 1201,
+        "train": 78,
+        "morale": 78
+      }
+    },
+    "metropolis_guard": {
+      "label": "한 태수",
+      "stacks": [
+        { "crewTypeId": 1201, "unitSize": 100, "stackCount": 5, "train": 75, "morale": 74 },
+        { "crewTypeId": 1102, "unitSize": 100, "stackCount": 4, "train": 72, "morale": 72 }
+      ],
+      "commander": {
+        "name": "태수",
+        "title": "한 태수",
+        "leadership": 70,
+        "strength": 68,
+        "intel": 65,
+        "crewTypeId": 1201,
+        "train": 74,
+        "morale": 74
+      }
+    },
+    "regional_guard": {
+      "label": "현령",
+      "stacks": [
+        { "crewTypeId": 1101, "unitSize": 100, "stackCount": 3, "train": 68, "morale": 68 },
+        { "crewTypeId": 1102, "unitSize": 100, "stackCount": 3, "train": 66, "morale": 65 }
+      ],
+      "commander": {
+        "name": "현령",
+        "title": "한 현령",
+        "leadership": 65,
+        "strength": 62,
+        "intel": 58,
+        "crewTypeId": 1101,
+        "train": 66,
+        "morale": 66
+      }
+    },
+    "tribal_warband": {
+      "label": "이민족 족장",
+      "stacks": [
+        { "crewTypeId": 1300, "unitSize": 100, "stackCount": 3, "train": 62, "morale": 65 },
+        { "crewTypeId": 1103, "unitSize": 100, "stackCount": 3, "train": 60, "morale": 62 }
+      ],
+      "commander": {
+        "name": "족장",
+        "title": "이민족 족장",
+        "leadership": 60,
+        "strength": 60,
+        "intel": 45,
+        "crewTypeId": 1300,
+        "train": 62,
+        "morale": 65
+      }
+    },
+    "town_militia": {
+      "label": "향촌 호족",
+      "stacks": [
+        { "crewTypeId": 1100, "unitSize": 100, "stackCount": 2, "train": 58, "morale": 58 },
+        { "crewTypeId": 1102, "unitSize": 100, "stackCount": 2, "train": 55, "morale": 55 }
+      ],
+      "commander": {
+        "name": "향촌 호족",
+        "title": "향촌 호족",
+        "leadership": 52,
+        "strength": 50,
+        "intel": 48,
+        "crewTypeId": 1100,
+        "train": 56,
+        "morale": 56
+      }
+    },
+    "village_militia": {
+      "label": "유민 무리",
+      "stacks": [
+        { "crewTypeId": 1100, "unitSize": 100, "stackCount": 1, "train": 45, "morale": 45 }
+      ],
+      "commander": {
+        "name": "유민 무리",
+        "title": "유민 무리",
+        "leadership": 40,
+        "strength": 38,
+        "intel": 30,
+        "crewTypeId": 1100,
+        "train": 45,
+        "morale": 45
+      }
+    }
+  },
+  "rules": [
+    { "cityIds": [3, 4], "pattern": "imperial_guard" },
+    { "levelGte": 9, "pattern": "provincial_guard" },
+    { "levelGte": 8, "pattern": "metropolis_guard" },
+    { "levelGte": 6, "pattern": "regional_guard" },
+    { "levelEq": 5, "pattern": "tribal_warband" },
+    { "levelGte": 3, "pattern": "town_militia" },
+    { "default": true, "pattern": "village_militia" }
+  ]
+}
+
