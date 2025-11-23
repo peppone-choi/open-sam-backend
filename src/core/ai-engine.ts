@@ -188,6 +188,9 @@ export class AIEngine {
   private cachedAverageTrain = 0;
   private cachedAverageMorale = 0;
   
+  private static readonly DIPLOMACY_CACHE_TTL_MS = 60_000;
+  private static diplomacyCache: Map<string, { state: DiplomacyState; expiresAt: number }> = new Map();
+  
   private getStackTroopCount(stack: Partial<IUnitStack>): number {
     if (!stack) {
       return 0;
@@ -467,20 +470,125 @@ export class AIEngine {
     nation: any,
     env: any
   ): Promise<DiplomacyState> {
-    // 실제 구현에서는 DB에서 외교 관계를 조회
-    // 여기서는 간단히 임시 구현
-    
-    const yearMonth = (env.year * 12 + env.month);
-    const startYearMonth = (env.startyear * 12 + 5);
-    
-    // 게임 초기에는 평화
-    if (yearMonth <= startYearMonth + 24) {
+    const sessionId = env?.session_id || env?.sessionId;
+    const nationId = nation?.nation ?? nation?.data?.nation;
+    if (!sessionId || !nationId) {
       return DiplomacyState.PEACE;
     }
-    
-    // nation의 war 상태나 diplomacy 테이블 확인 필요
-    // 임시로 평화 반환
-    return DiplomacyState.PEACE;
+
+    const cachedState = AIEngine.getCachedDiplomacyState(sessionId, nationId);
+    if (cachedState !== null) {
+      return cachedState;
+    }
+
+    const warList = this.getNationWarList(nation);
+    if (Array.isArray(warList) && warList.length > 0) {
+      AIEngine.setCachedDiplomacyState(sessionId, nationId, DiplomacyState.WAR);
+      return DiplomacyState.WAR;
+    }
+
+    let highestState = DiplomacyState.PEACE;
+
+    try {
+      const { diplomacyRepository } = await import('../repositories/diplomacy.repository');
+      let relations = await diplomacyRepository.findByNation(sessionId, nationId);
+
+      if (!relations || relations.length === 0) {
+        const { Diplomacy } = await import('../models/diplomacy.model');
+        relations = await Diplomacy.find({
+          session_id: sessionId,
+          'data.me': nationId,
+        });
+      }
+
+      for (const relation of relations || []) {
+        const mappedState = this.mapRelationState(relation);
+        if (mappedState > highestState) {
+          highestState = mappedState;
+          if (highestState === DiplomacyState.WAR) {
+            break;
+          }
+        }
+      }
+    } catch (error: any) {
+      console.warn('[AIEngine] Failed to evaluate diplomacy state', {
+        sessionId,
+        nationId,
+        error: error?.message || error,
+      });
+    }
+
+    if (highestState === DiplomacyState.PEACE) {
+      const startYear = env?.startyear ?? env?.startYear;
+      const year = env?.year;
+      const month = env?.month;
+      if (
+        typeof startYear === 'number' && Number.isFinite(startYear) &&
+        typeof year === 'number' && Number.isFinite(year) &&
+        typeof month === 'number' && Number.isFinite(month)
+      ) {
+        const yearMonth = year * 12 + month;
+        const startYearMonth = startYear * 12 + 5;
+        if (yearMonth <= startYearMonth + 24) {
+          AIEngine.setCachedDiplomacyState(sessionId, nationId, DiplomacyState.PEACE);
+          return DiplomacyState.PEACE;
+        }
+      }
+    }
+
+    AIEngine.setCachedDiplomacyState(sessionId, nationId, highestState);
+    return highestState;
+  }
+
+  private getNationWarList(nation: any): any[] | undefined {
+    if (!nation) {
+      return undefined;
+    }
+    return nation.war_list
+      || nation.data?.war_list
+      || nation.data?.warList
+      || nation.data?.warlist;
+  }
+
+  private mapRelationState(relation: any): DiplomacyState {
+    const rawState = relation?.state ?? relation?.data?.state;
+    const normalized = typeof rawState === 'string' ? parseInt(rawState, 10) : rawState;
+    switch (normalized) {
+      case 0:
+        return DiplomacyState.WAR;
+      case 1:
+        return DiplomacyState.WAR_DECLARED;
+      case 2:
+      case 7:
+      case undefined:
+        return DiplomacyState.PEACE;
+      default:
+        if (typeof normalized === 'number' && normalized >= 3 && normalized <= 6) {
+          return DiplomacyState.WAR_IMMINENT;
+        }
+        return DiplomacyState.PEACE;
+    }
+  }
+
+  private static getCachedDiplomacyState(sessionId: string, nationId: number): DiplomacyState | null {
+    const cacheKey = `${sessionId}:${nationId}`;
+    const cached = AIEngine.diplomacyCache.get(cacheKey);
+    if (!cached) {
+      return null;
+    }
+    if (cached.expiresAt < Date.now()) {
+      AIEngine.diplomacyCache.delete(cacheKey);
+      return null;
+    }
+    return cached.state;
+  }
+
+  private static setCachedDiplomacyState(sessionId: string, nationId: number, state: DiplomacyState): void {
+    const cacheKey = `${sessionId}:${nationId}`;
+    AIEngine.diplomacyCache.set(cacheKey, {
+      state,
+      expiresAt: Date.now() + AIEngine.DIPLOMACY_CACHE_TTL_MS,
+    });
   }
   
   /**

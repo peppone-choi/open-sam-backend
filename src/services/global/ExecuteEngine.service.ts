@@ -1022,17 +1022,18 @@ export class ExecuteEngineService {
     // 0번 턴 조회
     const nationTurn = await nationTurnRepository.findOneByFilter({
       session_id: sessionId,
-      nation_id: nationId,
-      officer_level: officerLevel,
-      turn_idx: 0
+      'data.nation_id': nationId,
+      'data.officer_level': officerLevel,
+      'data.turn_idx': 0
     });
 
     if (!nationTurn) {
       return;
     }
 
-    const action = nationTurn.action || '휴식';
-    const arg = nationTurn.arg || {};
+    const turnData = nationTurn.data || nationTurn;
+    const action = turnData.action || '휴식';
+    const arg = turnData.arg || {};
 
     if (action === '휴식') {
       return;
