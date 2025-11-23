@@ -154,16 +154,22 @@ export class IntensiveTrainingCommand extends GeneralCommand {
 
   private async applyIntensiveTrainingToStacks(stacks: any[], score: number): Promise<void> {
     if (!stacks.length) return;
-
+ 
+    let updated = false;
     for (const stack of stacks) {
       const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
       if (!stackDoc) continue;
-
+ 
       const nextTrain = Math.min(GameConst.maxTrainByCommand, (stackDoc.train ?? 0) + score);
       const nextMorale = Math.min(GameConst.maxAtmosByCommand, (stackDoc.morale ?? 0) + score);
       stackDoc.train = nextTrain;
       stackDoc.morale = nextMorale;
       await stackDoc.save();
+      updated = true;
+    }
+    if (updated) {
+      this.markUnitStacksDirty();
     }
   }
+
 }

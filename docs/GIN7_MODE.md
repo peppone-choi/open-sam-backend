@@ -14,8 +14,10 @@ This note documents the backend primitives that power the Legend of Galactic Her
 ## Authority Cards & Organizational Roles
 
 - `GalaxyAuthorityCard` stores every 職務権限カード, tying template metadata to a concrete holder. The structure mirrors Chapter3’s card breakdown and enforces the 16-card limit per character (gin7manual.txt:1076-1088).
+- The canonical card/command catalog lives in `src/config/gin7/catalog.ts` (extracted from Chapter3-4) and is now backed by `config/gin7/catalog.schema.json`. Run `npm run validate:gin7` to lint the dataset (schema compliance, duplicate checks, shortcut wiring) before shipping. Each template carries minRank/organization metadata plus the original command groups so backend guardrails and the UI stay in sync with the manual.
 - `GalaxyAuthorityCardService.ensureAuthorityCards()` provisions faction-specific cards from documented templates while `assignCard` / `releaseCard` enforce the manual’s ownership and revocation rules (gin7manual.txt:2334-2350).
 - Starter characters now receive card payloads derived from these templates, keeping UI copy, command groups, and email aliases consistent with the source material.
+- `scripts/migrations/2025-11-22-gin7-card-backfill.ts` re-syncs every session with the latest catalog version (see `metadata.catalogVersion`) so historical sandboxes inherit newly added cards or metadata fixes.
 
 ## Strategic Operations
 
@@ -96,6 +98,8 @@ This note documents the backend primitives that power the Legend of Galactic Her
 ```
 {
   "success": true,
+  "schemaVersion": "2025-11-22.authority.1",
+  "meta": { "commandCatalogVersion": "gin7.manual.v1" },
   "data": [
     {
       "cardId": "card.personal.basic:empire",
@@ -118,9 +122,32 @@ This note documents the backend primitives that power the Legend of Galactic Her
 }
 ```
 
+## Command Execution & CP Enforcement
+
+- `Gin7CommandExecutionService` now routes `/api/gin7/authority/sessions/:sessionId/cards/:cardId/commands/:commandCode/execute` requests through the catalog. It checks card ownership, required rank, organization scope, and the CP rules from Chapter3 (PCP/MCP plus 2× substitution). All CP deductions are persisted server side, and the response echoes what was spent.
+- Tactical commands reuse the existing PIXI command classes (`MoveTacticalCommand`, `AttackTacticalCommand`, …).
+- Strategic / operation / political commands now hydrate the LOGH `CommandRegistry` on demand and instantiate the canonical `BaseLoghCommand` subclasses. A lightweight `GalaxyCommanderAdapter` bridges `GalaxyCharacter` → `ILoghCommandExecutor`, so card metadata drives CP checks, rank enforcement, and any future turn timers exactly like the legacy commander console. PCP/MCP consumption is derived from the catalog metadata and mirrored in the adapter.
+
+### Sample: `POST /api/gin7/authority/sessions/s2-main/cards/card.personal.basic:empire/commands/move/execute`
+```
+{
+  "success": true,
+  "schemaVersion": "2025-11-22.authority.1",
+  "data": {
+    "success": true,
+    "message": "move executed",
+    "cardId": "card.personal.basic:empire",
+    "commandCode": "move",
+    "cpSpent": { "mcp": 10 }
+  }
+}
+```
+
 ## Telemetry & Energy Persistence (QA reference)
 
 `Gin7FrontendService` backs HUD slider state and QA probes with two Mongo collections:
+
+- Frontend QA fixtures (Storybook + Playwright) now load the serialized catalog located at `open-sam-front/src/mocks/gin7-command-catalog.json`. The JSON is generated directly from `src/config/gin7/catalog.ts`, so UI snapshots and automated runs always reference the exact same card/command metadata as the backend.
 
 - `gin7tacticalpreferences` — single document per character storing the latest slider balance plus the last telemetry snapshot streamed from the browser.
 - `gin7telemetrysamples` — append-only history powering future dashboards or Atlas charts.
@@ -180,7 +207,7 @@ Use these structures when crafting QA queries or dashboards.
 
 ### `GET /api/gin7/session/sessions/:sessionId/overview`
 - Purpose: single payload for 職務権限 카드 상태, PCP/MCP 회복률, loop health, and shortcut metadata (Ref: gin7manual.txt:1076-1188, 1800-1898).
-- Response includes `schemaVersion` (`2025-11-21.session.1`), session basics, `clock.loopStats`, aggregated card counts, command-point averages, substitution debt, and the 12 most relevant authority cards.
+- Response includes `schemaVersion` (`2025-11-22.session.2`), session basics, `clock.loopStats`, aggregated card counts, command-point averages, substitution debt, the 12 most relevant authority cards, **and** the full `commandCatalog` (version/source/commands/cards/shortcuts) so clients can hydrate Zustand without separate catalog pulls.
 
 ```
 GET /api/gin7/session/sessions/s2-main/overview
@@ -254,7 +281,13 @@ GET /api/gin7/session/sessions/s2-main/overview
         "commandGroups": ["政治", "人事"],
         "commandCodes": ["set-tax", "appoint-governor"]
       }
-    ]
+    ],
+    "commandCatalog": {
+      "version": "gin7.manual.v1",
+      "source": "gin7manual.txt Chapter3-4",
+      "authorityCards": 256,
+      "commands": 148
+    }
   }
 }
 ```

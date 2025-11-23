@@ -369,12 +369,14 @@ export class ConscriptCommand extends GeneralCommand {
           train: setTrain,
           morale: setAtmos,
         });
+        this.markUnitStacksDirty();
         const cache = this.getCachedUnitStacks();
         cache.length = 0;
         cache.push(stackDoc.toObject());
       }
-
+ 
       await this.syncGeneralTroopData(sessionId, generalNo);
+
     }
 
     // onCalcDomestic 보정 적용 (주민 감소량)
@@ -481,6 +483,7 @@ export class ConscriptCommand extends GeneralCommand {
           morale: this.generalObj?.data?.atmos ?? 70,
         });
         cache.push(stackDoc.toObject());
+        this.markUnitStacksDirty();
       }
     } else {
       stacks.forEach((stack) => cache.push(stack));
@@ -506,31 +509,17 @@ export class ConscriptCommand extends GeneralCommand {
     const prevMorale = stackDoc.morale ?? atmos;
     stackDoc.train = (prevTroops * prevTrain + addCrew * train) / totalTroops;
     stackDoc.morale = (prevTroops * prevMorale + addCrew * atmos) / totalTroops;
+    if (reqCrewType?.id && stackDoc.crew_type_id !== reqCrewType.id) {
+      stackDoc.crew_type_id = reqCrewType.id;
+    }
     if (reqCrewType?.name) {
       stackDoc.crew_type_name = reqCrewType.name;
     }
     await stackDoc.save();
+    this.markUnitStacksDirty();
     return stackDoc;
   }
 
-  private async syncGeneralTroopData(sessionId: string, generalNo: number): Promise<void> {
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
-    const totalTroops = stacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
-    this.generalObj.data.crew = totalTroops;
-    if (stacks.length > 0) {
-      const primary = stacks[0];
-      this.generalObj.data.crewtype = primary.crew_type_id;
-      this.generalObj.data.train = primary.train;
-      this.generalObj.data.atmos = primary.morale;
-    } else {
-      this.generalObj.data.crewtype = 0;
-      this.generalObj.data.train = 0;
-      this.generalObj.data.atmos = 0;
-    }
-    if (typeof this.generalObj.markModified === 'function') {
-      this.generalObj.markModified('data');
-    }
-  }
 
   private getStackTroopCount(stack: Partial<IUnitStack>): number {
     const hp = (stack as any)?.hp;

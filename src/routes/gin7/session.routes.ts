@@ -5,6 +5,7 @@ import { GalaxySessionClock, IGalaxySessionClock } from '../../models/logh/Galax
 import { GalaxyAuthorityCard, IGalaxyAuthorityCard } from '../../models/logh/GalaxyAuthorityCard.model';
 import { GalaxyCharacter, IGalaxyCharacter } from '../../models/logh/GalaxyCharacter.model';
 import { tupleAll } from '../../services/logh/Gin7Frontend.service';
+import { gin7CommandCatalog } from '../../config/gin7/catalog';
 
 const router = Router();
 router.use(autoExtractToken);
@@ -59,7 +60,11 @@ router.get('/sessions/:sessionId/overview', async (req, res) => {
 
     res.json({
       success: true,
-      schemaVersion: '2025-11-21.session.1',
+      schemaVersion: '2025-11-22.session.2',
+      meta: {
+        commandCatalogVersion: gin7CommandCatalog.version,
+        commandCatalogSource: gin7CommandCatalog.source,
+      },
       data: {
         session: {
           sessionId: session.session_id,
@@ -92,6 +97,7 @@ router.get('/sessions/:sessionId/overview', async (req, res) => {
         cards: cardSummary,
         commandPoints,
         shortcuts,
+        commandCatalog: gin7CommandCatalog,
       },
       compliance: [
         {

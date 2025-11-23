@@ -10,6 +10,8 @@ import { Gin7TelemetrySample, IGin7TelemetrySample } from '../../models/logh/Gin
 import { listCommMessages } from './GalaxyComm.service';
 import navigationGrid from '../../../config/scenarios/legend-of-galactic-heroes/data/map-navigation-grid.json';
 import planetCatalog from '../../../config/scenarios/legend-of-galactic-heroes/data/planets-and-systems-with-stats.json';
+import { gin7CommandCatalog } from '../../config/gin7/catalog';
+import { CommandPointType, Gin7CommandCatalog, Gin7CommandGroup, Gin7CommandShortcut } from '../../config/gin7/types';
 
 export function tupleAll<T extends readonly Promise<unknown>[]>(promises: T) {
   return Promise.all(promises) as Promise<{ [K in keyof T]: Awaited<T[K]> }>;
@@ -46,13 +48,26 @@ export interface Gin7StrategicState {
   viewport: { x: number; y: number };
 }
 
+export interface Gin7CommandSummary {
+  code: string;
+  label: string;
+  group: Gin7CommandGroup;
+  cpType?: CommandPointType;
+  cpCost?: number | string;
+}
+
+type Gin7CardShortcut = Gin7CommandShortcut & { type: Gin7CommandType };
+
 export interface Gin7AuthorityCard {
   id: string;
+  templateId: string;
   title: string;
   rank: string;
   faction: Gin7Faction;
   commands: Gin7CommandType[];
-  shortcuts: Array<{ key: string; label: string; description: string; type: Gin7CommandType }>;
+  commandCodes: string[];
+  commandMeta: Gin7CommandSummary[];
+  shortcuts: Gin7CardShortcut[];
 }
 
 export interface Gin7CommandPlan {
@@ -102,11 +117,12 @@ export interface Gin7SessionOverview {
     mcp: number;
     maxPcp: number;
     maxMcp: number;
-    jobCards: Array<{ id: string; title: string; rankReq: string; commands: Gin7CommandType[] }>;
+    jobCards: Array<{ id: string; title: string; rankReq: string; commands: Gin7CommandType[]; commandCodes: string[]; commandMeta: Gin7CommandSummary[] }>;
     sessionId?: string;
   };
   cpRegenSeconds: number;
   cards: Gin7AuthorityCard[];
+  commandCatalog: Gin7CommandCatalog;
 }
 
 export interface Gin7ApiBundle {
@@ -175,34 +191,6 @@ const STAR_SYSTEM_BY_COORD = new Map<string, StarSystemMeta>();
 
 const BASE_CELLS: Gin7StrategicCell[] = buildBaseCells();
 
-const COMMAND_SHORTCUT_PRESET: Record<Gin7CommandType, { key: string; label: string; description: string }> = {
-  warp: { key: 'w', label: '워프', description: '워프 / 고속 이동' },
-  move: { key: 'f', label: '이동', description: '그리드 이동' },
-  attack: { key: 'r', label: '공격', description: '포격 / 함포전' },
-  supply: { key: 's', label: '보급', description: '연료·탄약 보급' },
-  personnel: { key: 'p', label: '인사', description: '통신 / 메신저' },
-  tactics: { key: 't', label: '전술', description: '진형 / 작전 변경' },
-};
-
-const COMMAND_CODE_MAP: Record<string, Gin7CommandType> = {
-  warp: 'warp',
-  move: 'move',
-  travel: 'move',
-  attack: 'attack',
-  tactics: 'tactics',
-  supply: 'supply',
-  dock: 'supply',
-  resupply: 'supply',
-  allocate: 'supply',
-  reorganize: 'tactics',
-  'formation:set': 'tactics',
-  chat: 'personnel',
-  'mail:personal': 'personnel',
-  'set-tax': 'personnel',
-  'appoint-governor': 'personnel',
-  'declare-plan': 'tactics',
-  'withdraw-plan': 'tactics',
-};
 
 export class Gin7FrontendService {
   static async resolveCharacter(sessionId: string, userId?: string, characterId?: string) {
@@ -241,12 +229,18 @@ export class Gin7FrontendService {
 
     const normalizedCards = cards.filter(Boolean) as Gin7AuthorityCard[];
 
-    const jobCards = (character.commandCards || []).map((entry) => ({
-      id: entry.cardId,
-      title: entry.name,
-      rankReq: entry.category,
-      commands: dedupe(entry.commands || []).map((code) => COMMAND_CODE_MAP[code] || 'personnel') as Gin7CommandType[],
-    }));
+    const jobCards = (character.commandCards || []).map((entry) => {
+      const commandCodes = dedupe(entry.commands || []);
+      return {
+        id: entry.cardId,
+        title: entry.name,
+        rankReq: entry.category,
+        commands: commandCodes.map(mapLegacyCommandType),
+        commandCodes,
+        commandMeta: commandCodes.map(mapCommandMetaSummary),
+      };
+    });
+
 
     return {
       profile: {
@@ -263,6 +257,7 @@ export class Gin7FrontendService {
       },
       cpRegenSeconds: computeCpCountdown(character.commandPoints?.lastRecoveredAt),
       cards: normalizedCards,
+      commandCatalog: gin7CommandCatalog,
     };
   }
 
@@ -471,41 +466,94 @@ function computeCpCountdown(lastRecoveredAt?: Date) {
 }
 
 function mapAuthorityCard(card: IGalaxyAuthorityCard, rank: string): Gin7AuthorityCard {
-  const commands = dedupe(card.commandCodes || []).map((code) => COMMAND_CODE_MAP[code] || 'personnel');
+  const commandCodes = dedupe(card.commandCodes || []);
+  const commands = commandCodes.map(mapLegacyCommandType);
   return {
     id: card.cardId,
+    templateId: card.templateId,
     title: card.title,
     rank,
     faction: mapFaction(card.faction as any),
     commands,
-    shortcuts: buildShortcuts(commands),
+    commandCodes,
+    commandMeta: commandCodes.map(mapCommandMetaSummary),
+    shortcuts: buildShortcutsForCodes(commandCodes),
   };
 }
 
 function buildCardFromCommandEntry(entry: IGalaxyCharacter['commandCards'][number], rank: string, faction: string): Gin7AuthorityCard {
-  const commands = dedupe(entry.commands || []).map((code) => COMMAND_CODE_MAP[code] || 'personnel');
+  const commandCodes = dedupe(entry.commands || []);
+  const commands = commandCodes.map(mapLegacyCommandType);
   return {
     id: entry.cardId,
+    templateId: entry.cardId,
     title: entry.name,
     rank,
     faction: mapFaction(faction as any),
     commands,
-    shortcuts: buildShortcuts(commands),
+    commandCodes,
+    commandMeta: commandCodes.map(mapCommandMetaSummary),
+    shortcuts: buildShortcutsForCodes(commandCodes),
   };
 }
 
-function buildShortcuts(commands: Gin7CommandType[]) {
+function buildShortcutsForCodes(commandCodes: string[]): Gin7CardShortcut[] {
   const seen = new Set<string>();
-  return commands
-    .map((command) => {
-      const preset = COMMAND_SHORTCUT_PRESET[command];
-      if (!preset || seen.has(preset.key)) {
-        return null;
+  return gin7CommandCatalog.shortcuts
+    .filter((shortcut) => shortcut.commandCode && commandCodes.includes(shortcut.commandCode))
+    .filter((shortcut) => {
+      if (seen.has(shortcut.key)) {
+        return false;
       }
-      seen.add(preset.key);
-      return { key: preset.key, label: preset.label, description: preset.description, type: command };
+      seen.add(shortcut.key);
+      return true;
     })
-    .filter(Boolean) as Array<{ key: string; label: string; description: string; type: Gin7CommandType }>;
+    .map((shortcut) => ({
+      ...shortcut,
+      type: mapLegacyCommandType(shortcut.commandCode || ''),
+    }));
+}
+
+function mapCommandMetaSummary(code: string): Gin7CommandSummary {
+  const meta = gin7CommandCatalog.commands[code];
+  if (!meta) {
+    return { code, label: code, group: 'personal' } as Gin7CommandSummary;
+  }
+  return {
+    code,
+    label: meta.label,
+    group: meta.group,
+    cpType: meta.cpType,
+    cpCost: meta.cpCost,
+  };
+}
+
+function mapLegacyCommandType(code: string): Gin7CommandType {
+  const meta = gin7CommandCatalog.commands[code];
+  if (!meta) {
+    return 'personnel';
+  }
+  switch (meta.group) {
+    case 'operation':
+    case 'tactical':
+      if (code === 'warp') return 'warp';
+      if (['attack', 'fire', 'air_combat'].includes(code)) return 'attack';
+      if (['ground_deploy', 'ground_withdraw', 'formation', 'parallel_move', 'turn', 'reverse', 'retreat', 'sortie', 'stop', 'move'].includes(code)) {
+        return 'move';
+      }
+      return 'tactics';
+    case 'logistics':
+      return 'supply';
+    case 'command':
+      return 'tactics';
+    case 'personal':
+    case 'personnel':
+    case 'political':
+    case 'intelligence':
+      return 'personnel';
+    default:
+      return 'personnel';
+  }
 }
 
 function mapFleetMarker(fleet: IFleet): Gin7FleetMarker {

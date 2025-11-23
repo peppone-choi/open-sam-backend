@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { Gin7FrontendService } from '../src/services/logh/Gin7Frontend.service';
+import { GalaxyAuthorityCardService } from '../src/services/logh/GalaxyAuthorityCard.service';
 import { GalaxySession } from '../src/models/logh/GalaxySession.model';
 import { GalaxyCharacter } from '../src/models/logh/GalaxyCharacter.model';
-import { GalaxyAuthorityCard } from '../src/models/logh/GalaxyAuthorityCard.model';
 import { Fleet } from '../src/models/logh/Fleet.model';
+import { GalaxyFactionCode } from '../src/models/logh/GalaxySession.model';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/opensam';
 const SESSION_ID = process.env.GIN7_SESSION_ID || 'gin7-session-01';
@@ -56,38 +57,7 @@ async function ensureCharacter() {
 }
 
 async function ensureAuthorityCards() {
-  const cards = [
-    {
-      cardId: 'card.personal.basic:empire',
-      templateId: 'card.personal.basic',
-      title: '個人カード',
-      category: 'personal',
-      commandCodes: ['move', 'travel', 'chat', 'mail:personal'],
-    },
-    {
-      cardId: 'card.captain.basic:empire',
-      templateId: 'card.captain.basic',
-      title: '艦長カード',
-      category: 'fleet',
-      commandCodes: ['warp', 'dock', 'supply', 'formation:set'],
-    },
-  ];
-
-  for (const card of cards) {
-    await GalaxyAuthorityCard.findOneAndUpdate(
-      { session_id: SESSION_ID, cardId: card.cardId },
-      {
-        session_id: SESSION_ID,
-        faction: 'empire',
-        status: 'assigned',
-        holderCharacterId: CHARACTER_ID,
-        manualRef: 'gin7manual.txt',
-        commandGroups: ['作戦'],
-        ...card,
-      },
-      { upsert: true }
-    );
-  }
+  await GalaxyAuthorityCardService.ensureAuthorityCards(SESSION_ID, 'empire' as GalaxyFactionCode);
 }
 
 async function ensureFleet() {

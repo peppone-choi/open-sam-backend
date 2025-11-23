@@ -193,12 +193,17 @@ export class TrainCommand extends GeneralCommand {
 
   private async applyTrainingToStacks(stacks: any[], multiplier: number): Promise<void> {
     if (!stacks.length) return;
+    let updated = false;
     for (const stack of stacks) {
       const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
       if (!stackDoc) continue;
       stackDoc.train = Math.min(100, stackDoc.train + 1 * multiplier);
       stackDoc.morale = Math.min(100, stackDoc.morale + 0.5 * multiplier);
       await stackDoc.save();
+      updated = true;
+    }
+    if (updated) {
+      this.markUnitStacksDirty();
     }
   }
 }

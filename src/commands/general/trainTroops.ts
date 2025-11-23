@@ -153,17 +153,24 @@ export class TrainTroopsCommand extends GeneralCommand {
 
   private async applyTrainTroopsToStacks(stacks: any[], trainGain: number, newMorale: number): Promise<void> {
     if (!stacks.length) return;
-
+ 
     const clampedMorale = Util.clamp(newMorale, 0, GameConst.maxAtmosByCommand);
-
+    let updated = false;
+ 
     for (const stack of stacks) {
       const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
       if (!stackDoc) continue;
-
+ 
       const nextTrain = Math.min(GameConst.maxTrainByCommand, (stackDoc.train ?? 0) + trainGain);
       stackDoc.train = nextTrain;
       stackDoc.morale = clampedMorale;
       await stackDoc.save();
+      updated = true;
+    }
+ 
+    if (updated) {
+      this.markUnitStacksDirty();
     }
   }
+
 }

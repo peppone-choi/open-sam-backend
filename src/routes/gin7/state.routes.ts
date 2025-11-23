@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { autoExtractToken } from '../../middleware/auth';
 import { Gin7FrontendService, Gin7TelemetryPayload } from '../../services/logh/Gin7Frontend.service';
 import { Gin7EnergyProfile } from '../../models/logh/Gin7TacticalPreference.model';
+import { gin7CommandCatalog } from '../../config/gin7/catalog';
 
 const router = Router();
 router.use(autoExtractToken);
@@ -10,7 +11,12 @@ router.get('/session', async (req, res) => {
   try {
     const context = await ensureContext(req);
     const overview = await Gin7FrontendService.getSessionOverview(context.sessionId, context.character);
-    res.json({ success: true, data: overview });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.session.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: overview,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -20,7 +26,12 @@ router.get('/strategy', async (req, res) => {
   try {
     const context = await ensureContext(req);
     const strategic = await Gin7FrontendService.getStrategicState(context.sessionId, context.character ? (context.character.faction as any) : undefined);
-    res.json({ success: true, data: strategic });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.strategy.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: strategic,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -30,7 +41,12 @@ router.get('/operations', async (req, res) => {
   try {
     const context = await ensureContext(req, { allowAnonymous: true });
     const plans = await Gin7FrontendService.getCommandPlans(context.sessionId, context.character?.characterId);
-    res.json({ success: true, data: plans });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.operations.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: plans,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -43,7 +59,12 @@ router.post('/operations', async (req, res) => {
       return res.status(400).json({ success: false, message: '캐릭터 정보를 찾을 수 없습니다' });
     }
     const plan = await Gin7FrontendService.saveOperationDraft(context.sessionId, context.character.characterId, req.body || {});
-    res.json({ success: true, data: plan });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.operations.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: plan,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -53,7 +74,12 @@ router.get('/tactical', async (req, res) => {
   try {
     const context = await ensureContext(req, { allowAnonymous: true });
     const tactical = await Gin7FrontendService.getTacticalState(context.sessionId, context.character ?? null);
-    res.json({ success: true, data: tactical });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.tactical.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: tactical,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -70,7 +96,12 @@ router.post('/tactical/energy', async (req, res) => {
       return res.status(400).json({ success: false, message: '에너지 설정 값이 필요합니다.' });
     }
     const updated = await Gin7FrontendService.updateEnergyProfile(context.sessionId, context.character.characterId, energy);
-    res.json({ success: true, data: updated });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.tactical.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: updated,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -81,7 +112,12 @@ router.get('/chat', async (req, res) => {
     const context = await ensureContext(req, { allowAnonymous: true });
     const limit = req.query.limit ? Number(req.query.limit) : 20;
     const chat = await Gin7FrontendService.getChatLog(context.sessionId, limit);
-    res.json({ success: true, data: chat });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.chat.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: chat,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -92,7 +128,11 @@ router.post('/telemetry', async (req, res) => {
     const context = await ensureContext(req, { allowAnonymous: true });
     const payload = req.body as Gin7TelemetryPayload;
     await Gin7FrontendService.recordTelemetry(context.sessionId, context.character?.characterId, payload);
-    res.json({ success: true });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.telemetry.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }
@@ -103,7 +143,12 @@ router.get('/telemetry', async (req, res) => {
     const context = await ensureContext(req, { allowAnonymous: true });
     const limit = req.query.limit ? Number(req.query.limit) : 10;
     const samples = await Gin7FrontendService.listTelemetrySamples(context.sessionId, limit);
-    res.json({ success: true, data: samples });
+    res.json({
+      success: true,
+      schemaVersion: '2025-11-22.state.telemetry.2',
+      meta: { commandCatalogVersion: gin7CommandCatalog.version },
+      data: samples,
+    });
   } catch (error: any) {
     res.status(error.status || 400).json({ success: false, message: error.message });
   }

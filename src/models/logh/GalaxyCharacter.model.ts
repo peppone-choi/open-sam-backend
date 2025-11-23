@@ -7,7 +7,7 @@ export type GalaxyCharacterStatus = 'active' | 'offline' | 'arrested' | 'mia' | 
 export interface ICommandCard {
   cardId: string;
   name: string;
-  category: 'personal' | 'fleet' | 'logistics' | 'politics' | 'intel';
+  category: 'personal' | 'fleet' | 'logistics' | 'politics' | 'intel' | 'command' | 'personnel' | 'tactical';
   commands: string[];
 }
 
@@ -60,7 +60,7 @@ const CommandCardSchema = new Schema<ICommandCard>(
     name: { type: String, required: true },
     category: {
       type: String,
-      enum: ['personal', 'fleet', 'logistics', 'politics', 'intel'],
+      enum: ['personal', 'fleet', 'logistics', 'politics', 'intel', 'command', 'personnel', 'tactical'],
       default: 'personal',
     },
     commands: { type: [String], default: [] },

@@ -16,8 +16,16 @@ class NationTurnRepository {
   /**
    * 세션으로 조회
    */
-  findBySession(sessionId: string) {
-    return NationTurn.find({ session_id: sessionId });
+  findBySession(sessionId: string, filter: any = {}, sort?: any) {
+    const query = NationTurn.find({ session_id: sessionId, ...filter });
+    if (sort) {
+      query.sort(sort);
+    }
+    return query;
+  }
+
+  findByNation(sessionId: string, nationId: number, sort?: any) {
+    return this.findBySession(sessionId, { 'data.nation_id': nationId }, sort);
   }
 
   /**

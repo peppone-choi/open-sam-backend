@@ -6,6 +6,7 @@ import { StarSystem, IStarSystem } from '../../models/logh/StarSystem.model';
 import { Fleet, IFleet } from '../../models/logh/Fleet.model';
 import { GalaxyOperation, IGalaxyOperation } from '../../models/logh/GalaxyOperation.model';
 import { tupleAll } from '../../services/logh/Gin7Frontend.service';
+import { gin7CommandCatalog } from '../../config/gin7/catalog';
 
 const router = Router();
 router.use(autoExtractToken);
@@ -49,7 +50,10 @@ router.get('/sessions/:sessionId/map', async (req, res) => {
 
     res.json({
       success: true,
-      schemaVersion: '2025-11-21.strategy.1',
+      schemaVersion: '2025-11-22.strategy.2',
+      meta: {
+        commandCatalogVersion: gin7CommandCatalog.version,
+      },
       data: {
         session: {
           sessionId: session.session_id,

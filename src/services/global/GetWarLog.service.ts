@@ -15,13 +15,6 @@ export class GetWarLogService {
           success: false,
           message: '세션을 찾을 수 없습니다.'
         };
-
-      if (!generalId) {
-        return {
-          success: false,
-          message: '장수 식별자가 필요합니다.'
-        };
-
       }
 
       if (!generalId) {

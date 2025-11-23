@@ -473,6 +473,10 @@ export class GeneralAdapter {
 
   // 숙련도 증가
   addDex(crewTypeObj: any, amount: number, checkLimit: boolean = true): void {
+    if (!crewTypeObj || crewTypeObj.id === undefined || crewTypeObj.id === null) {
+      return;
+    }
+
     if (typeof this.raw.addDex === 'function') {
       this.raw.addDex(crewTypeObj, amount, checkLimit);
       return;

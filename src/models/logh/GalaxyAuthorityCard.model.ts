@@ -6,7 +6,10 @@ export type AuthorityCardCategory =
   | 'fleet'
   | 'logistics'
   | 'politics'
-  | 'intel';
+  | 'intel'
+  | 'command'
+  | 'personnel'
+  | 'tactical';
 
 export interface ICommandPermission {
   code: string;
@@ -55,7 +58,7 @@ const GalaxyAuthorityCardSchema = new Schema<IGalaxyAuthorityCard>(
     title: { type: String, required: true },
     category: {
       type: String,
-      enum: ['personal', 'fleet', 'logistics', 'politics', 'intel'],
+      enum: ['personal', 'fleet', 'logistics', 'politics', 'intel', 'command', 'personnel', 'tactical'],
       default: 'personal',
     },
     commandCodes: { type: [String], default: [] },

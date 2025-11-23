@@ -20,11 +20,14 @@ export class GetBossInfoService {
     }
 
     try {
-      // 현재 장수 정보 조회
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      // 현재 장수 정보 조회 (캐시 우선, 없으면 DB 조회)
+      let general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+      if (!general) {
+        general = await generalRepository.findOneByFilter({
+          session_id: sessionId,
+          $or: [{ 'data.no': generalId }, { no: generalId }]
+        });
+      }
 
       if (!general) {
         return {
@@ -33,11 +36,13 @@ export class GetBossInfoService {
         };
       }
 
-      const officerLevel = general.officer_level || 0;
-      const officerCity = general.officer_city || 0;
-      const nationId = general.nation || 0;
-      const troopId = general.troop || 0;
-      const cityId = general.city || 0;
+      const generalData = general.data || general;
+      const officerLevel = generalData.officer_level || 0;
+      const officerCity = generalData.officer_city || 0;
+      const nationId = generalData.nation || 0;
+      const troopId = generalData.troop || 0;
+      const cityId = generalData.city || 0;
+
 
       // 상급자 정보 초기화
       const bossInfo: any = {

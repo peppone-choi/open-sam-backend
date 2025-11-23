@@ -73,27 +73,33 @@ export class DismissCommand extends GeneralCommand {
     const logger = general.getLogger();
 
     logger.pushGeneralActionLog(`병사들을 <R>소집해제</>하였습니다. <1>${date}</>`);
-
+ 
     const exp = 70;
     const ded = 100;
-
+ 
     // UnitStack에서 총 병력 수 계산
+    await this.ensureUnitStacksCache();
     const unitStacks = this.getUnitStacks();
     const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
     
     // 레거시 crew 값과 비교하여 최대값 사용 (안전장치)
     const actualCrew = Math.max(totalCrew, general.data.crew || 0);
 
+
     const crewUp = general.onCalcDomestic('징집인구', 'score', actualCrew);
 
     // 도시 인구 증가
-    const sessionId = this.env.session_id || 'sangokushi_default';
+    const sessionId = this.env.session_id || general.getSessionID() || 'sangokushi_default';
     const cityId = general.getCityID();
     
     try {
-      await cityRepository.updateByCityNum(sessionId, cityId, {
-        pop: db.sqleval('pop + %i', crewUp)
-      });
+      const cityDoc = await cityRepository.findByCityNum(sessionId, cityId);
+      if (cityDoc) {
+        const nextPop = Math.max(0, (cityDoc.pop ?? 0) + crewUp);
+        await cityRepository.updateByCityNum(sessionId, cityId, { pop: nextPop });
+      } else {
+        throw new Error('city not found in cache');
+      }
     } catch (error) {
       console.warn('도시 인구 업데이트 실패 (레거시 방식 시도):', error);
       await db.update('city', {
@@ -109,11 +115,15 @@ export class DismissCommand extends GeneralCommand {
         console.error('UnitStack 삭제 실패:', error);
       }
     }
-
+    this.markUnitStacksDirty();
+    await this.syncGeneralTroopData(sessionId, general.getID?.() ?? general.no ?? general.data?.no);
+ 
     // 레거시 crew 값도 0으로 설정
     general.data.crew = 0;
+ 
     general.data.train = 0;
     general.data.atmos = 0;
+
 
     general.addExperience(exp);
     general.addDedication(ded);

@@ -161,14 +161,20 @@ export class BattleStanceCommand extends GeneralCommand {
 
   private async applyBattleStanceToStacks(stacks: any[], trainCap: number, atmosCap: number): Promise<void> {
     if (!stacks.length) return;
-
+ 
+    let updated = false;
     for (const stack of stacks) {
       const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
       if (!stackDoc) continue;
-
+ 
       stackDoc.train = Math.max(stackDoc.train ?? 0, trainCap);
       stackDoc.morale = Math.max(stackDoc.morale ?? 0, atmosCap);
       await stackDoc.save();
+      updated = true;
+    }
+    if (updated) {
+      this.markUnitStacksDirty();
     }
   }
+
 }

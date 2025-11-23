@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { autoExtractToken } from '../../middleware/auth';
 import { issueGalaxyOperation } from '../../services/logh/GalaxyOperation.service';
 import { GalaxyOperation } from '../../models/logh/GalaxyOperation.model';
+import { gin7CommandCatalog } from '../../config/gin7/catalog';
 
 const router = Router();
 router.use(autoExtractToken);
@@ -18,6 +19,10 @@ router.get('/sessions/:sessionId/operations', async (req, res) => {
     const operations = await GalaxyOperation.find(filter).lean();
     res.json({
       success: true,
+      schemaVersion: '2025-11-22.operations.1',
+      meta: {
+        commandCatalogVersion: gin7CommandCatalog.version,
+      },
       data: operations,
       compliance: [
         {
@@ -40,6 +45,10 @@ router.post('/sessions/:sessionId/operations/:operationId/issue', async (req, re
 
     res.json({
       success: true,
+      schemaVersion: '2025-11-22.operations.1',
+      meta: {
+        commandCatalogVersion: gin7CommandCatalog.version,
+      },
       data: operation,
       compliance: [
         {

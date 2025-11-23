@@ -183,9 +183,10 @@ export class ReassignUnitCommand extends GeneralCommand {
       toOwnerId: destinationCityId,
       toCityId: destinationCityId,
     });
-
-    this.invalidateUnitStackCache();
+ 
+    this.markUnitStacksDirty();
     await this.writeTransferToCityLog(movedStack, destinationCityId);
+
   }
 
   private async transferFromCity(
@@ -211,9 +212,10 @@ export class ReassignUnitCommand extends GeneralCommand {
       toOwnerId: generalNo,
       toCityId: generalCityId,
     });
-
-    this.invalidateUnitStackCache();
+ 
+    this.markUnitStacksDirty();
     await this.writeTransferToGeneralLog(movedStack, sourceCityId);
+
   }
 
   private async writeTransferToCityLog(stack: IUnitStack, cityId: number) {

@@ -1,0 +1,152 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://open-sam.dev/schemas/gin7/command-catalog.json",
+  "title": "Gin7CommandCatalog",
+  "type": "object",
+  "required": ["version", "source", "generatedAt", "commands", "authorityCards", "shortcuts"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "commands": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["code", "label", "group"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "group": {
+            "type": "string",
+            "enum": [
+              "operation",
+              "personal",
+              "command",
+              "logistics",
+              "personnel",
+              "political",
+              "intelligence",
+              "tactical"
+            ]
+          },
+          "cpType": { "type": "string", "enum": ["PCP", "MCP" ] },
+          "cpCost": { "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "string", "minLength": 0 }
+          ] },
+          "description": { "type": "string" },
+          "executionDelay": { "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "string", "minLength": 0 }
+          ] },
+          "executionDuration": { "oneOf": [
+            { "type": "number", "minimum": 0 },
+            { "type": "string", "minLength": 0 }
+          ] },
+          "manualRef": { "type": "string" },
+          "shortcuts": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/shortcut" }
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "authorityCards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "templateId",
+          "title",
+          "description",
+          "category",
+          "factionScope",
+          "commandGroups",
+          "commandCodes",
+          "manualRef"
+        ],
+        "properties": {
+          "templateId": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "category": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "fleet",
+              "logistics",
+              "politics",
+              "intel",
+              "command",
+              "personnel",
+              "tactical"
+            ]
+          },
+          "factionScope": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": ["empire", "alliance", "phezzan", "neutral", "shared"]
+            },
+            "uniqueItems": true
+          },
+          "commandGroups": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": [
+                "operation",
+                "personal",
+                "command",
+                "logistics",
+                "personnel",
+                "political",
+                "intelligence",
+                "tactical"
+              ]
+            }
+          },
+          "commandCodes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "manualRef": { "type": "string", "minLength": 1 },
+          "organizationId": { "type": "string" },
+          "positionId": { "type": "string" },
+          "authorityTags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true
+          },
+          "minRank": { "type": ["string", "null"] },
+          "maxRank": { "type": ["string", "null"] },
+          "maxHolders": { "type": "integer", "minimum": 1 },
+          "defaultMailAlias": { "type": "string" },
+          "metadata": { "type": "object" }
+        }
+      }
+    },
+    "shortcuts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/shortcut" }
+    }
+  },
+  "definitions": {
+    "shortcut": {
+      "type": "object",
+      "required": ["key", "label", "description"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "context": { "type": "string" },
+        "commandCode": { "type": "string" }
+      }
+    }
+  }
+}

@@ -9,6 +9,8 @@ import { ActionLogger } from '../../services/logger/ActionLogger';
 import { CityConst } from '../../const/CityConst';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { INation } from '../../models/nation.model';
+import { invalidateCache, saveGeneral as cacheSaveGeneral } from '../../common/cache/model-cache.helper';
+import { cacheService } from '../../common/cache/cache.service';
 
 export interface ICity {
   city: number;
@@ -100,6 +102,10 @@ export abstract class BaseCommand {
   protected city: ICity | null = null;
   protected nation: INation | null = null;
   protected cachedUnitStacks: Record<string, any[]> = {};
+  protected unitStacksDirty: boolean = false;
+  protected dirtyGenerals = new Set<number>();
+  protected dirtyCities = new Set<number>();
+  protected dirtyNations = new Set<number>();
   protected arg: any = null;
   protected env: any = null;
 
@@ -293,8 +299,128 @@ export abstract class BaseCommand {
       delete this.cachedUnitStacks[cacheKey];
     }
   }
-
+ 
+  protected markUnitStacksDirty(): void {
+    this.unitStacksDirty = true;
+    this.invalidateUnitStackCache();
+  }
+ 
+  protected markGeneralDirty(generalId?: number): void {
+    const targetId = generalId ?? this.generalObj?.getID?.() ?? this.generalObj?.no ?? this.generalObj?.data?.no;
+    if (typeof targetId === 'number' && targetId > 0) {
+      this.dirtyGenerals.add(targetId);
+    }
+  }
+ 
+  protected markCityDirty(cityId?: number): void {
+    const resolvedId = cityId ?? this.city?.city ?? (this.city as any)?.data?.city;
+    if (typeof resolvedId === 'number' && resolvedId > 0) {
+      this.dirtyCities.add(resolvedId);
+    }
+  }
+ 
+  protected markNationDirty(nationId?: number): void {
+    const resolvedId = nationId ?? this.nation?.nation ?? (this.nation as any)?.data?.nation;
+    if (typeof resolvedId === 'number' && resolvedId > 0) {
+      this.dirtyNations.add(resolvedId);
+    }
+  }
+ 
+  protected markDefaultDirtyEntities(): void {
+    this.markGeneralDirty();
+ 
+    const destGeneralId = this.destGeneralObj?.getID?.() ?? this.destGeneralObj?.no ?? this.destGeneralObj?.data?.no;
+    if (typeof destGeneralId === 'number' && destGeneralId > 0) {
+      this.dirtyGenerals.add(destGeneralId);
+    }
+ 
+    const currentCityId = this.city?.city ?? (this.city as any)?.data?.city;
+    if (typeof currentCityId === 'number' && currentCityId > 0) {
+      this.dirtyCities.add(currentCityId);
+    }
+    const destCityId = this.destCity?.city ?? (this.destCity as any)?.data?.city;
+    if (typeof destCityId === 'number' && destCityId > 0) {
+      this.dirtyCities.add(destCityId);
+    }
+ 
+    const nationId = this.nation?.nation ?? (this.nation as any)?.data?.nation;
+    if (typeof nationId === 'number' && nationId > 0) {
+      this.dirtyNations.add(nationId);
+    }
+    const destNationId = this.destNation?.nation ?? (this.destNation as any)?.data?.nation;
+    if (typeof destNationId === 'number' && destNationId > 0) {
+      this.dirtyNations.add(destNationId);
+    }
+  }
+ 
+  protected async flushDirtyCaches(): Promise<void> {
+    const sessionId = this.env?.session_id || this.generalObj?.getSessionID?.();
+    if (!sessionId) {
+      this.dirtyGenerals.clear();
+      this.dirtyCities.clear();
+      this.dirtyNations.clear();
+      return;
+    }
+ 
+    const tasks: Array<Promise<unknown>> = [];
+ 
+    if (this.dirtyGenerals.size > 0) {
+      // 장수 정보는 saveGeneral 단계에서 캐시/큐를 갱신하므로 별도 무효화가 필요 없다.
+      this.dirtyGenerals.clear();
+    }
+ 
+    if (this.dirtyCities.size > 0) {
+      for (const cityId of this.dirtyCities) {
+        tasks.push(invalidateCache('city', sessionId, cityId));
+      }
+      tasks.push(cacheService.invalidate([`cities:list:${sessionId}`], []));
+    }
+ 
+    if (this.dirtyNations.size > 0) {
+      for (const nationId of this.dirtyNations) {
+        tasks.push(invalidateCache('nation', sessionId, nationId));
+      }
+      tasks.push(cacheService.invalidate([`nations:list:${sessionId}`], []));
+    }
+ 
+    if (tasks.length > 0) {
+      await Promise.allSettled(tasks);
+    }
+ 
+    this.dirtyGenerals.clear();
+    this.dirtyCities.clear();
+    this.dirtyNations.clear();
+  }
+ 
+  protected async syncGeneralTroopData(sessionId?: string, generalNo?: number): Promise<void> {
+    const effectiveSessionId = sessionId || this.env?.session_id || this.generalObj?.getSessionID?.() || 'sangokushi_default';
+    const effectiveGeneralNo = generalNo || this.generalObj?.getID?.() || this.generalObj?.no || this.generalObj?.data?.no;
+    if (!effectiveGeneralNo) {
+      return;
+    }
+ 
+    const stacks = await unitStackRepository.findByOwner(effectiveSessionId, 'general', effectiveGeneralNo);
+    const totalTroops = stacks.reduce((sum, stack) => sum + (stack.hp ?? (stack.unit_size ?? 100) * (stack.stack_count ?? 0)), 0);
+    this.generalObj.data.crew = totalTroops;
+    if (stacks.length > 0) {
+      const primary = stacks[0];
+      this.generalObj.data.crewtype = primary.crew_type_id ?? 0;
+      this.generalObj.data.train = primary.train ?? 0;
+      this.generalObj.data.atmos = primary.morale ?? 0;
+    } else {
+      this.generalObj.data.crewtype = 0;
+      this.generalObj.data.train = 0;
+      this.generalObj.data.atmos = 0;
+    }
+ 
+    if (typeof this.generalObj.markModified === 'function') {
+      this.generalObj.markModified('data');
+    }
+  }
+ 
   protected async setNation(args: string[] | null = null): Promise<void> {
+
+
     this.resetTestCache();
     if (args === null) {
       if (!this!.nation) {
@@ -303,7 +429,7 @@ export abstract class BaseCommand {
       return;
     }
 
-    const nationID = this.generalObj.getNationID();
+    const nationID = BaseCommand.resolveNationId(this.generalObj);
     if (nationID === 0) {
       this!.nation = this.generalObj.getStaticNation?.() || {
         nation: 0,
@@ -499,7 +625,7 @@ export abstract class BaseCommand {
   }
 
   public getNationID(): number {
-    return this.generalObj.getNationID();
+    return BaseCommand.resolveNationId(this.generalObj);
   }
 
   public getOfficerLevel(): number {
@@ -780,56 +906,69 @@ export abstract class BaseCommand {
    * generalObj.save() 대신 사용
    */
   protected async saveGeneral(): Promise<void> {
-    const { generalRepository } = require('../../repositories/general.repository');
-    const sessionId = this.env.session_id;
-    const generalNo = this.generalObj.getID();
-    
+    const sessionId = this.env.session_id || this.generalObj.getSessionID?.();
+    const generalNo = this.generalObj.getID?.() ?? this.generalObj.no ?? this.generalObj.data?.no;
+ 
+    if (!sessionId || !generalNo) {
+      console.warn('[BaseCommand.saveGeneral] 세션 또는 장수 번호를 확인할 수 없습니다. 저장 생략');
+      return;
+    }
+ 
     console.log(`[BaseCommand.saveGeneral] 장수 저장 시작: session=${sessionId}, no=${generalNo}`);
-    
+ 
     // GeneralAdapter 여부 및 실제 raw 객체 분리
     const isAdapter = typeof (this.generalObj as any).getRaw === 'function';
     const rawGeneral: any = isAdapter
       ? (this.generalObj as any).getRaw()
       : this.generalObj;
-
+ 
+    this.markDefaultDirtyEntities();
+ 
     // ✅ PHP와 동일한 검증: nation > 0이면 officer_level은 최소 1이어야 함
     const generalData = rawGeneral.data || rawGeneral;
     const nation = generalData.nation || 0;
     let officerLevel = generalData.officer_level;
-    
-    // nation이 있는데 officer_level이 0이거나 없으면 1로 설정
+ 
     if (nation > 0 && (!officerLevel || officerLevel === 0)) {
       console.warn(`[BaseCommand.saveGeneral] ⚠️ 데이터 정합성 수정: nation=${nation}인데 officer_level=${officerLevel} → 1로 수정`);
       generalData.officer_level = 1;
       if (rawGeneral.data) {
         rawGeneral.data.officer_level = 1;
       }
-    }
-    // nation이 0인데 officer_level이 1 이상이면 0으로 설정
-    else if (nation === 0 && officerLevel && officerLevel > 0) {
+    } else if (nation === 0 && officerLevel && officerLevel > 0) {
       console.warn(`[BaseCommand.saveGeneral] ⚠️ 데이터 정합성 수정: nation=0인데 officer_level=${officerLevel} → 0으로 수정`);
       generalData.officer_level = 0;
       if (rawGeneral.data) {
         rawGeneral.data.officer_level = 0;
       }
     }
-    
-    // Mongoose 문서인 경우에만 save() 경로 사용
-    if (!isAdapter && rawGeneral.save && typeof rawGeneral.save === 'function') {
-      console.log(`[BaseCommand.saveGeneral] GeneralRepository.save() 호출 (Mongoose 문서)`);
-      await generalRepository.save(rawGeneral);
-    } else {
-      // GeneralAdapter 또는 Plain Object인 경우: 캐시 기반 업데이트 사용
-      // - rawGeneral.data 안에 실제 게임 필드가 들어있으므로
-      //   updateBySessionAndNo에는 { data: ... } 형식으로 전달한다.
-      const dataPayload = (rawGeneral as any).data;
-      const updateData = dataPayload ? { data: dataPayload } : (rawGeneral.toObject?.() || rawGeneral);
-      console.log(
-        `[BaseCommand.saveGeneral] Repository 사용 (cache update), hasData=${!!dataPayload}`
-      );
-      await generalRepository.updateBySessionAndNo(sessionId, generalNo, updateData);
+ 
+    // Plain object로 직렬화 (Mongoose Document면 toObject 사용)
+    const serialized = rawGeneral.toObject
+      ? rawGeneral.toObject({ depopulate: true, flattenMaps: true, versionKey: false })
+      : {
+          ...rawGeneral,
+          data: { ...(rawGeneral.data || {}) }
+        };
+ 
+    serialized.session_id = serialized.session_id || sessionId;
+    serialized.no = serialized.no ?? serialized.data?.no ?? generalNo;
+    if (!serialized.data) {
+      serialized.data = { no: serialized.no ?? generalNo };
+    } else if (serialized.data && serialized.data.no == null) {
+      serialized.data.no = serialized.no ?? generalNo;
     }
-    
+ 
+    await cacheSaveGeneral(sessionId, generalNo, serialized);
+ 
+    if (this.unitStacksDirty) {
+      this.invalidateUnitStackCache();
+      this.unitStacksDirty = false;
+    }
+ 
+    this.dirtyGenerals.clear();
+    await this.flushDirtyCaches();
+ 
     console.log(`[BaseCommand.saveGeneral] 장수 저장 완료`);
   }
 }

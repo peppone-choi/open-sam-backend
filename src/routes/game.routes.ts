@@ -11,6 +11,7 @@ import { ServerBasicInfoService } from '../services/game/ServerBasicInfo.service
 import { SetGeneralPermissionService } from '../services/game/SetGeneralPermission.service';
 import { RaiseEventService } from '../services/game/RaiseEvent.service';
 import { GetMyBossInfoService } from '../services/game/GetMyBossInfo.service';
+import { ManageOfficerService } from '../services/game/ManageOfficer.service';
 import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
 import { generalRecordRepository } from '../repositories/general-record.repository';
 import { worldHistoryRepository } from '../repositories/world-history.repository';
@@ -1210,6 +1211,68 @@ router.post('/raise-event', authenticate, async (req, res) => {
  *     tags: [Game]
  *     security:
  *       - bearerAuth: []
+ */
+router.post('/my-boss-info', authenticate, async (req, res) => {
+  try {
+    const result = await GetMyBossInfoService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/officer/appoint:
+ *   post:
+ *     summary: 관직 임명
+ *     description: 수뇌부 또는 도시 관직에 장수를 임명하거나 관직을 비웁니다.
+ *     tags: [Game]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 example: sangokushi_default
+ *               officerLevel:
+ *                 type: integer
+ *                 description: 임명할 관직 레벨 (2~11)
+ *               destGeneralID:
+ *                 type: integer
+ *                 description: 임명할 장수 번호 (0이면 공석 처리)
+ *               destCityID:
+ *                 type: integer
+ *                 description: 도시 관직(2~4) 임명 시 대상 도시 번호
+ *     responses:
+ *       200:
+ *         description: 임명 결과
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ */
+router.post('/officer/appoint', authenticate, async (req, res) => {
+  try {
+    const result = await ManageOfficerService.appoint(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/logs/general:
  */
 router.post('/my-boss-info', authenticate, async (req, res) => {
   try {

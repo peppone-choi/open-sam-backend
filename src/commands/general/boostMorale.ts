@@ -175,6 +175,7 @@ export class BoostMoraleCommand extends GeneralCommand {
   private async applyMoraleToStacks(stacks: any[], moraleBoost: number, newTrain: number): Promise<void> {
     if (!stacks.length) return;
     
+    let updated = false;
     for (const stack of stacks) {
       const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
       if (!stackDoc) continue;
@@ -186,6 +187,10 @@ export class BoostMoraleCommand extends GeneralCommand {
       stackDoc.train = newTrain;
       
       await stackDoc.save();
+      updated = true;
+    }
+    if (updated) {
+      this.markUnitStacksDirty();
     }
   }
 }

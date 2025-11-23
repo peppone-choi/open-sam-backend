@@ -73,6 +73,7 @@ export class DismissTroopsCommand extends GeneralCommand {
     const exp = 70;
     const ded = 100;
 
+    await this.ensureUnitStacksCache();
     const unitStacks = this.getUnitStacks();
     const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
     const legacyCrew = general.data.crew || 0;
@@ -83,19 +84,19 @@ export class DismissTroopsCommand extends GeneralCommand {
     const sessionId = general.getSessionID();
     const cityId = general.getCityID();
 
-    await cityRepository.updateOneByFilter(
-      { 
-        session_id: sessionId,
-        city: cityId
-      },
-      {
-        $inc: { 'data.pop': crewUp }
+    try {
+      const cityDoc = await cityRepository.findByCityNum(sessionId, cityId);
+      if (cityDoc) {
+        const nextPop = Math.max(0, (cityDoc.pop ?? 0) + crewUp);
+        await cityRepository.updateByCityNum(sessionId, cityId, { pop: nextPop });
+      } else {
+        throw new Error('city not found in cache');
       }
-    ).catch(async (error) => {
+    } catch (error) {
       console.warn('도시 인구 증가 실패, 레거시 방식 시도:', error);
       const db = DB.db();
       await db.update('city', { pop: db.sqleval('pop + %i', crewUp) }, 'city=%i', [cityId]);
-    });
+    }
 
     for (const stack of unitStacks) {
       try {
@@ -104,8 +105,12 @@ export class DismissTroopsCommand extends GeneralCommand {
         console.error('UnitStack 삭제 실패:', error);
       }
     }
-
+    this.markUnitStacksDirty();
+    await this.syncGeneralTroopData(sessionId, general.getID?.() ?? general.no ?? general.data?.no);
+  
     general.data.crew = 0;
+
+
     general.data.train = 0;
     general.data.atmos = 0;
     general.addExperience(exp);
