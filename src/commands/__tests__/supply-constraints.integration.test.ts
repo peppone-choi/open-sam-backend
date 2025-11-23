@@ -59,9 +59,10 @@ describe('보급 제약 조건 통합 테스트', () => {
         );
 
         // 보급 제약이 실패해야 함
-        const supplyFailed = failed.some(f => 
-          f.reason?.includes('보급') || f.reason?.includes('supply')
-        );
+        const supplyFailed = failed.some(f => {
+          const reasonStr = String(f.reason || '');
+          return reasonStr.includes('보급') || reasonStr.includes('supply');
+        });
         
         expect(supplyFailed).toBe(true);
       });
@@ -87,9 +88,10 @@ describe('보급 제약 조건 통합 테스트', () => {
         );
 
         // 보급 제약은 통과해야 함 (다른 제약은 실패할 수 있음)
-        const supplyFailed = failed.some(f => 
-          f.reason?.includes('보급') || f.reason?.includes('supply')
-        );
+        const supplyFailed = failed.some(f => {
+          const reasonStr = String(f.reason || '');
+          return reasonStr.includes('보급') || reasonStr.includes('supply');
+        });
         
         expect(supplyFailed).toBe(false);
       });
@@ -118,9 +120,10 @@ describe('보급 제약 조건 통합 테스트', () => {
         );
 
         // 점령 제약이 실패해야 함
-        const occupiedFailed = failed.some(f => 
-          f.reason?.includes('아국 도시가 아닙니다')
-        );
+        const occupiedFailed = failed.some(f => {
+          const reasonStr = String(f.reason || '');
+          return reasonStr.includes('아국 도시가 아닙니다');
+        });
         
         expect(occupiedFailed).toBe(true);
       });
@@ -145,9 +148,10 @@ describe('보급 제약 조건 통합 테스트', () => {
         );
 
         // 점령 제약은 통과해야 함
-        const occupiedFailed = failed.some(f => 
-          f.reason?.includes('아국 도시가 아닙니다')
-        );
+        const occupiedFailed = failed.some(f => {
+          const reasonStr = String(f.reason || '');
+          return reasonStr.includes('아국 도시가 아닙니다');
+        });
         
         expect(occupiedFailed).toBe(false);
       });

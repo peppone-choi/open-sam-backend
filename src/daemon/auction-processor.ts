@@ -2,10 +2,6 @@ import dotenv from 'dotenv';
 import * as cron from 'node-cron';
 import { Model } from 'mongoose';
 
-import dotenv from 'dotenv';
-import * as cron from 'node-cron';
-import { Model } from 'mongoose';
-
 dotenv.config();
 
 import { connectDB } from '../config/db';
@@ -78,19 +74,6 @@ async function processAuctionsOnce(): Promise<void> {
       error: error.message,
       stack: error.stack
     });
-  }
-}
-
-    try {
-      await processAuction(sessionId);
-    } catch (error: any) {
-      logger.error(`[AuctionProcessor] Session ${sessionId} 처리 중 오류`, {
-        error: error.message,
-        stack: error.stack,
-      });
-    } finally {
-      await releaseDistributedLock(lockKey, 'auction-processor');
-    }
   }
 }
 

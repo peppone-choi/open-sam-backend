@@ -5,6 +5,23 @@
  * 더 간결하고 균형잡힌 전투 시스템 구현
  */
 
+/**
+ * Simple seeded RNG for deterministic testing
+ */
+export class SeededRandom {
+  private seed: number;
+  
+  constructor(seed: number) {
+    this.seed = seed;
+  }
+  
+  next(): number {
+    // Simple LCG (Linear Congruential Generator)
+    this.seed = (this.seed * 9301 + 49297) % 233280;
+    return this.seed / 233280;
+  }
+}
+
 export enum UnitType {
   FOOTMAN = 'FOOTMAN',     // 보병 (도검병)
   SPEARMAN = 'SPEARMAN',   // 창병 (기병 카운터)
@@ -221,6 +238,11 @@ export class BattleCalculator {
   private readonly MAX_PHASES = 10;
   private readonly BASE_DAMAGE = 100;
   private readonly CRITICAL_DAMAGE_MULTIPLIER = 1.8;
+  private rng: () => number;
+  
+  constructor(rng?: () => number) {
+    this.rng = rng || (() => Math.random());
+  }
   
   /**
    * 전투 계산 메인 함수
@@ -487,7 +509,7 @@ export class BattleCalculator {
       finalRate += 0.15;
     }
     
-    return Math.random() < finalRate;
+    return this.rng() < finalRate;
   }
   
   /**
@@ -504,7 +526,7 @@ export class BattleCalculator {
       evasionRate += 0.15;
     }
     
-    return Math.random() < evasionRate;
+    return this.rng() < evasionRate;
   }
   
   /**
@@ -515,7 +537,7 @@ export class BattleCalculator {
       return Math.floor(power * 0.2); // 회피 시 80% 감소
     }
     
-    const variance = 0.9 + Math.random() * 0.2; // 90%~110%
+    const variance = 0.9 + this.rng() * 0.2; // 90%~110%
     let damage = (this.BASE_DAMAGE + power) * variance;
     
     if (isCritical) {
@@ -536,7 +558,7 @@ export class BattleCalculator {
     const moraleThreshold = unit.morale / 100;
     const breakChance = (lossRate - 0.3) * (1 - moraleThreshold);
     
-    return Math.random() < breakChance;
+    return this.rng() < breakChance;
   }
   
   /**
@@ -618,9 +640,10 @@ export function simulateBattle(
   defenderStats: [number, number, number],
   defenderType: UnitType,
   terrain: TerrainType = TerrainType.PLAINS,
-  isDefenderCity: boolean = false
+  isDefenderCity: boolean = false,
+  rng?: () => number
 ): BattleResult {
-  const calculator = new BattleCalculator();
+  const calculator = new BattleCalculator(rng);
   
   const context: BattleContext = {
     attacker: {

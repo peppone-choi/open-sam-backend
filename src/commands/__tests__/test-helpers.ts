@@ -250,7 +250,10 @@ export class ConstraintTestHelper {
   /**
    * 특정 제약이 존재하는지 확인
    */
-  static hasConstraint(constraints: any[], searchText: string): boolean {
+  static hasConstraint(constraints: any[] | null | undefined, searchText: string): boolean {
+    if (!constraints || constraints.length === 0) {
+      return false;
+    }
     return constraints.some(c => 
       c.test?.toString().includes(searchText) ||
       c.reason?.includes(searchText) ||
@@ -262,11 +265,15 @@ export class ConstraintTestHelper {
    * 제약 조건 테스트 실행
    */
   static testConstraint(
-    constraints: any[], 
+    constraints: any[] | null | undefined, 
     searchText: string, 
     input: any, 
     env: any
   ): string | null {
+    if (!constraints || constraints.length === 0) {
+      throw new Error(`Constraints array is null or empty`);
+    }
+    
     const constraint = constraints.find(c => 
       c.test?.toString().includes(searchText)
     );
@@ -282,10 +289,13 @@ export class ConstraintTestHelper {
    * 모든 제약 조건 통과 확인
    */
   static allConstraintsPassed(
-    constraints: any[], 
+    constraints: any[] | null | undefined, 
     input: any, 
     env: any
   ): boolean {
+    if (!constraints || constraints.length === 0) {
+      return true; // No constraints means all pass
+    }
     return constraints.every(c => c.test(input, env) === null);
   }
 
@@ -293,13 +303,21 @@ export class ConstraintTestHelper {
    * 실패한 제약 조건 찾기
    */
   static findFailedConstraints(
-    constraints: any[], 
+    constraints: any[] | null | undefined, 
     input: any, 
     env: any
   ): Array<{ constraint: any; reason: string }> {
+    if (!constraints || constraints.length === 0) {
+      return [];
+    }
     return constraints
-      .map(c => ({ constraint: c, reason: c.test(input, env) }))
-      .filter(r => r.reason !== null);
+      .map(c => {
+        const result = c.test(input, env);
+        // Convert reason to string to handle objects/arrays
+        const reason = result !== null && result !== undefined ? String(result) : result;
+        return { constraint: c, reason };
+      })
+      .filter(r => r.reason !== null && r.reason !== undefined);
   }
 }
 
