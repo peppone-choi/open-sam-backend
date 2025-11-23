@@ -1,6 +1,13 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { ActionLogger } from '../services/logger/ActionLogger';
 import { LogFormatType } from '../types/log.types';
+import type { GameAction } from '../game/actions/Action';
+import { getSpecialWarAction } from '../game/specialWar/specialWarRegistry';
+import { NationTypeAction } from '../game/actions/adapters/NationTypeAction';
+import { buildNationTypeClass } from '../core/nation-type/NationTypeFactory';
+import type { WarUnit } from '../battle/WarUnit';
+import { WarUnitTriggerCaller } from '../game/triggers/WarUnitTriggerCaller';
+import { InheritanceKey, InheritancePointUtil } from '../Enums/InheritanceKey';
 
 // 장수 인터페이스
 export interface IGeneral extends Document {
@@ -90,8 +97,21 @@ export interface IGeneral extends Document {
   markModified(path: string): void;
   save(): Promise<this>;
   onCalcDomestic(turnType: string, varType: string, value: number, aux?: any): number;
+  getActionList(): GameAction[];
+  getBattleActionList(): GameAction[];
+  onCalcStat(general: any, statName: string, value: any, aux?: any): any;
+  onCalcOpposeStat(general: any, statName: string, value: any, aux?: any): any;
+  getWarPowerMultiplier(unit: WarUnit): [number, number];
+  getBattleInitSkillTriggerList(unit: WarUnit): WarUnitTriggerCaller | null;
+  getBattlePhaseSkillTriggerList(unit: WarUnit): WarUnitTriggerCaller | null;
+  increaseInheritancePoint(key: InheritanceKey | string, amount?: number): Promise<void>;
+  getInheritancePoint(key: InheritanceKey | string): number;
+  getAllInheritancePoints(): Record<string, number>;
+  resetInheritancePoints(): void;
+  getTotalInheritancePoint(): number;
   
   // 능력치 조회 메서드 (통무지정매)
+
   getLeadership(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
   getStrength(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
   getIntel(withInjury?: boolean, withIActionObj?: boolean, withStatAdjust?: boolean, useFloor?: boolean): number;
@@ -289,22 +309,138 @@ GeneralSchema.methods.applyDB = async function(db: any): Promise<void> {
   await this.save();
 };
 
+type ActionCacheState = { key: string; actions: GameAction[] };
+
+function resolveNationTypeKey(general: any): string | null {
+  const nation = typeof general.getStaticNation === 'function' ? general.getStaticNation() : general.data?._cached_nation;
+  const rawType = nation?.type ?? general.data?.nation_type ?? general.nation_type;
+  if (!rawType) {
+    return null;
+  }
+  return String(rawType);
+}
+
+function buildActionCacheKey(general: any): string {
+  const specialKey = general.data?.special2 ?? general.special2 ?? 'None';
+  const nationTypeKey = resolveNationTypeKey(general) ?? 'none';
+  return `${specialKey || 'None'}|${nationTypeKey}`;
+}
+
+function createActionList(general: any): GameAction[] {
+  const actions: GameAction[] = [];
+  const specialKey = general.data?.special2 ?? general.special2 ?? 'None';
+  actions.push(getSpecialWarAction(specialKey));
+
+  const nationTypeKey = resolveNationTypeKey(general);
+  if (nationTypeKey) {
+    actions.push(new NationTypeAction(buildNationTypeClass(nationTypeKey)));
+  }
+
+  return actions;
+}
+
+GeneralSchema.methods.getActionList = function(): GameAction[] {
+  const cacheKey = buildActionCacheKey(this);
+  const cache = (this as any).__actionListCache as ActionCacheState | undefined;
+  if (cache && cache.key === cacheKey) {
+    return cache.actions;
+  }
+  const actions = createActionList(this);
+  (this as any).__actionListCache = { key: cacheKey, actions } as ActionCacheState;
+  return actions;
+};
+
+GeneralSchema.methods.getBattleActionList = function(): GameAction[] {
+  return this.getActionList();
+};
+
 GeneralSchema.methods.onCalcDomestic = function(turnType: string, varType: string, value: number, aux?: any): number {
-  // PHP의 onCalcDomestic과 동일
-  // 특수 아이템/능력의 영향을 계산하는 메서드
-  // 기본적으로는 value를 그대로 반환하지만,
-  // 특수 아이템이나 능력이 있으면 값을 조정
-  
-  // FUTURE: 특수 아이템/능력 목록을 가져와서 onCalcDomestic을 호출
-  // 현재는 기본값 반환
-  // const actionList = this.getActionList();
-  // for (const iObj of actionList) {
-  //   if (iObj && iObj.onCalcDomestic) {
-  //     value = iObj.onCalcDomestic(turnType, varType, value, aux);
-  //   }
-  // }
-  
-  return value;
+  let result = value;
+  for (const action of this.getActionList()) {
+    if (typeof action.onCalcDomestic === 'function') {
+      result = action.onCalcDomestic(turnType, varType, result, aux);
+    }
+  }
+  return result;
+};
+
+GeneralSchema.methods.increaseInheritancePoint = function(key: InheritanceKey | string, amount: number = 1): Promise<void> {
+  return InheritancePointUtil.increasePoint(this, key, amount);
+};
+
+GeneralSchema.methods.getInheritancePoint = function(key: InheritanceKey | string): number {
+  return InheritancePointUtil.getPoint(this, key);
+};
+
+GeneralSchema.methods.getAllInheritancePoints = function(): Record<string, number> {
+  return InheritancePointUtil.getAllPoints(this) || {};
+};
+
+GeneralSchema.methods.resetInheritancePoints = function(): void {
+  InheritancePointUtil.resetPoints(this);
+};
+
+GeneralSchema.methods.getTotalInheritancePoint = function(): number {
+  return InheritancePointUtil.getTotalPoints(this);
+};
+
+GeneralSchema.methods.onCalcStat = function(_general: any, statName: string, value: any, aux?: any): any {
+  let result = value;
+  for (const action of this.getActionList()) {
+    if (typeof action.onCalcStat === 'function') {
+      result = action.onCalcStat(this, statName, result, aux);
+    }
+  }
+  return result;
+};
+
+GeneralSchema.methods.onCalcOpposeStat = function(_general: any, statName: string, value: any, aux?: any): any {
+  let result = value;
+  for (const action of this.getActionList()) {
+    if (typeof action.onCalcOpposeStat === 'function') {
+      result = action.onCalcOpposeStat(this, statName, result, aux);
+    }
+  }
+  return result;
+};
+
+GeneralSchema.methods.getWarPowerMultiplier = function(unit: WarUnit): [number, number] {
+  let myMultiply = 1;
+  let opposeMultiply = 1;
+  for (const action of this.getBattleActionList()) {
+    if (typeof action.getWarPowerMultiplier === 'function') {
+      try {
+        const [selfMult, foeMult] = action.getWarPowerMultiplier(unit) || [1, 1];
+        if (Number.isFinite(selfMult)) {
+          myMultiply *= selfMult;
+        }
+        if (Number.isFinite(foeMult)) {
+          opposeMultiply *= foeMult;
+        }
+      } catch (error) {
+        console.warn('[General] getWarPowerMultiplier failed:', error);
+      }
+    }
+  }
+  return [myMultiply, opposeMultiply];
+};
+
+GeneralSchema.methods.getBattleInitSkillTriggerList = function(unit: WarUnit): WarUnitTriggerCaller | null {
+  const callers = this.getBattleActionList().map((action: GameAction) =>
+    typeof action.getBattleInitSkillTriggerList === 'function'
+      ? action.getBattleInitSkillTriggerList(unit)
+      : null
+  );
+  return WarUnitTriggerCaller.mergeCallers(callers);
+};
+
+GeneralSchema.methods.getBattlePhaseSkillTriggerList = function(unit: WarUnit): WarUnitTriggerCaller | null {
+  const callers = this.getBattleActionList().map((action: GameAction) =>
+    typeof action.getBattlePhaseSkillTriggerList === 'function'
+      ? action.getBattlePhaseSkillTriggerList(unit)
+      : null
+  );
+  return WarUnitTriggerCaller.mergeCallers(callers);
 };
 
 /**

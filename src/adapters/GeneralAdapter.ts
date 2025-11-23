@@ -6,6 +6,26 @@
  */
 
 import { buildItemClass, ItemSlot } from '../utils/item-class';
+import { GameConst } from '../constants/GameConst';
+
+const MAX_DEX_LIMIT = Math.max(GameConst.maxDex ?? 0, 1_200_000);
+
+function resolveArmType(crewTypeObj: any): number {
+  if (!crewTypeObj) {
+    return 0;
+  }
+  if (typeof crewTypeObj.armType === 'number' && !Number.isNaN(crewTypeObj.armType)) {
+    return crewTypeObj.armType;
+  }
+  if (typeof crewTypeObj.id === 'number' && !Number.isNaN(crewTypeObj.id)) {
+    const inferred = Math.floor(crewTypeObj.id / 1000);
+    return inferred > 0 ? inferred : crewTypeObj.id;
+  }
+  if (typeof crewTypeObj === 'number' && !Number.isNaN(crewTypeObj)) {
+    return crewTypeObj;
+  }
+  return 0;
+}
 
 export class GeneralAdapter {
   private raw: any;
@@ -473,7 +493,7 @@ export class GeneralAdapter {
 
   // 숙련도 증가
   addDex(crewTypeObj: any, amount: number, checkLimit: boolean = true): void {
-    if (!crewTypeObj || crewTypeObj.id === undefined || crewTypeObj.id === null) {
+    if (!crewTypeObj || typeof amount !== 'number' || !Number.isFinite(amount)) {
       return;
     }
 
@@ -482,15 +502,18 @@ export class GeneralAdapter {
       return;
     }
     
-    // Plain Object 처리
-    const dexKey = `dex${crewTypeObj.id}`;
+    const armType = resolveArmType(crewTypeObj);
+    if (armType <= 0) {
+      return;
+    }
+    const dexKey = `dex${armType}`;
     if (!this.raw.data) this.raw.data = {};
     if (!this.raw.data[dexKey]) this.raw.data[dexKey] = 0;
     
     this.raw.data[dexKey] += amount;
     
     if (checkLimit) {
-      this.raw.data[dexKey] = Math.max(0, Math.min(this.raw.data[dexKey], 200));
+      this.raw.data[dexKey] = Math.max(0, Math.min(this.raw.data[dexKey], MAX_DEX_LIMIT));
     }
     
     if (typeof this.raw.markModified === 'function') {

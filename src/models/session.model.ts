@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
+
 
 /**
  * 게임 세션
@@ -13,6 +14,8 @@ export interface ISession extends Document {
   // 시나리오 ID (어떤 시나리오를 사용하는지)
   scenario_id?: string;
   scenario_name?: string;  // 시나리오 표시명 (선택적)
+  scenarioId?: string;     // CamelCase 호환 필드
+  scenarioID?: string;     // 기타 레거시 호환 필드
   
   // 템플릿 ID (레거시, scenario_id 사용 권장)
   template_id?: string;
@@ -116,6 +119,8 @@ export interface ISession extends Document {
   status: 'preparing' | 'running' | 'paused' | 'finished' | 'united';
   started_at?: Date;
   finished_at?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
   
   // 동적 필드 (레거시 PHP 호환성)
   // 최상위 레벨에 저장되는 게임 데이터
@@ -126,11 +131,19 @@ export interface ISession extends Document {
   starttime?: Date | string;
   turnterm?: number;
   turn?: number;
+  is_locked?: boolean;
+  isunited?: number;
+  online_user_cnt?: number;
+  online_nation?: number | number[];
+  lastVote?: number;
+  develcost?: number;
+  config?: Record<string, any>;
   
   // PHP 호환성: 동적 게임 데이터
   // turntime, year, month, turnterm 등을 저장
   data?: Record<string, any>;
 }
+
 
 const SessionSchema = new Schema<ISession>({
   session_id: { type: String, required: true, unique: true },
@@ -166,9 +179,19 @@ const SessionSchema = new Schema<ISession>({
   started_at: { type: Date },
   finished_at: { type: Date },
   
-  data: { type: Schema.Types.Mixed, default: {} }
+  data: { type: Schema.Types.Mixed, default: {} },
+  config: { type: Schema.Types.Mixed, default: {} },
+  is_locked: { type: Boolean, default: false },
+  isunited: { type: Number, default: 0 },
+  online_user_cnt: { type: Number, default: 0 },
+  online_nation: { type: Schema.Types.Mixed, default: [] },
+  lastVote: { type: Number, default: 0 },
+  develcost: { type: Number, default: 100 }
 }, {
   timestamps: true
 });
 
-export const Session = mongoose.models.Session || mongoose.model<ISession>('Session', SessionSchema);
+
+export const Session: Model<ISession> =
+  (mongoose.models.Session as Model<ISession> | undefined) ?? mongoose.model<ISession>('Session', SessionSchema);
+

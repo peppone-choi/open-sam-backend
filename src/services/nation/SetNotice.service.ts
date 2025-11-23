@@ -1,7 +1,7 @@
 // @ts-nocheck - Argument count mismatches need review
 import { generalRepository } from '../../repositories/general.repository';
-import { KVStorage } from '../../models/kv-storage.model';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
+import { buildChiefPolicyPayload } from './helpers/policy.helper';
 
 /**
  * SetNotice Service
@@ -23,10 +23,7 @@ export class SetNoticeService {
         return { success: false, message: '공지는 최대 16384자까지 가능합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -57,20 +54,19 @@ export class SetNoticeService {
         storage_id: `nation_${nationId}`
       });
 
-      if (existingStorage) {
+      let storageDoc = existingStorage;
+      if (storageDoc) {
         await kvStorageRepository.updateOneByFilter(
           {
             session_id: sessionId,
             storage_id: `nation_${nationId}`
           },
           {
-            $set: {
-              'data.nationNotice': noticeData
-            }
+            'data.nationNotice': noticeData
           }
         );
       } else {
-        await kvStorageRepository.create({
+        storageDoc = await kvStorageRepository.create({
           session_id: sessionId,
           storage_id: `nation_${nationId}`,
           data: {
@@ -79,10 +75,25 @@ export class SetNoticeService {
         });
       }
 
+      if (storageDoc) {
+        if (!storageDoc.data) {
+          storageDoc.data = {};
+        }
+        storageDoc.data.nationNotice = noticeData;
+      }
+
+      const payload = await buildChiefPolicyPayload(sessionId, nationId, { kvDoc: storageDoc });
+      if (payload?.notices?.nation) {
+        payload.notices.nation = noticeData;
+      }
+
       return {
         success: true,
         result: true,
-        message: '국가 공지가 설정되었습니다'
+        message: '국가 공지가 설정되었습니다',
+        policy: payload?.policy,
+        warSettingCnt: payload?.warSettingCnt,
+        notices: payload?.notices,
       };
     } catch (error: any) {
       return {

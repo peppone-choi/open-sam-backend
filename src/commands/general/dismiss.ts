@@ -6,6 +6,7 @@ import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { cityRepository } from '../../repositories/city.repository';
+import type { ICity } from '../../models/city.model';
 
 /**
  * 소집해제 커맨드
@@ -93,9 +94,10 @@ export class DismissCommand extends GeneralCommand {
     const cityId = general.getCityID();
     
     try {
-      const cityDoc = await cityRepository.findByCityNum(sessionId, cityId);
+      const cityDoc = (await cityRepository.findByCityNum(sessionId, cityId)) as Partial<ICity> | null;
       if (cityDoc) {
-        const nextPop = Math.max(0, (cityDoc.pop ?? 0) + crewUp);
+        const currentPop = typeof cityDoc.pop === 'number' ? cityDoc.pop : 0;
+        const nextPop = Math.max(0, currentPop + crewUp);
         await cityRepository.updateByCityNum(sessionId, cityId, { pop: nextPop });
       } else {
         throw new Error('city not found in cache');

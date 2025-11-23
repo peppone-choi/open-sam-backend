@@ -1,4 +1,5 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 
 const MAX_TURN = 50;
 
@@ -89,12 +90,17 @@ export class ReserveBulkCommandService {
       }
     }
 
-    return {
+    const response = {
       success: true,
       result: true,
       briefList,
       reason: 'success'
     };
+
+    await invalidateCache('general', sessionId, Number(generalId));
+
+    return response;
+
   }
 }
 

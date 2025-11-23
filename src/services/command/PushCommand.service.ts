@@ -1,5 +1,6 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { verifyGeneralOwnership } from '../../common/auth-utils';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 
 const MAX_TURN = 50;
 
@@ -40,8 +41,7 @@ export class PushCommandService {
 
     // 캐시 무효화 (턴 데이터 변경으로 장수 정보도 영향받을 수 있음)
     try {
-      const { cacheManager } = await import('../../cache/CacheManager');
-      await cacheManager.delete(`general:${sessionId}:${generalId}`);
+      await invalidateCache('general', sessionId, Number(generalId));
     } catch (error: any) {
       console.error('Cache invalidation failed:', error);
       // 캐시 무효화 실패해도 계속 진행

@@ -7,6 +7,12 @@ import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
 const isTestEnv = process.env.NODE_ENV === 'test';
 const shouldUseRedisL2 = process.env.CACHE_ENABLE_REDIS !== 'false' && !isTestEnv;
 
+type L2BatchEntry = {
+  key: string;
+  value: unknown;
+  ttl?: number;
+};
+
 /**
  * 3단계 캐싱 시스템
 
@@ -24,6 +30,7 @@ const shouldUseRedisL2 = process.env.CACHE_ENABLE_REDIS !== 'false' && !isTestEn
  * const data = await cache.get('user:123');
  */
 export class CacheManager {
+
   private static instance: CacheManager;
   private l1Cache: NodeCache;
   private l2Cache: RedisClientType | null = null;
@@ -236,8 +243,29 @@ export class CacheManager {
     }
   }
 
+  async setL2Batch(entries: L2BatchEntry[]): Promise<void> {
+    if (!this.useRedis || !this.l2Connected || !this.l2Cache || entries.length === 0) {
+      return;
+    }
+
+    const pipeline = this.l2Cache.multi();
+    entries.forEach(({ key, value, ttl }) => {
+      pipeline.setEx(key, ttl ?? 360, JSON.stringify(value));
+    });
+
+    try {
+      await pipeline.exec();
+    } catch (error) {
+      logger.error('Redis setL2Batch 에러', {
+        keys: entries.map((entry) => entry.key),
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
   /**
    * 캐시에서 데이터 조회
+
    * 
    * L1 → L2 순서로 확인합니다.
    * L2 히트 시 자동으로 L1에도 저장합니다.

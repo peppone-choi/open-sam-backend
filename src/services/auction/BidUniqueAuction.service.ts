@@ -111,6 +111,16 @@ export class BidUniqueAuctionService {
         inherit_point: newInheritPoint
       });
 
+      // 경매 입찰 이벤트 브로드캐스트
+      const { GameEventEmitter } = await import('../gameEventEmitter');
+      GameEventEmitter.broadcastAuctionUpdate(sessionId, auctionID, {
+        status: 'bid',
+        bidderId: generalId,
+        bidderName: general.name,
+        amount,
+        closeDate: auction.closeDate
+      });
+
       return {
         success: true,
         result: true

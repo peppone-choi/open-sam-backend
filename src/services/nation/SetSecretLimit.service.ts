@@ -1,6 +1,7 @@
 // @ts-nocheck - Argument count mismatches need review
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
+import { buildChiefPolicyPayload } from './helpers/policy.helper';
 
 /**
  * SetSecretLimit Service
@@ -22,10 +23,7 @@ export class SetSecretLimitService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -43,22 +41,34 @@ export class SetSecretLimitService {
         return { success: false, message: '국가에 소속되어 있어야 합니다' };
       }
 
+      const nationDoc = await nationRepository.findByNationNum(sessionId, nationId);
+      if (!nationDoc) {
+        return { success: false, message: '국가를 찾을 수 없습니다' };
+      }
+
       await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId
         },
         {
-          $set: {
             'data.secretlimit': amount
-          }
         }
       );
+
+      if (nationDoc.data) {
+        nationDoc.data.secretlimit = amount;
+      }
+
+      const payload = await buildChiefPolicyPayload(sessionId, nationId, { nationDoc });
 
       return {
         success: true,
         result: true,
-        message: `사관 제한이 ${amount}년으로 설정되었습니다`
+        message: `사관 제한이 ${amount}년으로 설정되었습니다`,
+        policy: payload?.policy,
+        warSettingCnt: payload?.warSettingCnt,
+        notices: payload?.notices,
       };
     } catch (error: any) {
       return {

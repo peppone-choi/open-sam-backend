@@ -6,11 +6,7 @@ export enum PenaltyKey {
   NoChosenAssignment = 'no_chosen_assignment',
 }
 
-export enum InheritanceKey {
-  I_GOLD = 'gold',
-  I_RICE = 'rice',
-  active_action = 'active_action',
-}
+export { InheritanceKey } from '../Enums/InheritanceKey';
 
 export enum ConstraintEnum {
   BLOCK = 'block',

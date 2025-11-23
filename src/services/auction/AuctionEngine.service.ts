@@ -194,6 +194,17 @@ async function processUniqueItemAuction(sessionId: string, auctionDoc: IAuction)
 
   await finalizeAuctionDocument(auctionDoc, amount);
 
+  // 경매 종료 이벤트 브로드캐스트
+  const { GameEventEmitter } = await import('../gameEventEmitter');
+  GameEventEmitter.broadcastAuctionUpdate(sessionId, auctionDoc._id.toString(), {
+    status: 'closed',
+    winnerId: winnerNo,
+    winnerName,
+    finalAmount: amount,
+    itemCode,
+    itemName
+  });
+
   logger.info('[AuctionEngine] Unique auction settled', {
     auctionId: auctionDoc._id,
     itemCode,

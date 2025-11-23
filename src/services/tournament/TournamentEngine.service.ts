@@ -30,6 +30,7 @@ import { Betting } from '../../core/betting/Betting';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { tournamentRepository } from '../../repositories/tournament.repository';
 import { General } from '../../models/general.model';
+import { acquireDistributedLock, releaseDistributedLock } from '../../common/lock/distributed-lock.helper';
 
 // Helper 함수들
 function getTwo(tournament: number, phase: number): [number, number] {
@@ -74,6 +75,19 @@ function calcTournamentTerm(turnTerm: number): number {
  * 토너먼트 자동 진행 처리
  */
 export async function processTournament(sessionId: string): Promise<void> {
+  const lockKey = `lock:tournament:${sessionId}`;
+  const acquired = await acquireDistributedLock(lockKey, {
+    ttl: 90,
+    retry: 3,
+    retryDelayMs: 400,
+    context: 'tournament-engine',
+  });
+
+  if (!acquired) {
+    logger.debug('[TournamentEngine] Skip run because another worker holds the lock', { sessionId });
+    return;
+  }
+
   try {
     const gameStor = KVStorage.getStorage(`game_env:${sessionId}`);
     const startedAt = Date.now();
@@ -243,6 +257,8 @@ export async function processTournament(sessionId: string): Promise<void> {
       error: error.message,
       stack: error.stack
     });
+  } finally {
+    await releaseDistributedLock(lockKey, 'tournament-engine');
   }
 }
 

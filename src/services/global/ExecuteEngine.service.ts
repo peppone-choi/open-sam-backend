@@ -11,6 +11,7 @@ import { Util } from '../../utils/Util';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 import Redis from 'ioredis';
 import { GameEventEmitter } from '../gameEventEmitter';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 import { SessionStateService } from '../sessionState.service';
 import { getCommand, getNationCommand } from '../../commands';
 import { GeneralLog } from '../../models/general-log.model';
@@ -462,9 +463,7 @@ export class ExecuteEngineService {
     // 4. 캐시 무효화 및 브로드캐스트
     // ========================================
     try {
-      const { cacheManager } = await import('../../cache/CacheManager');
-      await cacheManager.delete(`session:state:${sessionId}`);
-      await cacheManager.delete(`session:byId:${sessionId}`);
+      await invalidateCache('session', sessionId);
     } catch (error: any) {
       // 캐시 무효화 실패해도 계속 진행
     }
@@ -836,8 +835,7 @@ export class ExecuteEngineService {
     // 도시/국가 정보가 변경되었을 수 있으므로 캐시 무효화
     if (cityId) {
       try {
-        const { cacheManager } = await import('../../cache/CacheManager');
-        await cacheManager.delete(`city:${sessionId}:${cityId}`);
+        await invalidateCache('city', sessionId, cityId);
       } catch (error: any) {
         // 캐시 무효화 실패해도 계속 진행
       }
@@ -845,8 +843,7 @@ export class ExecuteEngineService {
 
     if (nationId) {
       try {
-        const { cacheManager } = await import('../../cache/CacheManager');
-        await cacheManager.delete(`nation:${sessionId}:${nationId}`);
+        await invalidateCache('nation', sessionId, nationId);
       } catch (error: any) {
         // 캐시 무효화 실패해도 계속 진행
       }

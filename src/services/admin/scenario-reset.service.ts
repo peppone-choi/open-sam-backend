@@ -16,7 +16,7 @@ import { nationTurnRepository } from '../../repositories/nation-turn.repository'
 import { troopRepository } from '../../repositories/troop.repository';
 import { worldHistoryRepository } from '../../repositories/world-history.repository';
 import { SessionSync } from '../../utils/session-sync';
-import { cacheService } from '../../common/cache/cache.service';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 import { scanSyncQueue, getSyncQueueItem, removeFromSyncQueue } from '../../common/cache/sync-queue.helper';
 import { selectNpcTokenRepository } from '../../repositories/select-npc-token.repository';
 import { selectPoolRepository } from '../../repositories/select-pool.repository';
@@ -124,10 +124,12 @@ export class ScenarioResetService {
 
     // 초기화 이후 해당 세션 관련 캐시 무효화 (세션/도시/국가/장수 목록 등)
     try {
-      await cacheService.invalidate(
-        [`session:byId:${sessionId}`],
-        ['sessions:*', 'cities:*', 'nations:*', 'generals:*']
-      );
+      await Promise.all([
+        invalidateCache('session', sessionId),
+        invalidateCache('city', sessionId),
+        invalidateCache('nation', sessionId),
+        invalidateCache('general', sessionId)
+      ]);
       console.log(`[ScenarioReset] Cache invalidated for session ${sessionId}`);
     } catch (err: any) {
       console.warn(`[ScenarioReset] Failed to invalidate cache for session ${sessionId}:`, err?.message || err);

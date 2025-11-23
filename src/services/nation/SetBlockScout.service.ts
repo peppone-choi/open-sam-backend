@@ -2,6 +2,7 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { buildChiefPolicyPayload } from './helpers/policy.helper';
 
 /**
  * SetBlockScout Service
@@ -19,10 +20,7 @@ export class SetBlockScoutService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -47,22 +45,34 @@ export class SetBlockScoutService {
         return { success: false, message: '임관 설정을 바꿀 수 없도록 설정되어 있습니다' };
       }
 
+      const nationDoc = await nationRepository.findByNationNum(sessionId, nationId);
+      if (!nationDoc) {
+        return { success: false, message: '국가를 찾을 수 없습니다' };
+      }
+
       await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId
         },
         {
-          $set: {
-            'data.scout': value ? 1 : 0
-          }
+          'data.scout': value ? 1 : 0
         }
       );
+
+      if (nationDoc.data) {
+        nationDoc.data.scout = value ? 1 : 0;
+      }
+
+      const payload = await buildChiefPolicyPayload(sessionId, nationId, { nationDoc });
 
       return {
         success: true,
         result: true,
-        message: value ? '임관이 차단되었습니다' : '임관이 허용되었습니다'
+        message: value ? '임관이 차단되었습니다' : '임관이 허용되었습니다',
+        policy: payload?.policy,
+        warSettingCnt: payload?.warSettingCnt,
+        notices: payload?.notices,
       };
     } catch (error: any) {
       return {

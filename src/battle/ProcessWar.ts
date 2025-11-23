@@ -13,6 +13,8 @@ import { GameConst } from '../constants/GameConst';
 import { Util } from '../utils/Util';
 import { JosaUtil } from '../utils/JosaUtil';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
+import { WarUnitTriggerCaller } from '../game/triggers/WarUnitTriggerCaller';
+import { ensureTriggerEnv, type TriggerEnv } from '../game/triggers/TriggerEnv';
 
 /**
  * extractBattleOrder - 수비 순서 결정
@@ -92,6 +94,44 @@ export function extractBattleOrder(defender: WarUnit, attacker: WarUnit): number
   const totalCrew = crew / 1000000 * Math.pow(train * atmos, 1.5);
   
   return totalStat + totalCrew / 100;
+}
+
+type BattleTriggerMethod = 'getBattleInitSkillTriggerList' | 'getBattlePhaseSkillTriggerList';
+
+function resolveBattleTriggerCaller(unit: WarUnit | null | undefined, method: BattleTriggerMethod): WarUnitTriggerCaller | null {
+  if (!unit) {
+    return null;
+  }
+  const general = unit.getGeneral?.();
+  if (!general || typeof general[method] !== 'function') {
+    return null;
+  }
+  try {
+    return general[method](unit) ?? null;
+  } catch (error) {
+    console.error(`[ProcessWar] Failed to resolve ${method}:`, error);
+    return null;
+  }
+}
+
+function fireBattleTriggers(
+  attackerCaller: WarUnitTriggerCaller | null,
+  defenderCaller: WarUnitTriggerCaller | null,
+  attacker: WarUnit,
+  defender: WarUnit | null,
+  env?: TriggerEnv | null
+): TriggerEnv | null {
+  if ((!attackerCaller && !defenderCaller) || !defender) {
+    return env ?? null;
+  }
+  let currentEnv = ensureTriggerEnv(env || undefined);
+  if (attackerCaller) {
+    currentEnv = attackerCaller.fire(attacker.rng, currentEnv, [attacker, defender]);
+  }
+  if (defenderCaller) {
+    currentEnv = defenderCaller.fire(attacker.rng, currentEnv, [attacker, defender]);
+  }
+  return currentEnv;
 }
 
 /**
@@ -337,6 +377,9 @@ async function processWar_NG(
   
   let defender = await getNextDefender(null, true);
   let conquerCity = false;
+  let battleTriggerEnv: TriggerEnv | null = null;
+  let attackerPhaseCaller: WarUnitTriggerCaller | null = null;
+  let defenderPhaseCaller: WarUnitTriggerCaller | null = null;
   
   const josaRo = JosaUtil.pick(city.getName(), '로');
   const josaYi = JosaUtil.pick(attacker.getName(), '이');
@@ -355,6 +398,9 @@ async function processWar_NG(
     if (defender === null) {
       defender = city;
       defender.setSiege();
+      battleTriggerEnv = null;
+      attackerPhaseCaller = null;
+      defenderPhaseCaller = null;
       
       // 병량 부족으로 패퇴 체크
       if (city.getNationVar('rice') <= 0 && city.getVar('supply')) {
@@ -412,9 +458,16 @@ async function processWar_NG(
       
       attacker.setOppose(defender);
       defender.setOppose(attacker);
+
+      const attackerInitCaller = resolveBattleTriggerCaller(attacker, 'getBattleInitSkillTriggerList');
+      const defenderInitCaller = resolveBattleTriggerCaller(defender, 'getBattleInitSkillTriggerList');
+      battleTriggerEnv = fireBattleTriggers(attackerInitCaller, defenderInitCaller, attacker, defender, null);
+      attackerPhaseCaller = resolveBattleTriggerCaller(attacker, 'getBattlePhaseSkillTriggerList');
+      defenderPhaseCaller = resolveBattleTriggerCaller(defender, 'getBattlePhaseSkillTriggerList');
     }
     
     // 페이즈 시작
+    battleTriggerEnv = fireBattleTriggers(attackerPhaseCaller, defenderPhaseCaller, attacker, defender, battleTriggerEnv);
     attacker.beginPhase();
     defender?.beginPhase();
     
@@ -540,6 +593,9 @@ async function processWar_NG(
       
       defender.finishBattle();
       defender = await getNextDefender(defender, true);
+      battleTriggerEnv = null;
+      attackerPhaseCaller = null;
+      defenderPhaseCaller = null;
       
       if (defender !== null && !(defender instanceof WarUnitGeneral)) {
         throw new Error('다음 수비자를 받아오는데 실패');

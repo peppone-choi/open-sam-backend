@@ -1,4 +1,5 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 
 const MAX_TURN = 50;
 
@@ -20,8 +21,7 @@ export class RepeatCommandService {
 
     // 캐시 무효화
     try {
-      const { cacheManager } = await import('../../cache/CacheManager');
-      await cacheManager.delete(`general:${sessionId}:${generalId}`);
+      await invalidateCache('general', sessionId, Number(generalId));
     } catch (error: any) {
       console.error('Cache invalidation failed:', error);
     }

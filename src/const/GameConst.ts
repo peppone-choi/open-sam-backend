@@ -16,4 +16,12 @@ export const GameConst = {
   initialNationGenLimit: 10,
   coefAidAmount: 10000,
   minGoldRequiredWhenBetting: 0, // 베팅 시 최소 필요 금액
+  
+  // 전투 관련 상수
+  armperphase: 100, // 페이즈당 기본 데미지
+  maxTrainByCommand: 100, // 훈련도 상한 (명령)
+  maxAtmosByCommand: 100, // 사기 상한 (명령)
+  maxTrainByWar: 150, // 훈련도 상한 (전투)
+  maxAtmosByWar: 150, // 사기 상한 (전투)
+  neutralNationType: 0, // 중립 국가 타입
 };

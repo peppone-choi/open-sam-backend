@@ -33,7 +33,7 @@ export async function onCityOccupied(
   try {
     const city = await cityRepository.findOneByFilter({
       session_id: sessionId,
-      'data.id': cityId
+      'data.city': cityId
     });
 
     if (!city) {
@@ -55,18 +55,49 @@ export async function onCityOccupied(
     };
 
     // 도시 소유권 변경
-    const oldNationId = city.nation || 0;
-    await cityRepository.updateOneByFilter(
-      { session_id: sessionId, id: cityId },
-      { $set: { nation: attackerNationId } }
-    );
+    const oldNationId = city.data?.nation || city.nation || 0;
+    const cityName = city.data?.name || city.name || '도시';
+    
+    // 1. 도시 내 장수들 처리 (일반 장수 & NPC 이동)
+    await moveGeneralsOnOccupation(sessionId, cityId, oldNationId, attackerNationId);
+    
+    // 2. 도시 자원 일부 흡수 (금/군량의 50%)
+    const cityGold = city.data?.gold || 0;
+    const cityRice = city.data?.rice || 0;
+    const absorbedGold = Math.floor(cityGold * 0.5);
+    const absorbedRice = Math.floor(cityRice * 0.5);
+    
+    // 공격자 국가에 자원 추가
+    if (absorbedGold > 0 || absorbedRice > 0) {
+      await transferCityResources(sessionId, attackerNationId, absorbedGold, absorbedRice);
+    }
+    
+    // 3. 도시 소유권 변경 및 conflict 초기화
+    await cityRepository.updateByCityNum(sessionId, cityId, {
+      nation: attackerNationId,
+      gold: cityGold - absorbedGold,
+      rice: cityRice - absorbedRice,
+      conflict: '{}' // conflict 초기화
+    });
 
     logger.info('[BattleEventHook] City occupied', {
       sessionId,
       cityId,
-      cityName: city.name,
+      cityName,
       oldNationId,
       newNationId: attackerNationId,
+      attackerGeneralId,
+      absorbedGold,
+      absorbedRice
+    });
+    
+    // 4. 외교 로그 생성
+    await createDiplomaticLog(sessionId, gameEnv.year, gameEnv.month, {
+      type: 'CITY_OCCUPIED',
+      attackerNationId,
+      defenderNationId: oldNationId,
+      cityId,
+      cityName,
       attackerGeneralId
     });
 
@@ -74,18 +105,20 @@ export async function onCityOccupied(
     await ExecuteEngineService.runEventHandler(sessionId, 'OCCUPY_CITY', {
       ...gameEnv,
       cityId,
-      cityName: city.name,
+      cityName,
       oldNationId,
       newNationId: attackerNationId,
       attackerNationId,
-      attackerGeneralId
+      attackerGeneralId,
+      absorbedGold,
+      absorbedRice
     });
 
     // 국가 멸망 체크 (해당 국가의 도시가 0개가 되면)
     if (oldNationId && oldNationId !== 0) {
       const remainingCities = await cityRepository.count({
         session_id: sessionId,
-        nation: oldNationId
+        'data.nation': oldNationId
       });
 
       if (remainingCities === 0) {
@@ -348,6 +381,226 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
       unifiedNationId,
       error: error.message,
       stack: error.stack
+    });
+  }
+}
+
+/**
+ * 도시 점령 시 장수 이동 처리
+ * - 일반 장수: 인접 아군 도시로 이동
+ * - NPC 장수: 포로로 전환 또는 사망
+ */
+async function moveGeneralsOnOccupation(
+  sessionId: string,
+  cityId: number,
+  oldNationId: number,
+  newNationId: number
+): Promise<void> {
+  try {
+    // 도시 내 모든 장수 조회
+    const generalsInCity = await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.nation': oldNationId,
+      'data.city': cityId
+    });
+
+    if (!generalsInCity || generalsInCity.length === 0) {
+      return;
+    }
+
+    // 인접 아군 도시 찾기
+    const adjacentCities = await cityRepository.findByFilter({
+      session_id: sessionId,
+      'data.nation': oldNationId
+    });
+
+    let targetCityId = 0;
+    if (adjacentCities.length > 0) {
+      // 첫 번째 남은 아군 도시로 이동
+      targetCityId = adjacentCities[0].data?.city || adjacentCities[0].city || 0;
+    }
+
+    for (const general of generalsInCity) {
+      const generalData = general.data || {};
+      const generalNo = generalData.no || general.no;
+      const isNPC = generalData.npc === 1 || generalData.npc === true;
+
+      if (isNPC) {
+        // NPC 장수: 50% 확률로 포로, 50% 확률로 재야 전환
+        if (Math.random() < 0.5) {
+          // 포로로 전환
+          await generalRepository.updateOneByFilter(
+            { session_id: sessionId, 'data.no': generalNo },
+            {
+              $set: {
+                'data.nation': 0,
+                'data.city': 0,
+                'data.officer_level': 1,
+                'data.penalty': 'PRISONER',
+                'data.prisoner_until': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30일 후
+              }
+            }
+          );
+        } else {
+          // 재야로 전환
+          await generalRepository.updateOneByFilter(
+            { session_id: sessionId, 'data.no': generalNo },
+            {
+              $set: {
+                'data.nation': 0,
+                'data.city': 0,
+                'data.officer_level': 1
+              }
+            }
+          );
+        }
+      } else {
+        // 일반 장수: 아군 도시로 이동 (없으면 재야)
+        if (targetCityId > 0) {
+          await generalRepository.updateOneByFilter(
+            { session_id: sessionId, 'data.no': generalNo },
+            {
+              $set: {
+                'data.city': targetCityId,
+                'data.officer_level': 1 // 관직 박탈
+              }
+            }
+          );
+        } else {
+          // 아군 도시 없음 -> 재야
+          await generalRepository.updateOneByFilter(
+            { session_id: sessionId, 'data.no': generalNo },
+            {
+              $set: {
+                'data.nation': 0,
+                'data.city': 0,
+                'data.officer_level': 1
+              }
+            }
+          );
+        }
+      }
+    }
+
+    logger.info('[BattleEventHook] Generals moved on occupation', {
+      sessionId,
+      cityId,
+      generalCount: generalsInCity.length,
+      targetCityId
+    });
+  } catch (error: any) {
+    logger.error('[BattleEventHook] Error moving generals on occupation', {
+      sessionId,
+      cityId,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * 도시 자원을 공격자 국가로 이전
+ */
+async function transferCityResources(
+  sessionId: string,
+  nationId: number,
+  gold: number,
+  rice: number
+): Promise<void> {
+  try {
+    const nation = await nationRepository.findOneByFilter({
+      session_id: sessionId,
+      'data.nation': nationId
+    });
+
+    if (!nation) {
+      logger.error('[BattleEventHook] 국가를 찾을 수 없습니다.', { sessionId, nationId });
+      return;
+    }
+
+    const currentGold = nation.data?.gold || nation.gold || 0;
+    const currentRice = nation.data?.rice || nation.rice || 0;
+
+    await nationRepository.updateByNationNum(sessionId, nationId, {
+      'data.gold': currentGold + gold,
+      'data.rice': currentRice + rice
+    });
+
+    logger.info('[BattleEventHook] City resources transferred', {
+      sessionId,
+      nationId,
+      gold,
+      rice
+    });
+  } catch (error: any) {
+    logger.error('[BattleEventHook] Error transferring city resources', {
+      sessionId,
+      nationId,
+      error: error.message
+    });
+  }
+}
+
+/**
+ * 외교 로그 생성
+ */
+async function createDiplomaticLog(
+  sessionId: string,
+  year: number,
+  month: number,
+  event: {
+    type: string;
+    attackerNationId: number;
+    defenderNationId: number;
+    cityId?: number;
+    cityName?: string;
+    attackerGeneralId?: number;
+  }
+): Promise<void> {
+  try {
+    const { ActionLogger } = await import('../logger/ActionLogger');
+    const { LogFormatType } = await import('../../types/log.types');
+
+    // 공격자 국가 로그
+    const attackerLogger = new ActionLogger(
+      0, // generalId (국가 로그이므로 0)
+      event.attackerNationId,
+      year,
+      month,
+      sessionId,
+      false
+    );
+
+    // 수비자 국가 로그
+    const defenderLogger = new ActionLogger(
+      0,
+      event.defenderNationId,
+      year,
+      month,
+      sessionId,
+      false
+    );
+
+    if (event.type === 'CITY_OCCUPIED') {
+      const attackMsg = `<G>${event.cityName}</G> 도시를 점령하였습니다!`;
+      const defenseMsg = `<R>${event.cityName}</R> 도시를 빼앗겼습니다.`;
+
+      attackerLogger.pushGlobalActionLog(attackMsg, LogFormatType.PLAIN);
+      defenderLogger.pushGlobalActionLog(defenseMsg, LogFormatType.PLAIN);
+    }
+
+    await attackerLogger.flush();
+    await defenderLogger.flush();
+
+    logger.info('[BattleEventHook] Diplomatic log created', {
+      sessionId,
+      type: event.type,
+      attackerNationId: event.attackerNationId,
+      defenderNationId: event.defenderNationId
+    });
+  } catch (error: any) {
+    logger.error('[BattleEventHook] Error creating diplomatic log', {
+      sessionId,
+      error: error.message
     });
   }
 }

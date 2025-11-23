@@ -18,7 +18,7 @@ export class CommandController {
     try {
       // GET 요청이므로 req.query 사용
       const result = await GetReservedCommandService.execute(req.query, req.user);
-      res.json(result);
+      return CommandController.respond(res, result);
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -33,7 +33,7 @@ export class CommandController {
   static async pushCommand(req: Request, res: Response) {
     try {
       const result = await PushCommandService.execute(req.body, req.user);
-      res.json(result);
+      return CommandController.respond(res, result);
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -48,7 +48,7 @@ export class CommandController {
   static async repeatCommand(req: Request, res: Response) {
     try {
       const result = await RepeatCommandService.execute(req.body, req.user);
-      res.json(result);
+      return CommandController.respond(res, result);
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -63,7 +63,7 @@ export class CommandController {
   static async reserveBulkCommand(req: Request, res: Response) {
     try {
       const result = await ReserveBulkCommandService.execute(req.body, req.user);
-      res.json(result);
+      return CommandController.respond(res, result);
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -78,7 +78,7 @@ export class CommandController {
   static async reserveCommand(req: Request, res: Response) {
     try {
       const result = await ReserveCommandService.execute(req.body, req.user);
-      res.json(result);
+      return CommandController.respond(res, result);
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -86,4 +86,12 @@ export class CommandController {
       });
     }
   }
+
+  private static respond(res: Response, result: any) {
+    if (result?.success === false) {
+      return res.status(400).json(result);
+    }
+    return res.json(result);
+  }
 }
+

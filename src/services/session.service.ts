@@ -4,6 +4,7 @@ import { General } from '../models/general.model';
 import { InitService } from './init.service';
 import { sessionRepository } from '../repositories/session.repository';
 import { cacheService } from '../common/cache/cache.service';
+import { invalidateCache } from '../common/cache/model-cache.helper';
 import { logger } from '../common/logger';
 import { NotFoundError, ConflictError } from '../common/errors/app-error';
 import * as fs from 'fs';
@@ -73,10 +74,8 @@ export class SessionService {
     const session = await sessionRepository.create(config);
     
     // 캐시 무효화
-    await cacheService.invalidate(
-      [`session:byId:${session.session_id}`],
-      ['sessions:*']
-    );
+    await invalidateCache('session', session.session_id);
+
     
     logger.info('세션 생성 완료', {
       sessionId: session.session_id,
@@ -200,10 +199,8 @@ export class SessionService {
     });
     
     // 캐시 무효화
-    await cacheService.invalidate(
-      [`session:byId:${sessionId}`],
-      ['sessions:*']
-    );
+    await invalidateCache('session', sessionId);
+
     
     logger.info('시나리오 기반 세션 생성 완료', {
       sessionId,
@@ -282,10 +279,12 @@ export class SessionService {
     await InitService.initializeSession(sessionId);
     
     // 캐시 무효화
-    await cacheService.invalidate(
-      [`session:byId:${sessionId}`],
-      ['sessions:*', 'cities:*', 'nations:*', 'generals:*']
-    );
+    await Promise.all([
+      invalidateCache('session', sessionId),
+      invalidateCache('city', sessionId),
+      invalidateCache('nation', sessionId),
+      invalidateCache('general', sessionId)
+    ]);
     
     logger.info('세션 초기화 완료', { sessionId });
     
@@ -331,10 +330,12 @@ export class SessionService {
     await sessionRepository.deleteBySessionId(sessionId);
     
     // 캐시 무효화 (전체)
-    await cacheService.invalidate(
-      [`session:byId:${sessionId}`],
-      ['sessions:*', 'cities:*', 'nations:*', 'generals:*', '*']
-    );
+    await Promise.all([
+      invalidateCache('session', sessionId),
+      invalidateCache('city', sessionId),
+      invalidateCache('nation', sessionId),
+      invalidateCache('general', sessionId)
+    ]);
     
     logger.info('세션 삭제 완료', { sessionId });
   }

@@ -24,37 +24,38 @@ export class InheritancePointUtil {
   /**
    * 장수의 계승 포인트 증가
    */
-  static async increasePoint(general: any, key: InheritanceKey, amount: number = 1): Promise<void> {
+  static async increasePoint(general: any, key: InheritanceKey | string, amount: number = 1): Promise<void> {
     if (!general || !general.data) {
       return;
     }
+
+    const normalizedKey = normalizeInheritanceKey(key);
+    if (!normalizedKey) {
+      return;
+    }
     
-    // inheritance_points 객체 초기화
     if (!general.data.inheritance_points) {
       general.data.inheritance_points = {};
     }
     
-    // 현재 값 가져오기
-    const currentValue = general.data.inheritance_points[key] || 0;
-    
-    // 값 증가
-    general.data.inheritance_points[key] = currentValue + amount;
-    
-    // markModified 호출 (Mixed 타입 필드)
+    const currentValue = general.data.inheritance_points[normalizedKey] || 0;
+    general.data.inheritance_points[normalizedKey] = currentValue + amount;
     general.markModified('data.inheritance_points');
-    
-    // DB 저장은 호출자가 담당
   }
 
   /**
    * 장수의 계승 포인트 조회
    */
-  static getPoint(general: any, key: InheritanceKey): number {
+  static getPoint(general: any, key: InheritanceKey | string): number {
     if (!general || !general.data || !general.data.inheritance_points) {
       return 0;
     }
+    const normalizedKey = normalizeInheritanceKey(key);
+    if (!normalizedKey) {
+      return 0;
+    }
     
-    return general.data.inheritance_points[key] || 0;
+    return general.data.inheritance_points[normalizedKey] || 0;
   }
 
   /**
@@ -87,4 +88,12 @@ export class InheritancePointUtil {
     const points = this.getAllPoints(general);
     return Object.values(points).reduce((sum, val) => sum + val, 0);
   }
+}
+
+function normalizeInheritanceKey(key: InheritanceKey | string | undefined | null): string | null {
+  if (key == null) {
+    return null;
+  }
+  const normalized = String(key);
+  return normalized.trim().length > 0 ? normalized : null;
 }

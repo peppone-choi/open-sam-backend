@@ -412,15 +412,7 @@ class CityRepository {
    * @param sessionId - 세션 ID
    */
   private async _invalidateListCaches(sessionId: string) {
-    await cacheService.invalidate(
-      [
-        `cities:list:${sessionId}`,
-      ],
-      [
-        `cities:nation:${sessionId}:*`,
-        `cities:neutral:${sessionId}`,
-      ]
-    );
+    await invalidateCache('city', sessionId, undefined, { targets: ['lists'] });
   }
 }
 

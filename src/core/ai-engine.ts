@@ -494,8 +494,7 @@ export class AIEngine {
       let relations = await diplomacyRepository.findByNation(sessionId, nationId);
 
       if (!relations || relations.length === 0) {
-        const { Diplomacy } = await import('../models/diplomacy.model');
-        relations = await Diplomacy.find({
+        relations = await diplomacyRepository.findByFilter({
           session_id: sessionId,
           'data.me': nationId,
         });

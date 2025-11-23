@@ -1,9 +1,11 @@
 // @ts-nocheck - Type issues need investigation
 import { Battle, BattleStatus, BattlePhase } from '../models/battle.model';
-import { Session } from '../models/session.model';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
 import { unitStackRepository } from '../repositories/unit-stack.repository';
 import { cityDefenseRepository } from '../repositories/city-defense.repository';
+import { acquireDistributedLock, releaseDistributedLock } from '../common/lock/distributed-lock.helper';
+import { invalidateCache } from '../common/cache/model-cache.helper';
+import { logger } from '../common/logger';
 
 
 let io: any;
@@ -340,8 +342,24 @@ async function finishBattle(battle: any, winner: string | undefined) {
  * 전투 종료 후 월드 반영 처리
  */
 async function handleBattleEnded(battle: any, winner: string | undefined) {
+  const sessionId = battle.session_id;
+  const settlementLockKey = `lock:battle:settle:${sessionId}:${battle.battleId}`;
+  const acquired = await acquireDistributedLock(settlementLockKey, {
+    ttl: 120,
+    retry: 3,
+    retryDelayMs: 500,
+    context: 'battle-settlement',
+  });
+
+  if (!acquired) {
+    logger.warn('[BattleEventHook] 다른 인스턴스가 전투 정산을 수행 중이어서 건너뜁니다.', {
+      sessionId,
+      battleId: battle.battleId,
+    });
+    return;
+  }
+
   try {
-    const sessionId = battle.session_id;
     const targetCityId = battle.targetCityId;
     const attackerNationId = battle.attackerNationId;
     const defenderNationId = battle.defenderNationId;
@@ -356,8 +374,6 @@ async function handleBattleEnded(battle: any, winner: string | undefined) {
 
     // 공격자가 승리하고 도시 공격이면 도시 점령 처리
     if (winner === 'attacker' && targetCityId) {
-
-      // 공격자 장수 ID (첫 번째 장수 사용)
       const attackerGeneralId = battle.attackerUnits?.[0]?.generalId || 0;
 
       if (attackerGeneralId > 0) {
@@ -370,11 +386,32 @@ async function handleBattleEnded(battle: any, winner: string | undefined) {
       }
     }
 
+    const invalidations: Promise<void>[] = [];
+    if (targetCityId) {
+      invalidations.push(invalidateCache('city', sessionId, targetCityId));
+    }
+    const nationIds = [attackerNationId, defenderNationId].filter((nationId): nationId is number => typeof nationId === 'number' && nationId > 0);
+    for (const nationId of nationIds) {
+      invalidations.push(invalidateCache('nation', sessionId, nationId));
+    }
+    if (invalidations.length > 0) {
+      await Promise.all(invalidations);
+      logger.debug('[BattleEventHook] 캐시 무효화 완료 (전투 정산)', {
+        sessionId,
+        battleId: battle.battleId,
+        cityId: targetCityId,
+        nationIds,
+      });
+    }
+
     console.log(`[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`);
   } catch (error: any) {
     console.error('[BattleEventHook] 전투 종료 처리 중 오류:', error);
+  } finally {
+    await releaseDistributedLock(settlementLockKey, 'battle-settlement');
   }
 }
+
 
 async function startNextTurn(battle: any, timer: BattleTimer) {
   battle.currentTurn += 1;

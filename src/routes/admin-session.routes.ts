@@ -8,6 +8,7 @@ import { City } from '../models/city.model';
 import { GeneralTurn } from '../models/general_turn.model';
 import { NationTurn } from '../models/nation_turn.model';
 import { Message } from '../models/message.model';
+import { invalidateCache } from '../common/cache/model-cache.helper';
 
 const router = Router();
 
@@ -168,9 +169,7 @@ router.post('/open', authenticate, requireAdmin, async (req: Request, res: Respo
     
     // Redis 캐시 무효화
     try {
-      const { cacheManager } = await import('../cache/CacheManager');
-      await cacheManager.delete(`session:state:${sessionId}`);
-      await cacheManager.delete(`session:byId:${sessionId}`);
+      await invalidateCache('session', sessionId);
     } catch (error) {
       console.warn(`[AdminSession] Failed to invalidate cache:`, error);
     }
@@ -214,9 +213,7 @@ router.post('/close', authenticate, requireAdmin, async (req: Request, res: Resp
     
     // Redis 캐시 무효화
     try {
-      const { cacheManager } = await import('../cache/CacheManager');
-      await cacheManager.delete(`session:state:${sessionId}`);
-      await cacheManager.delete(`session:byId:${sessionId}`);
+      await invalidateCache('session', sessionId);
     } catch (error) {
       console.warn(`[AdminSession] Failed to invalidate cache:`, error);
     }
@@ -294,9 +291,7 @@ router.post('/reset', authenticate, requireAdmin, async (req: Request, res: Resp
     
     // Redis 캐시 무효화
     try {
-      const { cacheManager } = await import('../cache/CacheManager');
-      await cacheManager.delete(`session:state:${sessionId}`);
-      await cacheManager.delete(`session:byId:${sessionId}`);
+      await invalidateCache('session', sessionId);
     } catch (error) {
       console.warn(`[AdminSession] Failed to invalidate cache:`, error);
     }
@@ -393,9 +388,7 @@ router.post('/update', authenticate, requireAdmin, async (req: Request, res: Res
     
     // Redis 캐시 무효화
     try {
-      const { cacheManager } = await import('../cache/CacheManager');
-      await cacheManager.delete(`session:state:${sessionId}`);
-      await cacheManager.delete(`session:byId:${sessionId}`);
+      await invalidateCache('session', sessionId);
       console.log(`[AdminSession] Cache invalidated for ${sessionId}`);
     } catch (error) {
       console.warn(`[AdminSession] Failed to invalidate cache:`, error);

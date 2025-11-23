@@ -10,7 +10,6 @@ import { CityConst } from '../../const/CityConst';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { INation } from '../../models/nation.model';
 import { invalidateCache, saveGeneral as cacheSaveGeneral } from '../../common/cache/model-cache.helper';
-import { cacheService } from '../../common/cache/cache.service';
 
 export interface ICity {
   city: number;
@@ -373,14 +372,12 @@ export abstract class BaseCommand {
       for (const cityId of this.dirtyCities) {
         tasks.push(invalidateCache('city', sessionId, cityId));
       }
-      tasks.push(cacheService.invalidate([`cities:list:${sessionId}`], []));
     }
  
     if (this.dirtyNations.size > 0) {
       for (const nationId of this.dirtyNations) {
         tasks.push(invalidateCache('nation', sessionId, nationId));
       }
-      tasks.push(cacheService.invalidate([`nations:list:${sessionId}`], []));
     }
  
     if (tasks.length > 0) {

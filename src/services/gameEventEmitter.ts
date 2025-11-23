@@ -99,6 +99,55 @@ export class GameEventEmitter {
       socketManager.broadcastLogUpdate(sessionId, generalId, logType, logId, logText);
     }
   }
+
+  /**
+   * 경매 상태 변경 브로드캐스트
+   */
+  static broadcastAuctionUpdate(sessionId: string, auctionId: string, updates: any) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'auction:updated', {
+        auctionId,
+        ...updates
+      });
+    }
+  }
+
+  /**
+   * 토너먼트 상태 변경 브로드캐스트
+   */
+  static broadcastTournamentUpdate(sessionId: string, updates: any) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'tournament:updated', updates);
+    }
+  }
+
+  /**
+   * 베팅 상태 변경 브로드캐스트
+   */
+  static broadcastBettingUpdate(sessionId: string, bettingId: number, updates: any) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'betting:updated', {
+        bettingId,
+        ...updates
+      });
+    }
+  }
+
+  /**
+   * 국가 재정 업데이트 브로드캐스트
+   */
+  static broadcastFinanceUpdate(sessionId: string, nationId: number, financeData: any) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'finance:updated', {
+        nationId,
+        ...financeData
+      });
+    }
+  }
 }
 
 

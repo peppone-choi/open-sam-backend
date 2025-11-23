@@ -9,6 +9,7 @@ function parseArgs() {
     city: 7,
     seedScenario: null,
     dryRun: false,
+    mongoUri: null,
   };
 
   for (const arg of args) {
@@ -29,6 +30,11 @@ function parseArgs() {
       }
     } else if (arg === '--dry-run') {
       result.dryRun = true;
+    } else if (arg.startsWith('--mongo-uri')) {
+      const [, value] = arg.split('=');
+      if (value) {
+        result.mongoUri = value;
+      }
     }
   }
 
@@ -95,7 +101,8 @@ async function checkCitySupply() {
   const options = parseArgs();
 
   try {
-    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/samodev');
+    const mongoUri = options.mongoUri || process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/opensam';
+    await mongoose.connect(mongoUri);
     
     const City = mongoose.model('City', new mongoose.Schema({}, { strict: false }), 'cities');
     

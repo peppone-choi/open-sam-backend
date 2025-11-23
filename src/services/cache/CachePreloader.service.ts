@@ -5,6 +5,35 @@ import { sessionRepository } from '../../repositories/session.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
+import { CacheManager } from '../../cache/CacheManager';
+
+const DEFAULT_PRELOAD_BATCH_SIZE = Math.max(1, Number(process.env.CACHE_PRELOAD_BATCH_SIZE || '25'));
+const cacheManager = CacheManager.getInstance();
+
+async function processInBatches<T>(
+  items: T[],
+  handler: (item: T, index: number) => Promise<void>,
+  label: string,
+  batchSize: number = DEFAULT_PRELOAD_BATCH_SIZE
+): Promise<void> {
+  if (!items.length) {
+    return;
+  }
+
+  for (let start = 0; start < items.length; start += batchSize) {
+    const slice = items.slice(start, start + batchSize);
+    const results = await Promise.allSettled(slice.map((item, idx) => handler(item, start + idx)));
+    results.forEach((result, idx) => {
+      if (result.status === 'rejected') {
+        const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        logger.warn(`[CachePreloader] ${label} 처리 실패`, {
+          index: start + idx,
+          reason,
+        });
+      }
+    });
+  }
+}
 
 /**
  * 캐시 프리로더
@@ -22,7 +51,6 @@ export class CachePreloaderService {
 
     try {
       // Redis 연결 확인 및 대기
-      const { cacheManager } = await import('../../cache/CacheManager');
       logger.info('[CachePreloader] Waiting for Redis L2 cache to be ready...');
       
       const redisReady = await cacheManager.waitForRedis(5000);
@@ -62,40 +90,58 @@ export class CachePreloaderService {
 
           // 장수 데이터 프리로드
           const generals = await generalRepository.findBySession(sessionId);
-          for (const general of generals) {
-            const no = general.no || general.data?.no;
-            if (no) {
+          let sessionGenerals = 0;
+          await processInBatches(
+            generals,
+            async (general) => {
+              const no = general.no || general.data?.no;
+              if (!no) {
+                return;
+              }
               await saveGeneral(sessionId, no, general);
-              
-              // owner 기준 캐시도 추가 (유저 ID로 조회 시 사용)
+
               if (general.owner) {
-                const { cacheManager } = await import('../../cache/CacheManager');
                 await cacheManager.set(`general:owner:${sessionId}:${general.owner}`, general, 360);
               }
-              
-              totalGenerals++;
-            }
-          }
+              sessionGenerals++;
+            },
+            `session ${sessionId} generals`
+          );
+          totalGenerals += sessionGenerals;
 
           // 도시 데이터 프리로드
           const cities = await cityRepository.findBySession(sessionId);
-          for (const city of cities) {
-            if (city.city) {
+          let sessionCities = 0;
+          await processInBatches(
+            cities,
+            async (city) => {
+              if (!city.city) {
+                return;
+              }
               await saveCity(sessionId, city.city, city);
-              totalCities++;
-            }
-          }
+              sessionCities++;
+            },
+            `session ${sessionId} cities`
+          );
+          totalCities += sessionCities;
 
           // 국가 데이터 프리로드
           const nations = await nationRepository.findBySession(sessionId);
-          for (const nation of nations) {
-            if (nation.nation) {
+          let sessionNations = 0;
+          await processInBatches(
+            nations,
+            async (nation) => {
+              if (!nation.nation) {
+                return;
+              }
               await saveNation(sessionId, nation.nation, nation);
-              totalNations++;
-            }
-          }
+              sessionNations++;
+            },
+            `session ${sessionId} nations`
+          );
+          totalNations += sessionNations;
 
-          logger.info(`[CachePreloader] Session ${sessionId}: Loaded ${generals.length} generals, ${cities.length} cities, ${nations.length} nations`);
+          logger.info(`[CachePreloader] Session ${sessionId}: Loaded ${sessionGenerals} generals, ${sessionCities} cities, ${sessionNations} nations`);
         } catch (error: any) {
           logger.error(`[CachePreloader] Failed to preload session ${sessionId}:`, {
             message: error?.message,
@@ -137,36 +183,54 @@ export class CachePreloaderService {
 
       // 장수 데이터 프리로드
       const generals = await generalRepository.findBySession(sessionId);
-      for (const general of generals) {
-        const no = general.no || general.data?.no;
-        if (no) {
+      let sessionGenerals = 0;
+      await processInBatches(
+        generals,
+        async (general) => {
+          const no = general.no || general.data?.no;
+          if (!no) {
+            return;
+          }
           await saveGeneral(sessionId, no, general);
-          
-          // owner 기준 캐시도 추가 (유저 ID로 조회 시 사용)
           if (general.owner) {
-            const { cacheManager } = await import('../../cache/CacheManager');
             await cacheManager.set(`general:owner:${sessionId}:${general.owner}`, general, 360);
           }
-        }
-      }
+          sessionGenerals++;
+        },
+        `session ${sessionId} generals`
+      );
 
       // 도시 데이터 프리로드
       const cities = await cityRepository.findBySession(sessionId);
-      for (const city of cities) {
-        if (city.city) {
+      let sessionCities = 0;
+      await processInBatches(
+        cities,
+        async (city) => {
+          if (!city.city) {
+            return;
+          }
           await saveCity(sessionId, city.city, city);
-        }
-      }
+          sessionCities++;
+        },
+        `session ${sessionId} cities`
+      );
 
       // 국가 데이터 프리로드
       const nations = await nationRepository.findBySession(sessionId);
-      for (const nation of nations) {
-        if (nation.nation) {
+      let sessionNations = 0;
+      await processInBatches(
+        nations,
+        async (nation) => {
+          if (!nation.nation) {
+            return;
+          }
           await saveNation(sessionId, nation.nation, nation);
-        }
-      }
+          sessionNations++;
+        },
+        `session ${sessionId} nations`
+      );
 
-      logger.info(`[CachePreloader] Session ${sessionId}: Loaded ${generals.length} generals, ${cities.length} cities, ${nations.length} nations`);
+      logger.info(`[CachePreloader] Session ${sessionId}: Loaded ${sessionGenerals} generals, ${sessionCities} cities, ${sessionNations} nations`);
     } catch (error: any) {
       logger.error(`[CachePreloader] Failed to preload session ${sessionId}:`, {
         message: error?.message,

@@ -3,6 +3,7 @@ import { ActionLogger } from '../logger/ActionLogger';
 import { LogFormatType } from '../../types/log.types';
 import { SendSystemNoticeService } from '../message/SendSystemNotice.service';
 import { Util } from '../../utils/Util';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 
 /**
  * AdminGameSettings Service
@@ -21,9 +22,7 @@ export class AdminGameSettingsService {
    */
   private static async invalidateSessionCache(sessionId: string): Promise<void> {
     try {
-      const { cacheManager } = await import('../../cache/CacheManager');
-      await cacheManager.delete(`session:state:${sessionId}`);
-      await cacheManager.delete(`session:byId:${sessionId}`);
+      await invalidateCache('session', sessionId);
       console.log(`[AdminGameSettings] Session cache invalidated for ${sessionId}`);
     } catch (error) {
       console.warn(`[AdminGameSettings] Failed to invalidate cache:`, error);

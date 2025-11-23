@@ -4,6 +4,7 @@ import { General } from '../../models/general.model';
 import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
 import { generalRepository } from '../../repositories/general.repository';
+import { buildChiefPolicyPayload } from './helpers/policy.helper';
 
 /**
  * SetBill Service
@@ -33,10 +34,7 @@ export class SetBillService {
       }
 
       // 장수 정보 조회
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return {
@@ -65,15 +63,21 @@ export class SetBillService {
       }
 
       // 국가 정보 업데이트
+      const nationDoc = await nationRepository.findByNationNum(sessionId, nationId);
+      if (!nationDoc) {
+        return {
+          success: false,
+          message: '국가를 찾을 수 없습니다'
+        };
+      }
+
       const result = await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId
         },
         {
-          $set: {
-            'data.bill': amount
-          }
+          'data.bill': amount
         }
       );
 
@@ -84,10 +88,19 @@ export class SetBillService {
         };
       }
 
+      if (nationDoc.data) {
+        nationDoc.data.bill = amount;
+      }
+
+      const payload = await buildChiefPolicyPayload(sessionId, nationId, { nationDoc });
+
       return {
         success: true,
         result: true,
-        message: `공고 금액이 ${amount}으로 설정되었습니다`
+        message: `공고 금액이 ${amount}으로 설정되었습니다`,
+        policy: payload?.policy,
+        warSettingCnt: payload?.warSettingCnt,
+        notices: payload?.notices,
       };
     } catch (error: any) {
       return {

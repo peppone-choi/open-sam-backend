@@ -516,11 +516,12 @@ export class BattleSocketHandler {
   }
 
   /**
-   * 전투 참여 장수들에게 경험치/명성 지급
+   * 전투 참여 장수들에게 경험치/명성 지급 및 통계 업데이트
    */
   private async awardBattleRewards(battle: any, result: any) {
     try {
       const { General } = await import('../models/general.model');
+      const { generalRepository } = await import('../repositories/general.repository');
       const sessionId = battle.session_id;
       
       // 승자 측 장수들
@@ -528,7 +529,7 @@ export class BattleSocketHandler {
       // 패자 측 장수들
       const loserUnits = battle.winner === 'attacker' ? battle.defenderUnits : battle.attackerUnits;
 
-      // 승자 장수들에게 보상
+      // 승자 장수들에게 보상 및 통계 업데이트
       for (const unit of winnerUnits) {
         if (!unit.generalId || unit.generalId === 0) continue;
 
@@ -546,13 +547,22 @@ export class BattleSocketHandler {
           
           general.addExperience(baseExp);
           general.addDedication(Math.floor(baseExp / 2));
+          
+          // 통계 업데이트: 승리 횟수, 적 살상 수
+          await generalRepository.updateByGeneralNo(sessionId, unit.generalId, {
+            $inc: {
+              'data.killnum': 1, // 승리 횟수
+              'data.killcrew': enemyCasualties, // 적 살상 수
+              'data.warnum': 1 // 전투 횟수
+            }
+          });
 
           await general.save();
-          console.log(`[BattleReward] 승리 장수 ${general.name}(${unit.generalId}): 경험치 +${baseExp}`);
+          console.log(`[BattleReward] 승리 장수 ${general.name}(${unit.generalId}): 경험치 +${baseExp}, 살상 +${enemyCasualties}`);
         }
       }
 
-      // 패자 장수들에게 소량의 경험치
+      // 패자 장수들에게 소량의 경험치 및 통계 업데이트
       for (const unit of loserUnits) {
         if (!unit.generalId || unit.generalId === 0) continue;
 
@@ -563,9 +573,23 @@ export class BattleSocketHandler {
 
         if (general) {
           const loseExp = 100;
+          const ownCasualties = battle.winner === 'attacker' ?
+            (result.defenderCasualties || 0) :
+            (result.attackerCasualties || 0);
+          
           general.addExperience(loseExp);
+          
+          // 통계 업데이트: 패배 횟수, 아군 손실 수
+          await generalRepository.updateByGeneralNo(sessionId, unit.generalId, {
+            $inc: {
+              'data.deathnum': 1, // 패배 횟수
+              'data.deathcrew': ownCasualties, // 아군 손실 수
+              'data.warnum': 1 // 전투 횟수
+            }
+          });
+          
           await general.save();
-          console.log(`[BattleReward] 패배 장수 ${general.name}(${unit.generalId}): 경험치 +${loseExp}`);
+          console.log(`[BattleReward] 패배 장수 ${general.name}(${unit.generalId}): 경험치 +${loseExp}, 손실 +${ownCasualties}`);
         }
       }
     } catch (error: any) {

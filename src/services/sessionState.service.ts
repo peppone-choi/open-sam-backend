@@ -6,9 +6,9 @@
 import { Session } from '../models/session.model';
 import { logger } from '../common/logger';
 import { getSocketManager } from '../socket/socketManager';
-import Redis from 'ioredis';
 import { sessionRepository } from '../repositories/session.repository';
-import { randomUUID } from 'crypto';
+import { invalidateCache as invalidateModelCache } from '../common/cache/model-cache.helper';
+import { acquireDistributedLock, releaseDistributedLock } from '../common/lock/distributed-lock.helper';
 
 // Lazy-load cache manager to avoid blocking server startup
 let _cacheManager: any = null;
@@ -20,34 +20,7 @@ function getCacheManager(): any {
   return _cacheManager;
 }
 
-// Redis 클라이언트 (락 관리용)
-let redisClient: Redis | null = null;
 
-function getRedisClient(): Redis {
-  if (!redisClient) {
-    const url = process.env.REDIS_URL;
-    if (url) {
-      redisClient = new Redis(url, {
-        connectTimeout: 5000,
-        enableOfflineQueue: true,
-        maxRetriesPerRequest: 3,
-        retryStrategy: (times) => Math.min(times * 200, 2000),
-      });
-    } else {
-      redisClient = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
-        db: parseInt(process.env.REDIS_DB || '0'),
-        connectTimeout: 5000,
-        enableOfflineQueue: true,
-        maxRetriesPerRequest: 3,
-        retryStrategy: (times) => Math.min(times * 200, 2000),
-      });
-    }
-  }
-  return redisClient;
-}
 
 export interface SessionState {
   sessionId: string;
@@ -66,7 +39,7 @@ export interface SessionState {
 export class SessionStateService {
   private static readonly CACHE_TTL = 60; // 60초
   private static readonly LOCK_TTL = 300; // 5분
-  private static readonly lockTokens: Map<string, string> = new Map();
+
 
   /**
    * 세션 상태 조회 (캐시 우선)
@@ -280,9 +253,9 @@ export class SessionStateService {
    * 캐시 무효화
    */
   static async invalidateCache(sessionId: string): Promise<void> {
-    const cacheKey = `session:state:${sessionId}`;
-    await getCacheManager().delete(cacheKey);
+    await invalidateModelCache('session', sessionId);
   }
+
 
   /**
    * 모든 세션 상태 조회 (관리자용)
@@ -335,28 +308,16 @@ export class SessionStateService {
 
   private static async acquireLock(lockKey: string, ttl: number = this.LOCK_TTL): Promise<boolean> {
     try {
-      const redis = getRedisClient();
-      if (!redis) {
-        return false;
-      }
-
-      const token = randomUUID();
-      const result = await redis.set(
-        lockKey,
-        token,
-        'EX',
+      return await acquireDistributedLock(lockKey, {
         ttl,
-        'NX'
-      );
-      const acquired = result === 'OK';
-      if (acquired) {
-        this.lockTokens.set(lockKey, token);
-      }
-      return acquired;
+        retry: 2,
+        retryDelayMs: 250,
+        context: 'session-state',
+      });
     } catch (error: any) {
       logger.error('락 획득 실패', {
         lockKey,
-        error: error.message
+        error: error.message,
       });
       return false;
     }
@@ -365,33 +326,15 @@ export class SessionStateService {
 
   private static async releaseLock(lockKey: string): Promise<void> {
     try {
-      const redis = getRedisClient();
-      if (!redis) {
-        return;
-      }
-
-      const token = this.lockTokens.get(lockKey);
-      if (!token) {
-        await redis.del(lockKey);
-        return;
-      }
-
-      const releaseScript = `
-        if redis.call("get", KEYS[1]) == ARGV[1] then
-          return redis.call("del", KEYS[1])
-        else
-          return 0
-        end
-      `;
-      await redis.eval(releaseScript, 1, lockKey, token);
-      this.lockTokens.delete(lockKey);
+      await releaseDistributedLock(lockKey, 'session-state');
     } catch (error: any) {
       logger.error('락 해제 실패', {
         lockKey,
-        error: error.message
+        error: error.message,
       });
     }
   }
+
 
 }
 

@@ -66,13 +66,17 @@ export async function getSession(sessionId: string) {
 export async function getGeneral(sessionId: string, generalId: number) {
   return cacheService.getOrLoad(
     cacheKeys.general(sessionId, generalId),
-    () => General.findOne({ 
+    () => General.findOne({
       session_id: sessionId,
-      'data.no': generalId 
+      $or: [
+        { 'data.no': generalId },
+        { no: generalId },
+      ],
     }).lean(),
     TTL.GENERAL
   );
 }
+
 
 /**
  * General 조회 (no 필드로)
@@ -145,10 +149,10 @@ export async function saveSession(sessionId: string, data: any) {
 export async function saveGeneral(sessionId: string, generalId: number, data: any) {
   const no = data.no || data.data?.no || generalId;
   
-  // 1. Redis(L2)에 저장
-  await Promise.all([
-    cacheManager.setL2(cacheKeys.general(sessionId, generalId), data, TTL.GENERAL),
-    cacheManager.setL2(cacheKeys.generalByNo(sessionId, no), data, TTL.GENERAL),
+  // 1. Redis(L2)에 저장 (파이프라인)
+  await cacheManager.setL2Batch([
+    { key: cacheKeys.general(sessionId, generalId), value: data, ttl: TTL.GENERAL },
+    { key: cacheKeys.generalByNo(sessionId, no), value: data, ttl: TTL.GENERAL },
   ]);
   
   // 2. L1 캐시 업데이트
@@ -157,8 +161,9 @@ export async function saveGeneral(sessionId: string, generalId: number, data: an
     cacheManager.setL1(cacheKeys.generalByNo(sessionId, no), data),
   ]);
 
+
   // 3. 목록 캐시 무효화
-  await cacheService.invalidate([`generals:list:${sessionId}`], []);
+  await invalidateCache('general', sessionId, generalId, { targets: ['lists'] });
   
   // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
   await addToSyncQueue('general', `${sessionId}:${generalId}`, sanitizeForSync(data));
@@ -175,13 +180,16 @@ export async function saveGeneral(sessionId: string, generalId: number, data: an
  */
 export async function saveCity(sessionId: string, cityId: number, data: any) {
   // 1. Redis(L2)에 저장
-  await cacheManager.setL2(cacheKeys.city(sessionId, cityId), data, TTL.CITY);
+  await cacheManager.setL2Batch([
+    { key: cacheKeys.city(sessionId, cityId), value: data, ttl: TTL.CITY }
+  ]);
   
   // 2. L1 캐시 업데이트
   await cacheManager.setL1(cacheKeys.city(sessionId, cityId), data);
+
   
   // 3. 목록 캐시 무효화
-  await cacheService.invalidate([`cities:list:${sessionId}`], []);
+  await invalidateCache('city', sessionId, cityId, { targets: ['lists'] });
   
   // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
   await addToSyncQueue('city', `${sessionId}:${cityId}`, sanitizeForSync(data));
@@ -207,13 +215,16 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
  */
 export async function saveNation(sessionId: string, nationId: number, data: any) {
   // 1. Redis(L2)에 저장
-  await cacheManager.setL2(cacheKeys.nation(sessionId, nationId), data, TTL.NATION);
+  await cacheManager.setL2Batch([
+    { key: cacheKeys.nation(sessionId, nationId), value: data, ttl: TTL.NATION }
+  ]);
   
   // 2. L1 캐시 업데이트
   await cacheManager.setL1(cacheKeys.nation(sessionId, nationId), data);
+
   
   // 3. 목록 캐시 무효화
-  await cacheService.invalidate([`nations:list:${sessionId}`], []);
+  await invalidateCache('nation', sessionId, nationId, { targets: ['lists'] });
   
   // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
   await addToSyncQueue('nation', `${sessionId}:${nationId}`, sanitizeForSync(data));
@@ -233,41 +244,95 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
 }
 
 /**
+ * 캐시 타깃 종류 (개별 엔티티 vs 목록 뷰)
+ */
+type CacheTarget = 'entity' | 'lists';
+
+/**
  * 캐시 무효화 (캐시 업데이트가 어려운 경우에만 사용)
  */
-export async function invalidateCache(type: 'session' | 'general' | 'city' | 'nation', sessionId: string, id?: number) {
+export async function invalidateCache(
+  type: 'session' | 'general' | 'city' | 'nation',
+  sessionId: string,
+  id?: number,
+  options?: { targets?: CacheTarget[] }
+) {
+  const targets = options?.targets ?? ['entity', 'lists'];
+  const includeEntity = targets.includes('entity');
+  const includeLists = targets.includes('lists');
+
   const keys: string[] = [];
+  const patterns: string[] = [];
   
   switch (type) {
-    case 'session':
-      keys.push(cacheKeys.session(sessionId));
-      break;
-    case 'general':
-      if (id) {
-        keys.push(cacheKeys.general(sessionId, id));
-        keys.push(cacheKeys.generalByNo(sessionId, id));
-      } else {
-        // 모든 장수 캐시 무효화
-        keys.push(`general:byId:${sessionId}:*`);
-        keys.push(`general:byNo:${sessionId}:*`);
+    case 'session': {
+      if (includeEntity) {
+        keys.push(cacheKeys.session(sessionId));
+        keys.push(`session:state:${sessionId}`);
+      }
+      if (includeLists) {
+        patterns.push('sessions:*');
       }
       break;
-    case 'city':
-      if (id) {
-        keys.push(cacheKeys.city(sessionId, id));
-      } else {
-        keys.push(`city:byId:${sessionId}:*`);
+    }
+    case 'general': {
+      if (includeEntity) {
+        if (typeof id === 'number') {
+          keys.push(cacheKeys.general(sessionId, id));
+          keys.push(cacheKeys.generalByNo(sessionId, id));
+        } else {
+          patterns.push(`general:byId:${sessionId}:*`);
+          patterns.push(`general:byNo:${sessionId}:*`);
+        }
       }
-      break;
-    case 'nation':
-      if (id) {
-        keys.push(cacheKeys.nation(sessionId, id));
-      } else {
-        keys.push(`nation:byId:${sessionId}:*`);
+
+      if (includeLists) {
+        keys.push(`generals:list:${sessionId}`);
+        keys.push(`generals:neutral:${sessionId}`);
+        patterns.push(`general:owner:${sessionId}:*`);
+        patterns.push(`generals:nation:${sessionId}:*`);
+        patterns.push(`generals:city:${sessionId}:*`);
       }
+
       break;
+    }
+    case 'city': {
+      if (includeEntity) {
+        if (typeof id === 'number') {
+          keys.push(cacheKeys.city(sessionId, id));
+        } else {
+          patterns.push(`city:byId:${sessionId}:*`);
+        }
+      }
+
+      if (includeLists) {
+        keys.push(`cities:list:${sessionId}`);
+        keys.push(`cities:neutral:${sessionId}`);
+        patterns.push(`cities:nation:${sessionId}:*`);
+      }
+
+      break;
+    }
+    case 'nation': {
+      if (includeEntity) {
+        if (typeof id === 'number') {
+          keys.push(cacheKeys.nation(sessionId, id));
+        } else {
+          patterns.push(`nation:byId:${sessionId}:*`);
+        }
+      }
+
+      if (includeLists) {
+        keys.push(`nations:list:${sessionId}`);
+        keys.push(`nations:active:${sessionId}`);
+      }
+
+      break;
+    }
   }
   
-  await cacheService.invalidate(keys.filter(k => !k.includes('*')), keys.filter(k => k.includes('*')));
+  await cacheService.invalidate(keys, patterns);
 }
+
+
 

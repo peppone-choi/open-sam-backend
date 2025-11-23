@@ -336,13 +336,7 @@ class NationRepository {
    * @param sessionId - 세션 ID
    */
   private async _invalidateListCaches(sessionId: string) {
-    await cacheService.invalidate(
-      [
-        `nations:list:${sessionId}`,
-        `nations:active:${sessionId}`,
-      ],
-      []
-    );
+    await invalidateCache('nation', sessionId, undefined, { targets: ['lists'] });
   }
 }
 

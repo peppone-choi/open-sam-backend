@@ -604,19 +604,10 @@ class GeneralRepository {
    * @param sessionId - 세션 ID
    */
   private async _invalidateListCaches(sessionId: string) {
-    await cacheService.invalidate(
-      [
-        `generals:list:${sessionId}`,
-      ],
-      [
-        `generals:nation:${sessionId}:*`,
-        `generals:city:${sessionId}:*`,
-        `generals:neutral:${sessionId}`,
-        `general:owner:${sessionId}:*`,
-      ]
-    );
+    await invalidateCache('general', sessionId, undefined, { targets: ['lists'] });
   }
 }
+
 
 /**
  * 장수 리포지토리 싱글톤 인스턴스

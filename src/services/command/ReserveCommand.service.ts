@@ -1,6 +1,7 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { neutralize, removeSpecialCharacter, getStringWidth } from '../../utils/string-util';
 import GameConstants from '../../utils/game-constants';
+import { invalidateCache } from '../../common/cache/model-cache.helper';
 
 const MAX_TURN = GameConstants.MAX_TURN; // 50
 
@@ -65,10 +66,9 @@ export class ReserveCommandService {
     const result = await setGeneralCommand(sessionId, generalId, turnList, action, arg, brief);
 
     // 캐시 무효화
-    if (result.success) {
+    if (result.success && typeof generalId === 'number') {
       try {
-        const { cacheManager } = await import('../../cache/CacheManager');
-        await cacheManager.delete(`general:${sessionId}:${generalId}`);
+        await invalidateCache('general', sessionId, generalId);
       } catch (error: any) {
         console.error('Cache invalidation failed:', error);
       }

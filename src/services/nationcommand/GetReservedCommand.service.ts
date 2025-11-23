@@ -250,7 +250,8 @@ export class GetReservedCommandService {
          officerLevel,
         commandList: await this.buildChiefCommandTable(general, gameEnv),
          mapName: gameEnv.mapName || 'default',
-         unitSet: gameEnv.unitSet || 'default'
+        unitSet: gameEnv.unitSet || 'default',
+        maxChiefTurn: MAX_CHIEF_TURN,
        };
 
 

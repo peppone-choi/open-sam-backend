@@ -107,9 +107,28 @@ export class NationFinanceService {
                 }
             });
 
+            // 업데이트된 국가 정보 조회
+            const updatedNation = await nationRepository.findByNationNum(sessionId, nationId);
+            const newGold = updatedNation?.data?.gold || 0;
+            const newRice = updatedNation?.data?.rice || 0;
+
+            // 재정 변동 이벤트 브로드캐스트
+            const { GameEventEmitter } = await import('../gameEventEmitter');
+            GameEventEmitter.broadcastFinanceUpdate(sessionId, nationId, {
+                year,
+                month,
+                goldIncome: goldStats.income,
+                goldOutcome: goldStats.outcome,
+                goldNet: goldStats.net,
+                goldBreakdown: goldStats.breakdown,
+                riceIncome: riceStats.income,
+                riceNet: riceStats.net,
+                riceBreakdown: riceStats.breakdown,
+                newGold,
+                newRice
+            });
+
             // Log the finance update
-            // We might want a nation-wide log or a log for the ruler
-            // For now, let's just log to console/system logger
             logger.info(`[NationFinance] Applied update for Nation ${nationId} (Session: ${sessionId})`, {
                 year,
                 month,

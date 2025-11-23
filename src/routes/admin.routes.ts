@@ -15,6 +15,7 @@ import { AdminErrorLogService } from '../services/admin/AdminErrorLog.service';
 import { ApiError } from '../errors/ApiError';
 import Redis from 'ioredis';
 import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
+import { invalidateCache } from '../common/cache/model-cache.helper';
 
 const router = Router();
 
@@ -53,26 +54,12 @@ async function forceUnlockAndClearCache(sessionId: string) {
   
   // 2. 전체 세션 캐시 무효화
   try {
-    const { cacheManager } = await import('../cache/CacheManager');
-    
-    // 세션 관련 캐시
-    await cacheManager.delete(`session:state:${sessionId}`);
-    await cacheManager.delete(`session:byId:${sessionId}`);
-    
-    // 패턴 매칭으로 모든 관련 캐시 삭제
-    const patterns = [
-      `general:${sessionId}:*`,
-      `city:${sessionId}:*`,
-      `nation:${sessionId}:*`,
-      `generals:session:${sessionId}`,
-      `cities:session:${sessionId}`,
-      `nations:session:${sessionId}`
-    ];
-    
-    for (const pattern of patterns) {
-      await cacheManager.deletePattern(pattern);
-    }
-    
+    await Promise.all([
+      invalidateCache('session', sessionId),
+      invalidateCache('general', sessionId),
+      invalidateCache('city', sessionId),
+      invalidateCache('nation', sessionId)
+    ]);
     console.log(`[Admin] 🗑️ 전체 캐시 무효화 완료: ${sessionId}`);
   } catch (error) {
     console.error('[Admin] 캐시 무효화 실패:', error);

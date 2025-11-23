@@ -10,7 +10,7 @@ export class GetStaticInfoService {
 
     try {
       // Load session (L1 → L2 → DB)
-      const session = await getSession(sessionId) as ISession | null;
+      const session = (await getSession(sessionId)) as unknown as ISession | null;
       if (!session) {
         return {
           success: false,

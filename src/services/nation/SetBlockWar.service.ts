@@ -3,6 +3,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { KVStorage } from '../../models/kv-storage.model';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
+import { buildChiefPolicyPayload } from './helpers/policy.helper';
 
 /**
  * SetBlockWar Service
@@ -20,10 +21,7 @@ export class SetBlockWarService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
@@ -52,35 +50,59 @@ export class SetBlockWarService {
         return { success: false, message: '잔여 횟수가 부족합니다' };
       }
 
+      const nationDoc = await nationRepository.findByNationNum(sessionId, nationId);
+      if (!nationDoc) {
+        return { success: false, message: '국가를 찾을 수 없습니다' };
+      }
+
       await nationRepository.updateOneByFilter(
         {
           session_id: sessionId,
           'data.nation': nationId
         },
         {
-          $set: {
-            'data.war': value ? 1 : 0
-          }
+          'data.war': value ? 1 : 0
         }
       );
 
+      if (nationDoc.data) {
+        nationDoc.data.war = value ? 1 : 0;
+      }
+
+      const storageFilter = {
+        session_id: sessionId,
+        storage_id: `nation_${nationId}`
+      };
+
       await kvStorageRepository.updateOneByFilter(
         {
-          session_id: sessionId,
-          storage_id: `nation_${nationId}`
+          ...storageFilter
         },
         {
-          $set: {
-            'data.available_war_setting_cnt': availableCnt - 1
-          }
+          'data.available_war_setting_cnt': availableCnt - 1
         }
       );
+
+      const updatedStorage =
+        nationStorage ?? ({ data: {}, session_id: sessionId, storage_id: `nation_${nationId}` } as KVStorage);
+      if (!updatedStorage.data) {
+        updatedStorage.data = {};
+      }
+      updatedStorage.data.available_war_setting_cnt = availableCnt - 1;
+
+      const payload = await buildChiefPolicyPayload(sessionId, nationId, {
+        nationDoc,
+        kvDoc: updatedStorage,
+      });
 
       return {
         success: true,
         result: true,
         availableCnt: availableCnt - 1,
-        message: value ? '선전포고가 차단되었습니다' : '선전포고가 허용되었습니다'
+        message: value ? '선전포고가 차단되었습니다' : '선전포고가 허용되었습니다',
+        policy: payload?.policy,
+        warSettingCnt: payload?.warSettingCnt,
+        notices: payload?.notices,
       };
     } catch (error: any) {
       return {

@@ -44,7 +44,8 @@ export interface ProcessWarParams {
   defenderCity: any;
 }
 
-const enableLegacyProcessWar = process.env.ENABLE_LEGACY_PROCESS_WAR === 'true';
+// 기본값은 true로 두고, 명시적으로 false를 주면 비활성화하도록 한다.
+const enableLegacyProcessWar = process.env.ENABLE_LEGACY_PROCESS_WAR !== 'false';
 
 export class ProcessWarService {
   /**
