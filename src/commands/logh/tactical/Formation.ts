@@ -12,6 +12,7 @@
  * - crane: 학익진 (포위 유리, 중앙 취약)
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
 type FormationType = 'standard' | 'offensive' | 'defensive' | 'encircle' | 'retreat' | 'wedge' | 'crane';
@@ -23,7 +24,7 @@ interface FormationStats {
   moraleEffect: number; // 사기 영향
 }
 
-export class FormationTacticalCommand {
+export class FormationTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'formation';
   }
@@ -130,7 +131,7 @@ export class FormationTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

@@ -2,8 +2,31 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { GetProcessingCommandService } from '../services/processing/GetProcessingCommand.service';
 import { SubmitProcessingCommandService } from '../services/processing/SubmitProcessingCommand.service';
+import { recordCommandRequest } from '../common/metrics/command-metrics';
+ 
+ const router = Router();
 
-const router = Router();
+// Metrics middleware for processing commands
+router.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  const sessionId = (req.query.session_id as string) || (req.body && (req.body as any).session_id);
+
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const durationSeconds = Number(end - start) / 1e9;
+
+    recordCommandRequest({
+      type: 'processing',
+      method: req.method,
+      status: res.statusCode,
+      durationSeconds,
+      sessionId,
+    });
+  });
+
+  next();
+});
+
 
 /**
  * @swagger

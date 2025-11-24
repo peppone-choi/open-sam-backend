@@ -3,8 +3,61 @@ import { Server, Socket } from 'socket.io';
 import { Battle, BattleStatus, BattlePhase, ITurnAction } from '../models/battle.model';
 import { BattleCalculator, BattleContext } from '../core/battle-calculator';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
+import jwt from 'jsonwebtoken';
+import type { JwtPayload } from '../middleware/auth';
+import { verifyGeneralOwnership } from '../common/auth-utils';
 
 const HQ_COMMAND_RADIUS = 250; // 총사령관 지휘 기본 반경 (px 기준, 임시 값)
+
+function authenticateBattleSocket(socket: Socket): string | null {
+  const authToken =
+    (socket.handshake.auth && (socket.handshake.auth as any).token) ||
+    (socket.handshake.headers &&
+      (socket.handshake.headers['x-auth-token'] as string | undefined));
+
+  if (!authToken) {
+    socket.emit('battle:error', {
+      message: '전투 서버 인증 토큰이 없습니다. 다시 로그인해주세요.',
+    });
+    socket.disconnect();
+    return null;
+  }
+
+  if (!process.env.JWT_SECRET) {
+    socket.emit('battle:error', {
+      message:
+        '서버 설정 오류(JWT_SECRET 누락)로 인해 전투 서버에 접속할 수 없습니다.',
+    });
+    socket.disconnect();
+    return null;
+  }
+
+  try {
+    const decoded = jwt.verify(authToken, process.env.JWT_SECRET) as JwtPayload & {
+      iat?: number;
+    };
+
+    if (!decoded.userId) {
+      socket.emit('battle:error', {
+        message: '유효하지 않은 전투 인증 토큰입니다.',
+      });
+      socket.disconnect();
+      return null;
+    }
+
+    (socket.data as any).userId = decoded.userId;
+    (socket.data as any).generalId = decoded.generalId || null;
+    (socket.data as any).sessionId = decoded.sessionId || null;
+
+    return decoded.userId;
+  } catch (error) {
+    socket.emit('battle:error', {
+      message: '전투 인증 토큰 검증에 실패했습니다.',
+    });
+    socket.disconnect();
+    return null;
+  }
+}
 
 export class BattleSocketHandler {
   private io: Server;
@@ -15,6 +68,12 @@ export class BattleSocketHandler {
   }
 
   handleConnection(socket: Socket) {
+    const userId = authenticateBattleSocket(socket);
+    if (!userId) {
+      // 인증 실패 시 이벤트를 바인딩하지 않는다.
+      return;
+    }
+
     socket.on('battle:join', async (data) => {
       await this.handleJoin(socket, data);
     });
@@ -51,6 +110,23 @@ export class BattleSocketHandler {
         return;
       }
 
+      const userId = (socket.data as any).userId as string | undefined;
+      if (!userId) {
+        socket.emit('battle:error', {
+          message: '전투에 참가할 권한이 없습니다 (인증 정보 없음).',
+        });
+        return;
+      }
+
+      const sessionId = battle.session_id || 'sangokushi_default';
+      const ownership = await verifyGeneralOwnership(sessionId, Number(generalId), userId);
+      if (!ownership.valid) {
+        socket.emit('battle:error', {
+          message: ownership.error || '해당 장수에 대한 권한이 없습니다',
+        });
+        return;
+      }
+
       // 참가자 역할 초기화/업데이트
       if (!battle.participants) {
         battle.participants = [];
@@ -71,7 +147,6 @@ export class BattleSocketHandler {
       socket.join(`battle:${battleId}`);
       console.log(`장수 ${generalId}가 전투 ${battleId}에 참가했습니다`);
 
-
       socket.emit('battle:joined', {
         battleId: battle.battleId,
         status: battle.status,
@@ -85,12 +160,12 @@ export class BattleSocketHandler {
 
       this.io.to(`battle:${battleId}`).emit('battle:player_joined', {
         generalId,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       if (battle.status === BattleStatus.DEPLOYING) {
         const allUnits = [...battle.attackerUnits, ...battle.defenderUnits];
-        const allDeployed = allUnits.every(u => u.position);
+        const allDeployed = allUnits.every((u) => u.position);
 
         if (allDeployed) {
           battle.status = BattleStatus.IN_PROGRESS;
@@ -99,7 +174,7 @@ export class BattleSocketHandler {
 
           this.io.to(`battle:${battleId}`).emit('battle:started', {
             currentTurn: battle.currentTurn,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
 
           this.startPlanningPhase(battle);
@@ -125,7 +200,7 @@ export class BattleSocketHandler {
         return;
       }
 
-      const existingIndex = battle.currentTurnActions.findIndex(a => a.generalId === generalId);
+      const existingIndex = battle.currentTurnActions.findIndex((a) => a.generalId === generalId);
       if (existingIndex >= 0) {
         battle.currentTurnActions[existingIndex] = action;
       } else {
@@ -137,7 +212,7 @@ export class BattleSocketHandler {
       this.io.to(`battle:${battleId}`).emit('battle:action_submitted', {
         generalId,
         action,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     } catch (error: any) {
       socket.emit('battle:error', { message: error.message });
@@ -163,11 +238,11 @@ export class BattleSocketHandler {
       this.io.to(`battle:${battleId}`).emit('battle:player_ready', {
         generalId,
         readyPlayers: battle.readyPlayers,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       const allUnits = [...battle.attackerUnits, ...battle.defenderUnits];
-      const allReady = allUnits.every(u => battle.readyPlayers.includes(u.generalId));
+      const allReady = allUnits.every((u) => battle.readyPlayers.includes(u.generalId));
 
       if (allReady) {
         this.clearBattleTimer(battleId);
@@ -185,7 +260,7 @@ export class BattleSocketHandler {
 
       this.io.to(`battle:${battleId}`).emit('battle:player_left', {
         generalId,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       console.log(`장수 ${generalId}가 전투 ${battleId}를 떠났습니다`);
@@ -201,7 +276,7 @@ export class BattleSocketHandler {
     this.io.to(`battle:${battleId}`).emit('battle:planning_phase', {
       currentTurn: battle.currentTurn,
       timeLimit: battle.planningTimeLimit,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     const timer = setTimeout(async () => {
@@ -218,11 +293,11 @@ export class BattleSocketHandler {
 
       this.io.to(`battle:${battle.battleId}`).emit('battle:resolution_phase', {
         currentTurn: battle.currentTurn,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       const calculator = new BattleCalculator();
-      
+
       const attackerUnit = battle.attackerUnits[0];
       const defenderUnit = battle.defenderUnits[0];
 
@@ -235,7 +310,7 @@ export class BattleSocketHandler {
         defender: defenderUnit,
         terrain: battle.terrain,
         isDefenderCity: true,
-        cityWall: 50
+        cityWall: 50,
       };
 
       const result = calculator.calculateBattle(context);
@@ -250,9 +325,9 @@ export class BattleSocketHandler {
         results: {
           attackerDamage: result.attackerCasualties,
           defenderDamage: result.defenderCasualties,
-          events: result.battleLog
+          events: result.battleLog,
         },
-        battleLog: result.battleLog
+        battleLog: result.battleLog,
       });
 
       // 전투 로그 실시간 브로드캐스트
@@ -265,7 +340,10 @@ export class BattleSocketHandler {
       battle.currentTurnActions = [];
       battle.readyPlayers = [];
 
-      const battleEnded = result.attackerSurvivors <= 0 || result.defenderSurvivors <= 0 || battle.currentTurn >= battle.maxTurns;
+      const battleEnded =
+        result.attackerSurvivors <= 0 ||
+        result.defenderSurvivors <= 0 ||
+        battle.currentTurn >= battle.maxTurns;
 
       if (battleEnded) {
         battle.status = BattleStatus.COMPLETED;
@@ -277,9 +355,9 @@ export class BattleSocketHandler {
           winner: battle.winner,
           finalState: {
             attackerUnits: battle.attackerUnits,
-            defenderUnits: battle.defenderUnits
+            defenderUnits: battle.defenderUnits,
           },
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         // 전투 종료 후 월드 반영 처리
@@ -295,7 +373,7 @@ export class BattleSocketHandler {
           turnNumber: battle.currentTurn - 1,
           results: result,
           nextTurn: battle.currentTurn,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         setTimeout(() => {
@@ -305,7 +383,7 @@ export class BattleSocketHandler {
     } catch (error: any) {
       console.error('턴 해결 중 오류:', error);
       this.io.to(`battle:${battle.battleId}`).emit('battle:error', {
-        message: '턴 해결 중 오류가 발생했습니다'
+        message: '턴 해결 중 오류가 발생했습니다',
       });
     }
   }
@@ -321,24 +399,44 @@ export class BattleSocketHandler {
   /**
    * 실시간 전투 명령 처리 (Phase 3)
    */
-  private async handleRealtimeCommand(socket: Socket, data: { 
-    battleId: string; 
-    generalId: number; 
-    command: 'move' | 'attack' | 'hold' | 'retreat' | 'volley';
-    targetPosition?: { x: number; y: number };
-    targetGeneralId?: number;
-  }) {
+  private async handleRealtimeCommand(
+    socket: Socket,
+    data: {
+      battleId: string;
+      generalId: number;
+      command: 'move' | 'attack' | 'hold' | 'retreat' | 'volley';
+      targetPosition?: { x: number; y: number };
+      targetGeneralId?: number;
+    },
+  ) {
     try {
       const { battleId, generalId, command, targetPosition, targetGeneralId } = data;
- 
+
       const battle = await Battle.findOne({ battleId });
       if (!battle) {
         socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
         return;
       }
- 
+
       if (battle.status !== BattleStatus.IN_PROGRESS) {
         socket.emit('battle:error', { message: '전투가 진행 중이 아닙니다' });
+        return;
+      }
+
+      const userId = (socket.data as any).userId as string | undefined;
+      if (!userId) {
+        socket.emit('battle:error', {
+          message: '전투 명령을 내리기 위해서는 인증이 필요합니다',
+        });
+        return;
+      }
+
+      const sessionId = battle.session_id || 'sangokushi_default';
+      const ownership = await verifyGeneralOwnership(sessionId, Number(generalId), userId);
+      if (!ownership.valid) {
+        socket.emit('battle:error', {
+          message: ownership.error || '해당 장수에 대한 권한이 없습니다',
+        });
         return;
       }
 
@@ -349,14 +447,16 @@ export class BattleSocketHandler {
         return;
       }
       if (me.role === 'STAFF') {
-        socket.emit('battle:error', { message: '참모는 직접 전투 명령을 내릴 수 없습니다.' });
+        socket.emit('battle:error', {
+          message: '참모는 직접 전투 명령을 내릴 수 없습니다.',
+        });
         return;
       }
- 
+
       // 해당 장수의 유닛 찾기
       const allUnits = [...battle.attackerUnits, ...battle.defenderUnits];
-      const unit = allUnits.find(u => u.generalId === generalId);
- 
+      const unit = allUnits.find((u) => u.generalId === generalId);
+
       if (!unit) {
         socket.emit('battle:error', { message: '해당 장수를 찾을 수 없습니다' });
         return;
@@ -364,12 +464,15 @@ export class BattleSocketHandler {
 
       // SUB_COMMANDER인 경우, 자신이 위임받은 유닛인지 확인 (없다면 자신의 일반 유닛 1개만 허용)
       if (me.role === 'SUB_COMMANDER') {
-        const controlled = (me.controlledUnitGeneralIds || []);
-        const isControlled = controlled.length === 0
-          ? true // 아직 위임 정보가 없다면 일단 자기 일반 유닛은 허용
-          : controlled.includes(unit.generalId);
+        const controlled = me.controlledUnitGeneralIds || [];
+        const isControlled =
+          controlled.length === 0
+            ? true // 아직 위임 정보가 없다면 일단 자기 일반 유닛은 허용
+            : controlled.includes(unit.generalId);
         if (!isControlled) {
-          socket.emit('battle:error', { message: '이 부대에 대한 지휘권이 없습니다' });
+          socket.emit('battle:error', {
+            message: '이 부대에 대한 지휘권이 없습니다',
+          });
           return;
         }
       }
@@ -377,21 +480,23 @@ export class BattleSocketHandler {
       // 총사령관 지휘 반경 체크 (FIELD_COMMANDER 또는 SUB_COMMANDER 모두 영향 받음)
       const fieldCommander = participants.find((p: any) => p.role === 'FIELD_COMMANDER');
       if (fieldCommander) {
-        const hqUnit = allUnits.find(u => u.generalId === fieldCommander.generalId);
+        const hqUnit = allUnits.find((u) => u.generalId === fieldCommander.generalId);
         if (hqUnit) {
           const dx = (unit.position?.x || 0) - (hqUnit.position?.x || 0);
           const dy = (unit.position?.y || 0) - (hqUnit.position?.y || 0);
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist > HQ_COMMAND_RADIUS * 2) {
-            socket.emit('battle:error', { message: '총사령관의 지휘 범위를 크게 벗어나 직접 명령을 전달할 수 없습니다' });
+            socket.emit('battle:error', {
+              message:
+                '총사령관의 지휘 범위를 크게 벗어나 직접 명령을 전달할 수 없습니다',
+            });
             return;
           }
         }
       }
- 
+
       // AI 제어 해제 (유저가 직접 컨트롤)
       unit.isAIControlled = false;
-
 
       // 명령 적용
       switch (command) {
@@ -403,8 +508,8 @@ export class BattleSocketHandler {
           break;
 
         case 'attack':
-          if (targetGeneralId !== undefined) {
-            const target = allUnits.find(u => u.generalId === targetGeneralId);
+          if (typeof targetGeneralId === 'number') {
+            const target = allUnits.find((u) => u.generalId === targetGeneralId);
             if (target) {
               unit.targetPosition = target.position;
               unit.stance = 'aggressive';
@@ -415,8 +520,8 @@ export class BattleSocketHandler {
         case 'volley':
           // 일제 사격: 다음 공격 1회에 한해 강한 사격 적용
           unit.isVolleyMode = true;
-          if (targetGeneralId !== undefined) {
-            const target = allUnits.find(u => u.generalId === targetGeneralId);
+          if (typeof targetGeneralId === 'number') {
+            const target = allUnits.find((u) => u.generalId === targetGeneralId);
             if (target) {
               unit.targetPosition = target.position;
               unit.stance = 'aggressive';
@@ -445,9 +550,8 @@ export class BattleSocketHandler {
       socket.emit('battle:command_acknowledged', {
         generalId,
         command,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
-
     } catch (error: any) {
       socket.emit('battle:error', { message: error.message });
     }
@@ -459,7 +563,7 @@ export class BattleSocketHandler {
   broadcastBattleState(battleId: string, state: any) {
     this.io.to(`battle:${battleId}`).emit('battle:state', {
       ...state,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -474,7 +578,7 @@ export class BattleSocketHandler {
       battleId,
       logText,
       logType,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -504,12 +608,14 @@ export class BattleSocketHandler {
             sessionId,
             targetCityId,
             attackerNationId,
-            attackerGeneralId
+            attackerGeneralId,
           );
         }
       }
 
-      console.log(`[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`);
+      console.log(
+        `[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`,
+      );
     } catch (error: any) {
       console.error('[BattleEventHook] 전투 종료 처리 중 오류:', error);
     }
@@ -523,42 +629,47 @@ export class BattleSocketHandler {
       const { General } = await import('../models/general.model');
       const { generalRepository } = await import('../repositories/general.repository');
       const sessionId = battle.session_id;
-      
+
       // 승자 측 장수들
-      const winnerUnits = battle.winner === 'attacker' ? battle.attackerUnits : battle.defenderUnits;
+      const winnerUnits =
+        battle.winner === 'attacker' ? battle.attackerUnits : battle.defenderUnits;
       // 패자 측 장수들
-      const loserUnits = battle.winner === 'attacker' ? battle.defenderUnits : battle.attackerUnits;
+      const loserUnits =
+        battle.winner === 'attacker' ? battle.defenderUnits : battle.attackerUnits;
 
       // 승자 장수들에게 보상 및 통계 업데이트
       for (const unit of winnerUnits) {
         if (!unit.generalId || unit.generalId === 0) continue;
 
-        const general = await General.findOne({ 
-          session_id: sessionId, 
-          no: unit.generalId 
+        const general = await General.findOne({
+          session_id: sessionId,
+          no: unit.generalId,
         });
 
         if (general) {
           // 기본 경험치: 500 + 적 피해량 / 10
-          const enemyCasualties = battle.winner === 'attacker' ? 
-            (result.defenderCasualties || 0) : 
-            (result.attackerCasualties || 0);
+          const enemyCasualties =
+            battle.winner === 'attacker'
+              ? result.defenderCasualties || 0
+              : result.attackerCasualties || 0;
           const baseExp = 500 + Math.floor(enemyCasualties / 10);
-          
+
           general.addExperience(baseExp);
           general.addDedication(Math.floor(baseExp / 2));
-          
+
           // 통계 업데이트: 승리 횟수, 적 살상 수
           await generalRepository.updateByGeneralNo(sessionId, unit.generalId, {
             $inc: {
               'data.killnum': 1, // 승리 횟수
               'data.killcrew': enemyCasualties, // 적 살상 수
-              'data.warnum': 1 // 전투 횟수
-            }
+              'data.warnum': 1, // 전투 횟수
+            },
           });
 
           await general.save();
-          console.log(`[BattleReward] 승리 장수 ${general.name}(${unit.generalId}): 경험치 +${baseExp}, 살상 +${enemyCasualties}`);
+          console.log(
+            `[BattleReward] 승리 장수 ${general.name}(${unit.generalId}): 경험치 +${baseExp}, 살상 +${enemyCasualties}`,
+          );
         }
       }
 
@@ -566,30 +677,33 @@ export class BattleSocketHandler {
       for (const unit of loserUnits) {
         if (!unit.generalId || unit.generalId === 0) continue;
 
-        const general = await General.findOne({ 
-          session_id: sessionId, 
-          no: unit.generalId 
+        const general = await General.findOne({
+          session_id: sessionId,
+          no: unit.generalId,
         });
 
         if (general) {
           const loseExp = 100;
-          const ownCasualties = battle.winner === 'attacker' ?
-            (result.defenderCasualties || 0) :
-            (result.attackerCasualties || 0);
-          
+          const ownCasualties =
+            battle.winner === 'attacker'
+              ? result.defenderCasualties || 0
+              : result.attackerCasualties || 0;
+
           general.addExperience(loseExp);
-          
+
           // 통계 업데이트: 패배 횟수, 아군 손실 수
           await generalRepository.updateByGeneralNo(sessionId, unit.generalId, {
             $inc: {
               'data.deathnum': 1, // 패배 횟수
               'data.deathcrew': ownCasualties, // 아군 손실 수
-              'data.warnum': 1 // 전투 횟수
-            }
+              'data.warnum': 1, // 전투 횟수
+            },
           });
-          
+
           await general.save();
-          console.log(`[BattleReward] 패배 장수 ${general.name}(${unit.generalId}): 경험치 +${loseExp}, 손실 +${ownCasualties}`);
+          console.log(
+            `[BattleReward] 패배 장수 ${general.name}(${unit.generalId}): 경험치 +${loseExp}, 손실 +${ownCasualties}`,
+          );
         }
       }
     } catch (error: any) {
@@ -613,8 +727,9 @@ export class BattleSocketHandler {
       for (const unit of allUnits) {
         if (!unit.generalId || unit.generalId === 0) continue;
 
-        const isWinner = (battle.winner === 'attacker' && battle.attackerUnits.includes(unit)) ||
-                        (battle.winner === 'defender' && battle.defenderUnits.includes(unit));
+        const isWinner =
+          (battle.winner === 'attacker' && battle.attackerUnits.includes(unit)) ||
+          (battle.winner === 'defender' && battle.defenderUnits.includes(unit));
 
         const logger = new ActionLogger(
           unit.generalId,
@@ -622,13 +737,13 @@ export class BattleSocketHandler {
           year,
           month,
           sessionId,
-          false
+          false,
         );
 
         // 전투 결과 로그
-        const resultText = isWinner ? 
-          `전투 승리! (${battle.battleType || '일반전투'})` : 
-          `전투 패배 (${battle.battleType || '일반전투'})`;
+        const resultText = isWinner
+          ? `전투 승리! (${battle.battleType || '일반전투'})`
+          : `전투 패배 (${battle.battleType || '일반전투'})`;
         logger.pushGeneralBattleResultLog(resultText, LogFormatType.PLAIN);
 
         // 전투 상세 로그
@@ -637,7 +752,7 @@ export class BattleSocketHandler {
           `지형: ${battle.terrain || '평지'}`,
           `총 턴 수: ${battle.currentTurn}`,
           `최종 병력: ${unit.troops || 0}명`,
-          `결과: ${isWinner ? '승리' : '패배'}`
+          `결과: ${isWinner ? '승리' : '패배'}`,
         ];
 
         for (const line of detailLines) {

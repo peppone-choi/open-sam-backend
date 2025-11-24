@@ -103,7 +103,8 @@ export class DonateCommand extends GeneralCommand {
 
     const db = DB.db();
     const general = this.generalObj;
-    const date = general.getTurnTime('TURNTIME_HM');
+    const date = general.getTurnTime(general.TURNTIME_HM);
+
 
     const isGold = this.arg.isGold;
     let amount = this.arg.amount;

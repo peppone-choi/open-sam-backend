@@ -9,9 +9,10 @@
  * - 요격/호위 임무
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class AirCombatTacticalCommand {
+export class AirCombatTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'air_combat';
   }
@@ -53,7 +54,7 @@ export class AirCombatTacticalCommand {
     return carrierCount * 300; // 항공모함 1척당 전투기 300대 추정
   }
 
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

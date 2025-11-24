@@ -1,17 +1,6 @@
-/**
- * 숙련도 (Dex/Proficiency) 계산 유틸리티
- * 
- * PHP 참조:
- * - core/hwe/func_converter.php: getDexLevelList(), getDexLevel(), getDexLog()
- * - core/hwe/sammo/General.php: addDex()
- */
+import { ARM_TYPE } from '../const/GameUnitConst';
 
-/**
- * 숙련도 레벨 테이블
- * PHP getDexLevelList()와 동일
- * 
- * [경험치, 색상, 등급명]
- */
+// [requiredExp, color, gradeName]
 export const DEX_LEVEL_LIST: Array<[number, string, string]> = [
   [0, 'navy', 'F-'],
   [350, 'navy', 'F'],
@@ -42,116 +31,75 @@ export const DEX_LEVEL_LIST: Array<[number, string, string]> = [
   [1275975, 'white', 'EX+'],
 ];
 
-/**
- * 숙련도 경험치를 레벨 인덱스로 변환
- * PHP getDexLevel()와 동일
- * 
- * @param dex - 숙련도 경험치
- * @returns 레벨 인덱스 (0-26)
- */
+export type DexField = 'dex1' | 'dex2' | 'dex3' | 'dex4' | 'dex5';
+
+// PHP getDexLevel(): return index of last threshold <= dex
 export function getDexLevel(dex: number): number {
   if (dex < 0) {
     return 0;
   }
-
-  let retVal = 0;
-  for (let dexLevel = 0; dexLevel < DEX_LEVEL_LIST.length; dexLevel++) {
-    const [dexKey] = DEX_LEVEL_LIST[dexLevel];
-    if (dex < dexKey) {
+  let ret = 0;
+  for (let i = 0; i < DEX_LEVEL_LIST.length; i += 1) {
+    const [threshold] = DEX_LEVEL_LIST[i];
+    if (dex < threshold) {
       break;
     }
-    retVal = dexLevel;
+    ret = i;
   }
-  
-  return retVal;
+  return ret;
 }
 
-/**
- * 숙련도 경험치를 표시용 문자열로 변환
- * PHP getDexCall()와 유사
- * 
- * @param dex - 숙련도 경험치
- * @returns { color, name, level } 객체
- */
-export function getDexDisplay(dex: number): { color: string; name: string; level: number } {
-  if (dex < 0) {
-    throw new Error('Invalid dex value');
-  }
-
-  let color = 'navy';
-  let name = 'F-';
-  let level = 0;
-
-  for (let dexLevel = 0; dexLevel < DEX_LEVEL_LIST.length; dexLevel++) {
-    const [dexKey, nextColor, nextName] = DEX_LEVEL_LIST[dexLevel];
-    if (dex < dexKey) {
-      break;
-    }
-    color = nextColor;
-    name = nextName;
-    level = dexLevel;
-  }
-
-  return { color, name, level };
-}
-
-/**
- * 두 숙련도 간 보너스 비율 계산
- * PHP getDexLog()와 동일
- * 
- * 공격자의 숙련도가 높으면 > 1.0
- * 방어자의 숙련도가 높으면 < 1.0
- * 
- * @param dex1 - 공격자 숙련도 경험치
- * @param dex2 - 방어자 숙련도 경험치
- * @returns 보너스 비율 (기본 1.0)
- */
+// PHP getDexLog(): (level1 - level2) / 55 + 1
 export function getDexBonus(dex1: number, dex2: number): number {
   const level1 = getDexLevel(dex1);
   const level2 = getDexLevel(dex2);
-  
-  // PHP: $ratio = (getDexLevel($dex1) - getDexLevel($dex2)) / 55 + 1;
-  const ratio = (level1 - level2) / 55 + 1;
-  
-  return ratio;
+  return (level1 - level2) / 55 + 1;
 }
 
-/**
- * 숙련도 경험치 계산 (병종별 가중치 적용)
- * PHP General::addDex()와 동일
- * 
- * @param baseExp - 기본 경험치
- * @param armType - 병종 타입 (0: 보병, 1: 궁병, 2: 기병, 3: 귀병, 4: 차병)
- * @param train - 훈련도 (0-100)
- * @param atmos - 사기 (0-100)
- * @param affectTrainAtmos - 훈련도/사기 영향 여부
- * @returns 최종 숙련도 경험치
- */
+// Map armType to dex1..dex5 (castle shares siege)
+export function getDexFieldNameFromArmType(armType: number): DexField {
+  if (armType === ARM_TYPE.CASTLE) {
+    return 'dex5';
+  }
+  switch (armType) {
+    case ARM_TYPE.FOOTMAN:
+      return 'dex1';
+    case ARM_TYPE.ARCHER:
+      return 'dex2';
+    case ARM_TYPE.CAVALRY:
+      return 'dex3';
+    case ARM_TYPE.WIZARD:
+      return 'dex4';
+    case ARM_TYPE.SIEGE:
+      return 'dex5';
+    default:
+      // Unknown / misc -> treat as infantry
+      return 'dex1';
+  }
+}
+
+// Core dex EXP calculation, mirroring PHP General::addDex
 export function calculateDexExp(
   baseExp: number,
   armType: number,
   train: number = 100,
   atmos: number = 100,
-  affectTrainAtmos: boolean = false
+  affectTrainAtmos: boolean = false,
 ): number {
   let exp = baseExp;
 
-  // 병종 타입 정규화: 성벽 타입(5)은 차병(4)로 처리
-  if (armType === 5) {
-    armType = 4;
+  if (armType === ARM_TYPE.CASTLE) {
+    armType = ARM_TYPE.SIEGE;
   }
 
-  // 음수 타입은 숙련도 없음
   if (armType < 0) {
     return 0;
   }
 
-  // 귀병(3)과 차병(4)은 0.9배 가중치
-  if (armType === 3 || armType === 4) {
+  if (armType === ARM_TYPE.WIZARD || armType === ARM_TYPE.SIEGE) {
     exp *= 0.9;
   }
 
-  // 훈련도와 사기 영향 적용
   if (affectTrainAtmos) {
     exp *= (train + atmos) / 200;
   }
@@ -159,67 +107,40 @@ export function calculateDexExp(
   return exp;
 }
 
-/**
- * 병종 타입별 숙련도 필드명 반환
- * 
- * @param armType - 병종 타입 (0-4)
- * @returns 숙련도 필드명 (dex0 ~ dex4)
- */
-export function getDexFieldName(armType: number): string {
-  // 성벽 타입(5)은 차병(4)로 처리
-  if (armType === 5) {
-    armType = 4;
-  }
-
-  // 음수는 기본값
-  if (armType < 0) {
-    armType = 0;
-  }
-
-  return `dex${armType}`;
-}
-
-/**
- * 최대 숙련도 레벨 경험치 반환
- * 
- * @returns 최대 숙련도 경험치 (EX+ 등급)
- */
-export function getMaxDexExp(): number {
-  return DEX_LEVEL_LIST[DEX_LEVEL_LIST.length - 1][0];
-}
-
-/**
- * 숙련도 정보를 모두 반환
- * 
- * @param dex - 숙련도 경험치
- * @returns 숙련도 정보 객체
- */
+// Convenience helper for UI / debugging
 export function getDexInfo(dex: number): {
   exp: number;
   level: number;
   color: string;
   name: string;
   nextLevelExp: number | null;
-  progress: number;
+  progress: number; // 0-100 within current level
 } {
-  const level = getDexLevel(dex);
-  const { color, name } = getDexDisplay(dex);
-  
-  const currentLevelExp = DEX_LEVEL_LIST[level]?.[0] ?? 0;
-  const nextLevelExp = level < DEX_LEVEL_LIST.length - 1 
-    ? DEX_LEVEL_LIST[level + 1]?.[0] ?? null
-    : null;
-  
-  const progress = nextLevelExp !== null
-    ? ((dex - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100
-    : 100;
+  const safeDex = Math.max(0, dex);
+  const level = getDexLevel(safeDex);
+
+  const [currentLevelExp, color, name] = DEX_LEVEL_LIST[level] ?? [0, 'navy', 'F-'];
+  const isMax = level >= DEX_LEVEL_LIST.length - 1;
+  const nextLevelExp = isMax ? null : DEX_LEVEL_LIST[level + 1][0];
+
+  let progress = 100;
+  if (!isMax && nextLevelExp !== null) {
+    const span = nextLevelExp - currentLevelExp;
+    progress = span > 0 ? ((safeDex - currentLevelExp) / span) * 100 : 0;
+    if (!Number.isFinite(progress)) {
+      progress = 0;
+    }
+  }
+
+  // Clamp for safety
+  progress = Math.max(0, Math.min(100, progress));
 
   return {
-    exp: dex,
+    exp: safeDex,
     level,
     color,
     name,
     nextLevelExp,
-    progress
+    progress,
   };
 }

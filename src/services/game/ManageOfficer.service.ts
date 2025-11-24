@@ -141,6 +141,12 @@ export class ManageOfficerService {
       return error('수뇌만 관직을 임명할 수 있습니다.');
     }
 
+    // 군주(레벨 12)는 다른 군주를 임명할 수 없음 (자기 자리를 빼앗길 수 있음)
+    // 또한 자신과 동등하거나 높은 관직을 임명할 수 없음
+    if (officerLevel >= actorOfficerLevel) {
+      return error('자신과 동등하거나 상급 관직은 임명할 수 없습니다.');
+    }
+
     if (officerLevel >= 5) {
       return this.appointChief({ sessionId, nationId: actorNation, officerLevel, destGeneralID });
     }

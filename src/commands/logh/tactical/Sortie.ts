@@ -9,11 +9,12 @@
  * - 출격 준비 시간 필요
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 import { Planet } from '../../../models/logh/Planet.model';
 import { TacticalMap } from '../../../models/logh/TacticalMap.model';
 
-export class SortieTacticalCommand {
+export class SortieTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'sortie';
   }
@@ -71,7 +72,7 @@ export class SortieTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

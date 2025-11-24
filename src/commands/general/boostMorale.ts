@@ -92,15 +92,14 @@ export class BoostMoraleCommand extends GeneralCommand {
 
     // 0으로 나누기 방지: crew가 0일 수 있음
     const crew = Math.max(1, totalCrew || general.data.crew);
-    
-    // 사기진작은 통솔 70% + 매력 30%
+
+    // 사기진작은 통솔 100% (PHP Parity)
     const leadership = general.getLeadership();
-    const charm = general.getCharm();
-    const moralePower = leadership * 0.7 + charm * 0.3;
-    
+    const moralePower = leadership;
+
     // 현재 평균 사기 (UnitStack 기준)
     const currentMorale = primaryStack?.morale ?? general.data.atmos ?? 50;
-    
+
     const score = Math.max(0, Math.min(
       Math.round(moralePower * 100 / crew * atmosDelta),
       Math.max(0, maxAtmosByCommand - currentMorale)
@@ -143,7 +142,7 @@ export class BoostMoraleCommand extends GeneralCommand {
     // 사기진작은 통솔 70% + 매력 30%
     general.increaseVar('leadership_exp', 1);
     general.increaseVar('charm_exp', 0.5);
-    
+
     this.setResultTurn(new LastTurn((this.constructor as typeof BoostMoraleCommand).getName(), this.arg));
     general.checkStatChange();
 
@@ -174,18 +173,18 @@ export class BoostMoraleCommand extends GeneralCommand {
 
   private async applyMoraleToStacks(stacks: any[], moraleBoost: number, newTrain: number): Promise<void> {
     if (!stacks.length) return;
-    
+
     let updated = false;
     for (const stack of stacks) {
       const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || stack._id);
       if (!stackDoc) continue;
-      
+
       // 사기 증가 (최대 100)
       stackDoc.morale = Math.min(100, stackDoc.morale + moraleBoost);
-      
+
       // 훈련도 감소 (부작용)
       stackDoc.train = newTrain;
-      
+
       await stackDoc.save();
       updated = true;
     }

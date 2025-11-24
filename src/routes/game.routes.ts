@@ -181,12 +181,12 @@ const router = Router();
 router.get('/session/:sessionId/config', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
     const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
       return res.status(404).json({ error: '세션을 찾을 수 없습니다' });
     }
-    
+
     // 전체 설정 반환
     res.json({
       session_id: session.session_id,
@@ -277,7 +277,7 @@ router.get('/const', async (req, res) => {
   try {
     const sessionId = req.query.sessionId as string || 'sangokushi_default';
     const session = await Session.findOne({ session_id: sessionId });
-    
+
     res.json(session?.game_constants || {});
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -378,24 +378,24 @@ router.get('/turn', async (req, res) => {
   try {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
     const session = await Session.findOne({ session_id: sessionId });
-    
+
     if (!session) {
       return res.status(404).json({ error: '세션을 찾을 수 없습니다.' });
     }
-    
+
     const sessionData = session.data || {};
     const now = new Date();
-    
+
     // turntime이 없으면 현재 시간으로 설정
-    const turntime = sessionData.turntime 
+    const turntime = sessionData.turntime
       ? new Date(sessionData.turntime)
       : now;
-    
+
     // turnDate를 호출하여 최신 년/월 계산
     // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
     const gameEnvCopy = { ...sessionData };
     const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
-    
+
     // 년/월 또는 starttime이 변경되었으면 DB에 저장
     if (gameEnvCopy.year !== sessionData.year || gameEnvCopy.month !== sessionData.month || gameEnvCopy.starttime !== sessionData.starttime) {
       const starttimeChanged = gameEnvCopy.starttime !== sessionData.starttime;
@@ -408,7 +408,7 @@ router.get('/turn', async (req, res) => {
       session.data = sessionData;
       await session.save();
     }
-    
+
     res.json({
       turn: turnInfo.turn,
       year: turnInfo.year,
@@ -546,13 +546,13 @@ router.get('/turn', async (req, res) => {
 router.get('/ranking', async (req, res) => {
   try {
     const sessionId = req.query.session_id as string || req.query.serverID as string || 'sangokushi_default';
-    
+
     // 장수 랭킹 (경험치 기준)
     const generals = await General.find({ session_id: sessionId })
       .sort({ 'data.experience': -1, 'data.explevel': -1 })
       .limit(100)
       .lean();
-    
+
     const ranking = generals.map((g: any, index: number) => {
       const genData = g.data || {};
       return {
@@ -567,7 +567,7 @@ router.get('/ranking', async (req, res) => {
         intel: genData.intel || 0
       };
     });
-    
+
     res.json({
       result: true,
       ranking
@@ -854,7 +854,7 @@ router.get('/cities/:id', async (req, res) => {
     if (!city) {
       return res.status(404).json({ error: '도시를 찾을 수 없습니다' });
     }
-    
+
     res.json({
       city: city.city,
       name: city.name,
@@ -869,9 +869,10 @@ router.post('/basic-info', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const userId = req.user?.userId || req.user?.id;
-    
+
     if (!userId) {
       return res.json({
+        result: false,
         generalID: 0,
         myNationID: 0,
         isChief: false,
@@ -880,13 +881,14 @@ router.post('/basic-info', authenticate, async (req, res) => {
       });
     }
 
-    const general: any = await General.findOne({ 
+    const general: any = await General.findOne({
       session_id: sessionId,
       owner: String(userId)
     }).lean();
 
     if (!general) {
       return res.json({
+        result: false,
         generalID: 0,
         myNationID: 0,
         isChief: false,
@@ -898,7 +900,7 @@ router.post('/basic-info', authenticate, async (req, res) => {
     const genData = general.data || {};
     const officerLevel = genData.officer_level || genData.officerLevel || 0;
     const nation = genData.nation || 0;
-    
+
     // 권한 계산 (간단화)
     let permission = 0;
     if (officerLevel >= 12) {
@@ -918,6 +920,7 @@ router.post('/basic-info', authenticate, async (req, res) => {
     }
 
     res.json({
+      result: true,
       generalID: genData.no || general.no,
       myNationID: nation,
       isChief: officerLevel === 12,
@@ -933,30 +936,30 @@ router.post('/general-list', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const type = req.body.type || 7; // 정렬 타입 (기본: 턴)
-    
+
     // 현재 사용자의 장수 찾기
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다' });
     }
-    
-    const myGeneral = await General.findOne({ 
+
+    const myGeneral = await General.findOne({
       session_id: sessionId,
-      owner: String(userId) 
+      owner: String(userId)
     }).lean();
-    
+
     if (!myGeneral) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다' });
     }
-    
+
     const myNation = myGeneral.data?.nation || 0;
-    
+
     if (myNation === 0) {
       return res.status(403).json({ result: false, reason: '국가에 소속되어 있지 않습니다' });
     }
-    
+
     // 같은 국가 소속 장수만 조회 (암행부)
-    const generals = await General.find({ 
+    const generals = await General.find({
       session_id: sessionId,
       $or: [
         { 'data.nation': myNation },
@@ -1010,14 +1013,14 @@ router.post('/map', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const data = req.body.data || {};
-    
+
     // GetMapService 사용
     const { GetMapService } = await import('../services/global/GetMap.service');
     const result = await GetMapService.execute({
       session_id: sessionId,
       ...data
     }, req.user);
-    
+
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ result: false, reason: error.message });
@@ -1028,27 +1031,27 @@ router.post('/city-list', authenticate, async (req, res) => {
   try {
     const sessionId = (req.body.session_id as string) || 'sangokushi_default';
     const userId = req.user?.userId || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({ result: false, reason: '로그인이 필요합니다' });
     }
-    
+
     // 사용자의 장수 찾기
-    const myGeneral = await General.findOne({ 
+    const myGeneral = await General.findOne({
       session_id: sessionId,
-      owner: String(userId) 
+      owner: String(userId)
     }).lean();
-    
+
     if (!myGeneral) {
       return res.status(404).json({ result: false, reason: '장수를 찾을 수 없습니다' });
     }
-    
+
     const myNation = myGeneral.data?.nation || 0;
-    
+
     if (myNation === 0) {
       return res.status(403).json({ result: false, reason: '국가에 소속되어 있지 않습니다' });
     }
-    
+
     const nations = await Nation.find({ session_id: sessionId }).lean();
     const nationMap: Record<number, any> = {};
     nations.forEach((nation: any) => {
@@ -1071,7 +1074,7 @@ router.post('/city-list', authenticate, async (req, res) => {
       const nationId = city.nation ?? city.data?.nation ?? 0;
       return nationId === myNation;
     });
-    
+
     const cityArgsList = ['city', 'nation', 'name', 'level'];
     const cityList = cities.map((city: any) => {
       const cityData = city.data || city;
@@ -1156,7 +1159,7 @@ router.post('/server-basic-info', authenticate, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const userId = req.user?.userId || req.user?.id;
-    
+
     const result = await ServerBasicInfoService.execute(sessionId, userId);
     res.json(result);
   } catch (error: any) {
@@ -1310,14 +1313,14 @@ router.post('/my-boss-info', authenticate, async (req, res) => {
 router.get('/logs/general', async (req, res) => {
   try {
     const { sessionId, generalId, limit = 50 } = req.query;
-    
+
     if (!sessionId || !generalId) {
-      return res.status(400).json({ 
-        result: false, 
-        reason: 'sessionId and generalId are required' 
+      return res.status(400).json({
+        result: false,
+        reason: 'sessionId and generalId are required'
       });
     }
-    
+
     const records = await generalRecordRepository.findByFilter(
       {
         session_id: sessionId,
@@ -1329,7 +1332,7 @@ router.get('/logs/general', async (req, res) => {
         limit: parseInt(limit as string)
       }
     );
-    
+
     res.json({
       result: true,
       logs: records.map(record => ({
@@ -1369,22 +1372,22 @@ router.get('/logs/general', async (req, res) => {
 router.get('/logs/global', async (req, res) => {
   try {
     const { sessionId, limit = 50 } = req.query;
-    
+
     if (!sessionId) {
-      return res.status(400).json({ 
-        result: false, 
-        reason: '세션 식별자가 필요합니다.' 
+      return res.status(400).json({
+        result: false,
+        reason: '세션 식별자가 필요합니다.'
       });
     }
-    
+
     const histories = await worldHistoryRepository.findByFilter({
       session_id: sessionId,
       nation_id: 0  // 0 = 전역 이벤트
     })
-    .sort({ created_at: -1 })
-    .limit(parseInt(limit as string))
-    .lean();
-    
+      .sort({ created_at: -1 })
+      .limit(parseInt(limit as string))
+      .lean();
+
     res.json({
       result: true,
       logs: histories.map(history => ({
@@ -1412,29 +1415,29 @@ router.get('/current-city', optionalAuth, async (req, res) => {
   try {
     const sessionId = (req.query.sessionId as string) || 'sangokushi_default';
     const userId = req.user?.userId;
-    
+
     if (!userId) {
       return res.json({ result: false, reason: '로그인이 필요합니다' });
     }
-    
+
     // 장수 조회
-    const general = await General.findOne({ 
-      session_id: sessionId, 
+    const general = await General.findOne({
+      session_id: sessionId,
       owner: userId.toString()
     }).lean();
-    
+
     if (!general) {
       return res.json({ result: false, reason: '장수를 찾을 수 없습니다' });
     }
-    
+
     // 도시 조회
     const cityId = general.data?.city || general.city;
     const city = cityId ? await cityRepository.findByCityNum(sessionId, cityId) : null;
-    
+
     if (!city) {
       return res.json({ result: false, reason: '도시를 찾을 수 없습니다' });
     }
-    
+
     // 주둔 장수 목록 조회
     const generals = await General.find({
       session_id: sessionId,
@@ -1460,7 +1463,7 @@ router.get('/current-city', optionalAuth, async (req, res) => {
       'data.atmos': 1,
       'data.defence_train': 1
     }).lean();
-    
+
     const formattedGenerals = generals.map(g => ({
       no: g.data?.no || g.no,
       name: g.data?.name || g.name,
@@ -1477,9 +1480,9 @@ router.get('/current-city', optionalAuth, async (req, res) => {
     if (!cityInfo) {
       return res.json({ result: false, reason: '도시 정보를 생성할 수 없습니다' });
     }
-    
-    res.json({ 
-      result: true, 
+
+    res.json({
+      result: true,
       city: {
         ...cityInfo,
         generals: formattedGenerals
@@ -1518,14 +1521,14 @@ router.post('/history', authenticate, async (req, res) => {
     const { GetHistoryService } = await import('../services/global/GetHistory.service');
     const sessionId = req.body.session_id || req.body.serverID || 'sangokushi_default';
     const serverID = req.body.serverID || sessionId;
-    
+
     const result = await GetHistoryService.execute({
       session_id: sessionId,
       serverID,
       year: req.body.year,
       month: req.body.month
     }, req.user);
-    
+
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ result: false, reason: error.message });

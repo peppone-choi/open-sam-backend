@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type GalaxyCommChannel = 'spot' | 'fleet' | 'grid' | 'global';
+export type GalaxyCommChannel = 'spot' | 'fleet' | 'grid' | 'global' | 'whisper';
+
 
 export interface IGalaxyCommMessage extends Document {
   session_id: string;
@@ -20,9 +21,10 @@ const GalaxyCommMessageSchema = new Schema<IGalaxyCommMessage>(
     session_id: { type: String, required: true, index: true },
     channelType: {
       type: String,
-      enum: ['spot', 'fleet', 'grid', 'global'],
+      enum: ['spot', 'fleet', 'grid', 'global', 'whisper'],
       required: true,
     },
+
     scopeId: { type: String },
     senderCharacterId: { type: String, required: true },
     senderName: { type: String, required: true },

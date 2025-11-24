@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { User } from '../models/user.model';
 
 // JWT 토큰 페이로드 타입
 export interface JwtPayload {
@@ -11,89 +13,153 @@ export interface JwtPayload {
   acl?: string;
   grade?: number; // 사용자 등급 (5 이상이 어드민)
   role?: string; // 역할 추가
+  // global_salt 기반 토큰 바인딩용 선택적 필드
+  globalSaltHash?: string;
+}
+
+// global_salt 기반 해시 계산 함수
+function computeGlobalSaltHash(globalSalt?: string | null): string | null {
+  if (!globalSalt) {
+    return null;
+  }
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return crypto
+    .createHmac('sha256', process.env.JWT_SECRET)
+    .update(globalSalt)
+    .digest('hex');
 }
 
 /**
  * JWT 인증 미들웨어
- * Authorization 헤더에서 토큰을 추출하고 검증
+ * Authorization 헤더 또는 쿠키에서 토큰을 추출하고 검증
  */
 export const authenticate = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
-    // Authorization 헤더 확인
     const authHeader = req.headers.authorization;
-    
-    // 쿠키에서 토큰 확인 (Authorization 헤더가 없는 경우)
-    const cookieToken = req.cookies?.authToken;
-    
+    const cookieToken = (req as any).cookies?.authToken;
+
     console.log('========================================');
     console.log('[Auth] 인증 시도!');
     console.log('Path:', req.path);
-    console.log('Authorization Header:', authHeader ? authHeader.substring(0, 30) + '...' : 'NONE');
-    console.log('Cookie Token:', cookieToken ? cookieToken.substring(0, 30) + '...' : 'NONE');
+    console.log(
+      'Authorization Header:',
+      authHeader ? `${authHeader.substring(0, 30)}...` : 'NONE',
+    );
+    console.log(
+      'Cookie Token:',
+      cookieToken ? `${String(cookieToken).substring(0, 30)}...` : 'NONE',
+    );
     console.log('========================================');
-    
-    let token: string;
-    
+
+    let token: string | null = null;
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      // Bearer 토큰 방식
       token = authHeader.substring(7);
     } else if (cookieToken) {
-      // 쿠키 기반 인증 방식
-      token = cookieToken;
-    } else {
+      token = String(cookieToken);
+    }
+
+    if (!token) {
       console.log('[Auth] ❌ 인증 실패 - 토큰 없음');
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: '인증 토큰이 없습니다' 
+        message: '인증 토큰이 없습니다',
       });
     }
-    
+
     // 토큰 블랙리스트 체크
     const { tokenBlacklist } = await import('../utils/tokenBlacklist');
     if (tokenBlacklist.has(token)) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: '로그아웃된 토큰입니다' 
+        message: '로그아웃된 토큰입니다',
       });
     }
-    
-    // JWT 검증
+
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not configured');
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
-    
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload & {
+      iat?: number;
+    };
+
+    if (!decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: '유효하지 않은 토큰입니다 (사용자 정보 없음)',
+      });
+    }
+
+    // 사용자 정보 로드 (토큰 무효화/글로벌 솔트 검증용)
+    const user = await User.findById(decoded.userId)
+      .select('token_valid_until global_salt deleted')
+      .lean();
+
+    if (!user || (user as any).deleted) {
+      return res.status(401).json({
+        success: false,
+        message: '존재하지 않거나 삭제된 계정입니다',
+      });
+    }
+
+    // 1) token_valid_until 기반 글로벌 로그아웃
+    if (user.token_valid_until && decoded.iat) {
+      const tokenIssuedAtMs = decoded.iat * 1000;
+      const epochMs = new Date(user.token_valid_until as any).getTime();
+      if (tokenIssuedAtMs < epochMs) {
+        return res.status(401).json({
+          success: false,
+          message: '보안 설정이 변경되어 다시 로그인해야 합니다',
+          reason: 'TOKEN_EPOCH_EXPIRED',
+        });
+      }
+    }
+
+    // 2) global_salt 기반 바인딩 (선택적)
+    if (decoded.globalSaltHash) {
+      const expectedHash = computeGlobalSaltHash((user as any).global_salt as string | undefined);
+      if (!expectedHash || expectedHash !== decoded.globalSaltHash) {
+        return res.status(401).json({
+          success: false,
+          message: '보안 토큰이 더 이상 유효하지 않습니다',
+          reason: 'GLOBAL_SALT_MISMATCH',
+        });
+      }
+    }
+
     console.log('[Auth] ✅ 인증 성공!');
     console.log('Decoded Token:', JSON.stringify(decoded, null, 2));
     console.log('userId:', decoded.userId);
     console.log('generalId:', decoded.generalId);
     console.log('sessionId:', decoded.sessionId);
-    
-    // req.user에 사용자 정보 저장
-    req.user = decoded;
-    
-    next();
-  } catch (error) {
+
+    (req as any).user = decoded;
+    return next();
+  } catch (error: any) {
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: '유효하지 않은 토큰입니다' 
+        message: '유효하지 않은 토큰입니다',
       });
     }
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: '토큰이 만료되었습니다' 
+        message: '토큰이 만료되었습니다',
       });
     }
-    
-    return res.status(500).json({ 
+
+    console.error('[Auth] 인증 처리 중 오류:', error?.message || error);
+    return res.status(500).json({
       success: false,
-      message: '인증 처리 중 오류가 발생했습니다' 
+      message: '인증 처리 중 오류가 발생했습니다',
     });
   }
 };
@@ -104,22 +170,27 @@ export const authenticate = async (
  */
 export const optionalAuth = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  _res: Response,
+  next: NextFunction,
 ) => {
   try {
     const authHeader = req.headers.authorization;
+    const cookieToken = (req as any).cookies?.authToken;
+
+    let token: string | null = null;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not configured');
-      }
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
-      req.user = decoded;
+      token = authHeader.substring(7);
+    } else if (cookieToken) {
+      token = String(cookieToken);
     }
-    next();
-  } catch (error) {
+
+    if (token && process.env.JWT_SECRET) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+      (req as any).user = decoded;
+    }
+  } catch {
     // 토큰이 유효하지 않아도 계속 진행
+  } finally {
     next();
   }
 };
@@ -131,54 +202,44 @@ export const optionalAuth = async (
  */
 export const autoExtractToken = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  _res: Response,
+  next: NextFunction,
 ) => {
   try {
-    // 이미 user가 설정되어 있으면 스킵
-    if (req.user) {
+    if ((req as any).user) {
       return next();
     }
 
     let token: string | null = null;
 
-    // 1. Authorization 헤더에서 토큰 추출
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
     }
 
-    // 2. 쿠키에서 토큰 추출 (Authorization 헤더에 없을 경우)
     if (!token) {
-      // req.cookies는 cookie-parser가 있어야 사용 가능
-      // 없어도 에러가 나지 않도록 안전하게 처리
       try {
-        const cookieToken = req.cookies?.token || req.cookies?.authToken;
+        const cookies = (req as any).cookies;
+        const cookieToken = cookies?.token || cookies?.authToken;
         if (cookieToken) {
-          token = cookieToken;
+          token = String(cookieToken);
         }
       } catch {
         // 쿠키 파서가 없어도 계속 진행
       }
     }
 
-    // 3. 토큰이 있으면 검증하고 req.user에 저장
-    if (token) {
+    if (token && process.env.JWT_SECRET) {
       try {
-        if (!process.env.JWT_SECRET) {
-          throw new Error('JWT_SECRET is not configured');
-        }
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
-        req.user = decoded;
-      } catch (error) {
-        // 토큰이 유효하지 않아도 에러를 던지지 않고 계속 진행
-        // (optionalAuth와 동일한 동작)
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+        (req as any).user = decoded;
+      } catch {
+        // optionalAuth와 동일한 동작: 실패해도 진행
       }
     }
-
-    next();
-  } catch (error) {
+  } catch {
     // 에러가 발생해도 요청은 계속 진행
+  } finally {
     next();
   }
 };
@@ -190,24 +251,27 @@ export const autoExtractToken = async (
 export const validateSession = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
-  const userSessionId = req.user?.sessionId;
-  const requestSessionId = req.body.sessionId || req.params.sessionId || req.query.sessionId;
-  
+  const userSessionId = (req as any).user?.sessionId;
+  const requestSessionId =
+    (req.body as any).sessionId ||
+    (req.params as any).sessionId ||
+    (req.query as any).sessionId;
+
   if (!userSessionId) {
     return res.status(400).json({
       success: false,
-      message: '사용자 세션 정보가 없습니다'
+      message: '사용자 세션 정보가 없습니다',
     });
   }
-  
+
   if (userSessionId !== requestSessionId) {
     return res.status(403).json({
       success: false,
-      message: '세션이 일치하지 않습니다'
+      message: '세션이 일치하지 않습니다',
     });
   }
-  
+
   next();
 };

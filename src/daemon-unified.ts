@@ -28,13 +28,18 @@ const fallbackLogger = {
 let logger: any = fallbackLogger;
 let CommandRegistry: any;
 let CommandExecutor: any;
+let LoghCommandRegistry: any;
+let LoghCommandExecutor: any;
 let Session: any;
+let SessionStateService: any;
 let ExecuteEngineService: any;
 let processAuction: any;
 let processTournament: any;
 
 /**
  * 턴 처리 함수 (크론)
+ * 
+ * 일반 게임 세션과 LOGH 세션을 구분하여 처리합니다.
  */
 async function processTurns() {
   try {
@@ -46,21 +51,44 @@ async function processTurns() {
       const sessionId = session.session_id;
       
       try {
-        console.log(`[${new Date().toISOString()}] ⚙️ Processing session: ${sessionId}`);
-        const result = await ExecuteEngineService.execute({ session_id: sessionId });
-        
-        if (result.updated) {
-          console.log(`[${new Date().toISOString()}] ✅ Turn processed for ${sessionId}`, {
-            nextTurntime: result.turntime
-          });
-          logger.info(`Turn processed for session ${sessionId}`, {
-            nextTurntime: result.turntime
-          });
-        } else if (result.locked) {
-          console.log(`[${new Date().toISOString()}] 🔒 Session ${sessionId} is locked by another instance`);
-          // 다른 인스턴스가 잠금 - 무시
+        // LOGH 세션인지 확인
+        if (sessionId.startsWith('logh_')) {
+          console.log(`[${new Date().toISOString()}] 🌌 Processing LOGH session: ${sessionId}`);
+
+          // LOGH 세션도 세션 락을 사용하여 동시 실행 방지
+          if (SessionStateService) {
+            const locked = await SessionStateService.acquireSessionLock(sessionId, 60);
+            if (!locked) {
+              logger.warn('[LOGH] 턴 처리 건너뜀 - 세션 락 획득 실패', { sessionId });
+              continue;
+            }
+          }
+
+          try {
+            await processLoghTurn(sessionId);
+          } finally {
+            if (SessionStateService) {
+              await SessionStateService.releaseSessionLock(sessionId);
+            }
+          }
         } else {
-          console.log(`[${new Date().toISOString()}] ⏭️ Session ${sessionId} - no turn update needed`);
+          // 일반 게임 세션 처리
+          console.log(`[${new Date().toISOString()}] ⚙️ Processing session: ${sessionId}`);
+          const result = await ExecuteEngineService.execute({ session_id: sessionId });
+          
+          if (result.updated) {
+            console.log(`[${new Date().toISOString()}] ✅ Turn processed for ${sessionId}`, {
+              nextTurntime: result.turntime
+            });
+            logger.info(`Turn processed for session ${sessionId}`, {
+              nextTurntime: result.turntime
+            });
+          } else if (result.locked) {
+            console.log(`[${new Date().toISOString()}] 🔒 Session ${sessionId} is locked by another instance`);
+            // 다른 인스턴스가 잠금 - 무시
+          } else {
+            console.log(`[${new Date().toISOString()}] ⏭️ Session ${sessionId} - no turn update needed`);
+          }
         }
       } catch (error: any) {
         console.error(`[${new Date().toISOString()}] ❌ Turn processing error for ${sessionId}:`, error.message);
@@ -72,6 +100,116 @@ async function processTurns() {
     }
   } catch (error: any) {
     logger.error('Fatal error in turn processor', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * LOGH 턴 처리 함수
+ * 
+ * LOGH는 Realtime + Strategic 혼합 모드:
+ * - Realtime: Fleet 이동, 전투는 실시간 처리 (GameLoop.service.ts)
+ * - Strategic: 생산, 보급, 외교 등은 턴제 처리 (여기서)
+ */
+async function processLoghTurn(sessionId: string) {
+  try {
+    const { LoghCommander } = await import('./models/logh/Commander.model');
+    const { Fleet } = await import('./models/logh/Fleet.model');
+    const { Planet } = await import('./models/logh/Planet.model');
+    
+    // 1. 커맨드 포인트 회복 (턴마다)
+    await LoghCommander.updateMany(
+      { session_id: sessionId },
+      {
+        $set: {
+          'commandPoints.personal': { $min: ['$commandPoints.personal', '$commandPoints.maxPersonal'] },
+          'commandPoints.military': { $min: ['$commandPoints.military', '$commandPoints.maxMilitary'] },
+          turnDone: false // 새 턴 시작
+        }
+      }
+    );
+
+    // 2. 행성 생산 처리 (턴마다)
+    const planets = await Planet.find({ session_id: sessionId });
+    for (const planet of planets) {
+      if (planet.owner) {
+        // 생산 처리 (간단한 예시)
+        const production = Math.floor(planet.population / 100);
+        planet.resources.minerals = (planet.resources.minerals || 0) + production;
+        planet.resources.food = (planet.resources.food || 0) + production;
+        await planet.save();
+      }
+    }
+
+    // 3. 함대 보급 및 유지비 처리
+    const fleets = await Fleet.find({ session_id: sessionId });
+    for (const fleet of fleets) {
+      // 보급 소모 처리
+      if (fleet.supplies) {
+        fleet.supplies.fuel = Math.max(0, (fleet.supplies.fuel || 0) - 1);
+        fleet.supplies.ammunition = Math.max(0, (fleet.supplies.ammunition || 0) - 1);
+        await fleet.save();
+      }
+    }
+
+    // 4. 진행 중인 전략 커맨드 완료 처리
+    const commanders = await LoghCommander.find({
+      session_id: sessionId,
+      'activeCommands.0': { $exists: true }
+    });
+
+    for (const commander of commanders) {
+      const now = new Date();
+      const completedCommands = commander.activeCommands.filter(
+        (cmd: any) => cmd.completesAt <= now
+      );
+
+      for (const cmd of completedCommands) {
+        // 커맨드 완료 처리
+        const command = LoghCommandRegistry.getCommand(cmd.commandType);
+        if (command) {
+          try {
+            const context = {
+              commander: commander as any,
+              session: await Session.findOne({ session_id: sessionId }),
+              env: {}
+            };
+            await command.onTurnEnd(context);
+            logger.info('[LOGH] 전략 커맨드 완료', {
+              sessionId,
+              commanderNo: commander.no,
+              commandType: cmd.commandType
+            });
+          } catch (error: any) {
+            logger.error('[LOGH] 전략 커맨드 완료 처리 실패', {
+              sessionId,
+              commanderNo: commander.no,
+              commandType: cmd.commandType,
+              error: error.message
+            });
+          }
+        }
+      }
+
+      // 완료된 커맨드 제거
+      commander.activeCommands = commander.activeCommands.filter(
+        (cmd: any) => cmd.completesAt > now
+      );
+      await commander.save();
+    }
+
+    logger.info('[LOGH] 턴 처리 완료', {
+      sessionId,
+      commandersUpdated: commanders.length,
+      planetsUpdated: planets.length,
+      fleetsUpdated: fleets.length
+    });
+
+  } catch (error: any) {
+    logger.error('[LOGH] 턴 처리 실패', {
+      sessionId,
       error: error.message,
       stack: error.stack
     });
@@ -430,6 +568,8 @@ async function syncToDB() {
 /**
  * 커맨드 소비 처리 함수 (크론)
  * Redis Streams에서 커맨드를 읽어 실행합니다.
+ * 
+ * 일반 커맨드와 LOGH 커맨드를 모두 처리합니다.
  */
 async function consumeCommands(queue: any, groupName: string, consumerName: string) {
   try {
@@ -439,18 +579,45 @@ async function consumeCommands(queue: any, groupName: string, consumerName: stri
         commandId: message.commandId,
         category: message.category,
         type: message.type,
+        gameMode: message.gameMode,
         generalId: message.generalId,
+        commanderNo: message.commanderNo,
         sessionId: message.sessionId
       });
 
-      // CommandExecutor를 통해 커맨드 실행
-      const result = await CommandExecutor.execute({
-        category: message.category,
-        type: message.type,
-        generalId: message.generalId,
-        sessionId: message.sessionId,
-        arg: message.arg
-      });
+      let result: any;
+
+      // LOGH 커맨드 vs 일반 커맨드 구분
+      if (message.gameMode === 'logh' || message.commanderNo !== undefined) {
+        // LOGH 커맨드 실행 - commanderNo는 숫자형으로 정규화
+        const commanderNo = typeof message.commanderNo === 'string'
+          ? parseInt(message.commanderNo, 10)
+          : message.commanderNo;
+
+        if (!Number.isFinite(commanderNo)) {
+          logger.error('[LOGH] commanderNo 파싱 실패로 커맨드 건너뜀', {
+            commandId: message.commandId,
+            rawCommanderNo: message.commanderNo,
+          });
+          return;
+        }
+
+        result = await LoghCommandExecutor.execute({
+          commandType: message.type,
+          commanderNo,
+          sessionId: message.sessionId,
+          arg: message.arg
+        });
+      } else {
+        // 일반 커맨드 실행
+        result = await CommandExecutor.execute({
+          category: message.category,
+          type: message.type,
+          generalId: message.generalId,
+          sessionId: message.sessionId,
+          arg: message.arg
+        });
+      }
 
       if (!result.success) {
         logger.error('커맨드 실행 실패', {
@@ -462,6 +629,7 @@ async function consumeCommands(queue: any, groupName: string, consumerName: stri
 
       logger.info('커맨드 실행 완료', {
         commandId: message.commandId,
+        gameMode: message.gameMode,
         result: result.result
       });
     });
@@ -517,6 +685,11 @@ async function start() {
     const sessionModule = await import('./models/session.model');
     Session = sessionModule.Session;
     console.log('[DAEMON START] Session 모델 로딩 완료');
+
+    // 세션 상태 서비스 로드 (세션 락용)
+    const sessionStateModule = await import('./services/sessionState.service');
+    SessionStateService = sessionStateModule.SessionStateService;
+    console.log('[DAEMON START] SessionStateService 로딩 완료');
     
     const commandModule = await import('./core/command');
     CommandRegistry = commandModule.CommandRegistry;
@@ -525,6 +698,15 @@ async function start() {
     const executorModule = await import('./core/command/CommandExecutor');
     CommandExecutor = executorModule.CommandExecutor;
     console.log('[DAEMON START] CommandExecutor 로딩 완료');
+    
+    // LOGH CommandRegistry 및 Executor 로드
+    const loghRegistryModule = await import('./commands/logh/CommandRegistry');
+    LoghCommandRegistry = loghRegistryModule.commandRegistry;
+    console.log('[DAEMON START] LOGH CommandRegistry 로딩 완료');
+    
+    const loghExecutorModule = await import('./commands/logh/LoghCommandExecutor');
+    LoghCommandExecutor = loghExecutorModule.LoghCommandExecutor;
+    console.log('[DAEMON START] LOGH CommandExecutor 로딩 완료');
     
     const engineModule = await import('./services/global/ExecuteEngine.service');
     ExecuteEngineService = engineModule.ExecuteEngineService;
@@ -544,6 +726,11 @@ async function start() {
     const commandStats = CommandRegistry.getStats();
     console.log('[DAEMON START] ✅ 커맨드 시스템 초기화 완료', commandStats);
     logger.info('✅ 커맨드 시스템 초기화 완료', commandStats);
+    
+    // LOGH 커맨드 레지스트리 상태 확인
+    const loghStats = LoghCommandRegistry.getStats();
+    console.log('[DAEMON START] ✅ LOGH 커맨드 시스템 초기화 완료', loghStats);
+    logger.info('✅ LOGH 커맨드 시스템 초기화 완료', loghStats);
 
     // CommandQueue 초기화
     console.log('[DAEMON START] CommandQueue 초기화 중...');
@@ -656,14 +843,19 @@ async function start() {
     console.log('\n========================================');
     console.log('🎮 통합 게임 데몬 시작 완료!');
     console.log('========================================');
-    console.log(`🔧 커맨드: ${commandStats.total}개 로드됨`);
+    console.log(`🔧 일반 커맨드: ${commandStats.total}개 로드됨`);
     console.log(`   - General: ${commandStats.generalCount}개`);
     console.log(`   - Nation: ${commandStats.nationCount}개`);
     console.log(`   - LOGH: ${commandStats.loghCount}개`);
     console.log('');
+    console.log(`🌌 LOGH 커맨드: ${loghStats.total}개 로드됨`);
+    console.log(`   - Strategic: ${loghStats.strategic}개`);
+    console.log(`   - Tactical: ${loghStats.tactical}개`);
+    console.log(`   - Legacy: ${loghStats.legacy}개`);
+    console.log('');
     console.log('📋 활성화된 스케줄러:');
-    console.log(`   ✅ 턴 처리: ${TURN_CRON_EXPRESSION} (10초마다)`);
-    console.log(`   ✅ 커맨드 소비: ${COMMAND_CRON_EXPRESSION} (매초)`);
+    console.log(`   ✅ 턴 처리: ${TURN_CRON_EXPRESSION} (일반 + LOGH 혼합)`);
+    console.log(`   ✅ 커맨드 소비: ${COMMAND_CRON_EXPRESSION} (일반 + LOGH 혼합)`);
     console.log(`   ✅ 경매 처리: ${AUCTION_CRON_EXPRESSION} (매분)`);
     console.log(`   ✅ 토너먼트: ${TOURNAMENT_CRON_EXPRESSION} (매분)`);
     console.log(`   ✅ NPC 명령: ${NPC_CRON_EXPRESSION} (턴 주기와 동일)`);

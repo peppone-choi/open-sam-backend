@@ -1,8 +1,32 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { CommandController } from '../controllers/command.controller';
+import { commandAntiAbuseMiddleware } from '../common/middleware/command-anti-abuse.middleware';
+import { recordCommandRequest } from '../common/metrics/command-metrics';
+ 
+ const router = Router();
 
-const router = Router();
+// Metrics middleware for general commands
+router.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  const sessionId = (req.query.session_id as string) || (req.body && (req.body as any).session_id);
+
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const durationSeconds = Number(end - start) / 1e9;
+
+    recordCommandRequest({
+      type: 'general',
+      method: req.method,
+      status: res.statusCode,
+      durationSeconds,
+      sessionId,
+    });
+  });
+
+  next();
+});
+
 
 /**
  * @swagger
@@ -196,8 +220,8 @@ router.get('/get-reserved-command', authenticate, CommandController.getReservedC
  *       500:
  *         description: 서버 오류
  */
-router.post('/push-command', authenticate, CommandController.pushCommand);
-router.post('/push', authenticate, CommandController.pushCommand); // 별칭 (프론트엔드 호환)
+router.post('/push-command', authenticate, commandAntiAbuseMiddleware, CommandController.pushCommand);
+router.post('/push', authenticate, commandAntiAbuseMiddleware, CommandController.pushCommand); // 별칭 (프론트엔드 호환)
 
 /**
  * @swagger
@@ -256,7 +280,7 @@ router.post('/push', authenticate, CommandController.pushCommand); // 별칭 (�
  *       401:
  *         description: 인증 실패
  */
-router.post('/repeat-command', authenticate, CommandController.repeatCommand);
+router.post('/repeat-command', authenticate, commandAntiAbuseMiddleware, CommandController.repeatCommand);
 
 /**
  * @swagger
@@ -340,7 +364,7 @@ router.post('/repeat-command', authenticate, CommandController.repeatCommand);
  *       401:
  *         description: 인증 실패
  */
-router.post('/reserve-bulk-command', authenticate, CommandController.reserveBulkCommand);
+router.post('/reserve-bulk-command', authenticate, commandAntiAbuseMiddleware, CommandController.reserveBulkCommand);
 
 /**
  * @swagger
@@ -473,7 +497,7 @@ router.post('/reserve-bulk-command', authenticate, CommandController.reserveBulk
  *       500:
  *         description: 서버 오류
  */
-router.post('/reserve-command', authenticate, CommandController.reserveCommand);
+router.post('/reserve-command', authenticate, commandAntiAbuseMiddleware, CommandController.reserveCommand);
 router.post('/reserve', authenticate, CommandController.reserveCommand); // 별칭 (프론트엔드 호환)
 
 /**
@@ -505,7 +529,7 @@ router.post('/reserve', authenticate, CommandController.reserveCommand); // 별�
  *       200:
  *         description: 명령 미루기 성공
  */
-router.post('/push-command', authenticate, async (req, res) => {
+router.post('/push-command', authenticate, commandAntiAbuseMiddleware, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const generalId = req.user?.generalId || req.body.general_id;
@@ -553,7 +577,7 @@ router.post('/push-command', authenticate, async (req, res) => {
  *       200:
  *         description: 명령 당기기 성공
  */
-router.post('/pull-command', authenticate, async (req, res) => {
+router.post('/pull-command', authenticate, commandAntiAbuseMiddleware, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const generalId = req.user?.generalId || req.body.general_id;
@@ -603,7 +627,7 @@ router.post('/pull-command', authenticate, async (req, res) => {
  *       200:
  *         description: 명령 삭제 성공
  */
-router.post('/delete-command', authenticate, async (req, res) => {
+router.post('/delete-command', authenticate, commandAntiAbuseMiddleware, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const generalId = req.user?.generalId || req.body.general_id;

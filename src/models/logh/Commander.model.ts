@@ -19,6 +19,9 @@ export interface ILoghCommander extends Document {
   rank: number; // 계급 코드 (1=원수, 2=상급대장, etc.)
   jobPosition: string | null; // 직책 (함대사령관, 참모장 etc.)
 
+  // Ownership (optional, for player binding)
+  ownerUserId?: string;
+
   // Stats (8가지 능력치 - admirals.json 기준)
   stats: {
     leadership: number; // 통솔력
@@ -116,6 +119,9 @@ const LoghCommanderSchema = new Schema<ILoghCommander>(
     age: { type: Number },
     rank: { type: Number, required: true },
     jobPosition: { type: String, default: null },
+
+    // Optional owner binding for authenticated players
+    ownerUserId: { type: String, index: true },
 
     stats: {
       leadership: { type: Number, default: 50 },

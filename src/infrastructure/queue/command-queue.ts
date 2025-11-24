@@ -9,7 +9,11 @@ export interface CommandMessage {
   sessionId: string;
   arg?: any;
   timestamp: number;
+  // Optional fields for LOGH / other game modes
+  gameMode?: string;
+  commanderNo?: string;
 }
+
 
 export class CommandQueue {
   private streamName: string;
@@ -46,7 +50,10 @@ export class CommandQueue {
         'generalId', message.generalId,
         'sessionId', message.sessionId,
         'arg', message.arg,
-        'timestamp', message.timestamp
+        'timestamp', message.timestamp,
+        // Optional LOGH / extended routing fields
+        'gameMode', message.gameMode ?? '',
+        'commanderNo', message.commanderNo ?? ''
       );
 
       logger.debug('커맨드 발행 완료', {
@@ -81,13 +88,13 @@ export class CommandQueue {
       await client.xgroup('CREATE', this.streamName, groupName, '0', 'MKSTREAM');
       logger.info('Consumer Group 생성 완료', { groupName, streamName: this.streamName });
     } catch (error: any) {
-      // BUSYGROUP 오류는 Consumer Group이 이미 존재하는 경우이므로 무시
+      // BUSYGROUP 오류는 Consumer Group이 이미 존재하는 경우이므로 무시하고 계속 진행
       if (error.message?.includes('BUSYGROUP')) {
         logger.debug('Consumer Group이 이미 존재함', { groupName, streamName: this.streamName });
-        return; // 정상적으로 진행
+      } else {
+        // 기타 오류는 다시 throw
+        throw error;
       }
-      // 기타 오류는 다시 throw
-      throw error;
     }
 
     const result = await client.xreadgroup(
@@ -123,7 +130,9 @@ export class CommandQueue {
           generalId: data.generalId,
           sessionId: data.sessionId,
           arg: data.arg ? JSON.parse(data.arg) : undefined,
-          timestamp: parseInt(data.timestamp, 10)
+          timestamp: parseInt(data.timestamp, 10),
+          gameMode: data.gameMode || undefined,
+          commanderNo: data.commanderNo || undefined
         };
 
         try {

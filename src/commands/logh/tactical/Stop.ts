@@ -3,9 +3,10 @@
  * 현재 실행 중인 커맨드 취소, 전 유닛 동작 정지
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class StopTacticalCommand {
+export class StopTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'stop';
   }
@@ -37,7 +38,7 @@ export class StopTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

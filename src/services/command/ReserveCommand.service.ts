@@ -2,22 +2,30 @@ import { generalTurnRepository } from '../../repositories/general-turn.repositor
 import { neutralize, removeSpecialCharacter, getStringWidth } from '../../utils/string-util';
 import GameConstants from '../../utils/game-constants';
 import { invalidateCache } from '../../common/cache/model-cache.helper';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
+import { resolveCommandAuthContext } from './command-auth.helper';
 
 const MAX_TURN = GameConstants.MAX_TURN; // 50
 
 export class ReserveCommandService {
   static async execute(data: any, user?: any) {
-    const sessionId = data.session_id || 'sangokushi_default';
-    // general_id를 숫자로 변환 (문자열일 수도 있음)
-    let generalId = user?.generalId || data.general_id;
-    if (generalId) {
-      generalId = Number(generalId);
-      if (isNaN(generalId) || generalId === 0) {
-        generalId = undefined;
-      }
+    const authResult = resolveCommandAuthContext(data, user);
+    if (!authResult.ok) {
+      return authResult.error;
     }
-    
-    
+
+    const { sessionId, generalId, userId } = authResult.context;
+
+    const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+    if (!ownershipCheck.valid) {
+      return {
+        success: false,
+        result: false,
+        message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.',
+        reason: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
+      };
+    }
+
     const action = data.action;
     const brief = data.brief || action; // brief가 있으면 사용, 없으면 action 사용
     // turn_idx (단일 턴) 또는 turnList (여러 턴) 지원
@@ -28,36 +36,49 @@ export class ReserveCommandService {
       rawTurnList = data.turnList;
     }
     const arg = sanitizeArg(data.arg || {});
-
-    if (!generalId) {
-      return { success: false, message: '장수 ID가 필요합니다', result: false };
-    }
-
+ 
     if (!action || action.length === 0) {
-      return { success: false, message: '액션이 필요합니다', result: false };
+      return {
+        success: false,
+        result: false,
+        message: '액션이 필요합니다',
+        reason: '액션이 필요합니다'
+      };
     }
-
+ 
     if (!rawTurnList || rawTurnList.length === 0) {
-      return { success: false, message: '턴이 입력되지 않았습니다', result: false };
+      return {
+        success: false,
+        result: false,
+        message: '턴이 입력되지 않았습니다',
+        reason: '턴이 입력되지 않았습니다'
+      };
     }
-
+ 
     const turnList = expandTurnList(rawTurnList);
-
+ 
     if (turnList.length === 0) {
-      return { success: false, message: '올바른 턴이 아닙니다', result: false };
+      return {
+        success: false,
+        result: false,
+        message: '올바른 턴이 아닙니다',
+        reason: '올바른 턴이 아닙니다'
+      };
     }
-
+ 
     // 인자 검증
     const argError = checkCommandArg(arg);
     if (argError !== null) {
       return {
         success: false,
         result: false,
+        message: argError,
         reason: argError,
         test: 'checkCommandArg',
         target: 'arg'
       };
     }
+
 
     // 커맨드 예약은 turntime에 영향을 주지 않음
     // turntime은 장수 생성 시간 + (turnterm × N)으로 고정

@@ -46,12 +46,30 @@ async function start() {
     
     // CORS 설정
     app.use(cors({
-      origin: [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://127.0.0.1:3000',
-        process.env.FRONTEND_URL || 'http://localhost:3000'
-      ],
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://localhost:3003',
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:3001',
+          'http://127.0.0.1:3003',
+          process.env.FRONTEND_URL
+        ];
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          // Dev mode wildcard
+          if (process.env.NODE_ENV !== 'production') {
+             callback(null, true);
+          } else {
+             callback(new Error('Not allowed by CORS'));
+          }
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

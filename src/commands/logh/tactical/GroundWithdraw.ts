@@ -3,10 +3,11 @@
  * 강하/출격한 육전대 철수(탑재)
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 import { Planet } from '../../../models/logh/Planet.model';
 
-export class GroundWithdrawTacticalCommand {
+export class GroundWithdrawTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'ground_withdraw';
   }
@@ -17,6 +18,10 @@ export class GroundWithdrawTacticalCommand {
 
   getDescription(): string {
     return '행성에 배치된 육전대를 함대로 회수합니다. 양륙함이 필요합니다.';
+  }
+
+  getShortcut(): string {
+    return 'h';
   }
 
   getExecutionDelay(): number {
@@ -33,7 +38,7 @@ export class GroundWithdrawTacticalCommand {
     );
   }
 
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

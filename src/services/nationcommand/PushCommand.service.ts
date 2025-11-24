@@ -1,13 +1,28 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { pushNationCommand, pullNationCommand } from '../../utils/command-helpers';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 export class PushCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const amount = parseInt(data.amount);
     
     try {
+      if (!generalId) {
+        throw new Error('장수 ID가 필요합니다.');
+      }
+
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), userId);
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.');
+      }
+
       if (isNaN(amount)) {
         throw new Error('amount가 숫자가 아닙니다.');
       }

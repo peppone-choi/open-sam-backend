@@ -3,9 +3,10 @@
  * 선택 함선을 지정 위치로 이동
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class MoveTacticalCommand {
+export class MoveTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'move';
   }
@@ -33,7 +34,7 @@ export class MoveTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

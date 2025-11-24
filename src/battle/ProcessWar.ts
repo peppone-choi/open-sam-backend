@@ -168,7 +168,21 @@ export async function processWar(
       const { nationRepository } = await import('../repositories/nation.repository');
       const sessionId = attackerGeneral.getSessionID?.() || 'sangokushi_default';
       const nationDoc = await nationRepository.findByNationNum(sessionId, defenderNationID);
-      rawDefenderNation = nationDoc || rawDefenderNation;
+      if (nationDoc) {
+        rawDefenderNation = nationDoc;
+      } else {
+        rawDefenderNation = {
+          nation: defenderNationID,
+          name: '수비국',
+          capital: 0,
+          level: 0,
+          gold: 0,
+          rice: 10000,
+          type: 0,
+          tech: 0,
+          gennum: 1
+        };
+      }
     } catch (error) {
       console.error('Failed to load defender nation:', error);
       rawDefenderNation = {

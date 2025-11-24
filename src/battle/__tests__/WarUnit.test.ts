@@ -1,8 +1,34 @@
 /**
  * WarUnit Test - PHP 계산 결과와 TypeScript 구현 비교 검증
- * 
- * 목표: WarUnitGeneral.getWarPower() 및 WarUnitCity.getDefencePower()가
- * PHP 원본과 동일한 계산 결과를 내는지 검증 (<1% 오차)
+ *
+ * 목표
+ * - WarUnitGeneral.getWarPower(), WarUnitCity.getComputedDefence()가
+ *   PHP 원본(`sammo\\WarUnit::computeWarPower()`,
+ *   `sammo\\GameUnitDetail::getComputedAttack()/getComputedDefence()`,
+ *   `getDexLog()` in `func_converter.php`)과 동일한 공식을 사용함을 검증.
+ *
+ * 시나리오 설계 메모
+ * - Scenario 1: 대칭 장수 vs 장수 전투력
+ *   - PHP 기준: `WarUnit::computeWarPower()`에 동일 스탯/병종/숙련도를 입력했을 때
+ *     공격/수비 양측 warPower 비율이 1.0에 수렴해야 함을 수치적으로 확인.
+ * - Scenario 2: 숙련도 차이
+ *   - PHP `getDexLog($dex1, $dex2)` (TS: `getDexBonus`)에
+ *     dex1=100000, dex2=10000을 넣었을 때 (레벨 차이 6) 비율
+ *     (1 + 6/55)≈1.109 배 수준의 우위를 갖는지 범위로 검증.
+ * - Scenario 3: 병종 상성
+ *   - PHP `GameUnitDetail::getAttackCoef()`에 해당하는 상성표를
+ *     TS 단순화 상성표로 근사; 기병 vs 궁병에서 1.3배 이상 우위가 나는지 확인.
+ * - Scenario 4~5: 훈련/사기, 레벨 보정
+ *   - PHP `WarUnitGeneral::getComputedTrain()/getComputedAtmos()/computeWarPower()`를
+ *     기반으로, 극단값(훈련/사기 100 vs 50, explevel 100 vs 10)에서
+ *     기대되는 우위 범위를 수치적으로 검증.
+ * - Scenario 6~9: 도시 방어력/훈사, HP/사망/군량 소비
+ *   - PHP `WarUnitCity::getComputedDefence()/getHP()/continueWar()`와
+ *     `WarUnitGeneral::decreaseHP()/increaseKilled()/calcRiceConsumption()` 공식을
+ *     그대로 사용한 TS 구현이 일관된 값을 내는지 검증.
+ * - Scenario 10: 단일 페이즈 통합 전투
+ *   - 위 공식을 모두 조합했을 때 전형적인 기병 vs 궁병 교전이
+ *     기대 방향(기병 우위, 양측 모두 손실 발생)을 따르는지 확인.
  */
 
 import { WarUnitGeneral } from '../WarUnitGeneral';

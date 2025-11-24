@@ -1,6 +1,8 @@
 // @ts-nocheck - Argument count mismatches need review
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
+
 
 /**
  * TransferNationOwner Service
@@ -10,30 +12,35 @@ export class TransferNationOwnerService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const targetGeneralId = parseInt(data.targetGeneralId || data.target_general_id);
     
     try {
       if (!generalId) {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
-
+ 
       if (!targetGeneralId) {
         return { success: false, message: '대상 장수 ID가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      if (!userId) {
+        return { success: false, message: '사용자 인증이 필요합니다' };
+      }
 
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
+      if (!ownershipCheck.valid) {
+        return { success: false, message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.' };
+      }
+ 
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+ 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
+ 
+      const targetGeneral = await generalRepository.findBySessionAndNo(sessionId, targetGeneralId);
 
-      const targetGeneral = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': targetGeneralId
-      });
 
       if (!targetGeneral) {
         return { success: false, message: '대상 장수를 찾을 수 없습니다' };

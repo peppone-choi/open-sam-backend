@@ -31,6 +31,43 @@ export class ConstraintHelper {
     };
   }
 
+  /**
+   * 수도가 아닌 도시에서만 허용
+   *
+   * PHP ConstraintHelper::NotCapital(bool $ignoreOfficer=false) 대응
+   * - 기본: 장수의 현재 도시가 자국 수도이면 실패
+   * - ignoreOfficer=true인 경우, 태수/도독/대도독(2~4레벨)은 예외적으로 허용
+   */
+  static NotCapital(ignoreOfficer: boolean = false): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const general = input.general;
+        const nation = input.nation;
+        if (!general || !nation) {
+          return '국가 또는 장수 정보가 없습니다.';
+        }
+
+        const cityId = typeof general.getVar === 'function'
+          ? general.getVar('city')
+          : general.city ?? general.data?.city;
+        const officerLevel = typeof general.getVar === 'function'
+          ? general.getVar('officer_level')
+          : general.officer_level ?? general.data?.officer_level ?? 0;
+        const capitalId = nation.capital ?? nation.data?.capital;
+
+        if (cityId !== capitalId) {
+          return null; // 수도가 아니면 통과
+        }
+
+        if (ignoreOfficer && officerLevel >= 2 && officerLevel <= 4) {
+          return null; // 태수/도독/대도독일 때 예외 허용
+        }
+
+        return '이미 수도입니다.';
+      }
+    };
+  }
+
   static WanderingNation(): IConstraint {
     return {
       test: (input: any, env: any) => {

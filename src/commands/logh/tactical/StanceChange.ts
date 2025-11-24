@@ -10,6 +10,7 @@
  * - evasive: 회피 기동 (기동력 증가, 명중률 감소)
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
 type CombatStance = 'aggressive' | 'defensive' | 'balanced' | 'hold_fire' | 'evasive';
@@ -22,7 +23,7 @@ interface StanceModifiers {
   accuracy: number; // 명중률 보정 (%)
 }
 
-export class StanceChangeTacticalCommand {
+export class StanceChangeTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'stance_change';
   }
@@ -95,7 +96,7 @@ export class StanceChangeTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

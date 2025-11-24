@@ -40,7 +40,7 @@ const RANK_ORDER = [
   '원수',
 ];
 
-const TACTICAL_COMMAND_MAP: Record<string, new () => { execute: (fleetId: string, params: any) => Promise<{ success: boolean; message: string }> }> = {
+const TACTICAL_COMMAND_MAP: Record<string, new () => { executeTactical: (fleetId: string, params: any) => Promise<{ success: boolean; message: string }> }> = {
   move: MoveTacticalCommand,
   parallel_move: ParallelMoveTacticalCommand,
   turn: TurnTacticalCommand,
@@ -174,6 +174,49 @@ async function ensureLoghRegistryLoaded() {
 }
 
 export class Gin7CommandExecutionService {
+  /**
+   * LOGH 커맨드를 Redis 큐로 발행 (데몬 실행용)
+   * - 기존 동기 실행 경로와 병행 사용 가능
+   */
+  static async enqueue(request: Gin7CommandExecutionRequest): Promise<{ success: boolean; commandId: string }> {
+    const { sessionId, commandCode, characterId, args = {} } = request;
+    const character = await GalaxyCharacter.findOne({ session_id: sessionId, characterId });
+    if (!character) {
+      throw new Error('캐릭터 정보를 찾을 수 없습니다.');
+    }
+
+    // 큐 메시지 발행 (LOGH용 필드 포함)
+    const { CommandQueue } = await import('../../infrastructure/queue/command-queue');
+    const queue = new CommandQueue('game:commands');
+    const commandId = `${sessionId}:${characterId}:${commandCode}:${Date.now()}`;
+
+    await queue.init();
+
+    // LOGH 커맨드 실행을 위해 숫자형 commanderNo 파생
+    const commanderAdapter = new GalaxyCommanderAdapter(character);
+    const commanderNo = commanderAdapter.no;
+
+    await queue.publish({
+      commandId,
+      category: 'logh',
+      type: commandCode,
+      generalId: String(characterId),
+      sessionId,
+      arg: args,
+      gameMode: 'logh',
+      commanderNo: String(commanderNo),
+    });
+
+    logger.info('[GIN7] LOGH command enqueued', {
+      sessionId,
+      commandCode,
+      characterId,
+      commandId,
+    });
+
+    return { success: true, commandId };
+  }
+
   static async execute(request: Gin7CommandExecutionRequest): Promise<Gin7CommandExecutionResult> {
     const { sessionId, cardId, commandCode, characterId, args = {} } = request;
     const character = await GalaxyCharacter.findOne({ session_id: sessionId, characterId });
@@ -305,7 +348,7 @@ export class Gin7CommandExecutionService {
 
     const executor = new TacticalClass();
     const payload = { ...args, sessionId };
-    return executor.execute(fleetId, payload);
+    return executor.executeTactical(fleetId, payload);
   }
 }
 

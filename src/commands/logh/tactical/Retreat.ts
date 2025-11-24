@@ -14,10 +14,11 @@
  * - 철퇴 중 공격받으면 추가 사상자 발생 가능
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 import { TacticalMap } from '../../../models/logh/TacticalMap.model';
 
-export class RetreatTacticalCommand {
+export class RetreatTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'retreat';
   }
@@ -148,7 +149,7 @@ export class RetreatTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

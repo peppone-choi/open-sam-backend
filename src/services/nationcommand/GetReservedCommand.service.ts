@@ -5,6 +5,7 @@ import { nationTurnRepository } from '../../repositories/nation-turn.repository'
 import { sessionRepository } from '../../repositories/session.repository';
 import { troopRepository } from '../../repositories/troop.repository';
 import GameConstants from '../../utils/game-constants';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
 
@@ -44,6 +45,15 @@ export class GetReservedCommandService {
         actualGeneralId = userGeneral.data?.no || userGeneral.no;
       }
 
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(actualGeneralId), String(userId));
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.');
+      }
+
       const general = await generalRepository.findBySessionAndNo(sessionId, actualGeneralId);
 
       if (!general) {
@@ -53,17 +63,18 @@ export class GetReservedCommandService {
       const generalData = general.data;
       const nationId = generalData.nation;
       const officerLevel = generalData.officer_level || 1;
-
+ 
       if (!nationId) {
-        throw new Error('국가에 소속되어있지 않습니다.');
+        throw new Error('국가에 소속되어 있지 않습니다.');
       }
-
+ 
       const permission = this.checkSecretPermission(generalData);
       if (permission < 0) {
-        throw new Error('국가에 소속되어있지 않습니다.');
+        throw new Error('국가에 소속되어 있지 않습니다.');
       } else if (permission < 1) {
-        throw new Error('수뇌부가 아니거나 사관년도가 부족합니다.');
+        throw new Error('권한이 부족합니다');
       }
+
 
       const nation = await nationRepository.findOneByFilter({
         session_id: sessionId,
@@ -74,13 +85,16 @@ export class GetReservedCommandService {
 
       const chiefs = await generalRepository.findByFilter({
         session_id: sessionId,
-        nation: nationId,
-        officer_level: { $gte: 5 }
+        $or: [
+          { 'data.nation': nationId, 'data.officer_level': { $gte: 5 } },
+          { nation: nationId, officer_level: { $gte: 5 } }
+        ]
       });
 
       const generalsByLevel: { [key: number]: any } = {};
       for (const chief of chiefs) {
-        generalsByLevel[chief.officer_level] = chief;
+        const officerLevel = chief.data?.officer_level || chief.officer_level || 0;
+        generalsByLevel[officerLevel] = chief;
       }
 
       const nationTurns = await nationTurnRepository.findByNation(
@@ -167,7 +181,7 @@ export class GetReservedCommandService {
         if (!nationTurnList[officerLevel]) {
           nationTurnList[officerLevel] = {};
         }
-        
+
         const emptyTurns: number[] = [];
         for (let i = 0; i < MAX_CHIEF_TURN; i++) {
           if (!nationTurnList[officerLevel][i]) {
@@ -179,7 +193,7 @@ export class GetReservedCommandService {
             };
           }
         }
-        
+
         // 빈 턴이 있으면 DB에 자동으로 휴식 명령 저장
         if (emptyTurns.length > 0) {
           for (const turnIdx of emptyTurns) {
@@ -222,37 +236,38 @@ export class GetReservedCommandService {
           continue;
         }
 
+        const chiefData = chiefGeneral.data || {};
         nationChiefList[officerLevelNum] = {
-          name: chiefGeneral.name,
-          turnTime: chiefGeneral.turntime,
-          officerLevel: chiefGeneral.officer_level,
-          officerLevelText: this.getOfficerLevelText(chiefGeneral.officer_level, nationLevel),
-          npcType: chiefGeneral.npc,
+          name: chiefData.name || chiefGeneral.name,
+          turnTime: chiefData.turntime || chiefGeneral.turntime,
+          officerLevel: chiefData.officer_level || chiefGeneral.officer_level,
+          officerLevelText: this.getOfficerLevelText(officerLevelNum, nationLevel),
+          npcType: chiefData.npc || chiefGeneral.npc,
           turn: turnBrief
         };
       }
 
       const sessionData = await sessionRepository.findBySessionId(sessionId);
       const gameEnv = sessionData?.data?.game_env || {};
- 
-       return {
-         success: true,
-         result: true,
-         lastExecute: gameEnv.turntime || new Date(),
-         year: gameEnv.year || 184,
-         month: gameEnv.month || 1,
-         turnTerm: gameEnv.turnterm || 60, // 분 단위
-         date: new Date(),
-         chiefList: nationChiefList,
-         troopList,
-         isChief: officerLevel > 4,
-         autorun_limit: generalData.autorun_limit || 0,
-         officerLevel,
+
+      return {
+        success: true,
+        result: true,
+        lastExecute: gameEnv.turntime || new Date(),
+        year: gameEnv.year || 184,
+        month: gameEnv.month || 1,
+        turnTerm: gameEnv.turnterm || 60, // 분 단위
+        date: new Date(),
+        chiefList: nationChiefList,
+        troopList,
+        isChief: officerLevel > 4,
+        autorun_limit: generalData.autorun_limit || 0,
+        officerLevel,
         commandList: await this.buildChiefCommandTable(general, gameEnv),
-         mapName: gameEnv.mapName || 'default',
+        mapName: gameEnv.mapName || 'default',
         unitSet: gameEnv.unitSet || 'default',
         maxChiefTurn: MAX_CHIEF_TURN,
-       };
+      };
 
 
     } catch (error: any) {
@@ -262,88 +277,102 @@ export class GetReservedCommandService {
       };
     }
   }
- 
-   private static async buildChiefCommandTable(general: any, gameEnv: any): Promise<any[]> {
-     try {
-       const { NationCommandRegistry } = await import('../../commands');
-       const availableChiefCommand = (global as any).GameConst?.availableChiefCommand || gameEnv.availableChiefCommand || {};
- 
-       const result: any[] = [];
- 
-       for (const [category, commandList] of Object.entries(availableChiefCommand)) {
-         if (!Array.isArray(commandList)) continue;
- 
-         const subList: any[] = [];
- 
-         for (const commandClassName of commandList as string[]) {
-           try {
-             // PHP: buildNationCommandClass($commandClassName, $general, $env, new LastTurn());
-             const registryKey = String(commandClassName).replace(/^che_/, '');
-             const CommandClass = (NationCommandRegistry as any)[registryKey] || (NationCommandRegistry as any)[commandClassName];
- 
-             let canDisplay = true;
-             let hasMinCondition = true;
-             let commandName = registryKey;
-             let commandTitle = registryKey;
-             let reqArg = false;
-             let compensation = 0;
- 
-             if (CommandClass) {
-               try {
+
+  private static async buildChiefCommandTable(general: any, gameEnv: any): Promise<any[]> {
+    try {
+      const { NationCommandRegistry } = await import('../../commands');
+      let availableChiefCommand = (global as any).GameConst?.availableChiefCommand || gameEnv.availableChiefCommand;
+
+      // availableChiefCommand가 없으면 직접 로드
+      if (!availableChiefCommand || Object.keys(availableChiefCommand).length === 0) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const constantsPath = path.join(__dirname, '../../../config/scenarios/sangokushi/data/constants.json');
+          const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
+          availableChiefCommand = constantsData.availableChiefCommand || {};
+        } catch (err) {
+          console.error('[GetReservedCommand] Failed to load availableChiefCommand:', err);
+          availableChiefCommand = {};
+        }
+      }
+
+      const result: any[] = [];
+
+      for (const [category, commandList] of Object.entries(availableChiefCommand)) {
+        if (!Array.isArray(commandList)) continue;
+
+        const subList: any[] = [];
+
+        for (const commandClassName of commandList as string[]) {
+          try {
+            // PHP: buildNationCommandClass($commandClassName, $general, $env, new LastTurn());
+            const registryKey = String(commandClassName).replace(/^che_/, '');
+            const CommandClass = (NationCommandRegistry as any)[registryKey] || (NationCommandRegistry as any)[commandClassName];
+
+            let canDisplay = true;
+            let hasMinCondition = true;
+            let commandName = registryKey;
+            let commandTitle = registryKey;
+            let reqArg = false;
+            let compensation = 0;
+
+            if (CommandClass) {
+              try {
                 const env = gameEnv || {};
                 const commandObj = new CommandClass(general, env);
- 
-                 canDisplay = commandObj.canDisplay?.() ?? true;
-                 hasMinCondition = commandObj.hasMinConditionMet?.() ?? true;
-                 commandName = CommandClass.getName?.() ?? registryKey;
 
-                 commandTitle = String(commandObj.getCommandDetailTitle?.() ?? commandName);
-                 reqArg = CommandClass.reqArg ?? false;
-                 compensation = commandObj.getCompensationStyle?.() ?? 0;
-               } catch (err) {
-                 commandName = CommandClass.getName?.() ?? registryKey;
-                 commandTitle = String(commandName);
-                 reqArg = CommandClass.reqArg ?? false;
-               }
-             }
- 
-             if (!canDisplay) continue;
- 
-             subList.push({
-               value: commandClassName,
-               simpleName: commandName,
-               reqArg: reqArg ? 1 : 0,
-               possible: hasMinCondition,
-               compensation,
-               title: String(commandTitle),
-             });
-           } catch (error) {
-             subList.push({
-               value: commandClassName,
-               simpleName: String(commandClassName).replace(/^che_/, ''),
-               reqArg: 0,
-               possible: true,
-               compensation: 0,
-               title: String(commandClassName),
-             });
-           }
-         }
- 
-         if (subList.length > 0) {
-           result.push({
-             category,
-             values: subList,
-           });
-         }
-       }
- 
-       return result;
-     } catch (error) {
-       return [];
-     }
-   }
- 
-   private static checkSecretPermission(generalData: any): number {
+                canDisplay = commandObj.canDisplay?.() ?? true;
+                hasMinCondition = commandObj.hasMinConditionMet?.() ?? true;
+                commandName = CommandClass.getName?.() ?? registryKey;
+
+                commandTitle = String(commandObj.getCommandDetailTitle?.() ?? commandName);
+                reqArg = CommandClass.reqArg ?? false;
+                compensation = commandObj.getCompensationStyle?.() ?? 0;
+              } catch (err) {
+                commandName = CommandClass.getName?.() ?? registryKey;
+                commandTitle = String(commandName);
+                reqArg = CommandClass.reqArg ?? false;
+              }
+            }
+
+            if (!canDisplay) continue;
+
+            subList.push({
+              value: commandClassName,
+              simpleName: commandName,
+              reqArg: reqArg ? 1 : 0,
+              possible: hasMinCondition,
+              compensation,
+              title: String(commandTitle),
+            });
+          } catch (error) {
+            subList.push({
+              value: commandClassName,
+              simpleName: String(commandClassName).replace(/^che_/, ''),
+              reqArg: 0,
+              possible: true,
+              compensation: 0,
+              title: String(commandClassName),
+            });
+          }
+        }
+
+        if (subList.length > 0) {
+          result.push({
+            category,
+            values: subList,
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  private static checkSecretPermission(generalData: any): number {
     const officerLevel = generalData.officer_level || 1;
     const permission = generalData.permission || '';
     const penalty = generalData.penalty || 0;
@@ -365,27 +394,8 @@ export class GetReservedCommandService {
   }
 
   private static getOfficerLevelText(officerLevel: number, nationLevel: number): string {
-    const officerNames = [
-      ['일반', '일반', '일반', '일반', '일반'],
-      ['일반', '일반', '일반', '일반', '일반'],
-      ['일반', '일반', '일반', '일반', '일반'],
-      ['일반', '일반', '일반', '일반', '일반'],
-      ['일반', '일반', '일반', '일반', '일반'],
-      ['수뇌', '수뇌', '수뇌', '수뇌', '수뇌'],
-      ['수뇌', '수뇌', '장군', '장군', '장군'],
-      ['수뇌', '군단장', '대장군', '대장군', '대장군'],
-      ['수뇌', '군단장', '대장군', '대장군', '대장군'],
-      ['수뇌', '부군주', '군주보', '태위', '대사마'],
-      ['군주', '군주', '군주', '군주', '군주'],
-      ['황제', '황제', '황제', '황제', '황제'],
-      ['태황제', '태황제', '태황제', '태황제', '태황제']
-    ];
-
-    if (officerLevel >= officerNames.length) {
-      return '태황제';
-    }
-
-    const levelIdx = Math.min(Math.max(nationLevel, 0), 4);
-    return officerNames[officerLevel]?.[levelIdx] || '일반';
+    // rank-system 유틸리티 사용 (인사부 페이지와 동일한 로직)
+    const { getOfficerTitle } = require('../../utils/rank-system');
+    return getOfficerTitle(officerLevel, nationLevel);
   }
 }

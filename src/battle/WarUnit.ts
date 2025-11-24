@@ -7,6 +7,7 @@ import { RandUtil } from '../utils/RandUtil';
 import { GameUnitConst, GameUnitDetail } from '../const/GameUnitConst';
 import { GameConst } from '../constants/GameConst';
 import { Util } from '../utils/Util';
+import { getDexBonus } from '../utils/dex-calculator';
 
 export abstract class WarUnit {
   protected general: any;
@@ -268,19 +269,76 @@ export abstract class WarUnit {
   
   getComputedAttack(): number {
     if (!this.crewType) return 100;
-    // PHP: $this->getCrewType()->getComputedAttack($this->general, $this->getNationVar('tech'))
+
+    // PHP: GameUnitDetail::getComputedAttack($general, $tech)
     const tech = this.getNationVar('tech') || 0;
-    const baseAttack = this.crewType.attack || 100;
-    const techBonus = Math.floor(tech / 1000) * 10; // 기술 1레벨당 +10
-    return baseAttack + techBonus;
+    const techLevel = Math.min(
+      Math.max(0, Math.floor(tech / 1000)),
+      GameConst.maxTechLevel ?? 10,
+    );
+    const techAbil = techLevel * 25; // PHP getTechAbil($tech)
+
+    const general: any = this.general;
+    const strength: number =
+      (typeof general.getStrength === 'function'
+        ? general.getStrength(true, true, true)
+        : general.getVar?.('strength') ?? general.data?.strength ?? general.strength ?? GameConst.defaultStat);
+    const intel: number =
+      (typeof general.getIntel === 'function'
+        ? general.getIntel(true, true, true)
+        : general.getVar?.('intel') ?? general.data?.intel ?? general.intel ?? GameConst.defaultStat);
+    const leadership: number =
+      (typeof general.getLeadership === 'function'
+        ? general.getLeadership(true, true, true)
+        : general.getVar?.('leadership') ?? general.data?.leadership ?? general.leadership ?? GameConst.defaultStat);
+
+    let ratio: number;
+    // armType 값은 GameUnitConst / PHP GameUnitConstBase 와 동일한 인덱스를 사용한다.
+    if (this.crewType.armType === 4) {
+      // WIZARD
+      ratio = intel * 2 - 40;
+    } else if (this.crewType.armType === 5) {
+      // SIEGE
+      ratio = leadership * 2 - 40;
+    } else if (this.crewType.armType === 6) {
+      // MISC
+      ratio = ((intel + leadership + strength) * 2) / 3 - 40;
+    } else {
+      // 기본: 무력 기반
+      ratio = strength * 2 - 40;
+    }
+
+    if (ratio < 10) {
+      ratio = 10;
+    }
+    if (ratio > 100) {
+      ratio = 50 + ratio / 2;
+    }
+
+    const baseAttack = (this.crewType.attack ?? 100) + techAbil;
+    return Math.round(baseAttack * ratio / 100);
   }
   
   getComputedDefence(): number {
     if (!this.crewType) return 100;
+
+    // PHP: GameUnitDetail::getComputedDefence($general, $tech)
     const tech = this.getNationVar('tech') || 0;
-    const baseDefence = this.crewType.defence || 100;
-    const techBonus = Math.floor(tech / 1000) * 10;
-    return baseDefence + techBonus;
+    const techLevel = Math.min(
+      Math.max(0, Math.floor(tech / 1000)),
+      GameConst.maxTechLevel ?? 10,
+    );
+    const techAbil = techLevel * 25;
+
+    const baseDefence = (this.crewType.defence ?? 100) + techAbil;
+
+    const general: any = this.general;
+    const crew: number =
+      general.getVar?.('crew') ?? general.data?.crew ?? general.crew ?? 0;
+
+    // PHP: $crew = ($general->getVar('crew') / (7000 / 30)) + 70;
+    const crewCoef = crew / (7000 / 30) + 70;
+    return Math.round(baseDefence * crewCoef / 100);
   }
   
   computeWarPower(): [number, number] {
@@ -326,14 +384,9 @@ export abstract class WarUnit {
   
   // 숙련도 로그 계산 (PHP: getDexLog)
   protected getDexLog(myDex: number, oppDex: number): number {
-    const dexDiff = myDex - oppDex;
-    if (dexDiff === 0) return 1.0;
-    
-    const sign = dexDiff > 0 ? 1 : -1;
-    const absDiff = Math.abs(dexDiff);
-    
-    // PHP: return pow(1 + abs($myDex - $oppDex) / 1200000, $sign * 0.5);
-    return Math.pow(1 + absDiff / 1200000, sign * 0.5);
+    // PHP: $ratio = (getDexLevel($dex1) - getDexLevel($dex2)) / 55 + 1;
+    // 구현은 공용 유틸 getDexBonus()에 위임한다.
+    return getDexBonus(myDex, oppDex);
   }
   
   // 병종 공격 상성 계수

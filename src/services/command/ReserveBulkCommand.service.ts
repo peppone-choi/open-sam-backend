@@ -1,23 +1,36 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { invalidateCache } from '../../common/cache/model-cache.helper';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
+import { resolveCommandAuthContext } from './command-auth.helper';
 
 const MAX_TURN = 50;
-
+ 
 export class ReserveBulkCommandService {
   static async execute(data: any, user?: any) {
-    const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
+    const authResult = resolveCommandAuthContext(data, user);
+    if (!authResult.ok) {
+      return authResult.error;
+    }
+
+    const { sessionId, generalId, userId } = authResult.context;
     const commandList = data.commands || data;
 
-    if (!generalId) {
-      return { success: false, message: '장수 ID가 필요합니다', result: false };
+    const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+    if (!ownershipCheck.valid) {
+      return {
+        success: false,
+        result: false,
+        message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.',
+        reason: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
+      };
     }
 
     if (!Array.isArray(commandList)) {
-      return { success: false, message: '올바른 형식이 아닙니다', result: false };
+      return { success: false, message: '올바른 형식이 아닙니다', result: false, reason: '올바른 형식이 아닙니다' };
     }
 
     const briefList: any = {};
+
 
     for (let idx = 0; idx < commandList.length; idx++) {
       const command = commandList[idx];
@@ -29,33 +42,37 @@ export class ReserveBulkCommandService {
         return {
           success: false,
           result: false,
+          message: `${idx}: 액션이 필요합니다`,
+          reason: `${idx}: 액션이 필요합니다`,
           briefList,
-          errorIdx: idx,
-          reason: `${idx}: 액션이 필요합니다`
+          errorIdx: idx
         };
       }
-
+ 
       if (!rawTurnList || rawTurnList.length === 0) {
         return {
           success: false,
           result: false,
+          message: `${idx}: 턴이 입력되지 않았습니다`,
+          reason: `${idx}: 턴이 입력되지 않았습니다`,
           briefList,
-          errorIdx: idx,
-          reason: `${idx}: 턴이 입력되지 않았습니다`
+          errorIdx: idx
         };
       }
-
+ 
       const turnList = expandTurnList(rawTurnList);
-
+ 
       if (turnList.length === 0) {
         return {
           success: false,
           result: false,
+          message: `${idx}: 올바른 턴이 아닙니다`,
+          reason: `${idx}: 올바른 턴이 아닙니다`,
           briefList,
-          errorIdx: idx,
-          reason: `${idx}: 올바른 턴이 아닙니다`
+          errorIdx: idx
         };
       }
+
 
       try {
         const brief = action;
@@ -83,12 +100,14 @@ export class ReserveBulkCommandService {
         return {
           success: false,
           result: false,
+          message: error.message,
+          reason: error.message,
           briefList,
-          errorIdx: idx,
-          reason: error.message
+          errorIdx: idx
         };
       }
     }
+
 
     const response = {
       success: true,

@@ -12,7 +12,7 @@ import { cityRepository } from '../../repositories/city.repository';
  */
 export class EncourageSettlementCommand extends GeneralCommand {
   protected static cityKey = 'pop';
-  protected static statKey = 'politics'; // 정착 장려는 정치 능력치 사용 (매력도 일부 관여)
+  protected static statKey = 'leadership'; // 정착 장려는 통솔 능력치 사용 (PHP Parity)
   protected static actionKey = '인구';
   protected static actionName = '정착 장려';
 
@@ -25,6 +25,7 @@ export class EncourageSettlementCommand extends GeneralCommand {
 
   protected init(): void {
     this.setCity();
+    console.log('EncourageSettlementCommand init: city is', this.city);
     this.setNation();
 
     const [reqGold, reqRice] = this.getCost();
@@ -114,9 +115,6 @@ export class EncourageSettlementCommand extends GeneralCommand {
       score = general.getLeadership(true, true, true, false);
     } else if (statKey === 'politics') {
       score = general.getPolitics(true, true, true, false);
-      // 정착 장려는 매력도 일부 영향
-      const charm = general.getCharm(true, true, true, false);
-      score = score * 0.7 + charm * 0.3;
     } else if (statKey === 'charm') {
       score = general.getCharm(true, true, true, false);
     }
@@ -197,12 +195,12 @@ export class EncourageSettlementCommand extends GeneralCommand {
       this.city[cityKey] + score,
       this.city[`${cityKey}_max`]
     ));
-    
+
     const sessionId = general.getSessionID();
     const cityID = general.data.city ?? 0;
     const cityUpdate: any = {};
     cityUpdate[cityKey] = newCityValue;
-    
+
     await cityRepository.updateByCityNum(sessionId, cityID, cityUpdate);
 
     general.increaseVarWithLimit('rice', -this.reqRice, 0);
@@ -211,7 +209,7 @@ export class EncourageSettlementCommand extends GeneralCommand {
     // 정착장려는 정치 70% + 매력 30%
     general.increaseVar('politics_exp', 1);
     general.increaseVar('charm_exp', 0.5);
-    
+
     this.setResultTurn(new LastTurn((this.constructor as typeof EncourageSettlementCommand).getName(), this.arg));
     general.checkStatChange();
 

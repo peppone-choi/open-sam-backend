@@ -9,9 +9,10 @@
  * - 회전 속도는 함대 기동력에 비례
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class TurnTacticalCommand {
+export class TurnTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'turn';
   }
@@ -91,7 +92,7 @@ export class TurnTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {
@@ -213,7 +214,7 @@ export class TurnTacticalCommand {
         return { success: false, message: '잘못된 방향입니다.' };
     }
 
-    return command.execute(fleetId, {
+    return command.executeTactical(fleetId, {
       sessionId,
       targetAngle: relativeAngle,
       relative: true,

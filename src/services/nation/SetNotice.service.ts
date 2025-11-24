@@ -2,6 +2,7 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 import { buildChiefPolicyPayload } from './helpers/policy.helper';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 /**
  * SetNotice Service
@@ -12,6 +13,7 @@ export class SetNoticeService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const msg = data.msg || '';
     
     try {
@@ -19,11 +21,21 @@ export class SetNoticeService {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
 
+      if (!userId) {
+        return { success: false, message: '사용자 인증이 필요합니다' };
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
+      if (!ownershipCheck.valid) {
+        return { success: false, message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.' };
+      }
+ 
       if (msg.length > 16384) {
         return { success: false, message: '공지는 최대 16384자까지 가능합니다' };
       }
-
+ 
       const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };

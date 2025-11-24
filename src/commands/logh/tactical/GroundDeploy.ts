@@ -3,10 +3,11 @@
  * 육전대를 행성/요새로 강하/배치
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 import { Planet } from '../../../models/logh/Planet.model';
 
-export class GroundDeployTacticalCommand {
+export class GroundDeployTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'ground_deploy';
   }
@@ -17,6 +18,10 @@ export class GroundDeployTacticalCommand {
 
   getDescription(): string {
     return '함대의 육전대를 행성에 배치합니다. 양륙함이 필요하며, 행성 점령 작전에 사용됩니다.';
+  }
+
+  getShortcut(): string {
+    return 'g';
   }
 
   getExecutionDelay(): number {
@@ -37,7 +42,7 @@ export class GroundDeployTacticalCommand {
     );
   }
 
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

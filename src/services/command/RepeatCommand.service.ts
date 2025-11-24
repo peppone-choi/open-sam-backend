@@ -1,20 +1,37 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { invalidateCache } from '../../common/cache/model-cache.helper';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
+import { resolveCommandAuthContext } from './command-auth.helper';
 
 const MAX_TURN = 50;
 
 export class RepeatCommandService {
   static async execute(data: any, user?: any) {
-    const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
+    const authResult = resolveCommandAuthContext(data, user);
+    if (!authResult.ok) {
+      return authResult.error;
+    }
+
+    const { sessionId, generalId, userId } = authResult.context;
     const amount = parseInt(data.amount);
 
-    if (!generalId) {
-      return { success: false, message: '장수 ID가 필요합니다' };
+    const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+    if (!ownershipCheck.valid) {
+      return {
+        success: false,
+        result: false,
+        message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.',
+        reason: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
+      };
     }
 
     if (isNaN(amount) || amount < 1 || amount > 12) {
-      return { success: false, message: '반복 횟수는 1~12 범위여야 합니다.' };
+      return {
+        success: false,
+        result: false,
+        message: '반복 횟수는 1~12 범위여야 합니다.',
+        reason: '반복 횟수는 1~12 범위여야 합니다.'
+      };
     }
 
     await repeatGeneralCommand(sessionId, generalId, amount);
@@ -28,7 +45,8 @@ export class RepeatCommandService {
 
     return {
       success: true,
-      result: true
+      result: true,
+      reason: 'success'
     };
   }
 }

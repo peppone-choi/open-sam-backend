@@ -51,8 +51,10 @@ import loghFleetRoutes from './routes/logh/fleet.route';
 import loghCommandRoutes from './routes/logh/command.route';
 import gin7Routes from './routes/gin7';
 import { UniqueConst } from './const/UniqueConst';
+import { getCommandMetrics } from './common/metrics/command-metrics';
+ 
+ dotenv.config();
 
-dotenv.config();
 
 // 테스트용 앱 생성 함수
 export async function createApp(): Promise<Express> {
@@ -67,19 +69,21 @@ export async function createApp(): Promise<Express> {
   // 글로벌 rate limiting (1000 req/15min)
   app.use(globalLimiter);
   
-  // CORS 설정
-  app.use(cors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://127.0.0.1:3000',
-      process.env.FRONTEND_URL || 'http://localhost:3000'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['Set-Cookie']
-  }));
+    // CORS 설정
+    app.use(cors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3003',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'http://127.0.0.1:3003',
+      ],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      exposedHeaders: ['Set-Cookie']
+    }));
   
   app.use(compression());
   app.use(cookieParser());
@@ -99,6 +103,12 @@ export async function createApp(): Promise<Express> {
   // Health check
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Command metrics (Prometheus format)
+  app.get('/metrics/commands', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+    res.send(getCommandMetrics());
   });
   
   // Swagger API 문서
@@ -140,8 +150,10 @@ export async function createApp(): Promise<Express> {
   app.use('/api/chief', chiefRoutes);
   app.use('/api/processing', processingRoutes);
   app.use('/api/scenarios', scenarioRoutes);
+  app.use('/api/archive', archiveRoutes);
+ 
+   // LOGH (은하영웅전설) 라우트
 
-  // LOGH (은하영웅전설) 라우트
   app.use('/api/logh', loghCommanderRoutes);
   app.use('/api/logh', loghFleetRoutes);
   app.use('/api/logh', loghCommandRoutes);
@@ -223,11 +235,18 @@ app.use(autoExtractToken);
  *                   format: date-time
  *                   example: 2025-11-01T10:30:00.000Z
  */
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+ app.get('/health', (_req: Request, res: Response) => {
+   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+ });
 
-// Swagger API 문서
+// Command metrics (Prometheus format)
+app.get('/metrics/commands', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+  res.send(getCommandMetrics());
+});
+ 
+ // Swagger API 문서
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',

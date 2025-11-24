@@ -3,9 +3,10 @@
  * 지정 적에게 일시 공격 (Attack보다 더 강력하지만 재사용 대기시간 있음)
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class FireTacticalCommand {
+export class FireTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'fire';
   }
@@ -33,7 +34,7 @@ export class FireTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

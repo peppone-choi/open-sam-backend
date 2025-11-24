@@ -9,6 +9,7 @@
  * - 함대 간 간격 자동 조정
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
 interface FleetPosition {
@@ -16,7 +17,7 @@ interface FleetPosition {
   offset: { x: number; y: number }; // 리더 기준 상대 위치
 }
 
-export class ParallelMoveTacticalCommand {
+export class ParallelMoveTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'parallel_move';
   }
@@ -73,7 +74,7 @@ export class ParallelMoveTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

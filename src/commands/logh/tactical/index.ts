@@ -1,3 +1,6 @@
+// Tactical Commands Base Class
+export { BaseTacticalCommand } from './BaseTacticalCommand';
+
 // Tactical Commands
 export { AirCombatTacticalCommand } from './AirCombat';
 export { AttackTacticalCommand } from './Attack';

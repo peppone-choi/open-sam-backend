@@ -3,9 +3,10 @@
  * 사정거리 내 적에게 자동 공격
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class AttackTacticalCommand {
+export class AttackTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'attack';
   }
@@ -33,7 +34,7 @@ export class AttackTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {

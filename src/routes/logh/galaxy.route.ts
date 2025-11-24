@@ -25,6 +25,7 @@ import {
   deleteMail,
   getMailboxInfo,
 } from '../../services/logh/GalaxyComm.service';
+import { Gin7FrontendService } from '../../services/logh/Gin7Frontend.service';
 import { autoExtractToken } from '../../middleware/auth';
 import { LOGH_MESSAGES } from '../../constants/messages';
 
@@ -59,6 +60,25 @@ async function requireUserCharacter(
   }
   return GalaxyCharacter.findOne(filter);
 }
+
+router.get('/viewport', async (req, res) => {
+  try {
+    const sessionId = (req.query.sessionId || getSessionId(req) || '') as string;
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const faction = (req.query.faction as string | undefined)?.toLowerCase() as any;
+    const strategic = await Gin7FrontendService.getStrategicState(sessionId, faction);
+
+    res.json({
+      success: true,
+      data: strategic,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 router.post('/sessions/:sessionId/join', async (req, res) => {
   try {

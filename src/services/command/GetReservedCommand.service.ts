@@ -1,27 +1,28 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
+import { resolveCommandAuthContext } from './command-auth.helper';
 
 const MAX_TURN = 50;
 const FLIPPED_MAX_TURN = 30;
 
 export class GetReservedCommandService {
   static async execute(data: any, user?: any) {
-    const sessionId = data.session_id || 'sangokushi_default';
-    // general_id를 숫자로 변환 (쿼리 파라미터는 문자열로 올 수 있음)
-    let generalId = user?.generalId || data.general_id;
-    if (generalId) {
-      generalId = Number(generalId);
-      if (isNaN(generalId) || generalId === 0) {
-        generalId = undefined;
-      }
+    const authResult = resolveCommandAuthContext(data, user);
+    if (!authResult.ok) {
+      return authResult.error;
     }
-    
-    
-    if (!generalId) {
+
+    const { sessionId, generalId, userId } = authResult.context;
+
+    const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
+    if (!ownershipCheck.valid) {
       return {
         success: false,
-        message: '장수 ID가 필요합니다'
+        result: false,
+        message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.',
+        reason: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
       };
     }
 
@@ -86,23 +87,28 @@ export class GetReservedCommandService {
 
     // General 모델에서 장수 찾기
     const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
-
-
-
+ 
+ 
+ 
     if (!general) {
       return {
         success: false,
-        message: '장수를 찾을 수 없습니다'
+        result: false,
+        message: '장수를 찾을 수 없습니다',
+        reason: '장수를 찾을 수 없습니다'
       };
     }
-
+ 
     const session = await sessionRepository.findBySessionId(sessionId);
     if (!session) {
       return {
         success: false,
-        message: '세션을 찾을 수 없습니다'
+        result: false,
+        message: '세션을 찾을 수 없습니다',
+        reason: '세션을 찾을 수 없습니다'
       };
     }
+
 
     // session.data 또는 session.data.game_env에서 값 가져오기
     const sessionData = session.data || {};
@@ -298,6 +304,7 @@ export class GetReservedCommandService {
     return {
       success: true,
       result: true,
+      reason: 'success',
       turnTime: turnTime instanceof Date ? turnTime.toISOString() : new Date(turnTime).toISOString(),
       turnTerm: turnTermInMinutes, // PHP 버전과 동일하게 분 단위로 반환
       year, // 장수의 다음 turntime 기준 년월

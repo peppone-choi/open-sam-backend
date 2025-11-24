@@ -25,7 +25,9 @@ export class ReturnCommand extends GeneralCommand {
 
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
-      ConstraintHelper.NotWanderingNation()
+      ConstraintHelper.NotWanderingNation(),
+      // PHP: ConstraintHelper::NotCapital(true)
+      ConstraintHelper.NotCapital(true)
     ];
   }
 

@@ -98,7 +98,7 @@ export class MockObjects {
       nation: defaults.nation,
       city: defaults.city,
       data: { ...defaults },
-      
+
       getVar: jest.fn((key: string) => vars.get(key) ?? 0),
       setVar: jest.fn((key: string, value: any) => vars.set(key, value)),
       increaseVar: jest.fn((key: string, amount: number) => {
@@ -110,24 +110,27 @@ export class MockObjects {
         const newValue = Math.max(limit, current + amount);
         vars.set(key, newValue);
       }),
-      
+
       getID: jest.fn(() => defaults.no),
       getNationID: jest.fn(() => defaults.nation),
       getCityID: jest.fn(() => defaults.city),
-      
+
+      getCity: jest.fn(function () { return this._cached_city; }),
+      getNation: jest.fn(function () { return this._cached_nation; }),
+
       getLeadership: jest.fn(() => defaults.leadership),
       getStrength: jest.fn(() => defaults.strength),
       getIntel: jest.fn(() => defaults.intel),
       getPolitics: jest.fn(() => defaults.politics),
       getCharm: jest.fn(() => defaults.charm),
-      
-      getCrewTypeObj: jest.fn(() => ({ 
-        id: defaults.crewtype, 
-        name: '보병', 
+
+      getCrewTypeObj: jest.fn(() => ({
+        id: defaults.crewtype,
+        name: '보병',
         armType: 0,
-        cost: 1 
+        cost: 1
       })),
-      
+
       onCalcDomestic: jest.fn((action, key, value) => value),
       addExperience: jest.fn(),
       addDedication: jest.fn(),
@@ -135,14 +138,14 @@ export class MockObjects {
       setAuxVar: jest.fn(),
       addDex: jest.fn(),
       updateMaxDomesticCritical: jest.fn(),
-      
+
       getLogger: jest.fn(() => ({
         pushGeneralActionLog: jest.fn(),
         pushNationalHistoryLog: jest.fn(),
         pushGlobalHistoryLog: jest.fn(),
         flush: jest.fn()
       })),
-      
+
       getTurnTime: jest.fn(() => '184년 1월'),
       getSessionID: jest.fn(() => 'test_session'),
       genGenericUniqueRNG: jest.fn(() => ({
@@ -150,10 +153,15 @@ export class MockObjects {
         choiceUsingWeight: jest.fn(() => 'normal'),
         choiceUsingWeightPair: jest.fn(() => [['normal', 2], 0.33])
       })),
-      
+
       _cached_city: null,
       _cached_nation: null,
-      _vars: vars // 테스트용 직접 접근
+      _vars: vars, // 테스트용 직접 접근
+
+      // Turn management mocks
+      _setResultTurn: jest.fn(),
+      getResultTurn: jest.fn(() => ({ term: 0, command: '휴식', arg: null })),
+      getLastTurn: jest.fn(() => ({ term: 0, command: '휴식', arg: null })),
     };
   }
 
@@ -228,13 +236,13 @@ export class MockObjects {
    */
   static createMockRNG(options: any = {}): any {
     return {
-      nextRange: jest.fn((min: number, max: number) => 
+      nextRange: jest.fn((min: number, max: number) =>
         options.nextRange ?? (min + max) / 2
       ),
-      choiceUsingWeight: jest.fn((weights: Record<string, number>) => 
+      choiceUsingWeight: jest.fn((weights: Record<string, number>) =>
         options.choice ?? Object.keys(weights)[0]
       ),
-      choiceUsingWeightPair: jest.fn((pairs: any[]) => 
+      choiceUsingWeightPair: jest.fn((pairs: any[]) =>
         options.choicePair ?? pairs[0]
       ),
       nextBool: jest.fn(() => options.nextBool ?? true),
@@ -258,9 +266,9 @@ export class ConstraintTestHelper {
       const testStr = c.test?.toString() || '';
       const reasonStr = typeof c.reason === 'string' ? c.reason : '';
       const messageStr = typeof c.message === 'string' ? c.message : '';
-      return testStr.includes(searchText) || 
-             reasonStr.includes(searchText) || 
-             messageStr.includes(searchText);
+      return testStr.includes(searchText) ||
+        reasonStr.includes(searchText) ||
+        messageStr.includes(searchText);
     });
   }
 
@@ -268,23 +276,23 @@ export class ConstraintTestHelper {
    * 제약 조건 테스트 실행
    */
   static testConstraint(
-    constraints: any[] | null | undefined, 
-    searchText: string, 
-    input: any, 
+    constraints: any[] | null | undefined,
+    searchText: string,
+    input: any,
     env: any
   ): string | null {
     if (!constraints || constraints.length === 0) {
       throw new Error(`Constraints array is null or empty`);
     }
-    
-    const constraint = constraints.find(c => 
+
+    const constraint = constraints.find(c =>
       c.test?.toString().includes(searchText)
     );
-    
+
     if (!constraint) {
       throw new Error(`Constraint not found: ${searchText}`);
     }
-    
+
     return constraint.test(input, env);
   }
 
@@ -292,8 +300,8 @@ export class ConstraintTestHelper {
    * 모든 제약 조건 통과 확인
    */
   static allConstraintsPassed(
-    constraints: any[] | null | undefined, 
-    input: any, 
+    constraints: any[] | null | undefined,
+    input: any,
     env: any
   ): boolean {
     if (!constraints || constraints.length === 0) {
@@ -306,8 +314,8 @@ export class ConstraintTestHelper {
    * 실패한 제약 조건 찾기
    */
   static findFailedConstraints(
-    constraints: any[] | null | undefined, 
-    input: any, 
+    constraints: any[] | null | undefined,
+    input: any,
     env: any
   ): Array<{ constraint: any; reason: string }> {
     if (!constraints || constraints.length === 0) {
@@ -361,13 +369,13 @@ export class CommandTestHelper {
     expectedRice?: number
   ): void {
     const [gold, rice] = cost;
-    
+
     if (expectedGold !== undefined) {
       expect(gold).toBe(expectedGold);
     } else {
       expect(gold).toBeGreaterThanOrEqual(0);
     }
-    
+
     if (expectedRice !== undefined) {
       expect(rice).toBe(expectedRice);
     } else {
@@ -414,7 +422,7 @@ export class CommandTestHelper {
       arg: null,
       term: 0,
       seq: 0,
-      duplicate: function() {
+      duplicate: function () {
         return {
           command: this.command,
           arg: this.arg,
@@ -423,8 +431,8 @@ export class CommandTestHelper {
           duplicate: this.duplicate
         };
       },
-      getTerm: function() { return this.term; },
-      getSeq: function() { return this.seq; }
+      getTerm: function () { return this.term; },
+      getSeq: function () { return this.seq; }
     };
 
     // NationCommand는 (general, env, lastTurn, arg) 순서

@@ -1,13 +1,14 @@
 /**
  * LOGH Command API Routes
  * 은하영웅전설 커맨드 실행 API
+ * 
+ * 동적 커맨드 로딩 시스템 사용 (97개 커맨드 자동 지원)
  */
 
 import { Router } from 'express';
 import { LoghCommander } from '../../models/logh/Commander.model';
 import { Fleet } from '../../models/logh/Fleet.model';
-import { MoveFleetCommand } from '../../commands/logh/MoveFleet';
-import { IssueOperationCommand } from '../../commands/logh/IssueOperation';
+import { commandRegistry } from '../../commands/logh/CommandRegistry';
 import { authenticate, validateSession } from '../../middleware/auth';
 import { ILoghCommandContext } from '../../commands/logh/BaseLoghCommand';
 
@@ -20,23 +21,38 @@ const router = Router();
 router.post('/command/execute', authenticate, validateSession, async (req, res) => {
   try {
     const sessionId = req.sessionInstance?.session_id;
-    const userId = req.user?.userId;
+    const userId = req.user?.userId || req.user?.id;
     const { command, params } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: '세션 정보가 필요합니다.' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: '로그인한 사용자 정보가 필요합니다.' });
+    }
 
     if (!command) {
       return res.status(400).json({ error: '실행할 커맨드 이름이 필요합니다.' });
     }
 
-    // 커맨더 조회 (TODO: userId 매핑)
+    // 커맨더 조회 (1차 강화: ownerUserId 기반)
+    // TODO: 현재 ownerUserId를 채우는 경로는 시나리오/세션 서비스에서 아직 완성되지 않았습니다.
+    //       실 서비스에서는 join 시점에 commander-사용자 매핑을 생성해야 합니다.
 
     const commander = await LoghCommander.findOne({
       session_id: sessionId,
       isActive: true,
+      ownerUserId: userId,
     });
 
     if (!commander) {
-      return res.status(404).json({ error: '활성화된 제독 정보를 찾을 수 없습니다.' });
+      // 구조만 존재하고 실제 매핑이 없는 경우를 방지하기 위한 guard
+      return res.status(403).json({
+        error: '현재 세션에서 이 사용자에게 소유된 LOGH 커맨더를 찾을 수 없습니다. (테스트용 엔드포인트이며, 실 서비스에서는 커맨더-사용자 소유권 검증이 필요합니다.)',
+      });
     }
+
 
     // 함대 조회
     let fleet = null;
@@ -47,17 +63,14 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
       });
     }
 
-    // 커맨드 인스턴스 생성
-    let commandInstance;
-    switch (command) {
-      case 'move_fleet':
-        commandInstance = new MoveFleetCommand();
-        break;
-      case 'issue_operation':
-        commandInstance = new IssueOperationCommand();
-        break;
-      default:
-        return res.status(400).json({ error: `알 수 없는 커맨드입니다: ${command}` });
+    // 커맨드 인스턴스 가져오기 (동적 로딩)
+    const commandInstance = commandRegistry.getCommand(command);
+    if (!commandInstance) {
+      return res.status(400).json({ 
+        error: `알 수 없는 커맨드입니다: ${command}`,
+        availableCommands: commandRegistry.getAllCommandNames().slice(0, 10), // 처음 10개만 표시
+        totalCommands: commandRegistry.getAllCommandNames().length
+      });
     }
 
     // 커맨더를 ILoghCommandExecutor 인터페이스로 래핑
@@ -135,28 +148,39 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
 
 /**
  * GET /api/logh/commands/available
- * 사용 가능한 커맨드 목록
+ * 사용 가능한 커맨드 목록 (동적 생성)
  */
 router.get('/commands/available', authenticate, validateSession, async (req, res) => {
   try {
-    const commands = [
-      {
-        name: 'move_fleet',
-        displayName: '함대 이동',
-        category: 'fleet',
-        requiredCP: 2,
-        description: '함대를 지정한 좌표로 워프 항행시킵니다.',
-      },
-      {
-        name: 'issue_operation',
-        displayName: '작전 발령',
-        category: 'strategic',
-        requiredCP: 5,
-        description: '복수의 함대를 조율하는 작전 계획을 발령합니다.',
-      },
-    ];
+    const { category } = req.query;
+    
+    let commandList;
+    if (category && typeof category === 'string') {
+      // 카테고리별 필터링
+      commandList = commandRegistry.getCommandsByCategory(category as any);
+    } else {
+      // 전체 커맨드 목록
+      const allNames = commandRegistry.getAllCommandNames();
+      commandList = allNames.map(name => commandRegistry.getCommand(name)).filter(cmd => cmd !== null);
+    }
 
-    res.json({ commands });
+    const commands = commandList.map(cmd => ({
+      name: cmd!.getName(),
+      displayName: cmd!.getDisplayName(),
+      category: cmd!.getCategory(),
+      requiredCP: cmd!.getRequiredCommandPoints(),
+      requiredTurns: cmd!.getRequiredTurns(),
+      description: cmd!.getDescription(),
+    }));
+
+    const stats = commandRegistry.getStats();
+
+    res.json({ 
+      commands,
+      total: commands.length,
+      stats,
+      schemaVersion: '2025-11-24.command-registry.1',
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

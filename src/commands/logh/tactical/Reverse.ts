@@ -10,9 +10,10 @@
  * - 방어 자세 유지에 유리
  */
 
+import { BaseTacticalCommand } from './BaseTacticalCommand';
 import { Fleet } from '../../../models/logh/Fleet.model';
 
-export class ReverseTacticalCommand {
+export class ReverseTacticalCommand extends BaseTacticalCommand {
   getName(): string {
     return 'reverse';
   }
@@ -72,7 +73,7 @@ export class ReverseTacticalCommand {
   /**
    * 전술 커맨드 실행 (실시간)
    */
-  async execute(fleetId: string, params: any): Promise<{
+  async executeTactical(fleetId: string, params: any): Promise<{
     success: boolean;
     message: string;
   }> {
@@ -171,11 +172,11 @@ export class ReverseTacticalCommand {
   }
 
   /**
-   * 긴급 후진 (빠른 명령)
+   * 긴급 후진 (정적 메서드)
    */
   static async emergencyReverse(fleetId: string, sessionId: string): Promise<any> {
     const command = new ReverseTacticalCommand();
-    return command.execute(fleetId, {
+    return command.executeTactical(fleetId, {
       sessionId,
       distance: 1000, // 긴급 후진: 1000 유닛
     });

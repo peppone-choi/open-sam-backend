@@ -1,6 +1,7 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import GameConstants from '../../utils/game-constants';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
 
@@ -8,18 +9,33 @@ export class RepeatCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const amount = parseInt(data.amount);
     
     try {
+      if (!generalId) {
+        throw new Error('장수 ID가 필요합니다.');
+      }
+
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.');
+      }
+
       if (isNaN(amount)) {
         throw new Error('amount가 숫자가 아닙니다.');
       }
-
+ 
       if (amount < 1 || amount > 12) {
         throw new Error('범위를 벗어났습니다 (1 ~ 12)');
       }
-
+ 
       const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         throw new Error('올바르지 않은 장수입니다.');

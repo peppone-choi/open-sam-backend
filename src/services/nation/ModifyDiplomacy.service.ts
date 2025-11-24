@@ -2,6 +2,8 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { Diplomacy } from '../../models/diplomacy.model';
 import { diplomacyRepository } from '../../repositories/diplomacy.repository';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
+
 
 /**
  * ModifyDiplomacy Service
@@ -11,6 +13,7 @@ export class ModifyDiplomacyService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const targetNationId = parseInt(data.targetNationId || data.target_nation_id);
     const dipState = parseInt(data.state || data.dipState);
     const term = data.term ? parseInt(data.term) : null;
@@ -19,19 +22,26 @@ export class ModifyDiplomacyService {
       if (!generalId) {
         return { success: false, message: '장수 ID가 필요합니다' };
       }
-
+ 
       if (!targetNationId) {
         return { success: false, message: '대상 국가 ID가 필요합니다' };
       }
-
+ 
       if (dipState === undefined) {
         return { success: false, message: '외교 상태가 필요합니다' };
       }
 
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
+      if (!userId) {
+        return { success: false, message: '사용자 인증이 필요합니다' };
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
+      if (!ownershipCheck.valid) {
+        return { success: false, message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.' };
+      }
+ 
+      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };

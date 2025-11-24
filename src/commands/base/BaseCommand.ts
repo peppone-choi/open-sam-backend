@@ -900,45 +900,56 @@ export abstract class BaseCommand {
 
   /**
    * 아이템 즉시 소비 시도
-   * PHP의 BaseItem::tryConsumeNow() 호출
-   * 
+   *
+   * - PHP의 BaseItem::tryConsumeNow() 패턴을 TS로 옮긴 구현
+   * - GeneralAdapter + ItemAction을 사용해 슬롯별 아이템을 안전하게 소비
+   * - 실제 DB 저장은 `saveGeneral()`에서 한 번에 처리되어 커맨드 단위로 원자성 보장
+   *
    * @param itemSlot 아이템 슬롯 (item, weapon, book, horse 등)
-   * @param actionType 액션 타입 (예: 'GeneralTrigger', '장비매매')
-   * @param command 커맨드 이름
-   * @returns true면 아이템이 소비되어 제거됨
+   * @param actionType 액션 타입 (예: 'GeneralTrigger', '장비매매', 'GeneralCommand')
+   * @param command 커맨드 이름 또는 트리거 이름
+   * @returns true면 아이템이 소비되어 인벤토리에서 제거됨
    */
   protected async tryConsumeNow(
     itemSlot: string,
     actionType: string,
     command: string
   ): Promise<boolean> {
-    const itemClassName = this.generalObj.data[itemSlot];
-    if (!itemClassName || itemClassName === 'None') {
-      return false;
-    }
+    try {
+      const { GeneralAdapter } = await import('../../adapters/GeneralAdapter');
+      const adapter = new GeneralAdapter(this.generalObj);
 
-    // 아이템 인스턴스 생성
-    const { createItem } = await import('../../models/items');
-    const itemInstance = createItem(itemClassName);
-    if (!itemInstance) {
-      return false;
-    }
+      // 장비 코드가 비어 있으면 아무 것도 하지 않음
+      const item = adapter.getItem(itemSlot as any);
+      if (!item || typeof item.tryConsumeNow !== 'function') {
+        return false;
+      }
 
-    // 아이템의 tryConsumeNow 호출
-    const shouldConsume = itemInstance.tryConsumeNow(
-      this.generalObj,
-      actionType,
-      command
-    );
+      // 아이템 내부 로직에 위임 (치료/계략/소모품 등)
+      const result = item.tryConsumeNow(this.generalObj, actionType, command);
+      const shouldConsume =
+        result instanceof Promise ? await result : Boolean(result);
 
-    if (shouldConsume) {
-      // 아이템 제거
-      this.generalObj.data[itemSlot] = 'None';
-      this.generalObj.markModified('data');
+      if (!shouldConsume) {
+        return false;
+      }
+
+      // 실제 인벤토리 삭제는 General 헬퍼를 통해 수행
+      // - Mongoose Document: GeneralSchema.methods.deleteItem()
+      // - Plain Object: GeneralAdapter가 data[slot] = 'None'으로 처리
+      if (typeof (this.generalObj as any).deleteItem === 'function') {
+        (this.generalObj as any).deleteItem(itemSlot);
+      } else {
+        adapter.deleteItem(itemSlot as any);
+      }
+
+      // 커맨드 종료 시 saveGeneral() 한 번으로 DB 반영
+      this.markGeneralDirty();
       return true;
+    } catch (error) {
+      console.error('tryConsumeNow 실패:', error);
+      return false;
     }
-
-    return false;
   }
 
   /**

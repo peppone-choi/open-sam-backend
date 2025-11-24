@@ -5,7 +5,6 @@
  */
 
 import { diplomacyRepository } from '../../repositories/diplomacy.repository';
-import { GameConst } from '../../constants/GameConst';
 
 interface DiplomacyUpdate {
   sessionId: string;

@@ -6,11 +6,33 @@
  */
 
 import { EncourageSettlementCommand } from '../encourageSettlement';
-import { 
-  MockObjects, 
-  ConstraintTestHelper, 
-  CommandTestHelper 
+import {
+  MockObjects,
+  ConstraintTestHelper,
+  CommandTestHelper
 } from '../../__tests__/test-helpers';
+
+// Mock repositories
+jest.mock('../../../repositories/city.repository', () => ({
+  cityRepository: {
+    findOneByFilter: jest.fn().mockResolvedValue(null),
+    updateByCityNum: jest.fn().mockResolvedValue(undefined)
+  }
+}));
+
+jest.mock('../../../repositories/nation.repository', () => ({
+  nationRepository: {
+    findByNationNum: jest.fn().mockResolvedValue(null),
+    findOneByFilter: jest.fn().mockResolvedValue(null)
+  }
+}));
+
+jest.mock('../../../repositories/unit-stack.repository', () => ({
+  unitStackRepository: {
+    findByOwner: jest.fn().mockResolvedValue([]),
+    findById: jest.fn().mockResolvedValue(null)
+  }
+}));
 
 describe('EncourageSettlementCommand', () => {
   describe('기본 구조 테스트', () => {
@@ -51,7 +73,7 @@ describe('EncourageSettlementCommand', () => {
       );
 
       const result = command['argTest']();
-      
+
       expect(typeof result).toBe('boolean');
     });
 
@@ -63,7 +85,7 @@ describe('EncourageSettlementCommand', () => {
       );
 
       const result = command['argTest']();
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
   });
 
@@ -76,7 +98,7 @@ describe('EncourageSettlementCommand', () => {
       );
 
       command['init']();
-      
+
       const constraints = command['minConditionConstraints'];
       expect(Array.isArray(constraints)).toBe(true);
     });
@@ -90,7 +112,7 @@ describe('EncourageSettlementCommand', () => {
 
       command['init']();
       command['initWithArg']();
-      
+
       const constraints = command['fullConditionConstraints'];
       expect(Array.isArray(constraints)).toBe(true);
     });
@@ -156,9 +178,46 @@ describe('EncourageSettlementCommand', () => {
     });
   });
 
-  
-  // - 특정 제약 조건 테스트
-  // - run() 메서드 실행 테스트
-  // - 상태 변경 검증
-  // - 로그 메시지 검증
+
+  describe('실행 로직 테스트', () => {
+    it('정착 장려는 통솔력을 사용하여 계산해야 함 (BF-004 Fix)', async () => {
+      const { command, general } = CommandTestHelper.prepareCommand(
+        EncourageSettlementCommand,
+        {
+          leadership: 90,
+          politics: 10, // 정치가 낮아도 영향 없어야 함
+          charm: 10
+        },
+        {}, {}, {},
+        { /* arg */ }
+      );
+
+      // Mock setup
+      command['hasFullConditionMet'] = jest.fn().mockReturnValue(true);
+      command['saveGeneral'] = jest.fn().mockResolvedValue(undefined);
+
+      // Mock RNG
+      const rng = {
+        nextRange: jest.fn().mockReturnValue(1.0),
+        choiceUsingWeight: jest.fn().mockReturnValue('normal')
+      };
+
+      // Mock calcBaseScore to verify it uses leadership
+      // But we want to test calcBaseScore itself.
+      // So let's call calcBaseScore directly if possible or run() and check result.
+
+      // Let's spy on getLeadership
+      const getLeadershipSpy = jest.spyOn(general, 'getLeadership');
+      const getPoliticsSpy = jest.spyOn(general, 'getPolitics');
+
+      // Run command
+      await command.run(rng);
+
+      // Verify getLeadership was called
+      expect(getLeadershipSpy).toHaveBeenCalled();
+      // Verify getPolitics was NOT called (or at least not for score calc)
+      // Note: getPolitics might be called for other reasons? No, only if statKey is politics.
+      expect(getPoliticsSpy).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -1,36 +1,42 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { verifyGeneralOwnership } from '../../common/auth-utils';
 import { invalidateCache } from '../../common/cache/model-cache.helper';
+import { resolveCommandAuthContext } from './command-auth.helper';
 
 const MAX_TURN = 50;
 
 export class PushCommandService {
   static async execute(data: any, user?: any) {
-    const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
-    const userId = user?.userId || user?.id;
+    const authResult = resolveCommandAuthContext(data, user);
+    if (!authResult.ok) {
+      return authResult.error;
+    }
+
+    const { sessionId, generalId, userId } = authResult.context;
     const amount = parseInt(data.amount);
-
-    if (!generalId) {
-      return { success: false, message: '장수 ID가 필요합니다' };
-    }
-
-    if (!userId) {
-      return { success: false, message: '사용자 인증이 필요합니다' };
-    }
 
     // 🔒 보안: 장수 소유권 검증
     const ownershipCheck = await verifyGeneralOwnership(sessionId, generalId, userId);
     if (!ownershipCheck.valid) {
-      return { success: false, message: ownershipCheck.error };
+      return {
+        success: false,
+        result: false,
+        message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.',
+        reason: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
+      };
     }
 
     if (isNaN(amount) || amount < -12 || amount > 12) {
-      return { success: false, message: '증감 값은 -12 ~ 12 범위여야 합니다.' };
+      return {
+        success: false,
+        result: false,
+        message: '증감 값은 -12 ~ 12 범위여야 합니다.',
+        reason: '증감 값은 -12 ~ 12 범위여야 합니다.'
+      };
     }
 
     if (amount === 0) {
-      return { success: true, result: true };
+      return { success: true, result: true, reason: 'success' };
     }
 
     if (amount > 0) {
@@ -49,7 +55,8 @@ export class PushCommandService {
 
     return {
       success: true,
-      result: true
+      result: true,
+      reason: 'success'
     };
   }
 }

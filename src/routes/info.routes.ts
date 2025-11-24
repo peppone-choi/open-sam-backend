@@ -233,11 +233,11 @@ router.post('/city', authenticate, async (req, res) => {
   try {
     const { session_id: sessionId, cityID } = req.body;
     const userId = req.user?.userId;
-    
+
     if (!sessionId || cityID === undefined) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         result: false,
-        error: 'session_id와 cityID가 필요합니다.' 
+        error: 'session_id와 cityID가 필요합니다.'
       });
     }
 
@@ -252,12 +252,12 @@ router.post('/city', authenticate, async (req, res) => {
     const city = await cityRepository.findByCityNum(sessionId, numericCityId);
 
     if (!city) {
-      return res.json({ 
-        result: false, 
-        error: '도시를 찾을 수 없습니다.' 
+      return res.json({
+        result: false,
+        error: '도시를 찾을 수 없습니다.'
       });
     }
-    
+
     // 장수 조회 (권한 체크용)
     const ownerKey = userId?.toString();
     if (!ownerKey) {
@@ -265,24 +265,27 @@ router.post('/city', authenticate, async (req, res) => {
     }
 
     const general = await generalRepository.findBySessionAndOwner(sessionId, ownerKey);
-    
+
     if (!general) {
-      return res.json({ result: false, error: '장수를 찾을 수 없습니다' });
+      return res.json({
+        result: false,
+        error: '장수를 먼저 생성해주세요. 게임을 시작하려면 캐릭터를 생성하세요.'
+      });
     }
-    
+
     const myNationId = (general as any).data?.nation || (general as any).nation || 0;
     const cityNationId = city.data?.nation ?? city.nation ?? 0;
-    
+
     // 권한 체크: 아군 도시, 공백지, 또는 스파이한 도시만 볼 수 있음
     const isMyNation = myNationId === cityNationId;
     const isNeutral = cityNationId === 0;
-    
+
     let canView = isMyNation || isNeutral;
-    
+
     // 타국 도시는 스파이 여부 확인
     if (!canView && myNationId > 0) {
       const myNation = await nationRepository.findByNationNum(sessionId, myNationId);
-      
+
       if (myNation) {
         const nationData: any = typeof myNation.toObject === 'function' ? myNation.toObject() : myNation;
         const spyData = nationData.data?.spy ?? nationData.spy;
@@ -303,7 +306,7 @@ router.post('/city', authenticate, async (req, res) => {
         }
       }
     }
-    
+
     if (!canView) {
       return res.json({
         result: false,
@@ -325,9 +328,9 @@ router.post('/city', authenticate, async (req, res) => {
     });
   } catch (error: any) {
     console.error('도시 정보 조회 오류:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       result: false,
-      error: error.message 
+      error: error.message
     });
   }
 });

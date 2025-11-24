@@ -5,6 +5,7 @@ import { Nation } from '../../models/nation.model';
 import { Session } from '../../models/session.model';
 import { generalRepository } from '../../repositories/general.repository';
 import { buildChiefPolicyPayload } from './helpers/policy.helper';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 /**
  * SetBill Service
@@ -15,6 +16,7 @@ export class SetBillService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     const amount = parseInt(data.amount);
     
     try {
@@ -33,8 +35,24 @@ export class SetBillService {
         };
       }
 
+      if (!userId) {
+        return {
+          success: false,
+          message: '사용자 인증이 필요합니다'
+        };
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
+      if (!ownershipCheck.valid) {
+        return {
+          success: false,
+          message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
+        };
+      }
+ 
       // 장수 정보 조회
       const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
 
       if (!general) {
         return {

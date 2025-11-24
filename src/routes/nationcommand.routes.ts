@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
+import { recordCommandRequest } from '../common/metrics/command-metrics';
+ 
+ import { GetReservedCommandService } from '../services/nationcommand/GetReservedCommand.service';
 
-import { GetReservedCommandService } from '../services/nationcommand/GetReservedCommand.service';
 import { PushCommandService } from '../services/nationcommand/PushCommand.service';
 import { RepeatCommandService } from '../services/nationcommand/RepeatCommand.service';
 import { ReserveBulkCommandService } from '../services/nationcommand/ReserveBulkCommand.service';
@@ -9,8 +11,30 @@ import { ReserveCommandService } from '../services/nationcommand/ReserveCommand.
 
 const router = Router();
 
+// Metrics middleware for nation commands
+router.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  const sessionId = (req.query.session_id as string) || (req.body && (req.body as any).session_id);
 
-// GetReservedCommand
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const durationSeconds = Number(end - start) / 1e9;
+
+    recordCommandRequest({
+      type: 'nation',
+      method: req.method,
+      status: res.statusCode,
+      durationSeconds,
+      sessionId,
+    });
+  });
+
+  next();
+});
+ 
+ 
+ // GetReservedCommand
+
 /**
  * @swagger
  * /api/nationcommand/get-reserved-command:

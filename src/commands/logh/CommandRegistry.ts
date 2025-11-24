@@ -16,6 +16,11 @@ import { IssueOperationCommand } from './IssueOperation';
 
 type CommandConstructor = new () => BaseLoghCommand;
 
+// Type guard to check if a value is a CommandConstructor
+function isCommandConstructor(value: any): value is CommandConstructor {
+  return typeof value === 'function' && value.prototype instanceof BaseLoghCommand;
+}
+
 class CommandRegistry {
   private commands: Map<string, CommandConstructor> = new Map();
   private commandInstances: Map<string, BaseLoghCommand> = new Map();
@@ -116,7 +121,7 @@ class CommandRegistry {
     this.registerCommand('warp', StrategicCommands.WarpCommand);
     this.registerCommand('withdraw_operation', StrategicCommands.WithdrawOperationCommand);
 
-    // Tactical Commands (14개)
+    // Tactical Commands (14개) - now properly extend BaseTacticalCommand
     this.registerCommand('air_combat', TacticalCommands.AirCombatTacticalCommand);
     this.registerCommand('attack', TacticalCommands.AttackTacticalCommand);
     this.registerCommand('fire', TacticalCommands.FireTacticalCommand);
@@ -184,7 +189,8 @@ class CommandRegistry {
   getCommandsByCategory(category: 'fleet' | 'tactical' | 'strategic' | 'diplomatic' | 'admin'): BaseLoghCommand[] {
     const results: BaseLoghCommand[] = [];
     
-    for (const name of this.commands.keys()) {
+    const commandNames = Array.from(this.commands.keys());
+    for (const name of commandNames) {
       const cmd = this.getCommand(name);
       if (cmd && cmd.getCategory() === category) {
         results.push(cmd);
@@ -202,7 +208,8 @@ class CommandRegistry {
     let tactical = 0;
     let legacy = 0;
 
-    for (const name of this.commands.keys()) {
+    const commandNames = Array.from(this.commands.keys());
+    for (const name of commandNames) {
       const cmd = this.getCommand(name);
       if (!cmd) continue;
 

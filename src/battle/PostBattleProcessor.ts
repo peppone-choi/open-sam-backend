@@ -4,7 +4,7 @@
  * 기술력 증가, 외교 관계 업데이트, 군량 소모, 경험치/공헌도 분배 등을 처리
  */
 
-import { GameConst } from '../constants/GameConst';
+import { GameConst } from '../const/GameConst';
 import { Util } from '../utils/Util';
 import { nationRepository } from '../repositories/nation.repository';
 import { cityRepository } from '../repositories/city.repository';

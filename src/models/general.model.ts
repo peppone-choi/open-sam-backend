@@ -321,39 +321,37 @@ GeneralSchema.methods.addDedication = function(ded: number): void {
  * @param exp - 기본 숙련도 경험치
  * @param affectTrainAtmos - 훈련도/사기 영향 여부 (기본: false)
  */
-GeneralSchema.methods.addDex = function(crewType: any, exp: number, affectTrainAtmos: boolean = false): void {
-  const { calculateDexExp, getDexFieldName } = require('../utils/dex-calculator');
-  
-  // crewType에서 armType 추출
+GeneralSchema.methods.addDex = function(crewTypeOrArmType: any, exp: number, affectTrainAtmos: boolean = false): void {
+  const { calculateDexExp, getDexFieldNameFromArmType } = require('../utils/dex-calculator');
+
+  // crewType 또는 armType에서 armType 추출
   let armType: number;
-  if (typeof crewType === 'number') {
-    armType = crewType;
-  } else if (crewType && typeof crewType.armType === 'number') {
-    armType = crewType.armType;
+  if (typeof crewTypeOrArmType === 'number') {
+    armType = crewTypeOrArmType;
+  } else if (crewTypeOrArmType && typeof crewTypeOrArmType.armType === 'number') {
+    armType = crewTypeOrArmType.armType;
   } else {
     // 기본값: 보병
-    armType = 0;
+    armType = 1;
   }
-  
-  // 훈련도와 사기 가져오기
-  const train = this.data.train || 100;
-  const atmos = this.data.atmos || 100;
-  
-  // 최종 숙련도 경험치 계산
+
+  const train = this.data?.train ?? 100;
+  const atmos = this.data?.atmos ?? 100;
+
+  // PHP General::addDex에 맞춘 EXP 계산
   let finalExp = calculateDexExp(exp, armType, train, atmos, affectTrainAtmos);
-  
+
   // onCalcStat 트리거 적용 (아이템/특성 보정)
   if (typeof this.onCalcStat === 'function') {
     finalExp = this.onCalcStat(this, 'addDex', finalExp, { armType });
   }
-  
-  // 숙련도 필드 업데이트
-  const dexField = getDexFieldName(armType);
-  if (!this.data[dexField]) {
+
+  const dexField = getDexFieldNameFromArmType(armType);
+  if (typeof this.data[dexField] !== 'number') {
     this.data[dexField] = 0;
   }
   this.data[dexField] += finalExp;
-  
+
   this.markModified('data');
 };
 

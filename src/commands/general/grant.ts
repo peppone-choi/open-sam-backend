@@ -76,11 +76,9 @@ export class GrantCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
-    const { isGold, amount } = this.arg;
-    const resourceType = isGold ? 'gold' : 'rice';
-    const resourceTypeKorean = isGold ? '자금' : '군량';
-    
-    // fullConditionConstraints를 먼저 설정 (setDestGeneral은 비동기이므로 나중에 처리)
+    const { isGold } = this.arg;
+
+    // PHP che_증여와 동일한 제약 구성
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
@@ -88,22 +86,17 @@ export class GrantCommand extends GeneralCommand {
       ConstraintHelper.ExistsDestGeneral(),
       ConstraintHelper.FriendlyDestGeneral(),
     ];
-    
-    // 최소 자원 보유량 체크 추가 (GameConst에서 가져옴)
+
+    // 최소 자원 보유량 체크 (GameConst.generalMinimumGold/Rice 사용)
     if (isGold) {
-      const generalMinimumGold = this.env.general_minimum_gold || 1000;
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralGold(generalMinimumGold)
+        ConstraintHelper.ReqGeneralGold(GameConst.generalMinimumGold)
       );
     } else {
-      const generalMinimumRice = this.env.general_minimum_rice || 1000;
       this.fullConditionConstraints.push(
-        ConstraintHelper.ReqGeneralRice(generalMinimumRice)
+        ConstraintHelper.ReqGeneralRice(GameConst.generalMinimumRice)
       );
     }
-    
-    // setDestGeneral을 비동기로 호출 (run() 메서드에서 await 처리)
-    this.setDestGeneralAsync(this.arg.destGeneralID);
   }
   
   // 비동기로 destGeneral 설정하는 헬퍼 메서드
@@ -140,13 +133,21 @@ export class GrantCommand extends GeneralCommand {
   }
 
   public async run(rng: RandUtil): Promise<boolean> {
+    // PHP에서는 initWithArg()에서 destGeneral를 동기 로드하지만,
+    // TS에서는 비동기이므로 run 시작 시 한 번 더 보장해준다.
+    if (!this.destGeneralObj) {
+      await this.setDestGeneralAsync(this.arg.destGeneralID);
+    }
+
     if (!this.hasFullConditionMet()) {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
+
     const db = DB.db();
     const general = this.generalObj;
-    const date = general.getTurnTime('TURNTIME_HM');
+    const date = general.getTurnTime(general.TURNTIME_HM);
+
 
     const isGold = this.arg.isGold;
     let amount = this.arg.amount;
@@ -196,8 +197,12 @@ export class GrantCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
+    // TODO: PHP che_증여에서는 tryUniqueItemLottery 호출
+    // TS에서는 공통 유니크 아이템 추첨 유틸을 사용하도록 후속 마이그레이션 예정
+    
     await this.saveGeneral();
-    await destGeneral.save();
+    await destGeneral.save?.();
+
 
     return true;
   }
@@ -219,7 +224,9 @@ export class GrantCommand extends GeneralCommand {
         troops: troopsDict,
         generals: destRawGenerals,
         generalsKey: ['no', 'name', 'officerLevel', 'npc', 'gold', 'rice', 'leadership', 'strength', 'intel', 'cityID', 'crew', 'train', 'atmos', 'troopID'],
-        cities: await global.JSOptionsForCities(),
+        // TODO: JSOptionsForCities 대체 구현 필요
+        cities: await global.JSOptionsForCities?.(),
+
         minAmount: 100,
         maxAmount: GameConst.maxResourceActionAmount,
         amountGuide: GameConst.resourceActionAmountGuide,

@@ -1,6 +1,7 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import GameConstants from '../../utils/game-constants';
+import { verifyGeneralOwnership } from '../../common/auth-utils';
 
 const MAX_CHIEF_TURN = GameConstants.MAX_CHIEF_TURN;
 
@@ -8,9 +9,24 @@ export class ReserveCommandService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const generalId = user?.generalId || data.general_id;
+    const userId = user?.userId || user?.id;
     
     try {
+      if (!generalId) {
+        throw new Error('장수 ID가 필요합니다.');
+      }
+
+      if (!userId) {
+        throw new Error('사용자 인증이 필요합니다.');
+      }
+
+      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), userId);
+      if (!ownershipCheck.valid) {
+        throw new Error(ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.');
+      }
+
       const action = data.action;
+
       const turnList = data.turnList || [];
       const arg = data.arg || {};
 
