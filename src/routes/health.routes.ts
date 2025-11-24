@@ -64,7 +64,7 @@ router.get('/health/detailed', async (_req: Request, res: Response) => {
   try {
     const startMongo = Date.now();
     const mongoose = mongoConnection.getConnection();
-    if (mongoose && mongoose.readyState === 1) {
+    if (mongoose && mongoose.connection.readyState === 1) {
       const latency = Date.now() - startMongo;
       response.checks.mongodb = { 
         status: 'up', 
@@ -176,11 +176,11 @@ router.get('/health/detailed', async (_req: Request, res: Response) => {
 router.get('/health/db', async (_req: Request, res: Response) => {
   try {
     const mongoose = mongoConnection.getConnection();
-    if (!mongoose || mongoose.readyState !== 1) {
+    if (!mongoose || mongoose.connection.readyState !== 1) {
       return res.status(503).json({
         status: 'unhealthy',
         message: 'MongoDB not connected',
-        readyState: mongoose?.readyState
+        readyState: mongoose?.connection.readyState
       });
     }
 
@@ -237,7 +237,7 @@ router.get('/health/ready', async (_req: Request, res: Response) => {
     const mongoose = mongoConnection.getConnection();
     const redis = RedisService.getClient();
     
-    if (!mongoose || mongoose.readyState !== 1) {
+    if (!mongoose || mongoose.connection.readyState !== 1) {
       return res.status(503).json({
         ready: false,
         reason: 'MongoDB not ready'

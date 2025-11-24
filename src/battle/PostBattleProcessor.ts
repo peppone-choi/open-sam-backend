@@ -306,7 +306,7 @@ export class PostBattleProcessor {
         const attackerExp = (attackerGeneral.experience || 0) + 1000;
         const attackerDed = (attackerGeneral.dedication || 0) + 500;
 
-        await generalRepository.updateById(attackerGeneral.generalId, {
+        await generalRepository.updateById(String(attackerGeneral.generalId), {
           'data.experience': attackerExp,
           'data.dedication': attackerDed
         });
@@ -316,7 +316,7 @@ export class PostBattleProcessor {
           const defenderExp = Math.max(0, (defender.experience || 0) - 100);
           const defenderDed = Math.max(0, (defender.dedication || 0) - 50);
 
-          await generalRepository.updateById(defender.generalId, {
+          await generalRepository.updateById(String(defender.generalId), {
             'data.experience': defenderExp,
             'data.dedication': defenderDed
           });
@@ -326,7 +326,7 @@ export class PostBattleProcessor {
         const attackerExp = Math.max(0, (attackerGeneral.experience || 0) - 50);
         const attackerDed = Math.max(0, (attackerGeneral.dedication || 0) - 25);
 
-        await generalRepository.updateById(attackerGeneral.generalId, {
+        await generalRepository.updateById(String(attackerGeneral.generalId), {
           'data.experience': attackerExp,
           'data.dedication': attackerDed
         });
@@ -336,7 +336,7 @@ export class PostBattleProcessor {
           const defenderExp = (defender.experience || 0) + 500;
           const defenderDed = (defender.dedication || 0) + 250;
 
-          await generalRepository.updateById(defender.generalId, {
+          await generalRepository.updateById(String(defender.generalId), {
             'data.experience': defenderExp,
             'data.dedication': defenderDed
           });

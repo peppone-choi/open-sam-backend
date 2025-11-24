@@ -171,7 +171,7 @@ async function deleteNation(
     const loseExp = Math.floor(oldExp * 0.1);
     const loseDed = Math.floor(oldDed * 0.5);
     
-    await generalRepository.updateById(general._id, {
+    await generalRepository.updateById(String(general._id), {
       'data.nation': 0,
       'data.officer_level': 1,
       'data.officer_city': 0,
@@ -182,19 +182,18 @@ async function deleteNation(
     });
     
     oldNationGenerals.push({
-      ...general,
-      data: {
-        ...general.data,
-        loseGold,
-        loseRice,
-        loseExp,
-        loseDed
-      }
-    });
+      general_id: general._id,
+      name: general.name,
+      nation: general.nation,
+      loseGold: Math.floor((general as any).gold || 0 * 0.9),
+      loseRice: Math.floor((general as any).rice || 0 * 0.9),
+      loseExp: Math.floor((general as any).leadership_exp || 0 * 0.1),
+      loseDed: Math.floor((general as any).dedication || 0 * 0.1)
+    } as any);
   }
   
   // 국가 삭제
-  await nationRepository.deleteByNationNum(sessionId, defenderNationID);
+  await nationRepository.deleteManyByFilter({ session: sessionId, nation: defenderNationID });
   
   return oldNationGenerals;
 }
@@ -346,7 +345,7 @@ export async function ConquerCity(
     // 국가 멸망이 아닌 경우
     
     // 태수/군사/종사는 일반으로
-    await generalRepository.updateByFilter(
+    await generalRepository.updateManyByFilter(
       {
         session_id: sessionId,
         'data.officer_city': cityID
@@ -376,7 +375,7 @@ export async function ConquerCity(
         });
         
         // 수뇌부 이동
-        await generalRepository.updateByFilter(
+        await generalRepository.updateManyByFilter(
           {
             session_id: sessionId,
             'data.nation': defenderNationID,
@@ -388,7 +387,7 @@ export async function ConquerCity(
         );
         
         // 장수 사기 감소
-        await generalRepository.updateByFilter(
+        await generalRepository.updateManyByFilter(
           {
             session_id: sessionId,
             'data.nation': defenderNationID
@@ -418,8 +417,8 @@ export async function ConquerCity(
   
   // 성벽 복구
   if (city.level && city.level > 3) {
-    updateQuery.def = GameConst.defaultCityWall || 10000;
-    updateQuery.wall = GameConst.defaultCityWall || 10000;
+    updateQuery.def = 10000; // Default city defense
+    updateQuery.wall = 10000; // Default city wall
   } else {
     // 중형 도시 이하는 절반 복구
     updateQuery.def = Math.floor((city.def_max || 10000) / 2);
