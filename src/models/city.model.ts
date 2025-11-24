@@ -96,5 +96,6 @@ const CitySchema = new Schema<ICity>({
 
 // 인덱스: session_id + city 조합이 유니크
 CitySchema.index({ session_id: 1, city: 1 }, { unique: true });
+CitySchema.index({ session_id: 1, nation: 1 });
 
 export const City = mongoose.models.City || mongoose.model<ICity>('City', CitySchema);

@@ -691,7 +691,7 @@ export class ArchiveService {
    */
   private static async getOwnerName(ownerId: number): Promise<string | null> {
     try {
-      const user = await User.findById(ownerId);
+      const user = await User.findById(ownerId).select('-password');
       return user ? (user.name || user.username) : null;
     } catch {
       return null;

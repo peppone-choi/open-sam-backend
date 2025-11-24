@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { User } from '../models/user.model';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import { authLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -45,12 +46,12 @@ const router = Router();
  *       500:
  *         description: 서버 에러
  */
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     
     // 중복 체크
-    const existing = await User.findOne({ username });
+    const existing = await User.findOne({ username }).select('_id');
     if (existing) {
       return res.status(400).json({ error: '이미 존재하는 사용자입니다' });
     }
@@ -114,7 +115,7 @@ router.post('/register', async (req, res) => {
  *       500:
  *         description: 서버 에러
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -123,7 +124,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '사용자명과 비밀번호를 입력해주세요' });
     }
     
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username }).select('+password');
     if (!user) {
       return res.status(401).json({ error: '사용자를 찾을 수 없습니다' });
     }
@@ -135,13 +136,16 @@ router.post('/login', async (req, res) => {
     }
     
     // JWT 생성 (grade 포함)
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'JWT_SECRET is not configured' });
+    }
     const token = jwt.sign(
       { 
         userId: user._id, 
         username: user.username,
         grade: user.grade || 1
       },
-      process.env.JWT_SECRET || 'secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
     
@@ -191,11 +195,13 @@ router.get('/me', async (req, res) => {
     }
 
     const token = authHeader.substring(7);
-    const secret = process.env.JWT_SECRET || 'secret';
-    const decoded = jwt.verify(token, secret) as unknown as { userId: string; username: string; grade?: number };
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'JWT_SECRET is not configured' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as { userId: string; username: string; grade?: number };
     
     // 사용자 정보 조회
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
       return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
     }

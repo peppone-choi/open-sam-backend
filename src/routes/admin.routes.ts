@@ -16,6 +16,15 @@ import { ApiError } from '../errors/ApiError';
 import Redis from 'ioredis';
 import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
 import { invalidateCache } from '../common/cache/model-cache.helper';
+import { 
+  validate, 
+  adminGeneralSchema, 
+  adminPenaltySchema,
+  userIdSchema,
+  paginationSchema,
+  preventMongoInjection,
+  safeParseInt
+} from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -113,7 +122,7 @@ router.get('/monitoring/redis', (_req, res) => {
 router.post('/userlist', async (req, res) => {
   try {
     const users = await User.find({})
-      .select('username name grade picture createdAt')
+      .select('username name grade picture createdAt -password')
       .lean()
       .limit(1000);
     
@@ -142,7 +151,7 @@ router.post('/userlist', async (req, res) => {
  *     summary: 사용자 정보 수정
  *     tags: [Admin]
  */
-router.post('/update-user', async (req, res) => {
+router.post('/update-user', preventMongoInjection('body'), validate(userIdSchema), async (req, res) => {
   try {
     const { userID, action, data = {} } = req.body;
     
@@ -153,7 +162,7 @@ router.post('/update-user', async (req, res) => {
       });
     }
     
-    const user = await User.findById(userID);
+    const user = await User.findById(userID).select('-password');
     if (!user) {
       return res.status(404).json({
         result: false,
@@ -204,7 +213,7 @@ router.post('/update-user', async (req, res) => {
  *     summary: 에러 로그 조회
  *     tags: [Admin]
  */
-router.post('/error-log', async (req, res) => {
+router.post('/error-log', validate(paginationSchema), async (req, res) => {
   try {
     const from = Number(req.body.from) || 0;
     const limit = Math.min(Number(req.body.limit) || 100, 500);
@@ -818,14 +827,16 @@ router.post('/info', async (req, res) => {
  *     summary: 장수 정보 조회 (관리자)
  *     tags: [Admin]
  */
-router.post('/general', async (req, res) => {
+router.post('/general', preventMongoInjection('body'), async (req, res) => {
   try {
     const { generalID } = req.body;
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
     
     let query: any = { session_id: sessionId };
     if (generalID) {
-      query['data.no'] = generalID;
+      // Safe integer validation
+      const safeGeneralID = safeParseInt(generalID, 'generalID');
+      query['data.no'] = safeGeneralID;
     }
     
     const generals = await General.find(query)
@@ -872,6 +883,7 @@ router.post('/member', async (req, res) => {
     }
     
     const users = await User.find(query)
+      .select('-password')
       .sort({ createdAt: -1 })
       .limit(1000)
       .lean();
@@ -1551,12 +1563,13 @@ router.get('/user/generals', async (req, res) => {
  *     summary: 장수 블럭 설정
  *     tags: [Admin - User]
  */
-router.post('/user/set-block', async (req, res) => {
+router.post('/user/set-block', preventMongoInjection('body'), validate(adminPenaltySchema), async (req, res) => {
   try {
     const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
     const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
-    const generalNo = parseInt(req.body.generalNo || req.body.general_id);
-    const penaltyLevel = parseInt(req.body.penaltyLevel || req.body.block);
+    // Already validated by middleware
+    const generalNo = req.body.generalNo;
+    const penaltyLevel = req.body.penaltyLevel;
     
     const result = await AdminUserManagementService.setGeneralBlock(sessionId, generalNo, penaltyLevel);
     res.json(result);

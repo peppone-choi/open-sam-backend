@@ -1,4 +1,5 @@
 import { cityRepository } from '../repositories/city.repository';
+import { logger } from '../common/logger';
 
 /**
  * 도시 연결 정보 캐시
@@ -38,9 +39,12 @@ export async function loadCityGraph(sessionId: string): Promise<void> {
     }
 
     cityGraphCache.set(sessionId, graph);
-    console.log(`[searchDistance] Loaded city graph for session ${sessionId}: ${graph.size} cities`);
-  } catch (error) {
-    console.error(`[searchDistance] Failed to load city graph for session ${sessionId}:`, error);
+    logger.info('Loaded city graph', { sessionId, cityCount: graph.size });
+  } catch (error: any) {
+    logger.error('Failed to load city graph', { 
+      sessionId, 
+      error: error.message 
+    });
   }
 }
 
@@ -54,9 +58,9 @@ export async function initializeCityGraphCache(): Promise<void> {
     // 기본 세션 로드
     await loadCityGraph('sangokushi_default');
     cacheInitialized = true;
-    console.log('[searchDistance] City graph cache initialized');
-  } catch (error) {
-    console.error('[searchDistance] Failed to initialize city graph cache:', error);
+    logger.info('City graph cache initialized');
+  } catch (error: any) {
+    logger.error('Failed to initialize city graph cache', { error: error.message });
   }
 }
 
@@ -66,11 +70,11 @@ export async function initializeCityGraphCache(): Promise<void> {
 export function clearCityGraphCache(sessionId?: string): void {
   if (sessionId) {
     cityGraphCache.delete(sessionId);
-    console.log(`[searchDistance] Cleared cache for session ${sessionId}`);
+    logger.debug('Cleared city graph cache for session', { sessionId });
   } else {
     cityGraphCache.clear();
     cacheInitialized = false;
-    console.log('[searchDistance] Cleared all cache');
+    logger.debug('Cleared all city graph cache');
   }
 }
 
@@ -97,7 +101,7 @@ export function searchDistance(
   // 캐시된 그래프 가져오기
   const graph = cityGraphCache.get(sessionId);
   if (!graph) {
-    console.warn(`[searchDistance] No cached graph for session ${sessionId}, returning empty`);
+    logger.warn('No cached city graph for session', { sessionId });
     return distances;
   }
 

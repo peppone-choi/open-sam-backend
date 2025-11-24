@@ -254,11 +254,14 @@ export class ConstraintTestHelper {
     if (!constraints || constraints.length === 0) {
       return false;
     }
-    return constraints.some(c => 
-      c.test?.toString().includes(searchText) ||
-      c.reason?.includes(searchText) ||
-      c.message?.includes(searchText)
-    );
+    return constraints.some(c => {
+      const testStr = c.test?.toString() || '';
+      const reasonStr = typeof c.reason === 'string' ? c.reason : '';
+      const messageStr = typeof c.message === 'string' ? c.message : '';
+      return testStr.includes(searchText) || 
+             reasonStr.includes(searchText) || 
+             messageStr.includes(searchText);
+    });
   }
 
   /**
@@ -382,5 +385,51 @@ export class CommandTestHelper {
     const result = await command.run(rng);
     expect(typeof result).toBe('boolean');
     return result;
+  }
+
+  /**
+   * 국가 커맨드 초기화 및 실행 준비 (NationCommand용)
+   * LastTurn을 arg로 사용하는 국가 커맨드를 위한 헬퍼
+   */
+  static prepareNationCommand(
+    CommandClass: any,
+    generalOptions: MockGeneralOptions = {},
+    cityOptions: MockCityOptions = {},
+    nationOptions: MockNationOptions = {},
+    envOptions: any = {},
+    lastTurnArg: any = null,
+    commandArg: any = null
+  ): { command: any; general: any; city: any; nation: any; env: any; lastTurn: any } {
+    const general = MockObjects.createMockGeneral(generalOptions);
+    const city = MockObjects.createMockCity(cityOptions);
+    const nation = MockObjects.createMockNation(nationOptions);
+    const env = MockObjects.createMockEnv(envOptions);
+
+    general._cached_city = city;
+    general._cached_nation = nation;
+
+    // LastTurn 객체 생성 (duplicate 메서드 지원)
+    const lastTurn = lastTurnArg || {
+      command: '휴식',
+      arg: null,
+      term: 0,
+      seq: 0,
+      duplicate: function() {
+        return {
+          command: this.command,
+          arg: this.arg,
+          term: this.term,
+          seq: this.seq,
+          duplicate: this.duplicate
+        };
+      },
+      getTerm: function() { return this.term; },
+      getSeq: function() { return this.seq; }
+    };
+
+    // NationCommand는 (general, env, lastTurn, arg) 순서
+    const command = new CommandClass(general, env, lastTurn, commandArg);
+
+    return { command, general, city, nation, env, lastTurn };
   }
 }

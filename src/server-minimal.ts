@@ -15,6 +15,7 @@ import { mongoConnection } from './db/connection';
 import { logger } from './common/logger';
 import { requestLogger } from './common/middleware/request-logger.middleware';
 import { errorMiddleware } from './common/middleware/error.middleware';
+import { globalLimiter } from './middleware/rate-limit.middleware';
 import gatewayRoutes from './routes/gateway.routes';
 import authRoutes from './routes/auth.routes';
 
@@ -39,6 +40,9 @@ async function start() {
     
     // 보안 미들웨어
     app.use(helmet());
+    
+    // 글로벌 rate limiting (1000 req/15min)
+    app.use(globalLimiter);
     
     // CORS 설정
     app.use(cors({

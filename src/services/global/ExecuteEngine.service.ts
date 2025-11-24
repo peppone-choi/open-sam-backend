@@ -73,7 +73,7 @@ export class ExecuteEngineService {
         const ttl = await redis.ttl(lockKey);
         if (ttl <= 0) {
           // 만료된 락 강제 삭제
-          console.log(`[${new Date().toISOString()}] Removing expired lock: ${lockKey}, TTL: ${ttl}초`);
+          logger.warn('Removing expired lock', { lockKey, ttl });
           await redis.del(lockKey);
         } else {
           // 락이 너무 오래 유지되고 있으면 (TTL이 LOCK_TTL의 절반 이하) 강제 해제
@@ -81,7 +81,12 @@ export class ExecuteEngineService {
           if (ttl < LOCK_TTL / 2) {
             const ttlMinutes = Math.floor(ttl / 60);
             const ttlSeconds = ttl % 60;
-            console.log(`[${new Date().toISOString()}] ⚠️ Lock exists but heartbeat may be dead: ${lockKey}, TTL: ${ttl}초 (${ttlMinutes}분 ${ttlSeconds}초), forcing release`);
+            logger.warn('Lock exists but heartbeat may be dead, forcing release', { 
+              lockKey, 
+              ttl, 
+              ttlMinutes, 
+              ttlSeconds 
+            });
             await redis.del(lockKey);
             // 계속 진행하여 락 획득 시도
           } else {
@@ -89,7 +94,12 @@ export class ExecuteEngineService {
             // 하지만 TTL이 계속 유지되면 턴 처리가 너무 오래 걸리는 것일 수 있음
             const ttlMinutes = Math.floor(ttl / 60);
             const ttlSeconds = ttl % 60;
-            console.log(`[${new Date().toISOString()}] ⏳ Lock already exists: ${lockKey}, TTL: ${ttl}초 (${ttlMinutes}분 ${ttlSeconds}초) - Another instance is processing turns`);
+            logger.info('Lock already exists - Another instance is processing turns', { 
+              lockKey, 
+              ttl, 
+              ttlMinutes, 
+              ttlSeconds 
+            });
             return {
               success: true,
               result: false,
@@ -107,7 +117,13 @@ export class ExecuteEngineService {
         const ttl = await redis.ttl(lockKey);
         const ttlMinutes = Math.floor(ttl / 60);
         const ttlSeconds = ttl % 60;
-        console.log(`[${new Date().toISOString()}] Failed to acquire lock: ${lockKey}, value: ${currentValue}, TTL: ${ttl}초 (${ttlMinutes}분 ${ttlSeconds}초)`);
+        logger.warn('Failed to acquire lock', { 
+          lockKey, 
+          currentValue, 
+          ttl, 
+          ttlMinutes, 
+          ttlSeconds 
+        });
         return {
           success: true,
           result: false,
@@ -117,14 +133,14 @@ export class ExecuteEngineService {
         };
       }
       lockAcquired = true;
-      console.log(`[${new Date().toISOString()}] ✅ Lock acquired: ${lockKey} (TTL: ${LOCK_TTL}초)`);
+      logger.info('Lock acquired', { lockKey, ttl: LOCK_TTL });
       const session = await sessionRepository.findBySessionId(sessionId);
       if (!session) {
         // 락을 해제하고 반환
         if (lockAcquired) {
           await redis.del(lockKey);
           lockAcquired = false;
-          console.log(`[${new Date().toISOString()}] Lock released (early return - session not found): ${lockKey}`);
+          logger.warn('Lock released - session not found', { lockKey });
         }
         return {
           success: false,
@@ -148,7 +164,7 @@ export class ExecuteEngineService {
         if (lockAcquired) {
           await redis.del(lockKey);
           lockAcquired = false;
-          console.log(`[${new Date().toISOString()}] 🔓 Lock released (status=${sessionStatus}): ${lockKey}`);
+          logger.info('Lock released - session not running', { lockKey, sessionStatus });
         }
         return {
           success: true,
@@ -172,7 +188,7 @@ export class ExecuteEngineService {
       // turnterm이 없으면 기본값 설정 (테스트: 1분, 프로덕션: 60분)
       if (!turnterm) {
         const defaultTurnterm = process.env.NODE_ENV === 'production' ? 60 : 1;
-        console.log(`[${new Date().toISOString()}] ⚠️ Missing turnterm, setting default to ${defaultTurnterm} minutes`);
+        logger.warn('Missing turnterm, setting default', { defaultTurnterm });
         turnterm = defaultTurnterm;
         sessionData.turnterm = defaultTurnterm;
         sessionData.game_env.turnterm = defaultTurnterm;
@@ -185,7 +201,7 @@ export class ExecuteEngineService {
       // turnterm 유효성 검사 (1분~1440분 사이만 허용)
       if (turnterm < 1 || turnterm > 1440) {
         const defaultTurnterm = process.env.NODE_ENV === 'production' ? 60 : 1;
-        console.log(`[${new Date().toISOString()}] ⚠️ Invalid turnterm: ${turnterm}, resetting to ${defaultTurnterm}`);
+        logger.warn('Invalid turnterm, resetting to default', { turnterm, defaultTurnterm });
         turnterm = defaultTurnterm;
         sessionData.turnterm = defaultTurnterm;
         sessionData.game_env.turnterm = defaultTurnterm;
@@ -211,7 +227,9 @@ export class ExecuteEngineService {
 
       // 디버그: turntime 상태 로그
       if (timeDiffInMinutes < -60) {
-        console.log(`[${new Date().toISOString()}] ⚠️ Turntime is ${Math.abs(timeDiffInMinutes).toFixed(1)} minutes in the past! Processing overdue turns...`);
+        logger.warn('Turntime is in the past, processing overdue turns', { 
+          minutesPast: Math.abs(timeDiffInMinutes).toFixed(1) 
+        });
       }
 
       if (now < turntime) {
@@ -219,7 +237,11 @@ export class ExecuteEngineService {
         // 체크 기준: turnterm * 3 (최소 10분, 최대 180분)
         const maxAllowedMinutes = Math.min(Math.max(turntermInMinutes * 3, 10), 180);
         if (timeDiffInMinutes > maxAllowedMinutes) {
-          console.log(`[${new Date().toISOString()}] ⚠️ Turntime is too far in future (${timeDiffInMinutes.toFixed(1)}min > ${maxAllowedMinutes}min), resetting to now + turnterm (${turntermInMinutes}min)`);
+          logger.warn('Turntime is too far in future, resetting', { 
+            timeDiffInMinutes: timeDiffInMinutes.toFixed(1), 
+            maxAllowedMinutes, 
+            turntermInMinutes 
+          });
           const correctedTurntime = new Date(now.getTime() + turntermInSeconds * 1000);
           sessionData.turntime = correctedTurntime.toISOString();
           sessionData.game_env.turntime = correctedTurntime.toISOString();
@@ -229,7 +251,7 @@ export class ExecuteEngineService {
           if (lockAcquired) {
             await redis.del(lockKey);
             lockAcquired = false;
-            console.log(`[${new Date().toISOString()}] 🔓 Lock released (turntime corrected): ${lockKey}`);
+            logger.info('Lock released - turntime corrected', { lockKey });
           }
           return {
             success: true,
@@ -244,7 +266,7 @@ export class ExecuteEngineService {
         if (lockAcquired) {
           await redis.del(lockKey);
           lockAcquired = false;
-          console.log(`[${new Date().toISOString()}] Lock released (early return - turntime not reached): ${lockKey}`);
+          logger.debug('Lock released - turntime not reached', { lockKey });
         }
         return {
           success: true,
@@ -263,7 +285,7 @@ export class ExecuteEngineService {
         if (lockAcquired) {
           await redis.del(lockKey);
           lockAcquired = false;
-          console.log(`[${new Date().toISOString()}] Lock released (early return - isunited=${isunited}): ${lockKey}`);
+          logger.info('Lock released - game united/frozen', { lockKey, isunited });
         }
         return {
           success: true,
@@ -275,27 +297,29 @@ export class ExecuteEngineService {
       }
 
       // turntime이 과거이면 턴 실행 시작
-      console.log(`[${new Date().toISOString()}] ✅ Turntime passed (${timeDiffInMinutes.toFixed(1)}min ago), executing turns...`);
+      logger.info('Turntime passed, executing turns', { 
+        minutesAgo: timeDiffInMinutes.toFixed(1) 
+      });
 
       // 락 갱신을 위한 heartbeat 시작
-      console.log(`[${new Date().toISOString()}] 🔄 Starting heartbeat for ${lockKey} (interval: ${LOCK_HEARTBEAT_INTERVAL}초)`);
+      logger.debug('Starting heartbeat', { lockKey, interval: LOCK_HEARTBEAT_INTERVAL });
       heartbeatInterval = setInterval(async () => {
         try {
           const exists = await redis.exists(lockKey);
           if (exists) {
             const currentTtl = await redis.ttl(lockKey);
             await redis.expire(lockKey, LOCK_TTL);
-            console.log(`[${new Date().toISOString()}] 💓 Lock heartbeat: ${lockKey} (renewed TTL: ${LOCK_TTL}초, previous TTL: ${currentTtl}초)`);
+            logger.debug('Lock heartbeat renewed', { lockKey, renewedTTL: LOCK_TTL, previousTTL: currentTtl });
           } else {
             // 락이 이미 해제된 경우 heartbeat 중지
-            console.log(`[${new Date().toISOString()}] ⚠️ Lock ${lockKey} no longer exists, stopping heartbeat`);
+            logger.warn('Lock no longer exists, stopping heartbeat', { lockKey });
             if (heartbeatInterval) {
               clearInterval(heartbeatInterval);
               heartbeatInterval = null;
             }
           }
-        } catch (error) {
-          console.error(`[${new Date().toISOString()}] ❌ Lock heartbeat failed:`, error);
+        } catch (error: any) {
+          logger.error('Lock heartbeat failed', { error: error.message, stack: error.stack });
         }
       }, LOCK_HEARTBEAT_INTERVAL * 1000);
 
@@ -303,7 +327,7 @@ export class ExecuteEngineService {
       let result: any;
 
       const executionStartTime = Date.now();
-      console.log(`[${new Date().toISOString()}] 🚀 Starting turn execution for session: ${sessionId}`);
+      logger.info('Starting turn execution', { sessionId });
 
       // executeAllCommands는 내부에서 락을 해제함 (세션 상태 업데이트 직후)
       result = await this.executeAllCommands(sessionId, session, sessionData, lockKey, () => {
@@ -311,9 +335,9 @@ export class ExecuteEngineService {
         if (lockAcquired) {
           redis.del(lockKey).then(() => {
             lockAcquired = false;
-            console.log(`[${new Date().toISOString()}] 🔓 Lock released (after session state update): ${lockKey}`);
+            logger.info('Lock released after session state update', { lockKey });
           }).catch(err => {
-            console.error(`[${new Date().toISOString()}] Failed to release lock:`, err);
+            logger.error('Failed to release lock', { lockKey, error: err.message });
           });
         }
 
@@ -325,7 +349,7 @@ export class ExecuteEngineService {
       });
 
       const executionDuration = Date.now() - executionStartTime;
-      console.log(`[${new Date().toISOString()}] ✅ Turn execution completed in ${executionDuration}ms for session: ${sessionId}`);
+      logger.info('Turn execution completed', { sessionId, duration: executionDuration });
 
       return {
         success: true,
@@ -335,7 +359,7 @@ export class ExecuteEngineService {
         turntime: result.turntime
       };
     } catch (error: any) {
-      console.error('ExecuteEngine error:', error);
+      logger.error('ExecuteEngine error', { error: error.message, stack: error.stack });
       return {
         success: false,
         result: false,
@@ -353,9 +377,12 @@ export class ExecuteEngineService {
         try {
           await redis.del(lockKey);
           lockAcquired = false;
-          console.log(`[${new Date().toISOString()}] 🔓 Lock released (finally block - safety): ${lockKey}`);
-        } catch (error) {
-          console.error(`[${new Date().toISOString()}] Failed to release lock:`, error);
+          logger.info('Lock released in finally block', { lockKey });
+        } catch (error: any) {
+          logger.error('Failed to release lock in finally block', { 
+            lockKey, 
+            error: error.message 
+          });
         }
       }
     }
@@ -389,7 +416,7 @@ export class ExecuteEngineService {
       sessionData.starttime = initialTurntime instanceof Date ? initialTurntime : new Date(initialTurntime);
       session.data = sessionData;
       await sessionRepository.saveDocument(session);
-      console.log(`[${new Date().toISOString()}] ⚠️ starttime was missing, initialized to: ${sessionData.starttime}`);
+      logger.warn('starttime was missing, initialized', { starttime: sessionData.starttime });
     }
 
     // 현재 게임 년/월 계산 (세션 기준)
@@ -406,7 +433,7 @@ export class ExecuteEngineService {
       session.data = sessionData;
       session.markModified('data');
       await sessionRepository.saveDocument(session);
-      console.log(`[${new Date().toISOString()}] 📅 Game date updated: ${sessionData.year}년 ${sessionData.month}월`);
+      logger.info('Game date updated', { year: sessionData.year, month: sessionData.month });
     }
 
     // ========================================
@@ -475,9 +502,13 @@ export class ExecuteEngineService {
       try {
         const { checkSupply } = await import('../../utils/supply-line');
         await checkSupply(sessionId);
-        console.log(`[${new Date().toISOString()}] ✅ Supply lines updated for session: ${sessionId}`);
+        logger.info('Supply lines updated', { sessionId });
       } catch (error: any) {
-        console.error(`[${new Date().toISOString()}] ❌ Failed to update supply lines:`, error);
+        logger.error('Failed to update supply lines', { 
+          sessionId, 
+          error: error.message, 
+          stack: error.stack 
+        });
         // 보급선 업데이트 실패해도 계속 진행
       }
 
@@ -590,7 +621,10 @@ export class ExecuteEngineService {
     // 배치 크기 설정: 동시에 처리할 장수 수 (최대값)
     const BATCH_SIZE = 50; // DB 부하 최소화 (1000명 장수 대응) - 병렬 처리 증가
 
-    console.log(`[Turn] Processing ${eligibleGenerals.length} generals in batches of ${BATCH_SIZE}`);
+    logger.debug('Processing generals in batches', { 
+      totalGenerals: eligibleGenerals.length, 
+      batchSize: BATCH_SIZE 
+    });
 
     // 배치 단위로 병렬 처리
     for (let i = 0; i < eligibleGenerals.length; i += BATCH_SIZE) {
@@ -598,7 +632,11 @@ export class ExecuteEngineService {
       const batchNum = Math.floor(i / BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(eligibleGenerals.length / BATCH_SIZE);
 
-      console.log(`[Turn] Processing batch ${batchNum}/${totalBatches} (${batch.length} generals)`);
+      logger.debug('Processing batch', { 
+        batchNum, 
+        totalBatches, 
+        generalsInBatch: batch.length 
+      });
 
       // 배치 명령 당기기용 수집
       const batchPullCommands: Array<{ sessionId: string, generalId: number, isNPC: boolean, generalName: string, beforeLogTime: Date | null }> = [];
@@ -682,7 +720,7 @@ export class ExecuteEngineService {
             }
           } else {
             // 명령이 없어도 turntime은 업데이트해야 함 (무한 루프 방지)
-            console.log(`[Turn] General ${generalNo}: No command executed, but updating turntime`);
+            logger.debug('No command executed, updating turntime', { generalNo });
           }
 
           // turntime 업데이트 (명령 유무와 관계없이 항상 실행)
@@ -1097,13 +1135,13 @@ export class ExecuteEngineService {
         try {
           const generalObj = command.getGeneral?.();
           if (generalObj && typeof generalObj.getLogger === 'function') {
-            const logger = generalObj.getLogger();
-            if (logger && typeof logger.flush === 'function') {
-              await logger.flush();
+            const commandLogger = generalObj.getLogger();
+            if (commandLogger && typeof commandLogger.flush === 'function') {
+              await commandLogger.flush();
             }
           }
         } catch (error: any) {
-          console.error('Failed to flush logger:', error);
+          logger.error('Failed to flush nation command logger', { error: error.message });
         }
 
         if (result) {
@@ -1152,7 +1190,12 @@ export class ExecuteEngineService {
         command = alt;
       }
     } catch (error: any) {
-      console.error(`Nation command ${action} failed:`, error);
+      logger.error('Nation command execution failed', { 
+        action, 
+        nationId, 
+        error: error.message, 
+        stack: error.stack 
+      });
       await this.pushGeneralActionLog(
         sessionId,
         general.no,
@@ -1178,7 +1221,7 @@ export class ExecuteEngineService {
     const generalId = general.no || general.data?.no;
 
     if (!generalId) {
-      console.error('processGeneralCommand: generalId not found', { general: general._id });
+      logger.error('processGeneralCommand: generalId not found', { generalMongoId: general._id });
       return;
     }
 
@@ -1194,11 +1237,11 @@ export class ExecuteEngineService {
 
     // 디버그: generalTurn 구조 확인
     if (generalTurn) {
-      console.log(`[DEBUG] General ${generalId} turn data:`, {
+      logger.debug('General turn data found', {
+        generalId,
         action: generalTurn.data?.action || generalTurn.action,
         arg: generalTurn.data?.arg || generalTurn.arg,
-        hasData: !!generalTurn.data,
-        keys: Object.keys(generalTurn)
+        hasData: !!generalTurn.data
       });
     }
 
@@ -1215,7 +1258,9 @@ export class ExecuteEngineService {
 
       if (hasUserOwner) {
         // 유저가 빙의했는데 명령이 없으면 휴식으로 처리 (PHP와 동일)
-        console.log(`[Turn] ${generalName} (Player-controlled): No command, resting`);
+        logger.debug('Player-controlled general has no command, resting', { 
+          generalName 
+        });
         const date = `${year}년 ${month}월`;
         await this.pushGeneralActionLog(
           sessionId,
@@ -1228,14 +1273,17 @@ export class ExecuteEngineService {
       }
 
       // 유저가 빙의하지 않은 NPC는 명령이 없으면 AI가 결정
-      console.log(`[Turn] ${generalName} (NPC, type=${npcType}): No command, will try AI decision`);
+      logger.debug('NPC has no command, will try AI decision', { 
+        generalName, 
+        npcType 
+      });
       action = '휴식';
       arg = {};
     } else {
       action = generalTurn.data?.action || generalTurn.action || '휴식';
       arg = generalTurn.data?.arg || generalTurn.arg || {};
 
-      console.log(`[Turn] General ${generalId} command from DB: action=${action}, arg=`, arg);
+      logger.debug('General command loaded from DB', { generalId, action, arg });
     }
 
     // killturn 처리 (PHP 로직과 동일)
@@ -1292,7 +1340,8 @@ export class ExecuteEngineService {
           { year, month, session_id: sessionId, ...gameEnv }
         );
 
-        console.log(`[AI] General ${generalId} decision:`, {
+        logger.debug('AI decision for general', {
+          generalId,
           command: decision?.command,
           reason: decision?.reason,
           priority: decision?.priority,
@@ -1319,18 +1368,21 @@ export class ExecuteEngineService {
           // action과 arg 직접 설정 (DB 재조회 불필요)
           action = decision.command;
           arg = decision.args || {};
-          console.log(`[AI] General ${generalId} command set: ${action}`, arg);
+          logger.debug('AI command set for general', { generalId, action, arg });
         }
       } catch (error: any) {
         // AI 실패 시 휴식 (에러는 로깅)
-        console.error(`[AI] General ${generalId} error:`, error.message);
+        logger.error('AI error for general', { generalId, error: error.message });
         return;
       }
     }
 
     // 휴식인 경우 로그만 남기고 턴 소비
     if (action === '휴식') {
-      console.log(`[Turn] General ${generalId} (${general.name || general.data?.name}): Resting`);
+      logger.debug('General is resting', { 
+        generalId, 
+        name: general.name || general.data?.name 
+      });
 
       // PHP와 동일하게 날짜 포함 (년 월 형식)
       const date = `${year}년 ${month}월`;
@@ -1346,7 +1398,7 @@ export class ExecuteEngineService {
 
     const CommandClass = getCommand(action);
     if (!CommandClass) {
-      console.error(`[Turn] General ${generalId}: Unknown command '${action}'`);
+      logger.error('Unknown command for general', { generalId, action });
       await this.pushGeneralActionLog(
         sessionId,
         general.no,
@@ -1357,7 +1409,12 @@ export class ExecuteEngineService {
       return true; // 에러도 턴 소모
     }
 
-    console.log(`[Turn] General ${generalId} (${general.name || general.data?.name}): Executing ${action}`, arg);
+    logger.debug('Executing command for general', { 
+      generalId, 
+      name: general.name || general.data?.name, 
+      action, 
+      arg 
+    });
 
     let command: any = null; // catch 블록에서도 접근 가능하도록 선언
 
@@ -1433,7 +1490,7 @@ export class ExecuteEngineService {
             }
           }
         } catch (error: any) {
-          console.error('Failed to flush logger:', error);
+          logger.error('Failed to flush command logger', { error: error.message });
         }
 
         if (result) {
@@ -1461,7 +1518,12 @@ export class ExecuteEngineService {
       return true; // 명령 실행 완료
 
     } catch (error: any) {
-      console.error(`Command ${action} failed:`, error);
+      logger.error('Command execution failed', { 
+        action, 
+        generalId: general.no, 
+        error: error.message, 
+        stack: error.stack 
+      });
       await this.pushGeneralActionLog(
         sessionId,
         general.no,
@@ -1479,8 +1541,8 @@ export class ExecuteEngineService {
             await logger.flush();
           }
         }
-      } catch (flushError) {
-        console.error('Logger flush error:', flushError);
+      } catch (flushError: any) {
+        logger.error('Logger flush error', { error: flushError.message });
       }
 
       return true; // 에러도 턴 소모
@@ -1574,7 +1636,10 @@ export class ExecuteEngineService {
             const { CheckHallService } = await import('../admin/CheckHall.service');
             await CheckHallService.execute(generalNo, sessionId);
           } catch (error: any) {
-            console.warn('[ExecuteEngine] CheckHall execution failed:', error?.message || error);
+            logger.warn('CheckHall execution failed', { 
+              generalNo, 
+              error: error?.message || error 
+            });
           }
         }
       }
@@ -1582,7 +1647,10 @@ export class ExecuteEngineService {
       try {
         await general.rebirth();
       } catch (error: any) {
-        console.error('[ExecuteEngine] Failed to process general rebirth:', error?.message || error);
+        logger.error('Failed to process general rebirth', { 
+          generalNo: general.no, 
+          error: error?.message || error 
+        });
       }
     }
 
@@ -1690,8 +1758,12 @@ export class ExecuteEngineService {
 
         for (const log of logs) {
           if (log.text) {
-            const logTypeLabel = log.log_type ? `[${log.log_type}]` : '';
-            console.log(`${displayName}${logTypeLabel} ${log.text}`);
+            logger.info('General action log', { 
+              generalId, 
+              generalName, 
+              logType: log.log_type, 
+              text: log.text 
+            });
           }
         }
       } catch (error) {
@@ -1773,7 +1845,11 @@ export class ExecuteEngineService {
       try {
         await event.tryRunEvent(e_env);
       } catch (error: any) {
-        console.error(`Event ${eventID} failed:`, error);
+        logger.error('Event execution failed', { 
+          eventID, 
+          error: error.message, 
+          stack: error.stack 
+        });
       }
     }
 
@@ -1852,7 +1928,10 @@ export class ExecuteEngineService {
           const { NationFinanceService } = await import('../nation/NationFinance.service');
           await NationFinanceService.applyFinanceUpdate(sessionId, nationId, year, month);
         } catch (error: any) {
-          console.error(`[ExecuteEngine] Failed to apply finance update for nation ${nationId}:`, error);
+          logger.error('Failed to apply finance update for nation', { 
+            nationId, 
+            error: error.message 
+          });
         }
       }
     }
@@ -1862,7 +1941,8 @@ export class ExecuteEngineService {
       const { processAuction } = await import('../auction/AuctionEngine.service');
       await processAuction(sessionId);
     } catch (error: any) {
-      console.error('[ExecuteEngine] Error processing auctions', {
+      logger.error('Error processing auctions', {
+        sessionId,
         error: error.message,
         stack: error.stack
       });
@@ -1873,7 +1953,8 @@ export class ExecuteEngineService {
       const { registerAuction } = await import('../auction/AuctionEngine.service');
       await registerAuction(sessionId);
     } catch (error: any) {
-      console.error('[ExecuteEngine] Error registering auctions', {
+      logger.error('Error registering auctions', {
+        sessionId,
         error: error.message,
         stack: error.stack
       });
@@ -1898,7 +1979,7 @@ export class ExecuteEngineService {
     }
 
     const quarter = Math.floor((month - 1) / 3) + 1;
-    console.log(`[ExecuteEngine] Generating statistics for ${year} Q${quarter}`);
+    logger.info('Generating statistics', { year, quarter });
 
     try {
       const { Statistic } = await import('../../models/statistic.model');
@@ -1975,10 +2056,10 @@ export class ExecuteEngineService {
         }
       });
 
-      console.log(`[ExecuteEngine] Statistics saved for ${year} Q${quarter}`);
+      logger.info('Statistics saved', { year, quarter });
 
     } catch (error: any) {
-      console.error('[ExecuteEngine] Failed to generate statistics:', error);
+      logger.error('Failed to generate statistics', { error: error.message, stack: error.stack });
     }
   }
 
@@ -2033,7 +2114,12 @@ export class ExecuteEngineService {
       gameEnv.year = startyear;
       gameEnv.month = 1;
 
-      console.warn(`[${new Date().toISOString()}] ⚠️ starttime was ${reason}, reset to current time. year/month reset to ${startyear}/1`);
+      logger.warn('starttime reset to current time', { 
+        reason, 
+        newStarttime: curturn.toISOString(), 
+        year: startyear, 
+        month: 1 
+      });
     }
 
     const starttimeCut = ExecuteEngineService.cutTurn(starttime, turntermInMinutes);
@@ -2048,9 +2134,12 @@ export class ExecuteEngineService {
     // 일반적으로 starttime이 게임 년도(예: 0187-01-01)로 잘못 설정된 경우 발생
     const MAX_REASONABLE_TURNS = 50 * 365 * 24 * 60 / turntermInMinutes; // 50년치 턴으로 완화
     if (num > MAX_REASONABLE_TURNS) {
-      console.error(`[${new Date().toISOString()}] ⚠️ CRITICAL: Calculated ${num} turns (> ${MAX_REASONABLE_TURNS}), starttime corruption detected!`);
-      console.error(`starttime: ${starttime.toISOString()}, curturn: ${curturn.toISOString()}`);
-      console.error(`This usually happens when starttime is set to game year instead of real time.`);
+      logger.error('CRITICAL: starttime corruption detected', { 
+        calculatedTurns: num, 
+        maxReasonableTurns: MAX_REASONABLE_TURNS, 
+        starttime: starttime.toISOString(), 
+        curturn: curturn.toISOString() 
+      });
 
       // starttime을 현재 시간으로 강제 리셋하고 년/월을 startyear로 초기화
       const correctedStarttime = curturn;
@@ -2058,7 +2147,11 @@ export class ExecuteEngineService {
       gameEnv.year = startyear;
       gameEnv.month = 1;
 
-      console.log(`[${new Date().toISOString()}] ✅ Fixed: starttime reset to ${correctedStarttime.toISOString()}, year/month reset to ${startyear}/1`);
+      logger.info('Fixed starttime corruption', { 
+        newStarttime: correctedStarttime.toISOString(), 
+        year: startyear, 
+        month: 1 
+      });
 
       // 수정된 값 반환 (호출한 쪽에서 DB 저장)
       return { year: startyear, month: 1, turn: 1 };
@@ -2085,8 +2178,11 @@ export class ExecuteEngineService {
         throw new Error(`Calculated year ${year} is out of reasonable range`);
       }
     } catch (error: any) {
-      console.error(`[${new Date().toISOString()}] ⚠️ CRITICAL: Year calculation overflow detected!`, error.message);
-      console.error(`startyear: ${startyear}, num: ${num}`);
+      logger.error('CRITICAL: Year calculation overflow detected', { 
+        error: error.message, 
+        startyear, 
+        num 
+      });
 
       // 안전한 기본값으로 리셋
       gameEnv.starttime = curturn.toISOString();
@@ -2213,8 +2309,12 @@ export class ExecuteEngineService {
         record.id || record._id,
         message
       );
-    } catch (error) {
-      console.error('pushGeneralActionLog error:', error);
+    } catch (error: any) {
+      logger.error('pushGeneralActionLog error', { 
+        sessionId, 
+        generalId, 
+        error: error.message 
+      });
     }
   }
 }

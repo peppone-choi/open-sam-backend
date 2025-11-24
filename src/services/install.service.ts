@@ -97,7 +97,7 @@ export class InstallService {
   ): Promise<InstallResult> {
     try {
       // 이미 관리자가 있는지 확인
-      const existingAdmin = await User.findOne({ grade: { $gte: 5 } });
+      const existingAdmin = await User.findOne({ grade: { $gte: 5 } }).select('_id');
       if (existingAdmin) {
         return {
           success: false,
@@ -106,7 +106,7 @@ export class InstallService {
       }
 
       // 사용자명 중복 확인
-      const existingUser = await User.findOne({ username });
+      const existingUser = await User.findOne({ username }).select('_id');
       if (existingUser) {
         return {
           success: false,

@@ -53,6 +53,50 @@ class NationRepository {
   }
 
   /**
+   * 국가 번호 배열로 일괄 조회 (N+1 방지)
+   * @param sessionId - 세션 ID
+   * @param nationNums - 국가 번호 배열
+   * @returns 국가 번호를 키로 하는 Map
+   */
+  async findByNationNums(sessionId: string, nationNums: number[]): Promise<Map<number, any>> {
+    if (!nationNums || nationNums.length === 0) {
+      return new Map();
+    }
+
+    const resultMap = new Map<number, any>();
+    const missingNums: number[] = [];
+
+    // 1. 캐시에서 먼저 조회
+    for (const nationNum of nationNums) {
+      const cached = await getNation(sessionId, nationNum);
+      if (cached) {
+        resultMap.set(nationNum, cached);
+      } else {
+        missingNums.push(nationNum);
+      }
+    }
+
+    // 2. 캐시 미스된 항목만 DB에서 일괄 조회
+    if (missingNums.length > 0) {
+      const nations = await Nation.find({
+        session_id: sessionId,
+        nation: { $in: missingNums }
+      }).lean();
+
+      // DB 결과를 캐시에 저장하고 Map에 추가
+      for (const nation of nations) {
+        const nationNum = nation.nation;
+        if (nationNum) {
+          await saveNation(sessionId, nationNum, nation);
+          resultMap.set(nationNum, nation);
+        }
+      }
+    }
+
+    return resultMap;
+  }
+
+  /**
    * 세션 내 모든 국가 조회
    * @param sessionId - 세션 ID
    * @returns 국가 목록

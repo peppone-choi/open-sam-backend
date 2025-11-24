@@ -1,6 +1,7 @@
 // @ts-nocheck - Type issues need investigation
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
+import { asyncHandler } from '../middleware/async-handler';
 
 import { GeneralListService } from '../services/nation/GeneralList.service';
 import { GetGeneralLogService } from '../services/nation/GetGeneralLog.service';
@@ -286,14 +287,10 @@ function toPlain<T>(doc: T | null | undefined): any | null {
  *       500:
  *         description: 서버 오류
  */
-router.post('/general-list', authenticate, async (req, res) => {
-  try {
+router.post('/general-list', authenticate, asyncHandler(async (req, res) => {
     const result = await GeneralListService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -485,14 +482,10 @@ router.post('/general-list', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.get('/get-general-log', authenticate, async (req, res) => {
-  try {
+router.get('/get-general-log', authenticate, asyncHandler(async (req, res) => {
     const result = await GetGeneralLogService.execute(req.query, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -707,26 +700,18 @@ router.get('/get-general-log', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.get('/get-nation-info', authenticate, async (req, res) => {
-  try {
+router.get('/get-nation-info', authenticate, asyncHandler(async (req, res) => {
     const result = await GetNationInfoService.execute(req.query, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 // 별칭 (프론트엔드 호환)
-router.post('/info', authenticate, async (req, res) => {
-  try {
+router.post('/info', authenticate, asyncHandler(async (req, res) => {
     // POST 요청도 GET과 동일하게 처리 (query 또는 body에서 파라미터 추출)
     const params = { ...req.query, ...req.body };
     const result = await GetNationInfoService.execute(params, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -741,14 +726,10 @@ router.post('/info', authenticate, async (req, res) => {
  *       200:
  *         description: 성공
  */
-router.post('/strat_finan', authenticate, async (req, res) => {
-  try {
+router.post('/strat_finan', authenticate, asyncHandler(async (req, res) => {
     const result = await GetNationStratFinanService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -884,14 +865,10 @@ router.post('/strat_finan', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-bill', authenticate, async (req, res) => {
-  try {
+router.post('/set-bill', authenticate, asyncHandler(async (req, res) => {
     const result = await SetBillService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -1026,14 +1003,10 @@ router.post('/set-bill', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-block-scout', authenticate, async (req, res) => {
-  try {
+router.post('/set-block-scout', authenticate, asyncHandler(async (req, res) => {
     const result = await SetBlockScoutService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -1182,14 +1155,10 @@ router.post('/set-block-scout', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-block-war', authenticate, async (req, res) => {
-  try {
+router.post('/set-block-war', authenticate, asyncHandler(async (req, res) => {
     const result = await SetBlockWarService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -1349,14 +1318,10 @@ router.post('/set-block-war', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-notice', authenticate, async (req, res) => {
-  try {
+router.post('/set-notice', authenticate, asyncHandler(async (req, res) => {
     const result = await SetNoticeService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -1505,14 +1470,10 @@ router.post('/set-notice', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-rate', authenticate, async (req, res) => {
-  try {
+router.post('/set-rate', authenticate, asyncHandler(async (req, res) => {
     const result = await SetRateService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -1675,14 +1636,10 @@ router.post('/set-rate', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-scout-msg', authenticate, async (req, res) => {
-  try {
+router.post('/set-scout-msg', authenticate, asyncHandler(async (req, res) => {
     const result = await SetScoutMsgService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -1839,14 +1796,10 @@ router.post('/set-scout-msg', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-secret-limit', authenticate, async (req, res) => {
-  try {
+router.post('/set-secret-limit', authenticate, asyncHandler(async (req, res) => {
     const result = await SetSecretLimitService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -2010,14 +1963,10 @@ router.post('/set-secret-limit', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-troop-name', authenticate, async (req, res) => {
-  try {
+router.post('/set-troop-name', authenticate, asyncHandler(async (req, res) => {
     const result = await SetTroopNameService.execute(req.body, req.user);
     res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -2052,8 +2001,7 @@ router.post('/set-troop-name', authenticate, async (req, res) => {
  *                   items:
  *                     type: object
  */
-router.post('/generals', authenticate, async (req, res) => {
-  try {
+router.post('/generals', authenticate, asyncHandler(async (req, res) => {
     // GeneralListService 재사용
     const result = await GeneralListService.execute(req.body, req.user);
     if (result.success && result.list) {
@@ -2068,10 +2016,7 @@ router.post('/generals', authenticate, async (req, res) => {
         reason: result.message || '장수 목록을 조회할 수 없습니다'
       });
     }
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -2104,8 +2049,7 @@ router.post('/generals', authenticate, async (req, res) => {
  *                 stratFinan:
  *                   type: object
  */
-router.post('/stratfinan', authenticate, async (req, res) => {
-  try {
+router.post('/stratfinan', authenticate, asyncHandler(async (req, res) => {
     const sessionId = req.body.session_id || 'sangokushi_default';
 
     const ownerId = req.user?.userId ? String(req.user.userId) : null;
@@ -2328,10 +2272,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
         outcome
       }
     });
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 /**
  * @swagger
@@ -2366,8 +2307,7 @@ router.post('/stratfinan', authenticate, async (req, res) => {
  *                   items:
  *                     type: object
  */
-router.post('/betting', authenticate, async (req, res) => {
-  try {
+router.post('/betting', authenticate, asyncHandler(async (req, res) => {
     // GetBettingListService 재사용
     const { GetBettingListService } = await import('../services/betting/GetBettingList.service');
     const result = await GetBettingListService.execute(req.body, req.user);
@@ -2384,9 +2324,6 @@ router.post('/betting', authenticate, async (req, res) => {
         reason: result.reason || '배팅 정보를 조회할 수 없습니다'
       });
     }
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+  }));
 
 export default router;

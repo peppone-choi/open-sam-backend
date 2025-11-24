@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth';
+import { asyncHandler } from '../middleware/async-handler';
 
 import { BuildNationCandidateService } from '../services/general/BuildNationCandidate.service';
 import { DieOnPrestartService } from '../services/general/DieOnPrestart.service';
@@ -98,14 +99,10 @@ const router = Router();
  *       500:
  *         description: 서버 오류
  */
-router.post('/build-nation-candidate', authenticate, async (req, res) => {
-  try {
-    const result = await BuildNationCandidateService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/build-nation-candidate', authenticate, asyncHandler(async (req, res) => {
+  const result = await BuildNationCandidateService.execute(req.body, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -173,14 +170,10 @@ router.post('/build-nation-candidate', authenticate, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.post('/die-on-prestart', authenticate, async (req, res) => {
-  try {
-    const result = await DieOnPrestartService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/die-on-prestart', authenticate, asyncHandler(async (req, res) => {
+  const result = await DieOnPrestartService.execute(req.body, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -267,14 +260,10 @@ router.post('/die-on-prestart', authenticate, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.post('/drop-item', authenticate, async (req, res) => {
-  try {
-    const result = await DropItemService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/drop-item', authenticate, asyncHandler(async (req, res) => {
+  const result = await DropItemService.execute(req.body, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -384,14 +373,10 @@ router.post('/drop-item', authenticate, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-command-table', optionalAuth, async (req, res) => {
-  try {
-    const result = await GetCommandTableService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.get('/get-command-table', optionalAuth, asyncHandler(async (req, res) => {
+  const result = await GetCommandTableService.execute(req.query, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -446,19 +431,15 @@ router.get('/get-command-table', optionalAuth, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-front-info', optionalAuth, async (req, res) => {
-  try {
-    // serverID를 session_id로 매핑 (프론트엔드 호환성)
-    const params = {
-      ...req.query,
-      session_id: req.query.session_id || req.query.serverID || 'sangokushi_default',
-    };
-    const result = await GetFrontInfoService.execute(params, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.get('/get-front-info', optionalAuth, asyncHandler(async (req, res) => {
+  // serverID를 session_id로 매핑 (프론트엔드 호환성)
+  const params = {
+    ...req.query,
+    session_id: req.query.session_id || req.query.serverID || 'sangokushi_default',
+  };
+  const result = await GetFrontInfoService.execute(params, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -526,14 +507,10 @@ router.get('/get-front-info', optionalAuth, async (req, res) => {
  *       400:
  *         description: 잘못된 요청
  */
-router.get('/get-general-log', async (req, res) => {
-  try {
-    const result = await GetGeneralLogService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.get('/get-general-log', asyncHandler(async (req, res) => {
+  const result = await GetGeneralLogService.execute(req.query, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -605,14 +582,10 @@ router.get('/get-general-log', async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.post('/instant-retreat', authenticate, async (req, res) => {
-  try {
-    const result = await InstantRetreatService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/instant-retreat', authenticate, asyncHandler(async (req, res) => {
+  const result = await InstantRetreatService.execute(req.body, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -795,23 +768,15 @@ router.post('/instant-retreat', authenticate, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.get('/get-join-info', optionalAuth, async (req, res) => {
-  try {
-    const result = await GetJoinInfoService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.get('/get-join-info', optionalAuth, asyncHandler(async (req, res) => {
+  const result = await GetJoinInfoService.execute(req.query, req.user);
+  res.json(result);
+}));
 
-router.post('/join', authenticate, async (req, res) => {
-  try {
-    const result = await JoinService.execute(req.body, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.post('/join', authenticate, asyncHandler(async (req, res) => {
+  const result = await JoinService.execute(req.body, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger
@@ -904,14 +869,10 @@ router.post('/join', authenticate, async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-boss-info', authenticate, async (req, res) => {
-  try {
-    const result = await GetBossInfoService.execute(req.query, req.user);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+router.get('/get-boss-info', authenticate, asyncHandler(async (req, res) => {
+  const result = await GetBossInfoService.execute(req.query, req.user);
+  res.json(result);
+}));
 
 /**
  * @swagger

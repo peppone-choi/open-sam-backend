@@ -62,6 +62,13 @@ export interface IGeneral extends Document {
   //   atmos: 0,
   //   injury: 0,
   //   
+  //   // 숙련도 (proficiency by crew type)
+  //   dex0: 0,  // 보병
+  //   dex1: 0,  // 궁병
+  //   dex2: 0,  // 기병
+  //   dex3: 0,  // 귀병
+  //   dex4: 0,  // 차병
+  //   
   //   // 게임 로직 필드 (하드코딩 아님!)
   //   nation: 1,
   //   city: 10,
@@ -92,6 +99,7 @@ export interface IGeneral extends Document {
   getTurnTime(format?: string): string;
   addExperience(exp: number): void;
   addDedication(ded: number): void;
+  addDex(crewType: any, exp: number, affectTrainAtmos?: boolean): void;
   checkStatChange(): Promise<void>;
   applyDB(db: any): Promise<void>;
   markModified(path: string): void;
@@ -155,6 +163,10 @@ const GeneralSchema = new Schema<IGeneral>({
 });
 
 GeneralSchema.index({ session_id: 1, no: 1 }, { unique: true });
+GeneralSchema.index({ session_id: 1, nation: 1 });
+GeneralSchema.index({ session_id: 1, 'data.nation': 1 });
+GeneralSchema.index({ session_id: 1, city: 1 });
+GeneralSchema.index({ session_id: 1, owner: 1 });
 
 // 메서드 추가 (PHP의 General 클래스 메서드들)
 GeneralSchema.methods.getVar = function(key: string): any {
@@ -298,6 +310,50 @@ GeneralSchema.methods.addExperience = function(exp: number): void {
 GeneralSchema.methods.addDedication = function(ded: number): void {
   if (!this.data.dedication) this.data.dedication = 0;
   this.data.dedication += ded;
+  this.markModified('data');
+};
+
+/**
+ * 병종별 숙련도 증가
+ * PHP General::addDex()와 동일
+ * 
+ * @param crewType - 병종 객체 또는 armType 숫자
+ * @param exp - 기본 숙련도 경험치
+ * @param affectTrainAtmos - 훈련도/사기 영향 여부 (기본: false)
+ */
+GeneralSchema.methods.addDex = function(crewType: any, exp: number, affectTrainAtmos: boolean = false): void {
+  const { calculateDexExp, getDexFieldName } = require('../utils/dex-calculator');
+  
+  // crewType에서 armType 추출
+  let armType: number;
+  if (typeof crewType === 'number') {
+    armType = crewType;
+  } else if (crewType && typeof crewType.armType === 'number') {
+    armType = crewType.armType;
+  } else {
+    // 기본값: 보병
+    armType = 0;
+  }
+  
+  // 훈련도와 사기 가져오기
+  const train = this.data.train || 100;
+  const atmos = this.data.atmos || 100;
+  
+  // 최종 숙련도 경험치 계산
+  let finalExp = calculateDexExp(exp, armType, train, atmos, affectTrainAtmos);
+  
+  // onCalcStat 트리거 적용 (아이템/특성 보정)
+  if (typeof this.onCalcStat === 'function') {
+    finalExp = this.onCalcStat(this, 'addDex', finalExp, { armType });
+  }
+  
+  // 숙련도 필드 업데이트
+  const dexField = getDexFieldName(armType);
+  if (!this.data[dexField]) {
+    this.data[dexField] = 0;
+  }
+  this.data[dexField] += finalExp;
+  
   this.markModified('data');
 };
 

@@ -373,4 +373,28 @@ export class KVStorage {
       namespace: this.storNamespace 
     }).exec();
   }
+
+  /**
+   * 락 획득 (분산 락 지원)
+   */
+  async acquireLock(key: string, ttl: number = 60): Promise<boolean> {
+    const lockKey = `${this.storNamespace}:lock:${key}`;
+    const lockValue = Date.now().toString();
+    
+    const existing = await this.getDBValue(lockKey);
+    if (existing && Date.now() - parseInt(existing) < ttl * 1000) {
+      return false;
+    }
+    
+    await this.setDBValue(lockKey, lockValue);
+    return true;
+  }
+
+  /**
+   * 락 해제
+   */
+  async releaseLock(key: string): Promise<void> {
+    const lockKey = `${this.storNamespace}:lock:${key}`;
+    await this.deleteDBValue(lockKey);
+  }
 }

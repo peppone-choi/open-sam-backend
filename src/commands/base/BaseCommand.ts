@@ -899,6 +899,49 @@ export abstract class BaseCommand {
   }
 
   /**
+   * 아이템 즉시 소비 시도
+   * PHP의 BaseItem::tryConsumeNow() 호출
+   * 
+   * @param itemSlot 아이템 슬롯 (item, weapon, book, horse 등)
+   * @param actionType 액션 타입 (예: 'GeneralTrigger', '장비매매')
+   * @param command 커맨드 이름
+   * @returns true면 아이템이 소비되어 제거됨
+   */
+  protected async tryConsumeNow(
+    itemSlot: string,
+    actionType: string,
+    command: string
+  ): Promise<boolean> {
+    const itemClassName = this.generalObj.data[itemSlot];
+    if (!itemClassName || itemClassName === 'None') {
+      return false;
+    }
+
+    // 아이템 인스턴스 생성
+    const { createItem } = await import('../../models/items');
+    const itemInstance = createItem(itemClassName);
+    if (!itemInstance) {
+      return false;
+    }
+
+    // 아이템의 tryConsumeNow 호출
+    const shouldConsume = itemInstance.tryConsumeNow(
+      this.generalObj,
+      actionType,
+      command
+    );
+
+    if (shouldConsume) {
+      // 아이템 제거
+      this.generalObj.data[itemSlot] = 'None';
+      this.generalObj.markModified('data');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * 장수 정보를 레포지토리를 통해 저장
    * generalObj.save() 대신 사용
    */

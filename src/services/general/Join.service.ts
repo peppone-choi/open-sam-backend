@@ -1225,7 +1225,7 @@ export class JoinService {
   private static async lookupUserForFace(userId: number | string): Promise<any | null> {
     const idStr = String(userId);
     try {
-      const userDoc = await User.findById(idStr);
+      const userDoc = await User.findById(idStr).select('-password');
       if (userDoc) {
         return userDoc;
       }
@@ -1234,7 +1234,7 @@ export class JoinService {
     }
 
     try {
-      const userByNo = await User.findOne({ no: idStr });
+      const userByNo = await User.findOne({ no: idStr }).select('-password');
       if (userByNo) {
         return userByNo;
       }

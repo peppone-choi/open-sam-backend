@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { AccountSecurityService } from '../services/gateway/AccountSecurity.service';
 import { ApiError } from '../errors/ApiError';
+import { authLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -62,7 +63,7 @@ router.post('/get-user-info', authenticate, async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('-password');
     if (!user) {
       return res.status(404).json({
         result: false,
@@ -306,7 +307,7 @@ router.post('/logout', authenticate, async (req, res) => {
  *       400:
  *         description: 잘못된 요청
  */
-router.post('/change-password', authenticate, async (req, res) => {
+router.post('/change-password', authLimiter, authenticate, async (req, res) => {
   try {
     const { password, newPassword, globalSalt } = req.body;
     const userId = req.user?.userId;

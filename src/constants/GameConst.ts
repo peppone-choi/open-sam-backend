@@ -51,6 +51,14 @@ export class GameConst {
   static readonly defaultTrain = 50;
   static readonly defaultTrainLow = 40;
   static readonly defaultTrainHigh = 70;
+  
+  // 명령으로 올릴 수 있는 최대 훈련도/사기치
+  static readonly maxTrainByCommand = gameBalance?.maxTrainByCommand ?? 100;
+  static readonly maxAtmosByCommand = gameBalance?.maxAtmosByCommand ?? 100;
+  
+  // 전투로 올릴 수 있는 최대 훈련도/사기치
+  static readonly maxTrainByWar = gameBalance?.maxTrainByWar ?? 110;
+  static readonly maxAtmosByWar = gameBalance?.maxAtmosByWar ?? 150;
 
   static readonly maxAtmos = 100;
   static readonly minAtmos = 0;
@@ -180,11 +188,6 @@ export class GameConst {
   static readonly resourceActionAmountGuide = 100;
   static readonly generalMinimumGold = 10000;
   static readonly generalMinimumRice = 10000;
-  // 한 커맨드로 도달 가능한 훈련/사기 상한 (기존 코어 기준 0~100 스케일)
-  static readonly maxTrainByCommand = 100;
-  static readonly maxAtmosByCommand = 100;
-  static readonly maxTrainByWar = gameBalance?.maxTrainByWar ?? 110;
-  static readonly maxAtmosByWar = gameBalance?.maxAtmosByWar ?? 150;
 
   // Training effectiveness coefficient
   static readonly trainDelta = 1.0;

@@ -58,9 +58,9 @@ export async function processCityOccupation(
       }).session(session);
       
       if (general) {
-        general.city = cityId;
-        general.last_action = 'occupy_city';
-        general.last_action_at = new Date();
+        general.data.city = cityId;
+        general.data.last_action = 'occupy_city';
+        general.data.last_action_at = new Date();
         await general.save({ session });
         
         logger.info('장수 위치 업데이트', { 

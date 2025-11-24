@@ -17,8 +17,10 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
 
     // 토큰 검증
     const token = authHeader.substring(7);
-    const secret = process.env.JWT_SECRET || 'secret';
-    const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'JWT_SECRET is not configured' });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
     
     // 등급 확인 (5 이상이 어드민)
     const grade = decoded.grade || 1;

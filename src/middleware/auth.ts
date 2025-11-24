@@ -62,8 +62,10 @@ export const authenticate = async (
     }
     
     // JWT 검증
-        const secret = process.env.JWT_SECRET || 'secret';
-    const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
     
     console.log('[Auth] ✅ 인증 성공!');
     console.log('Decoded Token:', JSON.stringify(decoded, null, 2));
@@ -109,8 +111,10 @@ export const optionalAuth = async (
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const secret = process.env.JWT_SECRET || 'secret';
-      const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured');
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
       req.user = decoded;
     }
     next();
@@ -161,8 +165,10 @@ export const autoExtractToken = async (
     // 3. 토큰이 있으면 검증하고 req.user에 저장
     if (token) {
       try {
-    const secret = process.env.JWT_SECRET || 'secret';
-        const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+        if (!process.env.JWT_SECRET) {
+          throw new Error('JWT_SECRET is not configured');
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
         req.user = decoded;
       } catch (error) {
         // 토큰이 유효하지 않아도 에러를 던지지 않고 계속 진행

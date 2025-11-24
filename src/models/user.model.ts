@@ -32,7 +32,7 @@ const UserSchema = new Schema<IUser>({
   no: { type: String },
   username: { type: String, required: true, unique: true },
   name: { type: String },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   
   game_mode: { type: String, default: 'turn' },
   turn_hour: { type: Number, default: 21 },

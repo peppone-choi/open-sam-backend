@@ -107,7 +107,7 @@ router.get('/kakao/callback', async (req, res) => {
     let user = await User.findOne({ 
       oauth_type: 'kakao',
       'oauth_id': String(kakaoUserInfo.id)
-    });
+    }).select('-password');
 
     if (!user) {
       // 새 사용자 생성
@@ -134,14 +134,16 @@ router.get('/kakao/callback', async (req, res) => {
     }
 
     // JWT 토큰 발급
-    const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     const token = jwt.sign(
       {
         userId: user._id.toString(),
         username: user.username,
         grade: user.grade || 1
       },
-      secret,
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -175,10 +177,15 @@ router.post('/kakao/unlink', async (req, res) => {
     }
 
     const token = authHeader.substring(7);
-    const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-    const decoded = jwt.verify(token, secret) as { userId: string };
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: 'JWT_SECRET is not configured'
+      });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(decoded.userId).select('-password');
     if (!user || user.oauth_type !== 'kakao' || !user.oauth_id) {
       return res.status(400).json({
         success: false,

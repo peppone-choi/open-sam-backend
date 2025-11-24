@@ -77,6 +77,10 @@ export class MongoConnection {
   getStatus(): boolean {
     return this.isConnected;
   }
+
+  getConnection(): typeof mongoose {
+    return mongoose;
+  }
 }
 
 export const mongoConnection = MongoConnection.getInstance();

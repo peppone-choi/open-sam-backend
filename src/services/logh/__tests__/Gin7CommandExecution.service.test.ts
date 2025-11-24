@@ -1,7 +1,30 @@
 import { Gin7CommandExecutionService } from '../Gin7CommandExecution.service';
-import { gin7CommandCatalog } from '../../../config/gin7/catalog';
 
 const mockMoveExecute = jest.fn();
+const mockGetCommandMeta = jest.fn();
+
+jest.mock('../../../config/gin7/catalog', () => ({
+  gin7CommandCatalog: {
+    authorityCards: [
+      {
+        templateId: 'card.personal.basic',
+        title: '개인 카드',
+        commandCodes: ['move', 'warp'],
+      },
+      {
+        templateId: 'card.personal.restricted',
+        title: '제한된 카드',
+        commandCodes: [], // No commands allowed
+      },
+    ],
+  },
+  getCommandMeta: jest.fn((code: string) => ({
+    code,
+    group: code === 'move' ? 'tactical' : 'strategic',
+    cpType: 'mcp',
+    cpCost: 10,
+  })),
+}));
 
 jest.mock('../../../commands/logh/tactical/Move', () => {
   return {
@@ -117,14 +140,38 @@ describe('Gin7CommandExecutionService', () => {
   });
 
   it('rejects commands when card does not include code', async () => {
-    const characterDoc = buildCharacterDoc({ commandCodes: [] });
-    GalaxyCharacter.findOne.mockResolvedValue(characterDoc);
+    // Character has the restricted card which allows them to hold it, but template doesn't include 'move'
+    const doc: any = {
+      session_id: 'session-1',
+      characterId: 'gal-char-01',
+      displayName: '테스트',
+      faction: 'empire',
+      rank: '대장',
+      organizationNodeId: 'palace',
+      commandCards: [
+        {
+          cardId: 'card.personal.restricted',
+          name: '제한된 카드',
+          category: 'personal',
+          commands: ['move'], // Character thinks they can use move
+          commandCodes: ['move'],
+        },
+      ],
+      commandPoints: {
+        pcp: 50,
+        mcp: 80,
+        lastRecoveredAt: new Date(),
+      },
+      save: jest.fn().mockResolvedValue(null),
+    };
+    
+    GalaxyCharacter.findOne.mockResolvedValue(doc);
     GalaxyAuthorityCard.findOne.mockResolvedValue(null);
 
     await expect(
       Gin7CommandExecutionService.execute({
         sessionId: 'session-1',
-        cardId: 'card.personal.basic',
+        cardId: 'card.personal.restricted',
         commandCode: 'move',
         characterId: 'gal-char-01',
         args: { fleetId: 'fleet-1' },
@@ -147,6 +194,7 @@ function buildCharacterDoc(options: { commandCodes: string[] }) {
         name: '개인 카드',
         category: 'personal',
         commands: options.commandCodes,
+        commandCodes: options.commandCodes,
       },
     ],
     commandPoints: {

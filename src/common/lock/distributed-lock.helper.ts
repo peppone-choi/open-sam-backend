@@ -69,7 +69,7 @@ export async function acquireDistributedLock(lockKey: string, options: LockOptio
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const token = randomUUID();
-      const result = await redis.set(lockKey, token, 'NX', 'EX', ttl);
+      const result = await redis.set(lockKey, token, 'EX', ttl, 'NX');
       if (result === 'OK') {
         lockTokens.set(lockKey, token);
         logger.debug('[Lock] acquired distributed lock', { lockKey, ttl, context });

@@ -51,16 +51,15 @@ export const errorMiddleware = (
     details
   });
 
-  // 응답
+  // 표준 에러 응답 형식
   res.status(status).json({
+    success: false,
     error: {
-      message: err.message || '서버 내부 오류가 발생했습니다',
       code: code || 'INTERNAL_ERROR',
-      details,
-      requestId,
-      path: req.path,
-      method: req.method,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      message: err.message || '서버 내부 오류가 발생했습니다',
+      ...(details && { details }),
+      ...(requestId && { requestId }),
+      ...(process.env.NODE_ENV === 'development' && err.stack && { stack: err.stack })
     }
   });
 };

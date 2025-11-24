@@ -9,6 +9,7 @@ import { GameSocketHandler } from './game.socket';
 import { GeneralSocketHandler } from './general.socket';
 import { NationSocketHandler } from './nation.socket';
 import { WebSocketHandler } from '../services/logh/WebSocketHandler.service';
+import { logger } from '../common/logger';
 
 /**
  * Socket.IO 서버 관리자
@@ -53,14 +54,14 @@ export class SocketManager {
     // LOGH 핸들러 초기화 (환경 변수로 제어)
     if (process.env.ENABLE_LOGH_WEBSOCKET !== 'false') {
       this.loghHandler = new WebSocketHandler(this.io);
-      console.log('✅ LOGH WebSocket 핸들러 초기화 완료');
+      logger.info('LOGH WebSocket 핸들러 초기화 완료');
     }
 
     // 연결 처리
     this.io.use(this.authenticateSocket.bind(this));
     this.io.on('connection', this.handleConnection.bind(this));
 
-    console.log('✅ Socket.IO 서버 초기화 완료');
+    logger.info('Socket.IO 서버 초기화 완료');
   }
 
   /**
@@ -88,8 +89,10 @@ export class SocketManager {
       }
 
       // JWT 검증
-      const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-      const decoded = jwt.verify(token, secret) as unknown as JwtPayload;
+      if (!process.env.JWT_SECRET) {
+        return next(new Error('JWT_SECRET is not configured'));
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
 
       // 소켓에 사용자 정보 저장
       socket.user = decoded;
@@ -113,7 +116,11 @@ export class SocketManager {
     const userId = user?.userId;
     const sessionId = socket.handshake.query?.sessionId as string;
 
-    console.log(`📡 소켓 연결: ${socket.id} (사용자: ${userId || 'unknown'}, 세션: ${sessionId || 'N/A'})`);
+    logger.info('Socket connected', { 
+      socketId: socket.id, 
+      userId: userId || 'unknown', 
+      sessionId: sessionId || 'N/A' 
+    });
 
     // 사용자별 룸에 조인
     if (userId) {
@@ -123,7 +130,7 @@ export class SocketManager {
     // 세션 룸에 자동 조인 (실시간 로그 수신을 위해 필수)
     if (sessionId) {
       socket.join(`session:${sessionId}`);
-      console.log(`📡 소켓 ${socket.id}가 세션 룸 session:${sessionId}에 조인했습니다`);
+      logger.debug('Socket joined session room', { socketId: socket.id, sessionId });
     }
 
     // LOGH 세션인 경우 LOGH 핸들러로 처리
@@ -142,9 +149,9 @@ export class SocketManager {
     socket.on('disconnect', (reason: string) => {
       // HMR이나 클라이언트 disconnect는 로그만 (정상 동작)
       if (reason === 'io client disconnect' || reason === 'transport close') {
-        console.log(`📡 소켓 연결 해제 (정상): ${socket.id} (이유: ${reason})`);
+        logger.debug('Socket disconnected (normal)', { socketId: socket.id, reason });
       } else {
-        console.log(`📡 소켓 연결 해제: ${socket.id} (이유: ${reason})`);
+        logger.info('Socket disconnected', { socketId: socket.id, reason });
       }
       if (userId) {
         socket.leave(`user:${userId}`);
@@ -152,8 +159,12 @@ export class SocketManager {
     });
 
     // 에러 처리
-    socket.on('error', (error) => {
-      console.error(`📡 소켓 에러: ${socket.id}`, error);
+    socket.on('error', (error: any) => {
+      logger.error('Socket error', { 
+        socketId: socket.id, 
+        error: error.message, 
+        stack: error.stack 
+      });
     });
 
     // 연결 성공 메시지

@@ -1,0 +1,8 @@
+--- a/battle.routes.ts
++++ b/battle.routes.ts
+@@ -1,4 +1,5 @@
+ import { Router } from 'express';
++import { asyncHandler } from '../middleware/async-handler';
+ import { StartBattleService } from '../services/battle/StartBattle.service';
+ import { GetBattleStateService } from '../services/battle/GetBattleState.service';
+ import { DeployUnitsService } from '../services/battle/DeployUnits.service';

@@ -14,7 +14,7 @@ class UserRepository {
    * @returns 유저 문서 또는 null
    */
   async findById(userId: string) {
-    return await User.findById(userId).exec();
+    return await User.findById(userId).select('-password').exec();
   }
 
   /**
@@ -22,7 +22,7 @@ class UserRepository {
    * @returns 유저 목록
    */
   async findAll() {
-    return await User.find({}).exec();
+    return await User.find({}).select('-password').exec();
   }
 
   /**
@@ -31,7 +31,7 @@ class UserRepository {
    * @returns 유저 목록
    */
   async findByFilter(filter: any) {
-    return await User.find(filter).exec();
+    return await User.find(filter).select('-password').exec();
   }
 
   /**

@@ -28,13 +28,13 @@ describe('CounterAttackCommand', () => {
 
   describe('인스턴스 생성 테스트', () => {
     it('유효한 인자로 인스턴스를 생성할 수 있어야 함', () => {
-      const { command, general, city, nation, env } = CommandTestHelper.prepareCommand(
+      const { command, general, city, nation, env } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, // general options
         {}, // city options
         {}, // nation options
         {}, // env options
-        { /* TODO: 적절한 arg 추가 */ }
+        null // lastTurn arg
       );
 
       expect(command).toBeDefined();
@@ -44,10 +44,10 @@ describe('CounterAttackCommand', () => {
 
   describe('argTest 테스트', () => {
     it('유효한 인자를 검증해야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
-        { /* TODO: 유효한 arg */ }
+        null
       );
 
       const result = command['argTest']();
@@ -56,7 +56,7 @@ describe('CounterAttackCommand', () => {
     });
 
     it('잘못된 인자를 거부해야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
         null
@@ -69,10 +69,10 @@ describe('CounterAttackCommand', () => {
 
   describe('제약 조건 테스트', () => {
     it('minConditionConstraints가 정의되어 있어야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
-        { /* TODO */ }
+        null
       );
 
       command['init']();
@@ -81,15 +81,26 @@ describe('CounterAttackCommand', () => {
       expect(Array.isArray(constraints)).toBe(true);
     });
 
-    it('fullConditionConstraints가 정의되어 있어야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+    it('fullConditionConstraints가 정의되어 있어야 함', async () => {
+      // Setup GameConst for available commands
+      global.GameConst = {
+        availableChiefCommand: {
+          '전략': ['che_외교', 'che_모반', 'che_국가모반']
+        }
+      };
+
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
-        {}, {}, {}, {},
-        { /* TODO */ }
+        { nation: 1 },
+        { nation: 1 },
+        { nation: 1 },
+        {},
+        null,
+        { destNationID: 2, commandType: 'che_외교' }
       );
 
       command['init']();
-      command['initWithArg']();
+      await command['initWithArg']();
       
       const constraints = command['fullConditionConstraints'];
       expect(Array.isArray(constraints)).toBe(true);
@@ -98,14 +109,11 @@ describe('CounterAttackCommand', () => {
 
   describe('비용 계산 테스트', () => {
     it('getCost()가 [금, 쌀] 배열을 반환해야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
-        { /* TODO */ }
+        null
       );
-
-      command['init']();
-      command['initWithArg']();
 
       const cost = command.getCost();
       expect(Array.isArray(cost)).toBe(true);
@@ -115,14 +123,11 @@ describe('CounterAttackCommand', () => {
     });
 
     it('비용이 음수가 아니어야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
-        { /* TODO */ }
+        null
       );
-
-      command['init']();
-      command['initWithArg']();
 
       const [gold, rice] = command.getCost();
       expect(gold).toBeGreaterThanOrEqual(0);
@@ -132,10 +137,10 @@ describe('CounterAttackCommand', () => {
 
   describe('턴 요구사항 테스트', () => {
     it('getPreReqTurn()이 숫자를 반환해야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
-        { /* TODO */ }
+        null
       );
 
       const preTurn = command.getPreReqTurn();
@@ -144,10 +149,10 @@ describe('CounterAttackCommand', () => {
     });
 
     it('getPostReqTurn()이 숫자를 반환해야 함', () => {
-      const { command } = CommandTestHelper.prepareCommand(
+      const { command } = CommandTestHelper.prepareNationCommand(
         CounterAttackCommand,
         {}, {}, {}, {},
-        { /* TODO */ }
+        null
       );
 
       const postTurn = command.getPostReqTurn();

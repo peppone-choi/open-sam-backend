@@ -52,11 +52,11 @@ export async function processNationDestruction(
       }).session(session);
       
       for (const general of generals) {
-        general.nation = 0; // 재야로 전환
-        general.city = 0;
-        general.officer_level = 0;
-        general.last_action = 'nation_destroyed';
-        general.last_action_at = new Date();
+        general.data.nation = 0; // 재야로 전환
+        general.data.city = 0;
+        general.data.officer_level = 0;
+        general.data.last_action = 'nation_destroyed';
+        general.data.last_action_at = new Date();
         await general.save({ session });
       }
       

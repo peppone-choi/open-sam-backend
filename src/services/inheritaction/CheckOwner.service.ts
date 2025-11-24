@@ -78,7 +78,7 @@ export class CheckOwnerService {
         date: new Date().toISOString()
       });
       
-      const destOwner = await User.findOne({ no: destGeneral.owner });
+      const destOwner = await User.findOne({ no: destGeneral.owner }).select('-password');
       const destOwnerName = destGeneral.owner_name || destOwner?.name || '알수없음';
       
       const srcNation = await nationRepository.findByNationNum(sessionId, general.nation );

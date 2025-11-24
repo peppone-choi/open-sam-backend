@@ -95,7 +95,7 @@ export class SetMySettingService {
       }
 
       // 사용자 패널티 정보 업데이트
-      const user = await User.findById(userId);
+      const user = await User.findById(userId).select('-password');
       if (user && user.penalty) {
         const penalty = typeof user.penalty === 'string' ? JSON.parse(user.penalty) : user.penalty;
         updateData['data.penalty'] = JSON.stringify(penalty);

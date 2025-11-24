@@ -109,6 +109,16 @@ export class ConflictError extends AppError {
 }
 
 /**
+ * 422 Validation Error
+ */
+export class ValidationError extends AppError {
+  constructor(message: string, meta?: Record<string, any>) {
+    super(message, { status: 422, code: 'VALIDATION_ERROR', meta });
+    this.name = 'ValidationError';
+  }
+}
+
+/**
  * 500 Internal Server Error
  */
 export class InternalServerError extends AppError {

@@ -17,6 +17,7 @@ import { swaggerSpec } from './config/swagger';
 import { autoExtractToken } from './middleware/auth';
 import { initializeSocket } from './socket/socketManager';
 import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
+import { globalLimiter, apiLimiter, authLimiter } from './middleware/rate-limit.middleware';
 import sessionRoutes from './routes/session.routes';
 import { Session } from './models/session.model';
 import generalRoutes from './routes/general.routes';
@@ -62,6 +63,9 @@ export async function createApp(): Promise<Express> {
   
   // 보안 미들웨어
   app.use(helmet());
+  
+  // 글로벌 rate limiting (1000 req/15min)
+  app.use(globalLimiter);
   
   // CORS 설정
   app.use(cors({
@@ -163,6 +167,9 @@ app.set('trust proxy', 1);
 
 // 보안 미들웨어
 app.use(helmet());
+
+// 글로벌 rate limiting (1000 req/15min)
+app.use(globalLimiter);
 
 // CORS 설정 - 프론트엔드에서 쿠키를 포함한 요청 허용
 app.use(cors({
@@ -337,6 +344,56 @@ async function ensureDefaultSession() {
 async function start() {
   try {
     console.log('[DEBUG] start() function called');
+    
+    // ========================================
+    // CRITICAL: JWT Security Validation
+    // ========================================
+    if (!process.env.JWT_SECRET) {
+      logger.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET is not set');
+      console.error('\n========================================');
+      console.error('❌ CRITICAL SECURITY ERROR');
+      console.error('========================================');
+      console.error('JWT_SECRET environment variable is not set.');
+      console.error('This is a critical security requirement.');
+      console.error('');
+      console.error('Please set JWT_SECRET in your .env file:');
+      console.error('  JWT_SECRET=your-secure-random-secret-key');
+      console.error('');
+      console.error('Generate a secure secret with:');
+      console.error('  node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+      console.error('========================================\n');
+      process.exit(1);
+    }
+    
+    // Check for default/insecure JWT secrets
+    const insecureSecrets = [
+      'secret',
+      'your-secret-key-change-this-in-production',
+      'your-secret-key-change-in-production',
+      'change-this',
+      'changeme',
+      'default'
+    ];
+    
+    if (insecureSecrets.includes(process.env.JWT_SECRET)) {
+      logger.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET is using a default/insecure value');
+      console.error('\n========================================');
+      console.error('❌ CRITICAL SECURITY ERROR');
+      console.error('========================================');
+      console.error('JWT_SECRET is using a default or insecure value.');
+      console.error('This is a critical security vulnerability.');
+      console.error('');
+      console.error('Please set a strong JWT_SECRET in your .env file:');
+      console.error('  JWT_SECRET=your-secure-random-secret-key');
+      console.error('');
+      console.error('Generate a secure secret with:');
+      console.error('  node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+      console.error('========================================\n');
+      process.exit(1);
+    }
+    
+    logger.info('✅ JWT_SECRET validation passed');
+    
     // 한국 시간대(Asia/Seoul, UTC+9) 설정
     if (!process.env.TZ) {
       process.env.TZ = 'Asia/Seoul';

@@ -85,8 +85,13 @@ router.post('/by-token', async (req, res) => {
     // FUTURE: 실제로는 login_token 테이블에서 조회해야 함
     // 현재는 JWT 토큰으로 간단히 처리
     try {
-      const secret = process.env.JWT_SECRET || 'secret';
-      const decoded = jwt.verify(token, secret);
+      if (!process.env.JWT_SECRET) {
+        return res.status(500).json({
+          result: false,
+          reason: 'JWT_SECRET is not configured'
+        });
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       if (typeof decoded === 'string' || !decoded || typeof decoded !== 'object') {
         return res.status(401).json({
@@ -105,7 +110,7 @@ router.post('/by-token', async (req, res) => {
       }
       
       // 사용자 확인
-      const user = await User.findById(payload.userId);
+      const user = await User.findById(payload.userId).select('-password');
       if (!user) {
         return res.status(401).json({
           result: false,
@@ -120,7 +125,7 @@ router.post('/by-token', async (req, res) => {
           username: user.username,
           grade: user.grade || 1
         },
-        secret,
+        process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
       

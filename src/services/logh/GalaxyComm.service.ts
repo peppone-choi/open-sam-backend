@@ -3,6 +3,7 @@ import { GalaxyCommMessage, GalaxyCommChannel } from '../../models/logh/GalaxyCo
 import { GalaxyAddressBookEntry } from '../../models/logh/GalaxyAddressBook.model';
 import { GalaxyCommHandshake } from '../../models/logh/GalaxyCommHandshake.model';
 import { GalaxyCharacter } from '../../models/logh/GalaxyCharacter.model';
+import { GalaxyMail } from '../../models/logh/GalaxyMail.model';
 
 interface SendMessageParams {
   sessionId: string;
@@ -163,4 +164,125 @@ export async function listHandshakes(sessionId: string, characterId: string, sta
   }
 
   return GalaxyCommHandshake.find(query).sort({ createdAt: -1 });
+}
+
+// Mail Functions (Manual P.15 - 120 cap limit)
+const MAIL_INBOX_LIMIT = 120;
+
+interface SendMailParams {
+  sessionId: string;
+  fromCharacterId: string;
+  fromName: string;
+  fromAddress: string;
+  toCharacterId: string;
+  toName: string;
+  toAddress: string;
+  subject: string;
+  body: string;
+  replyToMailId?: string;
+}
+
+export async function sendMail(params: SendMailParams) {
+  const { sessionId, toCharacterId } = params;
+
+  // Check inbox limit (Manual P.15)
+  const inboxCount = await GalaxyMail.countDocuments({
+    session_id: sessionId,
+    toCharacterId,
+  });
+
+  if (inboxCount >= MAIL_INBOX_LIMIT) {
+    throw new Error(`受信メールボックスが満杯です (${MAIL_INBOX_LIMIT}通)。古いメールを削除してください。`);
+  }
+
+  const mail = await GalaxyMail.create({
+    session_id: sessionId,
+    mailId: randomUUID(),
+    fromCharacterId: params.fromCharacterId,
+    fromName: params.fromName,
+    fromAddress: params.fromAddress,
+    toCharacterId: params.toCharacterId,
+    toName: params.toName,
+    toAddress: params.toAddress,
+    subject: params.subject,
+    body: params.body,
+    replyToMailId: params.replyToMailId,
+  });
+
+  return mail;
+}
+
+export async function listMails(
+  sessionId: string,
+  characterId: string,
+  box: 'inbox' | 'outbox' = 'inbox'
+) {
+  const query: Record<string, any> = {
+    session_id: sessionId,
+  };
+
+  if (box === 'inbox') {
+    query.toCharacterId = characterId;
+  } else {
+    query.fromCharacterId = characterId;
+  }
+
+  const mails = await GalaxyMail.find(query)
+    .sort({ createdAt: -1 })
+    .limit(200);
+
+  const total = await GalaxyMail.countDocuments(query);
+
+  return { mails, total };
+}
+
+export async function markMailAsRead(sessionId: string, mailId: string, characterId: string) {
+  const mail = await GalaxyMail.findOne({ session_id: sessionId, mailId });
+  if (!mail) {
+    throw new Error('Mail not found.');
+  }
+
+  // Only recipient can mark as read
+  if (mail.toCharacterId !== characterId) {
+    throw new Error('Only the recipient can mark mail as read.');
+  }
+
+  mail.isRead = true;
+  await mail.save();
+  return mail;
+}
+
+export async function deleteMail(sessionId: string, mailId: string, characterId: string) {
+  const mail = await GalaxyMail.findOne({ session_id: sessionId, mailId });
+  if (!mail) {
+    throw new Error('Mail not found.');
+  }
+
+  // Only sender or recipient can delete
+  if (mail.fromCharacterId !== characterId && mail.toCharacterId !== characterId) {
+    throw new Error('Only sender or recipient can delete mail.');
+  }
+
+  await mail.deleteOne();
+  return { success: true };
+}
+
+export async function getMailboxInfo(sessionId: string, characterId: string) {
+  const inboxCount = await GalaxyMail.countDocuments({
+    session_id: sessionId,
+    toCharacterId: characterId,
+  });
+
+  const unreadCount = await GalaxyMail.countDocuments({
+    session_id: sessionId,
+    toCharacterId: characterId,
+    isRead: false,
+  });
+
+  return {
+    inboxCount,
+    unreadCount,
+    inboxLimit: MAIL_INBOX_LIMIT,
+    inboxAvailable: MAIL_INBOX_LIMIT - inboxCount,
+  };
 }

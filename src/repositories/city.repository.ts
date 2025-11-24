@@ -58,6 +58,50 @@ class CityRepository {
   }
 
   /**
+   * 도시 번호 배열로 일괄 조회 (N+1 방지)
+   * @param sessionId - 세션 ID
+   * @param cityNums - 도시 번호 배열
+   * @returns 도시 번호를 키로 하는 Map
+   */
+  async findByCityNums(sessionId: string, cityNums: number[]): Promise<Map<number, any>> {
+    if (!cityNums || cityNums.length === 0) {
+      return new Map();
+    }
+
+    const resultMap = new Map<number, any>();
+    const missingNums: number[] = [];
+
+    // 1. 캐시에서 먼저 조회
+    for (const cityNum of cityNums) {
+      const cached = await getCity(sessionId, cityNum);
+      if (cached) {
+        resultMap.set(cityNum, cached);
+      } else {
+        missingNums.push(cityNum);
+      }
+    }
+
+    // 2. 캐시 미스된 항목만 DB에서 일괄 조회
+    if (missingNums.length > 0) {
+      const cities = await City.find({
+        session_id: sessionId,
+        city: { $in: missingNums }
+      }).lean();
+
+      // DB 결과를 캐시에 저장하고 Map에 추가
+      for (const city of cities) {
+        const cityNum = city.city;
+        if (cityNum) {
+          await saveCity(sessionId, cityNum, city);
+          resultMap.set(cityNum, city);
+        }
+      }
+    }
+
+    return resultMap;
+  }
+
+  /**
    * 세션 내 모든 도시 조회 (캐시 기반)
    *
    * @param sessionId - 세션 ID

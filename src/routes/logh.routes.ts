@@ -16,10 +16,13 @@ import { LoghCommander } from '../models/logh/Commander.model';
 import { CommanderWrapper } from '../models/logh/CommanderWrapper';
 import { CommandRegistry } from '../core/command/CommandRegistry';
 import galaxyRouter from './logh/galaxy.route';
+import groundCombatRouter from './logh/ground-combat.route';
 import { LOGH_MESSAGES } from '../constants/messages';
+import { validate, loghCommanderSchema, preventMongoInjection, safeParseInt } from '../middleware/validation.middleware';
 
 const router = Router();
 router.use('/galaxy', galaxyRouter);
+router.use('/ground-combat', groundCombatRouter);
 
 /**
  * 세션 정보 가져오기 (미들웨어에서 설정)
@@ -509,7 +512,7 @@ router.get('/commanders', async (req, res) => {
 router.get('/commanders/:commanderNo', async (req, res) => {
   try {
     const sessionId = getSessionId(req);
-    const commanderNo = parseInt(req.params.commanderNo);
+    const commanderNo = safeParseInt(req.params.commanderNo, 'commanderNo');
 
     const commander = await LoghCommander.findOne({
       session_id: sessionId,
@@ -544,10 +547,10 @@ router.get('/commanders/:commanderNo', async (req, res) => {
  *   params: any           // 커맨드별 파라미터
  * }
  */
-router.post('/commanders/:commanderNo/execute-command', async (req, res) => {
+router.post('/commanders/:commanderNo/execute-command', preventMongoInjection('body'), async (req, res) => {
   try {
     const sessionId = getSessionId(req);
-    const commanderNo = parseInt(req.params.commanderNo);
+    const commanderNo = safeParseInt(req.params.commanderNo, 'commanderNo');
     const { commandType, params } = req.body;
 
     if (!commandType) {

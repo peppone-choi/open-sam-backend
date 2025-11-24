@@ -9,6 +9,7 @@ import { GalaxyValidationService } from '../../services/logh/GalaxyValidation.se
 import { resolveGalaxyBattle, autoResolveGalaxyBattle } from '../../services/logh/GalaxyBattle.service';
 import { RealtimeMovementService } from '../../services/logh/RealtimeMovement.service';
 import { notifyApiContractChange, notifyQaLogUpdate } from '../../services/logh/GalaxyNotification.service';
+import { getSocketManager } from '../../socket/socketManager';
 import { getEconomyState, listEconomyEvents, recordEconomyEvent } from '../../services/logh/GalaxyEconomy.service';
 import {
   sendCommMessage,
@@ -18,6 +19,11 @@ import {
   requestHandshake,
   respondHandshake,
   listHandshakes,
+  sendMail,
+  listMails,
+  markMailAsRead,
+  deleteMail,
+  getMailboxInfo,
 } from '../../services/logh/GalaxyComm.service';
 import { autoExtractToken } from '../../middleware/auth';
 import { LOGH_MESSAGES } from '../../constants/messages';
@@ -943,4 +949,294 @@ router.get('/comm/handshakes', async (req, res) => {
   }
 });
 
+// ============ Mail Routes (Manual P.15 - 120 cap limit) ============
+
+router.get('/comm/mail', async (req, res) => {
+  try {
+    const sessionId = (req.query.sessionId || getSessionId(req) || '') as string;
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const userId = resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '인증 정보가 필요합니다' });
+    }
+
+    if (!ensureSessionAccess(req, res, sessionId)) {
+      return;
+    }
+
+    const characterId = req.query.characterId as string;
+    if (!characterId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.characterIdRequired });
+    }
+
+    const owner = await requireUserCharacter(sessionId, userId, characterId);
+    if (!owner) {
+      return res.status(403).json({ success: false, message: '세션 캐릭터를 찾을 수 없습니다' });
+    }
+
+    const box = (req.query.box as 'inbox' | 'outbox') || 'inbox';
+    const { mails, total } = await listMails(sessionId, owner.characterId, box);
+    const mailboxInfo = await getMailboxInfo(sessionId, owner.characterId);
+
+    res.json({
+      success: true,
+      data: {
+        mails,
+        total,
+        mailboxInfo,
+      },
+      compliance: [
+        {
+          manualRef: 'gin7manual.txt:610-699',
+          status: '✅',
+          note: `メールボックスの制限: ${mailboxInfo.inboxCount}/${mailboxInfo.inboxLimit}`,
+        },
+      ],
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/comm/mail', async (req, res) => {
+  const sessionId = req.body.sessionId || getSessionId(req);
+  try {
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const userId = resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '인증 정보가 필요합니다' });
+    }
+
+    if (!ensureSessionAccess(req, res, sessionId)) {
+      return;
+    }
+
+    const { fromCharacterId, toCharacterId, subject, body, replyToMailId } = req.body;
+    if (!fromCharacterId || !toCharacterId || !subject || !body) {
+      return res.status(400).json({ success: false, message: 'fromCharacterId, toCharacterId, subject, body are required' });
+    }
+
+    const sender = await requireUserCharacter(sessionId, userId, fromCharacterId);
+    if (!sender) {
+      return res.status(403).json({ success: false, message: '세션 캐릭터를 찾을 수 없습니다' });
+    }
+
+    const recipient = await GalaxyCharacter.findOne({ session_id: sessionId, characterId: toCharacterId });
+    if (!recipient) {
+      return res.status(404).json({ success: false, message: '수신자를 찾을 수 없습니다' });
+    }
+
+    const fromAddress = `${sender.characterId}@personal.galaxy`;
+    const toAddress = `${recipient.characterId}@personal.galaxy`;
+
+    const mail = await sendMail({
+      sessionId,
+      fromCharacterId: sender.characterId,
+      fromName: sender.displayName,
+      fromAddress,
+      toCharacterId: recipient.characterId,
+      toName: recipient.displayName,
+      toAddress,
+      subject,
+      body,
+      replyToMailId,
+    });
+
+    res.json({
+      success: true,
+      data: mail,
+      compliance: [
+        {
+          manualRef: 'gin7manual.txt:610-699',
+          status: '✅',
+          note: 'メール送信成功 (120通制限内)',
+        },
+      ],
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/comm/mail/:mailId/read', async (req, res) => {
+  const sessionId = req.body.sessionId || getSessionId(req);
+  try {
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const userId = resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '인증 정보가 필요합니다' });
+    }
+
+    if (!ensureSessionAccess(req, res, sessionId)) {
+      return;
+    }
+
+    const { mailId } = req.params;
+    const { characterId } = req.body;
+    if (!characterId) {
+      return res.status(400).json({ success: false, message: 'characterId is required' });
+    }
+
+    const owner = await requireUserCharacter(sessionId, userId, characterId);
+    if (!owner) {
+      return res.status(403).json({ success: false, message: '세션 캐릭터를 찾을 수 없습니다' });
+    }
+
+    const mail = await markMailAsRead(sessionId, mailId, owner.characterId);
+
+    res.json({
+      success: true,
+      data: mail,
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+router.delete('/comm/mail/:mailId', async (req, res) => {
+  try {
+    const sessionId = (req.query.sessionId || getSessionId(req) || '') as string;
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const userId = resolveUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: '인증 정보가 필요합니다' });
+    }
+
+    if (!ensureSessionAccess(req, res, sessionId)) {
+      return;
+    }
+
+    const { mailId } = req.params;
+    const characterId = req.query.characterId as string;
+    if (!characterId) {
+      return res.status(400).json({ success: false, message: 'characterId is required' });
+    }
+
+    const owner = await requireUserCharacter(sessionId, userId, characterId);
+    if (!owner) {
+      return res.status(403).json({ success: false, message: '세션 캐릭터를 찾을 수 없습니다' });
+    }
+
+    await deleteMail(sessionId, mailId, owner.characterId);
+
+    res.json({
+      success: true,
+      message: 'Mail deleted successfully',
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// Terrain assessment endpoint (Manual P.31 - ワープ航行の概念)
+router.get('/terrain', async (req, res) => {
+  try {
+    const sessionId = (req.query.sessionId || getSessionId(req) || '') as string;
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const x = parseInt(req.query.x as string, 10);
+    const y = parseInt(req.query.y as string, 10);
+
+    if (isNaN(x) || isNaN(y)) {
+      return res.status(400).json({ success: false, message: 'Valid x and y coordinates are required' });
+    }
+
+    const terrain = await GalaxyValidationService.assessTerrain(sessionId, { x, y });
+
+    res.json({
+      success: true,
+      data: terrain,
+      compliance: [
+        {
+          manualRef: 'gin7manual.txt:1508-1530',
+          status: '✅',
+          note: 'ワープ誤差判定用の地形評価',
+        },
+      ],
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 export default router;
+
+// Check offline commanders endpoint
+router.get('/tactical-battles/:battleId/offline-check', async (req, res) => {
+  try {
+    const sessionId = (req.query.sessionId || getSessionId(req) || '') as string;
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: LOGH_MESSAGES.sessionIdRequired });
+    }
+
+    const { battleId } = req.params;
+    const battle = await GalaxyTacticalBattle.findOne({ session_id: sessionId, battleId });
+    
+    if (!battle) {
+      return res.status(404).json({ success: false, message: 'Battle not found' });
+    }
+
+    // Extract all commander IDs from factions
+    const allCommanderIds: string[] = [];
+    battle.factions?.forEach(faction => {
+      if (faction.commanderIds) {
+        allCommanderIds.push(...faction.commanderIds);
+      }
+    });
+
+    // Check which commanders are offline (inactive for > 15 minutes per gin7manual)
+    const OFFLINE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
+    const offlineCommanderIds: string[] = [];
+
+    for (const commanderId of allCommanderIds) {
+      const commander = await GalaxyCharacter.findOne({
+        session_id: sessionId,
+        characterId: commanderId,
+      });
+
+      if (!commander) continue;
+
+      // Check if offline based on lastLoginAt or status
+      const isOfflineStatus = commander.status === 'offline';
+      const isInactive = commander.lastLoginAt 
+        ? (Date.now() - commander.lastLoginAt.getTime() > OFFLINE_THRESHOLD_MS)
+        : false;
+
+      if (isOfflineStatus || isInactive) {
+        offlineCommanderIds.push(commanderId);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hasOfflineCommanders: offlineCommanderIds.length > 0,
+        offlineCommanderIds,
+        totalCommanders: allCommanderIds.length,
+      },
+      compliance: [
+        {
+          manualRef: 'gin7manual.txt:AI自動操縦',
+          status: '✅',
+          note: '旗艦ユニットが宇宙空間に存在している場合にAIが自動的に代行',
+        },
+      ],
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});

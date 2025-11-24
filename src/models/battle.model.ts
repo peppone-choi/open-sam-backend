@@ -355,6 +355,7 @@ const BattleSchema = new Schema({
 });
 
 BattleSchema.index({ session_id: 1, status: 1 });
+BattleSchema.index({ session_id: 1, status: 1, startedAt: -1 });
 BattleSchema.index({ attackerNationId: 1 });
 BattleSchema.index({ defenderNationId: 1 });
 

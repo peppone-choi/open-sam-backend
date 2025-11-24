@@ -33,8 +33,8 @@ export async function processBattles() {
     for (const battle of activeBattles) {
       await processSingleBattle(battle);
     }
-  } catch (error) {
-    console.error('❌ 전투 처리 오류:', error);
+  } catch (error: any) {
+    logger.error('전투 처리 오류', { error: error.message, stack: error.stack });
   }
 }
 
@@ -81,7 +81,9 @@ async function handlePlanningPhase(battle: any, timer: BattleTimer, elapsed: num
   }
 
   if (elapsed >= timeLimit) {
-    console.log(`⚔️ [${battle.battleId}] Planning Phase 종료 → Resolution Phase`);
+    logger.info('Planning Phase completed, transitioning to Resolution', { 
+      battleId: battle.battleId 
+    });
     
     await detectAFK(battle);
     await transitionToResolution(battle, timer);
@@ -92,7 +94,7 @@ async function handleResolutionPhase(battle: any, timer: BattleTimer, elapsed: n
   const timeLimit = battle.resolutionTimeLimit || 10;
 
   if (elapsed >= timeLimit) {
-    console.log(`⚔️ [${battle.battleId}] Resolution Phase 완료 → 다음 턴`);
+    logger.info('Resolution Phase completed', { battleId: battle.battleId });
     
     const result = await executeResolution(battle);
     
@@ -132,7 +134,11 @@ async function detectAFK(battle: any) {
       battle.afkTurns[generalId] = newAfkCount;
 
       if (newAfkCount === 1) {
-        console.log(`⚠️ [${battle.battleId}] 장수 ${unit.generalName} AFK 1턴 (Hold)`);
+        logger.warn('General AFK warning', { 
+          battleId: battle.battleId, 
+          generalName: unit.generalName, 
+          afkCount: 1 
+        });
         
         io.to(`battle:${battle.battleId}`).emit('battle:afk:warning', {
           battleId: battle.battleId,
@@ -147,7 +153,11 @@ async function detectAFK(battle: any) {
           action: 'defend'
         });
       } else if (newAfkCount >= 2) {
-        console.log(`🤖 [${battle.battleId}] 장수 ${unit.generalName} AI 전환 (${newAfkCount}턴 AFK)`);
+        logger.info('General transferred to AI control', { 
+          battleId: battle.battleId, 
+          generalName: unit.generalName, 
+          afkCount: newAfkCount 
+        });
         
         if (!battle.ai_controlled) {
           battle.ai_controlled = [];
@@ -323,7 +333,7 @@ async function finishBattle(battle: any, winner: string | undefined) {
 
   activeBattleTimers.delete(battle.battleId);
 
-  console.log(`🏆 [${battle.battleId}] 전투 종료 - 승자: ${winner}`);
+  logger.info('Battle finished', { battleId: battle.battleId, winner });
 
   io.to(`battle:${battle.battleId}`).emit('battle:finished', {
     battleId: battle.battleId,
@@ -404,9 +414,16 @@ async function handleBattleEnded(battle: any, winner: string | undefined) {
       });
     }
 
-    console.log(`[BattleEventHook] 전투 종료 처리 완료: ${battle.battleId}, 승자: ${winner}`);
+    logger.info('Battle ended processing complete', { 
+      battleId: battle.battleId, 
+      winner 
+    });
   } catch (error: any) {
-    console.error('[BattleEventHook] 전투 종료 처리 중 오류:', error);
+    logger.error('전투 종료 처리 중 오류', { 
+      battleId: battle.battleId, 
+      error: error.message, 
+      stack: error.stack 
+    });
   } finally {
     await releaseDistributedLock(settlementLockKey, 'battle-settlement');
   }
@@ -424,7 +441,10 @@ async function startNextTurn(battle: any, timer: BattleTimer) {
   
   await battle.save();
 
-  console.log(`📅 [${battle.battleId}] 턴 ${battle.currentTurn} 시작`);
+  logger.info('Battle turn started', { 
+    battleId: battle.battleId, 
+    turn: battle.currentTurn 
+  });
 
   io.to(`battle:${battle.battleId}`).emit('battle:turn:start', {
     battleId: battle.battleId,
@@ -539,7 +559,7 @@ export function startBattleProcessor() {
     processBattles();
   }, CHECK_INTERVAL);
   
-  console.log('⚔️ 전투 프로세서 시작 (1초마다 체크)');
+  logger.info('전투 프로세서 시작', { checkInterval: CHECK_INTERVAL });
   
   setTimeout(() => processBattles(), 1000);
 }
