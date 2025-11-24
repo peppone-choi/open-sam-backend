@@ -98,7 +98,8 @@ export const authenticate = async (
     }
 
     // 사용자 정보 로드 (토큰 무효화/글로벌 솔트 검증용)
-    const user = await User.findById(decoded.userId)
+    const user = await (User as any)
+      .findById(decoded.userId)
       .select('token_valid_until global_salt deleted')
       .lean();
 
