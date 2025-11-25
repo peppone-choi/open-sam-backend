@@ -24,7 +24,7 @@ export interface IGin7TacticalPreference extends Document {
   updatedAt?: Date;
 }
 
-const DEFAULT_PROFILE: Gin7EnergyProfile = {
+export const DEFAULT_GIN7_ENERGY_PROFILE: Gin7EnergyProfile = {
   beam: 20,
   gun: 20,
   shield: 20,
@@ -38,12 +38,12 @@ const Gin7TacticalPreferenceSchema = new Schema<IGin7TacticalPreference>(
     session_id: { type: String, required: true, index: true },
     characterId: { type: String, required: true, index: true },
     energy: {
-      beam: { type: Number, default: DEFAULT_PROFILE.beam },
-      gun: { type: Number, default: DEFAULT_PROFILE.gun },
-      shield: { type: Number, default: DEFAULT_PROFILE.shield },
-      engine: { type: Number, default: DEFAULT_PROFILE.engine },
-      warp: { type: Number, default: DEFAULT_PROFILE.warp },
-      sensor: { type: Number, default: DEFAULT_PROFILE.sensor },
+      beam: { type: Number, default: DEFAULT_GIN7_ENERGY_PROFILE.beam },
+      gun: { type: Number, default: DEFAULT_GIN7_ENERGY_PROFILE.gun },
+      shield: { type: Number, default: DEFAULT_GIN7_ENERGY_PROFILE.shield },
+      engine: { type: Number, default: DEFAULT_GIN7_ENERGY_PROFILE.engine },
+      warp: { type: Number, default: DEFAULT_GIN7_ENERGY_PROFILE.warp },
+      sensor: { type: Number, default: DEFAULT_GIN7_ENERGY_PROFILE.sensor },
     },
     telemetry: {
       avgFps: { type: Number, default: 0 },

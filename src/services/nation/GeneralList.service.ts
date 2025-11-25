@@ -2,6 +2,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { troopRepository } from '../../repositories/troop.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { cityRepository } from '../../repositories/city.repository';
 
 /**
  * GeneralList Service
@@ -78,41 +79,79 @@ export class GeneralListService {
         }
       });
 
+      // 도시 정보 맵 생성 (id -> { name, level })
+      const sessionCities: any[] = (await cityRepository.findBySession(sessionId)) || [];
+      const cityMap = new Map<number, { name: string; level: number }>();
+      for (const rawCity of sessionCities) {
+        const city: any = typeof (rawCity as any).toObject === 'function' ? (rawCity as any).toObject() : rawCity;
+        const cityId = city.city ?? city.data?.city ?? city.data?.id;
+        if (!cityId) continue;
+        const cityName = city.name || city.data?.name || `도시 ${cityId}`;
+        const cityLevel = (typeof city.level === 'number' ? city.level : city.data?.level) ?? 0;
+        cityMap.set(Number(cityId), { name: cityName, level: cityLevel });
+      }
+
       let formattedGenerals = generalList.map(gen => {
-        const genData = gen.data || {};
-        const troopInfo = troopMap[genData.no];
+        const raw: any = gen;
+        const genData = raw.data || raw;
+        const generalNo = genData.no ?? raw.no;
+        const troopId = genData.troop ?? raw.troop ?? 0;
+        const troopInfo = troopMap[troopId];
+        const cityId = genData.city ?? raw.city ?? 0;
+        const cityInfo = cityMap.get(Number(cityId));
+        const baseOfficerLevel = genData.officer_level ?? raw.officer_level ?? 0;
+        const visibleOfficerLevel = permission_level >= 1
+          ? baseOfficerLevel
+          : (baseOfficerLevel >= 5 ? baseOfficerLevel : 1);
+        const crewtype = (() => {
+          let crewtypeVal = genData.crewtype ?? raw.crewtype ?? 0;
+          const crew = genData.crew ?? raw.crew ?? 0;
+          const resultTurn = genData.result_turn ?? raw.result_turn;
+          const cmd = resultTurn?.command;
+          const argCrewType = resultTurn?.arg?.crewType;
+
+          if (!crewtypeVal && crew > 0 && argCrewType &&
+            ['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(cmd)) {
+            crewtypeVal = argCrewType;
+          }
+          return crewtypeVal ?? 0;
+        })();
+
         return {
-          no: genData.no,
-          name: genData.name || '무명',
-          nation: genData.nation,
-          npc: genData.npc || 0,
-          injury: genData.injury || 0,
-          leadership: genData.leadership || 0,
-          strength: genData.strength || 0,
-          intel: genData.intel || 0,
-          experience: genData.experience || 0,
-          explevel: genData.explevel || 0,
-          dedlevel: genData.dedlevel || 0,
-          gold: genData.gold || 0,
-          rice: genData.rice || 0,
-          picture: genData.picture,
-          imgsvr: genData.imgsvr,
-          age: genData.age,
-          special: genData.special,
-          special2: genData.special2,
-          personal: genData.personal,
-          belong: genData.belong,
-          troop: genData.troop,
-          troopName: troopInfo?.name || '-',
-          city: genData.city,
-          cityName: genData.city,
-          crewtype: genData.crewtype || 0,
-          officer_level: permission_level >= 1 ? genData.officer_level : (genData.officer_level >= 5 ? genData.officer_level : 1),
-          killturn: genData.killturn || 0,
-          turntime: genData.turntime,
-          crew: genData.crew || 0,
-          train: genData.train || 0,
-          atmos: genData.atmos || 0
+          no: generalNo,
+          name: genData.name || raw.name || '무명',
+          nation: genData.nation ?? raw.nation ?? nationId,
+          npc: genData.npc ?? raw.npc ?? 0,
+          injury: genData.injury ?? raw.injury ?? 0,
+          leadership: genData.leadership ?? raw.leadership ?? 0,
+          strength: genData.strength ?? raw.strength ?? 0,
+          intel: genData.intel ?? raw.intel ?? 0,
+          experience: genData.experience ?? raw.experience ?? 0,
+          explevel: genData.explevel ?? raw.explevel ?? 0,
+          dedlevel: genData.dedlevel ?? raw.dedlevel ?? 0,
+          gold: genData.gold ?? raw.gold ?? 0,
+          rice: genData.rice ?? raw.rice ?? 0,
+          picture: genData.picture ?? raw.picture,
+          imgsvr: genData.imgsvr ?? raw.imgsvr,
+          age: genData.age ?? raw.age ?? 0,
+          special: genData.special ?? raw.special,
+          special2: genData.special2 ?? raw.special2,
+          personal: genData.personal ?? raw.personal,
+          belong: genData.belong ?? raw.belong ?? 0,
+          troop: troopId,
+          troopName: troopInfo?.name || (troopId ? `부대 ${troopId}` : '-'),
+          city: cityId,
+          cityName: cityInfo?.name || (cityId ? `도시 ${cityId}` : ''),
+          cityLevel: cityInfo?.level ?? 0,
+          crewtype,
+          officer_level: visibleOfficerLevel,
+          officerLevel: visibleOfficerLevel,
+          officerLevelText: this.getOfficerLevelText(visibleOfficerLevel),
+          killturn: genData.killturn ?? raw.killturn ?? 0,
+          turntime: genData.turntime ?? raw.turntime,
+          crew: genData.crew ?? raw.crew ?? 0,
+          train: genData.train ?? raw.train ?? 0,
+          atmos: genData.atmos ?? raw.atmos ?? 0,
         };
       });
 
@@ -140,6 +179,15 @@ export class GeneralListService {
         message: error.message
       };
     }
+  }
+
+  private static getOfficerLevelText(level: number): string {
+    const levels: Record<number, string> = {
+      12: '군주', 11: '태사', 10: '대도독', 9: '도독',
+      8: '대장군', 7: '장군', 6: '집금오', 5: '장수',
+      4: '태수', 3: '도위', 2: '현령', 1: '일반', 0: '재야'
+    };
+    return levels[level] || '일반';
   }
 
   private static sortGenerals(generals: any[], type: number): any[] {

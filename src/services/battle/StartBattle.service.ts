@@ -40,20 +40,25 @@ export class StartBattleService {
 
         if (!general) continue;
 
-        const unitType = this.getUnitType(general.crewtype);
-        const unitProps = this.getUnitProperties(unitType, general.crew || 0);
+        const { troops, maxTroops, training, morale } = await this.getGeneralUnitStats(sessionId, general);
+        if (troops <= 0) {
+          continue;
+        }
+
+        const unitType = this.getUnitType((general as any).crewtype);
+        const unitProps = this.getUnitProperties(unitType, troops || 0);
 
         attackerUnits.push({
           generalId: general.no,
           generalName: general.name || '무명',
-          troops: general.crew || 0,
-          maxTroops: general.crew || 0,
+          troops,
+          maxTroops,
           leadership: general.leadership || 50,
           strength: general.strength || 50,
           intelligence: general.intel || 50,
           unitType,
-          morale: general.morale || 80,
-          training: general.train || 80,
+          morale,
+          training,
           techLevel: 50,
           nationId: attackerNationId,
           commanderId: general.no,
@@ -78,7 +83,7 @@ export class StartBattleService {
           isCharging: false,
           isAIControlled: false,
           
-          specialSkills: general.specialSkills || []
+          specialSkills: (general as any).specialSkills || []
         });
       }
 
@@ -88,22 +93,28 @@ export class StartBattleService {
         city: targetCityId,
         crew: { $gt: 0 }
       });
+ 
+      const defenderUnits: IBattleUnit[] = [];
+      for (const general of defenderGenerals) {
+        const { troops, maxTroops, training, morale } = await this.getGeneralUnitStats(sessionId, general);
+        if (troops <= 0) {
+          continue;
+        }
 
-      const defenderUnits: IBattleUnit[] = defenderGenerals.map(general => {
-        const unitType = this.getUnitType(general.crewtype);
-        const unitProps = this.getUnitProperties(unitType, general.crew || 0);
+        const unitType = this.getUnitType((general as any).crewtype);
+        const unitProps = this.getUnitProperties(unitType, troops || 0);
         
-        return {
+        defenderUnits.push({
           generalId: general.no,
           generalName: general.name || '무명',
-          troops: general.crew || 0,
-          maxTroops: general.crew || 0,
+          troops,
+          maxTroops,
           leadership: general.leadership || 50,
           strength: general.strength || 50,
           intelligence: general.intel || 50,
           unitType,
-          morale: general.morale || 80,
-          training: general.train || 80,
+          morale,
+          training,
           techLevel: 50,
           nationId: defenderNationId,
           commanderId: general.no,
@@ -128,9 +139,10 @@ export class StartBattleService {
           isCharging: false,
           isAIControlled: false,
           
-          specialSkills: general.specialSkills || []
-        };
-      });
+          specialSkills: (general as any).specialSkills || []
+        });
+      }
+
 
       // 진입 방향 계산 (임시로 north, 실제로는 ProcessWar에서 전달)
       const entryDirection = 'north';
@@ -328,6 +340,47 @@ export class StartBattleService {
       southwest: 'south'
     };
     return gateMapping[direction] || 'north';
+  }
+
+  private static async getGeneralUnitStats(
+    sessionId: string,
+    general: any,
+  ): Promise<{ troops: number; maxTroops: number; training: number; morale: number }> {
+    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', general.no);
+    let totalTroops = 0;
+    let weightedTrain = 0;
+    let weightedMorale = 0;
+
+    for (const stack of stacks as any[]) {
+      const troops = this.getStackTroopCount(stack);
+      if (troops <= 0) continue;
+      totalTroops += troops;
+      const stackTrain = typeof stack.train === 'number' ? stack.train : 0;
+      const stackMorale = typeof stack.morale === 'number' ? stack.morale : 0;
+      weightedTrain += stackTrain * troops;
+      weightedMorale += stackMorale * troops;
+    }
+
+    const rawCrew = (general as any).crew ?? (general as any).data?.crew ?? 0;
+    const fallbackCrew = typeof rawCrew === 'number' && Number.isFinite(rawCrew) ? rawCrew : 0;
+    const troops = totalTroops > 0 ? totalTroops : Math.max(0, fallbackCrew);
+
+    const baseTrain = (general as any).train ?? (general as any).data?.train ?? 0;
+    const baseAtmos = (general as any).atmos ?? (general as any).data?.atmos ?? 50;
+
+    const training = totalTroops > 0
+      ? Math.round(weightedTrain / totalTroops)
+      : baseTrain;
+    const morale = totalTroops > 0
+      ? Math.round(weightedMorale / totalTroops)
+      : baseAtmos;
+
+    return {
+      troops,
+      maxTroops: troops,
+      training,
+      morale,
+    };
   }
 
   private static buildCityGarrisonUnits(

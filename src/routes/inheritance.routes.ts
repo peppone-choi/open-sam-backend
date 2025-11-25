@@ -3,6 +3,8 @@ import { Router } from 'express';
 import { General } from '../models/general.model';
 import { Session } from '../models/session.model';
 import { authenticate } from '../middleware/auth';
+import { kvStorageRepository } from '../repositories/kvstorage.repository';
+import { UserRecord } from '../models/user_record.model';
 
 const router = Router();
 
@@ -25,12 +27,55 @@ router.post('/get-point', authenticate, async (req, res) => {
       return res.status(404).json({ result: false, error: '장수를 찾을 수 없습니다' });
     }
 
-    const totalPoint = general.data?.inherit_points || 0;
+    // 1) 계승 포인트 총액은 KVStorage를 우선 사용 (PHP j_inheritPoint.php 호환)
+    const inheritStor = await kvStorageRepository.findOneByFilter({
+      session_id: sessionId,
+      key: `inheritance_${userId}`,
+    });
+
+    let totalPoint = 0;
+    const previousValue = inheritStor?.value?.previous;
+    if (Array.isArray(previousValue)) {
+      totalPoint = Number(previousValue[0] || 0);
+    } else if (typeof previousValue === 'number') {
+      totalPoint = Number(previousValue);
+    }
+
+    // KVStorage에 값이 없으면 기존 general.data.inherit_points를 폴백으로 사용
+    if (!Number.isFinite(totalPoint) || totalPoint < 0) {
+      totalPoint = Number(general.data?.inherit_points || 0);
+    }
+
+    // 2) 최근 유산 포인트 내역 (UserRecord.log_type = 'inheritPoint')
+    const logs = await UserRecord.find({
+      session_id: sessionId,
+      user_id: String(userId),
+      log_type: 'inheritPoint',
+    })
+      .sort({ id: -1 })
+      .limit(10)
+      .lean();
+
+    const extractPoint = (text?: string): number => {
+      if (!text) return 0;
+      const match = text.match(/(\d+)\s*포인트/);
+      if (match) return Number(match[1]);
+      const anyNumber = text.match(/(\d+)/);
+      return anyNumber ? Number(anyNumber[1]) : 0;
+    };
+
+    const inheritList = logs.map((log: any) => ({
+      id: log.id,
+      type: 'inheritPoint',
+      reason: log.text,
+      amount: extractPoint(log.text),
+      date: log.date || log.created_at,
+    }));
     
     res.json({
       result: true,
       totalPoint,
-      inheritList: []
+      inheritList,
     });
   } catch (error: any) {
     res.status(500).json({ result: false, error: error.message });

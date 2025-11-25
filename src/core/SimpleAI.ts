@@ -5,16 +5,34 @@
 
 import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
+import { generalRepository } from '../repositories/general.repository';
 import { GameConst } from '../constants/GameConst';
 import { 
   AutorunGeneralPolicy, 
   AIOptions, 
-  GeneralActionType 
+  GeneralActionType,
+  DEFAULT_GENERAL_PRIORITY,
 } from './AutorunGeneralPolicy';
 import { 
   AutorunNationPolicy, 
   NationActionType 
 } from './AutorunNationPolicy';
+import {
+  DipStateActionSelector,
+  DipState,
+  GenType,
+  PolicyConfig,
+  EnvConfig,
+  calculateDipState,
+} from './DipStateActionSelector';
+import { searchDistanceAsync } from '../func/searchDistance';
+import { CityConst } from '../const/CityConst';
+import {
+  TroopDispatcher,
+  CityInfo,
+  GeneralInfo,
+  DispatchResult,
+} from './TroopDispatch';
 
 /**
  * 역사적 인물 기반 장수 타입 (31가지)
@@ -334,16 +352,64 @@ export class SimpleAI {
   private archetype: HistoricalArchetype;
   private generalPolicy?: AutorunGeneralPolicy;
   private nationPolicy?: AutorunNationPolicy;
+  private sessionId: string;
+  
+  // dipState 기반 선택기
+  private dipState: DipState = DipState.d평화;
+  private dipStateSelector?: DipStateActionSelector;
 
-  constructor(general: any, city: any, nation: any, env: any) {
+  constructor(general: any, city: any, nation: any, env: any, sessionId: string = 'sangokushi_default') {
     this.general = general;
     this.city = city;
     this.nation = nation;
     this.env = env;
+    this.sessionId = sessionId;
     
     // 장수 타입 분류
     const genData = this.general.data || this.general;
     this.archetype = GeneralTypeClassifier.classify(genData);
+    
+    // 외교 상태 초기화
+    this.initializeDipState();
+  }
+  
+  /**
+   * 외교 상태 초기화
+   */
+  private initializeDipState(): void {
+    const nationData = this.nation?.data || this.nation;
+    
+    // 전쟁 대상 목록 구성
+    const warTargets: any[] = [];
+    
+    // war_list 또는 warList 사용
+    const warList = nationData?.war_list || nationData?.warList || [];
+    if (Array.isArray(warList) && warList.length > 0) {
+      warList.forEach((target: any) => {
+        warTargets.push({
+          state: target.state ?? 0,
+          remainMonth: target.remainMonth ?? target.remain_month ?? 0,
+        });
+      });
+    }
+    
+    this.dipState = calculateDipState(nationData, warTargets);
+    console.log(`[SimpleAI] 외교 상태 초기화: ${DipState[this.dipState]} (${this.dipState})`);
+  }
+  
+  /**
+   * 현재 외교 상태 반환
+   */
+  getDipState(): DipState {
+    return this.dipState;
+  }
+  
+  /**
+   * 외교 상태 수동 설정 (테스트/오버라이드용)
+   */
+  setDipState(state: DipState): void {
+    this.dipState = state;
+    console.log(`[SimpleAI] 외교 상태 변경: ${DipState[this.dipState]} (${this.dipState})`);
   }
 
   /**
@@ -788,20 +854,25 @@ export class SimpleAI {
 
     // 2. 내정 명령
     const domesticCommands = await this.evaluateDomesticCommands(stats, genType);
+    console.log(`[SimpleAI] 내정 후보: ${domesticCommands.length}개`);
     candidates.push(...domesticCommands);
 
     // 3. 군사 명령
     const militaryCommands = await this.evaluateMilitaryCommands(stats, genType);
+    console.log(`[SimpleAI] 군사 후보: ${militaryCommands.length}개`);
     candidates.push(...militaryCommands);
 
     // 4. 자기계발 명령
     const selfImprovementCommands = this.evaluateSelfImprovementCommands(stats);
+    console.log(`[SimpleAI] 자기계발 후보: ${selfImprovementCommands.length}개`);
     candidates.push(...selfImprovementCommands);
 
     // 5. 거래 명령
     const tradeCommands = this.evaluateTradeCommands(stats);
     candidates.push(...tradeCommands);
 
+    console.log(`[SimpleAI] 총 후보: ${candidates.length}개`);
+    
     if (candidates.length === 0) {
       return null; // 휴식
     }
@@ -1123,16 +1194,24 @@ export class SimpleAI {
     if (genData.nation === 0) return false;
     
     // 도시를 점령하고 있어야 함
-    if (!cityData || cityData.nation !== genData.nation) return false;
+    // nation은 도시 최상위에 있음 (this.city.nation)
+    const cityNation = this.city?.nation ?? (this.city?.data?.nation);
+    if (!cityData || cityNation !== genData.nation) return false;
     
-    // 최소 인구 필요
-    if (cityData.pop < 200) return false;
+    // 최소 인구 필요 (200 -> 100으로 완화)
+    const pop = cityData.pop ?? this.city?.pop ?? 0;
+    if (pop < 100) return false;
     
-    // 민심 20 이상
-    if (cityData.trust < 20) return false;
+    // 민심 20 이상 (20 -> 15로 완화)
+    const trust = cityData.trust ?? this.city?.trust ?? 0;
+    if (trust < 15) return false;
     
-    // 자금/군량 필요
-    if (genData.gold < 500 || genData.rice < 500) return false;
+    // 자금/군량 필요 (병사 0명이면 조건 완화)
+    const crew = genData.crew || 0;
+    const minGold = crew === 0 ? 300 : 500;
+    const minRice = crew === 0 ? 300 : 500;
+    
+    if (genData.gold < minGold || genData.rice < minRice) return false;
     
     return true;
   }
@@ -1155,19 +1234,36 @@ export class SimpleAI {
    */
   private canDomestic(genData: any, cityData: any, specificKey?: string): boolean {
     // 재야가 아니어야 함
-    if (genData.nation === 0) return false;
+    if (genData.nation === 0) {
+      return false;
+    }
     
-    // 도시를 점령하고 있어야 함
-    if (!cityData || cityData.nation !== genData.nation) return false;
+    // 도시를 점령하고 있어야 함 - cityData는 이미 data이거나 전체 객체
+    if (!cityData) {
+      return false;
+    }
+    
+    // nation은 도시 최상위에 있음 (this.city.nation), cityData는 this.city.data일 수 있음
+    // 따라서 this.city에서 직접 nation을 가져와야 함
+    const cityNation = this.city?.nation ?? (this.city?.data?.nation);
+    
+    if (cityNation !== genData.nation) {
+      return false;
+    }
     
     // 최소 자금 필요
-    if (genData.gold < 100) return false;
+    if (genData.gold < 100) {
+      return false;
+    }
     
     // 특정 키가 지정된 경우 해당 개발 용량 체크
+    // cityData는 .data일 수 있고 전체 객체일 수 있음, this.city에서도 확인
     if (specificKey) {
-      const current = cityData[specificKey] || 0;
-      const max = cityData[`${specificKey}_max`] || 0;
-      if (current >= max) return false;
+      const current = cityData[specificKey] ?? this.city?.[specificKey] ?? 0;
+      const max = cityData[`${specificKey}_max`] ?? this.city?.[`${specificKey}_max`] ?? 0;
+      if (current >= max) {
+        return false;
+      }
     }
     
     return true;
@@ -1273,9 +1369,171 @@ export class SimpleAI {
       });
     }
 
-    // FUTURE: 발령, 천도, 외교 등 추가
+    // 부대 발령 명령 평가 (수뇌/군주만)
+    const dispatchCommands = await this.evaluateTroopDispatchCommands();
+    commands.push(...dispatchCommands);
+
+    // FUTURE: 천도, 외교 등 추가
 
     return commands;
+  }
+
+  /**
+   * 부대 발령 명령 평가
+   * 
+   * PHP GeneralAI의 do부대전방발령, do부대후방발령, do부대구출발령 로직
+   * TroopDispatch.ts의 TroopDispatcher 클래스 사용
+   */
+  private async evaluateTroopDispatchCommands(): Promise<AICommandDecision[]> {
+    const commands: AICommandDecision[] = [];
+    const nationData = this.nation?.data || this.nation;
+    const genData = this.general.data || this.general;
+
+    // 수뇌가 아니면 발령 불가
+    const officerLevel = genData.officer_level || 0;
+    if (officerLevel < 5) {
+      return commands;
+    }
+
+    // 수도가 없으면 발령 불가
+    if (!nationData?.capital) {
+      return commands;
+    }
+
+    // nationPolicy 확인
+    if (!this.nationPolicy) {
+      return commands;
+    }
+
+    try {
+      // 도시 목록 조회
+      const sessionId = this.env?.session_id;
+      if (!sessionId) {
+        return commands;
+      }
+
+      const nationID = nationData.nation;
+      const { cityRepository } = await import('../repositories/city.repository');
+      const { generalRepository } = await import('../repositories/general.repository');
+      
+      const cities = await cityRepository.findByNation(sessionId, nationID);
+      const generals = await generalRepository.findByNation(sessionId, nationID);
+
+      if (!cities || cities.length === 0) {
+        return commands;
+      }
+
+      // CityInfo, GeneralInfo 변환
+      const cityInfos: CityInfo[] = cities.map((c: any) => ({
+        city: c.city,
+        name: c.name,
+        nation: c.nation,
+        pop: c.pop || 0,
+        pop_max: c.pop_max || 10000,
+        supply: c.supply || 0,
+        front: c.front || 0,
+        level: c.level || 1,
+      }));
+
+      const generalInfos: GeneralInfo[] = (generals || []).map((g: any) => ({
+        no: g.no,
+        name: g.name,
+        nation: g.nation,
+        city: g.city,
+        npc: g.npc || 0,
+        officer_level: g.officer_level || 0,
+        troop: g.troop || 0,
+        crew: g.crew || 0,
+        train: g.train || 0,
+        atmos: g.atmos || 0,
+        leadership: g.leadership || 50,
+        aux: g.aux || {},
+        turnTime: g.turntime || '',
+      }));
+
+      // 전방 도시 체크
+      const frontCities = cityInfos.filter(c => c.front > 0);
+      if (frontCities.length === 0) {
+        return commands;
+      }
+
+      // TroopDispatcher 생성
+      const dispatcher = new TroopDispatcher(
+        nationData,
+        this.env,
+        this.nationPolicy,
+        Math.floor(Math.random() * 1000000)
+      );
+      dispatcher.setCities(cityInfos);
+      dispatcher.setGenerals(generalInfos);
+
+      // 전쟁 경로 계산 (도시별 거리 맵, 최대 20칸까지)
+      const warRoute: Record<number, Record<number, number>> = {};
+      for (const city of cityInfos) {
+        const distances = await searchDistanceAsync(sessionId, city.city, 20, true);
+        if (distances) {
+          warRoute[city.city] = distances;
+        }
+      }
+      dispatcher.setWarRoute(warRoute);
+
+      // 수뇌 턴 시간 계산
+      const turnterm = this.env?.turnterm || 10;
+      const chiefTurnTime = this.cutTurnTime(genData.turntime || '', turnterm);
+
+      // 1. 구출 발령 (최우선)
+      if (this.nationPolicy.can부대구출발령) {
+        const rescueResult = dispatcher.doTroopRescue();
+        if (rescueResult) {
+          commands.push({
+            command: rescueResult.command,
+            args: rescueResult.args,
+            weight: 90,
+            reason: rescueResult.reason,
+          });
+        }
+      }
+
+      // 2. 전방 발령
+      if (this.nationPolicy.can부대전방발령) {
+        const frontResult = dispatcher.doTroopFrontDispatch(chiefTurnTime);
+        if (frontResult) {
+          commands.push({
+            command: frontResult.command,
+            args: frontResult.args,
+            weight: 80,
+            reason: frontResult.reason,
+          });
+        }
+      }
+
+      // 3. 후방 발령
+      if (this.nationPolicy.can부대후방발령) {
+        const rearResult = dispatcher.doTroopRearDispatch(chiefTurnTime);
+        if (rearResult) {
+          commands.push({
+            command: rearResult.command,
+            args: rearResult.args,
+            weight: 60,
+            reason: rearResult.reason,
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error('[SimpleAI] 부대 발령 평가 중 오류:', error);
+    }
+
+    return commands;
+  }
+
+  /**
+   * 턴 시간을 turnterm 기준 정수로 변환 (PHP cutTurn 함수)
+   */
+  private cutTurnTime(turnTimeStr: string, turnterm: number): number {
+    if (!turnTimeStr) return 0;
+    const d = new Date(turnTimeStr);
+    return Math.floor(d.getTime() / (turnterm * 60 * 1000));
   }
 
   /**
@@ -1312,7 +1570,8 @@ export class SimpleAI {
   }
 
   /**
-   * 거병 시도 (PHP GeneralAI do거병 3217줄 참고)
+   * 거병 시도 (PHP GeneralAI do거병 3217-3289줄 참고)
+   * 재야 NPC가 새 세력을 만들기 위해 거병
    */
   private async tryRaiseArmy(): Promise<AICommandDecision | null> {
     const genData = this.general.data || this.general;
@@ -1322,9 +1581,12 @@ export class SimpleAI {
       return null;
     }
 
-    // NPC 타입 3 이상은 거병 불가 (유저장만 가능)
+    // NPC 타입 4 이상은 거병 불가 (NPC 2-3만 가능, 4는 50% 확률)
     const npcType = genData.npc || 0;
-    if (npcType > 2) {
+    if (npcType > 3) {
+      return null;
+    }
+    if (npcType === 3 && Math.random() < 0.5) {
       return null;
     }
 
@@ -1333,53 +1595,133 @@ export class SimpleAI {
       return null;
     }
 
-    // 도시 레벨 5-6만 가능 (중형 도시)
+    // 도시 레벨 5-6만 가능 (중형 도시) - PHP 3231-3234줄
     const cityData = this.city?.data || this.city;
-    const currentCityLevel = cityData?.level || 0;
+    const currentCityLevel = cityData?.level || cityData?.levelId || 0;
     if ((currentCityLevel < 5 || 6 < currentCityLevel) && Math.random() < 0.5) {
       return null;
     }
 
-    // 주변 3칸 이내에 거병 가능한 도시(레벨 5-6, 무주) 있는지 체크
-    // FUTURE: searchDistance() 구현 및 도시 점유 상태 조회
-    // 현재는 간단히 50% 확률로 체크
-    if (Math.random() < 0.5) {
+    // 주변 3칸 이내에 거병 가능한 도시(레벨 5-6, 무주) 있는지 체크 - PHP 3236-3266줄
+    const currentCityID = cityData?.city || genData.city || 0;
+    const occupiedCities = await this.getOccupiedCities();
+    
+    let availableNearCity = false;
+    try {
+      const distanceMap = await searchDistanceAsync(this.sessionId, currentCityID, 3, false);
+      
+      for (const [targetCityIDStr, dist] of Object.entries(distanceMap)) {
+        const targetCityID = parseInt(targetCityIDStr, 10);
+        
+        // 이미 점령된 도시면 스킵
+        if (occupiedCities.has(targetCityID)) {
+          continue;
+        }
+        
+        // 도시 레벨 체크 (5-6만 가능)
+        const cityConst = CityConst.byID(targetCityID);
+        const cityLevel = cityConst?.levelId || 0;
+        if (cityLevel < 5 || 6 < cityLevel) {
+          continue;
+        }
+        
+        // 거리 3이면 50% 확률로 스킵
+        if (dist === 3 && Math.random() < 0.5) {
+          continue;
+        }
+        
+        availableNearCity = true;
+        break;
+      }
+    } catch (error) {
+      console.warn('[SimpleAI] tryRaiseArmy: searchDistance failed, fallback to probability', error);
+      // 폴백: 50% 확률로 가능하다고 판단
+      availableNearCity = Math.random() > 0.5;
+    }
+    
+    if (!availableNearCity) {
       return null;
     }
 
-    // 능력치 체크: 평균 능력치가 높을수록 거병 확률 낮음
+    // 능력치 체크: 평균 능력치가 높을수록 거병 확률 증가 - PHP 3268-3274줄
     const leadership = genData.leadership || 50;
     const strength = genData.strength || 50;
     const intel = genData.intel || 50;
     const avgStat = (leadership + strength + intel) / 3;
-    const npcMaxStat = 80; // FUTURE: GameConst.defaultStatNPCMax
-    const chiefMinStat = 60; // FUTURE: GameConst.chiefStatMin
+    const npcMaxStat = GameConst.defaultStatNPCMax || 80;
+    const chiefMinStat = GameConst.chiefStatMin || 60;
     const threshold = Math.random() * (npcMaxStat + chiefMinStat) / 2;
     
-    if (threshold < avgStat) {
+    if (threshold >= avgStat) {
       return null;
     }
 
-    // 게임 초반(3년 이내)일수록 거병 확률 증가
+    // 게임 초반(3년 이내)일수록 거병 확률 증가 - PHP 3276-3280줄
     const env = this.env;
     const relYear = (env.year || 0) - (env.init_year || env.startyear || 0);
-    const yearBonus = Math.max(1, Math.min(3, 3 - relYear));
+    const yearBonus = Math.max(1, Math.min(5, 5 - relYear));
     
-    // 최종 확률: 0.75% * yearBonus
-    if (Math.random() > 0.0075 * yearBonus) {
+    // 최종 확률: 5% * yearBonus (최대 25%)
+    const raiseChance = 0.05 * yearBonus;
+    if (Math.random() > raiseChance) {
       return null;
     }
+    
+    console.log(`[SimpleAI] 🏴 거병 확률 통과: ${(raiseChance * 100).toFixed(1)}%`);
 
+    console.log(`[SimpleAI] 거병 조건 충족 - ${genData.name || genData.no}`);
     return {
       command: '거병',
       args: {},
       weight: 100, // 최우선
-      reason: 'NPC 거병',
+      reason: `NPC 거병 (능력:${avgStat.toFixed(0)}, 연차:${relYear})`,
     };
+  }
+  
+  /**
+   * 점령된 도시 목록 조회 (방랑군 대장 + 국가 도시)
+   * @returns Set<cityID> - 점령된 도시 ID 집합 (값: 1=국가점령, 2=방랑군대장)
+   */
+  private async getOccupiedCities(): Promise<Map<number, number>> {
+    const occupiedCities = new Map<number, number>();
+    
+    try {
+      // 방랑군 대장(officer_level=12, nation=0)이 있는 도시
+      const lordGenerals = await generalRepository.findByFilter({
+        session_id: this.sessionId,
+        'data.officer_level': 12,
+        'data.nation': 0
+      });
+      
+      for (const gen of lordGenerals) {
+        const cityID = gen.data?.city || gen.city;
+        if (cityID) {
+          occupiedCities.set(cityID, 2);
+        }
+      }
+      
+      // 국가 소유 도시
+      const cities = await cityRepository.findByFilter({
+        session_id: this.sessionId,
+        'data.nation': { $ne: 0 }
+      });
+      
+      for (const city of cities) {
+        const cityID = city.data?.city || city.city;
+        if (cityID) {
+          occupiedCities.set(cityID, 1);
+        }
+      }
+    } catch (error) {
+      console.warn('[SimpleAI] getOccupiedCities failed:', error);
+    }
+    
+    return occupiedCities;
   }
 
   /**
-   * 건국 시도 (PHP GeneralAI do건국 3302줄 참고)
+   * 건국 시도 (PHP GeneralAI do건국 3302-3319줄 참고)
+   * 방랑군 대장이 도시를 점령하고 국가를 세움
    */
   private async tryFoundNation(): Promise<AICommandDecision | null> {
     const genData = this.general.data || this.general;
@@ -1389,23 +1731,61 @@ export class SimpleAI {
       return null;
     }
 
-    // 방랑군 대장(officer_level=12)이고 수하가 2명 이상 있어야 함
-    const nationData = this.nation?.data || this.nation;
-    if (!nationData || (nationData.gennum || 0) < 2) {
+    // 방랑군 대장(officer_level=12)만 건국 가능
+    const officerLevel = genData.officer_level || 0;
+    if (officerLevel < 12) {
       return null;
     }
 
-    // 랜덤 국가 타입/색상 선택
-    const availableTypes = ['삼국', '진', '한', '조', '위', '촉', '오', '후한', '황건'];
-    const availableColors = [0, 1, 2, 3, 4, 5, 6, 7]; // FUTURE: GetNationColors() 구현 필요
+    // 현재 도시가 건국 가능한 도시(레벨 5-6)인지 확인
+    const cityData = this.city?.data || this.city;
+    const cityLevel = cityData?.level || cityData?.levelId || 0;
+    if (cityLevel < 5 || 6 < cityLevel) {
+      return null;
+    }
+
+    // 현재 도시가 비어있는지 확인 (다른 국가 소유 아님)
+    const cityNation = cityData?.nation || 0;
+    if (cityNation !== 0) {
+      return null;
+    }
+
+    // 같은 도시에 다른 방랑군 대장이 있는지 확인
+    const currentCityID = cityData?.city || genData.city || 0;
+    const occupiedCities = await this.getOccupiedCities();
+    const occupyType = occupiedCities.get(currentCityID);
+    
+    // 이미 다른 방랑군 대장이 점령 중이면 건국 불가
+    if (occupyType === 2) {
+      // 자기 자신인지 확인
+      const lordGenerals = await generalRepository.findByFilter({
+        session_id: this.sessionId,
+        'data.officer_level': 12,
+        'data.city': currentCityID,
+        'data.nation': 0
+      });
+      
+      const selfIsLord = lordGenerals.some(g => 
+        (g.data?.no || g.no) === (genData.no || genData.data?.no)
+      );
+      
+      if (!selfIsLord) {
+        return null;
+      }
+    }
+
+    // 랜덤 국가 타입/색상 선택 - PHP 3304-3305줄
+    const availableTypes = GameConst.availableNationType || ['왕', '공', '후', '백'];
+    const availableColors = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     
     const nationType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
     const colorType = availableColors[Math.floor(Math.random() * availableColors.length)];
     
-    // 국가명: ㉿ + 장수명 (첫 글자 제외)
+    // 국가명: ㉿ + 장수명 (첫 글자 제외) - PHP 3307줄
     const generalName = genData.name || '방랑군';
     const nationName = '㉿' + generalName.substring(1);
 
+    console.log(`[SimpleAI] 건국 시도 - ${genData.name || genData.no}, 도시: ${currentCityID}, 국명: ${nationName}`);
     return {
       command: '건국',
       args: {
@@ -1414,12 +1794,13 @@ export class SimpleAI {
         colorType,
       },
       weight: 100, // 최우선
-      reason: '방랑군 건국',
+      reason: `방랑군 건국 (${nationName}, ${nationType})`,
     };
   }
 
   /**
-   * 선양 시도 (PHP GeneralAI do선양 3318줄 참고)
+   * 선양 시도 (PHP GeneralAI do선양 3320-3333줄 참고)
+   * 군주가 다른 장수에게 왕위를 물려줌
    */
   private async tryAbdicate(): Promise<AICommandDecision | null> {
     const genData = this.general.data || this.general;
@@ -1433,41 +1814,228 @@ export class SimpleAI {
     if ((genData.officer_level || 0) < 12) {
       return null;
     }
-
-    // FUTURE: 국가 내 다른 장수 찾기 (npc != 5)
-    // const destGeneralID = await this.findRandomGeneralInNation();
     
-    return null; // 일단 구현 보류
+    // 국가 소속이어야 함
+    const nationID = genData.nation || 0;
+    if (nationID === 0) {
+      return null;
+    }
+
+    // 국가 내 다른 장수 찾기 (npc != 5, 즉 방랑군 소속이 아닌 장수)
+    try {
+      const nationGenerals = await generalRepository.findByFilter({
+        session_id: this.sessionId,
+        'data.nation': nationID,
+        'data.npc': { $ne: 5 }
+      });
+      
+      // 자신 제외
+      const candidates = nationGenerals.filter(g => {
+        const gNo = g.data?.no || g.no;
+        const selfNo = genData.no || genData.data?.no;
+        return gNo !== selfNo;
+      });
+      
+      if (candidates.length === 0) {
+        return null;
+      }
+      
+      // 랜덤 선택
+      const selectedGeneral = candidates[Math.floor(Math.random() * candidates.length)];
+      const destGeneralID = selectedGeneral.data?.no || selectedGeneral.no;
+      
+      console.log(`[SimpleAI] 선양 시도 - ${genData.name || genData.no} -> ${selectedGeneral.data?.name || destGeneralID}`);
+      return {
+        command: '선양',
+        args: {
+          destGeneralID,
+        },
+        weight: 100,
+        reason: `선양 (후계자: ${selectedGeneral.data?.name || destGeneralID})`,
+      };
+    } catch (error) {
+      console.warn('[SimpleAI] tryAbdicate: failed to find candidates:', error);
+      return null;
+    }
   }
 
   /**
-   * 방랑군 이동 (PHP GeneralAI do방랑군이동 3127줄 참고)
-   * 이동 커맨드를 사용하여 레벨 5-6 도시 중 비어있는 곳으로 이동
+   * 방랑군 이동 (PHP GeneralAI do방랑군이동 3127-3216줄 참고)
+   * 방랑군 대장이 건국 가능한 도시(레벨 5-6)로 이동
    */
   private async tryWanderingMove(): Promise<AICommandDecision | null> {
     const genData = this.general.data || this.general;
     const cityData = this.city?.data || this.city;
     const currentCityID = cityData?.city || genData.city || 0;
 
-    // FUTURE: 완전한 구현을 위해서는 다음이 필요:
-    // 1. 같은 도시에 다른 군주(officer_level=12) 있는지 체크
-    // 2. 현재 도시가 레벨 5-6인지 체크
-    // 3. 주변 4칸 이내 비어있는 레벨 5-6 도시 찾기
-    // 4. aux.movingTargetCityID 저장/로드
-    // 5. searchDistance() 함수로 최단 경로 계산
+    // 같은 도시에 다른 군주(officer_level=12) 있는지 체크 - PHP 3131-3140줄
+    const occupiedCities = await this.getOccupiedCities();
     
-    // 현재는 간단히 인접 도시로 랜덤 이동
-    // FUTURE: cityRepository에서 인접 도시 목록 가져오기
+    // 현재 도시에 다른 방랑군 대장이 1명 이하면 (즉 자기만 있거나 없으면)
+    const dupLordCount = await this.countLordsInCity(currentCityID);
     
-    // 임시로 이동 불가 처리
-    return null;
+    if (dupLordCount <= 1) {
+      // 현재 도시가 레벨 5-6인지 체크 - 이미 건국 가능한 도시면 이동 불필요
+      const cityLevel = cityData?.level || cityData?.levelId || 0;
+      if (cityLevel >= 5 && cityLevel <= 6) {
+        return null; // 이미 좋은 위치에 있음
+      }
+    }
+
+    // 저장된 이동 목표 도시 확인 (aux.movingTargetCityID)
+    let movingTargetCityID = genData.aux?.movingTargetCityID || null;
+    
+    // 목표 도시가 현재 도시면 초기화
+    if (movingTargetCityID === currentCityID) {
+      movingTargetCityID = null;
+    }
+    
+    // 목표 도시가 이미 점령되었으면 초기화
+    if (movingTargetCityID && occupiedCities.has(movingTargetCityID)) {
+      movingTargetCityID = null;
+    }
+
+    // 새 목표 도시 선정 - PHP 3163-3182줄
+    if (!movingTargetCityID) {
+      const candidateCities: Array<[number, number]> = [];
+      
+      try {
+        const distanceMap = await searchDistanceAsync(this.sessionId, currentCityID, 4, false);
+        
+        for (const [testCityIDStr, dist] of Object.entries(distanceMap)) {
+          const testCityID = parseInt(testCityIDStr, 10);
+          
+          // 이미 점령된 도시면 스킵
+          if (occupiedCities.has(testCityID)) {
+            continue;
+          }
+          
+          // 도시 레벨 체크 (5-6만 가능)
+          const cityConst = CityConst.byID(testCityID);
+          const cityLevel = cityConst?.levelId || 0;
+          if (cityLevel < 5 || 6 < cityLevel) {
+            continue;
+          }
+          
+          // 가중치: 거리가 가까울수록 높음 (1/2^dist)
+          candidateCities.push([testCityID, 1 / Math.pow(2, dist)]);
+        }
+      } catch (error) {
+        console.warn('[SimpleAI] tryWanderingMove: searchDistance failed:', error);
+      }
+      
+      if (candidateCities.length === 0) {
+        return null; // 갈 곳이 없음
+      }
+      
+      // 가중치 기반 랜덤 선택
+      movingTargetCityID = this.choiceUsingWeightPair(candidateCities);
+      
+      // 목표 저장 (FUTURE: aux 필드에 저장)
+      console.log(`[SimpleAI] 방랑군 새 목표 설정: ${currentCityID} -> ${movingTargetCityID}`);
+    }
+
+    // 목표 도시가 현재 도시면 인재탐색 (건국 대기)
+    if (movingTargetCityID === currentCityID) {
+      return {
+        command: '인재탐색',
+        args: {},
+        weight: 50,
+        reason: '방랑군 인재탐색 (건국 대기)',
+      };
+    }
+
+    // 다음 이동 경로 계산 - PHP 3188-3205줄
+    try {
+      const distMap = await searchDistanceAsync(this.sessionId, movingTargetCityID, 99, true);
+      const targetDistance = distMap[currentCityID] || 99;
+      
+      // 현재 도시의 인접 도시 중 목표에 가까운 도시 선택
+      const cityConst = CityConst.byID(currentCityID);
+      const neighbors = cityConst?.neighbors || [];
+      
+      const nextCandidates: Array<[number, number]> = [];
+      
+      for (const nearCityID of neighbors) {
+        const cityConstNear = CityConst.byID(nearCityID);
+        const cityLevel = cityConstNear?.levelId || 0;
+        
+        // 바로 옆 도시가 레벨 5-6이고 비어있으면 우선 이동
+        if (cityLevel >= 5 && cityLevel <= 6 && !occupiedCities.has(nearCityID)) {
+          nextCandidates.push([nearCityID, 10]); // 높은 가중치
+        }
+        
+        // 목표 방향으로 가는 경로면 추가
+        const nearDist = distMap[nearCityID] || 99;
+        if (nearDist + 1 === targetDistance) {
+          nextCandidates.push([nearCityID, 1]);
+        }
+      }
+      
+      if (nextCandidates.length === 0) {
+        return null;
+      }
+      
+      const destCityID = this.choiceUsingWeightPair(nextCandidates);
+      
+      console.log(`[SimpleAI] 방랑군 이동: ${currentCityID} -> ${destCityID} (목표: ${movingTargetCityID})`);
+      return {
+        command: '이동',
+        args: { destCityID },
+        weight: 80,
+        reason: `방랑군 이동 (${currentCityID} -> ${destCityID}, 목표: ${movingTargetCityID})`,
+      };
+    } catch (error) {
+      console.warn('[SimpleAI] tryWanderingMove: path calculation failed:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * 특정 도시의 방랑군 대장 수 조회
+   */
+  private async countLordsInCity(cityID: number): Promise<number> {
+    try {
+      const lords = await generalRepository.findByFilter({
+        session_id: this.sessionId,
+        'data.officer_level': 12,
+        'data.city': cityID,
+        'data.nation': 0
+      });
+      return lords.length;
+    } catch (error) {
+      return 0;
+    }
+  }
+  
+  /**
+   * 가중치 기반 랜덤 선택 (PHP rng->choiceUsingWeightPair 포팅)
+   */
+  private choiceUsingWeightPair<T>(pairs: Array<[T, number]>): T {
+    const totalWeight = pairs.reduce((sum, [, weight]) => sum + weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (const [item, weight] of pairs) {
+      random -= weight;
+      if (random <= 0) {
+        return item;
+      }
+    }
+    
+    return pairs[0][0];
   }
 
   /**
-   * 해산 (PHP GeneralAI do해산 3290줄 참고)
+   * 해산 (PHP GeneralAI do해산 3290-3301줄 참고)
+   * 방랑군 대장이 세력을 해산하고 모든 수하를 재야로 보냄
    */
   private async tryDisband(): Promise<AICommandDecision | null> {
-    // 방랑군 해산 - 모든 수하를 재야로 보내고 군주도 재야가 됨
+    const genData = this.general.data || this.general;
+    
+    // aux.movingTargetCityID 초기화 (PHP 3297줄)
+    // FUTURE: genData.aux.movingTargetCityID = null; 저장 필요
+    
+    console.log(`[SimpleAI] 방랑군 해산 - ${genData.name || genData.no}`);
     return {
       command: '해산',
       args: {},
@@ -1477,10 +2045,12 @@ export class SimpleAI {
   }
 
   /**
-   * 국가 선택 (임관/랜덤임관) (PHP GeneralAI do국가선택 3329줄 참고)
+   * 국가 선택 (임관/랜덤임관) (PHP GeneralAI do국가선택 3334-3402줄 참고)
+   * 재야 장수가 국가에 임관
    */
   private async tryJoinNation(): Promise<AICommandDecision | null> {
     const genData = this.general.data || this.general;
+    const npcType = genData.npc || 0;
     
     // Policy 체크
     if (this.generalPolicy && !this.generalPolicy.canPerform(GeneralActionType.국가선택)) {
@@ -1492,12 +2062,39 @@ export class SimpleAI {
       return null;
     }
 
-    // 30% 확률로 시도
+    // 오랑캐(npc=9)는 바로 오랑캐 군주 국가에 임관 - PHP 3343-3356줄
+    if (npcType === 9) {
+      try {
+        const barbarianRulers = await generalRepository.findByFilter({
+          session_id: this.sessionId,
+          'data.officer_level': 12,
+          'data.npc': 9,
+          'data.nation': { $ne: 0 }
+        });
+        
+        if (barbarianRulers.length > 0) {
+          const ruler = barbarianRulers[Math.floor(Math.random() * barbarianRulers.length)];
+          const destNationID = ruler.data?.nation || ruler.nation;
+          
+          console.log(`[SimpleAI] 오랑캐 임관 - ${genData.name || genData.no} -> 국가 ${destNationID}`);
+          return {
+            command: '임관',
+            args: { destNationID },
+            weight: 100,
+            reason: `오랑캐 임관 (국가: ${destNationID})`,
+          };
+        }
+      } catch (error) {
+        console.warn('[SimpleAI] tryJoinNation: barbarian ruler search failed:', error);
+      }
+    }
+
+    // 30% 확률로 시도 - PHP 3358줄
     if (Math.random() > 0.3) {
       return null;
     }
 
-    // 친화도 999면 임관 안 함
+    // 친화도 999면 임관 안 함 (일생 재야) - PHP 3359-3361줄
     if (genData.affinity === 999) {
       return null;
     }
@@ -1505,27 +2102,129 @@ export class SimpleAI {
     const env = this.env;
     const relYear = (env.year || 0) - (env.startyear || 0);
 
-    // 초기 임관 기간(3년)에는 국가 수에 따라 확률 조정
+    // 초기 임관 기간(3년)에는 국가 수에 따라 확률 조정 - PHP 3363-3379줄
     if (relYear < 3) {
-      // FUTURE: 국가 수 조회
-      // 국가가 적으면 임관 시도 확률 낮춤
-      if (Math.random() < 0.5) {
-        return null;
+      try {
+        const nations = await nationRepository.findByFilter({
+          session_id: this.sessionId
+        });
+        const nationCnt = nations.length;
+        
+        // 정원 미달 국가 수
+        const notFullNationCnt = nations.filter(n => 
+          (n.data?.gennum || n.gennum || 0) < (GameConst.initialNationGenLimit || 30)
+        ).length;
+        
+        if (nationCnt === 0 || notFullNationCnt === 0) {
+          return null;
+        }
+        
+        // 국가가 적을수록 임관 확률 낮음
+        const skipProb = Math.pow(1 / (nationCnt + 1) / Math.pow(notFullNationCnt, 3), 0.25);
+        if (Math.random() < skipProb) {
+          return null;
+        }
+      } catch (error) {
+        console.warn('[SimpleAI] tryJoinNation: nation count failed, using fallback:', error);
+        if (Math.random() < 0.5) {
+          return null;
+        }
       }
     } else {
-      // 임관 기간 종료 후에는 0.15 확률
-      if (Math.random() > 0.15) {
+      // 임관 기간 종료 후에는 0.15 확률 (0.3 * 0.5) - PHP 3375-3378줄
+      if (Math.random() > 0.5) {
         return null;
       }
     }
 
-    // 랜덤 임관 (임관 커맨드 구현 필요)
+    // 랜덤 임관 - PHP 3381-3387줄
+    console.log(`[SimpleAI] 랜덤 임관 시도 - ${genData.name || genData.no}`);
     return {
       command: '랜덤임관',
       args: {},
       weight: 10,
-      reason: '국가 선택',
+      reason: `국가 선택 (연차: ${relYear})`,
     };
+  }
+  
+  /**
+   * NPC 사망 대비 (PHP GeneralAI doNPC사망대비 3403-3435줄 참고)
+   * 사망 직전 NPC가 자원을 국가에 헌납하거나 자기계발
+   */
+  async tryDeathPreparation(): Promise<AICommandDecision | null> {
+    const genData = this.general.data || this.general;
+    
+    // Policy 체크
+    if (this.generalPolicy && !this.generalPolicy.canPerform(GeneralActionType.NPC사망대비)) {
+      return null;
+    }
+
+    // killturn이 5 이상이면 아직 여유 있음 - PHP 3407-3409줄
+    const killturn = genData.killturn || 30;
+    if (killturn > 5) {
+      return null;
+    }
+
+    const nationID = genData.nation || 0;
+
+    // 재야면 인재탐색 또는 견문 - PHP 3411-3417줄
+    if (nationID === 0) {
+      // 50% 확률로 인재탐색, 아니면 견문
+      if (Math.random() > 0.5) {
+        return {
+          command: '인재탐색',
+          args: {},
+          weight: 50,
+          reason: `NPC 사망 대비 - 인재탐색 (killturn: ${killturn})`,
+        };
+      }
+      return {
+        command: '견문',
+        args: {},
+        weight: 50,
+        reason: `NPC 사망 대비 - 견문 (killturn: ${killturn})`,
+      };
+    }
+
+    // 자원이 없으면 물자조달 - PHP 3419-3421줄
+    const gold = genData.gold || 0;
+    const rice = genData.rice || 0;
+    
+    if (gold + rice === 0) {
+      return {
+        command: '물자조달',
+        args: {},
+        weight: 80,
+        reason: `NPC 사망 대비 - 물자조달 (killturn: ${killturn})`,
+      };
+    }
+
+    // 자원 헌납 (금이 많으면 금, 아니면 쌀) - PHP 3423-3433줄
+    const maxAmount = GameConst.maxResourceActionAmount || 10000;
+    
+    if (gold >= rice) {
+      console.log(`[SimpleAI] NPC 사망 대비 - 금 헌납 ${gold} (killturn: ${killturn})`);
+      return {
+        command: '헌납',
+        args: {
+          isGold: true,
+          amount: Math.min(gold, maxAmount),
+        },
+        weight: 100,
+        reason: `NPC 사망 대비 - 금 헌납 (killturn: ${killturn})`,
+      };
+    } else {
+      console.log(`[SimpleAI] NPC 사망 대비 - 쌀 헌납 ${rice} (killturn: ${killturn})`);
+      return {
+        command: '헌납',
+        args: {
+          isGold: false,
+          amount: Math.min(rice, maxAmount),
+        },
+        weight: 100,
+        reason: `NPC 사망 대비 - 쌀 헌납 (killturn: ${killturn})`,
+      };
+    }
   }
 
   /**
@@ -1565,12 +2264,22 @@ export class SimpleAI {
     genType: number
   ): Promise<AICommandDecision[]> {
     const commands: AICommandDecision[] = [];
+    const genData = this.general.data || this.general;
+    const nationID = genData.nation || 0;
+    
+    // === 재야는 내정 불가 ===
+    if (nationID === 0) {
+      return commands;
+    }
+    
     const develRate = this.calculateDevelopmentRates(this.city);
     const isSpringSummer = (this.env.month || 1) <= 6;
 
     const TYPE_COMMANDER = 1;
     const TYPE_WARRIOR = 2;
     const TYPE_STRATEGIST = 4;
+    
+    console.log(`[SimpleAI] 내정 평가 - genType: ${genType}, 개발률: 민심${(develRate.trust*100).toFixed(0)}% 인구${(develRate.pop*100).toFixed(0)}% 농${(develRate.agri*100).toFixed(0)}% 상${(develRate.comm*100).toFixed(0)}%`);
 
     // 통솔장: 주민 관련
     if (genType & TYPE_COMMANDER) {
@@ -1645,6 +2354,7 @@ export class SimpleAI {
       if (develRate.agri < 1) {
         const seasonBonus = isSpringSummer ? 1.2 : 0.8;
         const weight = seasonBonus * stats.intel / Math.max(develRate.agri, 0.001);
+        console.log(`[SimpleAI] 농지개간 후보 추가: 가중치 ${weight.toFixed(1)}`);
         commands.push({
           command: '농지개간',
           args: {},
@@ -1657,6 +2367,7 @@ export class SimpleAI {
       if (develRate.comm < 1) {
         const seasonBonus = isSpringSummer ? 0.8 : 1.2;
         const weight = seasonBonus * stats.intel / Math.max(develRate.comm, 0.001);
+        console.log(`[SimpleAI] 상업투자 후보 추가: 가중치 ${weight.toFixed(1)}`);
         commands.push({
           command: '상업투자',
           args: {},
@@ -1666,6 +2377,7 @@ export class SimpleAI {
       }
     }
 
+    console.log(`[SimpleAI] 내정 명령 ${commands.length}개 생성`);
     return commands;
   }
 
@@ -1687,48 +2399,59 @@ export class SimpleAI {
 
     // === 자원 체크 (징병/훈련 비용) ===
     const hasMinimumResources = stats.gold >= 500 && stats.rice >= 500;
+    const hasLowResources = stats.gold >= 300 && stats.rice >= 300; // 최소 자원 (긴급 징병용)
     const hasGoodResources = stats.gold >= 2000 && stats.rice >= 2000;
 
     // === 징병 평가 ===
     const needRecruit = stats.crew < 5000;
     const canRecruit = stats.leadership >= 50; // 최소 통솔 50
 
-    if (needRecruit && canRecruit && hasMinimumResources) {
+    if (needRecruit && canRecruit) {
       let weight = stats.leadership / 5;
       let reason = '병사 부족';
       let priority = 'normal';
+      let requiresResources = hasMinimumResources;
       
-      // 병사 0명: 최고 우선순위 (단련/훈련 불가)
+      // 병사 0명: 최고 우선순위 (단련/훈련 불가) - 자원 조건 완화
       if (stats.crew <= 0) {
         weight = 100; // 절대 우선순위
         reason = '병사 없음 - 긴급 징병 필수';
         priority = 'critical';
+        requiresResources = hasLowResources; // 최소 자원만 있으면 징병
       }
       // 병사 500명 미만: 훈련 불가
       else if (stats.crew < 500) {
         weight = 50; // 매우 높은 우선순위
         reason = '병사 부족 - 훈련 불가';
         priority = 'urgent';
+        requiresResources = hasMinimumResources;
       }
       // 병사 1000명 미만: 전투 불가
       else if (stats.crew < 1000) {
         weight = stats.leadership / 2; // 2배 증가
         reason = '병사 매우 부족 - 전투 불가';
         priority = 'high';
+        requiresResources = hasMinimumResources;
       }
       // 병사 3000명 미만: 전투력 부족
       else if (stats.crew < 3000) {
         weight = stats.leadership / 3; // 1.5배 증가
         reason = '병사 부족 - 전투력 약함';
         priority = 'medium';
+        requiresResources = hasMinimumResources;
       }
       
-      commands.push({
-        command: '징병',
-        args: { crewType: this.selectBestCrewType(genData), amount: 1000 },
-        weight,
-        reason: `[${priority.toUpperCase()}] ${reason} (병사:${stats.crew})`
-      });
+      // 자원 조건 통과 시에만 징병 후보 추가
+      if (requiresResources) {
+        commands.push({
+          command: '징병',
+          args: { crewType: this.selectBestCrewType(genData), amount: 1000 },
+          weight,
+          reason: `[${priority.toUpperCase()}] ${reason} (병사:${stats.crew}, 금:${stats.gold}, 양:${stats.rice})`
+        });
+      } else {
+        console.log(`[SimpleAI] 징병 불가 - 자원 부족 (금:${stats.gold} < 300 또는 양:${stats.rice} < 300)`);
+      }
     }
 
     // === 훈련 평가 (병사가 있어야만 가능) ===
@@ -1769,6 +2492,48 @@ export class SimpleAI {
     } else if (deployResult.reason) {
       // 출병 불가 사유 로그
       console.log(`[SimpleAI] 출병 불가 - ${deployResult.reason}`);
+    }
+
+    // === 정찰 평가 (지력이 높은 장수) ===
+    if (stats.intel >= 60 && stats.crew >= 100) {
+      // 전선 도시에 있을 때 정찰 확률 증가
+      const cityData = this.city?.data || this.city;
+      const isFrontline = cityData?.front === 1 || cityData?.supply === 0;
+      
+      if (isFrontline || Math.random() < 0.2) {
+        commands.push({
+          command: '정찰',
+          args: {},
+          weight: stats.intel / 5,
+          reason: `적 정보 수집 (지력:${stats.intel})`
+        });
+      }
+    }
+
+    // === 첩보 평가 (지력이 매우 높은 장수) ===
+    if (stats.intel >= 75 && stats.gold >= 500) {
+      // 20% 확률로 첩보 활동
+      if (Math.random() < 0.2) {
+        commands.push({
+          command: '첩보',
+          args: {},
+          weight: stats.intel / 4,
+          reason: `첩보 활동 (지력:${stats.intel})`
+        });
+      }
+    }
+
+    // === 선동 평가 (적 도시 민심 떨어뜨리기) ===
+    if (stats.intel >= 70 && stats.gold >= 300) {
+      // 15% 확률로 선동 시도
+      if (Math.random() < 0.15) {
+        commands.push({
+          command: '선동',
+          args: {},
+          weight: stats.intel / 5,
+          reason: `적 민심 교란 (지력:${stats.intel})`
+        });
+      }
     }
 
     return commands;
@@ -1841,11 +2606,32 @@ export class SimpleAI {
   }
 
   /**
+   * 인접 도시 중 랜덤 선택 (방랑용)
+   */
+  private selectRandomNeighborCity(): number {
+    const cityData = this.city?.data || this.city || {};
+    const neighbors = cityData.neighbors || [];
+    
+    if (neighbors.length === 0) {
+      // 인접 도시 없으면 현재 도시 + 1 (임시)
+      return (cityData.city || 1) + 1;
+    }
+    
+    // 인접 도시 중 랜덤 선택
+    const randomIdx = Math.floor(Math.random() * neighbors.length);
+    const neighbor = neighbors[randomIdx];
+    
+    // neighbor가 숫자면 그대로, 객체면 city 필드
+    return typeof neighbor === 'number' ? neighbor : (neighbor?.city || neighbor?.id || 1);
+  }
+
+  /**
    * 자기계발 명령 평가
    */
   private evaluateSelfImprovementCommands(stats: GeneralStats): AICommandDecision[] {
     const commands: AICommandDecision[] = [];
     const genData = this.general.data || this.general;
+    const nationID = genData.nation || 0;
 
     // 특기에 따른 자기계발
     const special = genData.special || 'None';
@@ -1885,23 +2671,94 @@ export class SimpleAI {
       }
     }
 
-    // === 견문 평가 (경험치 낮을 때) ===
-    const experience = genData.experience || 0;
-    const needExperience = experience < 5000;
-    
-    if (needExperience) {
-      let weight = 5;
+    // === 재야 장수 활동 ===
+    if (nationID === 0) {
+      const experience = genData.experience || 0;
       
-      // 경험치가 매우 낮으면 가중치 증가
-      if (experience < 1000) {
-        weight = 10;
+      // 견문 (경험치 부족 시)
+      if (experience < 5000) {
+        let weight = 5;
+        if (experience < 1000) {
+          weight = 10;
+        }
+        commands.push({
+          command: '견문',
+          args: {},
+          weight,
+          reason: `경험치 부족 (${experience})`
+        });
+      }
+      
+      // 이동 (다른 도시로 방랑) - 30% 확률
+      if (Math.random() < 0.3) {
+        commands.push({
+          command: '이동',
+          args: { destCityID: this.selectRandomNeighborCity() },
+          weight: 8,
+          reason: '방랑 이동'
+        });
+      }
+      
+      // 인재탐색 (지력 60 이상) - 20% 확률
+      if (stats.intel >= 60 && Math.random() < 0.2) {
+        commands.push({
+          command: '인재탐색',
+          args: {},
+          weight: 6,
+          reason: `인재 발굴 (지력:${stats.intel})`
+        });
+      }
+      
+      return commands; // 재야는 여기서 반환
+    }
+
+    // === 물자조달 평가 (자원 부족 시) ===
+    if (nationID !== 0 && (stats.gold < 500 || stats.rice < 500)) {
+      let weight = 20;
+      
+      // 자원이 매우 부족하면 가중치 증가
+      if (stats.gold < 200 || stats.rice < 200) {
+        weight = 40;
       }
       
       commands.push({
-        command: '견문',
+        command: '물자조달',
         args: {},
         weight,
-        reason: `경험치 부족 (${experience})`
+        reason: `자원 부족 (금:${stats.gold}, 양:${stats.rice})`
+      });
+    }
+
+    // === 인재탐색 평가 (고위 장수가 가끔) ===
+    if (nationID !== 0 && stats.officerLevel >= 5 && stats.intel >= 60) {
+      // 30% 확률로 인재탐색 시도
+      if (Math.random() < 0.3) {
+        commands.push({
+          command: '인재탐색',
+          args: {},
+          weight: 8,
+          reason: `인재 발굴 (지력:${stats.intel})`
+        });
+      }
+    }
+
+    // === 요양 평가 (부상 시) ===
+    const injury = genData.injury || 0;
+    if (injury > 0) {
+      let weight = 30;
+      
+      // 부상이 심하면 가중치 증가
+      if (injury >= 50) {
+        weight = 80;
+      } else if (injury >= 20) {
+        weight = 50;
+      }
+      
+      commands.push({
+        command: '요양',
+        args: {},
+        weight,
+        reason: `부상 치료 (부상:${injury})`
       });
     }
 
@@ -2126,4 +2983,125 @@ export class SimpleAI {
       });
     }
   }
+  
+  // ================================================================
+  // === dipState 기반 액션 선택 (PHP chooseGeneralTurn 포팅) ===
+  // ================================================================
+  
+  /**
+   * dipState 기반 액션 선택 (PHP chooseGeneralTurn 완전 포팅)
+   * 
+   * dipState 레벨:
+   * - d평화 (0): 평화 시 - 내정 개발, 거래, 느린 징병
+   * - d선포 (1): 선포 시 - 긴급 징병, 기본 훈련
+   * - d징병 (2): 징병 시 - 최대 징병, 훈련 우선
+   * - d직전 (3): 직전 시 - 전투 준비, 전방 배치
+   * - d전쟁 (4): 전쟁 시 - 공격, 방어, 후퇴 로직
+   */
+  async decideCommandByDipState(): Promise<AICommandDecision | null> {
+    const genData = this.general.data || this.general;
+    
+    // 환경 설정 구성
+    const envConfig: EnvConfig = {
+      month: this.env.month || 1,
+      year: this.env.year || 200,
+      startyear: this.env.startyear || this.env.init_year || 184,
+      develcost: this.env.develcost || 24,
+      baserice: GameConst.baserice || 50000,
+    };
+    
+    // 정책 설정 구성
+    const policyConfig: PolicyConfig = {
+      minWarCrew: this.nationPolicy?.minWarCrew || 3000,
+      properWarTrainAtmos: this.nationPolicy?.properWarTrainAtmos || 80,
+      minNPCRecruitCityPopulation: this.nationPolicy?.minNPCRecruitCityPopulation || 5000,
+      safeRecruitCityPopulationRatio: this.nationPolicy?.safeRecruitCityPopulationRatio || 0.6,
+      minNPCWarLeadership: this.nationPolicy?.minNPCWarLeadership || 60,
+      minimumResourceActionAmount: this.nationPolicy?.minimumResourceActionAmount || 100,
+      cureThreshold: this.nationPolicy?.cureThreshold || 10,
+    };
+    
+    // 외교 상태 업데이트 (최신 정보로)
+    this.initializeDipState();
+    
+    // DipStateActionSelector 생성
+    this.dipStateSelector = new DipStateActionSelector(
+      this.general,
+      this.city,
+      this.nation,
+      envConfig,
+      policyConfig,
+      this.dipState
+    );
+    
+    // 우선순위 목록 가져오기
+    const priority = this.generalPolicy?.priority || DEFAULT_GENERAL_PRIORITY;
+    
+    // 액션 선택
+    const result = this.dipStateSelector.selectAction(priority);
+    
+    if (result) {
+      console.log(`[SimpleAI] dipState(${DipState[this.dipState]}) 기반 선택: ${result.command} - ${result.reason}`);
+    } else {
+      console.log(`[SimpleAI] dipState(${DipState[this.dipState]}) 기반 선택: 휴식`);
+    }
+    
+    return result;
+  }
+  
+  /**
+   * dipState별 평화 시 액션 선택
+   * (do일반내정 직접 호출)
+   */
+  pickGeneralActionPeace(): AICommandDecision | null {
+    if (!this.dipStateSelector) {
+      this.decideCommandByDipState(); // 초기화
+    }
+    return this.dipStateSelector?.pickGeneralActionPeace() || null;
+  }
+  
+  /**
+   * dipState별 선포/징병 시 액션 선택
+   * (do긴급내정 + do징병 직접 호출)
+   */
+  pickGeneralActionPreWar(): AICommandDecision | null {
+    if (!this.dipStateSelector) {
+      this.decideCommandByDipState(); // 초기화
+    }
+    
+    // 긴급 내정 시도
+    const emergencyAction = this.dipStateSelector?.pickGeneralActionDeclared();
+    if (emergencyAction) return emergencyAction;
+    
+    // 징병 시도
+    const recruitAction = this.dipStateSelector?.pickGeneralActionRecruit();
+    if (recruitAction) return recruitAction;
+    
+    // 전투 준비 시도
+    return this.dipStateSelector?.pickGeneralActionPreWar() || null;
+  }
+  
+  /**
+   * dipState별 전쟁 시 액션 선택
+   * (do출병 + do전쟁내정 직접 호출)
+   */
+  pickGeneralActionWar(): AICommandDecision | null {
+    if (!this.dipStateSelector) {
+      this.decideCommandByDipState(); // 초기화
+    }
+    
+    // 출병 시도
+    const attackAction = this.dipStateSelector?.pickGeneralActionWar();
+    if (attackAction) return attackAction;
+    
+    // 전쟁 내정 시도
+    return this.dipStateSelector?.pickGeneralActionWarDomestic() || null;
+  }
 }
+
+// ================================================================
+// === Export: DipState 관련 타입 및 상수 ===
+// ================================================================
+
+export { DipState, GenType, calculateDipState } from './DipStateActionSelector';
+export type { PolicyConfig, EnvConfig, DevelRate } from './DipStateActionSelector';

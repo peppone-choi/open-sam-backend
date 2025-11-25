@@ -76,6 +76,35 @@ class GeneralTurnRepository {
   }
 
   /**
+   * 장수 턴 upsert (중복 방지)
+   */
+  async upsert(
+    sessionId: string,
+    generalId: number,
+    turnIdx: number,
+    data: { action: string; arg: any; brief: string }
+  ) {
+    return GeneralTurn.findOneAndUpdate(
+      {
+        session_id: sessionId,
+        'data.general_id': generalId,
+        'data.turn_idx': turnIdx
+      },
+      {
+        $set: {
+          session_id: sessionId,
+          'data.general_id': generalId,
+          'data.turn_idx': turnIdx,
+          'data.action': data.action,
+          'data.arg': data.arg,
+          'data.brief': data.brief
+        }
+      },
+      { upsert: true, new: true }
+    );
+  }
+
+  /**
    * 삭제
    */
   async deleteOne(filter: any) {

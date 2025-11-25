@@ -327,7 +327,7 @@ export class ExecuteEngineService {
       let result: any;
 
       const executionStartTime = Date.now();
-      logger.info('Starting turn execution', { sessionId });
+      logger.info('Starting turn execution', { sessionId, singleTurn });
 
       // executeAllCommands는 내부에서 락을 해제함 (세션 상태 업데이트 직후)
       result = await this.executeAllCommands(sessionId, session, sessionData, lockKey, () => {
@@ -346,7 +346,7 @@ export class ExecuteEngineService {
           clearInterval(heartbeatInterval);
           heartbeatInterval = null;
         }
-      });
+      }, singleTurn);
 
       const executionDuration = Date.now() - executionStartTime;
       logger.info('Turn execution completed', { sessionId, duration: executionDuration });
@@ -1311,7 +1311,25 @@ export class ExecuteEngineService {
     const isNPCOwned = !owner || owner === '0' || owner === 0 || owner === 'NPC';
     const isAIControlled = isNPCOwned; // owner가 'NPC', '0', 0, null이면 AI가 조종
 
-    if (isAIControlled && (action === '휴식' || !generalTurn)) {
+    // ========================================
+    // NPC AI 모드 체크 (점진적 롤아웃)
+    // ========================================
+    // gameEnv.npc_ai_mode 값:
+    // - 'disabled' 또는 false: AI 비활성화 (기본값)
+    // - 'shadow': AI 결정만 로깅, 실제 적용 안함 (테스트용)
+    // - 'partial': npc >= 3 (명장급)만 AI 사용
+    // - 'full' 또는 true: 모든 NPC에 AI 사용
+    const npcAiMode = gameEnv.npc_ai_mode || 'disabled';
+    const aiEnabled = npcAiMode === 'full' || npcAiMode === true || 
+                      npcAiMode === 'partial' || npcAiMode === 'shadow';
+    
+    // npc_ai_mode가 'partial'인 경우 npc >= 3 (명장급)만 AI 사용
+    const shouldUseAI = aiEnabled && (
+      npcAiMode === 'full' || npcAiMode === true || npcAiMode === 'shadow' ||
+      (npcAiMode === 'partial' && npcType >= 3)
+    );
+
+    if (shouldUseAI && isAIControlled && (action === '휴식' || !generalTurn)) {
       try {
         const { AIEngine, AIDifficulty } = await import('../../core/ai-engine');
 
@@ -1340,13 +1358,35 @@ export class ExecuteEngineService {
           { year, month, session_id: sessionId, ...gameEnv }
         );
 
-        logger.debug('AI decision for general', {
+        // 디버그 로깅 (shadow 모드에서도 항상 로깅)
+        const generalName = general.name || general.data?.name || `General ${generalId}`;
+        const cityName = city?.name || city?.data?.name || `City ${general.city}`;
+        const nationName = nation?.name || nation?.data?.name || `Nation ${general.nation}`;
+        
+        logger.info('[NPC-AI] Decision', {
+          mode: npcAiMode,
           generalId,
+          generalName,
+          npcType,
+          cityName,
+          nationName,
           command: decision?.command,
           reason: decision?.reason,
           priority: decision?.priority,
-          args: decision?.args
+          args: decision?.args,
+          timestamp: new Date().toISOString()
         });
+
+        // shadow 모드: 로깅만 하고 실제 적용 안함
+        if (npcAiMode === 'shadow') {
+          logger.info('[NPC-AI] Shadow mode - skipping actual command application', {
+            generalId,
+            generalName,
+            wouldExecute: decision?.command
+          });
+          // 휴식으로 처리
+          return true;
+        }
 
         if (decision && decision.command !== 'neutral') {
           // AI가 결정한 커맨드를 0번 턴에 설정
@@ -1368,11 +1408,22 @@ export class ExecuteEngineService {
           // action과 arg 직접 설정 (DB 재조회 불필요)
           action = decision.command;
           arg = decision.args || {};
-          logger.debug('AI command set for general', { generalId, action, arg });
+          logger.info('[NPC-AI] Command set', { 
+            generalId, 
+            generalName, 
+            action, 
+            arg,
+            reason: decision.reason 
+          });
         }
       } catch (error: any) {
         // AI 실패 시 휴식 (에러는 로깅)
-        logger.error('AI error for general', { generalId, error: error.message });
+        logger.error('[NPC-AI] Error', { 
+          generalId, 
+          generalName: general.name || general.data?.name,
+          error: error.message,
+          stack: error.stack 
+        });
         return;
       }
     }

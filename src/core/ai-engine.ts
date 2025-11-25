@@ -3,6 +3,16 @@ import { ICity } from '../models/city.model';
 import { INation } from '../models/nation.model';
 import { unitStackRepository } from '../repositories/unit-stack.repository';
 import { IUnitStack } from '../models/unit_stack.model';
+import {
+  DiplomacyEngine,
+  DIP_STATE,
+  DiplomacyStateResult,
+  CityCategorizationResult,
+  CategorizedCity,
+  calcDiplomacyState,
+  categorizeNationCities,
+  getDipStateName,
+} from './DiplomacyEngine';
 
 /**
  * AI 내부 커맨드명을 실제 게임 커맨드명으로 변환
@@ -464,7 +474,10 @@ export class AIEngine {
   }
   
   /**
-   * 외교 상태 계산
+   * 외교 상태 계산 (DiplomacyEngine 사용)
+   *
+   * PHP GeneralAI::calcDiplomacyState() 포팅 버전 사용
+   * DiplomacyEngine의 상태값(0-4)을 DiplomacyState enum으로 매핑
    */
   private async calculateDiplomacyState(
     nation: any,
@@ -476,67 +489,91 @@ export class AIEngine {
       return DiplomacyState.PEACE;
     }
 
-    const cachedState = AIEngine.getCachedDiplomacyState(sessionId, nationId);
-    if (cachedState !== null) {
-      return cachedState;
-    }
-
-    const warList = this.getNationWarList(nation);
-    if (Array.isArray(warList) && warList.length > 0) {
-      AIEngine.setCachedDiplomacyState(sessionId, nationId, DiplomacyState.WAR);
-      return DiplomacyState.WAR;
-    }
-
-    let highestState = DiplomacyState.PEACE;
-
     try {
-      const { diplomacyRepository } = await import('../repositories/diplomacy.repository');
-      let relations = await diplomacyRepository.findByNation(sessionId, nationId);
+      // DiplomacyEngine 사용 (PHP 완전 호환)
+      const result = await calcDiplomacyState(nation, {
+        session_id: sessionId,
+        year: env.year,
+        month: env.month,
+        startyear: env.startyear ?? env.startYear ?? 184,
+      });
 
-      if (!relations || relations.length === 0) {
-        relations = await diplomacyRepository.findByFilter({
-          session_id: sessionId,
-          'data.me': nationId,
-        });
-      }
-
-      for (const relation of relations || []) {
-        const mappedState = this.mapRelationState(relation);
-        if (mappedState > highestState) {
-          highestState = mappedState;
-          if (highestState === DiplomacyState.WAR) {
-            break;
-          }
-        }
-      }
+      // DIP_STATE (0-4) -> DiplomacyState enum 매핑
+      return this.mapDipStateToEnum(result.dipState);
     } catch (error: any) {
-      console.warn('[AIEngine] Failed to evaluate diplomacy state', {
+      console.warn('[AIEngine] Failed to evaluate diplomacy state via DiplomacyEngine', {
         sessionId,
         nationId,
         error: error?.message || error,
       });
+
+      // 폴백: 기본 상태 반환
+      return DiplomacyState.PEACE;
+    }
+  }
+
+  /**
+   * DIP_STATE (PHP 포팅 값) -> DiplomacyState enum 변환
+   */
+  private mapDipStateToEnum(dipState: number): DiplomacyState {
+    switch (dipState) {
+      case DIP_STATE.PEACE:       // 0
+        return DiplomacyState.PEACE;
+      case DIP_STATE.DECLARED:    // 1
+        return DiplomacyState.WAR_DECLARED;
+      case DIP_STATE.RECRUITING:  // 2
+        return DiplomacyState.RECRUITING;
+      case DIP_STATE.IMMINENT:    // 3
+        return DiplomacyState.WAR_IMMINENT;
+      case DIP_STATE.WAR:         // 4
+        return DiplomacyState.WAR;
+      default:
+        return DiplomacyState.PEACE;
+    }
+  }
+
+  /**
+   * 확장 외교 상태 조회 (DiplomacyEngine 전체 결과 반환)
+   *
+   * 공격 가능 여부, 전쟁 대상 국가 목록 등 추가 정보 포함
+   */
+  async getExtendedDiplomacyState(
+    nation: any,
+    env: any
+  ): Promise<DiplomacyStateResult | null> {
+    const sessionId = env?.session_id || env?.sessionId;
+    if (!sessionId) {
+      return null;
     }
 
-    if (highestState === DiplomacyState.PEACE) {
-      const startYear = env?.startyear ?? env?.startYear;
-      const year = env?.year;
-      const month = env?.month;
-      if (
-        typeof startYear === 'number' && Number.isFinite(startYear) &&
-        typeof year === 'number' && Number.isFinite(year) &&
-        typeof month === 'number' && Number.isFinite(month)
-      ) {
-        const yearMonth = year * 12 + month;
-        const startYearMonth = startYear * 12 + 5;
-        if (yearMonth <= startYearMonth + 24) {
-          AIEngine.setCachedDiplomacyState(sessionId, nationId, DiplomacyState.PEACE);
-          return DiplomacyState.PEACE;
-        }
-      }
+    try {
+      return await calcDiplomacyState(nation, {
+        session_id: sessionId,
+        year: env.year,
+        month: env.month,
+        startyear: env.startyear ?? env.startYear ?? 184,
+      });
+    } catch (error) {
+      console.warn('[AIEngine] Failed to get extended diplomacy state', error);
+      return null;
     }
+  }
 
-    AIEngine.setCachedDiplomacyState(sessionId, nationId, highestState);
-    return highestState;
+  /**
+   * 국가 도시 분류 (전방/보급/후방)
+   *
+   * PHP GeneralAI::categorizeNationCities() 포팅 버전 사용
+   */
+  async getCategorizedCities(
+    sessionId: string,
+    nationId: number
+  ): Promise<CityCategorizationResult | null> {
+    try {
+      return await categorizeNationCities(sessionId, nationId);
+    } catch (error) {
+      console.warn('[AIEngine] Failed to categorize cities', error);
+      return null;
+    }
   }
 
   private getNationWarList(nation: any): any[] | undefined {
@@ -547,26 +584,6 @@ export class AIEngine {
       || nation.data?.war_list
       || nation.data?.warList
       || nation.data?.warlist;
-  }
-
-  private mapRelationState(relation: any): DiplomacyState {
-    const rawState = relation?.state ?? relation?.data?.state;
-    const normalized = typeof rawState === 'string' ? parseInt(rawState, 10) : rawState;
-    switch (normalized) {
-      case 0:
-        return DiplomacyState.WAR;
-      case 1:
-        return DiplomacyState.WAR_DECLARED;
-      case 2:
-      case 7:
-      case undefined:
-        return DiplomacyState.PEACE;
-      default:
-        if (typeof normalized === 'number' && normalized >= 3 && normalized <= 6) {
-          return DiplomacyState.WAR_IMMINENT;
-        }
-        return DiplomacyState.PEACE;
-    }
   }
 
   private static getCachedDiplomacyState(sessionId: string, nationId: number): DiplomacyState | null {

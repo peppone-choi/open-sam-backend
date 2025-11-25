@@ -688,21 +688,23 @@ router.post('/update-game', async (req, res) => {
       
       // 레거시 시나리오 ID를 CQRS 시나리오 ID로 매핑
       const legacyToNewMap: Record<string, string> = {
-        '1010': 'sangokushi-huangjin',
-        '1020': 'sangokushi-heroes',
-        '1021': 'sangokushi-heroes-all',
-        '1030': 'sangokushi-alliance',
-        '1031': 'sangokushi-alliance-zheng',
-        '1040': 'sangokushi-chibi',
-        '1041': 'sangokushi-chulsabpyo',
-        '1050': 'sangokushi-guandu',
-        '1060': 'sangokushi-emperor',
-        '1070': 'sangokushi-threekingdoms',
-        '1080': 'sangokushi-yizhou',
-        '1090': 'sangokushi-nanman',
-        '1100': 'sangokushi-baekma',
-        '1110': 'sangokushi-yuan-split',
-        '1120': 'sangokushi-emperor-yuanshu',
+        // 삼국지 시나리오: 실제 파일 구조에 맞게 scenario_XXXX.json으로 매핑
+        // ex) 1010(황건적의 난) → sangokushi/scenario-1010 → ScenarioResetService에서 scenario_1010.json 사용
+        '1010': 'sangokushi/scenario-1010',
+        '1020': 'sangokushi/scenario-1020',
+        '1021': 'sangokushi/scenario-1021',
+        '1030': 'sangokushi/scenario-1030',
+        '1031': 'sangokushi/scenario-1031',
+        '1040': 'sangokushi/scenario-1040',
+        '1041': 'sangokushi/scenario-1041',
+        '1050': 'sangokushi/scenario-1050',
+        '1060': 'sangokushi/scenario-1060',
+        '1070': 'sangokushi/scenario-1070',
+        '1080': 'sangokushi/scenario-1080',
+        '1090': 'sangokushi/scenario-1090',
+        '1100': 'sangokushi/scenario-1100',
+        '1110': 'sangokushi/scenario-1110',
+        '1120': 'sangokushi/scenario-1120',
       };
       
       // 레거시 ID면 변환

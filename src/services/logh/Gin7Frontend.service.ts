@@ -5,7 +5,7 @@ import { GalaxyAuthorityCard, IGalaxyAuthorityCard } from '../../models/logh/Gal
 import { Fleet, IFleet } from '../../models/logh/Fleet.model';
 import { GalaxyOperation, IGalaxyOperation } from '../../models/logh/GalaxyOperation.model';
 import { Gin7PlanningDraft, IGin7PlanningDraft } from '../../models/logh/Gin7PlanningDraft.model';
-import { Gin7TacticalPreference, Gin7EnergyProfile, IGin7TacticalPreference } from '../../models/logh/Gin7TacticalPreference.model';
+import { Gin7TacticalPreference, Gin7EnergyProfile, IGin7TacticalPreference, DEFAULT_GIN7_ENERGY_PROFILE } from '../../models/logh/Gin7TacticalPreference.model';
 import { Gin7TelemetrySample, IGin7TelemetrySample } from '../../models/logh/Gin7TelemetrySample.model';
 import { listCommMessages } from './GalaxyComm.service';
 import navigationGrid from '../../../config/scenarios/legend-of-galactic-heroes/data/map-navigation-grid.json';
@@ -27,6 +27,7 @@ export interface Gin7StrategicCell {
   label?: string;
   navigable: boolean;
   density?: number;
+  faction?: Gin7Faction;
 }
 
 export interface Gin7FleetMarker {
@@ -37,6 +38,7 @@ export interface Gin7FleetMarker {
   y: number;
   status: 'idle' | 'moving' | 'engaging' | 'retreating';
   cpLoad: { pcp: number; mcp: number };
+  totalShips: number;
   isFlagship: boolean;
 }
 
@@ -76,7 +78,7 @@ export interface Gin7CommandPlan {
   target: string;
   plannedStart: string;
   participants: string[];
-  status: 'draft' | 'issued' | 'active' | 'completed';
+  status: 'draft' | 'issued' | 'active' | 'completed' | 'aborted';
   notes?: string;
 }
 
@@ -314,14 +316,7 @@ export class Gin7FrontendService {
     ]);
     const units = fleets.map(mapTacticalUnit);
 
-    const energy = preference?.energy ?? {
-      beam: 24,
-      gun: 18,
-      shield: 20,
-      engine: 14,
-      warp: 12,
-      sensor: 12,
-    };
+    const energy = preference?.energy ?? DEFAULT_GIN7_ENERGY_PROFILE;
 
     const radarHeat = units.length ? units.filter((unit) => unit.type === 'flagship').length / units.length : 0;
 
@@ -447,6 +442,7 @@ function buildBaseCells(): Gin7StrategicCell[] {
         label: system?.label,
         navigable: navValue === 1,
         density: system?.density,
+        faction: system?.faction,
       });
     }
   }
@@ -576,6 +572,7 @@ function mapFleetMarker(fleet: IFleet): Gin7FleetMarker {
       pcp: Math.max(0, Math.round((fleet.totalStrength || 0) / 100)),
       mcp: Math.max(0, Math.round((fleet.totalShips || 0) / 5)),
     },
+    totalShips: fleet.totalShips || 0,
     isFlagship: fleet.fleetType === 'single_ship',
   };
 }
@@ -658,6 +655,8 @@ function mapPlanStatus(status?: IGalaxyOperation['status']): Gin7CommandPlan['st
       return 'active';
     case 'completed':
       return 'completed';
+    case 'aborted':
+      return 'aborted';
     default:
       return 'draft';
   }

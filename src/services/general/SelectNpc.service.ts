@@ -106,15 +106,27 @@ export class SelectNpcService {
       const pickedNPC = pickResult[pick];
 
       // 선택한 NPC 장수 조회 및 업데이트
+      // - 반드시 등장하는 NPC여야 하므로 city > 0 조건을 강제
+      // - NPC 타입은 npc>=2 (최상위 또는 data.npc) 중 하나여야 함
       const npcGeneral = await generalRepository.findOneByFilter({
         session_id: sessionId,
         no: pick,
-        npc: 2,
-        $or: [
-          { owner: { $exists: false } },
-          { owner: '0' },
-          { owner: 0 }
-        ]
+        city: { $gt: 0 },
+        $and: [
+          {
+            $or: [
+              { npc: 2 },
+              { 'data.npc': { $gte: 2 } },
+            ],
+          },
+          {
+            $or: [
+              { owner: { $exists: false } },
+              { owner: '0' },
+              { owner: 0 },
+            ],
+          },
+        ],
       });
 
       if (!npcGeneral) {
@@ -195,19 +207,27 @@ export class SelectNpcService {
       }
       genData.permission = existingPermission;
 
-      // generalRepository.updateBySessionAndNo 사용
-      // 최상위 필드와 data 필드 모두 업데이트
+      // DB 직접 업데이트: owner 기반 조회가 바로 반영되도록 함
       const officerLevel = genData.officer_level;
       const permission = genData.permission;
-      
-      await generalRepository.updateBySessionAndNo(sessionId, pick, {
-        npc: 1, // 선택된 오리지널 캐릭터
-        owner: userId.toString(),
-        owner_name: ownerName,
-        officer_level: officerLevel,  // ✅ 최상위 필드에도 저장
-        permission: permission,  // ✅ 최상위 필드에도 저장
-        data: genData
-      });
+
+      await generalRepository.updateOneByFilter(
+        {
+          session_id: sessionId,
+          $or: [
+            { no: pick },
+            { 'data.no': pick },
+          ],
+        },
+        {
+          npc: 1, // 선택된 오리지널 캐릭터
+          owner: userId.toString(),
+          owner_name: ownerName,
+          officer_level: officerLevel, // 최상위 필드에도 저장
+          permission: permission,      // 최상위 필드에도 저장
+          data: genData,
+        },
+      );
 
       // general_access_log 삽입
       // FUTURE: GeneralAccessLog 모델 구현 후 추가

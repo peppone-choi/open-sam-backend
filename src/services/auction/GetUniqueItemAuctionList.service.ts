@@ -46,8 +46,11 @@ export class GetUniqueItemAuctionListService {
         success: true,
         result: true,
         list: list,
+        // Alias for tests and legacy callers
+        auctions: list,
         obfuscatedName: obfuscatedName
       };
+
     } catch (error: any) {
       return {
         success: false,

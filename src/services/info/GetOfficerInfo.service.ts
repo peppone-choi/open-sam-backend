@@ -91,9 +91,15 @@ export class GetOfficerInfoService {
       });
 
       const cityNameMap: Record<number, string> = {};
-      allCities.forEach((city: any) => {
+      allCities.forEach((rawCity: any) => {
+        const city: any = typeof rawCity.toObject === 'function' ? rawCity.toObject() : rawCity;
         const cd = city.data || {};
-        cityNameMap[cd.city || 0] = cd.name || '?';
+        const cityId = city.city ?? cd.city ?? 0;
+        if (!cityId) {
+          return;
+        }
+        const cityName = city.name || cd.name || `도시 ${cityId}`;
+        cityNameMap[cityId] = cityName;
       });
 
       const levelMap: Record<number, any> = {};
@@ -195,34 +201,37 @@ export class GetOfficerInfoService {
         nation: nationId,
       });
 
-      cities.sort((a: any, b: any) => {
+      cities.sort((rawA: any, rawB: any) => {
+        const a: any = typeof rawA.toObject === 'function' ? rawA.toObject() : rawA;
+        const b: any = typeof rawB.toObject === 'function' ? rawB.toObject() : rawB;
         const ad = a.data || {};
         const bd = b.data || {};
-        const regionA = ad.region || 0;
-        const regionB = bd.region || 0;
+        const regionA = a.region ?? ad.region ?? 0;
+        const regionB = b.region ?? bd.region ?? 0;
         if (regionA !== regionB) {
           return regionA - regionB;
         }
-        const levelA = ad.level || 0;
-        const levelB = bd.level || 0;
+        const levelA = a.level ?? ad.level ?? 0;
+        const levelB = b.level ?? bd.level ?? 0;
         if (levelA !== levelB) {
           return levelB - levelA;
         }
-        const nameA = ad.name || '';
-        const nameB = bd.name || '';
+        const nameA = a.name || ad.name || '';
+        const nameB = b.name || bd.name || '';
         return nameA.localeCompare(nameB);
       });
 
       const cityList: any[] = [];
-      cities.forEach((city: any) => {
+      cities.forEach((rawCity: any) => {
+        const city: any = typeof rawCity.toObject === 'function' ? rawCity.toObject() : rawCity;
         const cd = city.data || {};
-        const cityId = cd.city || 0;
+        const cityId = city.city ?? cd.city ?? 0;
 
         cityList.push({
           city: cityId,
-          name: cd.name || '무명',
-          level: cd.level || 0,
-          region: cd.region || 0,
+          name: city.name || cd.name || '무명',
+          level: city.level ?? cd.level ?? 0,
+          region: city.region ?? cd.region ?? 0,
           officer_set: cd.officer_set || 0,
           officers: cityOfficersMap[cityId] || {},
         });

@@ -72,14 +72,22 @@ export class GetActiveResourceAuctionListService {
         };
       });
 
+      const allAuctions = [...buyRiceList, ...sellRiceList];
+
       return {
         success: true,
         result: true,
+        // Legacy keys for backward compatibility
         buyRice: buyRiceList,
         sellRice: sellRiceList,
-        recentLogs: recentLogs,
+        // New keys used by frontend & tests
+        buyRiceList,
+        sellRiceList,
+        auctions: allAuctions,
+        recentLogs,
         generalID: generalId
       };
+
     } catch (error: any) {
       return {
         success: false,

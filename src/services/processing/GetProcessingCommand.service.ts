@@ -183,12 +183,28 @@ export class GetProcessingCommandService {
       return await this.getConvertMasteryData(sessionId, generalId);
     }
 
+    // 내정 투자 계열 커맨드 (상업/농업/치안)
+    if (
+      command === '상업투자' ||
+      command === 'che_상업투자' ||
+      command === 'investCommerce' ||
+      command === '농지개간' ||
+      command === 'che_농지개간' ||
+      command === 'cultivateFarm' ||
+      command === '치안강화' ||
+      command === 'che_치안강화' ||
+      command === 'reinforceSecurity'
+    ) {
+      return await this.getDomesticInvestData(command, general, env);
+    }
+ 
     // 장비매매 커맨드
     if (command === '장비매매' || command === 'che_장비매매' || command === 'tradeEquipment') {
       return await this.getTradeEquipmentData(sessionId, generalId);
     }
-
+ 
     // 국기변경 커맨드 (Nation)
+
     if (command === '국기변경' || command === 'che_국기변경' || command === 'changeNationFlag') {
       return await this.getChangeNationFlagData(sessionId, env);
     }
@@ -240,11 +256,138 @@ export class GetProcessingCommandService {
       return await this.getReassignUnitData(sessionId, general);
     }
 
+    // 기타 내정 계열 커맨드 (기술/수비/성벽/인구/민심 등)
+    const domesticStatData = await this.getDomesticCityStatData(command, general, env);
+    if (domesticStatData && Object.keys(domesticStatData).length > 0) {
+      return domesticStatData;
+    }
+
     // 기본 빈 데이터
     return {};
   }
 
-  private static async getReassignUnitData(sessionId: string, general: any): Promise<any> {
+  /**
+   * 공통 내정 커맨드(상업/농업/치안/기술/방어/성벽/인구/민심) 비용/효과 미리보기
+   * - 각 커맨드 클래스의 getCost() / getCommandDetailTitle() / getCompensationStyle() 결과를 그대로 사용
+   */
+  private static async buildDomesticCommandPreview(
+    type: string,
+    general: any,
+    env: any,
+    commandLabel?: string
+  ): Promise<any> {
+    try {
+      const cmd = CommandFactory.create('general', type, general, env);
+
+      const detailTitleRaw = cmd.getCommandDetailTitle?.();
+      const detailTitle =
+        typeof detailTitleRaw === 'string' ? detailTitleRaw : await detailTitleRaw;
+
+      const [reqGold, reqRice] = cmd.getCost();
+      const compensationStyle =
+        typeof cmd.getCompensationStyle === 'function'
+          ? cmd.getCompensationStyle()
+          : null;
+
+      return {
+        name: detailTitle,
+        costGold: typeof reqGold === 'number' ? reqGold : 0,
+        costRice: typeof reqRice === 'number' ? reqRice : 0,
+        compensationStyle,
+      };
+    } catch (error: any) {
+      logger.error('Failed to build domestic command preview', {
+        type,
+        command: commandLabel,
+        error: error?.message,
+      });
+      return {};
+    }
+  }
+
+  /**
+   * 내정 투자 계열 커맨드 (상업/농업/치안) 데이터
+   * - PHP che_상업투자 계열의 getCost() / getCommandDetailTitle()와 동일한 정보를 제공
+   */
+  private static async getDomesticInvestData(
+    command: string,
+    general: any,
+    env: any
+  ): Promise<any> {
+    // CommandRegistry 타입 매핑 (GeneralCommand 타입 키)
+    const typeMap: Record<string, string> = {
+      상업투자: 'INVEST_COMMERCE',
+      che_상업투자: 'INVEST_COMMERCE',
+      investCommerce: 'INVEST_COMMERCE',
+      농지개간: 'CULTIVATE_FARM',
+      che_농지개간: 'CULTIVATE_FARM',
+      cultivateFarm: 'CULTIVATE_FARM',
+      치안강화: 'REINFORCE_SECURITY',
+      che_치안강화: 'REINFORCE_SECURITY',
+      reinforceSecurity: 'REINFORCE_SECURITY',
+    };
+
+    const type = typeMap[command];
+    if (!type) {
+      return {};
+    }
+
+    return this.buildDomesticCommandPreview(type, general, env, command);
+  }
+
+  /**
+   * 기타 내정 계열 커맨드 (기술/수비/성벽/인구/민심) 데이터
+   */
+  private static async getDomesticCityStatData(
+    command: string,
+    general: any,
+    env: any
+  ): Promise<any> {
+    const typeMap: Record<string, string> = {
+      // 기술 연구
+      기술연구: 'RESEARCH_TECH',
+      '기술 연구': 'RESEARCH_TECH',
+      che_기술연구: 'RESEARCH_TECH',
+      researchTech: 'RESEARCH_TECH',
+      RESEARCH_TECH: 'RESEARCH_TECH',
+      // 수비/성벽 강화
+      방어: 'REINFORCE_DEFENSE',
+      REINFORCE_DEFENSE: 'REINFORCE_DEFENSE',
+      reinforceDefense: 'REINFORCE_DEFENSE',
+      수비강화: 'REINFORCE_DEFENSE_EXTEND',
+      '수비 강화': 'REINFORCE_DEFENSE_EXTEND',
+      REINFORCE_DEFENSE_EXTEND: 'REINFORCE_DEFENSE_EXTEND',
+      reinforceDefenseExtend: 'REINFORCE_DEFENSE_EXTEND',
+      성벽: 'REPAIR_WALL',
+      REPAIR_WALL: 'REPAIR_WALL',
+      repairWall: 'REPAIR_WALL',
+      성벽보수: 'REPAIR_WALL_EXTEND',
+      '성벽 보수': 'REPAIR_WALL_EXTEND',
+      REPAIR_WALL_EXTEND: 'REPAIR_WALL_EXTEND',
+      repairWallExtend: 'REPAIR_WALL_EXTEND',
+      // 인구/민심 계열
+      정착장려: 'ENCOURAGE_SETTLEMENT',
+      '정착 장려': 'ENCOURAGE_SETTLEMENT',
+      ENCOURAGE_SETTLEMENT: 'ENCOURAGE_SETTLEMENT',
+      encourageSettlement: 'ENCOURAGE_SETTLEMENT',
+      주민선정: 'GOOD_GOVERNANCE',
+      '주민 선정': 'GOOD_GOVERNANCE',
+      선정: 'GOOD_GOVERNANCE',
+      GOOD_GOVERNANCE: 'GOOD_GOVERNANCE',
+      GOVERN_PEOPLE: 'GOOD_GOVERNANCE',
+      governPeople: 'GOOD_GOVERNANCE',
+    };
+
+    const type = typeMap[command];
+    if (!type) {
+      return {};
+    }
+
+    return this.buildDomesticCommandPreview(type, general, env, command);
+  }
+ 
+   private static async getReassignUnitData(sessionId: string, general: any): Promise<any> {
+
     const generalData = general.data || {};
     const currentCityId = general.city || generalData.city || 0;
     const currentCity = currentCityId
@@ -746,49 +889,71 @@ export class GetProcessingCommandService {
       const units = getUnitsByType(armTypeNum, scenarioId);
       
       const crewTypes: any[] = [];
-      for (const unit of units) {
-        // 현재 도시 이름으로 검증 (reqCities는 현재 위치한 도시를 체크)
-        const currentCityName = currentCity?.name || '';
-        const cityNames = currentCityName ? [currentCityName] : [];
-        
-        const available = isUnitAvailable(
-          unit,
-          tech,
-          relYear,
-          Array.from(ownCities.keys()),
-          Array.from(ownRegions),
-          cityNames,
-          nationType
-        );
-        
-        // baseCost, baseRice 계산 (기술력 반영)
-        // 기술력에 따른 비용 계산 (getTechCost)
-        const techLevel = Math.floor(tech / 1000);
-        const techCostMultiplier = 1 + techLevel * 0.15; // PHP: getTechCost($tech)
-        const baseCostRaw = unit.cost * techCostMultiplier;
-        const baseRiceRaw = unit.rice * techCostMultiplier;
-        const baseCost = Math.round(baseCostRaw);
-        const baseRice = Math.round(baseRiceRaw);
-        
-        crewTypes.push({
-          id: unit.id,
-          reqTech: unit.reqTech,
-          reqYear: unit.reqYear,
-          notAvailable: !available,
-          baseRice: baseRice,
-          baseRiceRaw,
-          baseCost: baseCost,
-          baseCostRaw,
-          name: unit.name,
-          attack: unit.attack,
-          defence: unit.defence,
-          speed: unit.speed,
-          avoid: unit.avoid,
-          img: `/image/game/crewtype${unit.id}.png`, // 실제 이미지 경로
-          info: unit.info
-        });
+        for (const unit of units) {
+          // 현재 도시 이름으로 검증 (reqCities는 현재 위치한 도시를 체크)
+          const currentCityName = currentCity?.name || '';
+          const cityNames = currentCityName ? [currentCityName] : [];
+          
+          const available = isUnitAvailable(
+            unit,
+            tech,
+            relYear,
+            Array.from(ownCities.keys()),
+            Array.from(ownRegions),
+            cityNames,
+            nationType
+          );
+          
+          // baseCost, baseRice 계산 (기술력 반영)
+          // 기술력에 따른 비용 계산 (getTechCost)
+          const techLevel = Math.floor(tech / 1000);
+          const techCostMultiplier = 1 + techLevel * 0.15; // PHP: getTechCost($tech)
+          const baseCostRaw = unit.cost * techCostMultiplier;
+          const baseRiceRaw = unit.rice * techCostMultiplier;
+          const baseCost = Math.round(baseCostRaw);
+          const baseRice = Math.round(baseRiceRaw);
 
-      }
+          // PHP che_징병::getCost()와 유사하게, 100명 기준 실제 징병 금 비용을 미리 계산한다.
+          // crew=100명 가정, 징병은 costOffset=1
+          let effectiveCostPerHundred = 0;
+          try {
+            const previewCrew = 100;
+            let previewGold = (unit.cost * techCostMultiplier * previewCrew) / 100;
+
+            // onCalcDomestic 보정 적용 (징병비/특기/국가 타입 등)
+            if (typeof general.onCalcDomestic === 'function') {
+              previewGold = general.onCalcDomestic('징병', 'cost', previewGold, {
+                armType: unit.armType ?? 0,
+              });
+            }
+
+            effectiveCostPerHundred = Math.max(0, Math.round(previewGold));
+          } catch (e) {
+            // 미리보기 계산 실패 시, 기술만 반영한 원가를 그대로 사용
+            effectiveCostPerHundred = baseCost;
+          }
+          
+          crewTypes.push({
+            id: unit.id,
+            reqTech: unit.reqTech,
+            reqYear: unit.reqYear,
+            notAvailable: !available,
+            baseRice: baseRice,
+            baseRiceRaw,
+            baseCost: baseCost,
+            baseCostRaw,
+            effectiveCostPerHundred,
+            name: unit.name,
+            attack: unit.attack,
+            defence: unit.defence,
+            speed: unit.speed,
+            avoid: unit.avoid,
+            img: `/image/game/crewtype${unit.id}.png`, // 실제 이미지 경로
+            info: unit.info
+          });
+
+        }
+
       
       if (crewTypes.length > 0) {
         armCrewTypes.push({

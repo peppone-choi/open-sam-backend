@@ -21,7 +21,9 @@ import { scanSyncQueue, getSyncQueueItem, removeFromSyncQueue } from '../../comm
 import { selectNpcTokenRepository } from '../../repositories/select-npc-token.repository';
 import { selectPoolRepository } from '../../repositories/select-pool.repository';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
+import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 import { generateInitialGarrisonsForCities } from '../helpers/garrison.helper';
+import { NgHistory } from '../../models/ng_history.model';
 
 /**
  * 시나리오 초기화 서비스 (CQRS 통합 버전)
@@ -119,6 +121,15 @@ export class ScenarioResetService {
 
     // 7. 장수 생성 (시나리오의 generals 사용)
     await this.createGenerals(sessionId, scenarioId, scenarioMetadata);
+
+    // 8. 외교 관계 생성 (시나리오의 diplomacy 사용)
+    await this.createDiplomacy(sessionId, scenarioMetadata);
+
+    // 9. 초기 역사 로그 생성 (시나리오의 history 사용)
+    await this.createInitialHistory(sessionId, scenarioMetadata);
+
+    // 10. 초기 ng_history 생성 (연감 시스템용)
+    await this.createInitialNgHistory(sessionId, scenarioId, scenarioMetadata);
 
     console.log(`[ScenarioReset] Successfully reset session ${sessionId}`);
 
@@ -225,7 +236,8 @@ export class ScenarioResetService {
       worldHistoryResult,
       selectNpcTokenResult,
       selectPoolResult,
-      unitStackResult
+      unitStackResult,
+      diplomacyResult
     ] = await Promise.all([
       commandRepository.deleteBySession(sessionId),
       messageRepository.deleteBySession(sessionId),
@@ -235,18 +247,25 @@ export class ScenarioResetService {
       worldHistoryRepository.deleteBySession(sessionId),
       selectNpcTokenRepository.deleteBySession(sessionId),
       selectPoolRepository.deleteBySession(sessionId),
-      unitStackRepository.deleteBySession(sessionId)
+      unitStackRepository.deleteBySession(sessionId),
+      diplomacyRepository.deleteBySession(sessionId)
     ]);
  
-     console.log(`[ScenarioReset] Deleted ${commandResult.deletedCount} commands`);
+    console.log(`[ScenarioReset] Deleted ${commandResult.deletedCount} commands`);
     console.log(`[ScenarioReset] Deleted ${messageResult.deletedCount} messages`);
-     console.log(`[ScenarioReset] Deleted ${battleResult.deletedCount} battles`);
-     console.log(`[ScenarioReset] Deleted ${eventResult.deletedCount} events`);
-     console.log(`[ScenarioReset] Deleted ${troopResult.deletedCount} troops`);
+    console.log(`[ScenarioReset] Deleted ${battleResult.deletedCount} battles`);
+    console.log(`[ScenarioReset] Deleted ${eventResult.deletedCount} events`);
+    console.log(`[ScenarioReset] Deleted ${troopResult.deletedCount} troops`);
     console.log(`[ScenarioReset] Deleted ${worldHistoryResult.deletedCount} world history records`);
     console.log(`[ScenarioReset] Deleted ${selectNpcTokenResult.deletedCount} select_npc_tokens`);
     console.log(`[ScenarioReset] Deleted ${selectPoolResult.deletedCount} select_pools`);
     console.log(`[ScenarioReset] Deleted ${unitStackResult.deletedCount} unit stacks`);
+    console.log(`[ScenarioReset] Deleted ${diplomacyResult.deletedCount} diplomacy records`);
+
+    // 4. ng_history 삭제 (연감 데이터)
+    // @ts-ignore - Mongoose model type issue
+    const ngHistoryResult = await NgHistory.deleteMany({ session_id: sessionId });
+    console.log(`[ScenarioReset] Deleted ${ngHistoryResult.deletedCount} ng_history records`);
    }
  
    /**
@@ -366,9 +385,14 @@ export class ScenarioResetService {
    }
  
    /**
-    * 도시 초기화
-    */
-  private static async initializeCities(
+     * 도시 초기화
+     * 
+     * 시나리오별 도시 오버라이드 지원:
+     * - scenarioMetadata.cities 배열에 도시별 오버라이드 정의 가능
+     * - { "name": "낙양", "override": { "levelId": 4, "population": 800, ... } }
+     * - levelId, population, agriculture, commerce, security, defense, wall 오버라이드 가능
+     */
+   private static async initializeCities(
     sessionId: string,
     scenarioId: string,
     scenarioMetadata: any
@@ -390,6 +414,20 @@ export class ScenarioResetService {
       cities = citiesData.cities || citiesData;
     }
     console.log(`[ScenarioReset] Found ${cities.length} cities`);
+
+    // 시나리오별 도시 오버라이드 맵 생성
+    const cityOverrideMap = new Map<string, any>(); // cityName -> override object
+    const scenarioCities = scenarioMetadata.cities || [];
+    
+    if (scenarioCities.length > 0) {
+      console.log(`[ScenarioReset] Found ${scenarioCities.length} city overrides in scenario`);
+      for (const cityOverride of scenarioCities) {
+        if (cityOverride.name && cityOverride.override) {
+          cityOverrideMap.set(cityOverride.name, cityOverride.override);
+          console.log(`[ScenarioReset]   - ${cityOverride.name}: ${JSON.stringify(cityOverride.override)}`);
+        }
+      }
+    }
 
     // 시나리오에 정의된 국가별 도시 소유권 맵 생성
     const cityOwnershipMap = new Map<string, number>(); // cityName -> nationId
@@ -422,39 +460,52 @@ export class ScenarioResetService {
 
     console.log(`[ScenarioReset] City ownership map: ${cityOwnershipMap.size} cities mapped`);
 
+    // 레벨별 초기값 (scenario.json cityLevels.buildCost 기준)
+    // 0:무(황무지), 1:향, 2:수, 3:진, 4:관, 5:이, 6:소, 7:중, 8:대, 9:특, 10:경
+    const levelInitValues: Record<number, any> = {
+      0: { pop: 10, agri: 0, comm: 0, secu: 10, def: 10, wall: 10 },               // 무 (황무지, 거의 무인)
+      1: { pop: 1000, agri: 50, comm: 50, secu: 50, def: 100, wall: 100 },         // 향
+      2: { pop: 5000, agri: 100, comm: 100, secu: 100, def: 500, wall: 500 },      // 수
+      3: { pop: 5000, agri: 100, comm: 100, secu: 100, def: 500, wall: 500 },      // 진
+      4: { pop: 10000, agri: 100, comm: 100, secu: 100, def: 1000, wall: 1000 },   // 관
+      5: { pop: 50000, agri: 1000, comm: 1000, secu: 1000, def: 1000, wall: 1000 }, // 이
+      6: { pop: 100000, agri: 1000, comm: 1000, secu: 1000, def: 2000, wall: 2000 }, // 소
+      7: { pop: 100000, agri: 1000, comm: 1000, secu: 1000, def: 3000, wall: 3000 }, // 중
+      8: { pop: 150000, agri: 1000, comm: 1000, secu: 1000, def: 4000, wall: 4000 }, // 대
+      9: { pop: 150000, agri: 1000, comm: 1000, secu: 1000, def: 5000, wall: 5000 }, // 특
+      10: { pop: 200000, agri: 1500, comm: 1500, secu: 1500, def: 7000, wall: 7000 } // 경
+    };
+
     // 도시 일괄 생성
     const citiesToCreate = [];
     for (const cityTemplate of cities) {
       const cityName = cityTemplate.name;
       const nationId = cityOwnershipMap.get(cityName) || 0; // 0 = 무소속
 
+      // 시나리오별 오버라이드 적용
+      const override = cityOverrideMap.get(cityName) || {};
       const initialState = cityTemplate.initialState || {};
+
+      // 오버라이드 우선 적용 (override > initialState > 기본값)
+      const population = override.population ?? initialState.population ?? 100;
+      const agriculture = override.agriculture ?? initialState.agriculture ?? 100;
+      const commerce = override.commerce ?? initialState.commerce ?? 100;
+      const security = override.security ?? initialState.security ?? 50;
+      const defense = override.defense ?? initialState.defense ?? 100;
+      const wall = override.wall ?? initialState.wall ?? 100;
+
       const position = cityTemplate.position || {};
 
       // PHP CityConstBase.php와 동일하게 모든 값에 100을 곱함
-      const popMax = (initialState.population || 100) * 100;
-      const agriMax = (initialState.agriculture || 100) * 100;
-      const commMax = (initialState.commerce || 100) * 100;
-      const secuMax = (initialState.security || 50) * 100;
-      const defMax = (initialState.defense || 100) * 100;
-      const wallMax = (initialState.wall || 100) * 100;
+      const popMax = population * 100;
+      const agriMax = agriculture * 100;
+      const commMax = commerce * 100;
+      const secuMax = security * 100;
+      const defMax = defense * 100;
+      const wallMax = wall * 100;
       
-      // 레벨별 초기값 (scenario.json cityLevels.buildCost 기준)
-      // 0:무(황무지), 1:향, 2:수, 3:진, 4:관, 5:이, 6:소, 7:중, 8:대, 9:특, 10:경
-      const cityLevel = cityTemplate.levelId || 2;
-      const levelInitValues: Record<number, any> = {
-        0: { pop: 10, agri: 0, comm: 0, secu: 10, def: 10, wall: 10 },               // 무 (황무지, 거의 무인)
-        1: { pop: 1000, agri: 50, comm: 50, secu: 50, def: 100, wall: 100 },         // 향
-        2: { pop: 5000, agri: 100, comm: 100, secu: 100, def: 500, wall: 500 },      // 수
-        3: { pop: 5000, agri: 100, comm: 100, secu: 100, def: 500, wall: 500 },      // 진
-        4: { pop: 10000, agri: 100, comm: 100, secu: 100, def: 1000, wall: 1000 },   // 관
-        5: { pop: 50000, agri: 1000, comm: 1000, secu: 1000, def: 1000, wall: 1000 }, // 이
-        6: { pop: 100000, agri: 1000, comm: 1000, secu: 1000, def: 2000, wall: 2000 }, // 소
-        7: { pop: 100000, agri: 1000, comm: 1000, secu: 1000, def: 3000, wall: 3000 }, // 중
-        8: { pop: 150000, agri: 1000, comm: 1000, secu: 1000, def: 4000, wall: 4000 }, // 대
-        9: { pop: 150000, agri: 1000, comm: 1000, secu: 1000, def: 5000, wall: 5000 }, // 특
-        10: { pop: 200000, agri: 1500, comm: 1500, secu: 1500, def: 7000, wall: 7000 } // 경
-      };
+      // 레벨도 오버라이드 가능
+      const cityLevel = override.levelId ?? cityTemplate.levelId ?? 2;
       const initValues = levelInitValues[cityLevel] || levelInitValues[2];
       
       const cityData = {
@@ -501,7 +552,7 @@ export class ScenarioResetService {
     }
 
     await cityRepository.bulkCreate(citiesToCreate);
-    console.log(`[ScenarioReset] Created ${citiesToCreate.length} cities`);
+    console.log(`[ScenarioReset] Created ${citiesToCreate.length} cities (${cityOverrideMap.size} overrides applied)`);
     return cities;
   }
 
@@ -664,14 +715,18 @@ export class ScenarioResetService {
   }
 
   /**
-   * 장수 생성
+   * 장수 생성 (정치, 매력 추가 버전)
+   * 
+   * PHP 배열 포맷 지원:
+   * - 구버전 (14개 요소): [affinity, name, pic, nation, city, LDR, STR, INT, Lv, Birth, Death, Ego, Special, Text]
+   * - 신버전 (16개 요소): [affinity, name, pic, nation, city, LDR, STR, INT, POL, CHR, Lv, Birth, Death, Ego, Special, Text]
    */
   private static async createGenerals(
     sessionId: string,
     scenarioId: string,
     scenarioMetadata: any
   ): Promise<void> {
-    console.log(`[ScenarioReset] Creating generals`);
+    console.log(`[ScenarioReset] Creating generals with extended stats`);
 
     // PHP JSON 구조: general, general_ex, general_neutral
     const generalsDataMain = scenarioMetadata.general || scenarioMetadata.data?.scenario?.general || [];
@@ -716,59 +771,87 @@ export class ScenarioResetService {
       }
     }
 
+    // 도시명 → 도시ID 매핑 생성
+    const cityNameToIdMap = new Map<string, number>();
+    const allCities = await cityRepository.findByFilter({ session_id: sessionId });
+    for (const city of allCities) {
+      if (city.name) {
+        cityNameToIdMap.set(city.name, city.city);
+      }
+    }
+    console.log(`[ScenarioReset] Loaded ${cityNameToIdMap.size} city name mappings`);
+
+    // 시나리오별 장수 근거지 오버라이드 (generalCities)
+    const generalCitiesOverride: Record<string, string | number> = scenarioMetadata.generalCities || {};
+    const overrideCount = Object.keys(generalCitiesOverride).length;
+    if (overrideCount > 0) {
+      console.log(`[ScenarioReset] Found ${overrideCount} general city overrides`);
+    }
+
     const generalsToCreate = [];
     let generalIdCounter = 1; // 장수 ID 자동 생성용
     
     for (const genEntry of allGeneralsData) {
       const genTemplate = genEntry.data;
       const npcTypeFromCategory = genEntry.npcType; // general 구분에 따른 NPC 타입
-      // PHP JSON 포맷 (최대 14개 요소): 
-      // [affinity, name, picturePath, nationName, locatedCity, 
-      //  leadership, strength, intel, officerLevel, birth, death, ego, char, text]
-      let affinity, name, picturePath, nationName, locatedCity, leadership, strength, intel, officerLevel, birthYear, deathYear, personality, special, text;
-      let nationNo, id, npc;
+      
+      let name, nationNo, id, npc;
+      let leadership, strength, intel, politics, charm;
+      let officerLevel, birthYear, deathYear, personality, special, text;
       
       if (Array.isArray(genTemplate)) {
-        // PHP 배열 포맷
-        affinity = genTemplate[0];               // 친화도/소속 (사용 안 함)
-        name = genTemplate[1];                   // 이름
-        picturePath = genTemplate[2];            // 초상화 ID
-        nationName = genTemplate[3];             // 국가 이름 또는 번호
-        locatedCity = genTemplate[4];            // 배치 도시 (null)
-        leadership = genTemplate[5] || 50;       // 통솔
-        strength = genTemplate[6] || 50;         // 무력
-        intel = genTemplate[7] || 50;            // 지력
-        officerLevel = genTemplate[8];           // 관직 레벨 (undefined 허용, 나중에 처리)
-        birthYear = genTemplate[9];              // 출생년
-        deathYear = genTemplate[10];             // 사망년
-        personality = genTemplate[11];           // 성격 (ego)
-        special = genTemplate[12];               // 특기 (char)
-        text = genTemplate[13];                  // 메시지
+        // PHP 배열 포맷 - 정치/매력 유무 체크 (14개 vs 16개 요소)
+        // 구버전: [0:affinity, 1:name, 2:pic, 3:nation, 4:city, 5:LDR, 6:STR, 7:INT, 8:Lv, 9:Birth, 10:Death, 11:Ego, 12:Special, 13:Text]
+        // 신버전: [0:affinity, 1:name, 2:pic, 3:nation, 4:city, 5:LDR, 6:STR, 7:INT, 8:POL, 9:CHR, 10:Lv, 11:Birth, 12:Death, 13:Ego, 14:Special, 15:Text]
+        const hasExtendedStats = genTemplate.length > 14;
         
-        // nationName이 숫자면 그대로, 아니면 국가 이름에서 ID 찾기
+        // 기본 정보
+        name = genTemplate[1];
+        const picturePath = genTemplate[2];
+        const nationName = genTemplate[3];
+        
+        // 국가 ID 처리
         if (typeof nationName === 'number') {
           nationNo = nationName;
         } else if (typeof nationName === 'string') {
-          // 국가 이름으로 ID 찾기 (TODO: 나중에 구현)
           nationNo = parseInt(nationName) || 0;
         } else {
-          nationNo = 0; // 재야
-        }
-        
-        // 999는 재야
-        if (nationNo === 999) {
           nationNo = 0;
         }
+        if (nationNo === 999) nationNo = 0;
         
-        // ID는 picturePath 사용
         id = picturePath || generalIdCounter;
-        
-        // NPC 타입은 배열 구분으로 결정 (나중에 설정)
-        
-        // nationNo가 999면 재야로 처리
-        if (nationNo === 999) {
-          nationNo = 0;
+
+        // 능력치 파싱
+        leadership = genTemplate[5] || 50;
+        strength = genTemplate[6] || 50;
+        intel = genTemplate[7] || 50;
+
+        if (hasExtendedStats) {
+          // 신버전 포맷: 인덱스 8, 9에 정치, 매력 존재
+          politics = genTemplate[8] || 50;
+          charm = genTemplate[9] || 50;
+          
+          // 인덱스 밀림 적용
+          officerLevel = genTemplate[10];
+          birthYear = genTemplate[11];
+          deathYear = genTemplate[12];
+          personality = genTemplate[13];
+          special = genTemplate[14];
+          text = genTemplate[15];
+        } else {
+          // 구버전 포맷: 정치/매력 자동 계산 및 인덱스 유지
+          politics = Math.round((leadership + intel) / 2);
+          charm = Math.round((leadership + intel) / 2.5);
+          
+          officerLevel = genTemplate[8];
+          birthYear = genTemplate[9];
+          deathYear = genTemplate[10];
+          personality = genTemplate[11];
+          special = genTemplate[12];
+          text = genTemplate[13];
         }
+        
       } else {
         // 객체 포맷 (기존 호환)
         nationNo = genTemplate.nation || 0;
@@ -778,18 +861,15 @@ export class ScenarioResetService {
         leadership = genTemplate.stats?.leadership || genTemplate.leadership || 50;
         strength = genTemplate.stats?.strength || genTemplate.strength || 50;
         intel = genTemplate.stats?.intel || genTemplate.intel || 50;
-        officerLevel = genTemplate.officerLevel;  // undefined 허용, 나중에 처리
+        // 객체 포맷에서도 정치/매력 지원
+        politics = genTemplate.stats?.politics || genTemplate.politics || Math.round((leadership + intel) / 2);
+        charm = genTemplate.stats?.charm || genTemplate.charm || Math.round((leadership + intel) / 2.5);
+        officerLevel = genTemplate.officerLevel;
         birthYear = genTemplate.birthYear || 20;
         deathYear = genTemplate.deathYear || 250;
         personality = genTemplate.personality || '평범';
         special = genTemplate.special || null;
       }
-      
-      // 정치와 매력 계산 (PHP에는 없으므로 통솔/무력/지력에서 유추)
-      // 정치 = (통솔 + 지력) / 2
-      // 매력 = (통솔 + 지력) / 2.5 (정치보다 약간 낮게)
-      const politics = Math.round((leadership + intel) / 2);
-      const charm = Math.round((leadership + intel) / 2.5);
       
       // birthYear에서 age 계산
       const startYear = scenarioMetadata.startYear || 181;
@@ -828,20 +908,44 @@ export class ScenarioResetService {
         // 시나리오에 명시적으로 관직이 있으면 그대로 사용
       }
       
-      const cityId = 0; // PHP에서는 city가 배열에 없음
-      
-      // 배치 도시 결정
+      // 배치 도시 결정 (우선순위: generalCities 오버라이드 > 장수 배열의 city > 국가 수도)
       let assignedCityId = 0;
-      if (nationNo > 0) {
-        // 국가의 수도에 배치
+      
+      // 1. 시나리오 generalCities 오버라이드 확인
+      if (generalCitiesOverride[name]) {
+        const overrideCity = generalCitiesOverride[name];
+        if (typeof overrideCity === 'number') {
+          assignedCityId = overrideCity;
+        } else if (typeof overrideCity === 'string') {
+          assignedCityId = cityNameToIdMap.get(overrideCity) || 0;
+          if (assignedCityId === 0) {
+            console.log(`[ScenarioReset] City not found: ${overrideCity} for ${name}`);
+          }
+        }
+      }
+      
+      // 2. 장수 배열의 city 필드 확인 (인덱스 4)
+      if (assignedCityId === 0 && Array.isArray(genTemplate)) {
+        const templateCity = genTemplate[4];
+        if (templateCity) {
+          if (typeof templateCity === 'number') {
+            assignedCityId = templateCity;
+          } else if (typeof templateCity === 'string') {
+            assignedCityId = cityNameToIdMap.get(templateCity) || 0;
+          }
+        }
+      }
+      
+      // 3. 국가 수도로 fallback
+      if (assignedCityId === 0 && nationNo > 0) {
         const capital = nationCapitalMap.get(nationNo);
         assignedCityId = capital?.city || 0;
-        
-        // 국가 소속인데 도시가 없으면 이 장수는 스킵 (시나리오에 등장하지 않음)
-        if (assignedCityId === 0) {
-          console.log(`[ScenarioReset] Skipping general ${name} (nation ${nationNo}) - no capital city`);
-          continue;
-        }
+      }
+      
+      // 국가 소속인데 도시가 없으면 이 장수는 스킵 (시나리오에 등장하지 않음)
+      if (nationNo > 0 && assignedCityId === 0) {
+        console.log(`[ScenarioReset] Skipping general ${name} (nation ${nationNo}) - no city assigned`);
+        continue;
       }
       
       // NPC마다 다른 turntime 부여 (turnterm 내에서 랜덤 분산)
@@ -914,6 +1018,8 @@ export class ScenarioResetService {
           leadership_exp: 0,
           strength_exp: 0,
           intel_exp: 0,
+          politics_exp: 0,
+          charm_exp: 0,
           officer_level: officerLevel,
           permission: 0,
           turntime: npcTurntime.toISOString()
@@ -976,5 +1082,190 @@ export class ScenarioResetService {
       );
       console.log(`[ScenarioReset] Set nation ${nationId} leader to general ${generalNo}`);
     }
+  }
+
+  /**
+   * 외교 관계 생성
+   * 시나리오의 diplomacy 배열을 diplomacy 테이블에 삽입
+   * 
+   * diplomacy 배열 형식: [me, you, state, term]
+   * - me: 국가 ID (주체)
+   * - you: 국가 ID (상대)
+   * - state: 외교 상태 (0=전쟁, 1=선전포고, 2=중립, 7=동맹 등)
+   * - term: 기한 (턴 수)
+   */
+  private static async createDiplomacy(
+    sessionId: string,
+    scenarioMetadata: any
+  ): Promise<void> {
+    const diplomacyData = scenarioMetadata.diplomacy || [];
+    
+    if (diplomacyData.length === 0) {
+      console.log('[ScenarioReset] No diplomacy data in scenario');
+      return;
+    }
+
+    console.log(`[ScenarioReset] Creating ${diplomacyData.length} diplomacy relations`);
+
+    // 중복 제거 (같은 me-you 쌍이 여러 번 나오는 경우 방지)
+    const seen = new Set<string>();
+    const uniqueDiplomacyData = [];
+    for (const diplo of diplomacyData) {
+      const me = Array.isArray(diplo) ? diplo[0] : diplo.me;
+      const you = Array.isArray(diplo) ? diplo[1] : diplo.you;
+      const key = `${me}-${you}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueDiplomacyData.push(diplo);
+      } else {
+        console.warn(`[ScenarioReset] Skipping duplicate diplomacy: ${key}`);
+      }
+    }
+
+    const diplomacyEntries = uniqueDiplomacyData.map((diplo: any) => {
+      // 배열 형식: [me, you, state, term]
+      if (Array.isArray(diplo)) {
+        const [me, you, state, term] = diplo;
+        return {
+          session_id: sessionId,
+          me: me,
+          you: you,
+          state: state ?? 2,  // 기본값 2 = 중립
+          term: term ?? 0
+        };
+      }
+      // 객체 형식도 지원
+      return {
+        session_id: sessionId,
+        me: diplo.me,
+        you: diplo.you,
+        state: diplo.state ?? 2,
+        term: diplo.term ?? 0
+      };
+    });
+
+    // 일괄 삽입
+    if (diplomacyEntries.length > 0) {
+      await diplomacyRepository.insertMany(diplomacyEntries);
+    }
+
+    console.log(`[ScenarioReset] Created ${diplomacyEntries.length} diplomacy relations`);
+  }
+
+  /**
+   * 초기 역사 로그 생성
+   * 시나리오의 history 배열을 world_history에 삽입
+   */
+  private static async createInitialHistory(
+    sessionId: string,
+    scenarioMetadata: any
+  ): Promise<void> {
+    const historyData = scenarioMetadata.history || [];
+    
+    if (historyData.length === 0) {
+      console.log('[ScenarioReset] No initial history in scenario');
+      return;
+    }
+
+    console.log(`[ScenarioReset] Creating ${historyData.length} initial history entries`);
+
+    const startYear = scenarioMetadata.startYear || 184;
+    const startMonth = 1;
+
+    const historyEntries = historyData.map((text: string) => ({
+      session_id: sessionId,
+      nation_id: 0,  // 전역 히스토리
+      year: startYear,
+      month: startMonth,
+      text: text,
+      created_at: new Date()
+    }));
+
+    // 일괄 삽입
+    for (const entry of historyEntries) {
+      await worldHistoryRepository.create(entry);
+    }
+
+    console.log(`[ScenarioReset] Created ${historyEntries.length} history entries`);
+  }
+
+  /**
+   * 초기 ng_history 생성 (연감 시스템용)
+   * world_history의 데이터를 ng_history에 복사하여 초기 연감 생성
+   */
+  private static async createInitialNgHistory(
+    sessionId: string,
+    scenarioId: string,
+    scenarioMetadata: any
+  ): Promise<void> {
+    const startYear = scenarioMetadata.startYear || 184;
+    const startMonth = 1;
+    const serverID = scenarioId.split('/')[0] || 'sangokushi';
+
+    console.log(`[ScenarioReset] Creating initial ng_history for ${startYear}년 ${startMonth}월`);
+
+    // world_history에서 초기 기록 가져오기
+    const worldHistory = await worldHistoryRepository.findByFilter({
+      session_id: sessionId,
+      year: startYear,
+      month: startMonth
+    });
+
+    // 국가 스냅샷 생성
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    const nationSnapshots = nations.map(nation => ({
+      id: nation.nation,
+      name: nation.name,
+      color: nation.color,
+      capital: nation.capital,
+      gold: nation.gold,
+      rice: nation.rice,
+      level: nation.level
+    }));
+
+    // 도시 맵 생성 (간단 버전)
+    const cities = await cityRepository.findByFilter({ session_id: sessionId });
+    const cityMap: any = {};
+    for (const city of cities) {
+      cityMap[city.city] = {
+        id: city.city,
+        name: city.name,
+        nation: city.nation,
+        x: city.x,
+        y: city.y
+      };
+    }
+
+    // global_history 포맷 (world_history 텍스트를 배열로)
+    const globalHistoryArray = worldHistory.map(h => ({
+      year: h.year,
+      month: h.month,
+      text: h.text
+    }));
+
+    // ng_history 문서 생성
+    const ngHistoryDoc = {
+      server_id: serverID,
+      year: startYear,
+      month: startMonth,
+      global_history: globalHistoryArray,
+      global_action: [],  // 초기에는 비어있음
+      nations: nationSnapshots,
+      map: cityMap,
+      created_at: new Date()
+    };
+
+    // 기존 문서 삭제 후 삽입 (unique index로 인한 충돌 방지)
+    // @ts-ignore - Mongoose model type issue
+    await NgHistory.deleteMany({
+      server_id: serverID,
+      year: startYear,
+      month: startMonth
+    });
+
+    // @ts-ignore - Mongoose model type issue
+    await NgHistory.create(ngHistoryDoc);
+
+    console.log(`[ScenarioReset] Created ng_history with ${globalHistoryArray.length} global history entries`);
   }
 }

@@ -437,8 +437,18 @@ router.get('/get-front-info', optionalAuth, asyncHandler(async (req, res) => {
     ...req.query,
     session_id: req.query.session_id || req.query.serverID || 'sangokushi_default',
   };
-  const result = await GetFrontInfoService.execute(params, req.user);
-  res.json(result);
+
+  try {
+    const result = await GetFrontInfoService.execute(params, req.user);
+    res.json(result);
+  } catch (error: any) {
+    console.error('[GetFrontInfo] route error:', error);
+    res.json({
+      success: false,
+      result: false,
+      message: error?.message || '전선 정보를 불러오는 중 오류가 발생했습니다',
+    });
+  }
 }));
 
 /**

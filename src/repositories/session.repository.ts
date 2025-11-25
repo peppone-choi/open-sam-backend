@@ -123,8 +123,29 @@ class SessionRepository {
     
     // Mongoose Document인 경우 save() 메서드 사용 (DB 저장)
     if (sessionDoc.save && typeof sessionDoc.save === 'function') {
-      // Mongoose Document - DB에 직접 저장
-      await sessionDoc.save();
+      try {
+        // 기본 경로: 낙관적 잠금 포함한 저장
+        await sessionDoc.save();
+      } catch (err: any) {
+        const message = err?.message || '';
+        const isVersionError = err?.name === 'VersionError' || message.includes('No matching document found for id');
+
+        if (!isVersionError) {
+          // 다른 유형의 에러는 그대로 던진다
+          throw err;
+        }
+
+        // VersionError인 경우에는 _id 기준으로 강제 업데이트를 시도한다
+        console.warn('[SessionRepository] saveDocument VersionError detected, retrying with direct updateOne:', message);
+
+        const plain = sessionDoc.toObject ? sessionDoc.toObject() : sessionDoc;
+        if (plain && plain._id) {
+          await Session.updateOne({ _id: plain._id }, plain, { upsert: false, strict: false }).exec();
+        } else {
+          // _id가 없으면 더 이상 할 수 있는 게 없으므로 원본 에러를 다시 던진다
+          throw err;
+        }
+      }
     }
     
     // Mongoose Document인 경우 toObject()로 변환

@@ -46,7 +46,259 @@ type LeanUnitStack = Partial<IUnitStack> & {
   id?: string;
 };
 
+/**
+ * 전선 정보 - 전역 게임 환경 정보
+ *
+ * 단위 규칙:
+ * - year/month: 시나리오 상 연/월 (in‑game 달력)
+ * - startyear: 시나리오 시작 연도
+ * - turnterm: 한 턴 길이 (분 단위)
+ * - lastExecuted: 마지막 턴 처리 시각 (서버 시각, 'YYYY-MM-DD HH:MM:SS')
+ */
+interface GlobalFrontInfo {
+  serverName: string | null;
+  scenarioText: string;
+  extendedGeneral: 0 | 1;
+  isFiction: 0 | 1;
+  npcMode: 0 | 1 | 2;
+  joinMode: 'onlyRandom' | 'full';
+  startyear: number;
+  year: number;
+  month: number;
+  autorunUser: {
+    /** 자동 턴 처리 제한 시간 (분) */
+    limit_minutes: number;
+    options: Record<string, any>;
+  };
+  /** 한 턴 길이 (분 단위) */
+  turnterm: number;
+  /** 마지막 턴 처리 시각 (서버 시각 문자열) */
+  lastExecuted: string;
+  lastVoteID: number | null;
+  develCost: number;
+  noticeMsg: number;
+  onlineNations: string | null;
+  onlineUserCnt: number | null;
+  apiLimit: number;
+  auctionCount: number;
+  isTournamentActive: boolean;
+  isTournamentApplicationOpen: boolean;
+  isBettingActive: boolean;
+  isLocked: boolean;
+  tournamentType: any;
+  tournamentState: number;
+  tournamentTime: any;
+  /** [npc플래그, 장수 수] 배열 */
+  genCount: Array<[number, number]>;
+  generalCntLimit: number;
+  serverCnt: number;
+  lastVote: any;
+}
+
+/**
+ * 전선 정보 - 국가 요약 정보
+ *
+ * 단위 규칙:
+ * - population.now / max: 총 인구 수
+ * - crew.now / max: 장수 병력 합 / 최대 병력 (통솔×100)
+ * - gold / rice / tech: 국가 자원 수치 (정수)
+ * - taxRate: 세율 (%)
+ */
+interface NationFrontInfo {
+  id: number;
+  full: boolean;
+  name: string;
+  population: {
+    /** 보유 도시 수 */
+    cityCnt: number;
+    /** 총 인구 (현재값) */
+    now: number;
+    /** 총 인구 (최대값) */
+    max: number;
+  };
+  crew: {
+    /** 장수 수 (npc 5 제외) */
+    generalCnt: number;
+    /** 장수 병력 합 */
+    now: number;
+    /** 통솔 기반 최대 병력 합 */
+    max: number;
+  };
+  type: {
+    raw: string;
+    name: string;
+    pros: string;
+    cons: string;
+  };
+  /** 국가 대표 색상 (hex, '#RRGGBB') */
+  color: string;
+  /** 국가 레벨 (constants.nationLevels 기준) */
+  level: number;
+  /** 수도 도시 ID (city_id) */
+  capital: number;
+  gold: number;
+  rice: number;
+  tech: number;
+  /** 국가 소속 장수 수 (캐시 필드) */
+  gennum: number;
+  power: Record<string, any>;
+  /** 지급률/비용 정책 문자열 */
+  bill: string;
+  /** 세율 (%) */
+  taxRate: number;
+  /** 온라인 장수 목록 (쉼표 구분 문자열) */
+  onlineGen: string;
+  /** 최신 국가 공지 */
+  notice: any;
+  /** 군주/부군주 등 상위 관직자 맵 */
+  topChiefs: Record<number, any>;
+  /** 외교 제한 턴 수 */
+  diplomaticLimit: number;
+  /** 전략 커맨드 사용 제한 */
+  strategicCmdLimit: Record<string, any>;
+  /** 사용 불가 전략 커맨드 목록 (프론트 표시용) */
+  impossibleStrategicCommand: string[];
+  /** 정찰 금지 여부 플래그 */
+  prohibitScout: number;
+  /** 전쟁 금지 여부 플래그 */
+  prohibitWar: number;
+}
+
+/**
+ * 전선 정보 - 장수 요약 정보
+ *
+ * 주요 단위:
+ * - gold / rice: 개인 보유 금/군량
+ * - crew: 장수 병력 (없으면 unitStacks.totalTroops 사용)
+ * - train / atmos: 0~100 범위 훈련/사기
+ * - unitStacks.totalTroops: 부대 병력 합계
+ */
+interface GeneralFrontInfo {
+  no: number;
+  name: string;
+  nation: number;
+  npc: number;
+  injury: number;
+  leadership: number;
+  strength: number;
+  intel: number;
+  politics: number;
+  charm: number;
+  explevel: number;
+  dedlevel: number;
+  gold: number;
+  rice: number;
+  /** 장수 병력 (명 단위) */
+  crew: number;
+  /** 부대 스택 정보 (없으면 null) */
+  unitStacks: {
+    totalTroops: number;
+    stackCount: number;
+    averageTrain: number;
+    averageMorale: number;
+    stacks: Array<{
+      id: string;
+      crewTypeId: number;
+      crewTypeName?: string;
+      unitSize: number;
+      stackCount: number;
+      troops: number;
+      train: number;
+      morale: number;
+      updatedAt?: Date | string;
+    }>;
+  } | null;
+  /** 훈련 (0~100) */
+  train: number;
+  /** 사기 (0~100) */
+  atmos: number;
+  /** 다음 개인 턴 예정 시각 */
+  turntime: Date | string;
+  /** 소속 도시 ID */
+  city: number;
+  /** 소속 부대 ID (0이면 미배치) */
+  troop: number;
+  /** 관직 레벨 (0=재야, 1=일반, 12=군주) */
+  officerLevel: number;
+  /** 관직 이름 (군주/태사/태수 등) */
+  officerLevelText: string;
+  /** 예약된 일반턴 명령 목록 */
+  reservedCommand: any[] | null;
+  /** 수동/자동턴 제한 (분 단위) */
+  autorun_limit: number;
+  /** 장수별 권한 비트 플래그 (0=일반, 4=수뇌부 등) */
+  permission: number;
+  [key: string]: any;
+}
+
+/**
+ * 전선 정보 - 도시 요약 정보
+ *
+ * 단위 규칙:
+ * - pop/agri/comm/secu/def/wall: [현재값, 최대값]
+ * - trust: 민심 (0~100)
+ * - garrison.totalTroops: 주둔 병력 합계
+ */
+interface CityFrontInfo {
+  id: number;
+  name: string;
+  /** 지역 ID (constants.regions 키) */
+  region: number;
+  nationInfo: {
+    id: number;
+    name: string;
+    /** 국가 색상 (hex, '#RRGGBB') */
+    color: string;
+  };
+  /** 도시 레벨 (constants.levelMap / cityLevels 기준) */
+  level: number;
+  /** 민심 (0~100) */
+  trust: number;
+  /** [현재인구, 최대인구] */
+  pop: [number, number];
+  /** [현재농업, 최대농업] */
+  agri: [number, number];
+  /** [현재상업, 최대상업] */
+  comm: [number, number];
+  /** [현재치안, 최대치안] */
+  secu: [number, number];
+  /** [현재수비, 최대수비] */
+  def: [number, number];
+  /** [현재성벽HP, 최대성벽HP] */
+  wall: [number, number];
+  /** 시세(%) 또는 null */
+  trade: number | null;
+  officerList: Record<2 | 3 | 4, {
+    officer_level: 2 | 3 | 4;
+    no?: number;
+    name: string;
+    npc: number;
+  } | null>;
+  defense?: {
+    wall: [number, number];
+    gate: [number, number];
+    towerLevel?: number;
+    repairRate?: number;
+    lastDamageAt?: Date | string;
+    lastRepairAt?: Date | string;
+  } | null;
+  garrison?: {
+    totalTroops: number;
+    stackCount: number;
+    stacks: Array<{
+      id: string;
+      crewTypeId: number;
+      crewTypeName?: string;
+      troops: number;
+      train: number;
+      morale: number;
+      updatedAt?: Date | string;
+    }>;
+  };
+}
+
 function resolveCrewTypeName(crewTypeId?: number | null, rawName?: string | null): string | undefined {
+
   const normalizedId = typeof crewTypeId === 'number' && Number.isFinite(crewTypeId) ? crewTypeId : undefined;
   const trimmedName = rawName?.trim();
   const isGenericName = !trimmedName || /^병종(\s*\d+)?$/u.test(trimmedName);
@@ -227,152 +479,15 @@ export class GetFrontInfoService {
         }
       };
     } catch (error: any) {
-      const generalPayload: any = {
-        success: true,
-        result: true,
-        no: data.no || general.no,
-        name: general.name || data.name || '무명',
-        nation: nationId,
-        npc: data.npc || 0,
-        injury: data.injury || 0,
-        leadership: leadership,
-        strength: strength,
-        intel: intel,
-        politics: politics,
-        charm: charm,
-        explevel: data.explevel || 0,
-        dedlevel: data.dedlevel || 0,
-        gold: (typeof data.gold === 'number' && !isNaN(data.gold)) ? data.gold : 1000,
-        rice: (typeof data.rice === 'number' && !isNaN(data.rice)) ? data.rice : 1000,
-        killturn: data.killturn || 0,
-        picture: data.picture || '',
-        imgsvr: data.imgsvr || 0,
-        age: (typeof data.age === 'number' && data.age >= 0 && data.age <= 200) ? data.age : 20,
-        specialDomestic: data.special || 'None',
-        specialWar: data.special2 || 'None',
-        personal: data.personal || 'None',
-        belong: data.belong || 0,
-        refreshScoreTotal: 0,
-        officerLevel: officerLevel,
-        officerLevelText: this.getOfficerLevelText(officerLevel),
-        lbonus: this.calculateStatBonus(data, 'leadership'),
-        sbonus: this.calculateStatBonus(data, 'strength'),
-        ibonus: this.calculateStatBonus(data, 'intel'),
-        pbonus: this.calculateStatBonus(data, 'politics'),
-        cbonus: this.calculateStatBonus(data, 'charm'),
-        ownerName: data.owner_name || null,
-        honorText: this.getHonor(data.experience || 0),
-        dedLevelText: this.getDed(data.dedication || 0),
-        bill: 0,
-        reservedCommand: await this.getReservedCommand(sessionId, data.no),
-        autorun_limit: data.aux?.autorun_limit || 0,
-        city: data.city ?? data.data?.city ?? 0,
-        troop: data.troop ?? data.data?.troop ?? 0,
-        refreshScore: 0,
-        specage: data.specage || 0,
-        specage2: data.specage2 || 0,
-        leadership_exp: data.leadership_exp || 0,
-        strength_exp: data.strength_exp || 0,
-        intel_exp: data.intel_exp || 0,
-        politics_exp: data.politics_exp || 0,
-        charm_exp: data.charm_exp || 0,
-        dex1: data.dex1 || 0,
-        dex2: data.dex2 || 0,
-        dex3: data.dex3 || 0,
-        dex4: data.dex4 || 0,
-        dex5: data.dex5 || 0,
-        experience: data.experience || 0,
-        dedication: data.dedication || 0,
-        officer_city: data.officer_city || 0,
-        defence_train: data.defence_train || 0,
-        crewtype: (() => {
-          let crewtype = data.crewtype ?? 0;
-          const crew = data.crew || 0;
-          const resultTurn = data.result_turn || data.data?.result_turn;
-          const cmd = resultTurn?.command;
-          const argCrewType = resultTurn?.arg?.crewType;
-
-          // 징병/모병 직후인데 crewtype이 0이면 결과 턴의 병종으로 보정
-          if (!crewtype && crew > 0 && argCrewType &&
-            ['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(cmd)) {
-            crewtype = argCrewType;
-          }
-
-          if (!crewtype) {
-            return 'None';
-          }
-
-          try {
-            const { GameUnitConst } = require('../../const/GameUnitConst');
-            const unit = GameUnitConst.byID(Number(crewtype));
-            return {
-              id: unit.id || Number(crewtype),
-              label: unit.name || String(crewtype),
-            };
-          } catch (e) {
-            return crewtype;
-          }
-        })(),
-        crew: derivedCrew || 0,
-        unitStacks: unitStackInfo,
-
-        train: derivedTrain,
-        atmos: derivedAtmos,
-        turntime: data.turntime || new Date(),
-        recent_war: data.recent_war || '',
-        horse: data.item2 || 'None',
-        weapon: data.item0 || 'None',
-        book: data.item3 || 'None',
-        item: data.item4 || 'None',
-        warnum: 0,
-        killnum: 0,
-        deathnum: 0,
-        killcrew: 0,
-        deathcrew: 0,
-        firenum: 0,
-        permission: 0
+      console.error('[GetFrontInfo] execute error:', error);
+      return {
+        success: false,
+        result: false,
+        message: error?.message || '전선 정보를 불러오는 중 오류가 발생했습니다',
       };
-
-      const troopLeaderId = data.troop ?? data.data?.troop ?? 0;
-      if (troopLeaderId) {
-        try {
-          const troopDoc = await troopRepository.findOneByFilter({
-            session_id: sessionId,
-            $or: [
-              { 'data.troop_leader': troopLeaderId },
-              { troop_leader: troopLeaderId }
-            ]
-          });
-          let troopLeader = await generalRepository.findBySessionAndNo(sessionId, troopLeaderId);
-          if (!troopLeader) {
-            troopLeader = await generalRepository.findOneByFilter({
-              session_id: sessionId,
-              $or: [
-                { 'data.no': troopLeaderId },
-                { no: troopLeaderId }
-              ]
-            });
-          }
-
-          if (troopDoc || troopLeader) {
-            const reservedCommand = await this.getReservedCommand(sessionId, troopLeaderId);
-            generalPayload.troopInfo = {
-              name: troopDoc?.data?.name || troopDoc?.name || '무명부대',
-              leader: {
-                city: troopLeader?.city || troopLeader?.data?.city || 0,
-                reservedCommand: reservedCommand || null
-              }
-            };
-          }
-        } catch (error) {
-          console.error('[GetFrontInfo] Failed to build troopInfo:', error);
-        }
-      }
-
-      return generalPayload;
-
     }
   }
+
 
   /**
    * 접속 중인 국가 목록 조회
@@ -480,7 +595,20 @@ export class GetFrontInfoService {
       data.game_env = gameEnv;
       session.data = data;
       session.markModified('data.game_env');
-      await session.save();
+
+      // 세션 저장 시 VersionError(동시 업데이트) 발생 가능성이 있어
+      // sessionRepository.saveDocument를 사용해 낙관적 잠금 충돌을 흡수한다.
+      try {
+        const { sessionRepository } = await import('../../repositories/session.repository');
+        await sessionRepository.saveDocument(session);
+      } catch (err: any) {
+        const msg = err?.message || '';
+        if (err?.name === 'VersionError' || msg.includes('No matching document found for id')) {
+          console.warn('[GetFrontInfo] Ignoring VersionError while saving session turn info:', msg);
+        } else {
+          throw err;
+        }
+      }
     }
     
     // 세션 이름이 설정되어 있고 기술적 ID와 다를 때만 반환
@@ -852,6 +980,11 @@ export class GetFrontInfoService {
       ? data.officer_level 
       : (data.data?.officer_level !== undefined ? data.data.officer_level : defaultOfficerLevel);
 
+    const aux = data.aux ?? data.data?.aux ?? {};
+    const defenceTrain = data.defence_train ?? data.data?.defence_train ?? 0;
+    const useTreatment = typeof aux.use_treatment === 'number' ? aux.use_treatment : 10;
+    const useAutoNationTurn = typeof aux.use_auto_nation_turn === 'number' ? aux.use_auto_nation_turn : 1;
+
     return {
       no: data.no || general.no,
       name: general.name || data.name || '무명',
@@ -888,7 +1021,9 @@ export class GetFrontInfoService {
       dedLevelText: this.getDed(data.dedication || 0),
       bill: 0,
       reservedCommand: await this.getReservedCommand(sessionId, data.no),
-      autorun_limit: data.aux?.autorun_limit || 0,
+      use_treatment: useTreatment,
+      use_auto_nation_turn: useAutoNationTurn,
+      autorun_limit: aux.autorun_limit || 0,
       city: data.city ?? data.data?.city ?? 0,
       troop: data.troop ?? data.data?.troop ?? 0,
       refreshScore: 0,
@@ -907,9 +1042,9 @@ export class GetFrontInfoService {
       experience: data.experience || 0,
       dedication: data.dedication || 0,
       officer_city: data.officer_city || 0,
-      defence_train: data.defence_train || 0,
+      defence_train: defenceTrain,
       crewtype: (() => {
-        let crewtype = data.crewtype ?? 0;
+        let crewtype = data.crewtype ?? data.data?.crewtype ?? 0;
         const crew = data.crew || 0;
         const resultTurn = data.result_turn || data.data?.result_turn;
         const cmd = resultTurn?.command;
@@ -919,6 +1054,11 @@ export class GetFrontInfoService {
         if (!crewtype && crew > 0 && argCrewType &&
           ['징병', '모병', 'che_징병', 'che_모병', 'conscript', 'recruitSoldiers'].includes(cmd)) {
           crewtype = argCrewType;
+        }
+
+        // unit_stack에서 병종 정보 가져오기 (fallback)
+        if (!crewtype && formattedStacks.length > 0) {
+          crewtype = formattedStacks[0].crewTypeId;
         }
 
         if (!crewtype) {

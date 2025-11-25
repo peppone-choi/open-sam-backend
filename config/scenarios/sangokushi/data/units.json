@@ -1,1878 +1,578 @@
 {
-  "unitSet": "che",
-  "generatedAt": "2025-11-18T07:31:02.612Z",
+  "unitSet": "three_kingdoms_final_linked",
+  "generatedAt": "2025-11-26T00:00:00.000Z",
   "units": {
     "1000": {
       "id": 1000,
       "type": "CASTLE",
       "name": "성벽",
-      "cost": {
-        "gold": 99,
-        "rice": 9
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 0,
-        "magic": 0,
-        "tech": 0
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": []
-      },
+      "cost": { "gold": 99, "rice": 9 },
+      "stats": { "offense": 100, "defense": 100, "defenseRange": 100, "attackRange": 7, "speed": 7, "avoid": 0, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
       "attacks": {},
-      "defenses": {
-        "FOOTMAN": 1.2
-      },
-      "description": [
-        "성벽입니다.",
-        "생성할 수 없습니다."
-      ],
-      "constraints": [
-        {
-          "type": "impossible"
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": null
-      }
+      "defenses": { "FOOTMAN": 1.2 },
+      "description": ["도시를 방어하는 성벽입니다.", "이동할 수 없습니다."],
+      "constraints": [{ "type": "impossible" }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1100": {
       "id": 1100,
       "type": "FOOTMAN",
-      "name": "보병",
-      "cost": {
-        "gold": 9,
-        "rice": 9
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 150,
-        "defenseRange": 150,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 0
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "ARCHER": 1.2,
-        "CAVALRY": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "ARCHER": 0.8,
-        "CAVALRY": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "표준적인 보병입니다.",
-        "보병은 방어특화이며,",
-        "상대가 회피하기 어렵습니다."
-      ],
+      "name": "도민병",
+      "cost": { "gold": 6, "rice": 6 },
+      "stats": { "offense": 80, "defense": 70, "defenseRange": 70, "attackRange": 7, "speed": 8, "avoid": 5, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
+      "attacks": { "ARCHER": 1.1, "CAVALRY": 0.8, "SIEGE": 1.1 },
+      "defenses": { "ARCHER": 0.7, "CAVALRY": 1.0, "SIEGE": 0.8 },
+      "description": ["환수도를 든 징집병입니다.", "가벼운 무장으로 기동성이 좋으나 방어력이 낮습니다."],
       "constraints": [],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1101": {
       "id": 1101,
       "type": "FOOTMAN",
-      "name": "청주병",
-      "cost": {
-        "gold": 10,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 200,
-        "defenseRange": 200,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "중원"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "ARCHER": 1.2,
-        "CAVALRY": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "ARCHER": 0.8,
-        "CAVALRY": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "저렴하고 튼튼합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "중원"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "name": "창민병",
+      "cost": { "gold": 7, "rice": 7 },
+      "stats": { "offense": 75, "defense": 75, "defenseRange": 75, "attackRange": 7, "speed": 7, "avoid": 5, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
+      "attacks": { "ARCHER": 1.1, "CAVALRY": 1.2, "SIEGE": 1.1 },
+      "defenses": { "ARCHER": 0.7, "CAVALRY": 1.1, "SIEGE": 0.8 },
+      "description": ["죽창을 든 징집병입니다.", "기병의 돌격을 어느 정도 저지할 수 있습니다."],
+      "constraints": [],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1102": {
       "id": 1102,
       "type": "FOOTMAN",
-      "name": "수병",
-      "cost": {
-        "gold": 11,
-        "rice": 10
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 150,
-        "defenseRange": 150,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "오월"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "ARCHER": 1.2,
-        "CAVALRY": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "ARCHER": 0.8,
-        "CAVALRY": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "저렴하고 강력합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "오월"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "name": "청주병",
+      "cost": { "gold": 12, "rice": 11 },
+      "stats": { "offense": 130, "defense": 160, "defenseRange": 160, "attackRange": 7, "speed": 7, "avoid": 5, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["진류", "허창", "제북"] },
+      "attacks": { "ARCHER": 1.2, "CAVALRY": 0.9, "SIEGE": 1.3 },
+      "defenses": { "ARCHER": 0.9, "CAVALRY": 1.2, "SIEGE": 0.8 },
+      "description": ["황건적 잔당을 재편한 정예입니다.", "전투와 농업 모두에 능숙하며 끈질긴 생명력을 가집니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["진류", "허창", "제북"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1103": {
       "id": 1103,
       "type": "FOOTMAN",
-      "name": "자객병",
-      "cost": {
-        "gold": 10,
-        "rice": 10
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 150,
-        "defenseRange": 150,
-        "attackRange": 8,
-        "speed": 8,
-        "avoid": 20,
-        "magic": 0,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "저"
-        ]
-      },
-      "attacks": {
-        "ARCHER": 1.2,
-        "CAVALRY": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "ARCHER": 0.8,
-        "CAVALRY": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "은밀하고 날쌥니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "저"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "name": "단양병",
+      "cost": { "gold": 13, "rice": 10 },
+      "stats": { "offense": 160, "defense": 130, "defenseRange": 130, "attackRange": 7, "speed": 8, "avoid": 20, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["건업", "오", "회계", "서주"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.4, "CAVALRY": 0.8, "SIEGE": 1.2 },
+      "defenses": { "FOOTMAN": 1.1, "ARCHER": 1.0, "CAVALRY": 1.0, "SIEGE": 0.8 },
+      "description": ["산악 지형에서 단련된 정예병입니다.", "근접전 능력이 매우 강력합니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["건업", "오", "회계", "서주"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1104": {
       "id": 1104,
       "type": "FOOTMAN",
-      "name": "근위병",
-      "cost": {
-        "gold": 12,
-        "rice": 12
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 200,
-        "defenseRange": 200,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "낙양"
-        ]
-      },
-      "attacks": {
-        "ARCHER": 1.2,
-        "CAVALRY": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "ARCHER": 0.8,
-        "CAVALRY": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "최강의 보병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "낙양"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "name": "함진영",
+      "cost": { "gold": 18, "rice": 15 },
+      "stats": { "offense": 190, "defense": 210, "defenseRange": 210, "attackRange": 7, "speed": 5, "avoid": 5, "magic": 0, "tech": 3000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["복양", "하비"] },
+      "attacks": { "FOOTMAN": 1.5, "ARCHER": 1.3, "CAVALRY": 1.2, "SIEGE": 1.8 },
+      "defenses": { "FOOTMAN": 1.4, "ARCHER": 1.3, "CAVALRY": 1.3, "SIEGE": 1.0 },
+      "description": ["적의 진영을 반드시 함락시키는 중보병입니다.", "장비가 정교하고 군기가 엄정합니다."],
+      "constraints": [{ "type": "reqTech", "value": 3000 }, { "type": "reqCities", "value": ["복양", "하비"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1105": {
       "id": 1105,
       "type": "FOOTMAN",
-      "name": "등갑병",
-      "cost": {
-        "gold": 13,
-        "rice": 10
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 225,
-        "defenseRange": 225,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "남중"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "ARCHER": 1.2,
-        "CAVALRY": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "ARCHER": 0.8,
-        "CAVALRY": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "등갑을 두른 보병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "남중"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "name": "백이병",
+      "cost": { "gold": 15, "rice": 13 },
+      "stats": { "offense": 140, "defense": 220, "defenseRange": 220, "attackRange": 7, "speed": 6, "avoid": 10, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["영안", "성도"] },
+      "attacks": { "ARCHER": 1.2, "CAVALRY": 1.5, "SIEGE": 1.2 },
+      "defenses": { "ARCHER": 1.5, "CAVALRY": 1.5, "SIEGE": 1.0 },
+      "description": ["촉나라 서부 전선을 지키는 정예병입니다.", "흰 깃털 장식을 했으며 방어력이 극도로 높습니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["영안", "성도"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1106": {
       "id": 1106,
       "type": "FOOTMAN",
-      "name": "백이병",
-      "cost": {
-        "gold": 13,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 175,
-        "defense": 175,
-        "defenseRange": 175,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "성도"
-        ]
-      },
-      "attacks": {
-        "ARCHER": 1.1,
-        "CAVALRY": 0.9,
-        "SIEGE": 1.1
-      },
-      "defenses": {
-        "ARCHER": 0.9,
-        "CAVALRY": 1.1,
-        "SIEGE": 0.9
-      },
-      "description": [
-        "정예 보병입니다. 불리한 싸움도 버텨냅니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "성도"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_방어력증가5p"
-        ],
-        "actions": null
-      }
+      "name": "무당비군",
+      "cost": { "gold": 14, "rice": 12 },
+      "stats": { "offense": 150, "defense": 120, "defenseRange": 120, "attackRange": 8, "speed": 9, "avoid": 30, "magic": 20, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["성도", "한중", "건녕"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.5, "CAVALRY": 1.0, "SIEGE": 1.2 },
+      "defenses": { "FOOTMAN": 1.0, "ARCHER": 1.5, "CAVALRY": 0.8, "SIEGE": 0.8 },
+      "description": ["남만 출신의 날랜 병사들입니다.", "산지를 평지처럼 이동하며 독화살을 사용합니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["성도", "한중", "건녕"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
+    },
+    "1107": {
+      "id": 1107,
+      "type": "FOOTMAN",
+      "name": "동주병",
+      "cost": { "gold": 12, "rice": 12 },
+      "stats": { "offense": 155, "defense": 80, "defenseRange": 80, "attackRange": 7, "speed": 7, "avoid": 5, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["성도", "자동"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.0, "CAVALRY": 0.8, "SIEGE": 1.2 },
+      "defenses": { "FOOTMAN": 1.0, "ARCHER": 0.8, "CAVALRY": 0.8, "SIEGE": 0.8 },
+      "description": ["익주로 유입된 유랑민 병사들입니다.", "매우 호전적이고 공격적입니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["성도", "자동"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1108": {
+      "id": 1108,
+      "type": "FOOTMAN",
+      "name": "청건병",
+      "cost": { "gold": 14, "rice": 14 },
+      "stats": { "offense": 150, "defense": 150, "defenseRange": 150, "attackRange": 7, "speed": 7, "avoid": 15, "magic": 10, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["건업"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.3, "CAVALRY": 1.0, "SIEGE": 1.2 },
+      "defenses": { "FOOTMAN": 1.2, "ARCHER": 1.2, "CAVALRY": 1.0, "SIEGE": 0.9 },
+      "description": ["푸른 두건을 쓴 오나라 정예병입니다.", "결사항전의 투지로 무장했습니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["건업"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1109": {
+      "id": 1109,
+      "type": "FOOTMAN",
+      "name": "해번병",
+      "cost": { "gold": 15, "rice": 13 },
+      "stats": { "offense": 145, "defense": 145, "defenseRange": 145, "attackRange": 7, "speed": 7, "avoid": 15, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["건업", "오"] },
+      "attacks": { "FOOTMAN": 1.2, "ARCHER": 1.3, "CAVALRY": 1.0, "SIEGE": 1.3 },
+      "defenses": { "FOOTMAN": 1.1, "ARCHER": 1.2, "CAVALRY": 1.1, "SIEGE": 0.9 },
+      "description": ["오나라 군주의 직속 호위 부대입니다.", "전장의 위급한 상황을 해결합니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["건업", "오"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1110": {
+      "id": 1110,
+      "type": "FOOTMAN",
+      "name": "황건역사",
+      "cost": { "gold": 11, "rice": 11 },
+      "stats": { "offense": 160, "defense": 80, "defenseRange": 80, "attackRange": 7, "speed": 6, "avoid": 0, "magic": 30, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["업", "평원", "거록"] },
+      "attacks": { "FOOTMAN": 1.4, "ARCHER": 1.0, "CAVALRY": 0.8, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 1.0, "ARCHER": 0.6, "CAVALRY": 0.5, "SIEGE": 0.5 },
+      "description": ["종교적 광신으로 무장한 황건적 정예입니다.", "죽음을 두려워하지 않고 맨몸으로 돌격합니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["업", "평원", "거록"] }],
+      "skills": { "init": null, "phase": null, "actions": null }
+    },
+    "1111": {
+      "id": 1111,
+      "type": "FOOTMAN",
+      "name": "금군",
+      "cost": { "gold": 22, "rice": 22 },
+      "stats": { "offense": 200, "defense": 200, "defenseRange": 200, "attackRange": 7, "speed": 7, "avoid": 15, "magic": 0, "tech": 3000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["낙양", "장안"] },
+      "attacks": { "FOOTMAN": 1.5, "ARCHER": 1.5, "CAVALRY": 1.5, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 1.3, "ARCHER": 1.3, "CAVALRY": 1.3, "SIEGE": 1.1 },
+      "description": ["황실을 수호하는 최정예 친위대입니다.", "최고 수준의 장비와 훈련을 갖췄습니다."],
+      "constraints": [{ "type": "reqTech", "value": 3000 }, { "type": "reqCities", "value": ["낙양", "장안"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1112": {
+      "id": 1112,
+      "type": "FOOTMAN",
+      "name": "등갑병",
+      "cost": { "gold": 14, "rice": 11 },
+      "stats": { "offense": 120, "defense": 300, "defenseRange": 300, "attackRange": 7, "speed": 7, "avoid": 10, "magic": -100, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["남만", "건녕", "운남"] },
+      "attacks": { "ARCHER": 1.8, "CAVALRY": 0.9, "SIEGE": 1.2 },
+      "defenses": { "ARCHER": 1.8, "CAVALRY": 1.2, "SIEGE": 0.8 },
+      "description": ["기름 먹인 등나무 갑옷을 입은 남만 보병입니다.", "화살 피해를 무시하지만 불에 매우 취약합니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["남만", "건녕", "운남"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1113": {
+      "id": 1113,
+      "type": "FOOTMAN",
+      "name": "산월병",
+      "cost": { "gold": 10, "rice": 10 },
+      "stats": { "offense": 145, "defense": 90, "defenseRange": 90, "attackRange": 7, "speed": 9, "avoid": 25, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": ["산월", "시상", "남해"] },
+      "attacks": { "FOOTMAN": 1.2, "ARCHER": 1.3, "CAVALRY": 0.7, "SIEGE": 1.3 },
+      "defenses": { "FOOTMAN": 0.9, "ARCHER": 1.0, "CAVALRY": 0.8, "SIEGE": 0.8 },
+      "description": ["강동 산지의 민첩한 전사들입니다.", "공격 속도가 매우 빠릅니다."],
+      "constraints": [{ "type": "reqCities", "value": ["산월", "시상", "남해"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1114": {
+      "id": 1114,
+      "type": "FOOTMAN",
+      "name": "왜구",
+      "cost": { "gold": 9, "rice": 9 },
+      "stats": { "offense": 155, "defense": 60, "defenseRange": 60, "attackRange": 7, "speed": 8, "avoid": 15, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": ["왜", "탐라"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.2, "CAVALRY": 0.6, "SIEGE": 1.2 },
+      "defenses": { "FOOTMAN": 0.8, "ARCHER": 0.6, "CAVALRY": 0.6, "SIEGE": 0.8 },
+      "description": ["바다를 건너온 이방인입니다.", "방어구는 빈약하지만 검술이 날카롭습니다."],
+      "constraints": [{ "type": "reqCities", "value": ["왜", "탐라"] }],
+      "skills": { "init": null, "phase": null, "actions": null }
+    },
+    "1115": {
+      "id": 1115,
+      "type": "FOOTMAN",
+      "name": "가야철검수",
+      "cost": { "gold": 13, "rice": 11 },
+      "stats": { "offense": 135, "defense": 175, "defenseRange": 175, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["금관"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.2, "CAVALRY": 0.8, "SIEGE": 1.1 },
+      "defenses": { "FOOTMAN": 1.2, "ARCHER": 1.3, "CAVALRY": 1.0, "SIEGE": 0.8 },
+      "description": ["철의 왕국 가야의 판갑을 입은 정예 검사입니다.", "우수한 철제 장비로 방어력이 높습니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["금관"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
+    },
+    "1116": {
+      "id": 1116,
+      "type": "FOOTMAN",
+      "name": "삼한장창병",
+      "cost": { "gold": 9, "rice": 9 },
+      "stats": { "offense": 100, "defense": 110, "defenseRange": 110, "attackRange": 8, "speed": 7, "avoid": 5, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": ["계림", "위례", "사비", "예"] },
+      "attacks": { "FOOTMAN": 1.0, "ARCHER": 1.0, "CAVALRY": 1.4, "SIEGE": 1.0 },
+      "defenses": { "FOOTMAN": 0.9, "ARCHER": 0.9, "CAVALRY": 1.2, "SIEGE": 0.8 },
+      "description": ["한반도 남부의 토착 보병입니다.", "긴 창을 사용하여 기병을 효과적으로 상대합니다."],
+      "constraints": [{ "type": "reqCities", "value": ["계림", "위례", "사비", "예"] }],
+      "skills": { "init": null, "phase": ["che_방어력증가5p"], "actions": null }
     },
     "1200": {
       "id": 1200,
       "type": "ARCHER",
       "name": "궁병",
-      "cost": {
-        "gold": 10,
-        "rice": 10
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 0
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "CAVALRY": 1.2,
-        "FOOTMAN": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "CAVALRY": 0.8,
-        "FOOTMAN": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "표준적인 궁병입니다.",
-        "궁병은 선제사격을 하는 병종입니다."
-      ],
+      "cost": { "gold": 9, "rice": 9 },
+      "stats": { "offense": 90, "defense": 70, "defenseRange": 70, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
+      "attacks": { "CAVALRY": 1.1, "FOOTMAN": 0.9, "SIEGE": 1.1 },
+      "defenses": { "CAVALRY": 0.6, "FOOTMAN": 1.0, "SIEGE": 0.8 },
+      "description": ["표준적인 원거리 병과입니다.", "곡사 사격이 가능합니다."],
       "constraints": [],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": null
-      }
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1201": {
       "id": 1201,
       "type": "ARCHER",
-      "name": "궁기병",
-      "cost": {
-        "gold": 11,
-        "rice": 12
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 8,
-        "speed": 8,
-        "avoid": 20,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "동이"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "CAVALRY": 1.2,
-        "FOOTMAN": 0.9,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "CAVALRY": 0.8,
-        "FOOTMAN": 1.1,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "말을 타고 잘 피합니다. 특히 다른 궁병보다 보병에게 조금 더 강합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "동이"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": null
-      }
+      "name": "노병",
+      "cost": { "gold": 12, "rice": 10 },
+      "stats": { "offense": 125, "defense": 90, "defenseRange": 90, "attackRange": 7, "speed": 6, "avoid": 5, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
+      "attacks": { "CAVALRY": 1.3, "FOOTMAN": 1.2, "SIEGE": 1.2 },
+      "defenses": { "CAVALRY": 0.7, "FOOTMAN": 1.1, "SIEGE": 0.8 },
+      "description": ["쇠뇌를 사용하는 병사입니다.", "관통력이 좋아 중장갑 적에게 효과적입니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1202": {
       "id": 1202,
       "type": "ARCHER",
-      "name": "연노병",
-      "cost": {
-        "gold": 12,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 8,
-        "speed": 8,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "서촉"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "CAVALRY": 1.2,
-        "FOOTMAN": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "CAVALRY": 0.8,
-        "FOOTMAN": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "화살을 연사합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "서촉"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": null
-      }
+      "name": "백마의종",
+      "cost": { "gold": 16, "rice": 16 },
+      "stats": { "offense": 140, "defense": 110, "defenseRange": 110, "attackRange": 8, "speed": 10, "avoid": 30, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["북평", "계"] },
+      "attacks": { "CAVALRY": 1.2, "FOOTMAN": 1.3, "SIEGE": 1.2 },
+      "defenses": { "CAVALRY": 1.0, "FOOTMAN": 1.1, "SIEGE": 0.8 },
+      "description": ["백마를 탄 정예 기마궁수입니다.", "교차 사격 전술과 뛰어난 기동력을 자랑합니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["북평", "계"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1203": {
       "id": 1203,
       "type": "ARCHER",
-      "name": "강궁병",
-      "cost": {
-        "gold": 13,
-        "rice": 13
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 150,
-        "defenseRange": 150,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "양양"
-        ]
-      },
-      "attacks": {
-        "CAVALRY": 1.2,
-        "FOOTMAN": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "CAVALRY": 0.8,
-        "FOOTMAN": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "강건한 궁병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "양양"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": null
-      }
+      "name": "연노병",
+      "cost": { "gold": 13, "rice": 11 },
+      "stats": { "offense": 160, "defense": 80, "defenseRange": 80, "attackRange": 6, "speed": 6, "avoid": 5, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["성도", "한중"] },
+      "attacks": { "CAVALRY": 1.1, "FOOTMAN": 1.4, "SIEGE": 1.2 },
+      "defenses": { "CAVALRY": 0.6, "FOOTMAN": 1.0, "SIEGE": 0.8 },
+      "description": ["연발 쇠뇌인 원융노를 사용하는 병사입니다.", "사거리는 짧으나 화력이 막강합니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["성도", "한중"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1204": {
       "id": 1204,
       "type": "ARCHER",
-      "name": "석궁병",
-      "cost": {
-        "gold": 13,
-        "rice": 13
-      },
-      "stats": {
-        "offense": 200,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "건업"
-        ]
-      },
-      "attacks": {
-        "CAVALRY": 1.2,
-        "FOOTMAN": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "CAVALRY": 0.8,
-        "FOOTMAN": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "강력한 화살을 쏩니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "건업"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": null
-      }
+      "name": "호사",
+      "cost": { "gold": 15, "rice": 14 },
+      "stats": { "offense": 150, "defense": 130, "defenseRange": 130, "attackRange": 8, "speed": 7, "avoid": 10, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["낙양", "장안"] },
+      "attacks": { "CAVALRY": 1.3, "FOOTMAN": 1.3, "SIEGE": 1.2 },
+      "defenses": { "CAVALRY": 0.9, "FOOTMAN": 1.2, "SIEGE": 0.9 },
+      "description": ["황실 북군 오교의 정예 궁병입니다.", "뛰어난 사격술과 규율을 갖추었습니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["낙양", "장안"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
+    },
+    "1205": {
+      "id": 1205,
+      "type": "ARCHER",
+      "name": "맥궁병",
+      "cost": { "gold": 12, "rice": 11 },
+      "stats": { "offense": 140, "defense": 90, "defenseRange": 90, "attackRange": 9, "speed": 7, "avoid": 10, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["졸본", "백랑", "예"] },
+      "attacks": { "CAVALRY": 1.2, "FOOTMAN": 1.1, "SIEGE": 1.2 },
+      "defenses": { "CAVALRY": 0.8, "FOOTMAN": 1.1, "SIEGE": 0.8 },
+      "description": ["동방의 강력한 맥궁을 사용합니다.", "다른 궁병보다 사거리가 길고 관통력이 좋습니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["졸본", "백랑", "예"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
+    },
+    "1206": {
+      "id": 1206,
+      "type": "ARCHER",
+      "name": "읍루독궁",
+      "cost": { "gold": 11, "rice": 11 },
+      "stats": { "offense": 70, "defense": 60, "defenseRange": 60, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 40, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["읍루", "옥저"] },
+      "attacks": { "CAVALRY": 1.0, "FOOTMAN": 1.2, "SIEGE": 1.0 },
+      "defenses": { "CAVALRY": 0.6, "FOOTMAN": 1.0, "SIEGE": 0.8 },
+      "description": ["읍루족의 독화살을 사용하는 궁병입니다.", "적에게 치명적인 중독 피해를 입힙니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["읍루", "옥저"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
+    },
+    "1207": {
+      "id": 1207,
+      "type": "ARCHER",
+      "name": "선등사",
+      "cost": { "gold": 15, "rice": 14 },
+      "stats": { "offense": 150, "defense": 140, "defenseRange": 140, "attackRange": 7, "speed": 6, "avoid": 10, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["업", "남피", "양평"] },
+      "attacks": { "CAVALRY": 1.5, "FOOTMAN": 1.2, "SIEGE": 1.2 },
+      "defenses": { "CAVALRY": 1.2, "FOOTMAN": 1.2, "SIEGE": 0.9 },
+      "description": ["강력한 쇠뇌와 방패를 든 정예병입니다.", "기마궁수의 천적입니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["업", "남피", "양평"] }],
+      "skills": { "init": null, "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1300": {
       "id": 1300,
       "type": "CAVALRY",
       "name": "기병",
-      "cost": {
-        "gold": 11,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 0
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "표준적인 기병입니다.",
-        "기병은 공격특화입니다."
-      ],
+      "cost": { "gold": 11, "rice": 11 },
+      "stats": { "offense": 130, "defense": 90, "defenseRange": 90, "attackRange": 7, "speed": 9, "avoid": 10, "magic": 0, "tech": 0 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.5, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 0.7, "ARCHER": 1.1, "SIEGE": 0.8 },
+      "description": ["표준적인 기병입니다.", "돌격력이 높으나 장기전에는 취약합니다."],
       "constraints": [],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1301": {
       "id": 1301,
       "type": "CAVALRY",
-      "name": "백마병",
-      "cost": {
-        "gold": 12,
-        "rice": 13
-      },
-      "stats": {
-        "offense": 200,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "하북"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "백마의 위용을 보여줍니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "하북"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "호표기",
+      "cost": { "gold": 20, "rice": 18 },
+      "stats": { "offense": 210, "defense": 200, "defenseRange": 200, "attackRange": 7, "speed": 8, "avoid": 10, "magic": 0, "tech": 3000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["허창", "초"] },
+      "attacks": { "FOOTMAN": 1.5, "ARCHER": 1.5, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 1.3, "ARCHER": 1.5, "SIEGE": 1.0 },
+      "description": ["매서운 정예 기병입니다.", "공격력과 방어력 모두 최상급입니다."],
+      "constraints": [{ "type": "reqTech", "value": 3000 }, { "type": "reqCities", "value": ["허창", "초"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1302": {
       "id": 1302,
       "type": "CAVALRY",
-      "name": "중장기병",
-      "cost": {
-        "gold": 13,
-        "rice": 12
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 150,
-        "defenseRange": 150,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "서북"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "갑주를 두른 기병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "서북"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "오환돌기",
+      "cost": { "gold": 14, "rice": 14 },
+      "stats": { "offense": 165, "defense": 110, "defenseRange": 110, "attackRange": 7, "speed": 10, "avoid": 20, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["오환", "북평", "양평"] },
+      "attacks": { "FOOTMAN": 1.4, "ARCHER": 1.6, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 0.9, "ARCHER": 1.1, "SIEGE": 0.8 },
+      "description": ["오환족 정예 돌격 기병입니다.", "매서운 기세로 적을 몰아붙입니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["오환", "북평", "양평"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1303": {
       "id": 1303,
       "type": "CAVALRY",
-      "name": "돌격기병",
-      "cost": {
-        "gold": 13,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 200,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 8,
-        "speed": 8,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "흉노"
-        ]
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "저돌적으로 공격합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "흉노"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "비웅군",
+      "cost": { "gold": 19, "rice": 17 },
+      "stats": { "offense": 190, "defense": 180, "defenseRange": 180, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["장안", "서량"] },
+      "attacks": { "FOOTMAN": 1.4, "ARCHER": 1.4, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 1.2, "ARCHER": 1.3, "SIEGE": 0.9 },
+      "description": ["곰 깃발을 사용하는 비밀 부대입니다.", "잔혹하고 파괴적인 돌격력을 가졌습니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["장안", "서량"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1304": {
       "id": 1304,
       "type": "CAVALRY",
-      "name": "철기병",
-      "cost": {
-        "gold": 11,
-        "rice": 13
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 250,
-        "defenseRange": 250,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "강"
-        ]
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "철갑을 두른 기병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "강"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "서량철기",
+      "cost": { "gold": 16, "rice": 16 },
+      "stats": { "offense": 180, "defense": 170, "defenseRange": 170, "attackRange": 7, "speed": 7, "avoid": 5, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["서량", "천수", "안정", "무위"] },
+      "attacks": { "FOOTMAN": 1.5, "ARCHER": 1.3, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 1.1, "ARCHER": 1.4, "SIEGE": 0.8 },
+      "description": ["서북의 중장 기병입니다.", "말과 병사 모두 철갑을 두르고 적진을 유린합니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["서량", "천수", "안정", "무위"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1305": {
       "id": 1305,
       "type": "CAVALRY",
-      "name": "수렵기병",
-      "cost": {
-        "gold": 12,
-        "rice": 12
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 8,
-        "speed": 8,
-        "avoid": 15,
-        "magic": 0,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "산월"
-        ]
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "날쎄고 빠른 기병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "산월"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "흉노기병",
+      "cost": { "gold": 12, "rice": 13 },
+      "stats": { "offense": 145, "defense": 95, "defenseRange": 95, "attackRange": 7, "speed": 10, "avoid": 20, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["흉노", "삭방"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.5, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 0.8, "ARCHER": 1.0, "SIEGE": 0.8 },
+      "description": ["초원의 유목 기병입니다.", "압도적인 기동력으로 전장을 누빕니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["흉노", "삭방"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1306": {
       "id": 1306,
       "type": "CAVALRY",
-      "name": "맹수병",
-      "cost": {
-        "gold": 16,
-        "rice": 16
-      },
-      "stats": {
-        "offense": 250,
-        "defense": 175,
-        "defenseRange": 175,
-        "attackRange": 6,
-        "speed": 6,
-        "avoid": 0,
-        "magic": 0,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "남만"
-        ]
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "어느 누구보다 강력합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "남만"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "남만상병",
+      "cost": { "gold": 25, "rice": 25 },
+      "stats": { "offense": 250, "defense": 150, "defenseRange": 150, "attackRange": 6, "speed": 5, "avoid": 0, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["남만", "건녕"] },
+      "attacks": { "FOOTMAN": 1.8, "ARCHER": 1.0, "SIEGE": 2.5 },
+      "defenses": { "FOOTMAN": 1.5, "ARCHER": 0.8, "SIEGE": 0.4 },
+      "description": ["거대한 전쟁 코끼리 부대입니다.", "적진을 짓밟아 공포를 심지만 불에 매우 취약합니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["남만", "건녕"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1307": {
       "id": 1307,
       "type": "CAVALRY",
-      "name": "호표기병",
-      "cost": {
-        "gold": 14,
-        "rice": 14
-      },
-      "stats": {
-        "offense": 200,
-        "defense": 150,
-        "defenseRange": 150,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "허창"
-        ]
-      },
-      "attacks": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 0.8,
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 1.2,
-        "SIEGE": 0.8
-      },
-      "description": [
-        "정예 기병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "허창"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": [
-          "che_기병병종전투"
-        ],
-        "actions": null
-      }
+      "name": "선비기마대",
+      "cost": { "gold": 13, "rice": 13 },
+      "stats": { "offense": 150, "defense": 100, "defenseRange": 100, "attackRange": 7, "speed": 9, "avoid": 15, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["선비"] },
+      "attacks": { "FOOTMAN": 1.3, "ARCHER": 1.4, "SIEGE": 1.4 },
+      "defenses": { "FOOTMAN": 0.8, "ARCHER": 1.1, "SIEGE": 0.8 },
+      "description": ["북방 선비족의 기마 부대입니다.", "균형 잡힌 능력치를 보유했습니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["선비"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
+    },
+    "1308": {
+      "id": 1308,
+      "type": "CAVALRY",
+      "name": "부여기병",
+      "cost": { "gold": 13, "rice": 13 },
+      "stats": { "offense": 155, "defense": 120, "defenseRange": 120, "attackRange": 7, "speed": 9, "avoid": 10, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["부여"] },
+      "attacks": { "FOOTMAN": 1.4, "ARCHER": 1.3, "SIEGE": 1.4 },
+      "defenses": { "FOOTMAN": 0.9, "ARCHER": 1.1, "SIEGE": 0.8 },
+      "description": ["북방의 강국 부여의 기병입니다.", "말이 크고 힘이 좋아 돌파력이 우수합니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["부여"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
+    },
+    "1309": {
+      "id": 1309,
+      "type": "CAVALRY",
+      "name": "강족약탈자",
+      "cost": { "gold": 11, "rice": 12 },
+      "stats": { "offense": 135, "defense": 110, "defenseRange": 110, "attackRange": 7, "speed": 9, "avoid": 10, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["강", "서량", "무위"] },
+      "attacks": { "FOOTMAN": 1.2, "ARCHER": 1.4, "SIEGE": 1.5 },
+      "defenses": { "FOOTMAN": 0.9, "ARCHER": 1.0, "SIEGE": 0.8 },
+      "description": ["피로를 모르는 강족 기병입니다.", "오랜 전투에도 지치지 않는 지구력을 가졌습니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["강", "서량", "무위"] }],
+      "skills": { "init": null, "phase": ["che_기병병종전투"], "actions": null }
     },
     "1400": {
       "id": 1400,
       "type": "WIZARD",
-      "name": "귀병",
-      "cost": {
-        "gold": 9,
-        "rice": 9
-      },
-      "stats": {
-        "offense": 80,
-        "defense": 80,
-        "defenseRange": 80,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0.5,
-        "tech": 0
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "계략을 사용하는 병종입니다."
-      ],
-      "constraints": [],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
+      "name": "책사",
+      "cost": { "gold": 10, "rice": 8 },
+      "stats": { "offense": 50, "defense": 50, "defenseRange": 50, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 10, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": [] },
+      "attacks": { "SIEGE": 1.2 },
+      "defenses": { "SIEGE": 0.8 },
+      "description": ["계략을 사용하여 적을 혼란시키는 참모입니다.", "전투력은 약하므로 호위가 필요합니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }],
+      "skills": { "init": null, "phase": null, "actions": null }
     },
     "1401": {
       "id": 1401,
       "type": "WIZARD",
-      "name": "신귀병",
-      "cost": {
-        "gold": 10,
-        "rice": 10
-      },
-      "stats": {
-        "offense": 80,
-        "defense": 80,
-        "defenseRange": 80,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 20,
-        "magic": 0.6,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [
-          "초"
-        ],
-        "cities": []
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "신출귀몰한 귀병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqRegions",
-          "value": [
-            "초"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
+      "name": "태평도인",
+      "cost": { "gold": 9, "rice": 9 },
+      "stats": { "offense": 70, "defense": 60, "defenseRange": 60, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 20, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["업", "평원"] },
+      "attacks": { "SIEGE": 1.2 },
+      "defenses": { "SIEGE": 0.8 },
+      "description": ["황건적의 정신적 지주입니다.", "아군의 사기를 높이고 적을 혼란시킵니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["업", "평원"] }],
+      "skills": { "init": null, "phase": null, "actions": null }
     },
     "1402": {
       "id": 1402,
       "type": "WIZARD",
-      "name": "백귀병",
-      "cost": {
-        "gold": 9,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 80,
-        "defense": 130,
-        "defenseRange": 130,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0.6,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "오환"
-        ]
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "저렴하고 튼튼합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "오환"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
+      "name": "오두미도사",
+      "cost": { "gold": 11, "rice": 11 },
+      "stats": { "offense": 90, "defense": 80, "defenseRange": 80, "attackRange": 7, "speed": 7, "avoid": 10, "magic": 15, "tech": 2000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["한중"] },
+      "attacks": { "SIEGE": 1.2 },
+      "defenses": { "SIEGE": 0.8 },
+      "description": ["장로를 따르는 광신적인 전사입니다.", "두려움을 모르고 적에게 돌격합니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqCities", "value": ["한중"] }],
+      "skills": { "init": null, "phase": null, "actions": null }
     },
     "1403": {
       "id": 1403,
       "type": "WIZARD",
-      "name": "흑귀병",
-      "cost": {
-        "gold": 11,
-        "rice": 9
-      },
-      "stats": {
-        "offense": 130,
-        "defense": 80,
-        "defenseRange": 80,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 5,
-        "magic": 0.6,
-        "tech": 2000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "왜"
-        ]
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "저렴하고 강력합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 2000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "왜"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
-    },
-    "1404": {
-      "id": 1404,
-      "type": "WIZARD",
-      "name": "악귀병",
-      "cost": {
-        "gold": 12,
-        "rice": 12
-      },
-      "stats": {
-        "offense": 130,
-        "defense": 130,
-        "defenseRange": 130,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 0,
-        "magic": 0.6,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "장안"
-        ]
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "백병전에도 능숙합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "장안"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
-    },
-    "1405": {
-      "id": 1405,
-      "type": "WIZARD",
-      "name": "남귀병",
-      "cost": {
-        "gold": 8,
-        "rice": 8
-      },
-      "stats": {
-        "offense": 60,
-        "defense": 60,
-        "defenseRange": 60,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 10,
-        "magic": 0.8,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "전투를 포기하고 계략에 몰두합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
-    },
-    "1406": {
-      "id": 1406,
-      "type": "WIZARD",
-      "name": "황귀병",
-      "cost": {
-        "gold": 13,
-        "rice": 10
-      },
-      "stats": {
-        "offense": 110,
-        "defense": 110,
-        "defenseRange": 110,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 0,
-        "magic": 0.8,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "낙양"
-        ]
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "고도로 훈련된 귀병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "낙양"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
-    },
-    "1407": {
-      "id": 1407,
-      "type": "WIZARD",
-      "name": "천귀병",
-      "cost": {
-        "gold": 11,
-        "rice": 12
-      },
-      "stats": {
-        "offense": 80,
-        "defense": 130,
-        "defenseRange": 130,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 15,
-        "magic": 0.6,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "성도"
-        ]
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "갑주를 두른 귀병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "성도"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
-    },
-    "1408": {
-      "id": 1408,
-      "type": "WIZARD",
-      "name": "마귀병",
-      "cost": {
-        "gold": 12,
-        "rice": 11
-      },
-      "stats": {
-        "offense": 130,
-        "defense": 80,
-        "defenseRange": 80,
-        "attackRange": 7,
-        "speed": 7,
-        "avoid": 15,
-        "magic": 0.6,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "업"
-        ]
-      },
-      "attacks": {
-        "SIEGE": 1.2
-      },
-      "defenses": {
-        "SIEGE": 0.8
-      },
-      "description": [
-        "날카로운 무기를 가진 귀병입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "업"
-          ]
-        }
-      ],
-      "skills": {
-        "init": null,
-        "phase": null,
-        "actions": null
-      }
+      "name": "독전주술사",
+      "cost": { "gold": 10, "rice": 10 },
+      "stats": { "offense": 60, "defense": 50, "defenseRange": 50, "attackRange": 6, "speed": 7, "avoid": 20, "magic": 30, "tech": 1000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["남만", "운남"] },
+      "attacks": { "SIEGE": 1.2 },
+      "defenses": { "SIEGE": 0.8 },
+      "description": ["독과 저주를 다루는 남만의 주술사입니다.", "적에게 지속적인 피해를 입힙니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqCities", "value": ["남만", "운남"] }],
+      "skills": { "init": null, "phase": null, "actions": null }
     },
     "1500": {
       "id": 1500,
       "type": "SIEGE",
-      "name": "정란",
-      "cost": {
-        "gold": 14,
-        "rice": 5
-      },
-      "stats": {
-        "offense": 100,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 6,
-        "speed": 6,
-        "avoid": 0,
-        "magic": 0,
-        "tech": 0
-      },
-      "requirements": {
-        "year": 3,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "1106": 1.112,
-        "FOOTMAN": 1.25,
-        "ARCHER": 1.25,
-        "CAVALRY": 1.25,
-        "WIZARD": 1.25,
-        "CASTLE": 1.8
-      },
-      "defenses": {
-        "1106": 1.067,
-        "FOOTMAN": 1.2,
-        "ARCHER": 1.2,
-        "CAVALRY": 1.2,
-        "WIZARD": 1.2
-      },
-      "description": [
-        "높은 구조물 위에서 공격합니다. 첫 공격은 성벽을 향합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqMinRelYear",
-          "value": 3
-        }
-      ],
-      "skills": {
-        "init": [
-          "che_성벽부상무효"
-        ],
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": [
-          "che_성벽선제"
-        ]
-      }
+      "name": "벽력거",
+      "cost": { "gold": 25, "rice": 5 },
+      "stats": { "offense": 200, "defense": 30, "defenseRange": 30, "attackRange": 9, "speed": 3, "avoid": 0, "magic": 0, "tech": 2000 },
+      "requirements": { "year": 3, "regions": [], "cities": [] },
+      "attacks": { "CASTLE": 2.5, "FOOTMAN": 1.2, "ARCHER": 1.2, "CAVALRY": 1.2, "WIZARD": 1.2 },
+      "defenses": { "FOOTMAN": 0.2, "ARCHER": 0.2, "CAVALRY": 0.1, "WIZARD": 0.5 },
+      "description": ["거대한 돌을 날려 성벽을 무너뜨리는 투석기입니다.", "원거리 병력 중 가장 긴 사거리를 가집니다."],
+      "constraints": [{ "type": "reqTech", "value": 2000 }, { "type": "reqMinRelYear", "value": 3 }],
+      "skills": { "init": ["che_성벽부상무효"], "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": ["che_성벽선제"] }
     },
     "1501": {
       "id": 1501,
       "type": "SIEGE",
       "name": "충차",
-      "cost": {
-        "gold": 18,
-        "rice": 5
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 6,
-        "speed": 6,
-        "avoid": 0,
-        "magic": 0,
-        "tech": 1000
-      },
-      "requirements": {
-        "year": 3,
-        "regions": [],
-        "cities": []
-      },
-      "attacks": {
-        "FOOTMAN": 0.8,
-        "ARCHER": 0.8,
-        "CAVALRY": 0.8,
-        "WIZARD": 0.8,
-        "CASTLE": 2.4
-      },
-      "defenses": {
-        "FOOTMAN": 1.2,
-        "ARCHER": 1.2,
-        "CAVALRY": 1.2,
-        "WIZARD": 1.2
-      },
-      "description": [
-        "엄청난 위력으로 성벽을 부수어버립니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 1000
-        },
-        {
-          "type": "reqMinRelYear",
-          "value": 3
-        }
-      ],
-      "skills": {
-        "init": [
-          "che_성벽부상무효"
-        ],
-        "phase": null,
-        "actions": null
-      }
+      "cost": { "gold": 18, "rice": 5 },
+      "stats": { "offense": 220, "defense": 150, "defenseRange": 150, "attackRange": 1, "speed": 4, "avoid": 0, "magic": 0, "tech": 1000 },
+      "requirements": { "year": 3, "regions": [], "cities": [] },
+      "attacks": { "CASTLE": 3.0, "FOOTMAN": 0.8, "ARCHER": 0.8, "CAVALRY": 0.8, "WIZARD": 0.8 },
+      "defenses": { "FOOTMAN": 1.0, "ARCHER": 1.8, "CAVALRY": 1.0, "WIZARD": 1.0 },
+      "description": ["성문을 부수기 위해 설계된 공성 병기입니다.", "두꺼운 지붕이 있어 화살 공격을 잘 막아냅니다."],
+      "constraints": [{ "type": "reqTech", "value": 1000 }, { "type": "reqMinRelYear", "value": 3 }],
+      "skills": { "init": ["che_성벽부상무효"], "phase": null, "actions": null }
     },
     "1502": {
       "id": 1502,
       "type": "SIEGE",
-      "name": "벽력거",
-      "cost": {
-        "gold": 20,
-        "rice": 5
-      },
-      "stats": {
-        "offense": 150,
-        "defense": 100,
-        "defenseRange": 100,
-        "attackRange": 6,
-        "speed": 6,
-        "avoid": 5,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "업"
-        ]
-      },
-      "attacks": {
-        "1106": 1.112,
-        "FOOTMAN": 1.25,
-        "ARCHER": 1.25,
-        "CAVALRY": 1.25,
-        "WIZARD": 1.25,
-        "CASTLE": 1.8
-      },
-      "defenses": {
-        "1106": 1.067,
-        "FOOTMAN": 1.2,
-        "ARCHER": 1.2,
-        "CAVALRY": 1.2,
-        "WIZARD": 1.2
-      },
-      "description": [
-        "상대에게 돌덩이를 날립니다. 첫 공격은 성벽을 향합니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "업"
-          ]
-        }
-      ],
-      "skills": {
-        "init": [
-          "che_성벽부상무효"
-        ],
-        "phase": [
-          "che_선제사격시도",
-          "che_선제사격발동"
-        ],
-        "actions": [
-          "che_성벽선제"
-        ]
-      }
+      "name": "연노거",
+      "cost": { "gold": 22, "rice": 10 },
+      "stats": { "offense": 190, "defense": 100, "defenseRange": 100, "attackRange": 7, "speed": 5, "avoid": 0, "magic": 0, "tech": 3000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["성도", "자동"] },
+      "attacks": { "FOOTMAN": 1.4, "ARCHER": 1.4, "CAVALRY": 1.2, "SIEGE": 1.2 },
+      "defenses": { "FOOTMAN": 0.8, "ARCHER": 1.2, "CAVALRY": 0.6, "SIEGE": 0.5 },
+      "description": ["수레에 실은 대형 연노입니다.", "이동하면서 빗발치는 화살을 쏠 수 있습니다."],
+      "constraints": [{ "type": "reqTech", "value": 3000 }, { "type": "reqCities", "value": ["성도", "자동"] }],
+      "skills": { "init": ["che_성벽부상무효"], "phase": ["che_선제사격시도", "che_선제사격발동"], "actions": null }
     },
     "1503": {
       "id": 1503,
       "type": "SIEGE",
-      "name": "목우",
-      "cost": {
-        "gold": 15,
-        "rice": 5
-      },
-      "stats": {
-        "offense": 50,
-        "defense": 200,
-        "defenseRange": 200,
-        "attackRange": 5,
-        "speed": 5,
-        "avoid": 0,
-        "magic": 0,
-        "tech": 3000
-      },
-      "requirements": {
-        "year": 0,
-        "regions": [],
-        "cities": [
-          "성도"
-        ]
-      },
-      "attacks": {
-        "FOOTMAN": 1,
-        "ARCHER": 1,
-        "CAVALRY": 1,
-        "WIZARD": 1,
-        "CASTLE": 1.8
-      },
-      "defenses": {
-        "1106": 1,
-        "FOOTMAN": 1,
-        "ARCHER": 1,
-        "CAVALRY": 1,
-        "WIZARD": 1
-      },
-      "description": [
-        "상대를 저지하는 특수병기입니다."
-      ],
-      "constraints": [
-        {
-          "type": "reqTech",
-          "value": 3000
-        },
-        {
-          "type": "reqCities",
-          "value": [
-            "성도"
-          ]
-        }
-      ],
-      "skills": {
-        "init": [
-          "che_성벽부상무효"
-        ],
-        "phase": [
-          "che_저지시도",
-          "che_저지발동"
-        ],
-        "actions": null
-      }
+      "name": "화수",
+      "cost": { "gold": 28, "rice": 10 },
+      "stats": { "offense": 240, "defense": 180, "defenseRange": 180, "attackRange": 4, "speed": 4, "avoid": 0, "magic": 0, "tech": 4000 },
+      "requirements": { "year": 0, "regions": [], "cities": ["성도", "남만"] },
+      "attacks": { "CASTLE": 1.5, "FOOTMAN": 2.0, "ARCHER": 2.0, "CAVALRY": 1.5, "WIZARD": 2.0 },
+      "defenses": { "FOOTMAN": 1.0, "ARCHER": 1.0, "CAVALRY": 0.8, "WIZARD": 0.8 },
+      "description": ["불을 뿜는 기계 야수입니다.", "사거리는 짧지만 전방의 모든 것을 태워버립니다."],
+      "constraints": [{ "type": "reqTech", "value": 4000 }, { "type": "reqCities", "value": ["성도", "남만"] }],
+      "skills": { "init": ["che_성벽부상무효"], "phase": null, "actions": null }
     }
   }
 }

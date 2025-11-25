@@ -2104,10 +2104,12 @@ router.post('/stratfinan', authenticate, asyncHandler(async (req, res) => {
       dipStateMap[dip.you] = { state: dip.state, term: dip.term };
     });
 
-    // 국가 목록 구성
+    // 국가 목록 구성 (PHP getAllNationStaticInfo() 정렬에 맞춘 요약 정보)
     const nationsList = allNations.map((n: any) => {
       const staticNationID = n.nation;
       const cityCnt = cityCntMap[staticNationID] || 0;
+      const gennum = n.gennum ?? n.data?.gennum ?? 0;
+      const power = n.power ?? n.data?.power ?? 0;
       let diplomacy;
       if (staticNationID === nationId) {
         diplomacy = { state: 7, term: null };
@@ -2124,6 +2126,8 @@ router.post('/stratfinan', authenticate, asyncHandler(async (req, res) => {
         name: n.name,
         color: n.color,
         cityCnt,
+        gennum,
+        power,
         diplomacy
       };
     });

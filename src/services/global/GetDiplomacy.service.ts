@@ -49,8 +49,26 @@ export class GetDiplomacyService {
             ...nationData,
             nation: nation.nation,
             name: nation.name,
-            cities: []
+            cities: [],
+            gennum: 0,
           };
+        }
+      }
+
+      // Recompute general counts per nation (live)
+      const allGenerals: any[] = await generalRepository.findByFilter({ session_id: sessionId });
+      for (const general of allGenerals) {
+        const genData: any = (general.data as any) || {};
+        const npc: number = general.npc ?? genData.npc ?? 0;
+
+        // 재야/특수 NPC(5)는 세력 장수 수에서 제외
+        if (npc === 5) {
+          continue;
+        }
+
+        const nationId: number = genData.nation || 0;
+        if (nationId && nations[nationId]) {
+          nations[nationId].gennum = (nations[nationId].gennum || 0) + 1;
         }
       }
 

@@ -20,7 +20,7 @@ router.get('/fleet/:id', authenticate, validateSession, async (req, res) => {
 
     const fleet = await Fleet.findOne({
       session_id: sessionId,
-      id: fleetId,
+      fleetId,
     });
 
     if (!fleet) {
@@ -47,10 +47,10 @@ router.get('/fleets', authenticate, validateSession, async (req, res) => {
       filter.faction = faction;
     }
     if (commanderId) {
-      filter.commanderId = parseInt(commanderId as string);
+      filter.commanderId = commanderId;
     }
 
-    const fleets = await Fleet.find(filter).sort({ id: 1 });
+    const fleets = await Fleet.find(filter).sort({ fleetId: 1 });
 
     res.json({ fleets });
   } catch (error: any) {
@@ -69,7 +69,7 @@ router.post('/fleet/update', authenticate, validateSession, async (req, res) => 
 
     const fleet = await Fleet.findOne({
       session_id: sessionId,
-      id: fleetId,
+      fleetId,
     });
 
     if (!fleet) {

@@ -7,7 +7,7 @@ import { InvestCommerceCommand } from './investCommerce';
  */
 export class CultivateFarmCommand extends InvestCommerceCommand {
   protected static cityKey = 'agri';
-  protected static statKey = 'politics'; // 농지개간은 정치 능력치 사용
+  protected static statKey = 'intel'; // PHP 원본과 동일하게 지력 사용
   protected static actionKey = '농업';
   protected static actionName = '농지 개간';
   protected static debuffFront = 0.5;

@@ -41,10 +41,26 @@ export class GetSelectNpcTokenService {
       const npcmode = gameEnv.npcmode || 0;
       const allowNpcPossess = gameEnv.allow_npc_possess || npcmode === 1 || false;
       const turnterm = gameEnv.turnterm || 300; // 초 단위
-
+ 
       console.log('[GetSelectNpcToken] npcmode:', npcmode);
       console.log('[GetSelectNpcToken] allow_npc_possess:', gameEnv.allow_npc_possess);
       console.log('[GetSelectNpcToken] allowNpcPossess:', allowNpcPossess);
+
+      // NPC 영속성/후보 수 확인용 계측
+      try {
+        const npcCountDb = await generalRepository.countByFilter({
+          session_id: sessionId,
+          npc: { $gte: 2 },
+          city: { $gt: 0 },
+        });
+        console.log('[GetSelectNpcToken] DB NPC count (npc>=2, city>0):', {
+          sessionId,
+          npcCountDb,
+        });
+      } catch (metricErr) {
+        console.warn('[GetSelectNpcToken] Failed to count NPCs for diagnostics:', metricErr);
+      }
+
 
       // allow_npc_possess가 true면 npcmode도 1로 간주
       if (!allowNpcPossess && !gameEnv.allow_npc_possess) {
@@ -147,14 +163,51 @@ export class GetSelectNpcTokenService {
         const pickMoreFromTime = new Date(tokenData.pick_more_from || '2000-01-01');
         const pickMoreSeconds = Math.max(0, Math.floor((pickMoreFromTime.getTime() - now.getTime()) / 1000));
 
+        let existingPick = tokenData.pick_result || existingToken.pick_result || {};
+
+        // 토큰은 있는데 pick_result가 비어 있는 경우: 데이터 불일치로 보고 자동 복구
+        if (!existingPick || Object.keys(existingPick).length === 0) {
+          console.warn('[GetSelectNpcToken] existing token has empty pick_result. Regenerating NPC list.', {
+            sessionId,
+            userId,
+          });
+
+          const regeneratedPick = await this.generateNpcPick(sessionId, userId, {});
+          const firstPickMoreFrom = new Date('2000-01-01T01:00:00.000Z');
+
+          await SelectNpcToken.updateOne(
+            {
+              session_id: sessionId,
+              'data.owner': userId.toString(),
+            },
+            {
+              $set: {
+                pick_result: regeneratedPick,
+                'data.valid_until': validUntil,
+                'data.pick_more_from': firstPickMoreFrom,
+                'data.pick_result': regeneratedPick,
+              },
+            },
+          );
+
+          return {
+            result: true,
+            pick: regeneratedPick,
+            pickMoreFrom: firstPickMoreFrom.toISOString(),
+            pickMoreSeconds: 0,
+            validUntil: validUntil.toISOString(),
+          };
+        }
+
         return {
           result: true,
-          pick: tokenData.pick_result || {},
+          pick: existingPick,
           pickMoreFrom: tokenData.pick_more_from,
           pickMoreSeconds,
-          validUntil: tokenData.valid_until
+          validUntil: tokenData.valid_until,
         };
       }
+
 
       // 새로 생성 - 처음에는 바로 다시 뽑기 가능
       const pickResult = await this.generateNpcPick(sessionId, userId, {});
@@ -201,13 +254,17 @@ export class GetSelectNpcTokenService {
       // NPC 장수 목록 조회
       // - 기존 구현은 npc: 2 (최상위 필드)만 보고 있었는데,
       //   실제 데이터는 data.npc에 저장되는 경우가 많으므로 둘 다 지원한다.
-      const npcGenerals = await generalRepository.findByFilter({
-        session_id: sessionId,
-        $or: [
-          { npc: 2 },
-          { 'data.npc': { $gte: 2 } },
-        ],
-      }).limit(100);
+      // DB에서부터 city > 0인 등장 가능한 NPC만 조회
+      const npcGenerals = await generalRepository
+        .findByFilter({
+          session_id: sessionId,
+          $or: [
+            { npc: 2 },
+            { 'data.npc': { $gte: 2 } },
+          ],
+        })
+        .find({ city: { $gt: 0 } })
+        .limit(500);
 
 
     // 다른 사용자가 예약한 NPC 제외
@@ -228,15 +285,31 @@ export class GetSelectNpcTokenService {
     }
 
     // 예약되지 않은 NPC만 선택 + 도시가 0인 NPC 제외 (시나리오에 등장하지 않음)
-    const availableNpcs = npcGenerals.filter((gen: any) => {
+    let availableNpcs = npcGenerals.filter((gen: any) => {
       const genNo = gen.no || gen.data?.no;
       const genCity = gen.city || gen.data?.city;
       return genNo && genCity && genCity > 0 && !reservedNpcs.has(genNo) && !keepPick[genNo];
     });
 
+    console.log('[GetSelectNpcToken] NPC candidates after initial filtering (city>0):', {
+      sessionId,
+      totalNpcGenerals: npcGenerals.length,
+      reservedNpcCount: reservedNpcs.size,
+      availableNpcCount: availableNpcs.length,
+    });
+
+    if (availableNpcs.length === 0) {
+      console.warn('[GetSelectNpcToken] No available NPCs with city>0. NPC selection is disabled until scenario/session data is fixed.', {
+        sessionId,
+        totalNpcGenerals: npcGenerals.length,
+      });
+      throw new Error('사용 가능한 NPC가 없습니다. 시나리오 또는 세션 설정을 확인해주세요.');
+    }
+ 
     // 5개 선택 (가중치 기반)
     const candidates: any = {};
     const weights: Record<number, number> = {};
+
 
     for (const npc of availableNpcs) {
       const npcData = npc.data || npc;

@@ -74,7 +74,10 @@ async function processTurns() {
         } else {
           // 일반 게임 세션 처리
           console.log(`[${new Date().toISOString()}] ⚙️ Processing session: ${sessionId}`);
-          const result = await ExecuteEngineService.execute({ session_id: sessionId });
+          const result = await ExecuteEngineService.execute({ 
+            session_id: sessionId,
+            singleTurn: true  // 한 턴에 하나씩만 처리
+          });
           
           if (result.updated) {
             console.log(`[${new Date().toISOString()}] ✅ Turn processed for ${sessionId}`, {
@@ -286,12 +289,24 @@ async function processNPCCommands() {
 
       try {
         const { NPCAutoCommandService } = await import('./services/ai/NPCAutoCommand.service');
+        
+        // 장수턴 자동 등록
         const result = await NPCAutoCommandService.assignCommandsToAllNPCs(sessionId, gameEnv);
 
         if (result.count > 0) {
           logger.debug(`NPC commands assigned for session ${sessionId}`, {
             assigned: result.count,
             errors: result.errors
+          });
+        }
+        
+        // 국가턴 자동 등록 (NPC 군주)
+        const nationResult = await NPCAutoCommandService.assignNationTurnsToAllNPCs(sessionId, gameEnv);
+        
+        if (nationResult.count > 0) {
+          logger.debug(`NPC nation turns assigned for session ${sessionId}`, {
+            assigned: nationResult.count,
+            errors: nationResult.errors
           });
         }
       } catch (error: any) {

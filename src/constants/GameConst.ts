@@ -215,6 +215,41 @@ export class GameConst {
 
   // Minimum gold required for betting
   static readonly minGoldRequiredWhenBetting = 1000;
+
+  // NPC AI constants (PHP GeneralAI constants)
+  static readonly defaultStatNPCMax = 80;      // NPC 최대 능력치 기본값
+  static readonly chiefStatMin = 60;           // 수뇌 최소 능력치
+  static readonly availableNationType = ['왕', '공', '후', '백', '군', '상', '무', '령'];  // 국가 타입
+
+  // NPC AI Mode constants (점진적 롤아웃용)
+  // - 'disabled': AI 비활성화 (기본값)
+  // - 'shadow': AI 결정만 로깅, 실제 적용 안함 (테스트용)
+  // - 'partial': npc >= 3 (명장급)만 AI 사용
+  // - 'full': 모든 NPC에 AI 사용
+  static readonly NPC_AI_MODE = {
+    DISABLED: 'disabled',
+    SHADOW: 'shadow',      // 로깅만 (PHP와 비교용)
+    PARTIAL: 'partial',    // 명장급 이상만
+    FULL: 'full'           // 모든 NPC
+  } as const;
+
+  // NPC 타입별 설명
+  static readonly NPC_TYPE = {
+    PLAYER: 0,             // 일반 플레이어
+    ORIGINAL_CHAR: 1,      // 오리지널 캐릭터 (유저 플레이)
+    NPC_BASIC: 2,          // 기본 NPC
+    NPC_FAMOUS: 3,         // 명장 NPC
+    NPC_LEGENDARY: 4,      // 전설급 NPC
+    NPC_TROOP_LEADER: 5    // 부대장 NPC
+  } as const;
+
+  // AI 난이도별 정책 값
+  static readonly AI_DIFFICULTY = {
+    EASY: 'easy',
+    NORMAL: 'normal',
+    HARD: 'hard',
+    EXPERT: 'expert'
+  } as const;
 }
 
 function loadAllItemsFromScenario(): Record<string, Record<string, number>> {

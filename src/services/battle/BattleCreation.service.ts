@@ -4,7 +4,9 @@ import { battleMapTemplateRepository } from '../../repositories/battle.repositor
 import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
+import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { nanoid } from 'nanoid';
+
 
 export interface CreateBattleParams {
   sessionId: string;
@@ -324,22 +326,70 @@ export class BattleCreationService {
       nation: nationId,
       city: cityId,
       crew: { $gt: 0 }
-    }, 'no name crew crewtype leadership strength intel');
+    }, 'no name crew crewtype leadership strength intel train atmos data');
 
-    const totalCrew = generals.reduce((sum, gen) => sum + ((gen as any).crew || 0), 0);
+    const resultGenerals: Array<{
+      generalId: number;
+      name: string;
+      crew: number;
+      crewType: number;
+      leadership: number;
+      strength: number;
+      intel: number;
+      train: number;
+      atmos: number;
+    }> = [];
+
+    for (const gen of generals as any[]) {
+      const stacks = await unitStackRepository.findByOwner(sessionId, 'general', gen.no);
+      let totalTroops = 0;
+      let weightedTrain = 0;
+      let weightedMorale = 0;
+
+      for (const stack of stacks as any[]) {
+        const troops = (stack.hp ?? ((stack.unit_size ?? 100) * (stack.stack_count ?? 0))) as number;
+        if (!Number.isFinite(troops) || troops <= 0) continue;
+        totalTroops += troops;
+        const stackTrain = typeof stack.train === 'number' ? stack.train : 0;
+        const stackMorale = typeof stack.morale === 'number' ? stack.morale : 0;
+        weightedTrain += stackTrain * troops;
+        weightedMorale += stackMorale * troops;
+      }
+
+      const rawCrew = gen.crew ?? gen.data?.crew ?? 0;
+      const fallbackCrew = typeof rawCrew === 'number' && Number.isFinite(rawCrew) ? rawCrew : 0;
+      const crew = totalTroops > 0 ? totalTroops : Math.max(0, fallbackCrew);
+
+      const baseTrain = gen.train ?? gen.data?.train ?? 0;
+      const baseAtmos = gen.atmos ?? gen.data?.atmos ?? 50;
+
+      const train = totalTroops > 0
+        ? Math.round(weightedTrain / totalTroops)
+        : baseTrain;
+      const atmos = totalTroops > 0
+        ? Math.round(weightedMorale / totalTroops)
+        : baseAtmos;
+
+      resultGenerals.push({
+        generalId: gen.no,
+        name: gen.name,
+        crew,
+        crewType: gen.crewtype || 0,
+        leadership: gen.leadership || 0,
+        strength: gen.strength || 0,
+        intel: gen.intel || 0,
+        train,
+        atmos,
+      });
+    }
+
+    const totalCrew = resultGenerals.reduce((sum, g) => sum + g.crew, 0);
 
     return {
-      generals: generals.map(g => ({
-        generalId: g.no,
-        name: g.name,
-        crew: g.crew || 0,
-        crewType: g.crewtype || 0,
-        leadership: g.leadership || 0,
-        strength: g.strength || 0,
-        intel: g.intel || 0
-      })),
+      generals: resultGenerals,
       totalCrew,
-      generalCount: generals.length
+      generalCount: resultGenerals.length
     };
   }
+
 }

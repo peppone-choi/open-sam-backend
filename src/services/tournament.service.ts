@@ -10,6 +10,8 @@ import { Session } from '../models/session.model';
 import { logger } from '../common/logger';
 import { generalRepository } from '../repositories/general.repository';
 import { tournamentRepository } from '../repositories/tournament.repository';
+import { sessionRepository } from '../repositories/session.repository';
+
 
 export type TournamentType = '전력전' | '통솔전' | '일기토' | '설전';
 export type TournamentState = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
