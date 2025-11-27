@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { asyncHandler } from '../middleware/async-handler';
+import { 
+  validate, 
+  generalJoinSchema, 
+  generalSettingSchema, 
+  generalDropItemSchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
 
 import { BuildNationCandidateService } from '../services/general/BuildNationCandidate.service';
 import { DieOnPrestartService } from '../services/general/DieOnPrestart.service';
@@ -260,7 +267,7 @@ router.post('/die-on-prestart', authenticate, asyncHandler(async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.post('/drop-item', authenticate, asyncHandler(async (req, res) => {
+router.post('/drop-item', authenticate, preventMongoInjection('body'), validate(generalDropItemSchema), asyncHandler(async (req, res) => {
   const result = await DropItemService.execute(req.body, req.user);
   res.json(result);
 }));
@@ -783,7 +790,7 @@ router.get('/get-join-info', optionalAuth, asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-router.post('/join', authenticate, asyncHandler(async (req, res) => {
+router.post('/join', authenticate, preventMongoInjection('body'), validate(generalJoinSchema), asyncHandler(async (req, res) => {
   const result = await JoinService.execute(req.body, req.user);
   res.json(result);
 }));
@@ -1178,7 +1185,7 @@ router.post('/vacation', authenticate, async (req, res) => {
  *       200:
  *         description: 설정 저장 성공
  */
-router.post('/set-my-setting', authenticate, async (req, res) => {
+router.post('/set-my-setting', authenticate, preventMongoInjection('body'), validate(generalSettingSchema), async (req, res) => {
   try {
     const result = await SetMySettingService.execute(req.body, req.user);
     res.json(result);

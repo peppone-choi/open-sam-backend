@@ -1027,6 +1027,46 @@ router.post('/map', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * 군대 이동 정보 조회
+ * POST /api/game/troop-movements
+ */
+router.post('/troop-movements', authenticate, async (req, res) => {
+  try {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const userId = req.user?.userId || req.user?.id;
+    const includeEnemy = req.body.includeEnemy !== false;
+
+    if (!userId) {
+      return res.status(401).json({ result: false, reason: '로그인이 필요합니다' });
+    }
+
+    // 사용자의 장수 찾기
+    const myGeneral = await General.findOne({
+      session_id: sessionId,
+      owner: String(userId)
+    }).lean();
+
+    const viewerNationId = myGeneral?.data?.nation || 0;
+
+    const { GetTroopMovementsService } = await import('../services/general/GetTroopMovements.service');
+    const movements = await GetTroopMovementsService.execute({
+      sessionId,
+      viewerNationId,
+      includeEnemy,
+    });
+
+    res.json({
+      result: true,
+      movements,
+      count: movements.length,
+    });
+  } catch (error: any) {
+    console.error('[troop-movements] 에러:', error);
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
 router.post('/city-list', authenticate, async (req, res) => {
   try {
     const sessionId = (req.body.session_id as string) || 'sangokushi_default';

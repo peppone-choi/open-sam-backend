@@ -143,9 +143,17 @@ export class che_불가침파기수락 extends NationCommand {
     destLogger.pushGeneralActionLog(`<D><b>${nationName}</b></>${josaWa}의 불가침 파기에 성공했습니다.`, ActionLogger.PLAIN);
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaWa}의 불가침 파기 성공`);
 
+    // PHP: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     await general.applyDB(db);
     await destLogger.flush();
 
     return true;
   }
-}
+}

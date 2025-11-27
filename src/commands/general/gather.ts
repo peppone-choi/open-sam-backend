@@ -57,6 +57,7 @@ export class GatherCommand extends GeneralCommand {
     }
 
     const db = DB.db();
+    const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
     const cityID = this.city!.city;
@@ -121,10 +122,8 @@ export class GatherCommand extends GeneralCommand {
       this.arg ?? {}
     );
     
-    await tryUniqueItemLottery(
-      // TODO: general.genGenericUniqueRNG(GatherCommand.actionName),
-      general
-    );
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    await tryUniqueItemLottery(rng, general, sessionId, '집합');
     
     await this.saveGeneral();
 

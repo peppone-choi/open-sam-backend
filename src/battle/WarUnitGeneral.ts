@@ -166,7 +166,48 @@ export class WarUnitGeneral extends WarUnit {
   
   getComputedCriticalRatio(): number {
     const general = this.general;
-    let criticalRatio = this.crewType?.critical || 0.05;
+    const armType = this.crewType?.armType ?? 1;
+    
+    // PHP GameUnitDetail::getCriticalRatio 공식 적용
+    // 성벽은 필살을 사용하지 않음
+    if (armType === 0) { // CASTLE
+      return 0;
+    }
+    
+    // 병종별 주 능력치와 계수 결정
+    let mainstat: number;
+    let coef: number;
+    
+    // PHP: getStrength(false, true, true, false) 등 - 부상/아이템/특성 보정 포함
+    const strength = typeof general.getStrength === 'function' 
+      ? general.getStrength(false, true, true, false)
+      : general.data?.strength ?? 50;
+    const intel = typeof general.getIntel === 'function'
+      ? general.getIntel(false, true, true, false)
+      : general.data?.intel ?? 50;
+    const leadership = typeof general.getLeadership === 'function'
+      ? general.getLeadership(false, true, true, false)
+      : general.data?.leadership ?? 50;
+    
+    if (armType === 4) { // WIZARD (귀병)
+      mainstat = intel;
+      coef = 0.4;
+    } else if (armType === 5) { // SIEGE (차병)
+      mainstat = leadership;
+      coef = 0.4;
+    } else if (armType === 6) { // MISC (기타)
+      mainstat = (intel + leadership + strength) / 3;
+      coef = 0.4;
+    } else { // FOOTMAN, ARCHER, CAVALRY 등 무력 기반
+      mainstat = strength;
+      coef = 0.5;
+    }
+    
+    // PHP: $ratio = Util::valueFit($mainstat - 65, 0) * coef
+    // 결과: (mainstat - 65)가 양수일 때만 계산, 최대 50%
+    let ratio = Math.max(0, mainstat - 65);
+    ratio *= coef;
+    let criticalRatio = Math.min(50, ratio) / 100;
     
     // onCalcStat 보정
     if (typeof general.onCalcStat === 'function') {

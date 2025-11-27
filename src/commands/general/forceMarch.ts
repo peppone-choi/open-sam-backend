@@ -3,6 +3,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { generalRepository } from '../../repositories/general.repository';
+import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
  * 강행 커맨드

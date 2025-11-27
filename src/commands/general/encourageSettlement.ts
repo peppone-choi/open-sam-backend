@@ -206,9 +206,10 @@ export class EncourageSettlementCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -this.reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    // 정착장려는 정치 70% + 매력 30%
-    general.increaseVar('politics_exp', 1);
-    general.increaseVar('charm_exp', 0.5);
+    // PHP 원본: leadership_exp +1 (statKey 기반)
+    // TS 확장: 사회 커맨드로 politics/charm 영향 추가 (AGENT_2_COMMAND.md 기준)
+    general.increaseVar('politics_exp', 1);  // ⚡ TS 확장: PHP에서는 leadership_exp
+    general.increaseVar('charm_exp', 0.5);   // ⚡ TS 확장: PHP에는 없음
 
     this.setResultTurn(new LastTurn((this.constructor as typeof EncourageSettlementCommand).getName(), this.arg));
     general.checkStatChange();

@@ -228,13 +228,7 @@ export class RandomJoinNationCommand extends GeneralCommand {
 
     try {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(RandomJoinNationCommand.actionName),
-        general,
-        sessionId,
-        '랜덤임관'
-      );
+      await tryUniqueItemLottery(rng, general, sessionId, '랜덤 임관');
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);
     }

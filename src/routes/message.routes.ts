@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { logger } from '../common/logger';
+import { 
+  validate, 
+  messageSendSchema, 
+  messageDecideSchema, 
+  messageDeleteSchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
 
 import { DecideMessageResponseService } from '../services/message/DecideMessageResponse.service';
 import { DeleteMessageService } from '../services/message/DeleteMessage.service';
@@ -39,7 +46,7 @@ const router = Router();
  *       200:
  *         description: 응답 성공
  */
-router.post('/decide-message-response', authenticate, async (req, res) => {
+router.post('/decide-message-response', authenticate, preventMongoInjection('body'), validate(messageDecideSchema), async (req, res) => {
   try {
     const result = await DecideMessageResponseService.execute(req.body, req.user);
     res.json(result);
@@ -69,7 +76,7 @@ router.post('/decide-message-response', authenticate, async (req, res) => {
  *       200:
  *         description: 삭제 성공
  */
-router.post('/delete-message', authenticate, async (req, res) => {
+router.post('/delete-message', authenticate, preventMongoInjection('body'), validate(messageDeleteSchema), async (req, res) => {
   try {
     const result = await DeleteMessageService.execute(req.body, req.user);
     res.json(result);
@@ -272,7 +279,7 @@ router.get('/read-latest-message', authenticate, async (req, res) => {
  *       200:
  *         description: 전송 성공
  */
-router.post('/send-message', authenticate, async (req, res) => {
+router.post('/send-message', authenticate, preventMongoInjection('body'), validate(messageSendSchema), async (req, res) => {
   try {
     const result = await SendMessageService.execute(req.body, req.user);
     res.json(result);
@@ -311,7 +318,7 @@ router.post('/set-recent-message-type', authenticate, async (req, res) => {
   }
 });
 
-router.post('/send', authenticate, async (req, res) => {
+router.post('/send', authenticate, preventMongoInjection('body'), validate(messageSendSchema), async (req, res) => {
   try {
     const result = await SendMessageService.execute(req.body, req.user);
     res.json(result);

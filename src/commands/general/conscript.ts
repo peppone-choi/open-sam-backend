@@ -99,10 +99,10 @@ export class ConscriptCommand extends GeneralCommand {
 
     const minRecruitPop = GameConst.minAvailableRecruitPop || 0;
     
+    // PHP 원본과 동일: SuppliedCity() 제약 없음 (징병은 보급 연결 불필요)
     this.minConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqCityCapacity('pop', '주민', minRecruitPop + 100),
       ConstraintHelper.ReqCityTrust(20),
     ];
@@ -157,10 +157,10 @@ export class ConscriptCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
     const minRecruitPop = GameConst.minAvailableRecruitPop || 0;
 
+    // PHP 원본과 동일: SuppliedCity() 제약 없음 (징병은 보급 연결 불필요)
     const baseFullConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqCityCapacity('pop', '주민', minRecruitPop + this.reqCrew),
       ConstraintHelper.ReqCityTrust(20),
       ConstraintHelper.ReqGeneralGold(reqGold),
@@ -193,24 +193,24 @@ export class ConscriptCommand extends GeneralCommand {
       return [0, 0];
     }
 
-    // 비용 계산 (기술 레벨 반영)
-    // PHP GameUnitDetail::costWithTech(tech, crew)와 동일한 개념:
-    //   costWithTech = cost * getTechCost(tech) * crew / 100
-    // 여기서 crew는 실제 병력 수(this.maxCrew)이며,
-    // getTechCost(tech) = 1 + getTechLevel(tech) * 0.15 (TS: techRaw/1000 기준)
+    // PHP 원본 참조: che_징병.php getCost()
+    // $reqGold = $this->reqCrewType->costWithTech($this->nation['tech'], $this->maxCrew);
+    // $reqRice = $this->maxCrew / 100;  // 고정 공식 (기술 레벨 영향 없음)
+    
     const baseCost = this.reqCrewType?.cost || 1; // units.json 기준 gold 비용
-    const baseRice = this.reqCrewType?.rice || 1; // units.json 기준 군량 비용
     const techRaw = this.nation?.tech || 0;
     const techLevel = Math.floor(techRaw / 1000);
     const techCostMultiplier = 1 + techLevel * 0.15;
 
     const crew = Math.max(100, this.maxCrew || 0);
 
+    // Gold 계산: costWithTech(tech, crew) = baseCost * techMultiplier * crew / 100
     let reqGold = (baseCost * techCostMultiplier * crew) / 100;
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     reqGold *= costOffset;
 
-    let reqRice = (baseRice * techCostMultiplier * crew) / 100;
+    // Rice 계산: PHP 원본과 동일하게 maxCrew / 100 (기술 레벨 영향 없음)
+    let reqRice = crew / 100;
 
     // onCalcDomestic 보정 적용 (PHP: onCalcDomestic('징병','cost',...))
     const general = this.generalObj;
@@ -423,9 +423,11 @@ export class ConscriptCommand extends GeneralCommand {
     general.addDedication(ded);
     general.increaseVarWithLimit('gold', -reqGold, 0);
     general.increaseVarWithLimit('rice', -reqRice, 0);
-    // 통무지정매 - 징병은 통솔+매력 증가
+    
+    // PHP 원본: leadership_exp +1만 증가
+    // TS 확장: 사회 커맨드로 charm 영향 추가 (AGENT_2_COMMAND.md 기준)
     general.increaseVar('leadership_exp', 1);
-    general.increaseVar('charm_exp', 0.5);
+    general.increaseVar('charm_exp', 0.5);  // ⚡ TS 확장: PHP에는 없음
     
     this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
     general.checkStatChange();

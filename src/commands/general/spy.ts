@@ -41,23 +41,19 @@ export class SpyCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
-    const [reqGold, reqRice] = this.getCost();
-
-    // fullConditionConstraints를 먼저 설정
-    this.fullConditionConstraints = [
-      ConstraintHelper.NotBeNeutral(),
-      ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.NotSameDestCity(),
-      ConstraintHelper.ReqGeneralGold(reqGold),
-      ConstraintHelper.ReqGeneralRice(reqRice),
-    ];
-    
-    // setDestCity, setDestNation은 비동기 작업이므로 나중에 처리
     this.setDestCity(this.arg.destCityID);
     if (this.destCity) {
       this.setDestNation(this.destCity.nation, ['tech']);
     }
+
+    const [reqGold, reqRice] = this.getCost();
+
+    // PHP: fullConditionConstraints
+    this.fullConditionConstraints = [
+      ConstraintHelper.NotOccupiedDestCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+    ];
   }
 
   public getBrief(): string {
@@ -199,6 +195,10 @@ export class SpyCommand extends GeneralCommand {
     const ded = rng.nextRangeInt(1, 70);
 
     const [reqGold, reqRice] = this.getCost();
+    
+    // PHP: increaseInheritancePoint(InheritanceKey::active_action, 0.5) - 첩보만 예외!
+    // TODO: general.increaseInheritancePoint('active_action', 0.5);
+    
     general.increaseVarWithLimit('gold', -reqGold, 0);
     general.increaseVarWithLimit('rice', -reqRice, 0);
     general.addExperience(exp);
@@ -206,6 +206,15 @@ export class SpyCommand extends GeneralCommand {
     general.increaseVar('leadership_exp', 1);
 
     this.setResultTurn(new LastTurn(SpyCommand.getName(), this.arg));
+    
+    // PHP: StaticEventHandler.handleEvent
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
     general.checkStatChange();
     await this.saveGeneral();
 

@@ -12,6 +12,14 @@ import type { BattleConfig } from '../battle/types';
 import { battleRepository } from '../repositories/battle.repository';
 import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
+import { 
+  validate, 
+  battleStartSchema, 
+  battleDeploySchema, 
+  battleActionSchema,
+  battleReadySchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -185,7 +193,7 @@ function toPlain<T>(doc: T | null | undefined): any | null {
  *       500:
  *         description: 서버 오류
  */
-router.post('/start', async (req, res) => {
+router.post('/start', preventMongoInjection('body'), validate(battleStartSchema), async (req, res) => {
   try {
     const result = await StartBattleService.execute(req.body, req.user);
     if (result.success) {
@@ -588,7 +596,7 @@ router.get('/:battleId', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/deploy', async (req, res) => {
+router.post('/:battleId/deploy', preventMongoInjection('body'), validate(battleDeploySchema), async (req, res) => {
   try {
     const result = await DeployUnitsService.execute({
       battleId: req.params.battleId,
@@ -788,7 +796,7 @@ router.post('/:battleId/deploy', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/action', async (req, res) => {
+router.post('/:battleId/action', preventMongoInjection('body'), validate(battleActionSchema), async (req, res) => {
   try {
     const result = await SubmitActionService.execute({
       battleId: req.params.battleId,
@@ -957,7 +965,7 @@ router.post('/:battleId/action', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/ready', async (req, res) => {
+router.post('/:battleId/ready', preventMongoInjection('body'), validate(battleReadySchema), async (req, res) => {
   try {
     const result = await ReadyUpService.execute({
       battleId: req.params.battleId,

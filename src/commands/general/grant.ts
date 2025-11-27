@@ -197,8 +197,14 @@ export class GrantCommand extends GeneralCommand {
       this.arg ?? {}
     );
 
-    // TODO: PHP che_증여에서는 tryUniqueItemLottery 호출
-    // TS에서는 공통 유니크 아이템 추첨 유틸을 사용하도록 후속 마이그레이션 예정
+    // PHP: tryUniqueItemLottery 호출
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '증여');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
     
     await this.saveGeneral();
     await destGeneral.save?.();

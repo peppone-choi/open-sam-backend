@@ -136,7 +136,54 @@ export class che_종전제의 extends NationCommand {
     const validMinutes = Math.max(30, env['turnterm'] * 3);
     validUntil.setMinutes(validUntil.getMinutes() + validMinutes);
 
+    // PHP: DiplomaticMessage 전송
+    try {
+      const { DiplomaticMessage } = await import('../../core/message/DiplomaticMessage');
+      const { MessageTarget } = await import('../../core/message/MessageTarget');
+      
+      const srcTarget = new MessageTarget(
+        general!.getID(),
+        general!.getName(),
+        nationID,
+        nationName,
+        nation['color'],
+        GetImageURL(general.data.imgsvr, general.data.picture)
+      );
+      const destTarget = new MessageTarget(
+        0,
+        '',
+        destNationID,
+        destNationName,
+        destNation['color']
+      );
+      
+      const msg = new DiplomaticMessage(
+        'diplomacy',
+        srcTarget,
+        destTarget,
+        `${nationName}의 종전 제의 서신`,
+        now,
+        validUntil,
+        {
+          action: 'STOP_WAR',
+          deletable: false
+        }
+      );
+      await msg.send();
+    } catch (error) {
+      console.error('DiplomaticMessage 전송 실패:', error);
+    }
+
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
+    
+    // PHP: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
     await this.saveGeneral();
     await destLogger.flush();
 
@@ -182,4 +229,4 @@ export class che_종전제의 extends NationCommand {
       }
     };
   }
-}
+}

@@ -1,11 +1,12 @@
 /**
  * 징병 커맨드 테스트
  * 
- * 테스트 항목:
- * 1. 보급이 끊긴 도시에서 징병 불가
- * 2. 점령한 도시에서만 징병 가능
- * 3. 주민 수, 신뢰도 제약 확인
- * 4. 병종 제약 확인
+ * PHP 원본 기준 (che_징병.php):
+ * - 보급 연결 제약 없음 (SuppliedCity 없음)
+ * - 점령한 도시에서만 징병 가능
+ * - 주민 수, 신뢰도 제약 확인
+ * - 병종 제약 확인
+ * - Rice 계산: maxCrew / 100 (고정, 기술 영향 없음)
  */
 
 import { ConscriptCommand } from '../conscript';
@@ -66,52 +67,17 @@ describe('ConscriptCommand', () => {
     };
   });
 
-  describe('보급 제약 (SuppliedCity)', () => {
-    it('보급이 끊긴 도시에서는 징병이 불가능해야 함', () => {
+  describe('보급 제약 (PHP 원본: 없음)', () => {
+    it('PHP 원본과 동일하게 SuppliedCity 제약이 없어야 함', () => {
       const arg = { crewType: 0, amount: 1000 };
       command = new ConscriptCommand(mockGeneral, mockEnv, arg);
 
-      // 보급이 끊긴 도시
+      // 보급이 끊긴 도시에서도 징병 가능해야 함 (PHP 원본 기준)
       mockGeneral._cached_city = {
         city: 1,
         name: '낙양',
         nation: 1,
         supply: 0, // 보급 끊김
-        pop: 100000,
-        trust: 80
-      };
-
-      command['init']();
-      command['initWithArg']();
-
-      const constraints = command['fullConditionConstraints'];
-      const suppliedCityConstraint = constraints.find(
-        c => c.test.toString().includes('보급이 끊긴')
-      );
-
-      expect(suppliedCityConstraint).toBeDefined();
-      
-      const result = suppliedCityConstraint!.test(
-        { 
-          general: mockGeneral, 
-          city: mockGeneral._cached_city 
-        }, 
-        mockEnv
-      );
-      
-      expect(result).toBe('보급이 끊긴 도시입니다.');
-    });
-
-    it('보급이 연결된 도시에서는 징병이 가능해야 함', () => {
-      const arg = { crewType: 0, amount: 1000 };
-      command = new ConscriptCommand(mockGeneral, mockEnv, arg);
-
-      // 보급이 연결된 도시
-      mockGeneral._cached_city = {
-        city: 1,
-        name: '낙양',
-        nation: 1,
-        supply: 1, // 보급 연결
         pop: 100000,
         trust: 80
       };
@@ -126,21 +92,13 @@ describe('ConscriptCommand', () => {
       command['initWithArg']();
 
       const constraints = command['fullConditionConstraints'];
+      
+      // SuppliedCity 제약이 없어야 함
       const suppliedCityConstraint = constraints.find(
         c => c.test.toString().includes('보급이 끊긴')
       );
 
-      expect(suppliedCityConstraint).toBeDefined();
-      
-      const result = suppliedCityConstraint!.test(
-        { 
-          general: mockGeneral, 
-          city: mockGeneral._cached_city 
-        }, 
-        mockEnv
-      );
-      
-      expect(result).toBeNull(); // 제약 통과
+      expect(suppliedCityConstraint).toBeUndefined();
     });
   });
 
@@ -264,6 +222,27 @@ describe('ConscriptCommand', () => {
       
       expect(gold).toBeGreaterThan(0);
       expect(rice).toBeGreaterThan(0);
+    });
+
+    it('PHP 원본과 동일하게 rice는 maxCrew/100으로 계산되어야 함', () => {
+      const arg = { crewType: 0, amount: 1000 };
+      command = new ConscriptCommand(mockGeneral, mockEnv, arg);
+
+      mockGeneral._cached_nation = {
+        nation: 1,
+        tech: 5000, // 높은 기술 레벨 (techLevel = 5)
+        aux: {}
+      };
+
+      command['argTest']();
+      command['init']();
+      command['initWithArg']();
+
+      const [gold, rice] = command.getCost();
+      
+      // PHP 원본: rice = maxCrew / 100 (기술 레벨 영향 없음)
+      // 1000명 징병 -> rice = 10
+      expect(rice).toBe(10);
     });
   });
 });

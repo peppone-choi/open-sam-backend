@@ -28,11 +28,12 @@ export class che_무작위수도이전 extends NationCommand {
     this.setCity();
     this.setNation(['capital', 'aux']);
 
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeLord(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.NotOpeningPart(),
+      ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.ReqNationAuxValue('can_무작위수도이전', 0, '>', 0, '더이상 변경이 불가능합니다.')
     ];
   }
@@ -161,4 +162,4 @@ export class che_무작위수도이전 extends NationCommand {
     await general.applyDB(db);
     return true;
   }
-}
+}

@@ -26,7 +26,8 @@ export class BorderReturnCommand extends GeneralCommand {
 
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
-      ConstraintHelper.NotWanderingNation()
+      ConstraintHelper.NotWanderingNation(),
+      ConstraintHelper.NotOccupiedCity() // PHP: 적 도시에서만 사용 가능
     ];
   }
 
@@ -111,14 +112,7 @@ export class BorderReturnCommand extends GeneralCommand {
       console.error('StaticEventHandler 실패:', error);
     }
 
-    // UniqueItemLottery
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '접경귀환');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // PHP: tryUniqueItemLottery 호출하지 않음
 
     await this.saveGeneral();
 

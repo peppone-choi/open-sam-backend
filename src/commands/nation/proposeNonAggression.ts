@@ -168,7 +168,56 @@ export class che_불가침제의 extends NationCommand {
 
     const josaWa = JosaUtil.pick(nationName, '와');
 
+    // PHP: DiplomaticMessage 전송
+    try {
+      const { DiplomaticMessage } = await import('../../core/message/DiplomaticMessage');
+      const { MessageTarget } = await import('../../core/message/MessageTarget');
+      
+      const srcTarget = new MessageTarget(
+        general!.getID(),
+        general!.getName(),
+        nationID,
+        nationName,
+        nation['color'],
+        GetImageURL(general.data.imgsvr, general.data.picture)
+      );
+      const destTarget = new MessageTarget(
+        0,
+        '',
+        destNationID,
+        destNationName,
+        destNation['color']
+      );
+      
+      const msg = new DiplomaticMessage(
+        'diplomacy',
+        srcTarget,
+        destTarget,
+        `${nationName}${josaWa} ${year}년 ${month}월까지 불가침 제의 서신`,
+        now,
+        validUntil,
+        {
+          action: 'NO_AGGRESSION',
+          year: year,
+          month: month,
+        }
+      );
+      await msg.send();
+    } catch (error) {
+      console.error('DiplomaticMessage 전송 실패:', error);
+    }
+
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
+    
+    // PHP: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
+    const db = DB.db();
     await general.applyDB(db);
     await destLogger.flush();
 
@@ -222,4 +271,4 @@ export class che_불가침제의 extends NationCommand {
       }
     };
   }
-}
+}

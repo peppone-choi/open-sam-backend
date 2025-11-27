@@ -2,6 +2,13 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { ApiError } from '../errors/ApiError';
 import { DiplomacyLetterService } from '../services/diplomacy/DiplomacyLetter.service';
+import { 
+  validate, 
+  diplomacySendLetterSchema, 
+  diplomacyRespondSchema, 
+  diplomacyProcessSchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -36,7 +43,7 @@ router.post('/get-letter', authenticate, async (req, res) => {
 /**
  * 외교문서 전송
  */
-router.post('/send-letter', authenticate, async (req, res) => {
+router.post('/send-letter', authenticate, preventMongoInjection('body'), validate(diplomacySendLetterSchema), async (req, res) => {
   try {
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
@@ -87,7 +94,7 @@ router.post('/send-letter', authenticate, async (req, res) => {
  *       200:
  *         description: 응답 성공
  */
-router.post('/respond-letter', authenticate, async (req, res) => {
+router.post('/respond-letter', authenticate, preventMongoInjection('body'), validate(diplomacyRespondSchema), async (req, res) => {
   try {
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
@@ -137,7 +144,7 @@ router.post('/respond-letter', authenticate, async (req, res) => {
  *       200:
  *         description: 처리 성공
  */
-router.post('/process', authenticate, async (req, res) => {
+router.post('/process', authenticate, preventMongoInjection('body'), validate(diplomacyProcessSchema), async (req, res) => {
   try {
     const userId = req.user?.userId || req.user?.id;
     if (!userId) {
@@ -146,10 +153,6 @@ router.post('/process', authenticate, async (req, res) => {
 
     const { letterNo, action, data } = req.body;
     const sessionId = req.body.session_id || req.query.session_id || 'sangokushi_default';
-
-    if (!letterNo || !action) {
-      return res.status(400).json({ result: false, reason: '필수 파라미터가 누락되었습니다.' });
-    }
 
     // 외교 처리 (동맹, 전쟁 등)
     const { ProcessDiplomacyService } = await import('../services/diplomacy/ProcessDiplomacy.service');

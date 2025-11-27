@@ -4,6 +4,7 @@ import { User } from '../models/user.model';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { authLimiter } from '../middleware/rate-limit.middleware';
+import { validate, authRegisterSchema, authLoginSchema, preventMongoInjection } from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ const router = Router();
  *       500:
  *         description: 서버 에러
  */
-router.post('/register', authLimiter, async (req, res) => {
+router.post('/register', authLimiter, preventMongoInjection('body'), validate(authRegisterSchema), async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -115,14 +116,11 @@ router.post('/register', authLimiter, async (req, res) => {
  *       500:
  *         description: 서버 에러
  */
-router.post('/login', authLimiter, async (req, res) => {
+router.post('/login', authLimiter, preventMongoInjection('body'), validate(authLoginSchema), async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // 입력값 검증
-    if (!username || !password) {
-      return res.status(400).json({ error: '사용자명과 비밀번호를 입력해주세요' });
-    }
+    // 입력값 검증은 validate 미들웨어에서 처리됨
     
     const user = await User.findOne({ username }).select('+password');
     if (!user) {

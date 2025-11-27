@@ -48,6 +48,7 @@ export class ScorchedEarthCommand extends NationCommand {
   protected async initWithArg(): Promise<void> {
     this.setDestCity(this.arg['destCityID']);
 
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.OccupiedDestCity(),
@@ -55,7 +56,8 @@ export class ScorchedEarthCommand extends NationCommand {
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.SuppliedDestCity(),
       ConstraintHelper.ReqNationValue('capital', '수도', '!=', this.destCity['city'], '수도입니다.'),
-      ConstraintHelper.ReqNationValue('surlimit', '제한 턴', '==', 0, '외교제한 턴이 남아있습니다.')
+      ConstraintHelper.ReqNationValue('surlimit', '제한 턴', '==', 0, '외교제한 턴이 남아있습니다.'),
+      ConstraintHelper.DisallowDiplomacyStatus(this.generalObj?.getNationID() || 0, { 0: '평시에만 가능합니다.' }),
     ];
   }
 
@@ -231,4 +233,4 @@ export class ScorchedEarthCommand extends NationCommand {
   }
 }
 
-export const che_초토화 = ScorchedEarthCommand;
+export const che_초토화 = ScorchedEarthCommand;

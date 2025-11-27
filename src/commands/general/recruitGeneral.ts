@@ -70,11 +70,11 @@ export class RecruitGeneralCommand extends GeneralCommand {
   protected initWithArg(): void {
     const relYear = this.env.year - this.env.startyear;
 
-    // fullConditionConstraints를 먼저 설정
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '임관 모드가 아닙니다.'),
       ConstraintHelper.BeNeutral(),
-      ConstraintHelper.NotOpeningPart(),
+      ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.AllowJoinAction()
     ];
     

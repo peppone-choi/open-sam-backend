@@ -20,18 +20,17 @@ export class TrainTroopsCommand extends GeneralCommand {
     this.setCity();
     this.setNation();
 
+    // PHP 원본과 동일: SuppliedCity() 제약 없음 (훈련은 보급 연결 불필요)
     this.minConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
     ];
 
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralTrainMargin(GameConst.maxTrainByCommand),
     ];
@@ -145,6 +144,15 @@ export class TrainTroopsCommand extends GeneralCommand {
       this.env,
       this.arg ?? {}
     );
+
+    // PHP 원본과 동일: tryUniqueItemLottery 호출
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env['session_id'] || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '훈련');
+    } catch (error: any) {
+      console.error('tryUniqueItemLottery failed:', error);
+    }
     
     await this.saveGeneral();
 

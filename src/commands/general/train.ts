@@ -25,13 +25,14 @@ export class TrainCommand extends GeneralCommand {
 
     const [reqGold, reqRice] = this.getCost();
 
+    // PHP che_단련.php와 동일한 Constraints
+    // - OccupiedCity(), SuppliedCity() 제거 (PHP에 없음)
+    // - defaultTrainLow = 40, defaultAtmosLow = 40 (PHP GameConstBase.php)
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
-      ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqGeneralCrew(),
-      ConstraintHelper.ReqGeneralValue('train', '훈련', '>=', 20),
-      ConstraintHelper.ReqGeneralValue('atmos', '사기', '>=', 20),
+      ConstraintHelper.ReqGeneralValue('train', '훈련', '>=', 40), // PHP: GameConst::$defaultTrainLow
+      ConstraintHelper.ReqGeneralValue('atmos', '사기', '>=', 40), // PHP: GameConst::$defaultAtmosLow
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
     ];

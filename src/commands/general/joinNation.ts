@@ -50,7 +50,7 @@ export class JoinNationCommand extends GeneralCommand {
     ];
 
     this.minConditionConstraints = [
-      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다'),
       ConstraintHelper.BeNeutral(),
       ConstraintHelper.AllowJoinAction(),
       ConstraintHelper.NoPenalty('NoChosenAssignment'),
@@ -68,13 +68,14 @@ export class JoinNationCommand extends GeneralCommand {
   protected initWithArg(): void {
     const relYear = this.env.year - this.env.startyear;
 
-    // fullConditionConstraints를 먼저 설정
+    // fullConditionConstraints - PHP와 일치
     this.fullConditionConstraints = [
-      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다'),
       ConstraintHelper.BeNeutral(),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.AllowJoinDestNation(relYear),
-      ConstraintHelper.DifferentDestNation(),
+      ConstraintHelper.AllowJoinAction(),
+      ConstraintHelper.NoPenalty('NoChosenAssignment'),
     ];
     
     // setDestNation은 비동기 작업이므로 나중에 처리

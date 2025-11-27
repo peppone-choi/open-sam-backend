@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { optionalAuth } from '../middleware/auth';
 import { GetJoinInfoService } from '../services/general/GetJoinInfo.service';
 import { JoinService } from '../services/general/Join.service';
+import { validate, generalJoinSchema, preventMongoInjection } from '../middleware/validation.middleware';
 
 const router = Router();
 
@@ -95,7 +96,7 @@ router.post('/get-nations', optionalAuth, async (req, res) => {
  *       200:
  *         description: 장수 생성 성공
  */
-router.post('/create-general', optionalAuth, async (req, res) => {
+router.post('/create-general', optionalAuth, preventMongoInjection('body'), validate(generalJoinSchema), async (req, res) => {
   try {
     // serverID를 session_id로 매핑
     const params = {

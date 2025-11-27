@@ -150,14 +150,7 @@ export class AbdicateCommand extends GeneralCommand {
       console.error('StaticEventHandler 실패:', error);
     }
 
-    // UniqueItemLottery
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '선양');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // PHP: tryUniqueItemLottery 호출 안 함
     
     // 장수 데이터 저장
     await this.saveGeneral();

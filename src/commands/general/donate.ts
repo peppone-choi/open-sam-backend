@@ -142,6 +142,15 @@ export class DonateCommand extends GeneralCommand {
       this.env,
       this.arg ?? {}
     );
+
+    // PHP: tryUniqueItemLottery 호출
+    try {
+      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      await tryUniqueItemLottery(rng, general, sessionId, '헌납');
+    } catch (error) {
+      console.error('tryUniqueItemLottery 실패:', error);
+    }
     
     await this.saveGeneral();
 

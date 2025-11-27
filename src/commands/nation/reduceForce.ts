@@ -43,11 +43,17 @@ export class ReduceForceCommand extends NationCommand {
 
     const [reqGold, reqRice] = this.getCost();
     
+    // PHP: CityConst.byID(capital).level 가져오기
+    const CityConst = global.CityConst;
+    const origCityLevel = CityConst?.byID?.(this.nation.capital)?.level || 4;
+    
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.ReqDestCityValue('pop', '주민', '>=', 100, '주민이 부족합니다')
+      ConstraintHelper.ReqDestCityValue('level', '규모', '>', 4, '더이상 감축할 수 없습니다.'),
+      ConstraintHelper.ReqDestCityValue('level', '규모', '>', origCityLevel, '더이상 감축할 수 없습니다.'),
     ];
   }
 
@@ -168,4 +174,4 @@ export class ReduceForceCommand extends NationCommand {
 
     return true;
   }
-}
+}

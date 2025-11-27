@@ -151,6 +151,416 @@ export const sessionIdSchema = yup.object({
     .default('sangokushi_default'),
 });
 
+// ============================================================
+// Auth Routes Schemas
+// ============================================================
+
+export const authRegisterSchema = yup.object({
+  username: yup.string()
+    .required('username is required')
+    .min(2, 'username must be at least 2 characters')
+    .max(50, 'username must be <= 50 characters')
+    .matches(/^[a-zA-Z0-9_가-힣]+$/, 'username must contain only letters, numbers, underscores, or Korean characters'),
+  password: yup.string()
+    .required('password is required')
+    .min(6, 'password must be at least 6 characters')
+    .max(100, 'password must be <= 100 characters'),
+});
+
+export const authLoginSchema = yup.object({
+  username: yup.string()
+    .required('username is required')
+    .max(50, 'username must be <= 50 characters'),
+  password: yup.string()
+    .required('password is required')
+    .max(100, 'password must be <= 100 characters'),
+});
+
+// ============================================================
+// Command Routes Schemas
+// ============================================================
+
+export const commandPushSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number().integer().min(0).optional(),
+  amount: yup.number()
+    .integer('amount must be an integer')
+    .min(-12, 'amount must be >= -12')
+    .max(12, 'amount must be <= 12')
+    .optional(),
+  turn_cnt: yup.number()
+    .integer('turn_cnt must be an integer')
+    .min(1, 'turn_cnt must be >= 1')
+    .max(12, 'turn_cnt must be <= 12')
+    .optional(),
+});
+
+export const commandReserveSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number().integer().min(0).optional(),
+  turn_idx: yup.number()
+    .integer('turn_idx must be an integer')
+    .min(0, 'turn_idx must be >= 0')
+    .max(29, 'turn_idx must be <= 29')
+    .required('turn_idx is required'),
+  action: yup.string().required('action is required'),
+  arg: yup.object().optional(),
+  brief: yup.string().max(500, 'brief must be <= 500 characters').optional(),
+});
+
+export const commandDeleteSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number().integer().min(0).optional(),
+  turn_list: yup.array()
+    .of(yup.number().integer().min(0).max(29))
+    .min(1, 'turn_list must have at least 1 item')
+    .required('turn_list is required'),
+});
+
+export const commandBulkReserveSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number().integer().min(0).optional(),
+  commands: yup.array()
+    .of(yup.object({
+      action: yup.string().required(),
+      arg: yup.object().optional(),
+      brief: yup.string().optional(),
+    }))
+    .max(12, 'commands must have <= 12 items')
+    .required('commands is required'),
+});
+
+// ============================================================
+// General Routes Schemas
+// ============================================================
+
+export const generalJoinSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  name: yup.string()
+    .required('name is required')
+    .min(2, 'name must be at least 2 characters')
+    .max(12, 'name must be <= 12 characters'),
+  leadership: yup.number()
+    .integer('leadership must be an integer')
+    .min(30, 'leadership must be >= 30')
+    .max(100, 'leadership must be <= 100')
+    .required('leadership is required'),
+  strength: yup.number()
+    .integer('strength must be an integer')
+    .min(30, 'strength must be >= 30')
+    .max(100, 'strength must be <= 100')
+    .required('strength is required'),
+  intel: yup.number()
+    .integer('intel must be an integer')
+    .min(30, 'intel must be >= 30')
+    .max(100, 'intel must be <= 100')
+    .required('intel is required'),
+  pic: yup.string().max(100).optional(),
+  character: yup.string().oneOf(['brave', 'wise', 'loyal', 'ambitious']).optional(),
+  inheritSpecial: yup.boolean().optional(),
+  inheritTurntimeZone: yup.boolean().optional(),
+  inheritCity: yup.boolean().optional(),
+  inheritBonusStat: yup.number().integer().min(0).optional(),
+});
+
+export const generalSettingSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  defence_train: yup.number()
+    .integer('defence_train must be an integer')
+    .min(40, 'defence_train must be >= 40')
+    .max(999, 'defence_train must be <= 999')
+    .optional(),
+  use_treatment: yup.number()
+    .integer('use_treatment must be an integer')
+    .min(10, 'use_treatment must be >= 10')
+    .max(100, 'use_treatment must be <= 100')
+    .optional(),
+  use_auto_nation_turn: yup.number().integer().min(0).max(1).optional(),
+  tnmt: yup.number()
+    .integer('tnmt must be an integer')
+    .min(0, 'tnmt must be >= 0')
+    .max(1, 'tnmt must be <= 1')
+    .optional(),
+});
+
+export const generalDropItemSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  item_id: yup.string().required('item_id is required'),
+  item_type: yup.string()
+    .oneOf(['weapon', 'armor', 'book', 'horse'], 'item_type must be one of: weapon, armor, book, horse')
+    .optional(),
+});
+
+// ============================================================
+// Battle Routes Schemas
+// ============================================================
+
+export const battleStartSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  attackerNationId: yup.number()
+    .integer('attackerNationId must be an integer')
+    .min(0, 'attackerNationId must be >= 0')
+    .required('attackerNationId is required'),
+  defenderNationId: yup.number()
+    .integer('defenderNationId must be an integer')
+    .min(0, 'defenderNationId must be >= 0')
+    .required('defenderNationId is required'),
+  targetCityId: yup.number()
+    .integer('targetCityId must be an integer')
+    .min(0, 'targetCityId must be >= 0')
+    .required('targetCityId is required'),
+  attackerGeneralIds: yup.array()
+    .of(yup.number().integer().min(0))
+    .optional(),
+});
+
+export const battleDeploySchema = yup.object({
+  generalId: yup.number()
+    .integer('generalId must be an integer')
+    .min(0, 'generalId must be >= 0')
+    .required('generalId is required'),
+  position: yup.object({
+    x: yup.number()
+      .integer('x must be an integer')
+      .min(0, 'x must be >= 0')
+      .max(20, 'x must be <= 20')
+      .required('x is required'),
+    y: yup.number()
+      .integer('y must be an integer')
+      .min(0, 'y must be >= 0')
+      .max(20, 'y must be <= 20')
+      .required('y is required'),
+  }).required('position is required'),
+});
+
+export const battleActionSchema = yup.object({
+  generalId: yup.number()
+    .integer('generalId must be an integer')
+    .min(0, 'generalId must be >= 0')
+    .required('generalId is required'),
+  action: yup.string()
+    .oneOf(['MOVE', 'ATTACK', 'SKILL', 'DEFEND', 'WAIT'], 'action must be one of: MOVE, ATTACK, SKILL, DEFEND, WAIT')
+    .required('action is required'),
+  target: yup.object({
+    x: yup.number().integer().min(0).max(20),
+    y: yup.number().integer().min(0).max(20),
+  }).optional(),
+  targetGeneralId: yup.number().integer().min(0).optional(),
+  skillId: yup.string().max(100).optional(),
+});
+
+export const battleReadySchema = yup.object({
+  generalId: yup.number()
+    .integer('generalId must be an integer')
+    .min(0, 'generalId must be >= 0')
+    .required('generalId is required'),
+});
+
+// ============================================================
+// Nation Routes Schemas
+// ============================================================
+
+export const nationSetBillSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  amount: yup.number()
+    .integer('amount must be an integer')
+    .min(20, 'amount must be >= 20')
+    .max(200, 'amount must be <= 200')
+    .required('amount is required'),
+});
+
+export const nationSetRateSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  amount: yup.number()
+    .integer('amount must be an integer')
+    .min(5, 'amount must be >= 5')
+    .max(30, 'amount must be <= 30')
+    .required('amount is required'),
+});
+
+export const nationSetSecretLimitSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  amount: yup.number()
+    .integer('amount must be an integer')
+    .min(1, 'amount must be >= 1')
+    .max(99, 'amount must be <= 99')
+    .required('amount is required'),
+});
+
+export const nationSetNoticeSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  msg: yup.string()
+    .max(16384, 'msg must be <= 16384 characters')
+    .required('msg is required'),
+});
+
+export const nationSetScoutMsgSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  msg: yup.string()
+    .max(1000, 'msg must be <= 1000 characters')
+    .required('msg is required'),
+});
+
+export const nationSetTroopNameSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  troopID: yup.number()
+    .integer('troopID must be an integer')
+    .min(0, 'troopID must be >= 0')
+    .required('troopID is required'),
+  troopName: yup.string()
+    .min(1, 'troopName must be at least 1 character')
+    .max(18, 'troopName must be <= 18 characters')
+    .required('troopName is required'),
+});
+
+export const nationBlockScoutSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  value: yup.boolean().required('value is required'),
+});
+
+export const nationBlockWarSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  value: yup.boolean().required('value is required'),
+});
+
+// ============================================================
+// Troop Routes Schemas
+// ============================================================
+
+export const troopJoinSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  troop_id: yup.number()
+    .integer('troop_id must be an integer')
+    .min(0, 'troop_id must be >= 0')
+    .required('troop_id is required'),
+});
+
+export const troopKickSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number()
+    .integer('general_id must be an integer')
+    .min(0, 'general_id must be >= 0')
+    .required('general_id is required'),
+});
+
+export const troopNewSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  name: yup.string()
+    .min(1, 'name must be at least 1 character')
+    .max(18, 'name must be <= 18 characters')
+    .required('name is required'),
+  description: yup.string().max(500, 'description must be <= 500 characters').optional(),
+});
+
+export const troopSetNameSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  name: yup.string()
+    .min(1, 'name must be at least 1 character')
+    .max(18, 'name must be <= 18 characters')
+    .required('name is required'),
+});
+
+export const troopSetLeaderCandidateSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number()
+    .integer('general_id must be an integer')
+    .min(0, 'general_id must be >= 0')
+    .required('general_id is required'),
+});
+
+// ============================================================
+// Diplomacy Routes Schemas
+// ============================================================
+
+export const diplomacySendLetterSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  prevNo: yup.number().integer().min(0).optional(),
+  destNationId: yup.number()
+    .integer('destNationId must be an integer')
+    .min(0, 'destNationId must be >= 0')
+    .required('destNationId is required'),
+  brief: yup.string()
+    .max(200, 'brief must be <= 200 characters')
+    .required('brief is required'),
+  detail: yup.string()
+    .max(5000, 'detail must be <= 5000 characters')
+    .optional(),
+});
+
+export const diplomacyRespondSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  letterNo: yup.number()
+    .integer('letterNo must be an integer')
+    .min(0, 'letterNo must be >= 0')
+    .required('letterNo is required'),
+  action: yup.string()
+    .oneOf(['accept', 'reject'], 'action must be one of: accept, reject')
+    .required('action is required'),
+});
+
+export const diplomacyProcessSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  letterNo: yup.number()
+    .integer('letterNo must be an integer')
+    .min(0, 'letterNo must be >= 0')
+    .required('letterNo is required'),
+  action: yup.string().required('action is required'),
+  data: yup.object().optional(),
+});
+
+// ============================================================
+// Message Routes Schemas
+// ============================================================
+
+export const messageSendSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  to_general_id: yup.number()
+    .integer('to_general_id must be an integer')
+    .min(0, 'to_general_id must be >= 0')
+    .optional(),
+  destGeneralID: yup.number()
+    .integer('destGeneralID must be an integer')
+    .min(0, 'destGeneralID must be >= 0')
+    .optional(),
+  message: yup.string()
+    .max(5000, 'message must be <= 5000 characters')
+    .optional(),
+  text: yup.string()
+    .max(5000, 'text must be <= 5000 characters')
+    .optional(),
+  type: yup.string()
+    .oneOf(['normal', 'diplomatic', 'secret'], 'type must be one of: normal, diplomatic, secret')
+    .optional(),
+  mailbox: yup.string().optional(),
+});
+
+export const messageDecideSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  message_id: yup.number()
+    .integer('message_id must be an integer')
+    .min(0, 'message_id must be >= 0')
+    .optional(),
+  msgID: yup.number()
+    .integer('msgID must be an integer')
+    .min(0, 'msgID must be >= 0')
+    .optional(),
+  response: yup.string()
+    .oneOf(['accept', 'reject'], 'response must be one of: accept, reject')
+    .required('response is required'),
+});
+
+export const messageDeleteSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  message_id: yup.number()
+    .integer('message_id must be an integer')
+    .min(0, 'message_id must be >= 0')
+    .optional(),
+  msgID: yup.number()
+    .integer('msgID must be an integer')
+    .min(0, 'msgID must be >= 0')
+    .optional(),
+});
+
 /**
  * Validation Middleware Factory
  * 

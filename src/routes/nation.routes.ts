@@ -2,6 +2,18 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { asyncHandler } from '../middleware/async-handler';
+import { 
+  validate, 
+  nationSetBillSchema, 
+  nationSetRateSchema, 
+  nationSetSecretLimitSchema,
+  nationSetNoticeSchema,
+  nationSetScoutMsgSchema,
+  nationSetTroopNameSchema,
+  nationBlockScoutSchema,
+  nationBlockWarSchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
 
 import { GeneralListService } from '../services/nation/GeneralList.service';
 import { GetGeneralLogService } from '../services/nation/GetGeneralLog.service';
@@ -865,7 +877,7 @@ router.post('/strat_finan', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-bill', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-bill', authenticate, preventMongoInjection('body'), validate(nationSetBillSchema), asyncHandler(async (req, res) => {
     const result = await SetBillService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1003,7 +1015,7 @@ router.post('/set-bill', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-block-scout', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-block-scout', authenticate, preventMongoInjection('body'), validate(nationBlockScoutSchema), asyncHandler(async (req, res) => {
     const result = await SetBlockScoutService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1155,7 +1167,7 @@ router.post('/set-block-scout', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-block-war', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-block-war', authenticate, preventMongoInjection('body'), validate(nationBlockWarSchema), asyncHandler(async (req, res) => {
     const result = await SetBlockWarService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1318,7 +1330,7 @@ router.post('/set-block-war', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-notice', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-notice', authenticate, preventMongoInjection('body'), validate(nationSetNoticeSchema), asyncHandler(async (req, res) => {
     const result = await SetNoticeService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1470,7 +1482,7 @@ router.post('/set-notice', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-rate', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-rate', authenticate, preventMongoInjection('body'), validate(nationSetRateSchema), asyncHandler(async (req, res) => {
     const result = await SetRateService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1636,7 +1648,7 @@ router.post('/set-rate', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-scout-msg', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-scout-msg', authenticate, preventMongoInjection('body'), validate(nationSetScoutMsgSchema), asyncHandler(async (req, res) => {
     const result = await SetScoutMsgService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1796,7 +1808,7 @@ router.post('/set-scout-msg', authenticate, asyncHandler(async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-secret-limit', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-secret-limit', authenticate, preventMongoInjection('body'), validate(nationSetSecretLimitSchema), asyncHandler(async (req, res) => {
     const result = await SetSecretLimitService.execute(req.body, req.user);
     res.json(result);
   }));
@@ -1963,7 +1975,7 @@ router.post('/set-secret-limit', authenticate, asyncHandler(async (req, res) => 
  *       500:
  *         description: 서버 오류
  */
-router.post('/set-troop-name', authenticate, asyncHandler(async (req, res) => {
+router.post('/set-troop-name', authenticate, preventMongoInjection('body'), validate(nationSetTroopNameSchema), asyncHandler(async (req, res) => {
     const result = await SetTroopNameService.execute(req.body, req.user);
     res.json(result);
   }));

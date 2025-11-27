@@ -47,21 +47,33 @@ export class FoundNationCommand extends GeneralCommand {
   }
 
   protected init(): void {
+    const env = this.env;
+    const relYear = env.year - env.startyear;
+
     this.setCity();
     this.setNation(['gennum', 'aux']);
 
+    // PHP: minConditionConstraints
     this.minConditionConstraints = [
+      ConstraintHelper.BeOpeningPart(relYear + 1),
       ConstraintHelper.ReqNationValue('level', '국가규모', '==', 0, '정식 국가가 아니어야합니다.'),
       ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }
 
   protected initWithArg(): void {
+    const env = this.env;
+    const relYear = env.year - env.startyear;
+
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.BeLord(),
       ConstraintHelper.WanderingNation(),
       ConstraintHelper.ReqNationValue('gennum', '수하 장수', '>=', 2),
+      ConstraintHelper.BeOpeningPart(relYear + 1),
       ConstraintHelper.CheckNationNameDuplicate(this.arg.nationName),
+      ConstraintHelper.AllowJoinAction(),
+      ConstraintHelper.ConstructableCity(),
       ConstraintHelper.NoPenalty('NoFoundNation'),
     ];
   }

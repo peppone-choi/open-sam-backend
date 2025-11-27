@@ -227,6 +227,14 @@ export class che_물자원조 extends NationCommand {
     general.addExperience(5);
     general.addDedication(5);
 
+    // PHP: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     this.setResultTurn(new LastTurn(che_물자원조.getName(), this.arg));
     await general.applyDB(db);
 
@@ -288,4 +296,4 @@ export class che_물자원조 extends NationCommand {
       }
     };
   }
-}
+}

@@ -310,10 +310,9 @@ export class FireAttackCommand extends GeneralCommand {
       general.increaseVarWithLimit('rice', -reqRice, 0);
       general.addExperience(exp);
       general.addDedication(ded);
-      // 화공은 지력 주력 + 정치/매력 소량
-      general.increaseVar('intel_exp', 1);
-      general.increaseVar('politics_exp', 0.3);
-      general.increaseVar('charm_exp', 0.3);
+      // PHP: increaseVar($statType . '_exp', 1)
+      // TS 확장: statType에 따라 해당 경험치 증가
+      general.increaseVar(`${statType}_exp`, 1);
 
       this.setResultTurn(new LastTurn(FireAttackCommand.getName(), this.arg));
       general.checkStatChange();
@@ -358,10 +357,9 @@ export class FireAttackCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    // 화공은 지력 주력 + 정치/매력 소량
-    general.increaseVar('intel_exp', 1);
-    general.increaseVar('politics_exp', 0.3);
-    general.increaseVar('charm_exp', 0.3);
+    // PHP: increaseVar($statType . '_exp', 1)
+    // TS 확장: statType에 따라 해당 경험치 증가
+    general.increaseVar(`${statType}_exp`, 1);
     
     // 화공 횟수 증가 (랭킹)
     try {

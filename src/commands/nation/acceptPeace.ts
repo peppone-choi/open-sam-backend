@@ -151,8 +151,17 @@ export class che_종전수락 extends NationCommand {
     destLogger.pushNationalHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전`);
 
     await general.applyDB(db);
+    
+    // PHP: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
     await destLogger.flush();
 
     return true;
   }
-}
+}

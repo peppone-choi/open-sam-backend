@@ -30,11 +30,11 @@ export class BoostMoraleCommand extends GeneralCommand {
       ConstraintHelper.OccupiedCity(),
     ];
 
+    // PHP 원본과 동일: SuppliedCity() 제약 없음 (사기진작은 보급 연결 불필요)
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.NotWanderingNation(),
       ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ReqGeneralCrew(),
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
@@ -139,9 +139,10 @@ export class BoostMoraleCommand extends GeneralCommand {
 
     general.addExperience(exp);
     general.addDedication(ded);
-    // 사기진작은 통솔 70% + 매력 30%
+    // PHP 원본: leadership_exp +1만 증가
+    // TS 확장: 사기진작은 군사 커맨드이지만 병사 통솔 특성상 charm 영향 추가
     general.increaseVar('leadership_exp', 1);
-    general.increaseVar('charm_exp', 0.5);
+    general.increaseVar('charm_exp', 0.5);  // ⚡ TS 확장: PHP에는 없음
 
     this.setResultTurn(new LastTurn((this.constructor as typeof BoostMoraleCommand).getName(), this.arg));
     general.checkStatChange();

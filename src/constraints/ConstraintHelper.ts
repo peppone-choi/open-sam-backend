@@ -4,6 +4,17 @@ export interface IConstraint {
   message?: string;
 }
 
+/**
+ * 한글 받침 존재 여부 확인 (조사 처리용)
+ */
+function hasKoreanBatchim(char: string): boolean {
+  if (!char) return false;
+  const code = char.charCodeAt(0);
+  // 한글 유니코드 범위: 0xAC00 ~ 0xD7A3
+  if (code < 0xAC00 || code > 0xD7A3) return false;
+  return (code - 0xAC00) % 28 !== 0;
+}
+
 export interface Constraint extends IConstraint {}
 
 export class ConstraintHelper {
@@ -19,6 +30,38 @@ export class ConstraintHelper {
     return {
       test: (input: any, env: any) => {
         return input.general?.getVar('officer_level') >= 5 ? null : '수뇌부만 가능합니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NotChief.php
+   * 수뇌부가 아닌 장수만 허용 (officer_level <= 4)
+   */
+  static NotChief(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const officerLevel = input.general?.getVar?.('officer_level') 
+          ?? input.general?.officer_level 
+          ?? input.general?.data?.officer_level 
+          ?? 0;
+        return officerLevel <= 4 ? null : '수뇌입니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NotLord.php
+   * 군주가 아닌 장수만 허용 (officer_level !== 12)
+   */
+  static NotLord(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const officerLevel = input.general?.getVar?.('officer_level') 
+          ?? input.general?.officer_level 
+          ?? input.general?.data?.officer_level 
+          ?? 0;
+        return officerLevel !== 12 ? null : '군주입니다.';
       }
     };
   }
@@ -170,20 +213,101 @@ export class ConstraintHelper {
     };
   }
 
-  static HasRouteWithEnemy(): IConstraint {
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/HasRoute.php
+   * 목적 도시까지 경로가 있는지 확인 (자국 영토 통과)
+   */
+  static HasRoute(): IConstraint {
     return {
       test: (input: any, env: any) => {
-        return null;
+        if (!input.general || !input.destCity) {
+          return '장수 또는 목적지 정보가 없습니다.';
+        }
+
+        const generalCity = input.general.getVar?.('city') ?? input.general.city ?? input.general.data?.city;
+        const destCityId = input.destCity.city ?? input.destCity.data?.city;
+        const nationId = input.general.getNationID?.() ?? input.general.nation ?? input.general.data?.nation ?? 0;
+
+        if (!generalCity || !destCityId) {
+          return '도시 정보가 없습니다.';
+        }
+
+        try {
+          const { searchDistanceListToDest } = require('../func/searchDistance');
+          const allowedNations = [nationId];
+          const distanceList = searchDistanceListToDest(generalCity, destCityId, allowedNations);
+
+          if (!distanceList || distanceList.length === 0) {
+            return '경로에 도달할 방법이 없습니다.';
+          }
+          return null;
+        } catch (error) {
+          console.warn('[HasRoute] Error:', error);
+          // 에러 시 일단 허용 (서버 안정성 우선)
+          return null;
+        }
       }
     };
   }
 
-  static NotOpeningPart(): IConstraint {
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/HasRouteWithEnemy.php
+   * 적국 영토를 통과하여 목적 도시까지 경로가 있는지 확인
+   */
+  static HasRouteWithEnemy(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        if (!input.general || !input.destCity) {
+          return '장수 또는 목적지 정보가 없습니다.';
+        }
+
+        const generalCity = input.general.getVar?.('city') ?? input.general.city ?? input.general.data?.city;
+        const destCityId = input.destCity.city ?? input.destCity.data?.city;
+        const nationId = input.general.getNationID?.() ?? input.general.nation ?? input.general.data?.nation ?? 0;
+
+        if (!generalCity || !destCityId) {
+          return '도시 정보가 없습니다.';
+        }
+
+        try {
+          const { searchDistanceListToDest } = require('../func/searchDistance');
+          
+          // 교전 중인 국가 목록 가져오기 (input.warNations에서)
+          const warNations = input.warNations ?? [];
+          const allowedNations = [nationId, 0, ...warNations]; // 자국, 중립, 교전국
+
+          // 목적 도시가 교전국인지 확인
+          const destCityNation = input.destCity.nation ?? input.destCity.data?.nation ?? 0;
+          if (destCityNation !== 0 && destCityNation !== nationId && !warNations.includes(destCityNation)) {
+            return '교전중인 국가가 아닙니다.';
+          }
+
+          const distanceList = searchDistanceListToDest(generalCity, destCityId, allowedNations);
+
+          if (!distanceList || distanceList.length === 0) {
+            return '경로에 도달할 방법이 없습니다.';
+          }
+          return null;
+        } catch (error) {
+          console.warn('[HasRouteWithEnemy] Error:', error);
+          // 에러 시 일단 허용 (서버 안정성 우선)
+          return null;
+        }
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NotOpeningPart.php
+   * 초반 제한 기간이 지났는지 확인
+   * @param relYear - 현재 상대 년도 (현재년도 - 시작년도)
+   */
+  static NotOpeningPart(relYear?: number): IConstraint {
     return {
       test: (input: any, env: any) => {
         const openingPartYear = env?.opening_part_year ?? 3;
-        const relYear = (env?.year ?? 0) - (env?.startyear ?? 0);
-        return relYear >= openingPartYear ? null : '초반 제한 중에는 불가능합니다.';
+        const currentRelYear = relYear ?? ((env?.year ?? 0) - (env?.startyear ?? 0));
+        return currentRelYear >= openingPartYear ? null : '초반 제한 중에는 불가능합니다.';
       }
     };
   }
@@ -196,14 +320,6 @@ export class ConstraintHelper {
     };
   }
 
-  static NearNation(): IConstraint {
-    return {
-      test: (input: any, env: any) => {
-        return null;
-      }
-    };
-  }
-
   static DisallowDiplomacyBetweenStatus(statusMessages: Record<number, string>): IConstraint {
     return {
       test: (input: any, env: any) => {
@@ -212,6 +328,57 @@ export class ConstraintHelper {
           return statusMessages[diplomacyStatus];
         }
         return null;
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/AllowDiplomacyStatus.php
+   * 특정 외교 상태가 허용되는지 확인
+   * @param nationID - 확인할 국가 ID
+   * @param allowList - 허용되는 외교 상태 코드 배열
+   * @param errMsg - 에러 메시지
+   */
+  static AllowDiplomacyStatus(nationID: number, allowList: number[], errMsg: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        // input.diplomacyList에서 해당 국가의 외교 상태를 찾음
+        const diplomacyList = input.diplomacyList ?? [];
+        
+        // 허용된 상태가 있는지 확인
+        const hasAllowedStatus = diplomacyList.some((dip: any) => 
+          dip.me === nationID && allowList.includes(dip.state)
+        );
+
+        if (hasAllowedStatus) {
+          return null;
+        }
+        return errMsg;
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/DisallowDiplomacyStatus.php
+   * 특정 외교 상태가 금지되는지 확인
+   * @param nationID - 확인할 국가 ID
+   * @param disallowList - { 외교상태코드: 에러메시지 } 형태
+   */
+  static DisallowDiplomacyStatus(nationID: number, disallowList: Record<number, string>): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const diplomacyList = input.diplomacyList ?? [];
+        const disallowCodes = Object.keys(disallowList).map(k => parseInt(k, 10));
+
+        // 금지된 상태가 있는지 확인
+        const foundDip = diplomacyList.find((dip: any) => 
+          dip.me === nationID && disallowCodes.includes(dip.state)
+        );
+
+        if (!foundDip) {
+          return null;
+        }
+        return disallowList[foundDip.state];
       }
     };
   }
@@ -411,14 +578,6 @@ export class ConstraintHelper {
     };
   }
 
-  static NoPenalty(...penalties: any[]): IConstraint {
-    return { test: () => null };
-  }
-
-  static ReqCityTrader(...args: any[]): IConstraint {
-    return { test: () => null };
-  }
-
   static ReqCityCapacity(key: string, message?: string, value?: any): IConstraint {
     const actualMessage = message || key;
     return {
@@ -591,6 +750,100 @@ export class ConstraintHelper {
     return {
       test: (input: any, env: any) => {
         return input.city?.nation === 0 ? null : '중립 도시가 아닙니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NotOccupiedCity.php
+   * 자국 도시가 아닌 경우만 허용
+   */
+  static NotOccupiedCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const cityNation = input.city?.nation ?? input.city?.data?.nation;
+        const generalNation = input.general?.getNationID?.() ?? input.general?.nation ?? input.general?.data?.nation;
+        return cityNation !== generalNation ? null : '아국입니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ReqCityValue.php
+   * 도시 값 비교 (범용)
+   */
+  static ReqCityValue(
+    key: string, 
+    keyNick: string, 
+    comp: string, 
+    reqVal: any, 
+    errMsg?: string
+  ): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const city = input.city;
+        if (!city) {
+          return '도시 정보가 없습니다.';
+        }
+
+        const value = city[key] ?? city.data?.[key];
+        let targetVal = reqVal;
+
+        // 퍼센트 문자열 처리 (예: "50%")
+        if (typeof reqVal === 'string' && reqVal.endsWith('%')) {
+          const percent = parseFloat(reqVal.replace('%', '')) / 100;
+          const maxKey = `${key}_max`;
+          const maxValue = city[maxKey] ?? city.data?.[maxKey] ?? 100;
+          targetVal = maxValue * percent;
+        }
+
+        let result = false;
+        let defaultMsg = '';
+        switch (comp) {
+          case '<':
+            result = value < targetVal;
+            defaultMsg = '너무 많습니다.';
+            break;
+          case '<=':
+            result = value <= targetVal;
+            defaultMsg = '너무 많습니다.';
+            break;
+          case '==':
+            result = value == targetVal;
+            defaultMsg = `올바르지 않은 ${keyNick}입니다.`;
+            break;
+          case '!=':
+            result = value != targetVal;
+            defaultMsg = `올바르지 않은 ${keyNick}입니다.`;
+            break;
+          case '===':
+            result = value === targetVal;
+            defaultMsg = `올바르지 않은 ${keyNick}입니다.`;
+            break;
+          case '!==':
+            result = value !== targetVal;
+            defaultMsg = `올바르지 않은 ${keyNick}입니다.`;
+            break;
+          case '>=':
+            result = value >= targetVal;
+            defaultMsg = targetVal === 1 ? '없습니다.' : '부족합니다.';
+            break;
+          case '>':
+            result = value > targetVal;
+            defaultMsg = targetVal === 0 ? '없습니다.' : '부족합니다.';
+            break;
+          default:
+            throw new Error(`Unknown comparator: ${comp}`);
+        }
+
+        if (result) return null;
+
+        if (errMsg) return errMsg;
+
+        // 조사 처리 (이/가)
+        const lastChar = keyNick.charAt(keyNick.length - 1);
+        const josa = hasKoreanBatchim(lastChar) ? '이' : '가';
+        return `${keyNick}${josa} ${defaultMsg}`;
       }
     };
   }
@@ -937,6 +1190,304 @@ export class ConstraintHelper {
           console.error('[AvailableRecruitCrewType] Error:', error);
           return null;
         }
+      }
+    };
+  }
+
+  // ===== Phase 5: 특수 Constraint =====
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/AdhocCallback.php
+   * 커스텀 콜백을 사용한 제약 조건 (TS에서는 Custom과 유사)
+   */
+  static AdhocCallback(callback: () => string | null): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        return callback();
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/AllowRebellion.php
+   * 반란 허용 조건 확인
+   */
+  static AllowRebellion(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const general = input.general;
+        const nationId = general?.getNationID?.() ?? general?.nation ?? general?.data?.nation ?? 0;
+
+        if (nationId === 0) {
+          return '재야입니다.';
+        }
+
+        const lord = input.lord; // ExecuteEngine에서 미리 로드해야 함
+        if (!lord) {
+          return '군주 정보가 없습니다.';
+        }
+
+        const generalNo = general?.getVar?.('no') ?? general?.no ?? general?.data?.no ?? 0;
+        if (lord.no === generalNo) {
+          return '이미 군주입니다.';
+        }
+
+        // 군주 활동 여부 확인 (killturn 비교)
+        const envKillturn = env?.killturn ?? 0;
+        if ((lord.killturn ?? 0) >= envKillturn) {
+          return '군주가 활동중입니다.';
+        }
+
+        // NPC 군주는 반란 불가
+        const lordNpc = lord.npc ?? lord.data?.npc ?? 0;
+        if ([2, 3, 6, 9].includes(lordNpc)) {
+          return '군주가 NPC입니다.';
+        }
+
+        return null;
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/BattleGroundCity.php
+   * 목적 도시가 교전 중인 국가의 도시인지 확인
+   */
+  static BattleGroundCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const generalNation = input.general?.getNationID?.() ?? input.general?.nation ?? input.general?.data?.nation ?? 0;
+        const destCityNation = input.destCity?.nation ?? input.destCity?.data?.nation ?? 0;
+
+        // 중립 도시면 허용
+        if (destCityNation === 0) {
+          return null;
+        }
+
+        // input.diplomacyList에서 교전 상태(state=0) 확인
+        const diplomacyList = input.diplomacyList ?? [];
+        const isAtWar = diplomacyList.some((dip: any) => 
+          dip.me === generalNation && dip.you === destCityNation && dip.state === 0
+        );
+
+        if (isAtWar) {
+          return null;
+        }
+
+        return '교전중인 국가의 도시가 아닙니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ConstructableCity.php
+   * 건설 가능 도시인지 확인 (공백지 + 중/소도시)
+   */
+  static ConstructableCity(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const city = input.city;
+        const cityNation = city?.nation ?? city?.data?.nation;
+        const cityLevel = city?.level ?? city?.data?.level ?? 0;
+
+        if (cityNation !== 0) {
+          return '공백지가 아닙니다.';
+        }
+
+        // level 5 = 중도시, level 6 = 소도시
+        if (![5, 6].includes(cityLevel)) {
+          return '중, 소 도시에만 가능합니다.';
+        }
+
+        return null;
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/DifferentNationDestGeneral.php
+   * 타국 장수인지 확인
+   */
+  static DifferentNationDestGeneral(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const generalNation = input.general?.getNationID?.() ?? input.general?.nation ?? input.general?.data?.nation ?? 0;
+        const destGeneralNation = input.destGeneral?.getNationID?.() ?? input.destGeneral?.nation ?? input.destGeneral?.data?.nation ?? 0;
+
+        if (destGeneralNation !== generalNation) {
+          return null;
+        }
+
+        return '같은 국가의 장수입니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ExistsAllowJoinNation.php
+   * 임관 가능한 국가가 존재하는지 확인
+   */
+  static ExistsAllowJoinNation(relYear: number, excludeNationList: number[]): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        // input.nationList에서 임관 가능한 국가 확인
+        const nationList = input.nationList ?? [];
+        const initialNationGenLimit = env?.initial_nation_gen_limit ?? 10;
+        const defaultMaxGeneral = env?.default_max_general ?? 50;
+
+        const maxGen = relYear < 3 ? initialNationGenLimit : defaultMaxGeneral;
+
+        const availableNations = nationList.filter((nation: any) => {
+          const nationNo = nation.nation ?? nation.no ?? nation.data?.nation;
+          if (excludeNationList.includes(nationNo)) return false;
+          if ((nation.scout ?? nation.data?.scout ?? 0) !== 0) return false; // 임관 금지
+          if ((nation.gennum ?? nation.data?.gennum ?? 0) >= maxGen) return false;
+          return true;
+        });
+
+        if (availableNations.length > 0) {
+          return null;
+        }
+
+        return '임관할 국가가 없습니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/MustBeNPC.php
+   * NPC 장수인지 확인 (npc >= 2)
+   */
+  static MustBeNPC(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const npc = input.general?.getVar?.('npc') ?? input.general?.npc ?? input.general?.data?.npc ?? 0;
+        return npc >= 2 ? null : 'NPC여야 합니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/MustBeTroopLeader.php
+   * 부대장인지 확인
+   */
+  static MustBeTroopLeader(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const generalNo = input.general?.getVar?.('no') ?? input.general?.no ?? input.general?.data?.no ?? 0;
+        const troopNo = input.general?.getVar?.('troop') ?? input.general?.troop ?? input.general?.data?.troop ?? 0;
+
+        if (generalNo === troopNo && troopNo !== 0) {
+          return null;
+        }
+
+        return '부대장이 아닙니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ReqTroopMembers.php
+   * 부대원이 있는지 확인
+   */
+  static ReqTroopMembers(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        // input.troopMembers에서 확인 (ExecuteEngine에서 미리 로드해야 함)
+        const troopMembers = input.troopMembers ?? [];
+        const generalNo = input.general?.getVar?.('no') ?? input.general?.no ?? input.general?.data?.no ?? 0;
+
+        // 자기 자신을 제외한 부대원이 있는지 확인
+        const hasMembers = troopMembers.some((member: any) => {
+          const memberNo = member.no ?? member.data?.no ?? 0;
+          return memberNo !== generalNo;
+        });
+
+        if (hasMembers) {
+          return null;
+        }
+
+        return '집합 가능한 부대원이 없습니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NoPenalty.php
+   * 특정 패널티가 없는지 확인
+   */
+  static NoPenalty(penaltyKey: string): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const penalty = input.general?.getVar?.('penalty') ?? input.general?.penalty ?? input.general?.data?.penalty ?? '{}';
+        
+        let penaltyObj: Record<string, string> = {};
+        if (typeof penalty === 'string') {
+          try {
+            penaltyObj = JSON.parse(penalty);
+          } catch {
+            penaltyObj = {};
+          }
+        } else if (typeof penalty === 'object') {
+          penaltyObj = penalty;
+        }
+
+        if (penaltyKey in penaltyObj) {
+          return `징계 사유: ${penaltyObj[penaltyKey]}`;
+        }
+
+        return null;
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NearNation.php
+   * 인접 국가인지 확인
+   */
+  static NearNation(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const srcNationId = input.nation?.nation ?? input.nation?.no ?? input.nation?.data?.nation ?? 0;
+        const destNationId = input.destNation?.nation ?? input.destNation?.no ?? input.destNation?.data?.nation ?? 0;
+
+        // input.neighborNations에서 확인 (ExecuteEngine에서 미리 로드해야 함)
+        const neighborNations = input.neighborNations ?? [];
+
+        if (neighborNations.includes(destNationId)) {
+          return null;
+        }
+
+        // neighborNations가 없으면 일단 허용
+        if (neighborNations.length === 0) {
+          console.warn('[NearNation] neighborNations not provided, skipping check');
+          return null;
+        }
+
+        return '인접 국가가 아닙니다.';
+      }
+    };
+  }
+
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ReqCityTrader.php
+   * 도시에 상인이 있는지 확인
+   */
+  static ReqCityTrader(npcType: number): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const trade = input.city?.trade ?? input.city?.data?.trade;
+
+        // trade가 있거나 npcType >= 2이면 허용
+        if (trade !== null && trade !== undefined) {
+          return null;
+        }
+
+        if (npcType >= 2) {
+          return null;
+        }
+
+        return '도시에 상인이 없습니다.';
       }
     };
   }

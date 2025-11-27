@@ -1,5 +1,14 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
+import { 
+  validate, 
+  troopJoinSchema, 
+  troopKickSchema, 
+  troopNewSchema,
+  troopSetNameSchema,
+  troopSetLeaderCandidateSchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
 
 import { ExitTroopService } from '../services/troop/ExitTroop.service';
 import { JoinTroopService } from '../services/troop/JoinTroop.service';
@@ -66,7 +75,7 @@ router.post('/exit', authenticate, async (req, res) => {
  *       200:
  *         description: 가입 신청 성공
  */
-router.post('/join-troop', authenticate, async (req, res) => {
+router.post('/join-troop', authenticate, preventMongoInjection('body'), validate(troopJoinSchema), async (req, res) => {
   try {
     const result = await JoinTroopService.execute(req.body, req.user);
     res.json(result);
@@ -109,7 +118,7 @@ router.post('/join', authenticate, async (req, res) => {
  *       200:
  *         description: 추방 성공
  */
-router.post('/kick-from-troop', authenticate, async (req, res) => {
+router.post('/kick-from-troop', authenticate, preventMongoInjection('body'), validate(troopKickSchema), async (req, res) => {
   try {
     const result = await KickFromTroopService.execute(req.body, req.user);
     res.json(result);
@@ -176,7 +185,7 @@ router.post('/modify-troop', authenticate, async (req, res) => {
  *       200:
  *         description: 생성 성공
  */
-router.post('/new-troop', authenticate, async (req, res) => {
+router.post('/new-troop', authenticate, preventMongoInjection('body'), validate(troopNewSchema), async (req, res) => {
   try {
     const result = await NewTroopService.execute(req.body, req.user);
     res.json(result);
@@ -217,7 +226,7 @@ router.post('/new', authenticate, async (req, res) => {
  *       200:
  *         description: 지정 성공
  */
-router.post('/set-leader-candidate', authenticate, async (req, res) => {
+router.post('/set-leader-candidate', authenticate, preventMongoInjection('body'), validate(troopSetLeaderCandidateSchema), async (req, res) => {
   try {
     const result = await SetLeaderCandidateService.execute(req.body, req.user);
     res.json(result);
@@ -248,7 +257,7 @@ router.post('/set-leader-candidate', authenticate, async (req, res) => {
  *       200:
  *         description: 변경 성공
  */
-router.post('/set-troop-name', authenticate, async (req, res) => {
+router.post('/set-troop-name', authenticate, preventMongoInjection('body'), validate(troopSetNameSchema), async (req, res) => {
   try {
     const result = await SetTroopNameService.execute(req.body, req.user);
     res.json(result);

@@ -52,11 +52,12 @@ export class che_몰수 extends NationCommand {
 
     const relYear = this.env['year'] - this.env['startyear'];
 
+    // PHP: minConditionConstraints
     this.minConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.NotOpeningPart(),
+      ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.SuppliedCity()
     ];
   }
@@ -75,11 +76,12 @@ export class che_몰수 extends NationCommand {
       return;
     }
 
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.NotOpeningPart(),
+      ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ExistsDestGeneral(),
       ConstraintHelper.FriendlyDestGeneral()
@@ -234,4 +236,4 @@ export class che_몰수 extends NationCommand {
       }
     };
   }
-}
+}

@@ -113,6 +113,7 @@ export class SearchTalentCommand extends GeneralCommand {
     if (!foundNpc) {
       logger.pushGeneralActionLog(`인재를 찾을 수 없었습니다. <1>${date}</>`);
 
+      // TS 확장: politics_exp, charm_exp 추가 (PHP는 leadership/strength/intel만)
       const incStat = rng.choiceUsingWeight({
         leadership_exp: general.getLeadership(false, false, false, false),
         strength_exp: general.getStrength(false, false, false, false),
@@ -137,12 +138,7 @@ export class SearchTalentCommand extends GeneralCommand {
       try {
         const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
         const sessionId = this.env.session_id || 'sangokushi_default';
-        await tryUniqueItemLottery(
-          // TODO: general.genGenericUniqueRNG(SearchTalentCommand.actionName),
-          general,
-          sessionId,
-          '인재탐색'
-        );
+        await tryUniqueItemLottery(rng, general, sessionId, '인재탐색');
       } catch (error) {
         console.error('tryUniqueItemLottery 실패:', error);
       }
@@ -210,12 +206,7 @@ export class SearchTalentCommand extends GeneralCommand {
     try {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(SearchTalentCommand.actionName),
-        general,
-        sessionId,
-        '인재탐색'
-      );
+      await tryUniqueItemLottery(rng, general, sessionId, '인재탐색');
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);
     }

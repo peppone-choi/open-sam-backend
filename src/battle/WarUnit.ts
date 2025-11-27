@@ -316,7 +316,8 @@ export abstract class WarUnit {
     }
 
     const baseAttack = (this.crewType.attack ?? 100) + techAbil;
-    return Math.round(baseAttack * ratio / 100);
+    // PHP와 동일하게 float 반환 (반올림 없음)
+    return baseAttack * ratio / 100;
   }
   
   getComputedDefence(): number {
@@ -338,7 +339,8 @@ export abstract class WarUnit {
 
     // PHP: $crew = ($general->getVar('crew') / (7000 / 30)) + 70;
     const crewCoef = crew / (7000 / 30) + 70;
-    return Math.round(baseDefence * crewCoef / 100);
+    // PHP와 동일하게 float 반환 (반올림 없음)
+    return baseDefence * crewCoef / 100;
   }
   
   computeWarPower(): [number, number] {
@@ -390,35 +392,76 @@ export abstract class WarUnit {
   }
   
   // 병종 공격 상성 계수
+  // PHP GameUnitConstBase.php의 attackCoef 배열 기준
   protected getAttackCoef(attacker: GameUnitDetail, defender: GameUnitDetail): number {
-    // 간단한 상성 시스템 (추후 GameUnitConst에서 가져오도록 개선 가능)
-    const armTypeMap: Record<number, string> = {
-      1: 'FOOTMAN',
-      2: 'ARCHER',
-      3: 'CAVALRY',
-      4: 'WIZARD',
-      5: 'SIEGE'
+    // PHP에서는 GameUnitDetail.attackCoef[opposeCrewTypeID] 또는 attackCoef[armType]를 사용
+    // TS에서는 armType 기반 기본 상성표 사용 (PHP 삼국지 데이터 기준)
+    
+    // 먼저 attacker가 attackCoef 배열을 가지고 있으면 사용
+    if ((attacker as any).attackCoef) {
+      const coefMap = (attacker as any).attackCoef as Record<number, number>;
+      // 1. 상대 병종 ID로 직접 매칭
+      if (coefMap[defender.id] !== undefined) {
+        return coefMap[defender.id];
+      }
+      // 2. armType으로 매칭
+      if (coefMap[defender.armType] !== undefined) {
+        return coefMap[defender.armType];
+      }
+    }
+    
+    // 기본 상성표 (PHP GameUnitConstBase.php 기준)
+    // armType: 1=보병, 2=궁병, 3=기병, 4=귀병, 5=차병, 0=성벽
+    const attackCoefTable: Record<number, Record<number, number>> = {
+      // 보병: 궁병에 강함, 기병에 약함
+      1: { 2: 1.2, 3: 0.8, 5: 1.2 },
+      // 궁병: 기병에 강함, 보병에 약함  
+      2: { 1: 0.8, 3: 1.2, 5: 1.2 },
+      // 기병: 보병에 강함, 궁병에 약함
+      3: { 1: 1.2, 2: 0.8, 5: 1.2 },
+      // 귀병: 차병에만 강함
+      4: { 5: 1.2 },
+      // 차병: 특수 상성 (정란, 충차, 벽력거 등 개별 정의)
+      5: { 0: 1.8 }, // 성벽에 강함
     };
     
-    const attackerType = armTypeMap[attacker.armType] || 'FOOTMAN';
-    const defenderType = armTypeMap[defender.armType] || 'FOOTMAN';
-    
-    // 기본 상성표 (삼국지 11 기준)
-    const advantage: Record<string, Record<string, number>> = {
-      'FOOTMAN': { 'FOOTMAN': 1.0, 'ARCHER': 1.1, 'CAVALRY': 0.8, 'WIZARD': 1.0, 'SIEGE': 1.2 },
-      'ARCHER': { 'FOOTMAN': 1.0, 'ARCHER': 1.0, 'CAVALRY': 1.0, 'WIZARD': 0.8, 'SIEGE': 0.8 },
-      'CAVALRY': { 'FOOTMAN': 1.2, 'ARCHER': 1.6, 'CAVALRY': 1.0, 'WIZARD': 1.2, 'SIEGE': 1.5 },
-      'WIZARD': { 'FOOTMAN': 1.1, 'ARCHER': 1.2, 'CAVALRY': 0.9, 'WIZARD': 1.0, 'SIEGE': 1.0 },
-      'SIEGE': { 'FOOTMAN': 0.7, 'ARCHER': 0.9, 'CAVALRY': 0.6, 'WIZARD': 1.0, 'SIEGE': 1.0 }
-    };
-    
-    return advantage[attackerType]?.[defenderType] || 1.0;
+    return attackCoefTable[attacker.armType]?.[defender.armType] ?? 1.0;
   }
   
   // 병종 방어 상성 계수
+  // PHP GameUnitConstBase.php의 defenceCoef 배열 기준
   protected getDefenceCoef(attacker: GameUnitDetail, defender: GameUnitDetail): number {
-    // 방어 계수는 공격 계수의 역수
-    return 1.0 / this.getAttackCoef(defender, attacker);
+    // PHP에서는 GameUnitDetail.defenceCoef[opposeCrewTypeID] 또는 defenceCoef[armType]를 사용
+    
+    // 먼저 attacker가 defenceCoef 배열을 가지고 있으면 사용
+    if ((attacker as any).defenceCoef) {
+      const coefMap = (attacker as any).defenceCoef as Record<number, number>;
+      // 1. 상대 병종 ID로 직접 매칭
+      if (coefMap[defender.id] !== undefined) {
+        return coefMap[defender.id];
+      }
+      // 2. armType으로 매칭
+      if (coefMap[defender.armType] !== undefined) {
+        return coefMap[defender.armType];
+      }
+    }
+    
+    // 기본 방어 상성표 (PHP GameUnitConstBase.php 기준)
+    // armType: 1=보병, 2=궁병, 3=기병, 4=귀병, 5=차병, 0=성벽
+    const defenceCoefTable: Record<number, Record<number, number>> = {
+      // 보병: 궁병에 약함, 기병에 강함
+      1: { 2: 0.8, 3: 1.2, 5: 0.8 },
+      // 궁병: 기병에 약함, 보병에 강함
+      2: { 1: 1.2, 3: 0.8, 5: 0.8 },
+      // 기병: 보병에 약함, 궁병에 강함
+      3: { 1: 0.8, 2: 1.2, 5: 0.8 },
+      // 귀병: 차병에만 약함
+      4: { 5: 0.8 },
+      // 차병: 다른 병종에 대해 방어 페널티
+      5: { 1: 1.2, 2: 1.2, 3: 1.2, 4: 1.2 },
+    };
+    
+    return defenceCoefTable[attacker.armType]?.[defender.armType] ?? 1.0;
   }
   
   addTrain(train: number): void {

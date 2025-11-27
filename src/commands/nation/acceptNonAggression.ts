@@ -194,9 +194,17 @@ export class che_불가침수락 extends NationCommand {
       `<D><b>${nationName}</b></>${josaWaSrc} ${year}년 ${month}월까지 불가침 성공`
     );
 
+    // PHP: StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+
     await general.applyDB(db);
     await destLogger.flush();
 
     return true;
   }
-}
+}

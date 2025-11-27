@@ -428,12 +428,15 @@ export class ExecuteEngineService {
     const beforeMonth = sessionData.month || 1;
     ExecuteEngineService.turnDate(initialTurnDateTime, sessionData);
 
-    // 년/월이 변경되었으면 저장
+    // 년/월이 변경되었으면 저장 및 월별 이벤트 처리
     if (sessionData.year !== beforeYear || sessionData.month !== beforeMonth) {
       session.data = sessionData;
       session.markModified('data');
       await sessionRepository.saveDocument(session);
       logger.info('Game date updated', { year: sessionData.year, month: sessionData.month });
+
+      // 봉록 지급 처리 (봄 1월: 금, 가을 7월: 쌀)
+      await this.processSeasonalIncome(sessionId, sessionData);
     }
 
     // ========================================
@@ -2006,6 +2009,41 @@ export class ExecuteEngineService {
     } catch (error: any) {
       logger.error('Error registering auctions', {
         sessionId,
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  }
+
+  /**
+   * 봉록 지급 처리 (PHP ProcessIncome 호출)
+   * - 봄(1월): 금 지급
+   * - 가을(7월): 쌀 지급
+   */
+  private static async processSeasonalIncome(sessionId: string, gameEnv: any) {
+    const year = gameEnv.year;
+    const month = gameEnv.month;
+
+    try {
+      // 봄(1월): 금 지급
+      if (month === 1) {
+        logger.info('[ProcessIncome] Processing gold income (Spring)', { sessionId, year, month });
+        const { ProcessIncome } = await import('../../core/event/Action/ProcessIncome');
+        const incomeProcessor = new ProcessIncome('gold');
+        await incomeProcessor.run({ session_id: sessionId, year, month });
+      }
+      // 가을(7월): 쌀 지급
+      else if (month === 7) {
+        logger.info('[ProcessIncome] Processing rice income (Autumn)', { sessionId, year, month });
+        const { ProcessIncome } = await import('../../core/event/Action/ProcessIncome');
+        const incomeProcessor = new ProcessIncome('rice');
+        await incomeProcessor.run({ session_id: sessionId, year, month });
+      }
+    } catch (error: any) {
+      logger.error('[ProcessIncome] Failed to process seasonal income', {
+        sessionId,
+        year,
+        month,
         error: error.message,
         stack: error.stack
       });

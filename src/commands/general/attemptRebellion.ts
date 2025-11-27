@@ -18,13 +18,14 @@ export class AttemptRebellionCommand extends GeneralCommand {
     this.setCity();
     this.setNation();
 
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.Custom((input: any, env: any) => input.officer_level !== 12, '군주는 반란을 일으킬 수 없습니다'),
-      ConstraintHelper.Custom((input: any, env: any) => env.allow_rebellion !== false, '반란이 허용되지 않습니다')
+      ConstraintHelper.NotLord(),
+      ConstraintHelper.AllowRebellion(),
     ];
   }
 
@@ -107,14 +108,7 @@ export class AttemptRebellionCommand extends GeneralCommand {
       console.error('StaticEventHandler 실패:', error);
     }
 
-    // UniqueItemLottery
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '모반시도');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // PHP: tryUniqueItemLottery 호출 안 함
     
     await this.saveGeneral();
     await lordGeneral.save();

@@ -887,35 +887,105 @@ export class DipStateActionSelector {
 // ================================================================
 
 /**
- * 외교 상태 계산 (PHP calcDiplomacyState 간소화)
+ * 외교 상태 계산 (PHP calcDiplomacyState 포팅)
+ * 
+ * PHP GeneralAI.php 206-281줄 로직:
+ * 1. 게임 초반(2년 5개월)이면 간단히 처리
+ * 2. 전쟁 대상 분류: state=0(전쟁중), state=1(선포됨)
+ * 3. 최소 term(남은 개월)에 따라 상태 결정:
+ *    - term > 8: d선포
+ *    - term > 5: d징병 
+ *    - term <= 5: d직전
+ * 4. 전쟁 중 + attackable이면 d전쟁
+ * 
+ * @param nation 국가 데이터
+ * @param warTargets 전쟁 대상 목록 [{state, remainMonth, ...}]
+ * @param env 환경 설정 (옵션: year, month, startyear)
+ * @param attackable 전선 도시 존재 여부 (옵션)
  */
-export function calculateDipState(nation: any, warTargets: any[]): DipState {
+export function calculateDipState(
+  nation: any, 
+  warTargets: any[], 
+  env?: { year?: number; month?: number; startyear?: number },
+  attackable?: boolean
+): DipState {
   if (!nation || nation.nation === 0) {
     return DipState.d평화;
   }
   
-  // 전쟁 중인 국가가 있는지 확인
-  const hasActiveWar = warTargets.some((target: any) => target.state === 0);
-  if (hasActiveWar) {
-    return DipState.d전쟁;
-  }
-  
-  // 선포된 국가가 있는지 확인 (state가 1이거나 특정 조건)
-  const hasDeclared = warTargets.some((target: any) => target.state === 1);
-  if (hasDeclared) {
-    // 남은 개월 수에 따라 상태 결정
-    const minMonths = Math.min(...warTargets.filter((t: any) => t.state === 1).map((t: any) => t.remainMonth || 3));
-    if (minMonths <= 0) {
-      return DipState.d전쟁;
-    } else if (minMonths <= 1) {
-      return DipState.d직전;
-    } else if (minMonths <= 2) {
-      return DipState.d징병;
+  // === 1. 게임 초반 체크 (PHP 219-228줄) ===
+  if (env?.year && env?.month && env?.startyear) {
+    const yearMonth = env.year * 12 + env.month;
+    const earlyGameEnd = (env.startyear + 2) * 12 + 5;  // 시작년도 + 2년 5개월
+    
+    if (yearMonth <= earlyGameEnd) {
+      if (!warTargets || warTargets.length === 0) {
+        return DipState.d평화;
+      } else {
+        return DipState.d선포;  // 게임 초반에는 선포까지만
+      }
     }
-    return DipState.d선포;
   }
   
-  return DipState.d평화;
+  // === 2. 전쟁 대상 분류 (PHP 234-248줄) ===
+  let onWar = 0;      // state=0: 전쟁 중
+  let onWarReady = 0; // state=1 && term<5: 곧 전쟁
+  
+  for (const target of warTargets) {
+    const state = target.state ?? 0;
+    const term = target.remainMonth ?? target.term ?? 0;
+    
+    if (state === 0) {
+      onWar++;
+    } else if (state === 1 && term < 5) {
+      onWarReady++;
+    }
+  }
+  
+  // === 3. minWarTerm에 따른 상태 결정 (PHP 256-267줄) ===
+  const declaredTargets = warTargets.filter((t: any) => t.state === 1);
+  
+  if (declaredTargets.length === 0 && onWar === 0) {
+    // 전쟁 대상 없음 → 평화
+    return DipState.d평화;
+  }
+  
+  // 선포된 전쟁의 최소 남은 개월 수
+  const minWarTerm = declaredTargets.length > 0
+    ? Math.min(...declaredTargets.map((t: any) => t.remainMonth ?? t.term ?? 12))
+    : null;
+  
+  let dipState = DipState.d평화;
+  
+  if (minWarTerm === null) {
+    dipState = DipState.d평화;
+  } else if (minWarTerm > 8) {
+    // PHP: minWarTerm > 8 → d선포
+    dipState = DipState.d선포;
+  } else if (minWarTerm > 5) {
+    // PHP: minWarTerm > 5 (6,7,8) → d징병
+    dipState = DipState.d징병;
+  } else {
+    // PHP: minWarTerm <= 5 → d직전
+    dipState = DipState.d직전;
+  }
+  
+  // === 4. 전쟁 상태 체크 (PHP 269-280줄) ===
+  // 전쟁 중 + attackable(전선 도시 있음) → d전쟁
+  if (onWar > 0) {
+    // attackable 파라미터가 제공되면 체크, 아니면 전쟁 중이면 d전쟁
+    if (attackable === undefined || attackable) {
+      dipState = DipState.d전쟁;
+    }
+    // TODO: last_attackable 로직 (최근 5개월 내 접경 기록) - 상태 저장 필요
+  }
+  
+  // 선포 후 term이 0 이하면 전쟁 시작
+  if (declaredTargets.some((t: any) => (t.remainMonth ?? t.term ?? 0) <= 0)) {
+    dipState = DipState.d전쟁;
+  }
+  
+  return dipState;
 }
 
 /**

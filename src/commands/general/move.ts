@@ -170,10 +170,10 @@ export class MoveCommand extends GeneralCommand {
     general.addExperience(exp);
     general.increaseVar('leadership_exp', 1);
 
-    // 비용 차감
-    const [reqGold, reqRice] = this.getCost();
+    // 비용 차감 (PHP 원본: gold만 차감, rice=0)
+    const [reqGold, _reqRice] = this.getCost();
     general.increaseVarWithLimit('gold', -reqGold, 0);
-    general.increaseVarWithLimit('rice', -reqRice, 0);
+    // PHP 원본에서는 rice 차감 없음 (reqRice=0이므로 영향 없음)
 
     // 사기 감소 (최소값 20)
     general.increaseVarWithLimit('atmos', -5, 20);

@@ -3,6 +3,14 @@ import { authenticate } from '../middleware/auth';
 import { CommandController } from '../controllers/command.controller';
 import { commandAntiAbuseMiddleware } from '../common/middleware/command-anti-abuse.middleware';
 import { recordCommandRequest } from '../common/metrics/command-metrics';
+import { 
+  validate, 
+  commandPushSchema, 
+  commandReserveSchema, 
+  commandDeleteSchema,
+  commandBulkReserveSchema,
+  preventMongoInjection 
+} from '../middleware/validation.middleware';
  
  const router = Router();
 
@@ -220,8 +228,8 @@ router.get('/get-reserved-command', authenticate, CommandController.getReservedC
  *       500:
  *         description: 서버 오류
  */
-router.post('/push-command', authenticate, commandAntiAbuseMiddleware, CommandController.pushCommand);
-router.post('/push', authenticate, commandAntiAbuseMiddleware, CommandController.pushCommand); // 별칭 (프론트엔드 호환)
+router.post('/push-command', authenticate, preventMongoInjection('body'), validate(commandPushSchema), commandAntiAbuseMiddleware, CommandController.pushCommand);
+router.post('/push', authenticate, preventMongoInjection('body'), validate(commandPushSchema), commandAntiAbuseMiddleware, CommandController.pushCommand); // 별칭 (프론트엔드 호환)
 
 /**
  * @swagger
@@ -364,7 +372,7 @@ router.post('/repeat-command', authenticate, commandAntiAbuseMiddleware, Command
  *       401:
  *         description: 인증 실패
  */
-router.post('/reserve-bulk-command', authenticate, commandAntiAbuseMiddleware, CommandController.reserveBulkCommand);
+router.post('/reserve-bulk-command', authenticate, preventMongoInjection('body'), validate(commandBulkReserveSchema), commandAntiAbuseMiddleware, CommandController.reserveBulkCommand);
 
 /**
  * @swagger
@@ -497,8 +505,8 @@ router.post('/reserve-bulk-command', authenticate, commandAntiAbuseMiddleware, C
  *       500:
  *         description: 서버 오류
  */
-router.post('/reserve-command', authenticate, commandAntiAbuseMiddleware, CommandController.reserveCommand);
-router.post('/reserve', authenticate, CommandController.reserveCommand); // 별칭 (프론트엔드 호환)
+router.post('/reserve-command', authenticate, preventMongoInjection('body'), validate(commandReserveSchema), commandAntiAbuseMiddleware, CommandController.reserveCommand);
+router.post('/reserve', authenticate, preventMongoInjection('body'), validate(commandReserveSchema), CommandController.reserveCommand); // 별칭 (프론트엔드 호환)
 
 /**
  * @swagger
@@ -627,18 +635,14 @@ router.post('/pull-command', authenticate, commandAntiAbuseMiddleware, async (re
  *       200:
  *         description: 명령 삭제 성공
  */
-router.post('/delete-command', authenticate, commandAntiAbuseMiddleware, async (req, res) => {
+router.post('/delete-command', authenticate, preventMongoInjection('body'), validate(commandDeleteSchema), commandAntiAbuseMiddleware, async (req, res) => {
   try {
     const sessionId = req.body.session_id || 'sangokushi_default';
     const generalId = req.user?.generalId || req.body.general_id;
-    const turnList = Array.isArray(req.body.turn_list) ? req.body.turn_list : [req.body.turn_list];
+    const turnList = req.body.turn_list; // Already validated as array by schema
 
     if (!generalId) {
       return res.status(400).json({ success: false, message: '장수 ID가 필요합니다' });
-    }
-
-    if (!turnList || turnList.length === 0) {
-      return res.status(400).json({ success: false, message: '턴 목록이 필요합니다' });
     }
 
     const { deleteGeneralCommand } = await import('../utils/command-helpers');

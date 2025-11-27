@@ -29,12 +29,13 @@ export class che_의병모집 extends NationCommand {
     const env = this.env;
     const relYear = env['year'] - env['startyear'];
 
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
       ConstraintHelper.BeChief(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.AvailableStrategicCommand('strategic'),
-      ConstraintHelper.NotOpeningPart()
+      ConstraintHelper.NotOpeningPart(relYear)
     ];
   }
 
@@ -197,4 +198,4 @@ export class che_의병모집 extends NationCommand {
 
     return true;
   }
-}
+}

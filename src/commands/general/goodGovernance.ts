@@ -13,7 +13,9 @@ import { cityRepository } from '../../repositories/city.repository';
  */
 export class GoodGovernanceCommand extends GeneralCommand {
   protected static cityKey = 'trust';
-  protected static statKey = 'politics'; // 선정은 정치 능력치 주 사용 (매력도 관여)
+  // PHP 원본: statKey = 'leadership'
+  // TS 확장: 선정은 정치+매력 기반으로 변경 (AGENT_2_COMMAND.md 기준)
+  protected static statKey = 'politics'; // ⚡ TS 확장: PHP에서는 leadership
   protected static actionKey = '민심';
   protected static actionName = '주민 선정';
 
@@ -207,9 +209,10 @@ export class GoodGovernanceCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -this.reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    // 선정은 정치 70% + 매력 30%
-    general.increaseVar('politics_exp', 1);
-    general.increaseVar('charm_exp', 0.5);
+    // PHP 원본: leadership_exp +1
+    // TS 확장: 선정은 정치+매력 기반으로 변경 (AGENT_2_COMMAND.md 기준)
+    general.increaseVar('politics_exp', 1);  // ⚡ TS 확장: PHP에서는 leadership_exp
+    general.increaseVar('charm_exp', 0.5);   // ⚡ TS 확장: PHP에는 없음
     
     this.setResultTurn(new LastTurn((this.constructor as typeof GoodGovernanceCommand).getName(), this.arg));
     general.checkStatChange();

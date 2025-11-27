@@ -36,7 +36,8 @@ export class WanderCommand extends GeneralCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.BeLord(),
       ConstraintHelper.NotWanderingNation(),
-      ConstraintHelper.NotOpeningPart()
+      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.AllowDiplomacyStatus(this.generalObj.getNationID(), [2, 7], '방랑할 수 없는 외교상태입니다.'),
     ];
   }
 
@@ -166,14 +167,7 @@ export class WanderCommand extends GeneralCommand {
       console.error('StaticEventHandler 실패:', error);
     }
 
-    // UniqueItemLottery
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '방랑');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // PHP: tryUniqueItemLottery 호출하지 않음
 
     await this.saveGeneral();
 

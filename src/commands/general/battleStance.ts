@@ -146,14 +146,19 @@ export class BattleStanceCommand extends GeneralCommand {
       general.addDex(crewTypeObj, (crew / 100) * 3, false);
     }
 
-    const [reqGold, reqRice] = this.getCost();
-    general.increaseVarWithLimit('gold', -reqGold, 0);
+    // PHP에서는 getCost()로 조건 검증만 하고 실제 gold 차감은 하지 않음
+    // const [reqGold, reqRice] = this.getCost();
+    // general.increaseVarWithLimit('gold', -reqGold, 0);
 
     general.increaseVar('leadership_exp', 3);
     this.setResultTurn(turnResult);
     general.checkStatChange();
     await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, BattleStanceCommand, this.env, this.arg ?? {});
-    // TODO: await tryUniqueItemLottery(general.genGenericUniqueRNG(BattleStanceCommand.actionName), general, general.session_id || '');
+    
+    // PHP: tryUniqueItemLottery(genGenericUniqueRNGFromGeneral($general, static::$actionName), $general);
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    await tryUniqueItemLottery(rng, this.generalObj, sessionId, '전투태세');
+    
     await this.saveGeneral();
 
     return true;

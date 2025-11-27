@@ -47,8 +47,9 @@ export class DeployCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
     const relYear = this.env.year - this.env.startyear;
 
+    // PHP 원본과 동일: NotOpeningPart(relYear+2)
     this.minConditionConstraints = [
-      ConstraintHelper.NotOpeningPart(),
+      ConstraintHelper.NotOpeningPart(relYear + 2),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
@@ -74,9 +75,9 @@ export class DeployCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
     const relYear = this.env.year - this.env.startyear;
 
-    // fullConditionConstraints를 먼저 설정 (setDestCity는 비동기이므로 나중에 처리)
+    // PHP 원본과 동일: NotOpeningPart(relYear)
     this.fullConditionConstraints = [
-      ConstraintHelper.NotOpeningPart(),
+      ConstraintHelper.NotOpeningPart(relYear),
       ConstraintHelper.NotSameDestCity(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),

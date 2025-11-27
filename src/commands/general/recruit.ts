@@ -49,12 +49,13 @@ export class RecruitCommand extends GeneralCommand {
 
     const relYear = this.env.year - this.env.startyear;
 
+    // PHP와 일치
     this.permissionConstraints = [
-      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다'),
     ];
 
     this.minConditionConstraints = [
-      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다'),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
@@ -67,16 +68,17 @@ export class RecruitCommand extends GeneralCommand {
   protected initWithArg(): void {
     const [reqGold, reqRice] = this.getCost();
 
-    // fullConditionConstraints를 먼저 설정
+    // PHP: fullConditionConstraints
     this.fullConditionConstraints = [
-      ConstraintHelper.ReqEnvValue('join_mode', '!==', 'onlyRandom', '등용 모드가 아닙니다.'),
+      ConstraintHelper.ReqEnvValue('join_mode', '!=', 'onlyRandom', '랜덤 임관만 가능합니다'),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ExistsDestGeneral(),
-      ConstraintHelper.FriendlyDestGeneral(),
+      ConstraintHelper.DifferentNationDestGeneral(), // PHP: DifferentNationDestGeneral
       ConstraintHelper.ReqGeneralGold(reqGold),
       ConstraintHelper.ReqGeneralRice(reqRice),
+      // 추가: 군주 등용 금지는 initWithArg에서 destGeneralObj 로드 후 별도 처리
     ];
     
     // destGeneral은 run() 메서드에서 로드됨
@@ -205,7 +207,7 @@ export class RecruitCommand extends GeneralCommand {
     // 경험치 증가
     const exp = 50;
     general.addExperience(exp);
-    general.increaseVar('charm_exp', 1);
+    // PHP: charm_exp 없음 - leadership_exp만 있음
 
     this.setResultTurn(new LastTurn(RecruitCommand.getName(), this.arg));
     general.checkStatChange();
@@ -217,15 +219,11 @@ export class RecruitCommand extends GeneralCommand {
       console.error('StaticEventHandler 실패:', error);
     }
 
+    // PHP: tryUniqueItemLottery 호출
     try {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(RecruitCommand.actionName),
-        general,
-        sessionId,
-        '등용'
-      );
+      await tryUniqueItemLottery(rng, general, sessionId, '등용');
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);
     }
