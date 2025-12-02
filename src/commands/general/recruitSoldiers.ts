@@ -10,13 +10,10 @@ export class RecruitSoldiersCommand extends ConscriptCommand {
   protected static actionName = '모병';
   protected static costOffset = 2;
 
-  protected static defaultTrain: number;
-  protected static defaultAtmos: number;
+  protected static defaultTrain = GameConst.defaultTrainHigh || 80;
+  protected static defaultAtmos = GameConst.defaultAtmosHigh || 80;
 
-  protected static initStatic(): void {
-    this.defaultTrain = GameConst.defaultTrainHigh || 80;
-    this.defaultAtmos = GameConst.defaultAtmosHigh || 80;
-  }
+  // protected static initStatic(): void { ... } removed
 
   public getCommandDetailTitle(): string {
     return `${(this.constructor as typeof RecruitSoldiersCommand).getName()}(통솔경험, 자금×2)`;

@@ -6,8 +6,11 @@ import * as BattleEventHook from '../services/battle/BattleEventHook.service';
 import jwt from 'jsonwebtoken';
 import type { JwtPayload } from '../middleware/auth';
 import { verifyGeneralOwnership } from '../common/auth-utils';
+import { saveGeneral } from '../common/cache/model-cache.helper';
+import { runWithDistributedLock } from '../common/lock/distributed-lock.helper';
 
 const HQ_COMMAND_RADIUS = 250; // 총사령관 지휘 기본 반경 (px 기준, 임시 값)
+const BATTLE_LOCK_TTL = 30; // 전투 락 TTL (초)
 
 function authenticateBattleSocket(socket: Socket): string | null {
   const authToken =
@@ -62,6 +65,11 @@ function authenticateBattleSocket(socket: Socket): string | null {
 export class BattleSocketHandler {
   private io: Server;
   private battleTimers: Map<string, NodeJS.Timeout> = new Map();
+  // 연결된 사용자의 전투 참가 정보 추적 (재연결 시 상태 복구용)
+  private userBattleMap: Map<string, { battleId: string; generalId: number }> = new Map();
+  // 연결 끊김 타임아웃 (일정 시간 내 재연결 시 상태 유지)
+  private disconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private readonly DISCONNECT_GRACE_PERIOD = 60000; // 60초
 
   constructor(io: Server) {
     this.io = io;
@@ -73,6 +81,9 @@ export class BattleSocketHandler {
       // 인증 실패 시 이벤트를 바인딩하지 않는다.
       return;
     }
+
+    // 재연결 처리: 이전 연결 끊김 타임아웃 취소
+    this.handleReconnection(socket, userId);
 
     socket.on('battle:join', async (data) => {
       await this.handleJoin(socket, data);
@@ -95,9 +106,141 @@ export class BattleSocketHandler {
       await this.handleRealtimeCommand(socket, data);
     });
 
-    socket.on('disconnect', () => {
-      console.log('전투 소켓 연결 해제:', socket.id);
+    // 재연결 시 상태 복구 요청
+    socket.on('battle:reconnect', async (data) => {
+      await this.handleReconnectRequest(socket, data);
     });
+
+    socket.on('disconnect', async () => {
+      await this.handleDisconnect(socket, userId);
+    });
+  }
+
+  /**
+   * 재연결 처리: 이전 연결 끊김 타임아웃 취소 및 상태 복구 알림
+   */
+  private handleReconnection(socket: Socket, userId: string) {
+    // 이전 연결 끊김 타임아웃 취소
+    const existingTimeout = this.disconnectTimeouts.get(userId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      this.disconnectTimeouts.delete(userId);
+      console.log(`[Battle] 사용자 재연결, 연결 끊김 타임아웃 취소: ${userId}`);
+    }
+
+    // 이전 전투 참가 정보가 있으면 알림
+    const battleInfo = this.userBattleMap.get(userId);
+    if (battleInfo) {
+      socket.emit('battle:reconnect_available', {
+        battleId: battleInfo.battleId,
+        generalId: battleInfo.generalId,
+        message: '이전 전투 세션이 있습니다. 재연결하시겠습니까?',
+        timestamp: new Date()
+      });
+    }
+  }
+
+  /**
+   * 연결 끊김 처리
+   */
+  private async handleDisconnect(socket: Socket, userId: string) {
+    console.log(`[Battle] 전투 소켓 연결 해제: ${socket.id}, userId: ${userId}`);
+
+    const battleInfo = this.userBattleMap.get(userId);
+    if (!battleInfo) {
+      return;
+    }
+
+    // 즉시 제거하지 않고, 일정 시간 대기 후 제거 (재연결 기회 부여)
+    const timeout = setTimeout(async () => {
+      console.log(`[Battle] 재연결 대기 시간 초과, 전투 참가 정보 제거: ${userId}`);
+      
+      // 전투에서 제거 알림
+      this.io.to(`battle:${battleInfo.battleId}`).emit('battle:player_disconnected', {
+        generalId: battleInfo.generalId,
+        userId,
+        reason: 'timeout',
+        timestamp: new Date()
+      });
+
+      // 전투 참가 정보 제거
+      this.userBattleMap.delete(userId);
+      this.disconnectTimeouts.delete(userId);
+    }, this.DISCONNECT_GRACE_PERIOD);
+
+    this.disconnectTimeouts.set(userId, timeout);
+
+    // 일시적 연결 끊김 알림
+    this.io.to(`battle:${battleInfo.battleId}`).emit('battle:player_connection_lost', {
+      generalId: battleInfo.generalId,
+      userId,
+      gracePeriod: this.DISCONNECT_GRACE_PERIOD,
+      timestamp: new Date()
+    });
+  }
+
+  /**
+   * 재연결 요청 처리
+   */
+  private async handleReconnectRequest(
+    socket: Socket, 
+    data: { battleId: string; generalId: number }
+  ) {
+    try {
+      const { battleId, generalId } = data;
+      const userId = (socket.data as any).userId as string;
+
+      const battle = await Battle.findOne({ battleId });
+      if (!battle) {
+        socket.emit('battle:error', { message: '전투를 찾을 수 없습니다' });
+        return;
+      }
+
+      // 전투가 이미 종료되었는지 확인
+      if (battle.status === BattleStatus.COMPLETED) {
+        socket.emit('battle:reconnect_failed', {
+          reason: '전투가 이미 종료되었습니다',
+          finalState: {
+            winner: battle.winner,
+            attackerUnits: battle.attackerUnits,
+            defenderUnits: battle.defenderUnits
+          }
+        });
+        this.userBattleMap.delete(userId);
+        return;
+      }
+
+      // 소켓 룸 재참가
+      socket.join(`battle:${battleId}`);
+      
+      // 사용자 전투 정보 업데이트
+      this.userBattleMap.set(userId, { battleId, generalId });
+
+      // 현재 전투 상태 전송
+      socket.emit('battle:reconnected', {
+        battleId: battle.battleId,
+        status: battle.status,
+        currentPhase: battle.currentPhase,
+        currentTurn: battle.currentTurn,
+        attackerUnits: battle.attackerUnits,
+        defenderUnits: battle.defenderUnits,
+        terrain: battle.terrain,
+        participants: battle.participants,
+        timestamp: new Date()
+      });
+
+      // 다른 참가자들에게 재연결 알림
+      this.io.to(`battle:${battleId}`).emit('battle:player_reconnected', {
+        generalId,
+        userId,
+        timestamp: new Date()
+      });
+
+      console.log(`[Battle] 전투 재연결 성공: ${battleId}, generalId: ${generalId}`);
+    } catch (error: any) {
+      socket.emit('battle:error', { message: '재연결 처리 중 오류가 발생했습니다' });
+      console.error('[Battle] 재연결 처리 중 오류:', error);
+    }
   }
 
   private async handleJoin(socket: Socket, data: { battleId: string; generalId: number }) {
@@ -145,6 +288,10 @@ export class BattleSocketHandler {
       }
 
       socket.join(`battle:${battleId}`);
+      
+      // 사용자 전투 참가 정보 저장 (재연결용)
+      this.userBattleMap.set(userId, { battleId, generalId });
+      
       console.log(`장수 ${generalId}가 전투 ${battleId}에 참가했습니다`);
 
       socket.emit('battle:joined', {
@@ -256,7 +403,20 @@ export class BattleSocketHandler {
   private async handleLeave(socket: Socket, data: { battleId: string; generalId: number }) {
     try {
       const { battleId, generalId } = data;
+      const userId = (socket.data as any).userId as string | undefined;
+      
       socket.leave(`battle:${battleId}`);
+
+      // 사용자 전투 참가 정보 제거
+      if (userId) {
+        this.userBattleMap.delete(userId);
+        // 연결 끊김 타임아웃도 취소
+        const existingTimeout = this.disconnectTimeouts.get(userId);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+          this.disconnectTimeouts.delete(userId);
+        }
+      }
 
       this.io.to(`battle:${battleId}`).emit('battle:player_left', {
         generalId,
@@ -287,6 +447,25 @@ export class BattleSocketHandler {
   }
 
   private async resolveTurn(battle: any) {
+    const battleId = battle.battleId;
+    const lockKey = `battle:turn:${battleId}`;
+
+    // 분산 락을 사용하여 동시 턴 처리 방지
+    const result = await runWithDistributedLock(
+      lockKey,
+      () => this.executeResolveTurn(battle),
+      { ttl: BATTLE_LOCK_TTL, retry: 3, retryDelayMs: 100, context: 'resolveTurn' }
+    );
+
+    if (result === null) {
+      console.warn(`[Battle] 턴 처리 락 획득 실패: ${battleId}`);
+      this.io.to(`battle:${battleId}`).emit('battle:error', {
+        message: '턴 처리가 이미 진행 중입니다. 잠시 후 다시 시도해주세요.',
+      });
+    }
+  }
+
+  private async executeResolveTurn(battle: any) {
     try {
       battle.currentPhase = BattlePhase.RESOLUTION;
       await battle.save();
@@ -373,6 +552,16 @@ export class BattleSocketHandler {
           turnNumber: battle.currentTurn - 1,
           results: result,
           nextTurn: battle.currentTurn,
+          timestamp: new Date(),
+        });
+        
+        // 프론트엔드 호환성을 위해 battle:turn_result 이벤트도 emit
+        this.io.to(`battle:${battle.battleId}`).emit('battle:turn_result', {
+          turnNumber: battle.currentTurn - 1,
+          results: result,
+          nextTurn: battle.currentTurn,
+          attackerUnits: battle.attackerUnits,
+          defenderUnits: battle.defenderUnits,
           timestamp: new Date(),
         });
 
@@ -586,6 +775,25 @@ export class BattleSocketHandler {
    * 전투 종료 후 월드 반영 처리
    */
   private async handleBattleEnded(battle: any, result: any) {
+    const battleId = battle.battleId;
+    const lockKey = `battle:world:${battleId}`;
+
+    // 분산 락을 사용하여 동시 월드 반영 방지
+    const lockResult = await runWithDistributedLock(
+      lockKey,
+      () => this.executeHandleBattleEnded(battle, result),
+      { ttl: BATTLE_LOCK_TTL * 2, retry: 5, retryDelayMs: 200, context: 'handleBattleEnded' }
+    );
+
+    if (lockResult === null) {
+      console.error(`[BattleEventHook] 월드 반영 락 획득 실패: ${battleId}`);
+    }
+  }
+
+  /**
+   * 전투 종료 후 월드 반영 실행 (락 내부)
+   */
+  private async executeHandleBattleEnded(battle: any, result: any) {
     try {
       const winner = battle.winner;
       const sessionId = battle.session_id;
@@ -666,7 +874,9 @@ export class BattleSocketHandler {
             },
           });
 
-          await general.save();
+          // CQRS: 캐시에 저장
+          const winnerNo = general.no || general.data?.no || unit.generalId;
+          await saveGeneral(sessionId, winnerNo, general.toObject());
           console.log(
             `[BattleReward] 승리 장수 ${general.name}(${unit.generalId}): 경험치 +${baseExp}, 살상 +${enemyCasualties}`,
           );
@@ -700,7 +910,9 @@ export class BattleSocketHandler {
             },
           });
 
-          await general.save();
+          // CQRS: 캐시에 저장
+          const loserNo = general.no || general.data?.no || unit.generalId;
+          await saveGeneral(sessionId, loserNo, general.toObject());
           console.log(
             `[BattleReward] 패배 장수 ${general.name}(${unit.generalId}): 경험치 +${loseExp}, 손실 +${ownCasualties}`,
           );

@@ -3,6 +3,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { searchDistance } from '../../func/searchDistance';
 
 /**
  * 첩보 커맨드
@@ -123,7 +124,9 @@ export class SpyCommand extends GeneralCommand {
     const destNationID = destCity.nation;
     const logger = general.getLogger();
 
-    const dist = 2;
+    // 거리 계산
+    const distanceMap = await searchDistance(general.getCityID(), 999, false, env.session_id || 'sangokushi_default');
+    const dist = distanceMap[destCityID] ?? 999;
 
     const destCityGeneralList = await db.query(
       'SELECT crew, crewtype FROM general WHERE city = ? AND nation = ?',

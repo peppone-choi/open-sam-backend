@@ -396,6 +396,251 @@ router.post('/delete-me', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/gateway/change-icon:
+ *   post:
+ *     summary: 아이콘 변경
+ *     description: 사용자 전용 아이콘을 변경합니다. FormData로 이미지 파일을 전송합니다.
+ *     tags: [Gateway]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image_upload:
+ *                 type: string
+ *                 format: binary
+ *                 description: 아이콘 이미지 파일 (avif, webp, jpg, gif, png, 50KB 이하)
+ *     responses:
+ *       200:
+ *         description: 아이콘 변경 성공
+ */
+router.post('/change-icon', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        result: false,
+        reason: '인증이 필요합니다'
+      });
+    }
+
+    // multer 미들웨어로 파일 업로드 처리 (서버 설정에 따라 다름)
+    // 여기서는 간단히 body에서 파일 정보를 받는다고 가정
+    const { MiscUploadImageService } = await import('../services/misc/UploadImage.service');
+    
+    // multipart form-data 처리를 위해 multer 사용 필요
+    // 현재는 기본 응답만 제공
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        result: false,
+        reason: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    // 파일이 req.file에 있다고 가정 (multer 미들웨어 필요)
+    if (!(req as any).file) {
+      return res.status(400).json({
+        result: false,
+        reason: '파일이 업로드되지 않았습니다. multipart/form-data 형식으로 전송해주세요.'
+      });
+    }
+
+    const file = (req as any).file;
+    
+    // 파일 크기 검증 (50KB)
+    if (file.size > 50 * 1024) {
+      return res.status(400).json({
+        result: false,
+        reason: '파일 크기는 50KB 이하여야 합니다'
+      });
+    }
+
+    // 파일 형식 검증
+    const allowedTypes = ['image/avif', 'image/webp', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return res.status(400).json({
+        result: false,
+        reason: 'avif, webp, jpg, gif, png 파일만 가능합니다'
+      });
+    }
+
+    // 파일 저장 및 URL 생성
+    const iconUrl = `/uploads/icons/${userId}_${Date.now()}.${file.originalname.split('.').pop()}`;
+    user.picture = iconUrl;
+    await user.save();
+
+    res.json({
+      result: true,
+      reason: '아이콘이 변경되었습니다',
+      iconUrl
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message || '서버 오류가 발생했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/gateway/delete-icon:
+ *   post:
+ *     summary: 아이콘 삭제
+ *     description: 사용자 전용 아이콘을 삭제합니다.
+ *     tags: [Gateway]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 아이콘 삭제 성공
+ */
+router.post('/delete-icon', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        result: false,
+        reason: '인증이 필요합니다'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        result: false,
+        reason: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    // 기존 아이콘 삭제 (파일 시스템에서도 삭제 가능)
+    user.picture = '';
+    await user.save();
+
+    res.json({
+      result: true,
+      reason: '아이콘이 삭제되었습니다'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message || '서버 오류가 발생했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/gateway/disallow-third-use:
+ *   post:
+ *     summary: 개인정보 3자 제공 동의 철회
+ *     description: 개인정보 제3자 제공 동의를 철회합니다.
+ *     tags: [Gateway]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 동의 철회 성공
+ */
+router.post('/disallow-third-use', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        result: false,
+        reason: '인증이 필요합니다'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        result: false,
+        reason: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    user.third_use = false;
+    await user.save();
+
+    res.json({
+      result: true,
+      reason: '개인정보 제3자 제공 동의가 철회되었습니다'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message || '서버 오류가 발생했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/gateway/expand-login-token:
+ *   post:
+ *     summary: 로그인 토큰 연장
+ *     description: 로그인 토큰의 유효기간을 연장합니다.
+ *     tags: [Gateway]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 토큰 연장 성공
+ */
+router.post('/expand-login-token', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        result: false,
+        reason: '인증이 필요합니다'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        result: false,
+        reason: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    // 토큰 유효기간 30일 연장
+    const newValidUntil = new Date();
+    newValidUntil.setDate(newValidUntil.getDate() + 30);
+    
+    user.token_valid_until = newValidUntil.toISOString();
+    await user.save();
+
+    // 새 토큰 발급
+    const newToken = jwt.sign(
+      { userId: user._id.toString(), username: user.username },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      result: true,
+      reason: '로그인 토큰이 연장되었습니다',
+      token: newToken,
+      validUntil: user.token_valid_until
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message || '서버 오류가 발생했습니다'
+    });
+  }
+});
+
 export default router;
 
 

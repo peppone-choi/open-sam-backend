@@ -7,19 +7,19 @@ class CityDefenseRepository {
   }
 
   async ensure(sessionId: string, cityId: number, cityName: string, defaults?: Partial<ICityDefenseState>) {
-    const existing = await this.findByCity(sessionId, cityId);
-    if (existing) {
-      return existing;
-    }
-
-    const payload = new CityDefenseState({
-      session_id: sessionId,
-      city_id: cityId,
-      city_name: cityName,
-      ...defaults,
-    });
-    await payload.save();
-    return payload;
+    // Race condition 방지: upsert 사용
+    return CityDefenseState.findOneAndUpdate(
+      { session_id: sessionId, city_id: cityId },
+      { 
+        $setOnInsert: {
+          session_id: sessionId,
+          city_id: cityId,
+          city_name: cityName,
+          ...defaults,
+        }
+      },
+      { new: true, upsert: true }
+    );
   }
 
   async update(sessionId: string, cityId: number, update: Partial<ICityDefenseState>) {

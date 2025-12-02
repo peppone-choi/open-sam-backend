@@ -1,6 +1,7 @@
 // @ts-nocheck - Type issues need investigation
 import { Router, Request, Response } from 'express';
 import { General } from '../../models';
+import { saveGeneral } from '../../common/cache/model-cache.helper';
 
 const router = Router();
 
@@ -24,7 +25,10 @@ router.post('/setting/save', async (req: Request, res: Response) => {
     if (customCSS !== undefined) aux.custom_css = customCSS;
 
     general.aux = aux;
-    await general.save();
+    // CQRS: 캐시에 저장
+    const sessionId = general.session_id || 'sangokushi_default';
+    const generalNo = general.no || general.data?.no;
+    await saveGeneral(sessionId, generalNo, general.toObject());
 
     res.json({ result: true, reason: 'success' });
   } catch (error) {

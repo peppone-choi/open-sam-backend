@@ -70,6 +70,7 @@ export class PopulationMoveCommand extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqCityCapacity('pop', '주민', GameBalance.minAvailableRecruitPop + 100),
       ConstraintHelper.OccupiedDestCity(),
+      ConstraintHelper.NearCity(1),
       ConstraintHelper.BeChief(),
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.SuppliedDestCity(),
@@ -169,13 +170,16 @@ export class PopulationMoveCommand extends NationCommand {
 
     logger.pushNationalHistoryLog(`<G><b>${destCityName}</b></>${josaRo} 인구 ${amount}명 이동`);
 
-    const StaticEventHandler = global.StaticEventHandler;
-    if (StaticEventHandler?.handleEvent) {
-      StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'PopulationMoveCommand', this.env, this.arg ?? {});
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await await this.saveGeneral();
+    await general.applyDB(DB.db());
 
     return true;
   }
@@ -194,4 +198,4 @@ export class PopulationMoveCommand extends NationCommand {
   }
 }
 
-export const cr_인구이동 = PopulationMoveCommand;
+export const cr_인구이동 = PopulationMoveCommand;

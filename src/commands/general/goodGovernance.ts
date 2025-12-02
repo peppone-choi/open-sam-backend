@@ -4,6 +4,11 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { cityRepository } from '../../repositories/city.repository';
+import { 
+  CriticalRatioDomestic, 
+  CriticalScoreEx, 
+  updateMaxDomesticCritical 
+} from '../../utils/game-processing';
 
 /**
  * 선정(善政) 커맨드
@@ -98,16 +103,6 @@ export class GoodGovernanceCommand extends GeneralCommand {
     return 1 + explevel * 0.01;
   }
 
-  protected criticalRatioDomestic(general: any, statKey: string): { success: number; fail: number } {
-    return { success: 0.1, fail: 0.1 };
-  }
-
-  protected criticalScoreEx(rng: any, pick: string): number {
-    if (pick === 'success') return rng.nextRange(1.5, 2.0);
-    if (pick === 'fail') return rng.nextRange(0.3, 0.7);
-    return 1.0;
-  }
-
   protected calcBaseScore(rng: any): number {
     const general = this.generalObj;
     const statKey = (this.constructor as typeof GoodGovernanceCommand).statKey;
@@ -144,7 +139,20 @@ export class GoodGovernanceCommand extends GeneralCommand {
 
     let score = Math.max(1, this.calcBaseScore(rng));
 
-    let { success: successRatio, fail: failRatio } = this.criticalRatioDomestic(general, statKey);
+    const leadership = general.getLeadership(true, true, true, false);
+    const strength = general.getStrength(true, true, true, false);
+    const intel = general.getIntel(true, true, true, false);
+
+    // Fallback to 'intel' for calculation ratio curve if statKey is 'politics'
+    const ratioType = (statKey === 'politics') ? 'intel' : (statKey as 'leadership' | 'strength' | 'intel');
+    
+    let { success: successRatio, fail: failRatio } = CriticalRatioDomestic(leadership, strength, intel, ratioType);
+    
+    // Adjust for trust
+    if (this.city && this.city.trust < 80) {
+        successRatio *= this.city.trust / 80;
+    }
+
     successRatio = general.onCalcDomestic(actionKey, 'success', successRatio);
     failRatio = general.onCalcDomestic(actionKey, 'fail', failRatio);
 
@@ -161,16 +169,15 @@ export class GoodGovernanceCommand extends GeneralCommand {
     const logger = general.getLogger();
     const date = general.getTurnTime(general.TURNTIME_HM);
 
-    score *= this.criticalScoreEx(rng, pick);
+    score *= CriticalScoreEx(rng, pick);
+    score = Math.round(score);
 
     const exp = score * 0.7;
     const ded = score * 1.0;
 
     if (pick === 'success') {
       try {
-        if (typeof general.updateMaxDomesticCritical === 'function') {
-          // TODO: general.updateMaxDomesticCritical();
-        }
+        updateMaxDomesticCritical(general, score);
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
@@ -194,8 +201,9 @@ export class GoodGovernanceCommand extends GeneralCommand {
       logger.pushGeneralActionLog(`${actionName}을 하여 <C>${scoreText}</> 상승했습니다. <1>${date}</>`);
     }
 
+    const oldCityValue = this.city[cityKey] ?? 50;
     const newCityValue = Math.max(0, Math.min(
-      this.city[cityKey] + score,
+      oldCityValue + score,
       100
     ));
     
@@ -203,6 +211,16 @@ export class GoodGovernanceCommand extends GeneralCommand {
     const cityID = general.data.city ?? 0;
     const cityUpdate: any = {};
     cityUpdate[cityKey] = newCityValue;
+    
+    // 디버그: 민심 변경 추적
+    console.log('[GoodGovernance] 민심 변경:', {
+      sessionId,
+      cityID,
+      cityKey,
+      oldValue: oldCityValue,
+      score,
+      newValue: newCityValue
+    });
     
     await cityRepository.updateByCityNum(sessionId, cityID, cityUpdate);
 

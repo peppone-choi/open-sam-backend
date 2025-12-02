@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { randomUUID } from 'crypto';
+import path from 'path';
 import { mongoConnection } from './db/connection';
 import { mountRoutes } from './api';
 import { errorMiddleware } from './common/middleware/error.middleware';
@@ -18,6 +19,7 @@ import { autoExtractToken } from './middleware/auth';
 import { initializeSocket } from './socket/socketManager';
 import { setupSessionMiddleware, sessionMiddleware } from './common/middleware/session.middleware';
 import { globalLimiter, apiLimiter, authLimiter } from './middleware/rate-limit.middleware';
+import { csrfProtection } from './middleware/csrf.middleware';
 import sessionRoutes from './routes/session.routes';
 import { Session } from './models/session.model';
 import generalRoutes from './routes/general.routes';
@@ -89,6 +91,9 @@ export async function createApp(): Promise<Express> {
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  // CSRF Protection
+  app.use(csrfProtection);
   
   // Session 미들웨어
   app.use(setupSessionMiddleware());
@@ -201,6 +206,35 @@ app.use(compression());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 정적 파일 제공 (terms.html 등)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// multer를 사용한 파일 업로드 지원
+import multer from 'multer';
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: path.join(__dirname, '../public/uploads/icons'),
+    filename: (req, file, cb) => {
+      const ext = file.originalname.split('.').pop();
+      cb(null, `${(req as any).user?.userId || 'unknown'}_${Date.now()}.${ext}`);
+    }
+  }),
+  limits: { fileSize: 50 * 1024 }, // 50KB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/avif', 'image/webp', 'image/jpeg', 'image/png', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('허용되지 않는 파일 형식입니다'));
+    }
+  }
+});
+// multer 미들웨어를 gateway icon 업로드 라우트에 연결
+app.post('/api/gateway/change-icon', upload.single('image_upload'));
+
+// CSRF Protection
+app.use(csrfProtection);
 
 // Session 미들웨어 (express-session 또는 기본)
 app.use(setupSessionMiddleware());

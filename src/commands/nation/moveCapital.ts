@@ -217,7 +217,7 @@ export class che_천도 extends NationCommand {
       `<S><b>【천도】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>${josaRo} <M>천도</>하였습니다.`
     );
 
-    this.setResultTurn(new LastTurn(che_천도.getName(), this.arg));
+    this.setResultTurn(new LastTurn(che_천도.getName(), this.arg, 0));
     await general.applyDB(db);
 
     // StaticEventHandler
@@ -239,4 +239,4 @@ export class che_천도 extends NationCommand {
       }
     };
   }
-}
+}

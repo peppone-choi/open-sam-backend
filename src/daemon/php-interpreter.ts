@@ -2,7 +2,11 @@
  * PHP AST 인터프리터
  * 
  * php-parsed.json의 AST를 실행 가능한 TypeScript 코드로 변환
+ * 
+ * CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
  */
+
+import { saveGeneral, saveCity, saveNation } from '../common/cache/model-cache.helper';
 
 interface Statement {
   kind: string;
@@ -24,14 +28,17 @@ interface Statement {
 
 export class PhpInterpreter {
   private context: any;
+  private sessionId: string;
   
   constructor(context: {
     general?: any;
     city?: any;
     nation?: any;
     arg?: any;
+    sessionId?: string;
   }) {
     this.context = context;
+    this.sessionId = context.sessionId || context.general?.session_id || context.city?.session_id || 'sangokushi_default';
   }
   
   /**
@@ -116,7 +123,12 @@ export class PhpInterpreter {
           break;
       }
       
-      await this.context.general.save();
+      // CQRS 패턴: 캐시에 쓰기
+      const generalId = this.context.general.data?.no || this.context.general.no;
+      const generalData = this.context.general.toObject 
+        ? this.context.general.toObject() 
+        : { ...this.context.general.data, session_id: this.sessionId, no: generalId };
+      await saveGeneral(this.sessionId, generalId, generalData);
     }
     
     // $db->update('city', [...])
@@ -126,7 +138,28 @@ export class PhpInterpreter {
         for (const [key, value] of Object.entries(updates)) {
           this.context.city.data[key] = value;
         }
-        await this.context.city.save();
+        // CQRS 패턴: 캐시에 쓰기
+        const cityId = this.context.city.city || this.context.city.data?.city;
+        const cityData = this.context.city.toObject 
+          ? this.context.city.toObject() 
+          : { ...this.context.city.data, session_id: this.sessionId, city: cityId };
+        await saveCity(this.sessionId, cityId, cityData);
+      }
+    }
+    
+    // $db->update('nation', [...])
+    if (method === 'update' && args[0] === 'nation' && this.context.nation) {
+      const updates = args[1];
+      if (typeof updates === 'object') {
+        for (const [key, value] of Object.entries(updates)) {
+          this.context.nation.data[key] = value;
+        }
+        // CQRS 패턴: 캐시에 쓰기
+        const nationId = this.context.nation.nation || this.context.nation.data?.nation;
+        const nationData = this.context.nation.toObject 
+          ? this.context.nation.toObject() 
+          : { ...this.context.nation.data, session_id: this.sessionId, nation: nationId };
+        await saveNation(this.sessionId, nationId, nationData);
       }
     }
   }

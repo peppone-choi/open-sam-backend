@@ -18,6 +18,7 @@ import { buildItemClass } from './item-class';
 import { UserRecord } from '../models/user_record.model';
 import { KVStorage as KVStorageCollection, IKVStorage } from '../models/kv-storage.model';
 import { KVStorageModel } from '../models/KVStorage.model';
+import { saveGeneral } from '../common/cache/model-cache.helper';
 
 type UniqueItemConstants = {
   allItems: Record<string, Record<string, number>>;
@@ -284,8 +285,10 @@ async function refundInheritRandomUnique(
     logger.warn('[unique-item-lottery] Failed to write inheritPoint log', error);
   }
 
-  if (typeof general.save === 'function') {
-    await general.save();
+  // CQRS: 캐시에 저장
+  const generalNo = general.no || general.data?.no;
+  if (generalNo && sessionId) {
+    await saveGeneral(sessionId, generalNo, general.toObject ? general.toObject() : general);
   }
 }
 
@@ -465,7 +468,9 @@ export async function giveRandomUniqueItem(
     // 장수에게 아이템 지급
     generalData[itemType] = itemCode;
     general.markModified('data');
-    await general.save();
+    // CQRS: 캐시에 저장
+    const generalNo = general.no || generalData.no;
+    await saveGeneral(sessionId, generalNo, general.toObject());
 
     // 로그 기록
     const [year, month] = await gameStor.getValuesAsArray(['year', 'month']);

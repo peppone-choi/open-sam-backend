@@ -35,6 +35,7 @@ export class DesperateDefenseCommand extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
+      ConstraintHelper.AllowDiplomacyStatus(this.generalObj?.getNationID() || 0, [0], '전쟁중이 아닙니다.'),
       ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
@@ -162,4 +163,4 @@ export class DesperateDefenseCommand extends NationCommand {
   }
 }
 
-export const che_필사즉생 = DesperateDefenseCommand;
+export const che_필사즉생 = DesperateDefenseCommand;

@@ -15,7 +15,7 @@ import { AdminErrorLogService } from '../services/admin/AdminErrorLog.service';
 import { ApiError } from '../errors/ApiError';
 import Redis from 'ioredis';
 import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
-import { invalidateCache } from '../common/cache/model-cache.helper';
+import { invalidateCache, saveGeneral } from '../common/cache/model-cache.helper';
 import { 
   validate, 
   adminGeneralSchema, 
@@ -319,6 +319,8 @@ router.post('/game-info', async (req, res) => {
     const gameInfo = {
       serverName: session?.name || '',
       scenario: session?.scenario_name || gameEnv.scenario || '',
+      scenarioText: sessionData.scenarioText || gameEnv.scenarioText || '',
+      serverCnt: sessionData.server_cnt || gameEnv.server_cnt || 1,
       msg: sessionData.noticeMsg || '',
       turnterm: sessionData.turnterm || 0,
       turntime: sessionData.turntime || null,
@@ -377,6 +379,19 @@ router.post('/update-game', async (req, res) => {
       session.markModified('data.game_env');
     } else if (action === 'scenario') {
       session.data.game_env.scenario = data.scenario || '';
+      session.markModified('data.game_env');
+    } else if (action === 'scenarioText') {
+      // 시나리오 표시 이름 설정 (게임 화면에 표시됨)
+      session.data.scenarioText = data.scenarioText || '';
+      session.data.game_env.scenarioText = data.scenarioText || '';
+      session.markModified('data');
+      session.markModified('data.game_env');
+    } else if (action === 'serverCnt') {
+      // 기수 설정
+      const serverCnt = parseInt(data.serverCnt) || 1;
+      session.data.server_cnt = serverCnt;
+      session.data.game_env.server_cnt = serverCnt;
+      session.markModified('data');
       session.markModified('data.game_env');
     } else if (action === 'msg') {
       // AdminGameSettings 서비스를 사용하여 관리자 메시지 설정
@@ -1062,7 +1077,9 @@ router.post('/force-rehall', async (req, res) => {
         
         if (inheritPoints > 0) {
           genData.inherit_points = (genData.inherit_points || 0) + inheritPoints;
-          await general.save();
+          // CQRS: 캐시에 저장
+          const generalNo = general.no || genData.no;
+          await saveGeneral(sessionId, generalNo, general.toObject());
         }
       }
     }

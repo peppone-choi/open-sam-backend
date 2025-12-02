@@ -77,6 +77,11 @@ export class CommandController {
    */
   static async reserveCommand(req: Request, res: Response) {
     try {
+      // 디버깅: req.body 원본 로깅
+      console.log('[CommandController.reserveCommand] req.body:', JSON.stringify(req.body));
+      console.log('[CommandController.reserveCommand] req.body.arg:', JSON.stringify(req.body?.arg));
+      console.log('[CommandController.reserveCommand] arg type:', typeof req.body?.arg);
+      
       const result = await ReserveCommandService.execute(req.body, req.user);
       return CommandController.respond(res, result);
     } catch (error: any) {

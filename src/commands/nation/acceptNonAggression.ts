@@ -8,6 +8,7 @@ import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { General } from '../../models/General';
 import { ActionLogger } from '../../models/ActionLogger';
+import { DiplomacyStateService, DiplomacyState } from '../../services/diplomacy/DiplomacyState.service';
 
 export class che_불가침수락 extends NationCommand {
   static getName(): string {
@@ -164,11 +165,15 @@ export class che_불가침수락 extends NationCommand {
     const currentMonth = env['year'] * 12 + env['month'] - 1;
     const reqMonth = year * 12 + month;
 
-    await db.update(
-      'diplomacy',
-      { state: 7, term: reqMonth - currentMonth },
-      '(me=%i AND you=%i) OR (you=%i AND me=%i)',
-      [nationID, destNationID, nationID, destNationID]
+    // 서비스를 통해 외교 상태 업데이트
+    const sessionId = this.env['session_id'] || 'sangokushi_default';
+    const term = reqMonth - currentMonth;
+    await DiplomacyStateService.updateBilateralState(
+      sessionId,
+      nationID,
+      destNationID,
+      DiplomacyState.NO_AGGRESSION,
+      term
     );
 
     const josaWa = JosaUtil.pick(destNationName, '와');

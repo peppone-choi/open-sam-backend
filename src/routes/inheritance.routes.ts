@@ -5,6 +5,7 @@ import { Session } from '../models/session.model';
 import { authenticate } from '../middleware/auth';
 import { kvStorageRepository } from '../repositories/kvstorage.repository';
 import { UserRecord } from '../models/user_record.model';
+import { saveGeneral } from '../common/cache/model-cache.helper';
 
 const router = Router();
 
@@ -122,7 +123,9 @@ router.post('/use-point', authenticate, async (req, res) => {
     }
 
     general.data.inherit_points = currentPoints - amount;
-    await general.save();
+    // CQRS: 캐시에 저장
+    const generalNo = general.no || general.data?.no;
+    await saveGeneral(sessionId, generalNo, general.toObject());
 
     res.json({
       result: true,
@@ -234,7 +237,9 @@ router.post('/change-turn-time', async (req, res) => {
     // 턴 시각 변경
     general.custom_turn_hour = hour;
     general.custom_turn_minute = minute;
-    await general.save();
+    // CQRS: 캐시에 저장
+    const genNo = general.no || general.data?.no;
+    await saveGeneral(sessionId, genNo, general.toObject());
     
     res.json({
       message: '턴 시각 변경 성공',

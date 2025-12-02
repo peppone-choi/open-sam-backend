@@ -1,11 +1,11 @@
 /**
  * 병종 상수 정의
- * JSON 파일에서 로드
+ * JSON 파일에서 로드 (시나리오 설정의 data.assets.units 경로 사용)
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { getScenarioConstants } from '../utils/scenario-data';
+import { getScenarioConstants, loadDataAsset, getDataAssetPath } from '../utils/scenario-data';
 
 const scenarioConstants = getScenarioConstants();
 const unitTypeConstants = scenarioConstants?.unitTypes ?? {};
@@ -54,7 +54,12 @@ export interface GameUnitDetail {
   reqYear: number;
   reqRegions?: string[];
   reqCities?: string[];
-  reqNationType?: string; // 국가 타입 제약 (country_type_unlock)
+  reqNationType?: string | string[]; // 국가 타입 제약 (reqNationType 또는 country_type_unlock)
+  reqLeadership?: number; // 통솔력 요구
+  reqStrength?: number; // 무력 요구
+  reqIntel?: number; // 지력 요구
+  reqOfficerLevel?: number; // 관직 레벨 요구
+  impossible?: boolean; // 징병 불가
   maxCount?: number; // 최대 부대 수 제한
   timeRestriction?: string; // 시간 제한 (야간 전용 등)
   seasonRestriction?: string; // 계절 제한 (겨울 전용 등)
@@ -85,21 +90,31 @@ function createFallbackUnit(id: number): GameUnitDetail {
 
 /**
  * JSON 파일에서 병종 데이터 로드
+ * 시나리오 설정(scenario.json)의 data.assets.units 경로 사용
  */
-let unitCache: Map<number, GameUnitDetail> | null = null;
-let typeCache: Map<number, GameUnitDetail[]> | null = null;
-let unitsData: any = null;
+// 시나리오별 캐시
+const unitsDataCache: Map<string, any> = new Map();
+const unitCacheByScenario: Map<string, Map<number, GameUnitDetail>> = new Map();
+const typeCacheByScenario: Map<string, Map<number, GameUnitDetail[]>> = new Map();
 
 function loadUnitsFromJSON(scenarioId: string = 'sangokushi'): any {
-  if (unitsData) return unitsData;
+  // 캐시 확인
+  if (unitsDataCache.has(scenarioId)) {
+    return unitsDataCache.get(scenarioId);
+  }
 
-  // 프로젝트 루트를 기준으로 config/scenarios/... 를 찾는다.
-  // dist/에서 실행하든 src/에서 실행하든 동일하게 동작하도록 __dirname 기준으로 계산.
+  // scenario.json의 data.assets.units 경로에서 로드 시도
+  let unitsData = loadDataAsset(scenarioId, 'units');
+
+  if (unitsData) {
+    unitsDataCache.set(scenarioId, unitsData);
+    return unitsData;
+  }
+
+  // fallback: 직접 경로에서 로드 (기존 방식)
   const projectRoot = path.resolve(__dirname, '../..');
   const candidates: string[] = [
-    // 일반 실행/빌드 환경: <projectRoot>/config/scenarios/...
     path.join(projectRoot, 'config', 'scenarios', scenarioId, 'data', 'units.json'),
-    // 혹시 모를 기존 cwd 기반 경로 (후순위)
     path.join(process.cwd(), 'config', 'scenarios', scenarioId, 'data', 'units.json'),
   ];
 
@@ -108,6 +123,7 @@ function loadUnitsFromJSON(scenarioId: string = 'sangokushi'): any {
       if (fs.existsSync(unitsPath)) {
         const fileContent = fs.readFileSync(unitsPath, 'utf-8');
         unitsData = JSON.parse(fileContent);
+        unitsDataCache.set(scenarioId, unitsData);
         return unitsData;
       }
     } catch (error) {
@@ -115,15 +131,26 @@ function loadUnitsFromJSON(scenarioId: string = 'sangokushi'): any {
     }
   }
 
-  console.error('units.json not found for scenario', scenarioId, 'searched paths:', candidates);
-  return { units: {} };
+  // sangokushi fallback
+  if (scenarioId !== 'sangokushi') {
+    console.warn(`[GameUnitConst] units.json not found for ${scenarioId}, falling back to sangokushi`);
+    return loadUnitsFromJSON('sangokushi');
+  }
+
+  console.error('units.json not found for scenario:', scenarioId);
+  const emptyData = { units: {} };
+  unitsDataCache.set(scenarioId, emptyData);
+  return emptyData;
 }
 
 function buildUnitCache(scenarioId: string = 'sangokushi'): void {
-  if (unitCache && typeCache) return;
+  // 시나리오별 캐시 확인
+  if (unitCacheByScenario.has(scenarioId) && typeCacheByScenario.has(scenarioId)) {
+    return;
+  }
 
-  unitCache = new Map();
-  typeCache = new Map();
+  const unitCache = new Map<number, GameUnitDetail>();
+  const typeCache = new Map<number, GameUnitDetail[]>();
 
   const data = loadUnitsFromJSON(scenarioId);
   const units = data.units || {};
@@ -139,7 +166,12 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     const reqRegions: string[] = [];
     const reqCities: string[] = [];
 
-    let reqNationType: string | undefined;
+    let reqNationType: string | string[] | undefined;
+    let reqLeadership: number | undefined;
+    let reqStrength: number | undefined;
+    let reqIntel: number | undefined;
+    let reqOfficerLevel: number | undefined;
+    let impossible: boolean | undefined;
     let maxCount: number | undefined;
     let timeRestriction: string | undefined;
     let seasonRestriction: string | undefined;
@@ -166,9 +198,24 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
           } else if (constraint.value) {
             reqCities.push(constraint.value);
           }
-        } else if (constraint.type === 'country_type_unlock') {
+        } else if (constraint.type === 'country_type_unlock' || constraint.type === 'reqNationType') {
           // 국가 타입 제약 조건
           reqNationType = constraint.value || undefined;
+        } else if (constraint.type === 'reqLeadership') {
+          // 통솔력 요구
+          reqLeadership = constraint.value || undefined;
+        } else if (constraint.type === 'reqStrength') {
+          // 무력 요구
+          reqStrength = constraint.value || undefined;
+        } else if (constraint.type === 'reqIntel') {
+          // 지력 요구
+          reqIntel = constraint.value || undefined;
+        } else if (constraint.type === 'reqOfficerLevel') {
+          // 관직 레벨 요구
+          reqOfficerLevel = constraint.value || undefined;
+        } else if (constraint.type === 'impossible') {
+          // 징병 불가
+          impossible = true;
         } else if (constraint.type === 'maxCount') {
           // 최대 부대 수 제한
           maxCount = constraint.value || undefined;
@@ -222,6 +269,11 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
       reqRegions: reqRegions.length > 0 ? reqRegions : undefined,
       reqCities: reqCities.length > 0 ? reqCities : undefined,
       reqNationType,
+      reqLeadership,
+      reqStrength,
+      reqIntel,
+      reqOfficerLevel,
+      impossible,
       maxCount,
       timeRestriction,
       seasonRestriction,
@@ -239,6 +291,10 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
     }
     typeCache.get(armType)!.push(unitDetail);
   }
+
+  // 시나리오별 캐시에 저장
+  unitCacheByScenario.set(scenarioId, unitCache);
+  typeCacheByScenario.set(scenarioId, typeCache);
 }
 
 export function getAllUnitTypes(): Record<number, string> {
@@ -247,7 +303,8 @@ export function getAllUnitTypes(): Record<number, string> {
 
 export function getUnitByID(id: number, scenarioId: string = 'sangokushi'): GameUnitDetail | null {
   buildUnitCache(scenarioId);
-  return unitCache!.get(id) || null;
+  const unitCache = unitCacheByScenario.get(scenarioId);
+  return unitCache?.get(id) || null;
 }
 
 export const GameUnitConst = {
@@ -261,12 +318,14 @@ export const GameUnitConst = {
 
 export function getUnitsByType(armType: number, scenarioId: string = 'sangokushi'): GameUnitDetail[] {
   buildUnitCache(scenarioId);
-  return typeCache!.get(armType) || [];
+  const typeCache = typeCacheByScenario.get(scenarioId);
+  return typeCache?.get(armType) || [];
 }
 
 export function getAllUnits(scenarioId: string = 'sangokushi'): GameUnitDetail[] {
   buildUnitCache(scenarioId);
-  return Array.from(unitCache!.values());
+  const unitCache = unitCacheByScenario.get(scenarioId);
+  return unitCache ? Array.from(unitCache.values()) : [];
 }
 
 /**
@@ -277,7 +336,8 @@ export function getAllUnits(scenarioId: string = 'sangokushi'): GameUnitDetail[]
  */
 export function getAttackAdvantage(attackerUnitId: number, defenderType: string, scenarioId: string = 'sangokushi'): number {
   buildUnitCache(scenarioId);
-  const attacker = unitCache!.get(attackerUnitId);
+  const unitCache = unitCacheByScenario.get(scenarioId);
+  const attacker = unitCache?.get(attackerUnitId);
   
   if (!attacker) return 1.0;
   
@@ -298,7 +358,8 @@ export function getAttackAdvantage(attackerUnitId: number, defenderType: string,
  */
 export function getDefenseAdvantage(defenderUnitId: number, attackerType: string, scenarioId: string = 'sangokushi'): number {
   buildUnitCache(scenarioId);
-  const defender = unitCache!.get(defenderUnitId);
+  const unitCache = unitCacheByScenario.get(scenarioId);
+  const defender = unitCache?.get(defenderUnitId);
   
   if (!defender) return 1.0;
   
@@ -313,6 +374,19 @@ export function getDefenseAdvantage(defenderUnitId: number, attackerType: string
 /**
  * 병종이 사용 가능한지 검증
  */
+export interface UnitAvailabilityContext {
+  tech: number;
+  relYear: number;
+  ownCities?: number[];
+  ownRegions?: string[];
+  ownCityNames?: string[];
+  nationType?: string;
+  leadership?: number;
+  strength?: number;
+  intel?: number;
+  officerLevel?: number;
+}
+
 export function isUnitAvailable(
   unit: GameUnitDetail,
   tech: number,
@@ -320,8 +394,14 @@ export function isUnitAvailable(
   ownCities?: number[],
   ownRegions?: string[],
   ownCityNames?: string[],
-  nationType?: string
+  nationType?: string,
+  context?: Partial<UnitAvailabilityContext>
 ): boolean {
+  // 징병 불가 병종
+  if (unit.impossible) {
+    return false;
+  }
+
   // 기술력 검증
   if (unit.reqTech > 0 && tech < unit.reqTech) {
     return false;
@@ -340,22 +420,56 @@ export function isUnitAvailable(
   }
 
   // 도시 이름 검증
-  if (unit.reqCities && unit.reqCities.length > 0 && ownCityNames) {
-    if (!unit.reqCities.some(cityName => ownCityNames.includes(cityName))) {
+  if (unit.reqCities && unit.reqCities.length > 0) {
+    if (!ownCityNames || !unit.reqCities.some(cityName => ownCityNames.includes(cityName))) {
       return false;
     }
   }
 
   // 국가 타입 제약 검증
   if (unit.reqNationType) {
-    if (!nationType || nationType !== unit.reqNationType) {
-      // 국가 타입 ID 정규화 (che_ 접두사 제거)
-      const normalizedNationType = nationType?.replace(/^che_/, '') || '';
-      const normalizedReqType = unit.reqNationType.replace(/^che_/, '');
-      
-      if (normalizedNationType !== normalizedReqType) {
-        return false;
-      }
+    const reqTypes = Array.isArray(unit.reqNationType) ? unit.reqNationType : [unit.reqNationType];
+    const normalizedNationType = nationType?.replace(/^che_/, '') || '';
+    
+    const hasMatchingType = reqTypes.some(reqType => {
+      const normalizedReqType = reqType.replace(/^che_/, '');
+      return normalizedNationType === normalizedReqType;
+    });
+    
+    if (!hasMatchingType) {
+      return false;
+    }
+  }
+
+  // 통솔력 검증
+  if (unit.reqLeadership && unit.reqLeadership > 0) {
+    const leadership = context?.leadership ?? 0;
+    if (leadership < unit.reqLeadership) {
+      return false;
+    }
+  }
+
+  // 무력 검증
+  if (unit.reqStrength && unit.reqStrength > 0) {
+    const strength = context?.strength ?? 0;
+    if (strength < unit.reqStrength) {
+      return false;
+    }
+  }
+
+  // 지력 검증
+  if (unit.reqIntel && unit.reqIntel > 0) {
+    const intel = context?.intel ?? 0;
+    if (intel < unit.reqIntel) {
+      return false;
+    }
+  }
+
+  // 관직 레벨 검증
+  if (unit.reqOfficerLevel && unit.reqOfficerLevel > 0) {
+    const officerLevel = context?.officerLevel ?? 0;
+    if (officerLevel < unit.reqOfficerLevel) {
+      return false;
     }
   }
 

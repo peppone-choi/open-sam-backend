@@ -152,7 +152,7 @@ export class WanderCommand extends GeneralCommand {
 
     try {
       if (typeof general.increaseInheritancePoint === 'function') {
-        // TODO: general.increaseInheritancePoint('active_action', 1);
+        await general.increaseInheritancePoint(InheritanceKey.active_action, 1);
       }
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);

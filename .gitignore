@@ -30,9 +30,36 @@ Thumbs.db
 
 # Test
 coverage/
+test-results/
 
 # Temporary
 *.tmp
 *.bak
 *.backup
-*.bak
+
+# AI Session files (development only)
+.ai-session-*
+.session-*-plan.md
+
+# Debug/Check scripts (should not be committed)
+check-*.js
+check-*.ts
+fix-*.js
+fix-*.sh
+migrate-*.js
+migrate-*.sh
+test-*.js
+test-*.mjs
+test_*.ts
+debug-*.ts
+quick-test.js
+remove-*.js
+remove-*.sh
+refactor-*.sh
+verify-*.sh
+ultimate-*.sh
+mass-*.sh
+final-*.sh
+finish-*.sh
+install.sh
+dependencies-*.txt

@@ -7,6 +7,7 @@ import { GameConst } from '../../const/GameConst';
 import { logger } from '../../common/logger';
 import { GeneralRecord } from '../../models/general_record.model';
 import { Session } from '../../models/session.model';
+import { saveGeneral } from '../../common/cache/model-cache.helper';
 
 /**
  * Betting 클래스
@@ -215,11 +216,9 @@ export class Betting {
       // 유산포인트 차감
       await inheritStor.setValue('previous', [remainPoint - amount, previousPoints[1]]);
     } else {
-      // 금 확인 및 차감
-      const general = await General.findOne({
-        session_id: this.sessionId,
-        no: generalID
-      });
+      // 금 확인 및 차감 (CQRS: 캐시 우선 조회)
+      const { generalRepository } = await import('../../repositories/general.repository');
+      const general = await generalRepository.findByGeneralNo(this.sessionId, generalID);
 
       if (!general) {
         throw new Error('장수를 찾을 수 없습니다.');
@@ -236,7 +235,9 @@ export class Betting {
       general.data = general.data || {};
       general.data.gold = gold - amount;
       general.markModified('data');
-      await general.save();
+      // CQRS: 캐시에 저장
+      const generalNo = general.no || general.data?.no;
+      await saveGeneral(this.sessionId, generalNo, general.toObject());
     }
 
     // 베팅 기록 저장 (upsert)
@@ -547,9 +548,10 @@ export class Betting {
         });
       }
 
-      // 모든 장수 저장
+      // 모든 장수 저장 (CQRS: 캐시에 저장)
       for (const general of generals) {
-        await general.save();
+        const generalNo = general.no || general.data?.no;
+        await saveGeneral(this.sessionId, generalNo, general.toObject());
       }
     }
 

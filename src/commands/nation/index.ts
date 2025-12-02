@@ -54,7 +54,7 @@ export { che_수몰, che_수몰 as FloodCommand } from './flood';
 export { che_의병모집, che_의병모집 as RecruitMilitiaCommand } from './recruitMilitia';
 
 // 18. che_이호경식 - 이호경식
-export { che_이호경식, che_이호경식 as RelocatePopulationCommand } from './relocatePopulation';
+export { che_이호경식, che_이호경식 as DriveTigerCommand } from './driveTiger';
 
 // 19. che_종전수락 - 종전 수락
 export { che_종전수락, che_종전수락 as AcceptPeaceCommand } from './acceptPeace';

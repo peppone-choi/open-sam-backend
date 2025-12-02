@@ -12,16 +12,26 @@ import type { BattleConfig } from '../battle/types';
 import { battleRepository } from '../repositories/battle.repository';
 import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
+import { battleLimiter } from '../middleware/rate-limit.middleware';
 import { 
-  validate, 
+  validate,
+  validateMultiple,
   battleStartSchema, 
   battleDeploySchema, 
   battleActionSchema,
   battleReadySchema,
+  battleIdSchema,
+  battleAutoResolveSchema,
+  battleSimulateSchema,
+  battleDetailSchema,
+  battleCenterQuerySchema,
   preventMongoInjection 
 } from '../middleware/validation.middleware';
 
 const router = Router();
+
+// Apply rate limiting to all battle routes
+router.use(battleLimiter);
 
 function toPlain<T>(doc: T | null | undefined): any | null {
   if (!doc) return null;
@@ -237,7 +247,7 @@ router.post('/start', preventMongoInjection('body'), validate(battleStartSchema)
  *       400:
  *         description: 잘못된 입력
  */
-router.post('/auto-resolve', async (req, res) => {
+router.post('/auto-resolve', preventMongoInjection('body'), validate(battleAutoResolveSchema), async (req, res) => {
   try {
     const payload = req.body as Partial<BattleConfig>;
     const attackers = payload?.attackers;
@@ -427,7 +437,7 @@ router.post('/auto-resolve', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.get('/:battleId', async (req, res) => {
+router.get('/:battleId', validate(battleIdSchema, 'params'), async (req, res) => {
   try {
     const result = await GetBattleStateService.execute({
       battleId: req.params.battleId
@@ -596,7 +606,7 @@ router.get('/:battleId', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/deploy', preventMongoInjection('body'), validate(battleDeploySchema), async (req, res) => {
+router.post('/:battleId/deploy', preventMongoInjection('body'), validateMultiple({ params: battleIdSchema, body: battleDeploySchema }), async (req, res) => {
   try {
     const result = await DeployUnitsService.execute({
       battleId: req.params.battleId,
@@ -796,7 +806,7 @@ router.post('/:battleId/deploy', preventMongoInjection('body'), validate(battleD
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/action', preventMongoInjection('body'), validate(battleActionSchema), async (req, res) => {
+router.post('/:battleId/action', preventMongoInjection('body'), validateMultiple({ params: battleIdSchema, body: battleActionSchema }), async (req, res) => {
   try {
     const result = await SubmitActionService.execute({
       battleId: req.params.battleId,
@@ -965,7 +975,7 @@ router.post('/:battleId/action', preventMongoInjection('body'), validate(battleA
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/ready', preventMongoInjection('body'), validate(battleReadySchema), async (req, res) => {
+router.post('/:battleId/ready', preventMongoInjection('body'), validateMultiple({ params: battleIdSchema, body: battleReadySchema }), async (req, res) => {
   try {
     const result = await ReadyUpService.execute({
       battleId: req.params.battleId,
@@ -1062,7 +1072,7 @@ router.post('/:battleId/ready', preventMongoInjection('body'), validate(battleRe
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/resolve', async (req, res) => {
+router.post('/:battleId/resolve', validate(battleIdSchema, 'params'), async (req, res) => {
   try {
     const result = await ResolveTurnService.execute(req.params.battleId);
     
@@ -1215,7 +1225,7 @@ router.post('/:battleId/resolve', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.get('/:battleId/history', async (req, res) => {
+router.get('/:battleId/history', validate(battleIdSchema, 'params'), async (req, res) => {
   try {
     const result = await GetBattleHistoryService.execute({
       battleId: req.params.battleId
@@ -1272,7 +1282,7 @@ router.get('/:battleId/history', async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/start-simulation', async (req, res) => {
+router.post('/:battleId/start-simulation', validate(battleIdSchema, 'params'), async (req, res) => {
   try {
     const result = await StartSimulationService.execute({
       battleId: req.params.battleId
@@ -1311,7 +1321,7 @@ router.post('/:battleId/start-simulation', async (req, res) => {
  *       200:
  *         description: 전투 상세 정보
  */
-router.post('/detail', async (req, res) => {
+router.post('/detail', preventMongoInjection('body'), validate(battleDetailSchema), async (req, res) => {
   try {
     const { GetBattleDetailService } = await import('../services/battle/GetBattleDetail.service');
     const result = await GetBattleDetailService.execute(req.body, req.user);
@@ -1430,7 +1440,7 @@ router.post('/detail', async (req, res) => {
  *       200:
  *         description: 전투 목록
  */
-router.get('/center', async (req, res) => {
+router.get('/center', validate(battleCenterQuerySchema, 'query'), async (req, res) => {
   try {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
     const statusFilter = (req.query.status as string) || 'all';
@@ -1598,7 +1608,7 @@ router.post('/center', async (req, res) => {
  *       200:
  *         description: 시뮬레이션 결과
  */
-router.post('/simulate', async (req, res) => {
+router.post('/simulate', preventMongoInjection('body'), validate(battleSimulateSchema), async (req, res) => {
   try {
     const { units, year, month, seed, repeatCount = 1, terrain = 'plains', isDefenderCity = false } = req.body;
 

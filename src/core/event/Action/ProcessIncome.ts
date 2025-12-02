@@ -7,6 +7,7 @@ import { getGoldIncome, getRiceIncome, getWallIncome, getOutcome, getBill } from
 import { Util } from '../../../utils/Util';
 import { ActionLogger } from '../../../types/ActionLogger';
 import { NationEnv } from '../../../models/nation-env.model';
+import { saveNation, saveGeneral } from '../../../common/cache/model-cache.helper';
 
 /**
  * 수입 처리 액션
@@ -116,8 +117,10 @@ export class ProcessIncome extends Action {
       }
 
         nation.data.gold = Math.max(nation.data.gold, baseGold);
-        nation.markModified('data');
-        await nation.save();
+        
+        // CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
+        const nationData = nation.toObject ? nation.toObject() : { ...nation.data, session_id: sessionId, nation: nationId };
+        await saveNation(sessionId, nationId, nationData);
 
       // nation_env에 prev_income_gold 저장
       await NationEnv.findOneAndUpdate(
@@ -143,11 +146,12 @@ export class ProcessIncome extends Action {
         const dedication = general.data?.dedication || 0;
         const gold = Math.round(getBill(dedication) * ratio);
         
-          general.data.gold = (general.data?.gold || 0) + gold;
-          general.markModified('data');
-          await general.save();
-
+        general.data.gold = (general.data?.gold || 0) + gold;
+        
+        // CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
         const generalId = general.data?.no || 0;
+        const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
+        await saveGeneral(sessionId, generalId, generalData);
         const logger = new ActionLogger(generalId, nationId, year, month);
         
         if (general.data?.officer_level && general.data.officer_level > 4) {
@@ -262,8 +266,10 @@ export class ProcessIncome extends Action {
       }
 
       nation.data.rice = Math.max(nation.data.rice, baseRice);
-      nation.markModified('data');
-      await nation.save();
+      
+      // CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
+      const nationData = nation.toObject ? nation.toObject() : { ...nation.data, session_id: sessionId, nation: nationId };
+      await saveNation(sessionId, nationId, nationData);
 
       // nation_env에 prev_income_rice 저장
       await NationEnv.findOneAndUpdate(
@@ -290,10 +296,11 @@ export class ProcessIncome extends Action {
         const rice = Math.round(getBill(dedication) * ratio);
         
         general.data.rice = (general.data?.rice || 0) + rice;
-        general.markModified('data');
-        await general.save();
-
+        
+        // CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
         const generalId = general.data?.no || 0;
+        const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
+        await saveGeneral(sessionId, generalId, generalData);
         const logger = new ActionLogger(generalId, nationId, year, month);
         
         if (general.data?.officer_level && general.data.officer_level > 4) {

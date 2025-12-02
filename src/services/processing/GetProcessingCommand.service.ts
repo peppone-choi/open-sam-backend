@@ -889,19 +889,29 @@ export class GetProcessingCommandService {
       const units = getUnitsByType(armTypeNum, scenarioId);
       
       const crewTypes: any[] = [];
+        // 국가가 소유한 모든 도시 이름 목록 (reqCities 검증용)
+        const ownCityNames = Array.from(ownCities.values()).map(c => c.name).filter(n => n);
+        
+        // 장수 스탯 정보 (병종 제약 조건 검증용)
+        const generalStrength = generalData.strength || 0;
+        const generalIntel = generalData.intel || 0;
+        const generalOfficerLevel = generalData.officer_level || 0;
+        
         for (const unit of units) {
-          // 현재 도시 이름으로 검증 (reqCities는 현재 위치한 도시를 체크)
-          const currentCityName = currentCity?.name || '';
-          const cityNames = currentCityName ? [currentCityName] : [];
-          
           const available = isUnitAvailable(
             unit,
             tech,
             relYear,
             Array.from(ownCities.keys()),
             Array.from(ownRegions),
-            cityNames,
-            nationType
+            ownCityNames,  // 국가가 소유한 모든 도시 이름
+            nationType,
+            {
+              leadership,
+              strength: generalStrength,
+              intel: generalIntel,
+              officerLevel: generalOfficerLevel
+            }
           );
           
           // baseCost, baseRice 계산 (기술력 반영)

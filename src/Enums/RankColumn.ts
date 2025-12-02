@@ -108,3 +108,6 @@ export function getRankColumnCases(): RankColumn[] {
   return Object.values(RankColumn);
 }
 
+
+
+

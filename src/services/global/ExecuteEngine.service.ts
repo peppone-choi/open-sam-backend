@@ -435,8 +435,24 @@ export class ExecuteEngineService {
       await sessionRepository.saveDocument(session);
       logger.info('Game date updated', { year: sessionData.year, month: sessionData.month });
 
+      // 월 변경 이벤트 브로드캐스트
+      GameEventEmitter.broadcastMonthChanged(
+        sessionId,
+        sessionData.year,
+        sessionData.month,
+        beforeYear,
+        beforeMonth
+      );
+
       // 봉록 지급 처리 (봄 1월: 금, 가을 7월: 쌀)
       await this.processSeasonalIncome(sessionId, sessionData);
+    }
+
+    // scenario_id를 sessionData에 추가 (징병 등에서 병종 정보 로드 시 필요)
+    // session.scenario_id는 'sangokushi' 같은 시나리오 디렉토리명
+    // sessionData.scenario는 '【공백지】 일반' 같은 표시 이름이므로 혼동 주의
+    if (!sessionData.scenario_id) {
+      sessionData.scenario_id = session.scenario_id || 'sangokushi';
     }
 
     // ========================================
@@ -798,6 +814,12 @@ export class ExecuteEngineService {
     gameEnv: any
   ): Promise<boolean> {
     const generalId = general.no;
+    const cityId = general.city || general.data?.city || 0;
+
+    // city=0 (방랑/미등장) 장수는 턴 실행 스킵
+    if (!cityId || cityId === 0) {
+      return false;
+    }
 
     // 전역 게임 년/월 사용 (모든 장수가 공유)
     // 장수별 턴 카운터 초기화 (없으면 0)
@@ -870,7 +892,7 @@ export class ExecuteEngineService {
 
     // 커맨드 실행 완료 후 관련 캐시 무효화 및 브로드캐스트
     const generalNo = general.no || general.data?.no;
-    const cityId = general.city || general.data?.city || 0;
+    // cityId는 위에서 이미 선언됨 - 재사용
     // nationId는 위(line 739)에서 이미 선언됨 - 재사용
 
     // 도시/국가 정보가 변경되었을 수 있으므로 캐시 무효화
@@ -1287,6 +1309,16 @@ export class ExecuteEngineService {
       arg = generalTurn.data?.arg || generalTurn.arg || {};
 
       logger.debug('General command loaded from DB', { generalId, action, arg });
+      
+      // 디버깅: 징병 명령의 인자 확인
+      if (action === '징병') {
+        console.log(`[ExecuteEngine] 징병 명령 로드 - 장수 ${generalId}, arg:`, JSON.stringify(arg));
+        console.log(`[ExecuteEngine] generalTurn 전체:`, JSON.stringify({
+          data_arg: generalTurn.data?.arg,
+          top_level_arg: generalTurn.arg,
+          data: generalTurn.data
+        }));
+      }
     }
 
     // killturn 처리 (PHP 로직과 동일)
@@ -2048,6 +2080,55 @@ export class ExecuteEngineService {
         stack: error.stack
       });
     }
+
+    // 랜덤 이벤트 처리 (매월)
+    await this.processRandomEvents(sessionId, gameEnv);
+  }
+
+  /**
+   * 랜덤 이벤트 처리
+   * - 재해 (가뭄, 홍수, 역병, 메뚜기떼)
+   * - 풍년
+   * - 도적 출현
+   */
+  private static async processRandomEvents(sessionId: string, gameEnv: any) {
+    const year = gameEnv.year;
+    const month = gameEnv.month;
+
+    try {
+      // 재해 이벤트 (5% 확률)
+      const { RandomDisaster } = await import('../../core/event/Action/RandomDisaster');
+      const disasterEvent = new RandomDisaster(0.05);
+      const disasterResult = await disasterEvent.run({ session_id: sessionId, year, month });
+      if (disasterResult.count > 0) {
+        logger.info('[RandomEvent] Disaster occurred', { sessionId, year, month, cities: disasterResult.affectedCities });
+      }
+
+      // 풍년 이벤트 (8% 확률, 가을에는 더 높음)
+      const { BountifulHarvest } = await import('../../core/event/Action/BountifulHarvest');
+      const harvestEvent = new BountifulHarvest(0.08);
+      const harvestResult = await harvestEvent.run({ session_id: sessionId, year, month });
+      if (harvestResult.count > 0) {
+        logger.info('[RandomEvent] Bountiful harvest', { sessionId, year, month, cities: harvestResult.affectedCities });
+      }
+
+      // 도적 출현 이벤트 (3% 확률, 치안 낮으면 더 높음)
+      const { BanditRaid } = await import('../../core/event/Action/BanditRaid');
+      const banditEvent = new BanditRaid(0.03);
+      const banditResult = await banditEvent.run({ session_id: sessionId, year, month });
+      if (banditResult.count > 0) {
+        logger.info('[RandomEvent] Bandit raid', { sessionId, year, month, cities: banditResult.affectedCities });
+      }
+
+    } catch (error: any) {
+      logger.error('[RandomEvent] Failed to process random events', {
+        sessionId,
+        year,
+        month,
+        error: error.message,
+        stack: error.stack
+      });
+    }
   }
 
   /**
@@ -2257,8 +2338,8 @@ export class ExecuteEngineService {
     let month: number;
 
     try {
-      // Util은 이미 import됨
-      totalMonths = Util.joinYearMonth(startyear, 1) + num; // joinYearMonth는 이미 오버플로우 체크 포함
+      // PHP turnDate()와 동일: $date = startyear * 12 + num
+      totalMonths = startyear * 12 + num;  // 1월을 0으로 계산 (PHP 호환)
       year = Math.floor(totalMonths / 12);
       month = 1 + (totalMonths % 12);
 

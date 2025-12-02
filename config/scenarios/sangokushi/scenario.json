@@ -283,6 +283,7 @@
     "totalCities": 94,
     "totalRegions": 8,
     "gameMode": "turn",
+    "turnIntervalSeconds": 30,
     "turnConfig": {
       "defaultHour": 21,
       "defaultMinute": 0,

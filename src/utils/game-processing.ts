@@ -14,7 +14,8 @@ function loadConstants(scenarioId: string = 'sangokushi') {
     return constantsCache[scenarioId];
   }
   
-  const constantsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/constants.json');
+  // dist 폴더에서 실행되므로 프로젝트 루트로 이동 (dist/utils -> config)
+  const constantsPath = path.join(__dirname, '../../../config/scenarios', scenarioId, 'data/constants.json');
   if (!fs.existsSync(constantsPath)) {
     throw new Error(`Constants file not found: ${constantsPath}`);
   }
@@ -79,14 +80,40 @@ export function calcLeadershipBonus(officerLevel: number, nationLevel: number): 
  * 성공/실패 확률에 따른 보너스 계산
  * PHP: CriticalScoreEx
  */
-export function CriticalScoreEx(rng: () => number, type: 'success' | 'fail'): number {
+export function CriticalScoreEx(rng: any, type: 'success' | 'fail' | string): number {
+  const nextFloat = typeof rng === 'function' ? rng : (rng.nextFloat ? rng.nextFloat.bind(rng) : Math.random);
+  
   if (type === 'success') {
-    return 2.2 + rng() * (3.0 - 2.2);
+    return 2.2 + nextFloat() * (3.0 - 2.2);
   }
   if (type === 'fail') {
-    return 0.2 + rng() * (0.4 - 0.2);
+    return 0.2 + nextFloat() * (0.4 - 0.2);
   }
   return 1;
+}
+
+/**
+ * 최대 내정 크리티컬 갱신
+ * PHP: updateMaxDomesticCritical
+ */
+export function updateMaxDomesticCritical(general: any, score: number): void {
+  if (!general.data.aux) {
+    general.data.aux = {};
+  }
+  
+  let maxDomesticCritical = general.data.aux.max_domestic_critical || 0;
+  maxDomesticCritical += score / 2;
+  general.data.aux.max_domestic_critical = maxDomesticCritical;
+
+  // Inheritance Point
+  const key = 'max_domestic_critical';
+  const oldMax = typeof general.getInheritancePoint === 'function' ? general.getInheritancePoint(key) : 0;
+  
+  if (maxDomesticCritical > oldMax) {
+    if (typeof general.setInheritancePoint === 'function') {
+      general.setInheritancePoint(key, maxDomesticCritical);
+    }
+  }
 }
 
 /**

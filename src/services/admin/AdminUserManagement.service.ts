@@ -1,6 +1,7 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { userRepository } from '../../repositories/user.repository';
 import { SendSystemNoticeService } from '../message/SendSystemNotice.service';
+import { GameEventEmitter } from '../gameEventEmitter';
 
 /**
  * AdminUserManagement Service
@@ -101,14 +102,26 @@ export class AdminUserManagementService {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
 
+      const generalName = general.name || '무명';
+      const nationId = general.nation || 0;
+
       await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
         npc: 5, // NPC 5 = 사망
         killturn: 0,
       });
 
+      // 장수 사망 이벤트 브로드캐스트
+      GameEventEmitter.broadcastGeneralDied(
+        sessionId,
+        generalNo,
+        generalName,
+        nationId,
+        'admin'
+      );
+
       return {
         success: true,
-        message: `${general.name}(${generalNo})가 강제 사망 처리되었습니다`,
+        message: `${generalName}(${generalNo})가 강제 사망 처리되었습니다`,
       };
     } catch (error: any) {
       return { success: false, message: error.message };

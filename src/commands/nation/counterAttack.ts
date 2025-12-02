@@ -231,6 +231,16 @@ export class CounterAttackCommand extends NationCommand {
       destNationStor.setValue(cmd.getNextExecuteKey(), destDelay + CounterAttackCommand.delayCnt);
     }
 
+    await db.update(
+      'diplomacy',
+      {
+        term: db.sqleval('IF(`state`=0, %i, `term`+ %i)', 3, 3),
+        state: 1
+      },
+      '(me = %i AND you = %i) OR (you = %i AND me = %i)',
+      [nationID, destNationID, nationID, destNationID]
+    );
+
     const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
       StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, 'CounterAttackCommand', this.env, this.arg ?? {});
@@ -318,4 +328,4 @@ export class CounterAttackCommand extends NationCommand {
   }
 }
 
-export const che_피장파장 = CounterAttackCommand;
+export const che_피장파장 = CounterAttackCommand;

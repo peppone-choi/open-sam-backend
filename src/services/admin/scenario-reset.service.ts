@@ -278,8 +278,13 @@ export class ScenarioResetService {
     session.data.game_env = session.data.game_env || {};
 
     // 시나리오 정보 설정
-    session.scenario_name = scenarioMetadata.name || '';
-    session.data.game_env.scenario = scenarioMetadata.name || '';
+    const scenarioName = scenarioMetadata.name || scenarioMetadata.title || '';
+    session.scenario_name = scenarioName;
+    session.data.game_env.scenario = scenarioName;
+    
+    // 시나리오 표시 이름 설정 (게임 화면에 표시됨)
+    session.data.scenarioText = scenarioName;
+    session.data.game_env.scenarioText = scenarioName;
     
     // 년도 설정 (시나리오 메타데이터에서 가져오거나 기본값 184년)
     const startYear = scenarioMetadata.metadata?.startYear || 

@@ -455,8 +455,9 @@ function handleMethodCall(what: any, args: string[], ctx: Context, cx: ConvertEx
     if (method === 'increaseVarWithLimit') {
       return `(general.data[${args[0]}] = Math.max((general.data[${args[0]}] || 0) + (${args[1] || '0'}), ${args[2] || '0'}))`;
     }
-    if (method === 'save') return `await general.save()`;
-    if (method === 'applyDB') return `await general.save()`;
+    // CQRS: 캐시 헬퍼 사용
+    if (method === 'save') return `await saveGeneral(sessionId, general.no, general.toObject())`;
+    if (method === 'applyDB') return `await saveGeneral(sessionId, general.no, general.toObject())`;
     
     return `await general.${method}(${args.join(', ')})`;
   }
@@ -468,13 +469,15 @@ function handleMethodCall(what: any, args: string[], ctx: Context, cx: ConvertEx
   
   // $city 메서드들
   if (obj === 'city') {
-    if (method === 'save') return `await city.save()`;
+    // CQRS: 캐시 헬퍼 사용
+    if (method === 'save') return `await saveCity(sessionId, city.city, city.toObject())`;
     return `await city.${method}(${args.join(', ')})`;
   }
   
   // $nation 메서드들
   if (obj === 'nation') {
-    if (method === 'save') return `await nation.save()`;
+    // CQRS: 캐시 헬퍼 사용
+    if (method === 'save') return `await saveNation(sessionId, nation.nation, nation.toObject())`;
     return `await nation.${method}(${args.join(', ')})`;
   }
   

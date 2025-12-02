@@ -53,7 +53,9 @@ export class FloodCommand extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
+      ConstraintHelper.NotNeutralDestCity(),
       ConstraintHelper.NotOccupiedDestCity(),
+      ConstraintHelper.BattleGroundCity(),
       ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
@@ -216,4 +218,4 @@ export class FloodCommand extends NationCommand {
   }
 }
 
-export const che_수몰 = FloodCommand;
+export const che_수몰 = FloodCommand;

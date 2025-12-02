@@ -180,3 +180,6 @@ describe('MoveCapitalCommand (천도)', () => {
   });
 });
 
+
+
+

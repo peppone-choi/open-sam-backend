@@ -1,16 +1,17 @@
 import { ICommand } from '../models/command.model';
-import { General } from '../models/general.model';
-import { City } from '../models/city.model';
-import { Nation } from '../models/nation.model';
 import { getSessionConfig } from '../utils/session-config';
 import { createFieldAccessor } from '../utils/field-accessor';
 import { applyEffects } from './effect-engine';
+import { generalRepository } from '../repositories/general.repository';
+import { cityRepository } from '../repositories/city.repository';
+import { nationRepository } from '../repositories/nation.repository';
 
 /**
  * 커맨드 실행기
  * 
  * ⭐ 중요: 모든 DB 업데이트는 여기서만 발생!
  * 
+ * CQRS 패턴: 캐시 우선 조회 사용
  * 완전 동적: 모든 필드 접근이 세션 설정 기반
  */
 
@@ -32,12 +33,14 @@ export async function executeCommand(command: ICommand) {
   
   // General 커맨드
   if (general_id) {
-    const general = await General.findOne({ session_id, no: general_id });
+    // CQRS: 캐시 우선 조회
+    const general = await generalRepository.findByGeneralNo(session_id, general_id);
     if (!general) throw new Error('장수를 찾을 수 없습니다');
     
     // 동적 필드 접근!
     const cityId = accessor.getGeneralField(general, 'location');
-    const city = await City.findOne({ session_id, city: cityId });
+    // CQRS: 캐시 우선 조회
+    const city = cityId ? await cityRepository.findByCityNum(session_id, cityId) : null;
     
     // 우선순위 1: TypeScript 함수로 구현된 효과
     const effectFn = getEffectFunction(action);
@@ -55,7 +58,8 @@ export async function executeCommand(command: ICommand) {
   }
   // Nation 커맨드
   else if (command.nation_id) {
-    const nation = await Nation.findOne({ session_id, nation: command.nation_id });
+    // CQRS: 캐시 우선 조회
+    const nation = await nationRepository.findByNationNum(session_id, command.nation_id);
     if (!nation) throw new Error('국가를 찾을 수 없습니다');
     
     // 세션별 효과 적용!

@@ -6,6 +6,7 @@ import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { ActionLogger } from '../../models/ActionLogger';
+import { DiplomacyProposalService, DiplomacyProposalType } from '../../services/diplomacy/DiplomacyProposal.service';
 
 export class che_불가침제의 extends NationCommand {
   static getName(): string {
@@ -168,7 +169,28 @@ export class che_불가침제의 extends NationCommand {
 
     const josaWa = JosaUtil.pick(nationName, '와');
 
-    // PHP: DiplomaticMessage 전송
+    // 서비스를 통해 불가침 제의 생성
+    const sessionId = this.env['session_id'] || 'sangokushi_default';
+    const proposalResult = await DiplomacyProposalService.proposeNonAggression({
+      sessionId,
+      srcNationId: nationID,
+      srcNationName: nationName,
+      srcGeneralId: general!.getID(),
+      srcGeneralName: generalName,
+      destNationId: destNationID,
+      destNationName: destNationName,
+      type: DiplomacyProposalType.NO_AGGRESSION,
+      year,
+      month,
+      validUntil,
+      message: `${nationName}${josaWa} ${year}년 ${month}월까지 불가침 제의 서신`
+    });
+
+    if (!proposalResult.success) {
+      console.error('불가침 제의 실패:', proposalResult.reason);
+    }
+
+    // 레거시 DiplomaticMessage도 함께 전송 (호환성)
     try {
       const { DiplomaticMessage } = await import('../../core/message/DiplomaticMessage');
       const { MessageTarget } = await import('../../core/message/MessageTarget');
@@ -200,6 +222,7 @@ export class che_불가침제의 extends NationCommand {
           action: 'NO_AGGRESSION',
           year: year,
           month: month,
+          proposalId: proposalResult.proposalId
         }
       );
       await msg.send();

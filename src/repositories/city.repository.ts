@@ -254,10 +254,27 @@ class CityRepository {
    */
   async updateByCityNum(sessionId: string, cityNum: number, update: any) {
     // 기존 도시 데이터 조회 (캐시 우선)
-    const existing = await this.findByCityNum(sessionId, cityNum);
+    const existingDoc = await this.findByCityNum(sessionId, cityNum);
 
-    if (existing) {
+    if (existingDoc) {
+      // Mongoose Document를 plain object로 변환 (spread 문제 해결)
+      const existing = typeof existingDoc.toObject === 'function' 
+        ? existingDoc.toObject() 
+        : existingDoc;
+      
       const merged = { ...existing, ...update };
+      
+      // 디버그: 민심 업데이트 추적
+      if (update.trust !== undefined) {
+        logger.info('[CityRepository] 민심 업데이트', {
+          sessionId,
+          cityNum,
+          oldTrust: existing.trust,
+          newTrust: update.trust,
+          mergedTrust: merged.trust
+        });
+      }
+      
       await saveCity(sessionId, cityNum, merged);
 
       // 목록 캐시 무효화

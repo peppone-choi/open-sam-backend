@@ -214,9 +214,9 @@ export class GetReservedCommandService {
         month = 1;
       } else {
         // 년월 계산 (오버플로우 안전)
+        // PHP turnDate()와 동일: $date = startyear * 12 + numTurns
         try {
-          const { Util } = require('../../utils/Util');
-          const date = Util.joinYearMonth(startyear, 1) + numTurns;
+          const date = startyear * 12 + numTurns;  // PHP와 동일하게 1월을 0으로 계산
           year = Math.floor(date / 12);
           month = (date % 12) + 1;
           
@@ -286,8 +286,8 @@ export class GetReservedCommandService {
       if (sessionNumTurns > MAX_REASONABLE_TURNS) {
         console.error(`[GetReservedCommand] ⚠️ Session calculated ${sessionNumTurns} turns (> ${MAX_REASONABLE_TURNS}), using safe defaults`);
       } else {
-        const { Util } = require('../../utils/Util');
-        const sessionDate = Util.joinYearMonth(startyear, 1) + sessionNumTurns;
+        // PHP turnDate()와 동일: $date = startyear * 12 + numTurns
+        const sessionDate = startyear * 12 + sessionNumTurns;
         sessionYear = Math.floor(sessionDate / 12);
         sessionMonth = (sessionDate % 12) + 1;
         

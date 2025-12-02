@@ -375,5 +375,20 @@
         "description": "제국과 동맹 사이에서 중립을 유지하며 경제적 이익을 추구하는 상업국가"
       }
     ]
+  },
+  "metadata": {
+    "baseYear": 796,
+    "calendar": "우주력",
+    "mapName": "galaxy",
+    "unitSet": "logh",
+    "totalSystems": 200,
+    "totalSectors": 12,
+    "gameMode": "realtime",
+    "turnIntervalSeconds": 15,
+    "turnConfig": {
+      "allowPause": true,
+      "speedMultiplier": 1.0,
+      "maxSpeedMultiplier": 4.0
+    }
   }
 }

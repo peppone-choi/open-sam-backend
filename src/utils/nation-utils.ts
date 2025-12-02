@@ -126,3 +126,126 @@ export async function getNationName(
   
   return nation?.name || null;
 }
+
+/**
+ * 국력 계산 가중치
+ */
+const POWER_WEIGHTS = {
+  population: 0.0001,
+  cities: 10,
+  generals: 5,
+  gold: 0.001,
+  rice: 0.001,
+  tech: 0.5,
+  military: 0.01,
+  facilities: 0.001,
+  avgAbility: 0.5,
+};
+
+/**
+ * 국력 계산
+ * PHP getNationPower() 기반
+ * 
+ * @param sessionId 세션 ID
+ * @param nationNum 국가 번호
+ * @returns 국력 점수
+ */
+export async function calculateNationPower(
+  sessionId: string,
+  nationNum: number
+): Promise<number> {
+  try {
+    const nation = await (Nation as Model<INation>).findOne({
+      session_id: sessionId,
+      nation: nationNum
+    });
+    
+    if (!nation) return 0;
+    
+    const nationData = nation.data || {};
+    
+    // 도시 통계
+    const cities = await (City as any).find({
+      session_id: sessionId,
+      nation: nationNum
+    });
+    
+    let totalPopulation = 0;
+    let totalFacilities = 0;
+    
+    for (const city of cities) {
+      totalPopulation += city.pop || 0;
+      totalFacilities += (city.agri || 0) + (city.comm || 0) + (city.def || 0) + (city.wall || 0);
+    }
+    
+    // 장수 통계
+    const generals = await (General as any).find({
+      session_id: sessionId,
+      'data.nation': nationNum
+    });
+    
+    let totalCrew = 0;
+    let avgAbility = 0;
+    
+    for (const general of generals) {
+      const genData = general.data || {};
+      totalCrew += genData.crew || 0;
+      avgAbility += (genData.leadership || 0) + (genData.strength || 0) + (genData.intel || 0);
+    }
+    
+    if (generals.length > 0) {
+      avgAbility = avgAbility / generals.length;
+    }
+    
+    // 경제력
+    const economicPower = 
+      totalPopulation * POWER_WEIGHTS.population +
+      totalFacilities * POWER_WEIGHTS.facilities +
+      (nationData.gold || 0) * POWER_WEIGHTS.gold +
+      (nationData.rice || 0) * POWER_WEIGHTS.rice;
+    
+    // 군사력
+    const militaryPower = 
+      totalCrew * POWER_WEIGHTS.military +
+      generals.length * POWER_WEIGHTS.generals +
+      avgAbility * POWER_WEIGHTS.avgAbility;
+    
+    // 총 국력
+    const power = Math.round(
+      economicPower +
+      militaryPower +
+      cities.length * POWER_WEIGHTS.cities +
+      (nationData.tech || 0) * POWER_WEIGHTS.tech
+    );
+    
+    return power;
+  } catch (error) {
+    console.error('[calculateNationPower] Error:', error);
+    return 0;
+  }
+}
+
+/**
+ * 모든 국가 국력 갱신
+ */
+export async function refreshAllNationPower(sessionId: string): Promise<void> {
+  try {
+    const nations = await (Nation as Model<INation>).find({ session_id: sessionId });
+    
+    for (const nation of nations) {
+      const nationNum = nation.nation || nation.data?.nation;
+      if (!nationNum || nationNum === 0) continue;
+      
+      const power = await calculateNationPower(sessionId, nationNum);
+      
+      await (Nation as Model<INation>).updateOne(
+        { session_id: sessionId, nation: nationNum },
+        { $set: { 'data.power': power } }
+      );
+    }
+    
+    console.log(`[refreshAllNationPower] Updated power for ${nations.length} nations`);
+  } catch (error) {
+    console.error('[refreshAllNationPower] Error:', error);
+  }
+}

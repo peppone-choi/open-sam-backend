@@ -52,7 +52,7 @@ export class che_백성동원 extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.OccupiedDestCity(),
       ConstraintHelper.AvailableStrategicCommand()
     ];
   }
@@ -172,4 +172,4 @@ export class che_백성동원 extends NationCommand {
       },
     };
   }
-}
+}

@@ -222,3 +222,6 @@ export function getCrewTypeInfo(crewTypeId: number): CrewTypeInfo | null {
   return DEFAULT_CREW_TYPES[crewTypeId] ?? null;
 }
 
+
+
+

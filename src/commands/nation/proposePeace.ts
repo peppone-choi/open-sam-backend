@@ -6,6 +6,7 @@ import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { ActionLogger } from '../../models/ActionLogger';
+import { DiplomacyProposalService, DiplomacyProposalType } from '../../services/diplomacy/DiplomacyProposal.service';
 
 export class che_종전제의 extends NationCommand {
   static getName(): string {
@@ -136,7 +137,26 @@ export class che_종전제의 extends NationCommand {
     const validMinutes = Math.max(30, env['turnterm'] * 3);
     validUntil.setMinutes(validUntil.getMinutes() + validMinutes);
 
-    // PHP: DiplomaticMessage 전송
+    // 서비스를 통해 종전 제의 생성
+    const sessionId = this.env['session_id'] || 'sangokushi_default';
+    const proposalResult = await DiplomacyProposalService.proposePeace({
+      sessionId,
+      srcNationId: nationID,
+      srcNationName: nationName,
+      srcGeneralId: general!.getID(),
+      srcGeneralName: generalName,
+      destNationId: destNationID,
+      destNationName: destNationName,
+      type: DiplomacyProposalType.STOP_WAR,
+      validUntil,
+      message: `${nationName}의 종전 제의 서신`
+    });
+
+    if (!proposalResult.success) {
+      console.error('종전 제의 실패:', proposalResult.reason);
+    }
+
+    // 레거시 DiplomaticMessage도 함께 전송 (호환성)
     try {
       const { DiplomaticMessage } = await import('../../core/message/DiplomaticMessage');
       const { MessageTarget } = await import('../../core/message/MessageTarget');
@@ -166,7 +186,8 @@ export class che_종전제의 extends NationCommand {
         validUntil,
         {
           action: 'STOP_WAR',
-          deletable: false
+          deletable: false,
+          proposalId: proposalResult.proposalId
         }
       );
       await msg.send();

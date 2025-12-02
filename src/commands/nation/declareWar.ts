@@ -6,6 +6,8 @@ import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { ActionLogger } from '../../models/ActionLogger';
+import { DiplomacyProposalService } from '../../services/diplomacy/DiplomacyProposal.service';
+import { DiplomacyState } from '../../services/diplomacy/DiplomacyState.service';
 
 export class che_선전포고 extends NationCommand {
   static getName(): string {
@@ -120,7 +122,7 @@ export class che_선전포고 extends NationCommand {
     const josaYiNation = JosaUtil.pick(nationName, '이');
 
     const logger = general!.getLogger();
-    const destLogger = ActionLogger;
+    const destLogger = new ActionLogger(0, destNationID, this.env['year'], this.env['month']);
 
     logger.pushGeneralActionLog(`<D><b>${destNationName}</b></>에 선전 포고 했습니다.<1>${date}</>`);
     logger.pushGeneralHistoryLog(`<D><b>${destNationName}</b></>에 선전 포고 <1>${date}</>`);
@@ -138,12 +140,17 @@ export class che_선전포고 extends NationCommand {
       `<R><b>【선포】</b></><D><b>${nationName}</b></>${josaYiNation} <D><b>${destNationName}</b></>에 선전 포고 하였습니다.`
     );
 
-    await db.update(
-      'diplomacy',
-      { state: 1, term: 24 },
-      '(me=%i AND you=%i) OR (me=%i AND you=%i)',
-      [nationID, destNationID, destNationID, nationID]
+    // 서비스를 통해 외교 상태 업데이트
+    const sessionId = this.env['session_id'] || 'sangokushi_default';
+    const result = await DiplomacyProposalService.declareWar(
+      sessionId,
+      nationID,
+      destNationID
     );
+
+    if (!result.success) {
+      throw new Error(result.reason);
+    }
 
     const { Message } = await import('../../models/Message');
     const { GetImageURL } = await import('../../func');
@@ -171,6 +178,7 @@ export class che_선전포고 extends NationCommand {
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
     await general.applyDB(db);
+    await destLogger.flush();
     await ActionLogger.flush();
 
     // StaticEventHandler
@@ -224,4 +232,4 @@ export class che_선전포고 extends NationCommand {
       }
     };
   }
-}
+}

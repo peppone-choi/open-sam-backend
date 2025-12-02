@@ -301,3 +301,6 @@ describe('GenType Classification (장수 타입 분류)', () => {
   });
 });
 
+
+
+

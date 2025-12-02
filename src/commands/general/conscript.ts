@@ -16,8 +16,8 @@ export class ConscriptCommand extends GeneralCommand {
   protected static costOffset = 1;
   public static reqArg = true;
 
-  protected static defaultTrain: number;
-  protected static defaultAtmos: number;
+  protected static defaultTrain = GameConst.defaultTrainLow || 20;
+  protected static defaultAtmos = GameConst.defaultAtmosLow || 20;
 
   protected maxCrew = 0;
   protected reqCrew = 0;
@@ -26,47 +26,47 @@ export class ConscriptCommand extends GeneralCommand {
   protected targetType: 'general' | 'city' = 'general';
   protected targetStackId?: string;
 
-  protected static initStatic(): void {
-    this.defaultTrain = GameConst.defaultTrainLow || 20;
-    this.defaultAtmos = GameConst.defaultAtmosLow || 20;
-  }
-
   protected argTest(): boolean {
+    console.log('[징병] argTest 시작 - arg:', JSON.stringify(this.arg));
     if (this.arg === null) {
+      console.log('[징병] argTest 실패: arg가 null입니다.');
       return false;
     }
     if (!('crewType' in this.arg)) {
+      console.log('[징병] argTest 실패: crewType이 없습니다. arg:', JSON.stringify(this.arg));
       return false;
     }
     if (!('amount' in this.arg)) {
+      console.log('[징병] argTest 실패: amount가 없습니다. arg:', JSON.stringify(this.arg));
       return false;
     }
     const crewType = this.arg.crewType;
     let amount = this.arg.amount;
 
     if (typeof crewType !== 'number') {
+      console.log('[징병] argTest 실패: crewType이 숫자가 아닙니다. crewType:', crewType, 'type:', typeof crewType);
       return false;
     }
     if (typeof amount !== 'number') {
+      console.log('[징병] argTest 실패: amount가 숫자가 아닙니다. amount:', amount, 'type:', typeof amount);
       return false;
     }
 
-     // 병종 ID 검증
-     try {
-       const { GameUnitConst } = require('../../const/GameUnitConst');
-       const crewTypeData = GameUnitConst.byID(crewType);
-       if (!crewTypeData && crewType !== 0) {
-         // crewType 0은 기본 병종으로 허용
-         return false;
-       }
-     } catch (error) {
-       // GameUnitConst 로드 실패 시 기본 검증만 수행
+     // 병종 ID 검증 - 유효한 병종 ID 범위 체크 (1000-9999)
+     // GameUnitConst.byID는 fallback을 반환하므로 항상 truthy
+     // 기본 범위 검증만 수행
+     if (crewType < 0 || (crewType !== 0 && crewType < 1000)) {
+       console.log('[징병] argTest 실패: crewType 범위 오류. crewType:', crewType, '(0 또는 1000 이상이어야 함)');
+       return false;
      }
 
     
     if (amount < 0) {
+      console.log('[징병] argTest 실패: amount가 음수입니다. amount:', amount);
       return false;
     }
+
+    console.log('[징병] argTest 성공 - crewType:', crewType, 'amount:', amount);
 
     let targetType: 'general' | 'city' = 'general';
     if (typeof (this.arg as any).targetType === 'string') {
@@ -122,23 +122,31 @@ export class ConscriptCommand extends GeneralCommand {
       : { id: general.data?.crewtype ?? 0, name: '병종', armType: Math.floor((general.data?.crewtype ?? 0) / 1000) };
     let maxCrew = leadership * 100;
 
-    // 병종 정보 가져오기 - units.json 기반
+    // 병종 정보 가져오기 - units.json 기반 (항상 sangokushi에서 로드)
     let reqCrewType: any = { id: this.arg.crewType, name: '병종', armType: 0, cost: 1, rice: 1 };
     try {
       const { GameUnitConst } = require('../../const/GameUnitConst');
-      const scenarioId = this.env?.scenario_id || this.env?.scenario || 'sangokushi';
-      const crewTypeData = GameUnitConst.byID(this.arg.crewType, scenarioId);
+      const crewTypeData = GameUnitConst.byID(this.arg.crewType);
+      console.log('[징병] GameUnitConst.byID 결과:', this.arg.crewType, '->', JSON.stringify(crewTypeData));
       if (crewTypeData) {
+        // units.json의 cost 구조: { gold: 8, rice: 8 } 또는 단일 숫자
+        const costObj = crewTypeData.cost;
+        const goldCost = typeof costObj === 'object' ? (costObj?.gold ?? 1) : (costObj ?? 1);
+        const riceCost = typeof costObj === 'object' ? (costObj?.rice ?? 1) : (crewTypeData.rice ?? 1);
+        
         reqCrewType = {
           id: crewTypeData.id || this.arg.crewType,
           name: crewTypeData.name || '병종',
           armType: crewTypeData.armType || 0,
-          cost: crewTypeData.cost || 1,
-          rice: crewTypeData.rice || 1,
+          cost: goldCost,
+          rice: riceCost,
         };
+        console.log('[징병] reqCrewType 설정:', JSON.stringify(reqCrewType));
+      } else {
+        console.warn('[징병] GameUnitConst.byID가 null 반환, 기본값 사용');
       }
-    } catch (error) {
-      // GameUnitConst 로드 실패 시 기본값 사용
+    } catch (error: any) {
+      console.error('[징병] GameUnitConst 로드 실패:', error?.message || error);
     }
 
     if (this.targetType === 'general') {
@@ -193,24 +201,25 @@ export class ConscriptCommand extends GeneralCommand {
       return [0, 0];
     }
 
-    // PHP 원본 참조: che_징병.php getCost()
-    // $reqGold = $this->reqCrewType->costWithTech($this->nation['tech'], $this->maxCrew);
-    // $reqRice = $this->maxCrew / 100;  // 고정 공식 (기술 레벨 영향 없음)
-    
-    const baseCost = this.reqCrewType?.cost || 1; // units.json 기준 gold 비용
+    // 병종별 비용 계산 (units.json 기준)
+    const baseGoldCost = this.reqCrewType?.cost || 1;  // 병종별 gold 비용
+    const baseRiceCost = this.reqCrewType?.rice || 1;  // 병종별 rice 비용
     const techRaw = this.nation?.tech || 0;
     const techLevel = Math.floor(techRaw / 1000);
-    const techCostMultiplier = 1 + techLevel * 0.15;
+    const techCostMultiplier = 1 + techLevel * 0.15;  // 기술 레벨 보너스
 
     const crew = Math.max(100, this.maxCrew || 0);
 
-    // Gold 계산: costWithTech(tech, crew) = baseCost * techMultiplier * crew / 100
-    let reqGold = (baseCost * techCostMultiplier * crew) / 100;
+    // Gold 계산: 병종비용 × 기술배율 × 병사수 / 100
+    let reqGold = (baseGoldCost * techCostMultiplier * crew) / 100;
     const costOffset = (this.constructor as typeof ConscriptCommand).costOffset;
     reqGold *= costOffset;
 
-    // Rice 계산: PHP 원본과 동일하게 maxCrew / 100 (기술 레벨 영향 없음)
-    let reqRice = crew / 100;
+    // Rice 계산: 병종비용 × 병사수 / 100 (기술 레벨 영향 없음)
+    let reqRice = (baseRiceCost * crew) / 100;
+    
+    console.log(`[징병] 비용 계산 - gold: ${baseGoldCost}, rice: ${baseRiceCost}, crew: ${crew}, techMult: ${techCostMultiplier}`);
+    console.log(`[징병] 최종 비용 - reqGold: ${reqGold}, reqRice: ${reqRice}`);
 
     // onCalcDomestic 보정 적용 (PHP: onCalcDomestic('징병','cost',...))
     const general = this.generalObj;
@@ -351,31 +360,42 @@ export class ConscriptCommand extends GeneralCommand {
           cache[idx] = updated.toObject?.() || updated;
         }
       } else {
+        // 새로운 병종 징병 - 기존 스택 유지하고 새 스택 추가
         logger.pushGeneralActionLog(`${crewTypeName} <C>${reqCrewText}</>명을 ${actionName}했습니다. <1>${date}</>`);
-        await unitStackRepository.deleteByOwner(sessionId, 'general', generalNo);
+        console.log(`[징병] 새 병종 UnitStack 생성 - sessionId: ${sessionId}, generalNo: ${generalNo}, reqCrew: ${reqCrew}`);
+        
         const unitSize = 100;
         const stackCount = Math.max(1, Math.ceil(reqCrew / unitSize));
-        const stackDoc = await unitStackRepository.create({
-          session_id: sessionId,
-          owner_type: 'general',
-          owner_id: generalNo,
-          commander_no: generalNo,
-          commander_name: general.name,
-          crew_type_id: reqCrewType?.id || 0,
-          crew_type_name: crewTypeName,
-          unit_size: unitSize,
-          stack_count: stackCount,
-          hp: reqCrew,
-          train: setTrain,
-          morale: setAtmos,
-        });
-        this.markUnitStacksDirty();
-        const cache = this.getCachedUnitStacks();
-        cache.length = 0;
-        cache.push(stackDoc.toObject());
+        console.log(`[징병] 생성할 UnitStack - unitSize: ${unitSize}, stackCount: ${stackCount}, hp: ${reqCrew}`);
+        try {
+          const stackDoc = await unitStackRepository.create({
+            session_id: sessionId,
+            owner_type: 'general',
+            owner_id: generalNo,
+            commander_no: generalNo,
+            commander_name: general.name,
+            crew_type_id: reqCrewType?.id || 0,
+            crew_type_name: crewTypeName,
+            unit_size: unitSize,
+            stack_count: stackCount,
+            hp: reqCrew,
+            train: setTrain,
+            morale: setAtmos,
+          });
+          console.log(`[징병] UnitStack 생성 성공 - _id: ${stackDoc._id}, hp: ${stackDoc.hp}`);
+          this.markUnitStacksDirty();
+          // 기존 캐시에 새 스택 추가 (기존 스택 유지)
+          const cache = this.getCachedUnitStacks();
+          cache.push(stackDoc.toObject());
+        } catch (createError) {
+          console.error(`[징병] UnitStack 생성 실패:`, createError);
+          throw createError;
+        }
       }
  
+      console.log(`[징병] syncGeneralTroopData 호출 전`);
       await this.syncGeneralTroopData(sessionId, generalNo);
+      console.log(`[징병] syncGeneralTroopData 완료 - crew: ${this.generalObj?.data?.crew}`);
 
     }
 
@@ -557,7 +577,8 @@ export class ConscriptCommand extends GeneralCommand {
       const fs = require('fs');
       const path = require('path');
       const scenarioId = this.env.scenario_id || 'sangokushi';
-      const unitsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/units.json');
+      // dist 폴더에서 실행되므로 프로젝트 루트로 이동 (dist/commands/general -> config)
+      const unitsPath = path.join(__dirname, '../../../config/scenarios', scenarioId, 'data/units.json');
       
       if (fs.existsSync(unitsPath)) {
         const unitsData = JSON.parse(fs.readFileSync(unitsPath, 'utf-8'));
@@ -609,7 +630,7 @@ export class ConscriptCommand extends GeneralCommand {
               } else {
                 // regions.json에서 지역 정보 확인
                 try {
-                  const regionsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/regions.json');
+                  const regionsPath = path.join(__dirname, '../../../config/scenarios', scenarioId, 'data/regions.json');
                   if (fs.existsSync(regionsPath)) {
                     const regionsData = JSON.parse(fs.readFileSync(regionsPath, 'utf-8'));
                     const regions = regionsData.regions || [];

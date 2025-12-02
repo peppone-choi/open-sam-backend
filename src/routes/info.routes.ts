@@ -307,10 +307,40 @@ router.post('/city', authenticate, async (req, res) => {
       }
     }
 
+    // 첩보 없는 타국 도시: 기본 정보만 공개, 상세 정보 마스킹
     if (!canView) {
+      const cityData: any = typeof city.toObject === 'function' ? city.toObject() : city;
+      const nation = cityNationId > 0 
+        ? await nationRepository.findByNationNum(sessionId, cityNationId)
+        : null;
+      
+      const restrictedCity = {
+        city: numericCityId,
+        name: cityData.name || cityData.data?.name || `도시 ${numericCityId}`,
+        nation: cityNationId,
+        nationName: nation?.name || '???',
+        nationColor: nation?.color || '#888888',
+        level: cityData.level ?? cityData.data?.level ?? 5,
+        region: cityData.region ?? cityData.data?.region ?? 0,
+        x: cityData.x ?? cityData.data?.x ?? 0,
+        y: cityData.y ?? cityData.data?.y ?? 0,
+        // 첩보 없으면 상세 정보 마스킹
+        pop: null,        // ???
+        trust: null,      // ???
+        agri: null,       // ???
+        comm: null,       // ???
+        secu: null,       // ???
+        def: null,        // ???
+        wall: null,       // ???
+        generals: [],     // 장수 목록 비공개
+        restricted: true  // 제한된 정보임을 표시
+      };
+
       return res.json({
-        result: false,
-        error: '타국 도시는 첩보를 넣어야 볼 수 있습니다.'
+        result: true,
+        city: restrictedCity,
+        restricted: true,
+        message: '첩보가 없어 일부 정보가 제한됩니다.'
       });
     }
 
@@ -324,7 +354,8 @@ router.post('/city', authenticate, async (req, res) => {
 
     res.json({
       result: true,
-      city: cityInfo
+      city: cityInfo,
+      restricted: false
     });
   } catch (error: any) {
     console.error('도시 정보 조회 오류:', error);

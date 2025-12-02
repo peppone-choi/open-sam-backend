@@ -40,3 +40,6 @@ export function hasScenarioEffect(key: string): boolean {
   return key in registry && key !== 'None';
 }
 
+
+
+

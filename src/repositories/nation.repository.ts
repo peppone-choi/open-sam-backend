@@ -187,6 +187,12 @@ class NationRepository {
       const merged = { ...existing, ...update };
       await saveNation(sessionId, nationNum, merged);
       
+      // DB에도 즉시 업데이트 (sync-daemon 대기 없이)
+      await Nation.updateOne(
+        { session_id: sessionId, nation: nationNum },
+        { $set: update }
+      );
+      
       // 목록 캐시 무효화
       await this._invalidateListCaches(sessionId);
       

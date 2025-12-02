@@ -8,6 +8,7 @@ import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { ActionLogger } from '../../models/ActionLogger';
 import { General } from '../../models/General';
+import { DiplomacyStateService, DiplomacyState } from '../../services/diplomacy/DiplomacyState.service';
 
 export class che_종전수락 extends NationCommand {
   static getName(): string {
@@ -117,14 +118,14 @@ export class che_종전수락 extends NationCommand {
     const logger = general!.getLogger();
     const destLogger = this.destGeneralObj!.getLogger();
 
-    await db.update(
-      'diplomacy',
-      {
-        state: 2,
-        term: 0
-      },
-      '(me=%i AND you=%i) OR (you=%i AND me=%i)',
-      [nationID, destNationID, nationID, destNationID]
+    // 서비스를 통해 외교 상태 업데이트
+    const sessionId = this.env['session_id'] || 'sangokushi_default';
+    await DiplomacyStateService.updateBilateralState(
+      sessionId,
+      nationID,
+      destNationID,
+      DiplomacyState.PEACE,
+      0
     );
 
     const SetNationFront = global.SetNationFront;

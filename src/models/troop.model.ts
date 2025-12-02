@@ -18,6 +18,10 @@ const TroopSchema = new Schema<ITroop>({
   collection: 'troops'
 });
 
-// 복합 인덱스 추가
+// 복합 인덱스 추가 - 성능 최적화
+TroopSchema.index({ session_id: 1 });
+TroopSchema.index({ session_id: 1, 'data.troop_id': 1 }, { unique: true, sparse: true });
+TroopSchema.index({ session_id: 1, 'data.nation': 1 });
+TroopSchema.index({ session_id: 1, 'data.city': 1 });
 
 export const Troop = mongoose.models.Troop || mongoose.model<ITroop>('Troop', TroopSchema);

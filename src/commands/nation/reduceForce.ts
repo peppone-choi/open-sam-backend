@@ -2,7 +2,9 @@
 import { NationCommand } from '../base/NationCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
-import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { ConstraintHelper } from '../../constraints/constraint-helper';
+
+import { JosaUtil } from '../../utils/JosaUtil';
 
 export class ReduceForceCommand extends NationCommand {
   protected static actionName = '감축';
@@ -65,7 +67,10 @@ export class ReduceForceCommand extends NationCommand {
   }
 
   public getCost(): [number, number] {
-    const amount = this.env.develcost * 20 + 5000;
+    const GameConst = global.GameConst || {};
+    const expandCityCostCoef = GameConst.expandCityCostCoef || 20;
+    const expandCityDefaultCost = GameConst.expandCityDefaultCost || 10000;
+    const amount = this.env.develcost * expandCityCostCoef + expandCityDefaultCost / 2;
     return [amount, amount];
   }
 
@@ -131,20 +136,26 @@ export class ReduceForceCommand extends NationCommand {
     general.addExperience(5 * (this.getPreReqTurn() + 1));
     general.addDedication(5 * (this.getPreReqTurn() + 1));
 
+    const GameConst = global.GameConst || {};
+    const expandCityPopIncreaseAmount = GameConst.expandCityPopIncreaseAmount || 5000;
+    const expandCityDevelIncreaseAmount = GameConst.expandCityDevelIncreaseAmount || 1000;
+    const expandCityWallIncreaseAmount = GameConst.expandCityWallIncreaseAmount || 1000;
+    const minAvailableRecruitPop = GameConst.minAvailableRecruitPop || 1000;
+
     await db.update('city', {
       level: db.sqleval('level-1'),
-      pop: db.sqleval('greatest(pop - %i, %i)', [5000, 1000]),
-      agri: db.sqleval('greatest(agri - %i, 0)', [1000]),
-      comm: db.sqleval('greatest(comm - %i, 0)', [1000]),
-      secu: db.sqleval('greatest(secu - %i, 0)', [1000]),
-      def: db.sqleval('greatest(def - %i, 0)', [1000]),
-      wall: db.sqleval('greatest(wall - %i, 0)', [1000]),
-      pop_max: db.sqleval('pop_max - %i', [5000]),
-      agri_max: db.sqleval('agri_max - %i', [1000]),
-      comm_max: db.sqleval('comm_max - %i', [1000]),
-      secu_max: db.sqleval('secu_max - %i', [1000]),
-      def_max: db.sqleval('def_max - %i', [1000]),
-      wall_max: db.sqleval('wall_max - %i', [1000]),
+      pop: db.sqleval('greatest(pop - %i, %i)', [expandCityPopIncreaseAmount, minAvailableRecruitPop]),
+      agri: db.sqleval('greatest(agri - %i, 0)', [expandCityDevelIncreaseAmount]),
+      comm: db.sqleval('greatest(comm - %i, 0)', [expandCityDevelIncreaseAmount]),
+      secu: db.sqleval('greatest(secu - %i, 0)', [expandCityDevelIncreaseAmount]),
+      def: db.sqleval('greatest(def - %i, 0)', [expandCityWallIncreaseAmount]),
+      wall: db.sqleval('greatest(wall - %i, 0)', [expandCityWallIncreaseAmount]),
+      pop_max: db.sqleval('pop_max - %i', [expandCityPopIncreaseAmount]),
+      agri_max: db.sqleval('agri_max - %i', [expandCityDevelIncreaseAmount]),
+      comm_max: db.sqleval('comm_max - %i', [expandCityDevelIncreaseAmount]),
+      secu_max: db.sqleval('secu_max - %i', [expandCityDevelIncreaseAmount]),
+      def_max: db.sqleval('def_max - %i', [expandCityWallIncreaseAmount]),
+      wall_max: db.sqleval('wall_max - %i', [expandCityWallIncreaseAmount]),
     }, 'city=%i', [destCityID]);
 
     const [reqGold, reqRice] = this.getCost();
@@ -154,11 +165,16 @@ export class ReduceForceCommand extends NationCommand {
       rice: db.sqleval('rice + %i', [reqRice]),
     }, 'nation=%i', [nationID]);
 
-    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>을 감축했습니다. <1>${date}</>`);
-    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>을 <M>감축</> <1>${date}</>`);
-    logger.pushNationalHistoryLog(`<Y>${general.data.name || general.name}</>이 <G><b>${destCityName}</b></>을 <M>감축</>`);
-    logger.pushGlobalActionLog(`<Y>${general.data.name || general.name}</>이 <G><b>${destCityName}</b></>을 <M>감축</>하였습니다.`);
-    logger.pushGlobalHistoryLog(`<M><b>【감축】</b></><D><b>${nationName}</b></>이 <G><b>${destCityName}</b></>을 <M>감축</>하였습니다.`);
+    const generalName = general.data.name || general.name;
+    const josaUl = JosaUtil.pick(destCityName, '을');
+    const josaYi = JosaUtil.pick(generalName, '이');
+    const josaYiNation = JosaUtil.pick(nationName, '이');
+
+    logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaUl} 감축했습니다. <1>${date}</>`);
+    logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaUl} <M>감축</> <1>${date}</>`);
+    logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>감축</>`);
+    logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>감축</>하였습니다.`);
+    logger.pushGlobalHistoryLog(`<M><b>【감축】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>${josaUl} <M>감축</>하였습니다.`);
 
     // TODO: general.increaseInheritancePoint('active_action', 1);
     this.setResultTurn(new LastTurn(ReduceForceCommand.getName(), this.arg, 0));

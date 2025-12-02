@@ -1,11 +1,14 @@
 /**
  * Set My Setting Service
  * 내 설정 변경 (j_set_my_setting.php)
+ * 
+ * CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
  */
 
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { logger } from '../../common/logger';
+import { saveGeneral } from '../../common/cache/model-cache.helper';
 
 export class SetMySettingService {
   static async execute(data: any, user?: any) {
@@ -66,8 +69,10 @@ export class SetMySettingService {
       genData.use_treatment = Math.max(10, Math.min(100, useTreatment));
       genData.use_auto_nation_turn = useAutoNationTurn;
 
-      general.data = genData;
-      await general.save();
+      // CQRS 패턴: 캐시에 쓰기
+      const generalId = genData.no || general.no;
+      const generalData = { ...general, data: genData, session_id: sessionId };
+      await saveGeneral(sessionId, generalId, generalData);
 
       logger.info('내 설정 변경 완료', { userId, sessionId, defenceTrain: finalDefenceTrain, tnmt });
 

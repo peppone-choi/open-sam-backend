@@ -257,6 +257,114 @@ router.post('/complete', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/install/file-install:
+ *   post:
+ *     summary: 파일 기반 설치
+ *     description: 파일을 통한 설치를 수행합니다. 초기 설정 파일 업로드 등에 사용됩니다.
+ *     tags: [Install]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               action:
+ *                 type: string
+ *                 description: 수행할 액션 (check, install, verify)
+ *               config:
+ *                 type: object
+ *                 description: 설치 설정
+ *     responses:
+ *       200:
+ *         description: 파일 설치 성공
+ *       400:
+ *         description: 잘못된 요청
+ */
+router.post('/file-install', async (req, res) => {
+  try {
+    const { action = 'check', config } = req.body;
+
+    switch (action) {
+      case 'check':
+        // 설치 상태 확인
+        const isInstalled = await InstallService.checkInstallation();
+        return res.json({
+          result: true,
+          installed: isInstalled,
+          message: isInstalled ? '이미 설치되어 있습니다' : '설치가 필요합니다'
+        });
+
+      case 'install':
+        // 이미 설치되어 있는지 확인
+        const alreadyInstalled = await InstallService.checkInstallation();
+        if (alreadyInstalled) {
+          return res.json({
+            result: false,
+            reason: '이미 설치가 완료되었습니다'
+          });
+        }
+
+        // 설치 수행
+        const installResult = await InstallService.completeInstallation(config || {});
+        return res.json({
+          result: installResult.success,
+          reason: installResult.message
+        });
+
+      case 'verify':
+        // 설치 검증
+        const verifyResult = await InstallService.checkInstallation();
+        return res.json({
+          result: true,
+          verified: verifyResult,
+          message: verifyResult ? '설치가 정상적으로 완료되었습니다' : '설치가 필요합니다'
+        });
+
+      default:
+        return res.status(400).json({
+          result: false,
+          reason: `알 수 없는 액션입니다: ${action}`
+        });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message || '서버 오류가 발생했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/install/status:
+ *   post:
+ *     summary: 설치 상태 확인 (POST)
+ *     description: 서버의 설치 상태를 확인합니다. (POST 버전)
+ *     tags: [Install]
+ *     responses:
+ *       200:
+ *         description: 설치 상태 확인 성공
+ */
+router.post('/status', async (req, res) => {
+  try {
+    const isInstalled = await InstallService.checkInstallation();
+    
+    res.json({
+      result: true,
+      installed: isInstalled,
+      status: isInstalled ? 'installed' : 'not_installed'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
 export default router;
 
 

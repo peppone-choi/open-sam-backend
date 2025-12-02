@@ -1,5 +1,9 @@
 import { cacheManager } from '../../cache/CacheManager';
 import { logger } from '../logger';
+import { CACHE_TTL, CacheKeyBuilder, CacheInvalidationPatterns } from '../../config/cache.config';
+
+// Re-export for convenience
+export { CACHE_TTL, CacheKeyBuilder, CacheInvalidationPatterns };
 
 /**
  * 캐시 서비스
@@ -7,11 +11,18 @@ import { logger } from '../logger';
  * 캐시 조회/저장/무효화를 위한 헬퍼 메서드를 제공합니다.
  * getOrLoad 패턴으로 캐시 미스 시 자동으로 데이터를 로드하고 저장합니다.
  * 
+ * TTL 가이드라인:
+ * - CACHE_TTL.REALTIME (3초): 실시간 데이터
+ * - CACHE_TTL.SHORT (10초): 전투, 활성 상태
+ * - CACHE_TTL.MEDIUM (60초): 장수, 도시, 국가
+ * - CACHE_TTL.LONG (300초): 세션, 드물게 변경되는 데이터
+ * - CACHE_TTL.STATIC (1800초): 정적 설정
+ * 
  * @example
  * const session = await cacheService.getOrLoad(
- *   'session:123',
- *   () => sessionRepository.findById('123'),
- *   60
+ *   CacheKeyBuilder.session('my-session'),
+ *   () => sessionRepository.findById('my-session'),
+ *   CACHE_TTL.SESSION
  * );
  */
 class CacheService {

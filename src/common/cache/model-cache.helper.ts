@@ -142,9 +142,10 @@ export async function saveSession(sessionId: string, data: any) {
 }
 
 /**
- * General 저장/업데이트 (Redis → L1)
+ * General 저장/업데이트 (Redis → L1 → DB 즉시)
  * 
- * Redis에 먼저 저장하고, 데몬이 주기적으로 DB에 동기화합니다.
+ * Redis에 저장하고, 중요 필드(crew, crewtype 등)는 DB에도 즉시 저장합니다.
+ * 5초 sync 대기 중 캐시 미스로 인한 데이터 불일치를 방지합니다.
  */
 export async function saveGeneral(sessionId: string, generalId: number, data: any) {
   const no = data.no || data.data?.no || generalId;
@@ -168,15 +169,45 @@ export async function saveGeneral(sessionId: string, generalId: number, data: an
   // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
   await addToSyncQueue('general', `${sessionId}:${generalId}`, sanitizeForSync(data));
   
+  // 5. 병사 관련 필드 변경 시에만 DB 즉시 업데이트 (비동기, fire-and-forget)
+  // 5초 sync 대기 중 캐시 미스로 인한 데이터 불일치 방지
+  // 성능을 위해 await 없이 백그라운드 처리
+  const gData = data.data || {};
+  const immediateUpdate: any = {};
+  
+  // 중요 필드만 즉시 DB에 반영 (병사, 자금, 소속)
+  // 병사/병종 관련
+  if (typeof gData.crew === 'number') immediateUpdate['data.crew'] = gData.crew;
+  if (typeof gData.crewtype === 'number') immediateUpdate['data.crewtype'] = gData.crewtype;
+  if (typeof gData.train === 'number') immediateUpdate['data.train'] = gData.train;
+  if (typeof gData.atmos === 'number') immediateUpdate['data.atmos'] = gData.atmos;
+  // 개인 자금
+  if (typeof gData.gold === 'number') immediateUpdate['data.gold'] = gData.gold;
+  if (typeof gData.rice === 'number') immediateUpdate['data.rice'] = gData.rice;
+  // 소속 (귀순, 등용 등)
+  if (typeof gData.city === 'number') immediateUpdate['data.city'] = gData.city;
+  if (typeof gData.nation === 'number') immediateUpdate['data.nation'] = gData.nation;
+  
+  if (Object.keys(immediateUpdate).length > 0) {
+    // 비동기로 DB 업데이트 (await 없음 - fire-and-forget)
+    General.updateOne(
+      { session_id: sessionId, no },
+      { $set: immediateUpdate },
+      { strict: false }
+    ).catch(err => {
+      logger.warn('General DB 즉시 업데이트 실패', { sessionId, generalId, err: err?.message });
+    });
+  }
+  
   logger.debug('General Redis 저장', { sessionId, generalId });
   
   return data;
 }
 
 /**
- * City 저장/업데이트 (Redis → L1)
+ * City 저장/업데이트 (Redis → L1 → DB 비동기)
  * 
- * Redis에 먼저 저장하고, 데몬이 주기적으로 DB에 동기화합니다.
+ * Redis에 저장하고, 인구/자금 관련 필드는 DB에도 비동기 즉시 저장합니다.
  */
 export async function saveCity(sessionId: string, cityId: number, data: any) {
   // 1. Redis(L2)에 저장
@@ -194,6 +225,27 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
   await addToSyncQueue('city', `${sessionId}:${cityId}`, sanitizeForSync(data));
   
+  // 5. 중요 필드는 DB에 비동기 즉시 저장 (중복 사용 방지)
+  const immediateUpdate: any = {};
+  // 인구/신뢰도
+  if (typeof data.pop === 'number') immediateUpdate.pop = data.pop;
+  if (typeof data.trust === 'number') immediateUpdate.trust = data.trust;
+  // 도시 자금
+  if (typeof data.gold === 'number') immediateUpdate.gold = data.gold;
+  if (typeof data.rice === 'number') immediateUpdate.rice = data.rice;
+  // 소속 국가 (점령 시)
+  if (typeof data.nation === 'number') immediateUpdate.nation = data.nation;
+  
+  if (Object.keys(immediateUpdate).length > 0) {
+    City.updateOne(
+      { session_id: sessionId, city: cityId },
+      { $set: immediateUpdate },
+      { strict: false }
+    ).catch(err => {
+      logger.warn('City DB 즉시 업데이트 실패', { sessionId, cityId, err: err?.message });
+    });
+  }
+  
   logger.debug('City Redis 저장', { sessionId, cityId });
   
   // 실시간 브로드캐스트
@@ -209,9 +261,9 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
 }
 
 /**
- * Nation 저장/업데이트 (Redis → L1)
+ * Nation 저장/업데이트 (Redis → L1 → DB 비동기)
  * 
- * Redis에 먼저 저장하고, 데몬이 주기적으로 DB에 동기화합니다.
+ * Redis에 저장하고, 자금 관련 필드는 DB에도 비동기 즉시 저장합니다.
  */
 export async function saveNation(sessionId: string, nationId: number, data: any) {
   // 1. Redis(L2)에 저장
@@ -228,6 +280,22 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
   
   // 4. DB 동기화 큐에 추가 - Mongoose 내부 필드 제거
   await addToSyncQueue('nation', `${sessionId}:${nationId}`, sanitizeForSync(data));
+  
+  // 5. 자금 관련 필드는 DB에 비동기 즉시 저장 (중복 사용 방지)
+  const nData = data.data || data;
+  const immediateUpdate: any = {};
+  if (typeof nData.gold === 'number') immediateUpdate['data.gold'] = nData.gold;
+  if (typeof nData.rice === 'number') immediateUpdate['data.rice'] = nData.rice;
+  
+  if (Object.keys(immediateUpdate).length > 0) {
+    Nation.updateOne(
+      { session_id: sessionId, nation: nationId },
+      { $set: immediateUpdate },
+      { strict: false }
+    ).catch(err => {
+      logger.warn('Nation DB 즉시 업데이트 실패', { sessionId, nationId, err: err?.message });
+    });
+  }
   
   logger.debug('Nation Redis 저장', { sessionId, nationId });
   

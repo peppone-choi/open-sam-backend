@@ -4,6 +4,7 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { generalRepository } from '../../repositories/general.repository';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { ActionLogger } from '../../utils/ActionLogger';
 
 /**
  * 강행 커맨드
@@ -152,12 +153,16 @@ export class ForceMarchCommand extends GeneralCommand {
             .filter((id: any) => id !== undefined);
           await this.updateOtherGeneralsCity(targetIds, destCityID);
           
+import { ActionLogger } from '../../utils/ActionLogger'; // Ensure this import is added at top
+
+// ... inside run method ...
+
           for (const targetGen of generals) {
-            const targetGeneralID = targetGen.data?.no;
+            const targetGeneralID = targetGen.data?.no ?? targetGen.no;
             if (targetGeneralID) {
-              // TODO: const targetLogger = general.createLogger(targetGeneralID, nationID, env.year, env.month);
-              // TODO: targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>로 강행했습니다.`, 'PLAIN');
-              // TODO: await targetLogger.flush();
+              const targetLogger = new ActionLogger(targetGeneralID, nationID, env.year, env.month);
+              targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>로 강행했습니다.`);
+              await targetLogger.flush();
             }
           }
         }

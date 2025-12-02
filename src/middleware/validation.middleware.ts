@@ -84,6 +84,60 @@ export const loghCommanderSchema = yup.object({
     .required('commanderNo is required'),
 });
 
+export const buildNationCandidateSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+});
+
+export const dieOnPrestartSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  general_id: yup.number().integer().min(0).required('general_id is required'),
+});
+
+export const getCommandTableSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  category: yup.string().oneOf(['all', 'internal', 'military', 'personnel', 'diplomacy', 'special']).default('all'),
+});
+
+export const getFrontInfoSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+});
+
+export const getGeneralLogSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  limit: yup.number().integer().min(1).max(100).default(50),
+  log_type: yup.string().oneOf(['all', 'command', 'battle', 'item', 'status']).default('all'),
+});
+
+export const instantRetreatSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  battle_id: yup.string().required('battle_id is required'),
+});
+
+export const adjustIconSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+});
+
+export const selectPickedGeneralSchema = yup.object({
+  pick: yup.string().required('pick is required'),
+  leadership: yup.number().integer().min(30).max(100).optional(),
+  strength: yup.number().integer().min(30).max(100).optional(),
+  intel: yup.number().integer().min(30).max(100).optional(),
+  personal: yup.string().optional(),
+  use_own_picture: yup.boolean().optional(),
+});
+
+export const updatePickedGeneralSchema = yup.object({
+  pick: yup.string().required('pick is required'),
+});
+
+export const selectNpcSchema = yup.object({
+  pick: yup.number().integer().min(0).required('pick is required'),
+});
+
+export const vacationSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+});
+
 // Battle Routes - Battle ID 검증
 export const battleIdSchema = yup.object({
   battleId: yup.string()
@@ -204,7 +258,8 @@ export const commandReserveSchema = yup.object({
     .max(29, 'turn_idx must be <= 29')
     .required('turn_idx is required'),
   action: yup.string().required('action is required'),
-  arg: yup.object().optional(),
+  // arg는 명령마다 구조가 다르므로 mixed로 선언하여 stripUnknown에서 제외
+  arg: yup.mixed().optional(),
   brief: yup.string().max(500, 'brief must be <= 500 characters').optional(),
 });
 
@@ -354,6 +409,39 @@ export const battleReadySchema = yup.object({
     .integer('generalId must be an integer')
     .min(0, 'generalId must be >= 0')
     .required('generalId is required'),
+});
+
+export const battleAutoResolveSchema = yup.object({
+  attackers: yup.object().required('attackers is required'),
+  defenders: yup.object().required('defenders is required'),
+  city: yup.object().optional(),
+  maxTurns: yup.number().integer().min(1).max(100).optional(),
+  seed: yup.string().optional(),
+  scenarioId: yup.string().optional(),
+});
+
+export const battleSimulateSchema = yup.object({
+  units: yup.array().of(yup.object()).required('units is required'),
+  year: yup.number().integer().optional(),
+  month: yup.number().integer().optional(),
+  seed: yup.string().optional(),
+  repeatCount: yup.number().integer().min(1).max(1000).optional(),
+  terrain: yup.string().optional(),
+  isDefenderCity: yup.boolean().optional(),
+});
+
+export const battleDetailSchema = yup.object({
+  battleID: yup.number() // Note: Route uses battleID (number) but GetBattleState uses battleId (UUID). 
+  // Checking route code: router.post('/detail' ... GetBattleDetailService.execute(req.body...
+  // The schema in route comments says battleID: number.
+    .integer('battleID must be an integer')
+    .required('battleID is required'),
+});
+
+export const battleCenterQuerySchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  status: yup.string().oneOf(['ongoing', 'finished', 'all']).default('all'),
+  limit: yup.number().integer().min(1).max(100).default(50),
 });
 
 // ============================================================
@@ -559,6 +647,31 @@ export const messageDeleteSchema = yup.object({
     .integer('msgID must be an integer')
     .min(0, 'msgID must be >= 0')
     .optional(),
+});
+
+export const getMessageListSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+});
+
+export const getMessagesSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  type: yup.string().oneOf(['received', 'sent']).optional(),
+  limit: yup.number().integer().min(1).max(100).optional(),
+});
+
+export const getOldMessageSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  before_id: yup.number().integer().min(0).required('before_id is required'),
+});
+
+export const getRecentMessageSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  limit: yup.number().integer().min(1).max(100).optional(),
+});
+
+export const setRecentMessageTypeSchema = yup.object({
+  session_id: yup.string().default('sangokushi_default'),
+  type: yup.string().required('type is required'),
 });
 
 /**

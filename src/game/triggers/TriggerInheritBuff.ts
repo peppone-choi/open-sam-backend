@@ -176,3 +176,6 @@ export function createInheritBuffTrigger(inheritBuffList: Record<string, number>
   return new TriggerInheritBuff(inheritBuffList);
 }
 
+
+
+

@@ -103,7 +103,7 @@ export class ReturnCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(ReturnCommand.actionName),
+        rng,
         general,
         sessionId,
         '귀환'

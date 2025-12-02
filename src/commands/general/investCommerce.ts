@@ -3,6 +3,11 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { 
+  CriticalRatioDomestic, 
+  CriticalScoreEx, 
+  updateMaxDomesticCritical 
+} from '../../utils/game-processing';
 
 /**
  * 상업 투자 커맨드 (기본 내정 클래스)
@@ -121,15 +126,7 @@ export class InvestCommerceCommand extends GeneralCommand {
     return 1 + explevel * 0.01;
   }
 
-  protected criticalRatioDomestic(general: any, statKey: string): { success: number; fail: number } {
-    return { success: 0.1, fail: 0.1 };
-  }
-
-  protected criticalScoreEx(rng: any, pick: string): number {
-    if (pick === 'success') return rng.nextRange(1.5, 2.0);
-    if (pick === 'fail') return rng.nextRange(0.3, 0.7);
-    return 1.0;
-  }
+  // removed criticalRatioDomestic and criticalScoreEx stubs
 
   public async run(rng: any): Promise<boolean> {
     if (!this.hasFullConditionMet()) {
@@ -147,7 +144,15 @@ export class InvestCommerceCommand extends GeneralCommand {
 
     let score = Math.max(1, this.calcBaseScore(rng));
 
-    let { success: successRatio, fail: failRatio } = this.criticalRatioDomestic(general, statKey);
+    const statVal = general.getVar(statKey) || 0;
+    // TODO: Need 3 stats for CriticalRatioDomestic but we only have one key?
+    // CriticalRatioDomestic expects (leadership, strength, intel, type)
+    // We can get all 3 stats from general
+    const leadership = general.getLeadership(true, true, true, false);
+    const strength = general.getStrength(true, true, true, false);
+    const intel = general.getIntel(true, true, true, false);
+
+    let { success: successRatio, fail: failRatio } = CriticalRatioDomestic(leadership, strength, intel, statKey as any);
     if (trust < 80) {
       successRatio *= trust / 80;
     }
@@ -166,7 +171,7 @@ export class InvestCommerceCommand extends GeneralCommand {
 
     const logger = general.getLogger();
 
-    score *= this.criticalScoreEx(rng, pick);
+    score *= CriticalScoreEx(rng, pick);
     score = Math.round(score);
 
     const exp = score * 0.7;
@@ -174,9 +179,7 @@ export class InvestCommerceCommand extends GeneralCommand {
 
     if (pick === 'success') {
       try {
-        if (typeof general.updateMaxDomesticCritical === 'function') {
-          // TODO: general.updateMaxDomesticCritical();
-        }
+        updateMaxDomesticCritical(general, score);
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
@@ -241,10 +244,10 @@ export class InvestCommerceCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        // TODO: rng
+        rng,
         general,
         sessionId,
-        '내정'
+        actionName
       );
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);

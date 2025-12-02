@@ -33,7 +33,7 @@ export class che_무작위수도이전 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeLord(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.BeOpeningPart(relYear + 1),
       ConstraintHelper.ReqNationAuxValue('can_무작위수도이전', 0, '>', 0, '더이상 변경이 불가능합니다.')
     ];
   }
@@ -159,6 +159,15 @@ export class che_무작위수도이전 extends NationCommand {
     );
 
     this.setResultTurn(new LastTurn(che_무작위수도이전.getName(), this.arg, 0));
+    
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
     await general.applyDB(db);
     return true;
   }

@@ -103,7 +103,8 @@ export class BorderReturnCommand extends GeneralCommand {
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>로 접경귀환했습니다. <1>${date}</>`);
     await this.updateGeneralCity(destCityID);
 
-    this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
+    // PHP: TODO: InstantAction일때에만 설정하지 않는게 나은데..
+    // this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
 
     try {
       const { StaticEventHandler } = await import('../../events/StaticEventHandler');

@@ -174,5 +174,74 @@ router.post('/process', authenticate, preventMongoInjection('body'), validate(di
   }
 });
 
+/**
+ * @swagger
+ * /api/diplomacy/history:
+ *   post:
+ *     summary: 외교 히스토리 조회
+ *     tags: [Diplomacy]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nationId:
+ *                 type: number
+ *                 description: 특정 국가와의 히스토리만 조회 (선택사항)
+ *               limit:
+ *                 type: number
+ *                 default: 50
+ *     responses:
+ *       200:
+ *         description: 히스토리 목록
+ */
+router.post('/history', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const sessionId = (req.body.session_id || req.query.session_id || 'sangokushi_default') as string;
+    const { nationId, limit = 50 } = req.body;
+
+    // 사용자의 국가 조회
+    const { General } = await import('../models/general.model');
+    const general = await General.findOne({
+      session_id: sessionId,
+      owner: String(userId)
+    });
+
+    if (!general || !general.data?.nation) {
+      return res.status(400).json({ result: false, reason: '소속 국가가 없습니다.' });
+    }
+
+    const myNationId = general.data.nation;
+
+    const { DiplomacyMessageService } = await import('../services/diplomacy/DiplomacyMessage.service');
+    
+    let history;
+    if (nationId && nationId !== myNationId) {
+      // 특정 국가와의 양자 히스토리
+      history = await DiplomacyMessageService.getBilateralHistory(sessionId, myNationId, nationId, limit);
+    } else {
+      // 내 국가의 전체 히스토리
+      history = await DiplomacyMessageService.getDiplomacyHistory(sessionId, myNationId, limit);
+    }
+
+    res.json({
+      success: true,
+      result: true,
+      history
+    });
+  } catch (error: any) {
+    console.error('Error in diplomacy/history:', error);
+    res.status(500).json({ result: false, reason: error.message || 'Internal server error' });
+  }
+});
+
 export default router;
 

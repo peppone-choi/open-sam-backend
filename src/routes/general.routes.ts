@@ -1,11 +1,23 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { asyncHandler } from '../middleware/async-handler';
+import { generalLimiter } from '../middleware/rate-limit.middleware';
 import { 
   validate, 
   generalJoinSchema, 
   generalSettingSchema, 
   generalDropItemSchema,
+  buildNationCandidateSchema,
+  dieOnPrestartSchema,
+  getCommandTableSchema,
+  getFrontInfoSchema,
+  getGeneralLogSchema,
+  instantRetreatSchema,
+  adjustIconSchema,
+  selectPickedGeneralSchema,
+  updatePickedGeneralSchema,
+  selectNpcSchema,
+  vacationSchema,
   preventMongoInjection 
 } from '../middleware/validation.middleware';
 
@@ -29,6 +41,9 @@ import { VacationService } from '../services/general/Vacation.service';
 import { SetMySettingService } from '../services/general/SetMySetting.service';
 
 const router = Router();
+
+// Apply rate limiting to all general routes
+router.use(generalLimiter);
 
 /**
  * @swagger
@@ -106,7 +121,7 @@ const router = Router();
  *       500:
  *         description: 서버 오류
  */
-router.post('/build-nation-candidate', authenticate, asyncHandler(async (req, res) => {
+router.post('/build-nation-candidate', authenticate, preventMongoInjection('body'), validate(buildNationCandidateSchema), asyncHandler(async (req, res) => {
   const result = await BuildNationCandidateService.execute(req.body, req.user);
   res.json(result);
 }));
@@ -177,7 +192,7 @@ router.post('/build-nation-candidate', authenticate, asyncHandler(async (req, re
  *       401:
  *         description: 인증 실패
  */
-router.post('/die-on-prestart', authenticate, asyncHandler(async (req, res) => {
+router.post('/die-on-prestart', authenticate, preventMongoInjection('body'), validate(dieOnPrestartSchema), asyncHandler(async (req, res) => {
   const result = await DieOnPrestartService.execute(req.body, req.user);
   res.json(result);
 }));
@@ -380,7 +395,7 @@ router.post('/drop-item', authenticate, preventMongoInjection('body'), validate(
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-command-table', optionalAuth, asyncHandler(async (req, res) => {
+router.get('/get-command-table', optionalAuth, validate(getCommandTableSchema, 'query'), asyncHandler(async (req, res) => {
   const result = await GetCommandTableService.execute(req.query, req.user);
   res.json(result);
 }));
@@ -438,7 +453,7 @@ router.get('/get-command-table', optionalAuth, asyncHandler(async (req, res) => 
  *       401:
  *         description: 인증 실패
  */
-router.get('/get-front-info', optionalAuth, asyncHandler(async (req, res) => {
+router.get('/get-front-info', optionalAuth, validate(getFrontInfoSchema, 'query'), asyncHandler(async (req, res) => {
   // serverID를 session_id로 매핑 (프론트엔드 호환성)
   const params = {
     ...req.query,
@@ -524,7 +539,7 @@ router.get('/get-front-info', optionalAuth, asyncHandler(async (req, res) => {
  *       400:
  *         description: 잘못된 요청
  */
-router.get('/get-general-log', asyncHandler(async (req, res) => {
+router.get('/get-general-log', validate(getGeneralLogSchema, 'query'), asyncHandler(async (req, res) => {
   const result = await GetGeneralLogService.execute(req.query, req.user);
   res.json(result);
 }));
@@ -599,7 +614,7 @@ router.get('/get-general-log', asyncHandler(async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.post('/instant-retreat', authenticate, asyncHandler(async (req, res) => {
+router.post('/instant-retreat', authenticate, preventMongoInjection('body'), validate(instantRetreatSchema), asyncHandler(async (req, res) => {
   const result = await InstantRetreatService.execute(req.body, req.user);
   res.json(result);
 }));
@@ -938,7 +953,7 @@ router.get('/get-boss-info', authenticate, asyncHandler(async (req, res) => {
  *       401:
  *         description: 인증 실패
  */
-router.post('/adjust-icon', authenticate, async (req, res) => {
+router.post('/adjust-icon', authenticate, preventMongoInjection('body'), validate(adjustIconSchema), async (req, res) => {
   try {
     const result = await AdjustIconService.execute(req.body, req.user);
     res.json(result);
@@ -1018,7 +1033,7 @@ router.get('/get-select-pool', authenticate, async (req, res) => {
  *       200:
  *         description: 장수 생성 성공
  */
-router.post('/select-picked-general', authenticate, async (req, res) => {
+router.post('/select-picked-general', authenticate, preventMongoInjection('body'), validate(selectPickedGeneralSchema), async (req, res) => {
   try {
     const result = await SelectPickedGeneralService.execute(req.body, req.user);
     res.json(result);
@@ -1051,7 +1066,7 @@ router.post('/select-picked-general', authenticate, async (req, res) => {
  *       200:
  *         description: 장수 업데이트 성공
  */
-router.post('/update-picked-general', authenticate, async (req, res) => {
+router.post('/update-picked-general', authenticate, preventMongoInjection('body'), validate(updatePickedGeneralSchema), async (req, res) => {
   try {
     const result = await UpdatePickedGeneralService.execute(req.body, req.user);
     res.json(result);
@@ -1118,7 +1133,7 @@ router.get('/get-select-npc-token', authenticate, async (req, res) => {
  *       200:
  *         description: NPC 선택 성공
  */
-router.post('/select-npc', authenticate, async (req, res) => {
+router.post('/select-npc', authenticate, preventMongoInjection('body'), validate(selectNpcSchema), async (req, res) => {
   try {
     const result = await SelectNpcService.execute(req.body, req.user);
     res.json(result);
@@ -1142,7 +1157,7 @@ router.post('/select-npc', authenticate, async (req, res) => {
  *       200:
  *         description: 휴가 모드 설정 성공
  */
-router.post('/vacation', authenticate, async (req, res) => {
+router.post('/vacation', authenticate, preventMongoInjection('body'), validate(vacationSchema), async (req, res) => {
   try {
     const result = await VacationService.execute(req.body, req.user);
     res.json(result);

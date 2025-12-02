@@ -3,6 +3,7 @@ import { sessionRepository } from '../../repositories/session.repository';
 import { Session } from '../../models/session.model';
 import { generalRepository } from '../../repositories/general.repository';
 import { NgBetting } from '../../models/ng_betting.model';
+import { saveGeneral } from '../../common/cache/model-cache.helper';
 
 const MIN_GOLD_REQUIRED_WHEN_BETTING = 500;
 const MAX_BETTING_AMOUNT = 1000;
@@ -172,7 +173,9 @@ export class BetService {
 
         genData.gold = gold - amount;
         general.data = genData;
-        await general.save();
+        // CQRS: 캐시에 저장
+        const generalNo = genData.no || general.no || generalId;
+        await saveGeneral(sessionId, generalNo, { ...general.toObject(), data: genData });
       }
 
       const bettingTypeKey = JSON.stringify(uniqueBettingType);

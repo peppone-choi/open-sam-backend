@@ -1,11 +1,17 @@
 import { Router } from 'express';
 import { authenticate, optionalAuth } from '../middleware/auth';
 import { logger } from '../common/logger';
+import { generalLimiter } from '../middleware/rate-limit.middleware';
 import { 
   validate, 
   messageSendSchema, 
   messageDecideSchema, 
   messageDeleteSchema,
+  getMessageListSchema,
+  getMessagesSchema,
+  getOldMessageSchema,
+  getRecentMessageSchema,
+  setRecentMessageTypeSchema,
   preventMongoInjection 
 } from '../middleware/validation.middleware';
 
@@ -21,6 +27,9 @@ import { SendMessageService } from '../services/message/SendMessage.service';
 import { SetRecentMessageTypeService } from '../services/message/SetRecentMessageType.service';
 
 const router = Router();
+
+// Apply general rate limiter to message routes
+router.use(generalLimiter);
 
 /**
  * @swagger
@@ -96,7 +105,7 @@ router.post('/delete-message', authenticate, preventMongoInjection('body'), vali
  *       200:
  *         description: 목록 조회 성공
  */
-router.get('/get-contact-list', authenticate, async (req, res) => {
+router.get('/get-contact-list', authenticate, validate(getMessageListSchema, 'query'), async (req, res) => {
   try {
     const result = await GetContactListService.execute(req.query, req.user);
     res.json(result);
@@ -116,7 +125,7 @@ router.get('/get-contact-list', authenticate, async (req, res) => {
  *       200:
  *         description: 미리보기 조회 성공
  */
-router.get('/get-message-preview', authenticate, async (req, res) => {
+router.get('/get-message-preview', authenticate, validate(getMessageListSchema, 'query'), async (req, res) => {
   try {
     const result = await GetMessagePreviewService.execute(req.query, req.user);
     res.json(result);
@@ -142,7 +151,7 @@ router.get('/get-message-preview', authenticate, async (req, res) => {
  *       200:
  *         description: 목록 조회 성공
  */
-router.get('/get-messages', authenticate, async (req, res) => {
+router.get('/get-messages', authenticate, validate(getMessagesSchema, 'query'), async (req, res) => {
   console.log('========================================');
   console.log('[GET /get-messages] 요청 받음!');
   console.log('Query:', req.query);
@@ -191,7 +200,7 @@ router.get('/get-messages', authenticate, async (req, res) => {
  *       200:
  *         description: 조회 성공
  */
-router.get('/get-old-message', authenticate, async (req, res) => {
+router.get('/get-old-message', authenticate, validate(getOldMessageSchema, 'query'), async (req, res) => {
   try {
     const result = await GetOldMessageService.execute(req.query, req.user);
     res.json(result);
@@ -211,7 +220,7 @@ router.get('/get-old-message', authenticate, async (req, res) => {
  *       200:
  *         description: 조회 성공
  */
-router.get('/get-recent-message', authenticate, async (req, res) => {
+router.get('/get-recent-message', authenticate, validate(getRecentMessageSchema, 'query'), async (req, res) => {
   try {
     const result = await GetRecentMessageService.execute(req.query, req.user);
     res.json(result);
@@ -221,7 +230,7 @@ router.get('/get-recent-message', authenticate, async (req, res) => {
 });
 
 // 별칭 (프론트엔드 호환)
-router.post('/get-recent', authenticate, async (req, res) => {
+router.post('/get-recent', authenticate, preventMongoInjection('body'), validate(getRecentMessageSchema), async (req, res) => {
   try {
     // POST 요청도 GET과 동일하게 처리 (query 또는 body에서 파라미터 추출)
     const params = { ...req.query, ...req.body };
@@ -243,7 +252,7 @@ router.post('/get-recent', authenticate, async (req, res) => {
  *       200:
  *         description: 읽음 처리 성공
  */
-router.get('/read-latest-message', authenticate, async (req, res) => {
+router.get('/read-latest-message', authenticate, validate(getMessageListSchema, 'query'), async (req, res) => {
   try {
     const result = await ReadLatestMessageService.execute(req.query, req.user);
     res.json(result);
@@ -309,7 +318,7 @@ router.post('/send-message', authenticate, preventMongoInjection('body'), valida
  *       200:
  *         description: 설정 성공
  */
-router.post('/set-recent-message-type', authenticate, async (req, res) => {
+router.post('/set-recent-message-type', authenticate, preventMongoInjection('body'), validate(setRecentMessageTypeSchema), async (req, res) => {
   try {
     const result = await SetRecentMessageTypeService.execute(req.body, req.user);
     res.json(result);

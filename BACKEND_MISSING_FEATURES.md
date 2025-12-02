@@ -13,7 +13,7 @@ API 엔드포인트는 **100% 포팅**되었으나, **핵심 비즈니스 로직
 |---------|--------|---------|----------|
 | API 엔드포인트 | 100% | - | - |
 | 명령 실행 로직 | 90% | Medium | 2일 |
-| 전투 시스템 | 70% | **High** | 3일 |
+| 전투 시스템 | 95% | ✅ 완료 | - |
 | 경매 시스템 | 60% | High | 2일 |
 | 베팅 시스템 | 50% | Medium | 1일 |
 | 토너먼트 | 20% | **High** | 5일 |
@@ -23,120 +23,54 @@ API 엔드포인트는 **100% 포팅**되었으나, **핵심 비즈니스 로직
 
 ---
 
-## 1. 전투 시스템 (70% 완성) 🔴 P0
+## 1. 전투 시스템 (95% 완성) ✅ P0 완료
 
 ### ✅ 구현된 기능
 - 전투 룸 생성/참가
 - 턴 진행 (40x40 그리드)
 - 유닛 이동/공격
 - Socket.IO 실시간 업데이트
+- **전투 종료 후 월드 반영** ✅ (2025-12 구현)
+- **도시 점령 로직** ✅
+- **국가 멸망 체크/처리** ✅
+- **천하통일 체크/처리** ✅
+- **MongoDB 트랜잭션** ✅
+- **Socket 브로드캐스트** ✅
+  - `city:occupied` - 도시 점령
+  - `nation:destroyed` - 국가 멸망
+  - `game:unified` - 천하통일
 
-### ❌ 누락된 기능
-#### 1.1. 전투 종료 후 월드 반영
-**위치**: `src/handlers/battle.socket.ts`
-**문제**: 
-- `BattleEventHook.service.ts`에 구현된 로직이 있으나 실제 호출 부재
-- 전투 종료(`battle:ended` 이벤트) 후 처리 없음
+### ✅ 완료된 P2 기능 (2025-12)
+- **명예의 전당**: 통일 시 황제/공신 기록, 모든 장수 통계 기록
+- **긴급천도**: 수도 함락 시 자동 천도, 수뇌부 이동, 국고 감소, 사기 감소
 
-**필요한 처리**:
-```typescript
-// battle.socket.ts에 추가
-socket.on('battle:turn', async (data) => {
-  // ... 기존 턴 처리 ...
-  
-  if (battleEnded) {
-    socket.emit('battle:ended', result);
-    
-    // 누락: 월드 반영
-    await BattleEventHook.onBattleEnded({
-      battleId,
-      winner: result.winner,
-      cityId: battle.cityId
-    });
-    
-    // 도시 점령
-    if (result.cityOccupied) {
-      await BattleEventHook.onCityOccupied({
-        cityId: battle.cityId,
-        oldNation: battle.defenderNation,
-        newNation: result.winner
-      });
-    }
-    
-    // 국가 멸망 체크
-    const destroyed = await BattleEventHook.checkNationDestroyed(battle.defenderNation);
-    if (destroyed) {
-      await BattleEventHook.onNationDestroyed({
-        nationId: battle.defenderNation
-      });
-    }
-    
-    // 통일 체크
-    const unified = await BattleEventHook.checkUnified();
-    if (unified) {
-      await BattleEventHook.onUnified({
-        nationId: result.winner
-      });
-    }
-  }
-});
-```
-
-**우선순위**: P0 (게임 핵심 로직)  
-**예상 시간**: 3일
+### ✅ 완료된 P3 기능 (2025-12)
+- **동시 전투 처리**: Redis 분산 락 적용 (resolveTurn, handleBattleEnded)
+- **Socket 재연결**: 60초 grace period, 전투 상태 복구, 재연결 이벤트
 
 ---
 
-## 2. 경매 시스템 (60% 완성) 🔴 P0
+## 2. 경매 시스템 (95% 완성) ✅ P0 완료
 
 ### ✅ 구현된 기능
 - 자원 경매 (금/쌀)
 - 입찰/낙찰 처리
+- **유니크 아이템 경매** ✅ (2025-12 구현)
+  - 경매 생성 시 아이템 소유 검증
+  - 동일 부위 유니크 제한 체크
+  - 다른 경매 1순위 입찰 시 슬롯 충돌 검사
+  - 글로벌 히스토리 로그 (【보물수배】)
+- **실시간 종료 데몬** ✅ (daemon-unified.ts에 매분 cron 등록)
+- **낙찰 실패 시 메시지 발송** ✅
+  - 판매자 부재, 아이템 미유효, 슬롯 충돌 등 상황별 메시지
 
-### ❌ 누락된 기능
+### ⏳ 미완료 기능 (P2)
+#### 2.1. 연도별 유니크 소유 제한
+- PHP: maxUniqueItemLimit 배열 기반 제한
+- 현재 입찰 시점에서 체크하므로 낙찰 시 재확인 필요
+- 낙찰 실패 시 자동 연장 로직 미구현
 
-#### 2.1. 유니크 아이템 경매
-**위치**: `src/services/auction/AuctionEngine.service.ts:56-59`
-```typescript
-case 'unique':
-  // TODO: Not implemented
-  break;
-```
-
-**필요한 작업**:
-1. UniqueItem 모델 생성
-2. 유니크 경매 낙찰 처리
-3. 아이템 소유권 이전
-
-**우선순위**: P1  
-**예상 시간**: 2일
-
-#### 2.2. 경매 실시간 종료 데몬
-**위치**: `src/services/global/ExecuteEngine.service.ts:1434-1454`
-**문제**: 월간 후처리에서만 경매 처리 → closeDate 기준 즉시 종료 안 됨
-
-**필요한 작업**:
-```typescript
-// src/daemon/auction-processor.ts (신규)
-export async function processAuctions() {
-  const now = new Date();
-  const expiredAuctions = await Auction.find({
-    status: 'active',
-    closeDate: { $lte: now }
-  });
-  
-  for (const auction of expiredAuctions) {
-    await AuctionEngine.closeAuction(auction.id);
-  }
-}
-
-// daemon-unified.ts에 추가
-cron.schedule('* * * * *', () => {
-  processAuctions();
-});
-```
-
-**우선순위**: P0  
+**우선순위**: P2 (추가 기능)  
 **예상 시간**: 4시간
 
 ---

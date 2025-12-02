@@ -17,8 +17,13 @@ import * as cron from 'node-cron';
 
 let isShuttingDown = false;
 
+// 세션별 마지막 처리 시간 추적 (시나리오별 처리 간격 지원)
+const sessionLastProcessedTime: Map<string, number> = new Map();
+const sessionLastNPCProcessedTime: Map<string, number> = new Map();
+
 // 동적 임포트를 위한 전역 변수
 let mongoConnection: any;
+let getScenarioConfig: any; // 시나리오 설정 로더
 const fallbackLogger = {
   info: console.info.bind(console),
   warn: console.warn.bind(console),
@@ -37,18 +42,58 @@ let processAuction: any;
 let processTournament: any;
 
 /**
- * 턴 처리 함수 (크론)
+ * 시나리오별 턴 처리 간격 가져오기
+ * @param scenarioId 시나리오 ID (예: 'sangokushi', 'legend-of-galactic-heroes')
+ * @returns 처리 간격 (초), 기본값 60초
+ */
+function getTurnIntervalSeconds(scenarioId: string): number {
+  if (!getScenarioConfig) return 60; // 로더가 없으면 기본값
+  
+  try {
+    const config = getScenarioConfig(scenarioId);
+    return config?.metadata?.turnIntervalSeconds ?? 60;
+  } catch {
+    return 60;
+  }
+}
+
+/**
+ * 세션의 처리 간격이 지났는지 확인
+ * @param sessionId 세션 ID
+ * @param scenarioId 시나리오 ID
+ * @returns 처리해야 하면 true
+ */
+function shouldProcessSession(sessionId: string, scenarioId: string): boolean {
+  const now = Date.now();
+  const lastProcessed = sessionLastProcessedTime.get(sessionId) || 0;
+  const intervalSeconds = getTurnIntervalSeconds(scenarioId);
+  const intervalMs = intervalSeconds * 1000;
+  
+  return (now - lastProcessed) >= intervalMs;
+}
+
+/**
+ * 턴 처리 함수 (15초마다 호출)
  * 
- * 일반 게임 세션과 LOGH 세션을 구분하여 처리합니다.
+ * 시나리오별 처리 간격을 확인하여 세션을 처리합니다:
+ * - sangokushi: 60초마다 (turnIntervalSeconds: 60)
+ * - legend-of-galactic-heroes: 15초마다 (turnIntervalSeconds: 15)
  */
 async function processTurns() {
   try {
-    console.log(`[${new Date().toISOString()}] 🔄 processTurns() called`);
     const sessions = await Session.find({ 'data.isunited': { $nin: [2, 3] } });
-    console.log(`[${new Date().toISOString()}] 📋 Found ${sessions.length} active sessions`);
     
     for (const session of sessions) {
       const sessionId = session.session_id;
+      
+      // 시나리오 ID 추출 (세션에서 또는 기본값)
+      const scenarioId = session.data?.scenario_id || 
+                        (sessionId.startsWith('logh_') ? 'legend-of-galactic-heroes' : 'sangokushi');
+      
+      // 시나리오별 처리 간격 확인
+      if (!shouldProcessSession(sessionId, scenarioId)) {
+        continue; // 아직 처리 간격이 지나지 않음
+      }
       
       try {
         // LOGH 세션인지 확인
@@ -66,6 +111,7 @@ async function processTurns() {
 
           try {
             await processLoghTurn(sessionId);
+            sessionLastProcessedTime.set(sessionId, Date.now()); // 처리 시간 기록
           } finally {
             if (SessionStateService) {
               await SessionStateService.releaseSessionLock(sessionId);
@@ -73,24 +119,22 @@ async function processTurns() {
           }
         } else {
           // 일반 게임 세션 처리
-          console.log(`[${new Date().toISOString()}] ⚙️ Processing session: ${sessionId}`);
           const result = await ExecuteEngineService.execute({ 
             session_id: sessionId,
             singleTurn: true  // 한 턴에 하나씩만 처리
           });
           
           if (result.updated) {
-            console.log(`[${new Date().toISOString()}] ✅ Turn processed for ${sessionId}`, {
-              nextTurntime: result.turntime
-            });
-            logger.info(`Turn processed for session ${sessionId}`, {
-              nextTurntime: result.turntime
+            sessionLastProcessedTime.set(sessionId, Date.now()); // 처리 시간 기록
+            logger.debug(`Turn processed for session ${sessionId}`, {
+              nextTurntime: result.turntime,
+              scenarioId,
+              intervalSeconds: getTurnIntervalSeconds(scenarioId)
             });
           } else if (result.locked) {
-            console.log(`[${new Date().toISOString()}] 🔒 Session ${sessionId} is locked by another instance`);
             // 다른 인스턴스가 잠금 - 무시
           } else {
-            console.log(`[${new Date().toISOString()}] ⏭️ Session ${sessionId} - no turn update needed`);
+            sessionLastProcessedTime.set(sessionId, Date.now()); // 체크 시간 기록
           }
         }
       } catch (error: any) {
@@ -276,8 +320,20 @@ async function processTournaments() {
 }
 
 /**
- * NPC 자동 명령 처리 함수 (크론)
- * NPC들에게 자동으로 명령 할당
+ * 세션의 NPC 처리 간격이 지났는지 확인
+ */
+function shouldProcessNPCForSession(sessionId: string, scenarioId: string): boolean {
+  const now = Date.now();
+  const lastProcessed = sessionLastNPCProcessedTime.get(sessionId) || 0;
+  const intervalSeconds = getTurnIntervalSeconds(scenarioId);
+  const intervalMs = intervalSeconds * 1000;
+  
+  return (now - lastProcessed) >= intervalMs;
+}
+
+/**
+ * NPC 자동 명령 처리 함수 (15초마다 호출)
+ * 시나리오별 처리 간격을 확인하여 NPC에게 명령 할당
  */
 async function processNPCCommands() {
   try {
@@ -286,12 +342,24 @@ async function processNPCCommands() {
     for (const session of sessions) {
       const sessionId = session.session_id;
       const gameEnv = session.data || {};
+      
+      // 시나리오 ID 추출
+      const scenarioId = session.data?.scenario_id || 
+                        (sessionId.startsWith('logh_') ? 'legend-of-galactic-heroes' : 'sangokushi');
+      
+      // 시나리오별 처리 간격 확인
+      if (!shouldProcessNPCForSession(sessionId, scenarioId)) {
+        continue;
+      }
 
       try {
         const { NPCAutoCommandService } = await import('./services/ai/NPCAutoCommand.service');
         
         // 장수턴 자동 등록
         const result = await NPCAutoCommandService.assignCommandsToAllNPCs(sessionId, gameEnv);
+        
+        // 처리 시간 기록
+        sessionLastNPCProcessedTime.set(sessionId, Date.now());
 
         if (result.count > 0) {
           logger.debug(`NPC commands assigned for session ${sessionId}`, {
@@ -734,6 +802,11 @@ async function start() {
     const tournamentModule = await import('./services/tournament/TournamentEngine.service');
     processTournament = tournamentModule.processTournament;
     console.log('[DAEMON START] TournamentEngine 로딩 완료');
+    
+    // 시나리오 설정 로더 (turnIntervalSeconds 등)
+    const scenarioDataModule = await import('./utils/scenario-data');
+    getScenarioConfig = scenarioDataModule.getScenarioConfig;
+    console.log('[DAEMON START] ScenarioData 유틸리티 로딩 완료');
 
     // 커맨드 레지스트리 초기화
     console.log('[DAEMON START] 커맨드 레지스트리 초기화 중...');
@@ -755,13 +828,12 @@ async function start() {
     console.log('[DAEMON START] ✅ CommandQueue 초기화 완료');
     logger.info('✅ CommandQueue 초기화 완료');
 
-    // 1. 턴 처리 스케줄러 시작 (매분마다 - PHP 삼국지와 동일)
-    // node-cron 형식: 초(옵션) 분 시 일 월 요일
-    // 5개 필드: 분 시 일 월 요일 (표준)
+    // 1. 턴 처리 스케줄러 시작 (15초마다 - 실시간 시나리오 지원)
+    // 시나리오별 처리 간격: sangokushi=60초, logh=15초 (scenario.json의 turnIntervalSeconds)
     console.log('[DAEMON START] 턴 처리 스케줄러 등록 중...');
-    const TURN_CRON_EXPRESSION = '* * * * *'; // 매분마다
+    const TURN_INTERVAL_MS = 15 * 1000; // 15초 (가장 빠른 간격 기준)
     let isProcessingTurns = false; // 중복 실행 방지
-    cron.schedule(TURN_CRON_EXPRESSION, () => {
+    setInterval(() => {
       if (isProcessingTurns) {
         logger.debug('턴 처리가 이미 실행 중입니다. 스킵합니다.');
         return;
@@ -769,7 +841,7 @@ async function start() {
       isProcessingTurns = true;
       processTurns()
         .catch(err => {
-          logger.error('턴 처리 크론 작업 실행 중 오류', {
+          logger.error('턴 처리 작업 실행 중 오류', {
             error: err.message,
             stack: err.stack
           });
@@ -777,8 +849,8 @@ async function start() {
         .finally(() => {
           isProcessingTurns = false;
         });
-    });
-    logger.info('✅ 턴 스케줄러 시작 (매분마다)', { schedule: TURN_CRON_EXPRESSION });
+    }, TURN_INTERVAL_MS);
+    logger.info('✅ 턴 스케줄러 시작 (15초마다)', { intervalMs: TURN_INTERVAL_MS });
 
     // 2. 경매 스케줄러 시작 (경매 종료 처리)
     const AUCTION_CRON_EXPRESSION = '* * * * *'; // 매분
@@ -804,17 +876,17 @@ async function start() {
     });
     logger.info('✅ 토너먼트 스케줄러 시작', { schedule: TOURNAMENT_CRON_EXPRESSION });
 
-    // 4. NPC 자동 명령 스케줄러 시작 - 일반 턴 주기와 동일하게 유지
-    const NPC_CRON_EXPRESSION = TURN_CRON_EXPRESSION; // 매분마다
-    cron.schedule(NPC_CRON_EXPRESSION, () => {
+    // 4. NPC 자동 명령 스케줄러 시작 (15초마다 - 시나리오별 간격 적용)
+    const NPC_INTERVAL_MS = 15 * 1000; // 15초 (가장 빠른 간격 기준)
+    setInterval(() => {
       processNPCCommands().catch(err => {
-        logger.error('NPC 명령 처리 크론 작업 실행 중 오류', {
+        logger.error('NPC 명령 처리 작업 실행 중 오류', {
           error: err.message,
           stack: err.stack
         });
       });
-    });
-    logger.info('✅ NPC 자동 명령 스케줄러 시작', { schedule: NPC_CRON_EXPRESSION });
+    }, NPC_INTERVAL_MS);
+    logger.info('✅ NPC 자동 명령 스케줄러 시작 (15초마다, 시나리오별 간격 적용)', { intervalMs: NPC_INTERVAL_MS });
 
     // 5. DB 동기화 스케줄러 시작 (5초마다)
     const SYNC_CRON_EXPRESSION = '*/5 * * * * *'; // 5초마다
@@ -869,11 +941,11 @@ async function start() {
     console.log(`   - Legacy: ${loghStats.legacy}개`);
     console.log('');
     console.log('📋 활성화된 스케줄러:');
-    console.log(`   ✅ 턴 처리: ${TURN_CRON_EXPRESSION} (일반 + LOGH 혼합)`);
+    console.log(`   ✅ 턴 처리: 15초마다 (시나리오별 간격 적용)`);
     console.log(`   ✅ 커맨드 소비: ${COMMAND_CRON_EXPRESSION} (일반 + LOGH 혼합)`);
     console.log(`   ✅ 경매 처리: ${AUCTION_CRON_EXPRESSION} (매분)`);
     console.log(`   ✅ 토너먼트: ${TOURNAMENT_CRON_EXPRESSION} (매분)`);
-    console.log(`   ✅ NPC 명령: ${NPC_CRON_EXPRESSION} (턴 주기와 동일)`);
+    console.log(`   ✅ NPC 명령: 15초마다 (시나리오별 간격 적용)`);
     console.log(`   ✅ DB 동기화: ${SYNC_CRON_EXPRESSION} (5초마다)`);
     console.log(`   ✅ 전투 해결: ${BATTLE_CRON_EXPRESSION} (5초마다)`);
     console.log('');
@@ -897,10 +969,10 @@ async function start() {
       streamName: 'game:commands',
       consumerGroup: groupName,
       consumerName: consumerName,
-      turnCronSchedule: TURN_CRON_EXPRESSION,
+      turnIntervalMs: TURN_INTERVAL_MS,
+      npcIntervalMs: NPC_INTERVAL_MS,
       auctionCronSchedule: AUCTION_CRON_EXPRESSION,
       tournamentCronSchedule: TOURNAMENT_CRON_EXPRESSION,
-      npcCronSchedule: NPC_CRON_EXPRESSION,
       syncCronSchedule: SYNC_CRON_EXPRESSION,
       commandCronSchedule: COMMAND_CRON_EXPRESSION
     });

@@ -47,11 +47,7 @@ export class RaidCommand extends NationCommand {
     this.minConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.AvailableStrategicCommand(),
-      ConstraintHelper.Custom((input: any, env: any) => {
-        const nation = input._cached_nation || {};
-        return (nation.strategic_cmd_limit || 0) > 0;
-      }, '전략 커맨드 실행 가능 횟수를 초과했습니다')
+      ConstraintHelper.AvailableStrategicCommand()
     ];
   }
 
@@ -61,17 +57,9 @@ export class RaidCommand extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
-      ConstraintHelper.AvailableStrategicCommand(),
       ConstraintHelper.ExistsDestNation(),
-      ConstraintHelper.Custom((input: any, env: any) => {
-        const diplomacy = input._cached_diplomacy || {};
-        const term = diplomacy.term || 0;
-        return diplomacy.state === 1 && term >= 12;
-      }, '선포 12개월 이상인 상대국에만 가능합니다.'),
-      ConstraintHelper.Custom((input: any, env: any) => {
-        const nation = input._cached_nation || {};
-        return (nation.strategic_cmd_limit || 0) > 0;
-      }, '전략 커맨드 실행 가능 횟수를 초과했습니다')
+      ConstraintHelper.AllowDiplomacyWithTerm(1, 12, '선포 12개월 이상인 상대국에만 가능합니다.'),
+      ConstraintHelper.AvailableStrategicCommand()
     ];
   }
 

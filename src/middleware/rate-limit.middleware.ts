@@ -8,6 +8,14 @@ const RATE_LIMIT_AUTH_MAX = parseInt(process.env.RATE_LIMIT_AUTH_MAX || '5', 10)
 const RATE_LIMIT_API_WINDOW_MS = parseInt(process.env.RATE_LIMIT_API_WINDOW_MS || String(15 * 60 * 1000), 10);
 const RATE_LIMIT_API_MAX = parseInt(process.env.RATE_LIMIT_API_MAX || '100', 10);
 
+// Battle: High frequency (Polling, RTS actions)
+const RATE_LIMIT_BATTLE_WINDOW_MS = 1 * 60 * 1000; // 1 minute
+const RATE_LIMIT_BATTLE_MAX = 120; // 2 requests per second average
+
+// General: Moderate frequency
+const RATE_LIMIT_GENERAL_WINDOW_MS = 1 * 60 * 1000; // 1 minute
+const RATE_LIMIT_GENERAL_MAX = 60; // 1 request per second average
+
 /**
  * Global rate limiter - applies to all requests
  * Allows 1000 requests per 15 minutes per IP
@@ -68,6 +76,48 @@ export const apiLimiter = rateLimit({
     res.status(429).json({
       error: 'API 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
       retryAfter: '15분'
+    });
+  }
+});
+
+/**
+ * Battle rate limiter - applies to RTS battle endpoints
+ * Allows 120 requests per 1 minute per IP
+ */
+export const battleLimiter = rateLimit({
+  windowMs: RATE_LIMIT_BATTLE_WINDOW_MS,
+  max: RATE_LIMIT_BATTLE_MAX,
+  message: {
+    error: '전투 명령 요청이 너무 많습니다.',
+    retryAfter: '1분'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req: Request, res: Response) => {
+    res.status(429).json({
+      error: '전투 명령 요청이 너무 많습니다.',
+      retryAfter: '1분'
+    });
+  }
+});
+
+/**
+ * General rate limiter - applies to General command endpoints
+ * Allows 60 requests per 1 minute per IP
+ */
+export const generalLimiter = rateLimit({
+  windowMs: RATE_LIMIT_GENERAL_WINDOW_MS,
+  max: RATE_LIMIT_GENERAL_MAX,
+  message: {
+    error: '명령 요청이 너무 많습니다.',
+    retryAfter: '1분'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req: Request, res: Response) => {
+    res.status(429).json({
+      error: '명령 요청이 너무 많습니다.',
+      retryAfter: '1분'
     });
   }
 });

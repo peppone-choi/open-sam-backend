@@ -1,4 +1,5 @@
 // @ts-nocheck - Type issues need investigation
+import { saveGeneral } from '../../common/cache/model-cache.helper';
 import { InheritActionRepository } from '../../repositories/inheritaction.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
@@ -66,7 +67,8 @@ export class BuyRandomUniqueService {
       general.rank = general.rank || {};
       general.rank.inherit_point_spent_dynamic = (general.rank.inherit_point_spent_dynamic || 0) + reqAmount;
       
-      await general.save();
+      const generalNo = general.no || general.data?.no || generalId;
+      await saveGeneral(sessionId, generalNo, general);
       
       return {
         success: true,

@@ -1,9 +1,28 @@
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
+import { generalRepository } from '../../repositories/general.repository';
 import { neutralize, removeSpecialCharacter, getStringWidth } from '../../utils/string-util';
 import GameConstants from '../../utils/game-constants';
 import { invalidateCache } from '../../common/cache/model-cache.helper';
 import { verifyGeneralOwnership } from '../../common/auth-utils';
 import { resolveCommandAuthContext } from './command-auth.helper';
+import Redis from 'ioredis';
+
+// Redis 싱글턴
+let redisClient: Redis | null = null;
+function getRedisClient(): Redis {
+  if (!redisClient) {
+    const url = process.env.REDIS_URL;
+    if (url) {
+      redisClient = new Redis(url);
+    } else {
+      redisClient = new Redis({
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      });
+    }
+  }
+  return redisClient;
+}
 
 const MAX_TURN = GameConstants.MAX_TURN; // 50
 
@@ -28,6 +47,20 @@ export class ReserveCommandService {
 
     const action = data.action;
     const brief = data.brief || action; // brief가 있으면 사용, 없으면 action 사용
+    
+    // 디버깅: 요청 데이터 로깅
+    console.log('[ReserveCommand] 원본 data 전체:', JSON.stringify(data));
+    console.log('[ReserveCommand] 요청 데이터:', JSON.stringify({
+      sessionId,
+      generalId,
+      action,
+      brief,
+      turn_idx: data.turn_idx,
+      turnList: data.turnList,
+      arg: data.arg,
+      argType: typeof data.arg
+    }));
+    
     // turn_idx (단일 턴) 또는 turnList (여러 턴) 지원
     let rawTurnList: number[] = [];
     if (data.turn_idx !== undefined) {
@@ -55,7 +88,7 @@ export class ReserveCommandService {
       };
     }
  
-    const turnList = expandTurnList(rawTurnList);
+    let turnList = expandTurnList(rawTurnList);
  
     if (turnList.length === 0) {
       return {
@@ -64,6 +97,45 @@ export class ReserveCommandService {
         message: '올바른 턴이 아닙니다',
         reason: '올바른 턴이 아닙니다'
       };
+    }
+
+    // 턴 실행 중인 경우 락이 풀릴 때까지 대기 (최대 30초)
+    // 60분 턴에서 1시간 날리는 것 방지
+    let turnAdjusted = false;
+    if (turnList.includes(0)) {
+      try {
+        const redis = getRedisClient();
+        const lockKey = `execute_engine_lock:${sessionId}`;
+        
+        const MAX_WAIT_MS = 30000; // 최대 30초 대기
+        const CHECK_INTERVAL_MS = 500; // 0.5초마다 체크
+        const startTime = Date.now();
+        
+        let lockExists = await redis.exists(lockKey);
+        
+        if (lockExists) {
+          console.log(`[ReserveCommand] 턴 실행 중 감지 - 락 해제 대기 시작 (sessionId: ${sessionId})`);
+          
+          // 락이 풀릴 때까지 대기
+          while (lockExists && (Date.now() - startTime) < MAX_WAIT_MS) {
+            await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL_MS));
+            lockExists = await redis.exists(lockKey);
+          }
+          
+          if (lockExists) {
+            // 30초 지나도 락이 안 풀림 - 다음 턴으로 조정
+            turnList = turnList.map(t => t === 0 ? 1 : t);
+            turnList = [...new Set(turnList)].sort((a, b) => a - b);
+            turnAdjusted = true;
+            console.log(`[ReserveCommand] 대기 시간 초과 - turn_idx 0을 1로 조정 (대기: ${Date.now() - startTime}ms)`);
+          } else {
+            console.log(`[ReserveCommand] 락 해제됨 - turn_idx 0 유지 (대기: ${Date.now() - startTime}ms)`);
+          }
+        }
+      } catch (error) {
+        console.warn('[ReserveCommand] 턴 실행 락 확인 실패:', error);
+        // 락 확인 실패해도 계속 진행
+      }
     }
  
     // 인자 검증
@@ -86,8 +158,23 @@ export class ReserveCommandService {
 
     const result = await setGeneralCommand(sessionId, generalId, turnList, action, arg, brief);
 
-    // 캐시 무효화
+    // 턴 조정 정보 추가
+    if (turnAdjusted && result.success) {
+      result.turnAdjusted = true;
+      result.message = (result.message || '') + ' (턴 실행 중이어서 다음 턴에 예약됨)';
+    }
+
+    // 성공 시 lastActiveAt 업데이트 (플레이어 접속 상태 추적)
     if (result.success && typeof generalId === 'number') {
+      try {
+        await generalRepository.updateBySessionAndNo(sessionId, generalId, {
+          'data.lastActiveAt': new Date().toISOString()
+        });
+      } catch (error: any) {
+        console.error('lastActiveAt update failed:', error);
+      }
+      
+      // 캐시 무효화
       try {
         await invalidateCache('general', sessionId, generalId);
       } catch (error: any) {

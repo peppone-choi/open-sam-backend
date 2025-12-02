@@ -43,7 +43,7 @@ export class che_국기변경 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.ReqNationAuxValue(`can_${actionName}`, 0,  '>', [0, '더이상 변경이 불가능합니다.'])
+      ConstraintHelper.ReqNationAuxValue(`can_${actionName}`, 0, '>', 0, '더이상 변경이 불가능합니다.')
     ];
   }
 
@@ -54,7 +54,7 @@ export class che_국기변경 extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.ReqNationAuxValue(`can_${actionName}`, 0,  '>', [0, '더이상 변경이 불가능합니다.'])
+      ConstraintHelper.ReqNationAuxValue(`can_${actionName}`, 0, '>', 0, '더이상 변경이 불가능합니다.')
     ];
   }
 
@@ -153,4 +153,4 @@ export class che_국기변경 extends NationCommand {
       orange: '#FFA500'
     };
   }
-}
+}

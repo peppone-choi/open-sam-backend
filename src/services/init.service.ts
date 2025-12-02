@@ -10,12 +10,15 @@ import { generalRepository } from '../repositories/general.repository';
 import { SessionSync } from '../utils/session-sync';
 import { unitStackRepository } from '../repositories/unit-stack.repository';
 import { generateInitialGarrisonsForCities } from './helpers/garrison.helper';
+import { saveCity, saveNation, saveSession } from '../common/cache/model-cache.helper';
 
 /**
  * 세션 초기화 서비스
  * 
  * config/scenarios/{scenarioId}/data/ 에서 데이터를 로드하여
  * 실제 DB에 초기화
+ * 
+ * CQRS: DB 저장 후 캐시에도 초기화
  */
 
 export class InitService {
@@ -230,6 +233,11 @@ export class InitService {
       // DB에 직접 저장 (Mongoose create는 DB에 저장함)
       const city = new City(cityData);
       await city.save();
+      
+      // 캐시에도 초기화 (CQRS 일관성)
+      const cityObj = city.toObject();
+      await saveCity(sessionId, cityObj.city, cityObj);
+      
       createdCount++;
     }
     
@@ -323,6 +331,11 @@ export class InitService {
         
         const nation = new Nation(nationData);
         await nation.save();
+        
+        // 캐시에도 초기화 (CQRS 일관성)
+        const nationObj = nation.toObject();
+        await saveNation(sessionId, nationObj.nation, nationObj);
+        
         nationCount++;
         
         // 국가에 속한 도시들의 nation 필드 업데이트
@@ -365,6 +378,11 @@ export class InitService {
       };
       const nation = new Nation(nationData);
       await nation.save();
+      
+      // 캐시에도 초기화 (CQRS 일관성)
+      const nationObj = nation.toObject();
+      await saveNation(sessionId, nationObj.nation, nationObj);
+      
       nationCount = 1;
       
       console.log(`   ✅ 재야 국가 생성 완료`);
@@ -407,6 +425,10 @@ export class InitService {
     session.markModified('data');
     session.markModified('data.game_env');
     await sessionRepository.saveDocument(session);
+    
+    // CQRS: DB 저장 후 캐시에도 초기화
+    const sessionObj = session.toObject();
+    await saveSession(sessionId, sessionObj);
     
     // 저장 후 실제 DB 값 확인
     const savedSession = await sessionRepository.findBySessionId(sessionId);

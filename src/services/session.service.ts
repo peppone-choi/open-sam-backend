@@ -165,7 +165,8 @@ export class SessionService {
     autoInit: boolean = true
   ) {
     // 1. 시나리오 경로 확인
-    const scenarioPath = path.join(__dirname, `../../config/scenarios/${scenarioId}`);
+    // dist 폴더에서 실행되므로 프로젝트 루트로 이동 (dist/services -> config)
+    const scenarioPath = path.join(__dirname, `../../../config/scenarios/${scenarioId}`);
     const scenarioFile = path.join(scenarioPath, 'scenario.json');
     
     if (!fs.existsSync(scenarioFile)) {

@@ -2,6 +2,8 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { generalRepository } from '../../repositories/general.repository';
+import { ActionLogger } from '../../utils/ActionLogger';
+import { JosaUtil } from '../../utils/JosaUtil';
 
 /**
  * 이동 커맨드
@@ -161,6 +163,17 @@ export class MoveCommand extends GeneralCommand {
           .map((doc: any) => doc.data?.no ?? doc.no)
           .filter((id: any) => id !== undefined);
         await this.updateOtherGeneralsCity(targetIds, destCityID);
+
+        // 방랑군 구성원에게 로그 남기기
+        const josaRo = JosaUtil.pick(destCityName, '로');
+        for (const targetGen of targetGenerals) {
+          const targetId = targetGen.no || targetGen.data?.no;
+          if (targetId) {
+            const targetLogger = new ActionLogger(targetId, nationID, env.year, env.month);
+            targetLogger.pushGeneralActionLog(`방랑군 세력이 <G><b>${destCityName}</b></>${josaRo} 이동했습니다.`);
+            await targetLogger.flush();
+          }
+        }
       } catch (error) {
         console.error('방랑군 전체 이동 실패:', error);
       }
@@ -192,7 +205,7 @@ export class MoveCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(MoveCommand.actionName),
+        rng,
         general,
         sessionId,
         '이동'

@@ -1341,14 +1341,21 @@ export class SimpleAI {
 
   /**
    * 장수 능력치 추출
+   * 
+   * gold/rice는 국가 자금을 사용 (징병/훈련 등은 국가 자금 소모)
    */
   private extractGeneralStats(genData: any): GeneralStats {
+    // 국가 자금 가져오기 (징병/훈련 등은 국가 자금 사용)
+    const nationData = this.nation?.data || this.nation;
+    const nationGold = nationData?.gold || 0;
+    const nationRice = nationData?.rice || 0;
+    
     return {
       leadership: genData.leadership || 50,
       strength: genData.strength || 50,
       intel: genData.intel || 50,
-      gold: genData.gold || 0,
-      rice: genData.rice || 0,
+      gold: nationGold,  // 국가 자금 사용
+      rice: nationRice,  // 국가 군량 사용
       crew: genData.crew || 0,
       officerLevel: genData.officer_level || 1
     };
@@ -2529,11 +2536,20 @@ export class SimpleAI {
       
       // 자원 조건 통과 시에만 징병 후보 추가
       if (requiresResources) {
+        // 징병량 계산: 통솔에 따른 최대 징병량 (통솔 * 100, 최소 1000, 최대 10000)
+        const maxRecruitByLeadership = Math.max(1000, Math.min(stats.leadership * 100, 10000));
+        
+        // 자원에 따른 실제 징병량 (금과 쌀 중 적은 것 기준, 1명당 금1 쌀1 소모 가정)
+        const maxRecruitByResources = Math.min(stats.gold, stats.rice);
+        
+        // 최종 징병량: 통솔 제한과 자원 제한 중 작은 값, 최소 1000
+        const recruitAmount = Math.max(1000, Math.min(maxRecruitByLeadership, maxRecruitByResources));
+        
         commands.push({
           command: '징병',
-          args: { crewType: this.selectBestCrewType(genData), amount: 1000 },
+          args: { crewType: this.selectBestCrewType(genData), amount: recruitAmount },
           weight,
-          reason: `[${priority.toUpperCase()}] ${reason} (병사:${stats.crew}, 금:${stats.gold}, 양:${stats.rice})`
+          reason: `[${priority.toUpperCase()}] ${reason} (병사:${stats.crew}, 징병량:${recruitAmount}, 금:${stats.gold}, 양:${stats.rice})`
         });
       } else {
         console.log(`[SimpleAI] 징병 불가 - 자원 부족 (금:${stats.gold} < 300 또는 양:${stats.rice} < 300)`);
@@ -2626,17 +2642,120 @@ export class SimpleAI {
   }
 
   /**
-   * 최적 병종 선택
+   * 최적 병종 선택 - units.json 기반 병종 ID 사용
+   * 
+   * 병종 ID 체계:
+   * - 1100~1116: 보병 (FOOTMAN)
+   * - 1200~1207: 궁병 (ARCHER)
+   * - 1300~1309: 기병 (CAVALRY)
+   * - 1400~1403: 특수병/책사 (WIZARD)
+   * - 1500~1503: 공성병기 (SIEGE)
    */
   private selectBestCrewType(genData: any): number {
     const strength = genData.strength || 50;
     const intel = genData.intel || 50;
-
-    // 무력이 높으면 기병(4), 지력이 높으면 노병(3), 평범하면 창병(1)
-    if (strength >= 80) return 4; // 기병
-    if (intel >= 80) return 3;    // 노병
-    if (strength >= 60) return 2; // 극병
-    return 1; // 창병
+    const leadership = genData.leadership || 50;
+    const officerLevel = genData.officer_level || 0;
+    
+    // 국가 정보
+    const nationData = this.nation?.data || this.nation || {};
+    const nationTech = nationData.tech || 0;
+    const nationTypeId = nationData.nation_type || nationData.country_type || 'neutral';
+    
+    // 병종 우선순위 리스트 (높은 순위부터)
+    // 각 병종의 조건: { id, reqTech, reqStrength, reqIntel, reqLeadership, reqOfficerLevel, reqNationType }
+    const crewTypePriority = [
+      // === 최상위 정예 병종 (국가 타입 + 능력치 요구) ===
+      { id: 1314, reqTech: 3000, reqLeadership: 85, reqNationType: ['militarism'] },  // 옥룡대
+      { id: 1123, reqTech: 2000, reqStrength: 80, reqNationType: ['militarism'] },    // 황룡대
+      { id: 1122, reqTech: 2000, reqStrength: 75, reqNationType: ['militarism'] },    // 진주룡대
+      { id: 1121, reqTech: 2500, reqStrength: 85, reqNationType: ['militarism'] },    // 참마도수
+      // 함진영은 도시 제한(복양, 하비)이 있어 AI가 직접 선택하기 어려움 - 일반 병종 우선순위에서 제외
+      
+      // === 황실/유가 병종 ===
+      { id: 1120, reqTech: 3000, reqOfficerLevel: 8, reqNationType: ['confucianism', 'legalism'] }, // 금군
+      { id: 1313, reqTech: 3000, reqOfficerLevel: 9, reqNationType: ['confucianism', 'legalism'] }, // 제국창기병
+      { id: 1118, reqTech: 2000, reqLeadership: 80, reqNationType: ['confucianism', 'virtue'] },    // 백이병
+      
+      // === 법가/병가 병종 ===
+      { id: 1304, reqTech: 3000, reqLeadership: 90, reqNationType: ['legalism', 'militarism'] },    // 호표기
+      
+      // === 태평도 병종 ===
+      { id: 1114, reqTech: 1000, reqNationType: ['taiping'] },  // 황건역사
+      { id: 1113, reqTech: 0, reqNationType: ['taiping'] },     // 황건신도
+      { id: 1417, reqTech: 0, reqNationType: ['taiping'] },     // 여남황건
+      { id: 1419, reqTech: 500, reqIntel: 60, reqNationType: ['taiping', 'taoism_religious'] }, // 암송대
+      
+      // === 도적 병종 ===
+      { id: 1418, reqTech: 1500, reqStrength: 80, reqNationType: ['bandits'] },  // 광전사
+      { id: 1124, reqTech: 0, reqNationType: ['bandits'] },                       // 흑산적
+      
+      // === 고급 일반 병종 (기술 + 능력치 요구) ===
+      { id: 1301, reqTech: 1000, reqLeadership: 65 },  // 중기병
+      { id: 1302, reqTech: 500, reqStrength: 60 },     // 창기병
+      { id: 1303, reqTech: 1000, reqStrength: 55 },    // 궁기병
+      { id: 1317, reqTech: 1000, reqStrength: 65 },    // 쌍검기병
+      { id: 1318, reqTech: 2000, reqLeadership: 70 },  // 전차병
+      
+      { id: 1204, reqTech: 2000, reqLeadership: 70 },  // 강노병
+      { id: 1205, reqTech: 2500, reqStrength: 80 },    // 흑룡대
+      { id: 1214, reqTech: 2000, reqStrength: 75 },    // 저격수
+      
+      { id: 1107, reqTech: 500, reqStrength: 70 },     // 양손도끼병
+      { id: 1109, reqTech: 500, reqStrength: 65 },     // 쌍검병
+      { id: 1110, reqTech: 700, reqStrength: 60 },     // 철퇴병
+      { id: 1106, reqTech: 800, reqLeadership: 70 },   // 대방패병
+      { id: 1105, reqTech: 400, reqLeadership: 60 },   // 방패보병
+      
+      // === 중급 병종 (기술만 요구) ===
+      { id: 1300, reqTech: 300 },   // 경기병
+      { id: 1202, reqTech: 500, reqIntel: 50 },    // 노병
+      { id: 1201, reqTech: 300 },   // 장궁병
+      { id: 1208, reqTech: 300, reqStrength: 55 }, // 투창병
+      { id: 1213, reqTech: 500, reqIntel: 45 },    // 기름단지병
+      
+      { id: 1108, reqTech: 600 },   // 장창병
+      { id: 1104, reqTech: 300 },   // 정규극병
+      { id: 1112, reqTech: 300 },   // 둔전병
+      { id: 1102, reqTech: 200 },   // 정규보병
+      { id: 1103, reqTech: 200 },   // 정규창병
+      
+      // === 기본 병종 (조건 없음) ===
+      { id: 1319, reqTech: 0 },     // 정찰기병
+      { id: 1200, reqTech: 0 },     // 단궁병
+      { id: 1210, reqTech: 0 },     // 투석병
+      { id: 1101, reqTech: 0 },     // 창민병
+      { id: 1100, reqTech: 0 },     // 도민병 (최하위 기본)
+    ];
+    
+    // 조건을 만족하는 최고 우선순위 병종 선택
+    for (const crewType of crewTypePriority) {
+      // 기술 체크
+      if (crewType.reqTech && nationTech < crewType.reqTech) continue;
+      
+      // 무력 체크
+      if (crewType.reqStrength && strength < crewType.reqStrength) continue;
+      
+      // 지력 체크
+      if (crewType.reqIntel && intel < crewType.reqIntel) continue;
+      
+      // 통솔력 체크
+      if (crewType.reqLeadership && leadership < crewType.reqLeadership) continue;
+      
+      // 관직 레벨 체크
+      if (crewType.reqOfficerLevel && officerLevel < crewType.reqOfficerLevel) continue;
+      
+      // 국가 타입 체크
+      if (crewType.reqNationType && crewType.reqNationType.length > 0) {
+        if (!crewType.reqNationType.includes(nationTypeId)) continue;
+      }
+      
+      // 모든 조건 만족!
+      return crewType.id;
+    }
+    
+    // 기본값: 도민병
+    return 1100;
   }
 
   /**

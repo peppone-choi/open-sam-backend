@@ -3,7 +3,7 @@ import { ActionLogger } from '../logger/ActionLogger';
 import { LogFormatType } from '../../types/log.types';
 import { SendSystemNoticeService } from '../message/SendSystemNotice.service';
 import { Util } from '../../utils/Util';
-import { invalidateCache } from '../../common/cache/model-cache.helper';
+import { invalidateCache, saveGeneral } from '../../common/cache/model-cache.helper';
 
 /**
  * AdminGameSettings Service
@@ -246,10 +246,11 @@ export class AdminGameSettingsService {
       
       // ⚠️ CRITICAL FIX: 경과한 턴 수 계산
       // 현재 년/월로부터 경과한 게임 내 월 수를 계산하고, 이를 현실 턴 수로 변환
+      // PHP 호환: startMonths = startyear * 12 (1월을 0으로 계산)
       let elapsedTurns: number;
       try {
         const currentMonths = Util.joinYearMonth(year, month);
-        const startMonths = Util.joinYearMonth(startyear, 1);
+        const startMonths = startyear * 12;  // PHP 호환: 1월을 0으로 계산
         const elapsedGameMonths = currentMonths - startMonths; // 게임 내 경과 월 수
         
         // 게임 내 1개월 = 현실 1턴이므로, 경과한 게임 월 수 = 경과한 턴 수
@@ -316,7 +317,9 @@ export class AdminGameSettingsService {
           const newGenTurnTime = new Date(servTurnTime.getTime() + newTimeDiff * 1000);
           
           general.turntime = newGenTurnTime.toISOString();
-          await general.save();
+          // CQRS: 캐시에 저장
+          const generalNo = general.no || general.data?.no;
+          await saveGeneral(sessionId, generalNo, general.toObject());
           updatedCount++;
         }
         

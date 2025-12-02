@@ -108,8 +108,17 @@ export class event_화시병연구 extends NationCommand {
     // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
+    
+    // StaticEventHandler
+    try {
+      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
+      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
+    } catch (error) {
+      console.error('StaticEventHandler 실패:', error);
+    }
+    
     await general.applyDB(db);
 
     return true;
   }
-}
+}

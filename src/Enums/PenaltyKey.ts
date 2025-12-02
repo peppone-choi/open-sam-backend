@@ -72,3 +72,6 @@ export function tryPenaltyKeyFrom(value: string): PenaltyKey | null {
   return null;
 }
 
+
+
+

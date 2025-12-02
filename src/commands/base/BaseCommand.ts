@@ -221,13 +221,8 @@ export abstract class BaseCommand {
     const sessionId = this.env.session_id;
     
     if (cityId && sessionId) {
-      const cityDoc = await cityRepository.findOneByFilter({
-        session_id: sessionId,
-        $or: [
-          { 'data.city': cityId },
-          { city: cityId }
-        ]
-      });
+      // CQRS: 캐시 우선 조회 (findByCityNum 사용)
+      const cityDoc = await cityRepository.findByCityNum(sessionId, cityId);
       if (cityDoc) {
         // City 모델은 최상위 필드 우선 사용
         const cityObj = cityDoc.toObject?.() || cityDoc;
@@ -444,13 +439,8 @@ export abstract class BaseCommand {
     const sessionId = this.env.session_id;
     
     if (sessionId) {
-      const nationDoc = await nationRepository.findOneByFilter({
-        session_id: sessionId,
-        $or: [
-          { 'data.nation': nationID },
-          { nation: nationID }
-        ]
-      });
+      // CQRS: 캐시 우선 조회 (findByNationNum 사용)
+      const nationDoc = await nationRepository.findByNationNum(sessionId, nationID);
       if (nationDoc) {
         this.nation = nationDoc.data || nationDoc.toObject?.() || nationDoc;
       }
@@ -487,10 +477,8 @@ export abstract class BaseCommand {
         const { cityRepository } = await import('../../repositories/city.repository');
         const sessionId = this.env.session_id || 'sangokushi_default';
         
-        const cityDoc = await cityRepository.findOneByFilter({
-          session_id: sessionId,
-          city: cityNo
-        });
+        // CQRS: 캐시 우선 조회
+        const cityDoc: any = await cityRepository.findByCityNum(sessionId, cityNo);
         
         if (!cityDoc) {
           console.error(`setDestCity: City ${cityNo} not found in session ${sessionId}`);
@@ -525,10 +513,8 @@ export abstract class BaseCommand {
       const { cityRepository } = await import('../../repositories/city.repository');
       const sessionId = this.env.session_id || 'sangokushi_default';
       
-      const cityDoc = await cityRepository.findOneByFilter({
-        session_id: sessionId,
-        city: cityNo
-      });
+      // CQRS: 캐시 우선 조회
+      const cityDoc: any = await cityRepository.findByCityNum(sessionId, cityNo);
       
       if (!cityDoc) {
         console.error(`setDestCityAsync: City ${cityNo} not found in session ${sessionId}`);

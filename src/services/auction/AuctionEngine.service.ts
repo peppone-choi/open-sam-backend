@@ -101,12 +101,14 @@ async function processUniqueItemAuction(sessionId: string, auctionDoc: IAuction)
     generalRepository.findBySessionAndNo(sessionId, highestBid.generalId)
   ]);
 
+  const auctionTitle = auctionDoc.title || `경매 #${auctionDoc._id}`;
+
   if (!hostGeneral) {
     logger.warn('[AuctionEngine] Host general missing for unique auction', {
       auctionId: auctionDoc._id,
       hostGeneralId: auctionDoc.hostGeneralId
     });
-    await refundBid(sessionId, highestBid, 'host_missing');
+    await refundBid(sessionId, highestBid, 'host_missing', auctionTitle);
     await finalizeAuctionDocument(auctionDoc, undefined);
     return;
   }
@@ -116,7 +118,7 @@ async function processUniqueItemAuction(sessionId: string, auctionDoc: IAuction)
       auctionId: auctionDoc._id,
       winnerGeneralId: highestBid.generalId
     });
-    await refundBid(sessionId, highestBid, 'winner_missing');
+    await refundBid(sessionId, highestBid, 'winner_missing', auctionTitle);
     await finalizeAuctionDocument(auctionDoc, undefined);
     return;
   }
@@ -132,7 +134,7 @@ async function processUniqueItemAuction(sessionId: string, auctionDoc: IAuction)
       itemSlot,
       hostSlotValue
     });
-    await refundBid(sessionId, highestBid, 'item_missing');
+    await refundBid(sessionId, highestBid, 'item_missing', auctionTitle);
     await finalizeAuctionDocument(auctionDoc, undefined);
     return;
   }
@@ -146,7 +148,7 @@ async function processUniqueItemAuction(sessionId: string, auctionDoc: IAuction)
       hostGeneralId: auctionDoc.hostGeneralId,
       winnerGeneralId: highestBid.generalId
     });
-    await refundBid(sessionId, highestBid, 'bad_general_no');
+    await refundBid(sessionId, highestBid, 'bad_general_no', auctionTitle);
     await finalizeAuctionDocument(auctionDoc, undefined);
     return;
   }
@@ -253,7 +255,11 @@ function resolveItemSlot(itemCode: string | null | undefined): string | null {
   }
 }
 
-async function refundBid(sessionId: string, bid: IAuctionBid | null, reason: string): Promise<void> {
+/**
+ * 입찰 금액 환불 및 메시지 발송
+ * PHP: Auction::refundBid 참조
+ */
+async function refundBid(sessionId: string, bid: IAuctionBid | null, reason: string, auctionTitle?: string): Promise<void> {
   if (!bid || !bid.generalId || !bid.amount) {
     return;
   }
@@ -274,6 +280,55 @@ async function refundBid(sessionId: string, bid: IAuctionBid | null, reason: str
   await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
     inherit_point: newPoint
   });
+
+  // 메시지 발송 (PHP: Message 클래스 사용)
+  try {
+    const { SendSystemNoticeService } = await import('../message/SendSystemNotice.service');
+    
+    let messageText = '';
+    switch (reason) {
+      case 'host_missing':
+        messageText = `경매 "${auctionTitle || '알 수 없음'}"의 판매자가 사라져 경매가 취소되었습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      case 'winner_missing':
+        messageText = `경매 "${auctionTitle || '알 수 없음'}"의 낙찰자 처리 중 문제가 발생했습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      case 'item_missing':
+        messageText = `경매 "${auctionTitle || '알 수 없음'}"의 아이템이 더 이상 유효하지 않아 취소되었습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      case 'bad_general_no':
+        messageText = `경매 "${auctionTitle || '알 수 없음'}" 처리 중 오류가 발생했습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      case 'outbid':
+        messageText = `경매 "${auctionTitle || '알 수 없음'}"에 상회입찰자가 나타났습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      case 'unique_limit':
+        messageText = `유니크 아이템 소유 제한에 걸려 낙찰되지 않았습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      case 'slot_occupied':
+        messageText = `이미 같은 부위에 유니크 아이템을 보유하고 있어 낙찰되지 않았습니다. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+        break;
+      default:
+        messageText = `경매 관련 알림: ${reason}. ${bid.amount} 유산 포인트가 반환되었습니다.`;
+    }
+
+    await SendSystemNoticeService.send(sessionId, [generalNo], messageText);
+    
+    logger.info('[AuctionEngine] Refund message sent', {
+      sessionId,
+      generalNo,
+      reason,
+      amount: bid.amount
+    });
+  } catch (msgError: any) {
+    // 메시지 발송 실패해도 환불은 완료됨
+    logger.warn('[AuctionEngine] Failed to send refund notification', {
+      sessionId,
+      generalNo,
+      reason,
+      error: msgError.message
+    });
+  }
 }
 
 async function getYearMonth(sessionId: string): Promise<{ year: number; month: number }> {

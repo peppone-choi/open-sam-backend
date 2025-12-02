@@ -9,12 +9,17 @@ import { cityDefenseRepository } from '../../repositories/city-defense.repositor
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 export class StartBattleService {
+  /**
+   * 전투 시작
+   * @param data.multiStackMode - true면 장수 1명당 여러 스택을 개별 유닛으로 분리 (토탈 워 스타일)
+   */
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const attackerNationId = data.attackerNationId;
     const defenderNationId = data.defenderNationId;
     const targetCityId = data.targetCityId;
     const attackerGeneralIds = data.attackerGeneralIds || [];
+    const multiStackMode = data.multiStackMode ?? true; // 기본값: 멀티 스택 활성화
 
     try {
       const city = await cityRepository.findByCityNum(sessionId, targetCityId);
@@ -33,60 +38,63 @@ export class StartBattleService {
 
       const terrain = this.getTerrainFromCity(city);
 
-
+      // 공격자 유닛 생성
       const attackerUnits: IBattleUnit[] = [];
       for (const generalId of attackerGeneralIds) {
         const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
-
         if (!general) continue;
 
-        const { troops, maxTroops, training, morale } = await this.getGeneralUnitStats(sessionId, general);
-        if (troops <= 0) {
-          continue;
+        if (multiStackMode) {
+          // 멀티 스택 모드: 장수의 각 스택을 개별 유닛으로
+          const stackUnits = await this.buildGeneralMultiStackUnits(
+            sessionId,
+            general,
+            attackerNationId,
+            'aggressive',
+            false
+          );
+          attackerUnits.push(...stackUnits);
+        } else {
+          // 레거시 모드: 장수 1명 = 유닛 1개
+          const { troops, maxTroops, training, morale } = await this.getGeneralUnitStats(sessionId, general);
+          if (troops <= 0) continue;
+
+          const unitType = this.getUnitType((general as any).crewtype);
+          const unitProps = this.getUnitProperties(unitType, troops || 0);
+
+          attackerUnits.push({
+            generalId: general.no,
+            generalName: general.name || '무명',
+            troops,
+            maxTroops,
+            leadership: general.leadership || 50,
+            strength: general.strength || 50,
+            intelligence: general.intel || 50,
+            unitType,
+            morale,
+            training,
+            techLevel: 50,
+            nationId: attackerNationId,
+            commanderId: general.no,
+            originType: 'general',
+            position: { x: 0, y: 0 },
+            velocity: { x: 0, y: 0 },
+            facing: 0,
+            collisionRadius: unitProps.collisionRadius,
+            moveSpeed: unitProps.moveSpeed,
+            attackRange: unitProps.attackRange,
+            attackCooldown: unitProps.attackCooldown,
+            lastAttackTime: 0,
+            formation: unitProps.formation,
+            stance: 'aggressive' as const,
+            isCharging: false,
+            isAIControlled: false,
+            specialSkills: (general as any).specialSkills || []
+          });
         }
-
-        const unitType = this.getUnitType((general as any).crewtype);
-        const unitProps = this.getUnitProperties(unitType, troops || 0);
-
-        attackerUnits.push({
-          generalId: general.no,
-          generalName: general.name || '무명',
-          troops,
-          maxTroops,
-          leadership: general.leadership || 50,
-          strength: general.strength || 50,
-          intelligence: general.intel || 50,
-          unitType,
-          morale,
-          training,
-          techLevel: 50,
-          nationId: attackerNationId,
-          commanderId: general.no,
-          originType: 'general',
-          
-          // 좌표 (배치 단계에서 설정)
-          position: { x: 0, y: 0 },
-          velocity: { x: 0, y: 0 },
-          facing: 0,
-          
-          // 물리 속성
-          collisionRadius: unitProps.collisionRadius,
-          moveSpeed: unitProps.moveSpeed,
-          attackRange: unitProps.attackRange,
-          attackCooldown: unitProps.attackCooldown,
-          lastAttackTime: 0,
-          
-          // 전술
-          formation: unitProps.formation,
-          stance: 'aggressive' as const,
-          
-          isCharging: false,
-          isAIControlled: false,
-          
-          specialSkills: (general as any).specialSkills || []
-        });
       }
 
+      // 방어자 장수 조회
       const defenderGenerals = await generalRepository.findByFilter({
         session_id: sessionId,
         nation: defenderNationId,
@@ -94,53 +102,57 @@ export class StartBattleService {
         crew: { $gt: 0 }
       });
  
+      // 방어자 유닛 생성
       const defenderUnits: IBattleUnit[] = [];
       for (const general of defenderGenerals) {
-        const { troops, maxTroops, training, morale } = await this.getGeneralUnitStats(sessionId, general);
-        if (troops <= 0) {
-          continue;
-        }
+        if (multiStackMode) {
+          // 멀티 스택 모드: 장수의 각 스택을 개별 유닛으로
+          const stackUnits = await this.buildGeneralMultiStackUnits(
+            sessionId,
+            general,
+            defenderNationId,
+            'defensive',
+            false
+          );
+          defenderUnits.push(...stackUnits);
+        } else {
+          // 레거시 모드
+          const { troops, maxTroops, training, morale } = await this.getGeneralUnitStats(sessionId, general);
+          if (troops <= 0) continue;
 
-        const unitType = this.getUnitType((general as any).crewtype);
-        const unitProps = this.getUnitProperties(unitType, troops || 0);
-        
-        defenderUnits.push({
-          generalId: general.no,
-          generalName: general.name || '무명',
-          troops,
-          maxTroops,
-          leadership: general.leadership || 50,
-          strength: general.strength || 50,
-          intelligence: general.intel || 50,
-          unitType,
-          morale,
-          training,
-          techLevel: 50,
-          nationId: defenderNationId,
-          commanderId: general.no,
-          originType: 'general' as const,
+          const unitType = this.getUnitType((general as any).crewtype);
+          const unitProps = this.getUnitProperties(unitType, troops || 0);
           
-          // 좌표
-          position: { x: 0, y: 0 },
-          velocity: { x: 0, y: 0 },
-          facing: 0,
-          
-          // 물리 속성
-          collisionRadius: unitProps.collisionRadius,
-          moveSpeed: unitProps.moveSpeed,
-          attackRange: unitProps.attackRange,
-          attackCooldown: unitProps.attackCooldown,
-          lastAttackTime: 0,
-          
-          // 전술
-          formation: unitProps.formation,
-          stance: 'defensive' as const,
-          
-          isCharging: false,
-          isAIControlled: false,
-          
-          specialSkills: (general as any).specialSkills || []
-        });
+          defenderUnits.push({
+            generalId: general.no,
+            generalName: general.name || '무명',
+            troops,
+            maxTroops,
+            leadership: general.leadership || 50,
+            strength: general.strength || 50,
+            intelligence: general.intel || 50,
+            unitType,
+            morale,
+            training,
+            techLevel: 50,
+            nationId: defenderNationId,
+            commanderId: general.no,
+            originType: 'general' as const,
+            position: { x: 0, y: 0 },
+            velocity: { x: 0, y: 0 },
+            facing: 0,
+            collisionRadius: unitProps.collisionRadius,
+            moveSpeed: unitProps.moveSpeed,
+            attackRange: unitProps.attackRange,
+            attackCooldown: unitProps.attackCooldown,
+            lastAttackTime: 0,
+            formation: unitProps.formation,
+            stance: 'defensive' as const,
+            isCharging: false,
+            isAIControlled: false,
+            specialSkills: (general as any).specialSkills || []
+          });
+        }
       }
 
 
@@ -381,6 +393,176 @@ export class StartBattleService {
       training,
       morale,
     };
+  }
+
+  /**
+   * 멀티 스택 전투: 장수의 각 스택을 개별 전투 유닛으로 변환
+   * 토탈 워 스타일 - 장수 1명이 여러 병종 스택을 독립 제어
+   */
+  private static async buildGeneralMultiStackUnits(
+    sessionId: string,
+    general: any,
+    nationId: number,
+    stance: 'aggressive' | 'defensive' = 'aggressive',
+    isAIControlled: boolean = false
+  ): Promise<IBattleUnit[]> {
+    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', general.no);
+    const units: IBattleUnit[] = [];
+    
+    const generalLeadership = general.leadership || 50;
+    const generalStrength = general.strength || 50;
+    const generalIntel = general.intel || 50;
+    
+    for (let i = 0; i < stacks.length; i++) {
+      const stack = stacks[i] as any;
+      const troops = this.getStackTroopCount(stack);
+      if (troops <= 0) continue;
+      
+      const unitType = this.getUnitType(stack.crew_type_id ?? 0);
+      const unitProps = this.getUnitProperties(unitType, troops);
+      const stackMorale = typeof stack.morale === 'number' ? stack.morale : 70;
+      const stackTrain = typeof stack.train === 'number' ? stack.train : 70;
+      
+      // 스택 타입에 따른 스탯 보정
+      const statModifier = this.getStackStatModifier(unitType);
+      
+      units.push({
+        // 유닛 식별: generalId는 스택 인덱스로 구분 (장수no * 100 + 인덱스)
+        generalId: general.no * 100 + i,
+        generalName: `${general.name || '무명'} ${stack.crew_type_name || this.getUnitTypeName(unitType)}`,
+        troops,
+        maxTroops: troops,
+        
+        // 장수 스탯 + 병종 보정
+        leadership: Math.round(generalLeadership * statModifier.leadership),
+        strength: Math.round(generalStrength * statModifier.strength),
+        intelligence: Math.round(generalIntel * statModifier.intelligence),
+        
+        unitType,
+        morale: stackMorale,
+        training: stackTrain,
+        techLevel: 50,
+        nationId,
+        
+        // 지휘관 연결 (같은 장수의 유닛들을 그룹화)
+        commanderId: general.no,
+        originType: 'generalStack',
+        originStackId: stack._id?.toString?.() || stack.id,
+        
+        // 좌표 (배치 단계에서 설정)
+        position: { x: 0, y: 0 },
+        velocity: { x: 0, y: 0 },
+        facing: 0,
+        
+        // 물리 속성
+        collisionRadius: unitProps.collisionRadius,
+        moveSpeed: unitProps.moveSpeed,
+        attackRange: unitProps.attackRange,
+        attackCooldown: unitProps.attackCooldown,
+        lastAttackTime: 0,
+        
+        // 전술 (병종에 맞는 기본 진형)
+        formation: unitProps.formation,
+        stance,
+        
+        isCharging: false,
+        isAIControlled,
+        
+        specialSkills: this.getStackSpecialSkills(unitType)
+      });
+    }
+    
+    // 스택이 없으면 레거시 crew 값으로 단일 유닛 생성
+    if (units.length === 0) {
+      const legacyCrew = (general as any).crew ?? (general as any).data?.crew ?? 0;
+      if (legacyCrew > 0) {
+        const unitType = this.getUnitType((general as any).crewtype ?? 0);
+        const unitProps = this.getUnitProperties(unitType, legacyCrew);
+        units.push({
+          generalId: general.no,
+          generalName: general.name || '무명',
+          troops: legacyCrew,
+          maxTroops: legacyCrew,
+          leadership: generalLeadership,
+          strength: generalStrength,
+          intelligence: generalIntel,
+          unitType,
+          morale: (general as any).atmos ?? 50,
+          training: (general as any).train ?? 50,
+          techLevel: 50,
+          nationId,
+          commanderId: general.no,
+          originType: 'general',
+          position: { x: 0, y: 0 },
+          velocity: { x: 0, y: 0 },
+          facing: 0,
+          collisionRadius: unitProps.collisionRadius,
+          moveSpeed: unitProps.moveSpeed,
+          attackRange: unitProps.attackRange,
+          attackCooldown: unitProps.attackCooldown,
+          lastAttackTime: 0,
+          formation: unitProps.formation,
+          stance,
+          isCharging: false,
+          isAIControlled,
+          specialSkills: []
+        });
+      }
+    }
+    
+    return units;
+  }
+  
+  /**
+   * 병종별 스탯 보정치
+   * 기병: 통솔↑, 보병: 무력↑, 궁병: 지력↑
+   */
+  private static getStackStatModifier(unitType: UnitType): { leadership: number; strength: number; intelligence: number } {
+    switch (unitType) {
+      case UnitType.CAVALRY:
+        return { leadership: 1.1, strength: 1.0, intelligence: 0.9 };
+      case UnitType.FOOTMAN:
+        return { leadership: 1.0, strength: 1.1, intelligence: 0.9 };
+      case UnitType.ARCHER:
+        return { leadership: 0.9, strength: 0.9, intelligence: 1.1 };
+      case UnitType.WIZARD:
+        return { leadership: 0.9, strength: 0.8, intelligence: 1.2 };
+      case UnitType.SIEGE:
+        return { leadership: 1.0, strength: 1.2, intelligence: 0.8 };
+      default:
+        return { leadership: 1.0, strength: 1.0, intelligence: 1.0 };
+    }
+  }
+  
+  /**
+   * 병종별 특수 스킬
+   */
+  private static getStackSpecialSkills(unitType: UnitType): string[] {
+    switch (unitType) {
+      case UnitType.CAVALRY:
+        return ['돌격', '추격'];
+      case UnitType.FOOTMAN:
+        return ['방진', '장창'];
+      case UnitType.ARCHER:
+        return ['일제사격', '화살비'];
+      case UnitType.WIZARD:
+        return ['화공', '낙뢰'];
+      case UnitType.SIEGE:
+        return ['공성', '파성'];
+      default:
+        return [];
+    }
+  }
+  
+  private static getUnitTypeName(unitType: UnitType): string {
+    switch (unitType) {
+      case UnitType.CAVALRY: return '기병대';
+      case UnitType.FOOTMAN: return '보병대';
+      case UnitType.ARCHER: return '궁병대';
+      case UnitType.WIZARD: return '모사대';
+      case UnitType.SIEGE: return '공성대';
+      default: return '부대';
+    }
   }
 
   private static buildCityGarrisonUnits(

@@ -2,12 +2,15 @@ import { General } from '../models/general.model';
 import { City } from '../models/city.model';
 import { Nation } from '../models/nation.model';
 import { evaluate } from './expression-evaluator';
+import { saveGeneral, saveCity, saveNation } from '../common/cache/model-cache.helper';
 
 /**
  * 효과 엔진
  * 
  * 세션별로 정의된 효과를 실행
  * JSON 템플릿 문자열 지원! ({{arg.amount}} 같은 것)
+ * 
+ * CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
  */
 
 export async function applyEffects(
@@ -25,19 +28,28 @@ export async function applyEffects(
   // 장수 효과
   if (general && effects.general) {
     await applyToData(general.data, effects.general, context);
-    await general.save();
+    // CQRS 패턴: 캐시에 쓰기
+    const generalId = general.data?.no || general.no;
+    const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
+    await saveGeneral(sessionId, generalId, generalData);
   }
   
   // 도시 효과
   if (city && effects.city) {
     await applyToData(city.data, effects.city, context);
-    await city.save();
+    // CQRS 패턴: 캐시에 쓰기
+    const cityId = city.city || city.data?.city;
+    const cityData = city.toObject ? city.toObject() : { ...city.data, session_id: sessionId, city: cityId };
+    await saveCity(sessionId, cityId, cityData);
   }
   
   // 국가 효과
   if (nation && effects.nation) {
     await applyToData(nation.data, effects.nation, context);
-    await nation.save();
+    // CQRS 패턴: 캐시에 쓰기
+    const nationId = nation.nation || nation.data?.nation;
+    const nationData = nation.toObject ? nation.toObject() : { ...nation.data, session_id: sessionId, nation: nationId };
+    await saveNation(sessionId, nationId, nationData);
   }
   
   // 특수 효과

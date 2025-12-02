@@ -4,6 +4,11 @@ import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { cityRepository } from '../../repositories/city.repository';
+import { 
+  CriticalRatioDomestic, 
+  CriticalScoreEx, 
+  updateMaxDomesticCritical 
+} from '../../utils/game-processing';
 
 /**
  * 정착 장려 커맨드
@@ -25,7 +30,6 @@ export class EncourageSettlementCommand extends GeneralCommand {
 
   protected init(): void {
     this.setCity();
-    console.log('EncourageSettlementCommand init: city is', this.city);
     this.setNation();
 
     const [reqGold, reqRice] = this.getCost();
@@ -96,16 +100,6 @@ export class EncourageSettlementCommand extends GeneralCommand {
     return 1 + explevel * 0.01;
   }
 
-  protected criticalRatioDomestic(general: any, statKey: string): { success: number; fail: number } {
-    return { success: 0.1, fail: 0.1 };
-  }
-
-  protected criticalScoreEx(rng: any, pick: string): number {
-    if (pick === 'success') return rng.nextRange(1.5, 2.0);
-    if (pick === 'fail') return rng.nextRange(0.3, 0.7);
-    return 1.0;
-  }
-
   protected calcBaseScore(rng: any): number {
     const general = this.generalObj;
     const statKey = (this.constructor as typeof EncourageSettlementCommand).statKey;
@@ -140,7 +134,22 @@ export class EncourageSettlementCommand extends GeneralCommand {
 
     let score = Math.max(1, this.calcBaseScore(rng));
 
-    let { success: successRatio, fail: failRatio } = this.criticalRatioDomestic(general, statKey);
+    const leadership = general.getLeadership(true, true, true, false);
+    const strength = general.getStrength(true, true, true, false);
+    const intel = general.getIntel(true, true, true, false);
+
+    // Fallback ratioType logic as in GoodGovernance
+    const ratioType = (statKey === 'leadership' || statKey === 'strength' || statKey === 'intel') 
+        ? statKey 
+        : 'leadership'; // Default for settlement
+
+    let { success: successRatio, fail: failRatio } = CriticalRatioDomestic(leadership, strength, intel, ratioType as any);
+    
+    // Adjust for trust if city exists
+    if (this.city && this.city.trust < 80) {
+        successRatio *= this.city.trust / 80;
+    }
+
     successRatio = general.onCalcDomestic(actionKey, 'success', successRatio);
     failRatio = general.onCalcDomestic(actionKey, 'fail', failRatio);
 
@@ -157,7 +166,7 @@ export class EncourageSettlementCommand extends GeneralCommand {
     const logger = general.getLogger();
     const date = general.getTurnTime(general.TURNTIME_HM);
 
-    score *= this.criticalScoreEx(rng, pick);
+    score *= CriticalScoreEx(rng, pick);
     score = Math.round(score);
 
     const exp = score * 0.7;
@@ -165,14 +174,11 @@ export class EncourageSettlementCommand extends GeneralCommand {
 
     if (pick === 'success') {
       try {
-        if (typeof general.updateMaxDomesticCritical === 'function') {
-          // TODO: general.updateMaxDomesticCritical();
-        }
+        updateMaxDomesticCritical(general, score);
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }
     } else {
-      // setAuxVar 대신 직접 aux 객체 수정
       if (!general.data.aux) {
         general.data.aux = {};
       }
@@ -206,10 +212,9 @@ export class EncourageSettlementCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -this.reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    // PHP 원본: leadership_exp +1 (statKey 기반)
-    // TS 확장: 사회 커맨드로 politics/charm 영향 추가 (AGENT_2_COMMAND.md 기준)
-    general.increaseVar('politics_exp', 1);  // ⚡ TS 확장: PHP에서는 leadership_exp
-    general.increaseVar('charm_exp', 0.5);   // ⚡ TS 확장: PHP에는 없음
+    // TS Extension logic
+    general.increaseVar('politics_exp', 1);
+    general.increaseVar('charm_exp', 0.5);
 
     this.setResultTurn(new LastTurn((this.constructor as typeof EncourageSettlementCommand).getName(), this.arg));
     general.checkStatChange();
@@ -224,10 +229,10 @@ export class EncourageSettlementCommand extends GeneralCommand {
     try {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(EncourageSettlementCommand.actionName),
-        null,
+        rng,
         general,
-        this.env.session_id || general.getSessionID?.() || 'sangokushi_default'
+        this.env.session_id || general.getSessionID?.() || 'sangokushi_default',
+        '정착 장려'
       );
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);

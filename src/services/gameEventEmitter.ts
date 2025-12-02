@@ -148,6 +148,118 @@ export class GameEventEmitter {
       });
     }
   }
+
+  /**
+   * 국가 멸망 브로드캐스트
+   */
+  static broadcastNationDestroyed(
+    sessionId: string,
+    destroyedNationId: number,
+    destroyedNationName: string,
+    attackerNationId: number,
+    attackerNationName: string
+  ) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'nation:destroyed', {
+        destroyedNationId,
+        destroyedNationName,
+        attackerNationId,
+        attackerNationName,
+        timestamp: new Date()
+      });
+    }
+  }
+
+  /**
+   * 천하통일 브로드캐스트
+   */
+  static broadcastGameUnified(
+    sessionId: string,
+    unifiedNationId: number,
+    unifiedNationName: string,
+    year: number,
+    month: number
+  ) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'game:unified', {
+        unifiedNationId,
+        unifiedNationName,
+        year,
+        month,
+        timestamp: new Date()
+      });
+    }
+  }
+
+  /**
+   * 월 변경 브로드캐스트
+   */
+  static broadcastMonthChanged(
+    sessionId: string,
+    year: number,
+    month: number,
+    previousYear: number,
+    previousMonth: number
+  ) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'month:changed', {
+        year,
+        month,
+        previousYear,
+        previousMonth,
+        timestamp: new Date()
+      });
+    }
+  }
+
+  /**
+   * 장수 사망 브로드캐스트
+   */
+  static broadcastGeneralDied(
+    sessionId: string,
+    generalId: number,
+    generalName: string,
+    nationId: number,
+    cause: 'natural' | 'battle' | 'admin' | 'prestart' | 'killturn' = 'natural'
+  ) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'general:died', {
+        generalId,
+        generalName,
+        nationId,
+        cause,
+        timestamp: new Date()
+      });
+    }
+  }
+
+  /**
+   * 도시 점령 브로드캐스트
+   */
+  static broadcastCityOccupied(
+    sessionId: string,
+    cityId: number,
+    cityName: string,
+    oldNationId: number,
+    newNationId: number,
+    attackerGeneralId: number
+  ) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'city:occupied', {
+        cityId,
+        cityName,
+        oldNationId,
+        newNationId,
+        attackerGeneralId,
+        timestamp: new Date()
+      });
+    }
+  }
 }
 
 

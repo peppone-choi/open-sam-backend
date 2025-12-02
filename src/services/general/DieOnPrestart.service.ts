@@ -3,6 +3,7 @@ import { sessionRepository } from '../../repositories/session.repository';
 import { generalRecordRepository } from '../../repositories/general-record.repository';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { worldHistoryRepository } from '../../repositories/world-history.repository';
+import { GameEventEmitter } from '../gameEventEmitter';
 
 /**
  * DieOnPrestart Service (사전 삭제)
@@ -77,6 +78,15 @@ export class DieOnPrestartService {
         session_id: sessionId,
         no: generalNo
       });
+
+      // 장수 사망 이벤트 브로드캐스트
+      GameEventEmitter.broadcastGeneralDied(
+        sessionId,
+        generalNo,
+        generalName,
+        0, // 재야 상태에서만 가능
+        'prestart'
+      );
 
       return {
         success: true,

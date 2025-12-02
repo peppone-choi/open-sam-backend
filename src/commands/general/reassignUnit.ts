@@ -25,18 +25,27 @@ export class ReassignUnitCommand extends GeneralCommand {
   };
 
   protected argTest(): boolean {
-    if (!this.arg) return false;
+    console.log('[주둔 재배치] argTest 시작 - arg:', JSON.stringify(this.arg));
+    
+    if (!this.arg) {
+      console.log('[주둔 재배치] argTest 실패: arg가 null/undefined');
+      return false;
+    }
     const { stackId, splitCount, targetCityId } = this.arg as ReassignUnitArg;
+    console.log('[주둔 재배치] 파싱된 인자 - stackId:', stackId, 'type:', typeof stackId, 'splitCount:', splitCount, 'targetCityId:', targetCityId);
 
     if (typeof stackId !== 'string' || !stackId.trim()) {
+      console.log('[주둔 재배치] argTest 실패: stackId가 유효한 문자열이 아님');
       return false;
     }
 
     if (splitCount !== undefined && (typeof splitCount !== 'number' || Number.isNaN(splitCount) || splitCount <= 0)) {
+      console.log('[주둔 재배치] argTest 실패: splitCount가 유효하지 않음');
       return false;
     }
 
     if (targetCityId !== undefined && (typeof targetCityId !== 'number' || Number.isNaN(targetCityId))) {
+      console.log('[주둔 재배치] argTest 실패: targetCityId가 유효하지 않음');
       return false;
     }
 

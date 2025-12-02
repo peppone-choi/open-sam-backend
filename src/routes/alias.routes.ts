@@ -138,4 +138,66 @@ router.post('/game/vacation', (req, res, next) => {
   next('route');
 });
 
+// ============================================
+// Inherit Aliases
+// ============================================
+
+// POST /api/inherit/get-point → POST /api/inheritance/get-point
+router.post('/inherit/get-point', (req, res, next) => {
+  req.url = '/api/inheritance/get-point';
+  next('route');
+});
+
+// POST /api/inherit/use-point → POST /api/inheritance/use-point
+router.post('/inherit/use-point', (req, res, next) => {
+  req.url = '/api/inheritance/use-point';
+  next('route');
+});
+
+// ============================================
+// User Aliases
+// ============================================
+
+// POST /api/user/upload-icon → POST /api/gateway/change-icon
+router.post('/user/upload-icon', (req, res, next) => {
+  req.url = '/api/gateway/change-icon';
+  next('route');
+});
+
+// ============================================
+// Game Info Aliases (for API_CALL_MAPPING compatibility)
+// ============================================
+
+// POST /api/game/get-tournament-info → POST /api/info/tournament
+router.post('/game/get-tournament-info', (req, res, next) => {
+  req.url = '/api/info/tournament';
+  next('route');
+});
+
+// POST /api/game/get-inherit-point → POST /api/inheritance/get-point
+router.post('/game/get-inherit-point', (req, res, next) => {
+  req.url = '/api/inheritance/get-point';
+  next('route');
+});
+
+// ============================================
+// Betting Info Aliases
+// ============================================
+
+// POST /api/betting/get-betting-info → POST /api/info/betting
+router.post('/betting/get-betting-info', (req, res, next) => {
+  req.url = '/api/info/betting';
+  next('route');
+});
+
+// ============================================
+// Nation Info Aliases
+// ============================================
+
+// POST /api/nation/get-officer-info → POST /api/info/officer
+router.post('/nation/get-officer-info', (req, res, next) => {
+  req.url = '/api/info/officer';
+  next('route');
+});
+
 export default router;

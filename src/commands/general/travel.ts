@@ -131,10 +131,10 @@ export class TravelCommand extends GeneralCommand {
       const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
       const sessionId = this.env.session_id || 'sangokushi_default';
       await tryUniqueItemLottery(
-        // TODO: general.genGenericUniqueRNG(TravelCommand.actionName),
+        rng,
         general,
         sessionId,
-        '유랑'
+        TravelCommand.actionName
       );
     } catch (error) {
       console.error('tryUniqueItemLottery 실패:', error);

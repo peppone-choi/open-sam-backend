@@ -1,6 +1,7 @@
 import { City } from '../models/city.model';
 import { General } from '../models/general.model';
 import { buildNationTypeClass } from '../core/nation-type/NationTypeFactory';
+import { GameBalance } from '../common/constants/game-balance';
 
 /**
  * 수입 계산 유틸리티
@@ -307,29 +308,16 @@ export function getBill(dedication: number): number {
 
 /**
  * 헌신 레벨 계산
+ * PHP: ceil(sqrt($dedication) / 10), 0 ~ maxDedLevel 제한
  */
 function getDedLevel(dedication: number): number {
   if (dedication <= 0) return 0;
-  if (dedication < 100) return 1;
-  if (dedication < 300) return 2;
-  if (dedication < 600) return 3;
-  if (dedication < 1000) return 4;
-  if (dedication < 1500) return 5;
-  if (dedication < 2100) return 6;
-  if (dedication < 2800) return 7;
-  if (dedication < 3600) return 8;
-  if (dedication < 4500) return 9;
-  if (dedication < 5500) return 10;
-  if (dedication < 6600) return 11;
-  if (dedication < 7800) return 12;
-  if (dedication < 9100) return 13;
-  if (dedication < 10500) return 14;
-  if (dedication < 12000) return 15;
-  if (dedication < 13600) return 16;
-  if (dedication < 15300) return 17;
-  if (dedication < 17100) return 18;
-  if (dedication < 19000) return 19;
-  return 20;
+  
+  const maxDedLevel = GameBalance.maxDedLevel || 30;
+  const level = Math.ceil(Math.sqrt(dedication) / 10);
+  
+  // 0 ~ maxDedLevel 범위 제한
+  return Math.max(0, Math.min(level, maxDedLevel));
 }
 
 /**

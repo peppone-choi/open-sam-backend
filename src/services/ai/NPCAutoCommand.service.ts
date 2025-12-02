@@ -6,6 +6,28 @@ import { nationRepository } from '../../repositories/nation.repository';
 import { GameConst } from '../../constants/GameConst';
 import { SimpleAI } from '../../core/SimpleAI';
 
+// 접속 상태 확인을 위한 기준 시간 (10분)
+const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000;
+
+/**
+ * 플레이어가 접속 중인지 확인 (lastActiveAt 기준)
+ * @param general 장수 데이터
+ * @returns 접속 중이면 true
+ */
+function isPlayerActive(general: any): boolean {
+  const generalData = general.data || general;
+  const lastActiveAt = generalData.lastActiveAt;
+  
+  if (!lastActiveAt) {
+    return false; // 활동 기록 없음 = 미접속
+  }
+  
+  const lastActiveTime = new Date(lastActiveAt).getTime();
+  const now = Date.now();
+  
+  return (now - lastActiveTime) < ACTIVE_THRESHOLD_MS;
+}
+
 /**
  * NPC 자동 명령 등록 서비스
  */
@@ -19,9 +41,27 @@ export class NPCAutoCommandService {
     gameEnv: any
   ): Promise<{ success: boolean; command?: string; args?: any }> {
     const npcType = general.npc || general.data?.npc || 0;
+    const generalData = general.data || general;
+    const owner = generalData.owner || general.owner;
     
-    // NPC가 아니면 스킵
-    if (npcType < 2) {
+    // 플레이어(npc=0)는 스킵
+    if (npcType < 1) {
+      return { success: false };
+    }
+    
+    // 유저가 소유한 NPC는 스킵 (owner가 있으면 유저가 플레이 중)
+    if (owner) {
+      return { success: false };
+    }
+    
+    // 반자동 NPC(npc=1)는 플레이어 접속 중이면 스킵
+    if (npcType === 1 && isPlayerActive(general)) {
+      return { success: false };
+    }
+
+    // city=0 (방랑/미등장) 장수는 스킵
+    const cityId = generalData.city;
+    if (!cityId || cityId === 0) {
       return { success: false };
     }
 
@@ -55,7 +95,6 @@ export class NPCAutoCommandService {
 
     try {
       // 장수가 속한 도시와 국가 정보 가져오기
-      const generalData = general.data || general;
       const cityId = generalData.city;
       const nationId = generalData.nation;
 
@@ -101,7 +140,7 @@ export class NPCAutoCommandService {
         decision.args
       );
       
-      console.log(`[NPC AI] ✅ 장수 ${general.no} (${general.data?.name || general.name}) - 명령 등록: ${decision.command}`);
+      console.log(`[NPC AI] ✅ 장수 ${general.no} (${general.data?.name || general.name}) - 명령 등록: ${decision.command}, args:`, JSON.stringify(decision.args));
       
       return {
         success: true,
@@ -165,20 +204,23 @@ export class NPCAutoCommandService {
 
   /**
    * 모든 NPC에게 자동 명령 할당
+   * npc >= 1인 장수 대상 (반자동 NPC 포함)
+   * 반자동 NPC(npc=1)는 플레이어 접속 중이면 스킵
    */
   static async assignCommandsToAllNPCs(
     sessionId: string,
     gameEnv: any
   ): Promise<{ success: boolean; count: number; errors: number }> {
+    // npc >= 1인 장수 모두 가져오기 (반자동 + 완전자동)
     const npcs = await generalRepository.findByFilter({
       session_id: sessionId,
       $or: [
-        { npc: { $gte: 2 } },
-        { 'data.npc': { $gte: 2 } }
+        { npc: { $gte: 1 } },
+        { 'data.npc': { $gte: 1 } }
       ]
     });
 
-    console.log(`[NPC AI] ${sessionId} - NPC 장수 ${npcs.length}명 발견`);
+    console.log(`[NPC AI] ${sessionId} - NPC 장수 ${npcs.length}명 발견 (반자동 포함)`);
 
     let successCount = 0;
     let errorCount = 0;
@@ -289,9 +331,12 @@ export class NPCAutoCommandService {
       }
 
       // 결정된 명령 등록 (general_id 포함)
+      // id는 고유해야 함: nation_general_turn 형식
+      const turnId = `${nationId}_${generalId}_${emptyTurnIdx}`;
       await nationTurnRepository.create({
         session_id: sessionId,
         data: {
+          id: turnId,
           nation_id: nationId,
           general_id: generalId, // 수뇌별 턴 테이블 구분
           turn_idx: emptyTurnIdx,
@@ -321,12 +366,13 @@ export class NPCAutoCommandService {
     sessionId: string,
     gameEnv: any
   ): Promise<{ success: boolean; count: number; errors: number }> {
-    // NPC 수뇌 찾기 (officer_level >= 5, npc >= 2)
+    // NPC 수뇌 찾기 (officer_level >= 5, npc >= 1)
+    // npc=0: 플레이어, npc>=1: 자동 명령 대상 (반자동 포함)
     const npcChiefs = await generalRepository.findByFilter({
       session_id: sessionId,
       $or: [
-        { 'data.officer_level': { $gte: 5 }, 'data.npc': { $gte: 2 } },
-        { officer_level: { $gte: 5 }, npc: { $gte: 2 } }
+        { 'data.officer_level': { $gte: 5 }, 'data.npc': { $gte: 1 } },
+        { officer_level: { $gte: 5 }, npc: { $gte: 1 } }
       ]
     });
 

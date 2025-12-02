@@ -2,6 +2,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { generalRecordRepository } from '../../repositories/general-record.repository';
+import { saveGeneral } from '../../common/cache/model-cache.helper';
 import crypto from 'crypto';
 
 /**
@@ -83,8 +84,15 @@ export class InstantRetreatService {
       const selectedCity = nearCities[Math.abs(seed) % nearCities.length];
 
       // 7. 장수를 선택된 도시로 이동
-      general.setVar('city', selectedCity.city);
-      await general.save();
+      // plain object이므로 직접 수정
+      if (general.data) {
+        general.data.city = selectedCity.city;
+      } else {
+        general.city = selectedCity.city;
+      }
+      // CQRS 패턴: 캐시에 쓰기
+      const generalData = { ...general, session_id: sessionId };
+      await saveGeneral(sessionId, generalId, generalData);
 
       // 8. 로그 기록
       const { getNextRecordId } = await import('../../utils/record-helpers');

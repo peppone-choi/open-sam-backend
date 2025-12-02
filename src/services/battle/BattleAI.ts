@@ -138,24 +138,48 @@ export class SimpleBattleAI {
 
   /**
    * 궁병 전술: 카이팅 (hit and run)
+   * - 적이 사거리 밖이면 적극적으로 접근
+   * - 기병이 너무 가까우면 후퇴
+   * - 적절한 거리에서 공격
    */
   private archerTactic(unit: IBattleUnit, enemies: IBattleUnit[], map: IBattleMap): AIDecision {
     const target = this.physics.findNearestEnemy(unit, enemies);
 
     if (!target) {
+      // 적이 없으면 맵 중앙으로 이동 (대치 방지)
+      const centerX = map.width / 2;
+      const centerY = map.height / 2;
+      const distToCenter = Math.sqrt(
+        Math.pow(unit.position.x - centerX, 2) + 
+        Math.pow(unit.position.y - centerY, 2)
+      );
+      
+      if (distToCenter > 50) {
+        return {
+          generalId: unit.generalId,
+          action: 'move',
+          targetPosition: { x: centerX, y: centerY }
+        };
+      }
       return { generalId: unit.generalId, action: 'hold' };
     }
 
     const distance = this.physics.getDistance(unit, target);
-    const safeDistance = unit.attackRange * 0.8; // 사거리의 80%
+    const safeDistance = unit.attackRange * 0.7; // 사거리의 70% (더 가깝게 접근)
+    const optimalDistance = unit.attackRange * 0.85; // 최적 사거리
 
-    // 적이 너무 가까우면 후퇴
-    if (distance < 80 && target.unitType === UnitType.CAVALRY) {
+    // 적이 너무 가까우면 후퇴 (기병에게만)
+    if (distance < 60 && target.unitType === UnitType.CAVALRY) {
       return this.kiteAway(unit, target, map);
     }
 
-    // 적절한 거리면 공격
-    if (distance <= unit.attackRange && distance >= safeDistance) {
+    // 사거리 안에 있고 적절한 거리면 공격
+    if (distance <= unit.attackRange) {
+      // 너무 가까우면 살짝 후퇴하면서 공격
+      if (distance < safeDistance && target.unitType !== UnitType.ARCHER) {
+        return this.kiteAway(unit, target, map);
+      }
+      
       return {
         generalId: unit.generalId,
         action: 'attack',
@@ -163,18 +187,14 @@ export class SimpleBattleAI {
       };
     }
 
-    // 너무 멀면 접근
-    if (distance > unit.attackRange) {
-      const approachPoint = this.calculateApproachPoint(unit, target, safeDistance);
-      return {
-        generalId: unit.generalId,
-        action: 'move',
-        targetPosition: approachPoint
-      };
-    }
-
-    // 너무 가까우면 후퇴
-    return this.kiteAway(unit, target, map);
+    // 사거리 밖이면 적극적으로 접근 (핵심 수정!)
+    // 최적 사거리까지 접근 (적의 현재 위치를 향해)
+    const approachPoint = this.calculateApproachPoint(unit, target, optimalDistance);
+    return {
+      generalId: unit.generalId,
+      action: 'move',
+      targetPosition: approachPoint
+    };
   }
 
   /**

@@ -1,0 +1,647 @@
+제공해주신 JSON 데이터와 '한나라 말 ~ 삼국시대'라는 역사적 배경, 그리고 '복셀(Voxel)'이라는 아트 스타일을 고려하여 **시스템 아트 사양서(Art Specification)**를 재구성했습니다.
+
+이 사양서는 AI 모델링 툴이나 복셀 아티스트가 **"어떤 형태와 색감으로 만들어야 고증과 게임적 허용(가시성)을 동시에 잡을 수 있는지"**에 대한 명확한 지침서 역할을 합니다.
+
+---
+
+# [System Spec] Voxel Unit Design : Three Kingdoms 130
+
+## 1. Global Configuration (공통 규격)
+
+**Grid Scale (복셀 해상도):**
+* **Human:** 32(X) x 32(Y) x 48(Z) (표준 인간형, 1 Voxel ≈ 4~5cm)
+* **Mount (Horse):** 40(X) x 80(Y) x 56(Z)
+* **Siege Weapon:** 80(X) x 120(Y) x 90(Z)
+
+**Style Guidelines (스타일 가이드):**
+* **Proportions (비율):** 6~6.5등신 (리얼함과 귀여움의 중간). 머리는 약간 크지만(가시성), 팔다리는 굵직하게 표현하여 액션성을 강조.
+* **Texture:** 노이즈를 줄이고 **면(Face) 단위의 깔끔한 단색 처리** 위주. 갑옷의 찰편(Scale) 같은 디테일만 노멀맵이나 음영으로 표현.
+* **Palette (핵심 컬러):** 채도를 약간 낮춘 '묵직한' 톤.
+    * `#8B0000` (Lacquer Red): 한나라 갑옷의 주칠(옻칠).
+    * `#111111` (Lacquer Black): 흑칠 갑옷.
+    * `#B8860B` (Aged Bronze): 산화된 청동 무기/장식.
+    * `#C0C0C0` (Worn Iron): 관리된 철, 너무 밝지 않은 은회색.
+    * `#FFD700` (Imperial Gold): 황실/고위 장수 포인트 컬러.
+
+---
+
+## 2. Unit Specifications (유닛별 상세 명세)
+
+### Group 1: 보병 (FOOTMAN) [1100~1128]
+
+| ID | 유닛명 | Voxel Design Key Points (복셀 디자인 핵심) | Weapon & Acc |
+| :-- | :-- | :-- | :-- |
+| **1100** | **도민병** | **[빈곤]** 헝클어진 머리, 상의 탈의 혹은 누더기 삼베옷(`#C2B280`). 신발 없음(맨발). | 녹슨 낫, 괭이 |
+| **1101** | **창민병** | **[저항]** 도민병보다 나은 복장. 머리에 띠를 두름. | **죽창** (대나무 마디 표현 필수 `#DAA520`) |
+| **1102** | **정규보병** | **[규율]** 붉은색 군복. 가죽 투구(무변). 가죽 흉갑. | 환수도(고리자루 칼), 둥근 방패 |
+| **1103** | **정규창병** | **[방어]** 정규보병과 유사하나 팔 보호대(완갑) 추가. | 붉은 술이 달린 긴 창 |
+| **1104** | **정규극병** | **[후한의 상징]** 'ㄱ'자 모양의 **극(Ji)** 무기 강조. 투구에 작은 붉은 장식. | **극 (창+낫 형태)** |
+| **1105** | **방패보병** | **[방벽]** 몸을 가리는 직사각형 목재 방패. 갑옷 어깨 부분 보강. | 한손검, **대형 사각 방패** |
+| **1106** | **대방패병** | **[철벽]** 얼굴을 가리는 철제 투구. 방패에 철판 보강(`#708090`). | 타워 실드, 짧은 창 |
+| **1107** | **양손도끼병** | **[파괴]** 근육질 체형 강조. 갑옷을 최소화하여 공격성 부각. | **양손 대형 도끼** (날이 넓음) |
+| **1108** | **장창병** | **[대기병]** 창의 길이가 유닛 키의 2배(Z축 길게). 창끝을 낮게 든 자세. | **장창 (Pike)** |
+| **1109** | **쌍검병** | **[민첩]** 가벼운 가죽 갑옷. 망토나 긴 옷자락 휘날림 표현. | 양손에 얇은 환수도 |
+| **1110** | **철퇴병** | **[타격]** 두꺼운 철제 견갑. 묵직한 실루엣. | 육각 철퇴, 소형 방패 |
+| **1111** | **수군** | **[해상]** 갑옷 대신 푸른색(`#4682B4`) 활동복. 머리에 두건. | 짧은 검, 갈고리 |
+| **1112** | **둔전병** | **[반농반병]** 군복 바지 + 농민 상의. 허리에 농기구 주머니. | 창, 괭이 |
+| **1113** | **황건신도** | **[광신]** **노란 두건(`#FFD700`)** 필수. 부적을 몸에 붙임. 옷이 찢어짐. | 농기구, 몽둥이 |
+| **1114** | **황건역사** | **[괴력]** 황건신도의 거대화 버전. 상체 근육 과장. | 거대한 나무 기둥/철봉 |
+| **1115** | **청주병** | **[정예화]** 황건적 두건을 썼지만 갑옷은 조조군(검은색) 정규 갑옷. | 잘 관리된 창/검 |
+| **1116** | **단양병** | **[산악]** 팔다리 보호대 위주. 산악 이동용 짚신/부츠. 녹색/갈색 위장톤. | 쌍검 또는 창 |
+| **1117** | **함진영** | **[중장갑]** **전신 흑철 갑옷**. 얼굴을 가리는 면갑. 묵직한 느낌. | 대형 방패, 철퇴/도끼 |
+| **1118** | **백이병** | **[친위대]** **백색 깃털 장식** 투구. 은색 찰갑(`#D3D3D3`). | 정교한 방패, 긴 창 |
+| **1119** | **해번병** | **[강동]** 붉은색/금색이 섞인 화려한 갑옷. 투구 장식이 큼. | 언월도 또는 창 |
+| **1120** | **금군** | **[황실]** **황금색(`#FFD700`)** 테두리가 들어간 화려한 갑옷. 붉은 망토. | 의장용 도끼/창 (화려함) |
+| **1121** | **참마도수** | **[대검]** 갑옷은 가볍게, 검은 유닛 키만큼 거대함. | **참마도 (거대한 양손검)** |
+| **1122** | **진주룡대** | **[기동]** 용 문양이 새겨진 가벼운 갑옷. 날렵한 투구. | 창, 활 복합 무장 |
+| **1123** | **황룡대** | **[돌격]** 황색 용 문양의 흉갑. 어깨가 넓은 실루엣. | 대형 도끼/철퇴 |
+| **1124** | **흑산적** | **[도적]** 검은색 옷, 복면. 털가죽 장식. | 마구잡이 무장 (도끼 등) |
+| **1125** | **묵협** | **[묵가]** 검소한 **검은색(`#2F2F2F`) 옷**. 삿갓. 등 뒤에 공구/짐. | 평범한 철검 |
+| **1126** | **유협** | **[협객]** 화려한 사복. 긴 머리끈. 술병을 허리에 참. | 장식이 있는 검 |
+| **1127** | **촉한무위군** | **[수호]** 촉나라 특유의 녹색/황색 배색 갑옷. 방패에 촉 문양. | 대형 방패, 창 |
+| **1128** | **자객** | **[암살]** 전신 검은색 타이즈 형태. 얼굴 복면. | 쌍단검, 비수 |
+
+### Group 2: 궁병 (ARCHER) [1200~1215]
+
+| ID | 유닛명 | Voxel Design Key Points | Weapon |
+| :-- | :-- | :-- | :-- |
+| **1200** | **단궁병** | **[기본]** 가벼운 복장. 활이 작고 단순함. | 짧은 활 (Short bow) |
+| **1201** | **장궁병** | **[숙련]** 윗옷을 한쪽만 걸침(활쏘기 편하게). 깍지(엄지 반지) 표현. | **각궁 (Composite bow)** |
+| **1202** | **노병** | **[기계]** 앉아 쏴 자세 가능. 등에 네모난 화살통. | **쇠뇌 (Crossbow)** |
+| **1203** | **연노병** | **[연사]** 쇠뇌 위에 **네모난 탄창** 박스 모델링 필수. | **제갈노 (Repeating X-bow)** |
+| **1204** | **강노병** | **[중장]** 쇠뇌가 매우 크고 두꺼움. 중갑 착용. | 대형 쇠뇌 (Arbalest급) |
+| **1205** | **흑룡대** | **[전설]** 흑색 갑옷. 활에 용 장식. 눈이 빛나는 연출(선택). | 검은색 대형 활 |
+| **1206** | **선등사** | **[특수]** 등 뒤에 **거대한 방패(파비스)**를 메고 있음. | 쇠뇌, 등 방패 |
+| **1207** | **업군강노수** | **[하북]** 원소군 특유의 황금색 투구 장식. 튼튼한 쇠뇌. | 정교한 쇠뇌 |
+| **1208** | **투창병** | **[투척]** 등 뒤에 창 3~4개가 꽂힌 통을 멤. | 짧은 투창 (Javelin) |
+| **1209** | **도끼투척병** | **[남만]** 상의 탈의, 문신. 허리춤에 손도끼 여러 개. | 투척용 손도끼 |
+| **1210** | **투석병** | **[원시]** 매우 허름한 복장. 손에 돌리기 위한 끈. | **투석구 (Sling)** |
+| **1211** | **화염궁병** | **[화공]** 화살촉 부분이 붉은색/주황색(`#FF4500`). 기름통 휴대. | 불화살 |
+| **1212** | **독침병** | **[밀림]** 풀이나 나뭇잎 위장복. 입에 대나무 관. | **대나무 취관 (Blowgun)** |
+| **1213** | **기름단지병** | **[특수]** 손에 둥근 항아리. 옷에 검은 얼룩(기름). | 화염 항아리 |
+| **1214** | **저격수** | **[은밀]** 엎드린 자세에 적합한 위장 망토. | 매우 긴 활 |
+| **1215** | **원융노병** | **[북방]** 털가죽 모자. 쇠뇌가 땅에 닿을 만큼 거대함. | 거대 쇠뇌 |
+
+### Group 3: 기병 (CAVALRY) [1300~1322]
+
+* *Note: 말(Horse) 모델링이 추가됨. 기병과 말은 하나의 복셀 덩어리로 구성하되 색상으로 구분.*
+
+| ID | 유닛명 | Voxel Design Key Points | Mount (탑승물) |
+| :-- | :-- | :-- | :-- |
+| **1300** | **경기병** | **[속도]** 말 갑옷 없음. 기수도 가벼운 옷. | 갈색 말 |
+| **1301** | **중기병** | **[충격]** 말의 앞부분(가슴)에 가죽 갑옷. 기수는 철갑. | 검은 말, 가죽 마갑 |
+| **1302** | **창기병** | **[돌격]** 창이 매우 길어 앞으로 튀어나옴. | 군마 |
+| **1303** | **궁기병** | **[유목]** 말 위에서 몸을 돌려 쏘는 자세(파르티안 샷) 구현하면 베스트. | 날렵한 말 |
+| **1304** | **호표기** | **[조조]** 투구와 말 안장에 **표범 무늬** 텍스처. 붉은 망토. | 검은 명마, 표범 장식 |
+| **1305** | **서량철기** | **[중장]** **마갑(말 갑옷)**이 말 전체를 덮음. 기수도 전신 철갑. | 철갑 말 (Cataphract) |
+| **1306** | **백마의종** | **[공손찬]** 기수와 말 모두 **백색(`#FFFFFF`)** 테마. | **백마** |
+| **1307** | **비웅군** | **[동탁]** 곰 가죽을 두른 기수. 덩치가 큼. | 거대 흑마 |
+| **1308** | **흉노기병** | **[오랑캐]** 털모자, 변발. 활 중심 무장. | 조랑말 (다리가 짧음) |
+| **1309** | **서북고원기병** | **[강족]** 양가죽 조끼. 투박한 창. | 고원 말 |
+| **1310** | **낙타기병** | **[사막]** **쌍봉낙타** 모델링. 기수가 혹 사이에 앉음. | **낙타** |
+| **1311** | **늑대기수** | **[판타지/야만]** 말이 아닌 **거대한 늑대**. 기수는 뼈 장식. | **거대 늑대** |
+| **1312** | **맹수기수** | **[남만]** 호랑이 또는 표범 탑승. | **호랑이/표범** |
+| **1313** | **제국창기병** | **[황실]** 화려한 금장 마갑. 의장용 깃발이 달린 창. | 금장 마갑 백마 |
+| **1314** | **옥룡대** | **[전설]** 옥색(`#40E0D0`) 빛이 감도는 갑옷과 마갑. | 옥색 장식 말 |
+| **1315** | **오환돌기** | **[돌격]** 머리를 삭발하거나 독특한 헤어. 쌍검이나 도끼. | 흑마 |
+| **1316** | **선비궁기병** | **[북방]** 두꺼운 털옷. 활의 장력이 강해 보임. | 북방 말 |
+| **1317** | **쌍검기병** | **[근접]** 고삐를 놓고 양손에 검을 든 자세. | 군마 |
+| **1318** | **전차병** | **[고대]** 말이 끄는 **2륜 전차(Chariot)**. 기수 1명 + 창병 1명 탑승. | **전차 (말 2필)** |
+| **1319** | **정찰기병** | **[시야]** 무장 최소화. 횃불이나 깃발을 듬. | 빠른 말 |
+| **1320** | **양마기병** | **[산악]** 말의 다리가 굵고 튼튼함(지구력). | 서량마 |
+| **1321** | **돌기병** | **[자폭]** 말의 눈을 가림(공포 제거). 기수는 죽창/폭탄. | 눈 가린 말 |
+| **1322** | **상병** | **[남만]** **코끼리**. 상아에 철 장식. 기수는 윗부분에 탑승. | **코끼리 (소형)** |
+
+### Group 4: 귀병 (WIZARD/STRATEGIST) [1400~1424]
+
+* *Note: 무기보다는 부채, 지팡이, 책, 붓 등을 들고 있음. 의복(Robes) 위주.*
+
+| ID | 유닛명 | Voxel Design Key Points | Accessory |
+| :-- | :-- | :-- | :-- |
+| **1400** | **귀병** | **[학자]** 평범한 관복. 부채. | 부채 |
+| **1401** | **신귀병** | **[은밀]** 검은색/남색 도포. 얼굴을 가림. | 부적, 비수 |
+| **1402** | **백귀병** | **[순수]** **전신 백색** 도포. 긴 수염. | 백색 부채 |
+| **1403** | **흑귀병** | **[저주]** 전신 흑색 도포. 해골 장식 지팡이. | 흑색 지팡이 |
+| **1404** | **악귀병** | **[전투]** 도포 위에 갑옷을 걸침. | 검 + 부적 |
+| **1405** | **남귀병** | **[이민족]** 화려한 깃털 장식, 가면. | 지팡이 + 방울 |
+| **1406** | **황귀병** | **[고위]** 황금색 관복. 화려한 관(Headgear). | 옥새, 두루마리 |
+| **1407** | **천귀병** | **[성직]** 하늘을 상징하는 푸른색/구름 무늬 도포. | 별자리 판 |
+| **1408** | **마귀병** | **[강령]** 찢어진 도포. 주변에 보라색 오라(이펙트). | 뼈 지팡이 |
+| **1409** | **음귀병** | **[현혹]** 악기(비파, 피리)를 들고 있음. | **악기** |
+| **1410** | **향귀병** | **[향]** 손에 **향로**를 들고 연기가 나는 연출. | 향로 |
+| **1411** | **무희** | **[춤]** 긴 소매(Water sleeves)가 휘날리는 형태. 여성형. | 긴 소매, 부채 |
+| **1412** | **독전주술사** | **[주술]** 북(Drum)을 메고 있거나 두드림. | **북, 채** |
+| **1413** | **태평도사** | **[장각]** 노란 두건, 지팡이, 긴 수염. | 지팡이, 경전 |
+| **1414** | **오두미도사** | **[장로]** 도교 복장. 쌀자루(오두미)를 형상화한 장식. | 칠성검 |
+| **1415** | **방사** | **[신선]** 등 뒤에 호리병. 구름 무늬 옷. | 호리병 |
+| **1416** | **암송대** | **[경전]** 책을 펼쳐 들고 읽는 자세. | **책 (죽간)** |
+| **1417** | **유세객** | **[외교]** 화려한 양반 복장. 혀(말)를 강조하는 제스처? (손짓). | 두루마리 |
+| **1418** | **세작** | **[첩자]** 평범한 농민/상인 복장이지만 품에 단검. | 변장 도구 |
+| **1419** | **군사참모** | **[지휘]** 깃발을 등 뒤에 꽂고 지휘봉을 듬. | **지휘봉, 깃발** |
+| **1420** | **화공대** | **[화염]** 등에 기름통. 손에 횃불. | **횃불** |
+| **1421** | **수공대** | **[수리]** 삽이나 곡괭이. 둑을 무너뜨리는 도구. | 삽, 곡괭이 |
+| **1422** | **기문둔갑사** | **[진법]** 바닥에 팔괘(8각형) 이펙트나 장식. | 나침반(패철) |
+| **1423** | **태일도사** | **[제사]** 제단 의식용 복장. 엄숙함. | 제기(그릇) |
+| **1424** | **묵자** | **[기술]** 공구 벨트. 실용적인 짧은 옷. | 목공 도구 |
+
+### Group 5: 이민족 & 지역병 (Regional) [1450~1472]
+
+* *Note: 한나라 정규군과 확연히 다른 실루엣(털가죽, 판갑, 문신 등) 필요.*
+
+| ID | 유닛명 | Voxel Design Key Points |
+| :-- | :-- | :-- |
+| **1450** | **남만전사** | **[야만]** 상의 탈의, 호피 무늬 하의. 뼈 장식. |
+| **1451** | **등갑병** | **[특수]** 노란색/갈색의 **등나무 갑옷(비늘 모양 아님, 엮은 모양)**. |
+| **1452** | **코끼리병** | **[기병]** 1322번보다 더 무장된 코끼리. 기수 2명 탑승. |
+| **1453** | **전쟁코끼리** | **[요새]** 코끼리 등 위에 **망루(집)**가 있음. 3명 이상 탑승. |
+| **1454** | **개마무사** | **[고구려]** 말과 기수 모두 **비늘 갑옷(찰갑)**으로 빈틈없이 덮임. 투구에 깃털. 창이 매우 긺. |
+| **1455** | **맥궁사** | **[동예]** 호랑이 가죽 모자. 활이 유난히 큼(맥궁). |
+| **1456** | **가야판갑병** | **[가야]** 세로로 긴 철판을 이어 붙인 **판갑(Plate Armor)**. 일본 사무라이 갑옷의 원형 느낌. |
+| **1457** | **삼한장창병** | **[삼한]** 짚으로 엮은 갑옷이나 투박한 가죽. 매우 긴 대나무 창. |
+| **1458** | **마한전사** | **[문신]** 얼굴에 문신. 머리를 상투 틂. 둥근 목방패. |
+| **1459** | **읍루독궁병** | **[독]** 털옷. 화살촉에서 보라색 액체(독)가 떨어짐. |
+| **1460** | **강족약탈자** | **[유목]** 양가죽 옷. 약탈품 보따리를 메고 있음. |
+| **1461** | **동예단궁병** | **[산악]** 표범 가죽 조끼. 활이 짧음. |
+| **1462** | **산월전사** | **[게릴라]** 나뭇잎 위장. 머리가 산발임. |
+| **1463** | **파촉산악병** | **[험지]** 짚신. 다리 근육 강조. 등짐을 지고 있음. |
+| **1464** | **강동수군** | **[오]** 1111번의 정예 버전. 붉은 머리띠. 가죽 조끼. |
+| **1465** | **형주강궁병** | **[수성]** 1204번과 유사하나 물에 강한 가죽 옷. |
+| **1466** | **여남황건** | **[잔당]** 1113번보다 더 낡고 지저분함. 붕대 감음. |
+| **1467** | **광전사** | **[폭주]** 눈이 붉음. 입에 거품(하얀 복셀). 무기를 질질 끔. |
+| **1468** | **계림전사** | **[신라]** 닭 깃털 장식 투구. 날렵한 철검. |
+| **1469** | **화시병** | **[불]** 1211번의 정예 버전. 화살통 자체가 불타고 있음. |
+| **1470** | **변군전사** | **[변한]** 철기 문명 강조. 무기가 유난히 크고 날카로움. |
+| **1471** | **부여보병** | **[북방]** 두꺼운 백색/회색 털옷. 둥근 방패. |
+| **1472** | **부여기병** | **[북방]** 말에도 털가죽을 씌움. 창 대신 도끼나 철퇴. |
+
+### Group 6: 공성병기 (SIEGE) [1500~1511]
+
+| ID | 유닛명 | Voxel Design Key Points |
+| :-- | :-- | :-- |
+| **1500** | **충차** | 거대한 통나무가 달린 지붕 있는 수레. 앞부분에 철제 양 머리 장식. |
+| **1501** | **벽력거** | 지렛대 원리의 투석기(Trebuchet 아님, 인력 당김식). 돌덩이 장전. |
+| **1502** | **정란** | 바퀴 달린 높은 망루. 꼭대기에 궁수 배치 공간. |
+| **1503** | **연노거** | 수레 위에 거대한 쇠뇌 설치. |
+| **1504** | **화수** | 불을 뿜는 짐승 머리 모양 장식이 달린 수레. |
+| **1505** | **다연장노포** | 쇠뇌 하나에 화살이 여러 개(부채꼴) 걸려 있음. |
+| **1506** | **공성탑** | 정란보다 훨씬 크고 넓음. 성벽에 붙는 다리가 있음. |
+| **1507** | **화염투석기** | 벽력거 투석구에 불타는 공이 들어있음. |
+| **1508** | **쇠뇌차** | 연노거의 경량화 버전. 방패판이 앞에 있음. |
+| **1509** | **화공차** | 수레 가득 짚단과 기름통이 실려 있음. |
+| **1510** | **목우유마** | **[기계]** 나무로 만든 소/말 모양의 기계 장치. 톱니바퀴 노출. |
+| **1511** | **화륜차** | 바퀴 자체가 불타는 거대한 가시 바퀴 2개. |
+
+---
+
+## 3. Implementation Hints (제작 팁)
+
+1.  **Material Differentiation (재질 구분):**
+    * **천/가죽:** 반사광(Specular) 없음, 매트한 질감.
+    * **철/금속:** 하이라이트(가장 밝은 점)를 모서리에 찍어 금속성 표현.
+    * **나무:** 짙은 갈색과 옅은 갈색의 줄무늬 패턴.
+
+2.  **Silhouette (실루엣):**
+    * 복셀은 디테일이 뭉개지기 쉬우므로 **투구의 장식(깃털, 뿔)**, **어깨 갑옷의 크기**, **무기의 크기**를 과장하여 멀리서도 유닛을 구별할 수 있게 해야 함.
+
+3.  **Nation Colors (국가별 포인트 컬러):**
+    * **위(Wei):** 푸른색/검은색 (`#2F4F4F`)
+    * **촉(Shu):** 초록색/노란색 (`#228B22`) -> *삼국지연의 고증(촉=녹색) vs 정사 고증(촉=적색/황색) 중 선택 필요. 보통 게임에선 녹색 선호.*
+    * **오(Wu):** 붉은색 (`#8B0000`)
+    * **기타:** 황건(노랑), 원소(황금), 동탁(검정/보라)
+
+이 사양서를 바탕으로 AI 프롬프트를 작성하거나 복셀 작업을 진행하면 통일감 있고 고증이 살아있는 결과물을 얻을 수 있습니다.
+
+물론입니다\! **시스템 사양서에 있는 1000번부터 1511번까지 모든 유닛**에 대한 프롬프트를 작성해 드립니다.
+
+양이 방대하므로 파트별로 나누어 정리했습니다. AI(Midjourney, Stable Diffusion)에 넣을 때는 아래 \*\*[Base Style]\*\*을 복사하고, 그 뒤에 각 유닛의 \*\*[Unit Prompt]\*\*를 붙여서 사용하세요.
+
+-----
+
+### 📋 사용법 (Copy & Paste)
+
+`[Base Style]` + `[Unit Prompt]` + `  --v 6.0 ` (미드저니 기준)
+
+#### 1\. Base Style (공통/고정)
+
+```text
+/imagine prompt: 3d voxel art, isometric view, MagicaVoxel style, Three Kingdoms period of China style, historical fantasy strategy game asset, adorable but serious atmosphere, clean solid colors, low noise texture, soft ambient occlusion lighting, neutral white background, full body shot, sharp focus, 
+```
+
+-----
+
+### Part 0: 시설 (Structure)
+
+```text
+[1000] 성벽 (Castle Wall):
+stone fortress wall section, ancient chinese architecture, gray stone bricks, crenellations on top, defensive structure, sturdy and heavy look
+```
+
+### Part 1: 보병 (Footman) [1100\~1128]
+
+```text
+[1100] 도민병 (Peasant Militia):
+starving male villager, messy hair, wearing worn-out rags and tattered sackcloth, barefoot, holding a rusty farming sickle and a crude wooden stick, thin body, expression of desperation
+
+[1101] 창민병 (Bamboo Spearman):
+male peasant soldier, wearing brown hemp clothes, wearing a headband, holding a long sharpened bamboo spear (200cm long), bamboo texture visible, defensive stance, woven straw shoes
+
+[1102] 정규보병 (Standard Infantry):
+Han Dynasty soldier, wearing a black leather cap (Wu Bian), red lacquered lamellar armor (Liang-dang) over black clothes, holding a standard iron ring-pommel saber (Huanshoudao) and a round wooden shield
+
+[1103] 정규창병 (Regular Spearman):
+regular soldier, wearing red lacquered lamellar armor, leather arm guards, holding a long spear with red tassel, round shield on left arm, disciplined stance
+
+[1104] 정규극병 (Halberdier):
+soldier holding a Chinese Ji (Polearm with spear and crescent blade), wearing red lacquered armor with shoulder guards, leather helmet with cheek guards, polearm is long with bronze fittings
+
+[1105] 방패보병 (Shieldbearer):
+defensive infantry, holding a large rectangular wooden shield with iron reinforcements, wearing standard armor with arm guards, holding a sword ready to strike from behind shield
+
+[1106] 대방패병 (Heavy Shieldbearer):
+heavy infantry, holding a massive rectangular tower shield covering the whole body, iron reinforced shield face, wearing an iron helmet covering the face, heavy lamellar armor extending to thighs
+
+[1107] 양손도끼병 (Two-handed Axeman):
+muscular soldier, wearing light leather chest armor, bare muscular arms, holding a massive two-handed battle axe with a crescent blade, wild expression, aggressive pose
+
+[1108] 장창병 (Pikeman):
+soldier holding an extremely long pike (400cm), pike held horizontally with two hands, wearing standard armor with leg wrappings, anti-cavalry stance
+
+[1109] 쌍검병 (Dual Swordsman):
+agile soldier, wearing light leather vest, holding twin swords (one in each hand), dynamic pose crossing swords, light shoes, long hair tied back
+
+[1110] 철퇴병 (Maceman):
+heavy soldier, wearing heavy shoulder guards and lamellar armor, holding a hexagonal iron mace and a small round shield, brute strength look
+
+[1111] 수군 (Marine):
+naval soldier, wearing blue cloth uniform without heavy armor, bandana on head, holding a short sword and a grappling hook, ready for boarding
+
+[1112] 둔전병 (Farmer Soldier):
+soldier wearing military pants but farmer upper clothes, straw hat, holding a farming tool modified into a spear, carrying a bag of grain on back
+
+[1113] 황건신도 (Yellow Turban Rebel):
+fanatic rebel, wearing a bright yellow headscarf (Gold color), dirty farmer clothes, paper talismans stuck on chest, holding a rough wooden club, shouting expression
+
+[1114] 황건역사 (Yellow Turban Elite):
+large muscular rebel, wearing yellow turban, bare chest with leather straps, holding a giant wooden log with iron spikes, intimidating size
+
+[1115] 청주병 (Qingzhou Soldier):
+veteran soldier, wearing Cao Cao's army black armor but with a yellow strip of cloth tied on arm (remnant of Yellow Turban), holding a well-maintained spear
+
+[1116] 단양병 (Danyang Mountain Soldier):
+mountain specialist, wearing light leather armor, climbing ropes on waist, holding a sword and javelins on back, agile posture, mountaineering shoes
+
+[1117] 함진영 (Camp Smasher):
+heavily armored shock trooper, full body black iron lamellar armor (Lacquer Black), wearing a full-face iron mask helmet with slit eyes, holding a heavy halberd (Ji), intimidating aura
+
+[1118] 백이병 (White Feather Guard):
+elite bodyguard, wearing silver lamellar armor, helmet with white feather/tassel, holding a large white shield with dragon crest, defending stance
+
+[1119] 해번병 (Haifan Guard):
+elite Wu soldier, wearing intricate armor with blue and red details, holding a sword and shield, confident expression, well-equipped
+
+[1120] 금군 (Imperial Guard):
+elite royal guard, ornate gold-trimmed red armor, helmet with red tassel and gold dragon decoration, holding a ceremonial polearm, majestic posture
+
+[1121] 참마도수 (Zhanmadao Slayer):
+soldier holding a massive two-handed anti-cavalry sword (Zhanmadao), blade is as tall as the person, wearing light armor for mobility, muscular arms
+
+[1122] 진주룡대 (Pearl Dragon Unit):
+agile shock trooper, wearing armor with dragon motifs, holding a sword and javelins, dynamic running pose
+
+[1123] 황룡대 (Yellow Dragon Unit):
+elite soldier, wearing golden chest plate with dragon engraving, broad shoulders, holding a large axe, imposing stance
+
+[1124] 흑산적 (Black Mountain Bandit):
+bandit soldier, wearing all black ragged clothes, face covered with black mask, holding a stolen sword, crouching stealthily
+
+[1125] 묵협 (Mohist Warrior):
+Mohist scholar-warrior, wearing simple black robes and practical leather chest piece, tool belt on waist (hammer, chisel), holding a sword, stoic expression
+
+[1126] 유협 (Wandering Knight):
+heroic swordsman, wearing stylish hanfu robes with a cape, long sword on waist, holding a wine gourd, charismatic look
+
+[1127] 촉한무위군 (Shu Han Guard):
+elite Shu soldier, wearing green and gold lamellar armor, large shield with Shu kingdom emblem, holding a spear, disciplined formation stance
+
+[1128] 자객 (Assassin):
+stealthy killer, wearing tight black suit and black face mask (eyes only visible), dual wielding daggers, crouching pose, mysterious atmosphere
+```
+
+### Part 2: 궁병 (Archer) [1200\~1215]
+
+```text
+[1200] 단궁병 (Shortbowman):
+light archer, wearing simple clothes, holding a small short wooden bow, quiver on hip, drawing the string
+
+[1201] 장궁병 (Longbowman):
+skilled archer, wearing leather armor, holding a large composite bow (recurved shape), quiver on back, thumb ring on hand, focused aiming pose
+
+[1202] 노병 (Crossbowman):
+soldier holding a Han dynasty crossbow, aiming with one eye closed, quiver of bolts on waist, standard armor
+
+[1203] 연노병 (Repeating Crossbowman):
+soldier holding a repeating crossbow (Zhuge Nu) with a wooden magazine box on top, lever mechanism visible, wearing light armor, reloading action
+
+[1204] 강노병 (Heavy Crossbowman):
+heavy soldier, holding a massive heavy crossbow (Arbalest size), wearing heavy lamellar armor, bolt quiver on back, sturdy stance
+
+[1205] 흑룡대 (Black Dragon Archer):
+elite archer, wearing all black armor and cape, holding a large black composite bow, black feathered arrows, sharp eyes
+
+[1206] 선등사 (Vanguard Crossbowman):
+siege trooper, carrying a massive pavise shield on his back, holding a crossbow and a grappling hook, battle-worn look
+
+[1207] 업군강노수 (Ye City Crossbowman):
+elite crossbowman, wearing ornate helmet, holding a precision crossbow with bronze mechanisms, confident pose
+
+[1208] 투창병 (Javelin Thrower):
+skirmisher, carrying a bundle of short spears (javelins) on back, holding one ready to throw, light armor, athletic build
+
+[1209] 도끼투척병 (Axe Thrower):
+tribal warrior, shirtless with tattoos, belt full of throwing axes, holding a hand axe ready to throw, wild look
+
+[1210] 투석병 (Slinger):
+poor soldier, wearing simple rags, swinging a leather sling above head, pouch of stones on waist, dynamic motion blur on sling
+
+[1211] 화염궁병 (Fire Archer):
+archer holding a bow with a flaming arrow (fire effect on tip), oil pot on waist, soot on face, orange lighting
+
+[1212] 독침병 (Blowgunner):
+jungle warrior, camouflaged with leaves, holding a long bamboo blowpipe, crouching, poison gourd on waist
+
+[1213] 기름단지병 (Oil Thrower):
+soldier holding a ceramic jar filled with oil, soot stains on clothes, torch in other hand, dangerous appearance
+
+[1214] 저격수 (Sniper):
+stealth archer, wearing a camouflage cloak (ghillie style), prone or crouching, holding an extremely long bow, hidden face
+
+[1215] 원융노병 (Long Range Crossbowman):
+northern soldier, wearing fur hat, operating a gigantic crossbow that rests on the ground, long distance aiming
+```
+
+### Part 3: 기병 (Cavalry) [1300\~1322]
+
+*`riding a [Color] horse` 패턴 필수*
+
+```text
+[1300] 경기병 (Light Cavalry):
+rider on a brown horse, horse has no armor, rider wearing light leather vest and holding a saber, dynamic galloping pose
+
+[1301] 중기병 (Heavy Cavalry):
+rider on a black horse, horse has leather chest armor, rider wearing iron lamellar armor, holding a long spear
+
+[1302] 창기병 (Lancer):
+rider on a warhorse, holding an extremely long lance (350cm), lance held horizontally for charge, standard armor
+
+[1303] 궁기병 (Horse Archer):
+rider on a fast horse, turning body backwards to shoot an arrow (Parthian shot), wearing light armor, quiver on saddle
+
+[1304] 호표기 (Tiger Leopard Cavalry):
+elite rider on a black horse, rider wearing armor with leopard skin pattern cloak, horse has partial iron armor with leopard pattern cloth, holding a long spear
+
+[1305] 서량철기 (Iron Cavalry):
+heavy cataphract, rider and horse both fully covered in heavy iron scale armor (Lamellar), horse face covered by metal mask, rider holding a heavy lance, bulky appearance
+
+[1306] 백마의종 (White Horse Fellow):
+rider on a pure white horse, wearing silver armor and white cape, holding a bow and white-fletched arrows, clean and noble look
+
+[1307] 비웅군 (Flying Bear Army):
+rider on a massive black horse, wearing terrifying armor with bear fur and skull motifs, horse has a scary mask, dark and bloody atmosphere
+
+[1308] 흉노기병 (Xiongnu Cavalry):
+nomad rider on a pony, wearing fur hat and vest, braided hair, holding a composite bow, wild steppe look
+
+[1309] 서북고원기병 (Qiang Cavalry):
+rider on a mountain horse, wearing sheepskin vest and turquoise jewelry, holding a spear, rugged highland look
+
+[1310] 낙타기병 (Camel Cavalry):
+rider on a two-humped camel, rider sitting between humps, wearing desert robes and turban, holding a curved sword
+
+[1311] 늑대기수 (Wolf Rider):
+savage warrior riding a giant grey wolf, rider wearing wolf pelt hat and bone necklace, holding a curved blade, fantasy tribal style
+
+[1312] 맹수기수 (Beast Rider):
+tribal warrior riding a tiger, rider wearing minimal clothes with tattoos, holding a spear, fierce jungle atmosphere
+
+[1313] 제국창기병 (Imperial Lancer):
+rider on a white horse with gold armor, rider wearing ornate gold-trimmed armor, holding a ceremonial lance with banner, majestic
+
+[1314] 옥룡대 (Jade Dragon Cavalry):
+elite rider on a horse, armor has jade-green tint and dragon motifs, holding a polearm, mythical aura
+
+[1315] 오환돌기 (Wuhuan Cavalry):
+nomad rider with shaved head, riding a black horse, dual wielding swords on horseback, aggressive charge
+
+[1316] 선비궁기병 (Xianbei Archer):
+northern rider on a horse, wearing thick fur coat, holding a powerful horn bow, cold weather gear
+
+[1317] 쌍검기병 (Dual Blade Cavalry):
+rider on a horse, holding two swords (one in each hand), reins loose, dynamic slashing pose
+
+[1318] 전차병 (Chariot):
+two-wheeled wooden chariot pulled by two horses, driver and a warrior with a halberd standing inside the chariot, bronze fittings
+
+[1319] 정찰기병 (Scout Cavalry):
+light rider on a fast horse, minimal armor, carrying a signal flag and a torch, looking into distance
+
+[1320] 양마기병 (Liangzhou Horse):
+rider on a sturdy muscular horse, wearing western region style clothes, holding a spear, mountainous background
+
+[1321] 돌기병 (Blind Charge Cavalry):
+rider on a large horse with its eyes covered by a blinder mask, rider heavily armored, holding a lance, reckless charge pose
+
+[1322] 상병 (Elephant Rider):
+soldier riding a small war elephant, elephant has iron tusks, rider sitting on neck holding a goad and spear, tribal outfit
+```
+
+### Part 4: 귀병/책사 (Wizard/Strategist) [1400\~1424]
+
+```text
+[1400] 귀병 (Strategist):
+scholar wearing grey hanfu robes, holding a feather fan, intellectual expression, clean and simple look
+
+[1401] 신귀병 (Shadow Strategist):
+scholar wearing dark blue robes, face partially hidden by collar or shadow, holding a dagger hidden in sleeve, mysterious
+
+[1402] 백귀병 (White Robe Strategist):
+scholar wearing pure white robes, long beard, holding a book/scroll, calm and wise appearance
+
+[1403] 흑귀병 (Dark Strategist):
+scholar wearing black robes with silver patterns, holding a black staff with skull top, ominous aura
+
+[1404] 악귀병 (Battle Mage):
+scholar wearing robes over armor, holding a sword in one hand and a talisman in the other, aggressive look
+
+[1405] 남귀병 (Southern Shaman):
+tribal shaman wearing colorful feather headdress, holding a staff with bells, painted face
+
+[1406] 황귀병 (Imperial Strategist):
+high official wearing golden robes and ornate headdress, holding an imperial seal (jade square) and a scroll, majestic
+
+[1407] 천귀병 (Heavenly Strategist):
+scholar wearing robes with cloud patterns, holding a fan, blue magical aura effect, divine look
+
+[1408] 마귀병 (Sorcerer):
+scholar wearing tattered purple robes, holding a bone staff, purple magical aura, necromancer vibe
+
+[1409] 음귀병 (Sound Strategist):
+scholar playing a traditional instrument (Guqin or Flute), wearing elegant green robes, soundwave effect visualization
+
+[1410] 향귀병 (Incense Strategist):
+scholar holding a smoking incense burner, wearing purple robes, surrounded by magical smoke
+
+[1411] 무희 (Dancer):
+female dancer wearing beautiful silk dress with long flowing sleeves, dancing pose, holding a fan, charming expression
+
+[1412] 독전주술사 (War Drummer):
+shaman carrying a large war drum, wearing animal skins, beating the drum with intensity, morale boosting aura
+
+[1413] 태평도사 (Taiping Taoist):
+Taoist priest wearing yellow turban and yellow robes, holding a wooden sword and paper talismans, chanting spell
+
+[1414] 오두미도사 (Five Pecks of Rice Taoist):
+Taoist priest wearing blue robes and distinctive hat, holding a fly-whisk and a bag of rice, religious look
+
+[1415] 방사 (Alchemist):
+old hermit with white beard, holding a gourd bottle (elixir), wearing simple white robes, mystical atmosphere
+
+[1416] 암송대 (Chanter):
+scholar holding a bamboo scroll open, reading aloud, wearing glasses (primitive style) or focused look, magical text effect
+
+[1417] 유세객 (Diplomat):
+elegant scholar wearing fine silk robes, making a persuasive hand gesture, holding a diplomatic scroll, charismatic
+
+[1418] 세작 (Spy):
+person looking like a commoner but with sharp eyes, hiding a message scroll inside clothes, nondescript appearance
+
+[1419] 군사참모 (Military Advisor):
+strategist wearing armor under robes, pointing with a command baton, map scroll in other hand, tactical look
+
+[1420] 화공대 (Fire Strategist):
+soldier wearing fire-resistant leather clothes, holding a torch and a bag of gunpowder, soot on face
+
+[1421] 수공대 (Water Strategist):
+soldier holding a shovel and sandbags, wearing blue work clothes, wet texture effect
+
+[1422] 기문둔갑사 (Formation Master):
+Taoist scholar holding a Feng Shui compass (Luopan), standing in a center of an octagonal formation (Bagua) effect
+
+[1423] 태일도사 (Grand Ritualist):
+high priest wearing ceremonial grand robes with star patterns, holding a jade tablet, performing a ritual
+
+[1424] 묵자 (Mohist Engineer):
+scholar-engineer wearing practical black clothes, tool belt with ruler and compass, holding a blueprint scroll
+```
+
+### Part 5: 지역/이민족 (Regional) [1450\~1472]
+
+```text
+[1450] 남만전사 (Nanman Warrior):
+tribal warrior, shirtless, leopard skin loincloth, bone necklace, holding a jungle machete, tattooed skin
+
+[1451] 등갑병 (Rattan Armor Soldier):
+soldier wearing armor made of woven vines/rattan (yellowish brown texture), holding a rattan shield, lightweight look
+
+[1452] 코끼리병 (Elephant Cavalry):
+soldier riding a medium-sized elephant, rider sits on neck, tribal outfit, elephant has simple harness
+
+[1453] 전쟁코끼리 (War Elephant):
+large elephant with a wooden fortress (howdah) on its back, carrying 3 soldiers inside, elephant has iron armor on head
+
+[1454] 개마무사 (Goguryeo Cataphract):
+heavily armored cavalry, rider and horse covered in scale armor (lamellar), rider wears a helmet with feathers, holding a long lance
+
+[1455] 맥궁사 (Maek Archer):
+archer from the east, wearing fur hat, holding a very large composite bow (Maek-gung), thick fur clothes
+
+[1456] 가야판갑병 (Gaya Plate Armor):
+soldier wearing vertical plate armor (iron plates riveted together), distinct helmet shape, holding a sword
+
+[1457] 삼한장창병 (Samhan Spearman):
+soldier wearing straw or leather armor, holding an extremely long bamboo spear, simple footwear
+
+[1458] 마한전사 (Mahan Warrior):
+tribal warrior with face tattoos, topknot hair, holding a round wooden shield and spear, fierce look
+
+[1459] 읍루독궁병 (Yilou Poison Archer):
+archer wearing thick furs, holding a bow with purple-tipped arrows (poison), rugged appearance
+
+[1460] 강족약탈자 (Qiang Raider):
+nomad rider carrying a large sack of looted goods on horseback, wearing sheepskin vest, holding a curved sword
+
+[1461] 동예단궁병 (Dongye Archer):
+mountain archer, wearing leopard skin vest, holding a short bow, agile climbing pose
+
+[1462] 산월전사 (Shanyue Warrior):
+jungle guerilla, camouflaged with leaves, messy hair, holding a spear and looking wild
+
+[1463] 파촉산악병 (Bashu Mountain Infantry):
+soldier with large leg muscles, wearing straw sandals, carrying a heavy backpack frame, holding a spear
+
+[1464] 강동수군 (Jiangdong Marine):
+elite marine, shirtless with red vest, red bandana, holding a sword, muscular build
+
+[1465] 형주강궁병 (Jingzhou Archer):
+archer wearing water-resistant leather armor, holding a strong bow, standing firm
+
+[1466] 여남황건 (Runan Rebel):
+ragged rebel soldier, bandages on body, rusty weapon, desperate survivalist look
+
+[1467] 광전사 (Berserker):
+warrior in a frenzy, red eyes, foaming mouth (white voxel particles), dragging a huge weapon, scary look
+
+[1468] 계림전사 (Gyerim Warrior):
+warrior wearing a helmet with rooster feather decorations, holding a sword, agile and young look
+
+[1469] 화시병 (Fire Arrow Soldier):
+elite archer with a quiver full of burning arrows, fire effect visible, wearing red armor
+
+[1470] 변군전사 (Byeonhan Warrior):
+warrior wearing plate armor, holding a large iron sword, metallic texture emphasized
+
+[1471] 부여보병 (Buyeo Infantry):
+soldier wearing thick white fur coat, round shield, holding a spear, winter warfare gear
+
+[1472] 부여기병 (Buyeo Cavalry):
+rider on a horse covered in furs, rider wearing thick winter clothes and fur hat, holding a lance
+```
+
+### Part 6: 공성병기 (Siege) [1500\~1511]
+
+```text
+[1500] 충차 (Battering Ram):
+large wooden siege engine on wheels, roof covered with raw hide, massive log with an iron ram head hanging inside, heavy look
+
+[1501] 벽력거 (Catapult):
+wooden catapult siege weapon, A-frame structure with wheels, long throwing arm with a sling pouch containing a rock
+
+[1502] 정란 (Siege Tower):
+tall wooden mobile tower on wheels, lookout platform on top, wooden texture, ladders visible inside
+
+[1503] 연노거 (Ballista Cart):
+wooden cart carrying a massive crossbow (ballista), large bolts loaded, mechanical gears visible
+
+[1504] 화수 (Fire Beast):
+wooden cart shaped like a beast's head, spewing fire (voxel fire effect) from the front, spiked wheels
+
+[1505] 다연장노포 (Multi-Bolt Crossbow):
+siege crossbow with multiple bolts loaded in a fan shape, wooden frame on wheels, complex mechanism
+
+[1506] 공성탑 (Grand Siege Tower):
+massive multi-story wooden tower on wheels, drawbridge on top floor lowered, covered in raw hide
+
+[1507] 화염투석기 (Fire Catapult):
+catapult loaded with a burning oil barrel, fire effects, blackened wood texture
+
+[1508] 쇠뇌차 (Light Ballista):
+smaller mobile ballista on a two-wheeled cart, frontal shield plate for protection
+
+[1509] 화공차 (Fire Cart):
+suicide cart filled with hay and oil barrels, burning fiercely, pushed by handles at the back
+
+[1510] 목우 (Wooden Ox):
+mechanical wooden ox automaton, gears and cogs visible, carrying sacks of grain, legendary invention style
+
+[1511] 유마 (Flowing Horse):
+mechanical wooden horse-cart automaton, single wheel (wheelbarrow style), intricate wooden mechanism
+```

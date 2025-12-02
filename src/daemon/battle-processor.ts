@@ -3,6 +3,7 @@ import { Battle, BattleStatus, BattlePhase } from '../models/battle.model';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
 import { unitStackRepository } from '../repositories/unit-stack.repository';
 import { cityDefenseRepository } from '../repositories/city-defense.repository';
+import { generalRepository } from '../repositories/general.repository';
 import { acquireDistributedLock, releaseDistributedLock } from '../common/lock/distributed-lock.helper';
 import { invalidateCache } from '../common/cache/model-cache.helper';
 import { logger } from '../common/logger';
@@ -382,6 +383,10 @@ async function handleBattleEnded(battle: any, winner: string | undefined) {
       await updateCityDefenseAfterBattle(sessionId, targetCityId, cityName, winner, attackerLoss, defenderLoss);
     }
 
+    // 멀티 스택 모드: 장수별 스택 손실 반영
+    await applyGeneralStackCasualties(battle, sessionId, 'attacker');
+    await applyGeneralStackCasualties(battle, sessionId, 'defender');
+
     // 공격자가 승리하고 도시 공격이면 도시 점령 처리
     if (winner === 'attacker' && targetCityId) {
       const attackerGeneralId = battle.attackerUnits?.[0]?.generalId || 0;
@@ -473,6 +478,80 @@ function sumMaxTroops(units: any[] = []): number {
 
 function sumCurrentTroops(units: any[] = []): number {
   return units.reduce((sum, unit) => sum + (unit?.troops ?? 0), 0);
+}
+
+/**
+ * 멀티 스택 전투: 장수의 개별 스택 손실 반영
+ * originType: 'generalStack'인 유닛들의 손실을 originStackId로 매핑
+ */
+async function applyGeneralStackCasualties(
+  battle: any,
+  sessionId: string,
+  side: 'attacker' | 'defender'
+): Promise<void> {
+  const units = side === 'attacker' ? battle.attackerUnits : battle.defenderUnits;
+  if (!units || units.length === 0) {
+    return;
+  }
+
+  // generalStack 타입 유닛들의 생존 병력 집계
+  const survivorsByStack = new Map<string, number>();
+  const commanderCrew = new Map<number, number>(); // commanderId별 총 병력
+
+  for (const unit of units) {
+    if (unit.originType === 'generalStack' && unit.originStackId) {
+      const troops = unit.troops || 0;
+      survivorsByStack.set(unit.originStackId, troops);
+      
+      // 지휘관별 총 병력 집계 (레거시 crew 값 업데이트용)
+      if (unit.commanderId && unit.commanderId > 0) {
+        commanderCrew.set(
+          unit.commanderId,
+          (commanderCrew.get(unit.commanderId) || 0) + troops
+        );
+      }
+    }
+  }
+
+  if (survivorsByStack.size === 0) {
+    return;
+  }
+
+  // 스택별 손실 반영
+  for (const [stackId, survivorTroops] of survivorsByStack) {
+    const stackDoc = await unitStackRepository.findById(stackId);
+    if (!stackDoc) {
+      continue;
+    }
+
+    const newHp = Math.max(0, Math.round(survivorTroops));
+    
+    if (newHp <= 0) {
+      // 전멸 시 스택 삭제
+      await unitStackRepository.deleteById(stackId);
+    } else {
+      // 스택 업데이트
+      stackDoc.hp = newHp;
+      stackDoc.stack_count = Math.max(0, Math.ceil(newHp / Math.max(1, stackDoc.unit_size ?? 100)));
+      await stackDoc.save();
+    }
+  }
+
+  // 지휘관(장수)의 레거시 crew 값 업데이트
+  for (const [commanderId, totalCrew] of commanderCrew) {
+    try {
+      const general = await generalRepository.findBySessionAndNo(sessionId, commanderId);
+      if (general) {
+        (general as any).crew = totalCrew;
+        if (general.data) {
+          (general.data as any).crew = totalCrew;
+        }
+        await (general as any).save?.();
+      }
+    } catch (error) {
+      logger.warn(`[applyGeneralStackCasualties] 장수 crew 업데이트 실패: ${commanderId}`, error);
+    }
+  }
 }
 
 async function applyCityGarrisonCasualties(battle: any, sessionId: string, cityId: number): Promise<void> {

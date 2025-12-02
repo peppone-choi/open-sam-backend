@@ -29,9 +29,20 @@ export class MongoConnection {
 
     try {
       await mongoose.connect(mongoUri, {
+        // 연결 풀링 최적화
+        maxPoolSize: 50,          // 최대 연결 수 (기본값 5 → 50)
+        minPoolSize: 10,          // 최소 연결 수 (유휴 상태에서도 유지)
+        maxIdleTimeMS: 30000,     // 유휴 연결 유지 시간 (30초)
+        
         // 자동 재연결 설정
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
+        
+        // 쓰기 성능 최적화
+        writeConcern: {
+          w: 1,                   // 단일 노드 확인 (속도 우선)
+          j: false                // 저널 확인 비활성화 (속도 우선)
+        }
       });
       this.isConnected = true;
       logger.info('MongoDB connected successfully');
