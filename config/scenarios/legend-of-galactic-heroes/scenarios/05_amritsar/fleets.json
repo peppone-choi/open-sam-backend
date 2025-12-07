@@ -1,0 +1,197 @@
+{
+  "description": "시나리오 5 (UC796.10) 함대 배치. 암릿처 성역 회전 시점.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "empire_reinhard",
+        "name": "라인하르트 함대",
+        "commander": "라인하르트 폰 로엔그람",
+        "commanderId": 1,
+        "size": 30000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 95,
+        "supply": 100,
+        "subCommanders": [
+          { "id": 3, "name": "키르히아이스", "role": "부사령관" },
+          { "id": 5, "name": "로이엔탈", "role": "분함대장" },
+          { "id": 6, "name": "미터마이어", "role": "분함대장" }
+        ],
+        "notes": "최상의 상태. 청야전술 성공으로 주도권 장악."
+      },
+      {
+        "id": "empire_3rd",
+        "name": "제3함대",
+        "commander": "메르카츠",
+        "commanderId": 103,
+        "size": 15000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 90,
+        "supply": 95
+      },
+      {
+        "id": "empire_reserve",
+        "name": "예비함대",
+        "size": 20000,
+        "location": "empire_rear",
+        "status": "reserve",
+        "notes": "필요시 투입 가능."
+      }
+    ]
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "alliance_1st",
+        "name": "제1함대",
+        "commander": "큐브르슬리",
+        "size": 12000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 50,
+        "supply": 10,
+        "notes": "보급 부족. 전투 지속 어려움."
+      },
+      {
+        "id": "alliance_3rd",
+        "name": "제3함대",
+        "commander": "르페브르",
+        "size": 11000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 45,
+        "supply": 5
+      },
+      {
+        "id": "alliance_5th",
+        "name": "제5함대",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 12000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 55,
+        "supply": 15,
+        "notes": "뷰코크의 통솔로 사기 유지 중."
+      },
+      {
+        "id": "alliance_7th",
+        "name": "제7함대",
+        "commander": "호우드",
+        "size": 10000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 40,
+        "supply": 5
+      },
+      {
+        "id": "alliance_8th",
+        "name": "제8함대",
+        "commander": "애플턴",
+        "size": 10000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 42,
+        "supply": 8
+      },
+      {
+        "id": "alliance_9th",
+        "name": "제9함대",
+        "commander": "알 살렘",
+        "size": 9000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 38,
+        "supply": 3
+      },
+      {
+        "id": "alliance_10th",
+        "name": "제10함대",
+        "commander": "우란프",
+        "commanderId": 214,
+        "size": 10000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 48,
+        "supply": 10
+      },
+      {
+        "id": "alliance_12th",
+        "name": "제12함대",
+        "commander": "보로딘",
+        "commanderId": 215,
+        "size": 9000,
+        "location": "amritsar",
+        "status": "combat",
+        "morale": 35,
+        "supply": 2
+      },
+      {
+        "id": "alliance_13th",
+        "name": "제13함대 (이제르론 주둔)",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 15000,
+        "location": "iserlohn",
+        "status": "garrison",
+        "morale": 85,
+        "supply": 100,
+        "notes": "이제르론에서 방어 중. 보급 안정."
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_alliance",
+        "name": "이제르론 주둔함대",
+        "fortress": "iserlohn",
+        "commander": "양 웬리",
+        "size": 15000,
+        "status": "garrison"
+      }
+    ]
+  },
+  
+  "battleSituation": {
+    "location": "amritsar",
+    "turn": 1,
+    "empireForces": {
+      "totalShips": 65000,
+      "fleets": ["empire_reinhard", "empire_3rd"],
+      "morale": 93,
+      "supply": 98,
+      "advantages": [
+        "청야전술 성공",
+        "보급 안정",
+        "사기 최고조",
+        "라인하르트의 지휘"
+      ]
+    },
+    "allianceForces": {
+      "totalShips": 83000,
+      "fleets": ["alliance_1st", "alliance_3rd", "alliance_5th", "alliance_7th", "alliance_8th", "alliance_9th", "alliance_10th", "alliance_12th"],
+      "morale": 44,
+      "supply": 7,
+      "advantages": [
+        "수적 우세"
+      ],
+      "disadvantages": [
+        "보급 고갈",
+        "사기 저하",
+        "지휘 혼란",
+        "무능한 총사령관 (로보스)"
+      ]
+    },
+    "criticalFactors": [
+      "동맹군 보급 0 시 전투력 50% 감소",
+      "사기 30 이하 시 자동 후퇴",
+      "함대 전멸 시 제독 전사 확률 70%"
+    ]
+  }
+}
+
+
+
+

@@ -1,0 +1,230 @@
+{
+  "description": "시나리오 5 (UC796.10) 이벤트 목록. 암릿처 성역 회전.",
+  
+  "events": [
+    {
+      "id": "evt_amritsar_battle_start",
+      "name": "암릿처 회전 개시",
+      "category": "battle",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "제국군 6.5만 vs 동맹군 8.3만. 그러나 동맹군은 보급 고갈 상태!",
+      "effects": [
+        { "type": "battle_start", "location": "amritsar" },
+        { "type": "message", "text": "암릿처 성역 회전 개시! 동맹군은 보급 부족으로 전투력이 저하되어 있습니다!" }
+      ]
+    },
+    {
+      "id": "evt_supply_crisis_immediate",
+      "name": "보급 위기 (즉각)",
+      "category": "military",
+      "priority": 950,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "동맹 함대들의 보급이 거의 바닥났다.",
+      "effects": [
+        { "type": "debuff", "target": "alliance_fleets_in_amritsar", "stat": "combat_power", "value": -20 },
+        { "type": "debuff", "target": "alliance_fleets_in_amritsar", "stat": "morale", "value": -30 },
+        { "type": "warning", "text": "동맹군 보급 위기! 즉시 철수하지 않으면 대패할 수 있습니다!" }
+      ]
+    },
+    {
+      "id": "evt_retreat_to_iserlohn",
+      "name": "이제르론 철수",
+      "category": "military",
+      "priority": 900,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "retreat" },
+          { "destination": "iserlohn" }
+        ]
+      },
+      "description": "동맹 함대가 이제르론으로 철수한다.",
+      "effects": [
+        { "type": "fleet_move", "fleets": "alliance_in_amritsar", "destination": "iserlohn" },
+        { "type": "morale_recovery", "value": 30, "delay": 2 },
+        { "type": "supply_recovery", "value": 100, "delay": 2 },
+        { "type": "message", "text": "이제르론으로 철수합니다. 보급 후 사기 회복됩니다." }
+      ],
+      "notes": "권장 행동. 철수 후 재정비."
+    },
+    {
+      "id": "evt_empire_pursuit",
+      "name": "제국군 추격",
+      "category": "battle",
+      "priority": 850,
+      "trigger": {
+        "type": "fleet_retreat",
+        "conditions": [
+          { "faction": "alliance" },
+          { "pursuer": "empire" }
+        ]
+      },
+      "description": "제국군이 퇴각하는 동맹군을 추격한다.",
+      "effects": [
+        { "type": "pursuit_battle" },
+        { "type": "damage", "target": "retreating_alliance", "value": 10 },
+        { "type": "message", "text": "제국군이 추격합니다! 후위 부대에 피해 발생!" }
+      ]
+    },
+    {
+      "id": "evt_sithole_lobos_retirement",
+      "name": "시트레/로보스 은퇴",
+      "category": "political",
+      "priority": 800,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "amritsar" },
+          { "alliance_defeat": true }
+        ]
+      },
+      "description": "침공작전 실패의 책임을 지고 시트레와 로보스가 물러난다.",
+      "effects": [
+        { "type": "character_retire", "targets": ["sithole", "lobos"] },
+        { "type": "position_vacant", "positions": ["operations_chief", "fleet_commander"] },
+        { "type": "message", "text": "시트레 원수와 로보스 원수가 침공작전 실패의 책임을 지고 은퇴했습니다." }
+      ],
+      "notes": "요직 공백 발생. 인재 부족 심화."
+    },
+    {
+      "id": "evt_leadership_crisis",
+      "name": "지휘부 위기",
+      "category": "political",
+      "priority": 750,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_sithole_lobos_retirement" }
+        ]
+      },
+      "description": "요직을 맡을 인재가 부족하다.",
+      "effects": [
+        { "type": "warning", "text": "요직 공백! 양 웬리는 여전히 중장이라 대장 승진에 노가다 필요합니다." }
+      ]
+    },
+    {
+      "id": "evt_noble_rebellion_warning",
+      "name": "귀족 반란 경고",
+      "category": "political",
+      "priority": 700,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "amritsar" },
+          { "empire_victory": true }
+        ]
+      },
+      "description": "암릿처 승리 후 귀족들의 불만이 고조된다.",
+      "effects": [
+        { "type": "faction_tension", "faction": "nobles", "value": 20 },
+        { "type": "warning", "text": "브라운슈바이크/리텐하임 반란 주의! 함대 해산 권장." }
+      ]
+    },
+    {
+      "id": "evt_greenhill_coup_warning",
+      "name": "그린힐 쿠데타 경고",
+      "category": "political",
+      "priority": 650,
+      "trigger": {
+        "type": "stat_threshold",
+        "conditions": [
+          { "character": "greenhill", "stat": "politicalOperation", "value": ">=", "threshold": 7000 }
+        ]
+      },
+      "description": "그린힐의 정치공작이 위험 수준에 도달!",
+      "effects": [
+        { "type": "critical_warning", "text": "그린힐 정치공작 7000 돌파! 쿠데타까지 1000 남았습니다!" }
+      ]
+    },
+    {
+      "id": "evt_alliance_annihilation",
+      "name": "동맹군 궤멸",
+      "category": "battle",
+      "priority": 600,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "amritsar" },
+          { "alliance_losses": ">=", "value": 0.7 }
+        ]
+      },
+      "description": "동맹군 주력이 궤멸당했다!",
+      "effects": [
+        { "type": "death_check", "targets": "participating_alliance_admirals", "probability": 0.7 },
+        { "type": "prestige_change", "faction": "alliance", "value": -50 },
+        { "type": "prestige_change", "faction": "empire", "value": 40 },
+        { "type": "message", "text": "동맹군 대패! 주력 함대가 궤멸당했습니다. 다수의 제독이 전사했습니다." }
+      ]
+    },
+    {
+      "id": "evt_attrition_warfare",
+      "name": "소모전 유도",
+      "category": "strategy",
+      "priority": 550,
+      "trigger": {
+        "type": "territory_state",
+        "conditions": [
+          { "territory": "iserlohn", "owner": "alliance" },
+          { "empire_attacks": ">=", "value": 2 }
+        ]
+      },
+      "description": "이제르론을 거점으로 제국군을 소모전으로 유도한다.",
+      "effects": [
+        { "type": "message", "text": "소모전 유도 성공! 이제르론에서 제국군을 갈아내세요." }
+      ],
+      "notes": "동맹 회복 전략의 핵심."
+    },
+    {
+      "id": "evt_phezzan_warning",
+      "name": "페잔 공격 경고",
+      "category": "strategy",
+      "priority": 500,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "attack" },
+          { "target": "phezzan" }
+        ]
+      },
+      "description": "페잔 공격은 이중전선을 의미한다!",
+      "effects": [
+        { "type": "warning", "text": "페잔 공격은 이중전선! 하책입니다. 암릿처 소모전이 상책입니다." }
+      ]
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_alliance_defeat",
+      "name": "동맹군 대패 체인",
+      "events": [
+        "evt_amritsar_battle_start",
+        "evt_supply_crisis_immediate",
+        "evt_alliance_annihilation",
+        "evt_sithole_lobos_retirement",
+        "evt_leadership_crisis"
+      ],
+      "description": "회전 개시 → 보급 위기 → 궤멸 → 지휘부 은퇴 → 인재 부족"
+    },
+    {
+      "id": "chain_alliance_recovery",
+      "name": "동맹군 회복 체인",
+      "events": [
+        "evt_retreat_to_iserlohn",
+        "evt_attrition_warfare"
+      ],
+      "description": "이제르론 철수 → 소모전 유도"
+    }
+  ]
+}
+
+
+
+

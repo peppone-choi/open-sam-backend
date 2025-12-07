@@ -1,3 +1,5 @@
+import * as yup from 'yup';
+import { validate, battleIdSchema, battleGeneralIdSchema, preventMongoInjection, safeParseInt } from '../middleware/validation.middleware';
 import { Router } from 'express';
 import { StartBattleService } from '../services/battle/StartBattle.service';
 import { GetBattleStateService } from '../services/battle/GetBattleState.service';
@@ -8,30 +10,13 @@ import { GetBattleHistoryService } from '../services/battle/GetBattleHistory.ser
 import { ResolveTurnService } from '../services/battle/ResolveTurn.service';
 import { StartSimulationService } from '../services/battle/StartSimulation.service';
 import { AutoBattleService } from '../services/battle/AutoBattle.service';
+import { ReplayService } from '../services/battle/Replay.service';
 import type { BattleConfig } from '../battle/types';
 import { battleRepository } from '../repositories/battle.repository';
 import { cityRepository } from '../repositories/city.repository';
 import { nationRepository } from '../repositories/nation.repository';
-import { battleLimiter } from '../middleware/rate-limit.middleware';
-import { 
-  validate,
-  validateMultiple,
-  battleStartSchema, 
-  battleDeploySchema, 
-  battleActionSchema,
-  battleReadySchema,
-  battleIdSchema,
-  battleAutoResolveSchema,
-  battleSimulateSchema,
-  battleDetailSchema,
-  battleCenterQuerySchema,
-  preventMongoInjection 
-} from '../middleware/validation.middleware';
 
 const router = Router();
-
-// Apply rate limiting to all battle routes
-router.use(battleLimiter);
 
 function toPlain<T>(doc: T | null | undefined): any | null {
   if (!doc) return null;
@@ -203,7 +188,7 @@ function toPlain<T>(doc: T | null | undefined): any | null {
  *       500:
  *         description: 서버 오류
  */
-router.post('/start', preventMongoInjection('body'), validate(battleStartSchema), async (req, res) => {
+router.post('/start', async (req, res) => {
   try {
     const result = await StartBattleService.execute(req.body, req.user);
     if (result.success) {
@@ -247,7 +232,7 @@ router.post('/start', preventMongoInjection('body'), validate(battleStartSchema)
  *       400:
  *         description: 잘못된 입력
  */
-router.post('/auto-resolve', preventMongoInjection('body'), validate(battleAutoResolveSchema), async (req, res) => {
+router.post('/auto-resolve', async (req, res) => {
   try {
     const payload = req.body as Partial<BattleConfig>;
     const attackers = payload?.attackers;
@@ -437,7 +422,7 @@ router.post('/auto-resolve', preventMongoInjection('body'), validate(battleAutoR
  *       500:
  *         description: 서버 오류
  */
-router.get('/:battleId', validate(battleIdSchema, 'params'), async (req, res) => {
+router.get('/:battleId', async (req, res) => {
   try {
     const result = await GetBattleStateService.execute({
       battleId: req.params.battleId
@@ -606,7 +591,7 @@ router.get('/:battleId', validate(battleIdSchema, 'params'), async (req, res) =>
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/deploy', preventMongoInjection('body'), validateMultiple({ params: battleIdSchema, body: battleDeploySchema }), async (req, res) => {
+router.post('/:battleId/deploy', async (req, res) => {
   try {
     const result = await DeployUnitsService.execute({
       battleId: req.params.battleId,
@@ -806,7 +791,7 @@ router.post('/:battleId/deploy', preventMongoInjection('body'), validateMultiple
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/action', preventMongoInjection('body'), validateMultiple({ params: battleIdSchema, body: battleActionSchema }), async (req, res) => {
+router.post('/:battleId/action', async (req, res) => {
   try {
     const result = await SubmitActionService.execute({
       battleId: req.params.battleId,
@@ -975,7 +960,7 @@ router.post('/:battleId/action', preventMongoInjection('body'), validateMultiple
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/ready', preventMongoInjection('body'), validateMultiple({ params: battleIdSchema, body: battleReadySchema }), async (req, res) => {
+router.post('/:battleId/ready', async (req, res) => {
   try {
     const result = await ReadyUpService.execute({
       battleId: req.params.battleId,
@@ -1072,7 +1057,7 @@ router.post('/:battleId/ready', preventMongoInjection('body'), validateMultiple(
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/resolve', validate(battleIdSchema, 'params'), async (req, res) => {
+router.post('/:battleId/resolve', async (req, res) => {
   try {
     const result = await ResolveTurnService.execute(req.params.battleId);
     
@@ -1225,7 +1210,7 @@ router.post('/:battleId/resolve', validate(battleIdSchema, 'params'), async (req
  *       500:
  *         description: 서버 오류
  */
-router.get('/:battleId/history', validate(battleIdSchema, 'params'), async (req, res) => {
+router.get('/:battleId/history', async (req, res) => {
   try {
     const result = await GetBattleHistoryService.execute({
       battleId: req.params.battleId
@@ -1282,7 +1267,7 @@ router.get('/:battleId/history', validate(battleIdSchema, 'params'), async (req,
  *       500:
  *         description: 서버 오류
  */
-router.post('/:battleId/start-simulation', validate(battleIdSchema, 'params'), async (req, res) => {
+router.post('/:battleId/start-simulation', async (req, res) => {
   try {
     const result = await StartSimulationService.execute({
       battleId: req.params.battleId
@@ -1321,7 +1306,7 @@ router.post('/:battleId/start-simulation', validate(battleIdSchema, 'params'), a
  *       200:
  *         description: 전투 상세 정보
  */
-router.post('/detail', preventMongoInjection('body'), validate(battleDetailSchema), async (req, res) => {
+router.post('/detail', async (req, res) => {
   try {
     const { GetBattleDetailService } = await import('../services/battle/GetBattleDetail.service');
     const result = await GetBattleDetailService.execute(req.body, req.user);
@@ -1440,7 +1425,7 @@ router.post('/detail', preventMongoInjection('body'), validate(battleDetailSchem
  *       200:
  *         description: 전투 목록
  */
-router.get('/center', validate(battleCenterQuerySchema, 'query'), async (req, res) => {
+router.get('/center', async (req, res) => {
   try {
     const sessionId = (req.query.session_id as string) || 'sangokushi_default';
     const statusFilter = (req.query.status as string) || 'all';
@@ -1476,31 +1461,9 @@ router.get('/center', validate(battleCenterQuerySchema, 'query'), async (req, re
     const uniqueNationIds = Array.from(nationIds).filter((id): id is number => typeof id === 'number' && !Number.isNaN(id));
     const uniqueCityIds = Array.from(cityIds).filter((id): id is number => typeof id === 'number' && !Number.isNaN(id));
 
-    const nationEntries = await Promise.all(
-      uniqueNationIds.map(async (nationId) => {
-        const doc = await nationRepository.findByNationNum(sessionId, nationId);
-        return [nationId, toPlain(doc)] as const;
-      })
-    );
-    const nationMap = new Map<number, any>();
-    nationEntries.forEach(([nationId, nation]) => {
-      if (nation) {
-        nationMap.set(nationId, nation);
-      }
-    });
-
-    const cityEntries = await Promise.all(
-      uniqueCityIds.map(async (cityId) => {
-        const city = await cityRepository.findByCityNum(sessionId, cityId);
-        return [cityId, city] as const;
-      })
-    );
-    const cityMap = new Map<number, any>();
-    cityEntries.forEach(([cityId, city]) => {
-      if (city) {
-        cityMap.set(cityId, city);
-      }
-    });
+    // 배치 쿼리로 N+1 문제 해결 (20+ 쿼리 → 2 쿼리)
+    const nationMap = await nationRepository.findByNationNums(sessionId, uniqueNationIds);
+    const cityMap = await cityRepository.findByCityNums(sessionId, uniqueCityIds);
 
     // 응답 데이터 구성
     const battleList = battles.map((battle: any) => {
@@ -1608,7 +1571,7 @@ router.post('/center', async (req, res) => {
  *       200:
  *         description: 시뮬레이션 결과
  */
-router.post('/simulate', preventMongoInjection('body'), validate(battleSimulateSchema), async (req, res) => {
+router.post('/simulate', async (req, res) => {
   try {
     const { units, year, month, seed, repeatCount = 1, terrain = 'plains', isDefenderCity = false } = req.body;
 
@@ -1735,5 +1698,73 @@ function mapUnitType(crewType: string): any {
   };
   return typeMap[crewType] || UnitType.FOOTMAN;
 }
+
+/**
+ * @swagger
+ * /api/battle/replay/{battleId}:
+ *   get:
+ *     summary: 전투 리플레이 데이터 조회
+ *     description: |
+ *       전투의 전체 리플레이 데이터를 조회합니다.
+ *       초기 배치, 맵 정보, 턴별 상세 이력을 포함합니다.
+ *       BattleLog 컬렉션에서 조회하며, 없으면 Battle 컬렉션에서 조회를 시도할 수 있습니다.
+ *     tags: [Battle]
+ *     parameters:
+ *       - in: path
+ *         name: battleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 전투 ID
+ *     responses:
+ *       200:
+ *         description: 리플레이 데이터 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 replay:
+ *                   type: object
+ *                   properties:
+ *                     battleId:
+ *                       type: string
+ *                     map:
+ *                       type: object
+ *                     initialAttackerUnits:
+ *                       type: array
+ *                     initialDefenderUnits:
+ *                       type: array
+ *                     turnHistory:
+ *                       type: array
+ *                     winner:
+ *                       type: string
+ *       404:
+ *         description: 리플레이를 찾을 수 없음
+ */
+router.get('/replay/:battleId', async (req, res) => {
+  try {
+    const battleId = req.params.battleId;
+    
+    // 1. BattleLog에서 조회
+    const replay = await ReplayService.getReplay(battleId);
+    
+    if (replay) {
+      return res.json({
+        success: true,
+        replay
+      });
+    }
+
+    // 2. BattleLog에 없으면 Battle에서 조회 후 변환 (Optional fallback)
+    // 현재는 BattleLog가 없으면 404
+    res.status(404).json({ success: false, message: '리플레이를 찾을 수 없습니다.' });
+
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 export default router;

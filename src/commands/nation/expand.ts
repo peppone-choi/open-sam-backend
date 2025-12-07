@@ -141,7 +141,15 @@ export class che_증축 extends NationCommand {
 
     general.addExperience(5 * (this.getPreReqTurn() + 1));
     general.addDedication(5 * (this.getPreReqTurn() + 1));
-    // TODO: general.increaseInheritancePoint('active_action', 1);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
 
     const josaUl = JosaUtil.pick(destCityName, '을');
     const josaYi = JosaUtil.pick(generalName, '이');
@@ -199,4 +207,4 @@ export class che_증축 extends NationCommand {
 
     return true;
   }
-}
+}

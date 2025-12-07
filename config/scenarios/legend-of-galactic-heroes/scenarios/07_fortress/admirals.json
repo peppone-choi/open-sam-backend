@@ -1,0 +1,146 @@
+{
+  "description": "시나리오 7 (UC798.4) 제독 오버라이드. 제8차 이제르론 공방전 시점.",
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 22,
+      "faction": 1,
+      "position": "제국 재상",
+      "location": "valhalla",
+      "status": "command",
+      "notes": "직접 출격하지 않음. 켐프/뮐러에게 작전 위임."
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 31,
+      "faction": 2,
+      "position": "이제르론 요새 사령관",
+      "location": "returning",
+      "status": "transit",
+      "playable": true,
+      "merit": 35000,
+      "notes": "사문회 출석 후 귀환 중. 기함 히페리온은 이제르론에 정박."
+    },
+    {
+      "id": 7,
+      "name": "나이트하르트 뮐러",
+      "rank": 8,
+      "rankName": "대장",
+      "age": 31,
+      "faction": 1,
+      "position": "가이에스부르크 함대 부사령관",
+      "location": "iserlohn_corridor",
+      "status": "combat",
+      "notes": "켐프와 함께 이제르론 공략."
+    },
+    {
+      "id": 103,
+      "name": "빌리바르트 요아힘 폰 메르카츠",
+      "rank": 8,
+      "rankName": "대장",
+      "age": 59,
+      "faction": 2,
+      "position": "이제르론 임시 지휘관",
+      "location": "iserlohn",
+      "status": "combat",
+      "notes": "양 웬리 부재 시 히페리온으로 임시 지휘.",
+      "flagship": "히페리온 (양 웬리 기함)"
+    }
+  ],
+  
+  "newCharacters": [
+    {
+      "id": 114,
+      "name": "카를 구스타프 켐프",
+      "nameEn": "Karl Gustav Kempf",
+      "faction": 1,
+      "rank": 9,
+      "rankName": "대장",
+      "age": 42,
+      "position": "가이에스부르크 함대 사령관",
+      "location": "iserlohn_corridor",
+      "status": "combat",
+      "leadership": 70,
+      "politics": 50,
+      "operations": 60,
+      "intelligence": 55,
+      "command": 72,
+      "maneuver": 65,
+      "attack": 75,
+      "defense": 68,
+      "notes": "가이에스부르크 워프 작전 지휘. 이 전투에서 전사.",
+      "description": "용맹하지만 무모한 면이 있는 제독."
+    },
+    {
+      "id": 115,
+      "name": "샤프트",
+      "nameEn": "Anton Hilmer von Schaft",
+      "faction": 1,
+      "rank": 9,
+      "rankName": "대장 (기술)",
+      "age": 55,
+      "position": "과학기술총감",
+      "location": "gaiesburg",
+      "status": "support",
+      "leadership": 40,
+      "politics": 60,
+      "operations": 95,
+      "intelligence": 70,
+      "command": 30,
+      "notes": "가이에스부르크 워프 기술 개발자.",
+      "description": "뛰어난 기술자이지만 야심가."
+    }
+  ],
+  
+  "casualties": {
+    "description": "립슈타트 전역 이후 숙청/은퇴",
+    "purged": ["리히텐라데", "브라운슈바이크", "리텐하임"],
+    "defected": ["메르카츠 → 동맹 망명", "파렌하이트 → 라인하르트 귀순"]
+  },
+  
+  "allianceSmallFleetAdmirals": [
+    {
+      "id": 12,
+      "name": "더스티 아텐보로",
+      "rank": 6,
+      "rankName": "소장",
+      "location": "iserlohn",
+      "status": "combat",
+      "fleetSize": "small",
+      "ships": 2,
+      "notes": "전함 2부대만 편성. 전멸 시 전사 확률 높음."
+    },
+    {
+      "id": 207,
+      "name": "에드윈 피셔",
+      "rank": 6,
+      "rankName": "소장",
+      "location": "iserlohn",
+      "status": "combat",
+      "fleetSize": "small",
+      "ships": 2,
+      "notes": "전함 2부대만 편성. 전멸 시 전사 확률 높음."
+    },
+    {
+      "id": 208,
+      "name": "구엔 반 휴",
+      "rank": 6,
+      "rankName": "소장",
+      "location": "iserlohn",
+      "status": "combat",
+      "fleetSize": "small",
+      "ships": 2,
+      "notes": "전함 2부대만 편성. 전멸 시 전사 확률 높음."
+    }
+  ]
+}
+
+
+
+

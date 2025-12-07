@@ -1,0 +1,244 @@
+{
+  "description": "시나리오 10 (UC799.4) 이벤트 목록. 버밀리온 성역 회전. 최종 시나리오.",
+  
+  "events": [
+    {
+      "id": "evt_vermilion_battle",
+      "name": "버밀리온 회전 개시",
+      "category": "battle",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "양 웬리 vs 라인하르트! 최후의 결전!",
+      "effects": [
+        { "type": "battle_start", "location": "vermilion" },
+        { "type": "message", "text": "버밀리온 회전 개시! 양 웬리 vs 라인하르트! 라인하르트를 쓰러뜨려라!" }
+      ]
+    },
+    {
+      "id": "evt_reinhard_vulnerability",
+      "name": "라인하르트 취약점",
+      "category": "strategy",
+      "priority": 950,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "라인하르트 직속대가 소규모 분함대로 구성되어 있다!",
+      "effects": [
+        { "type": "reveal_weakness", "target": "reinhard_direct" },
+        { "type": "message", "text": "라인하르트 직속대 = 전함 2부대 + 수송함 1부대! 핀포인트 격파 가능!" }
+      ]
+    },
+    {
+      "id": "evt_empire_budget_crisis",
+      "name": "제국 예산 위기",
+      "category": "economy",
+      "priority": 900,
+      "trigger": {
+        "type": "stat_check",
+        "conditions": [
+          { "faction": "empire" },
+          { "stat": "headquarters_budget", "value": "<=", "threshold": 5000 }
+        ]
+      },
+      "description": "통수본부 예산 부족! 보급 위기!",
+      "effects": [
+        { "type": "supply_crisis", "faction": "empire" },
+        { "type": "warning", "text": "통수본부 예산 부족! 함대 보급 끊김! 제독 전사 위험!" }
+      ]
+    },
+    {
+      "id": "evt_rockwell_capture",
+      "name": "록웰 확보",
+      "category": "political",
+      "priority": 850,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "recruit" },
+          { "target": "rockwell" }
+        ]
+      },
+      "description": "록웰을 참모로 확보! 쿠데타 준비!",
+      "effects": [
+        { "type": "character_recruit", "character": "rockwell" },
+        { "type": "enable_coup_path" },
+        { "type": "message", "text": "록웰 확보! 정치공작 8000 도달 시 쿠데타 가능!" }
+      ]
+    },
+    {
+      "id": "evt_rockwell_lost",
+      "name": "록웰 확보 실패",
+      "category": "political",
+      "priority": 800,
+      "trigger": {
+        "type": "game_event",
+        "conditions": [
+          { "event": "rockwell_becomes_vice_chief" }
+        ]
+      },
+      "description": "록웰이 통합작전본부차장에 임명되어 확보 불가!",
+      "effects": [
+        { "type": "coup_path_blocked" },
+        { "type": "critical_warning", "text": "록웰 확보 실패! 쿠데타 불가! 라인하르트 척살만이 남은 길!" }
+      ]
+    },
+    {
+      "id": "evt_coup_execution",
+      "name": "쿠데타 실행",
+      "category": "political",
+      "priority": 750,
+      "trigger": {
+        "type": "stat_threshold",
+        "conditions": [
+          { "character": "rockwell", "stat": "politicalOperation", "value": ">=", "threshold": 8000 },
+          { "all_fleets_disbanded": true }
+        ]
+      },
+      "description": "쿠데타 실행! 무혈 점령!",
+      "effects": [
+        { "type": "coup_success" },
+        { "type": "government_control" },
+        { "type": "message", "text": "쿠데타 성공! 평의회 제거! 직접 통제 가능!" }
+      ],
+      "notes": "모든 함대 해산 후 쿠데타 → 무혈 점령"
+    },
+    {
+      "id": "evt_reinhard_defeat",
+      "name": "라인하르트 패배",
+      "category": "result",
+      "priority": 700,
+      "trigger": {
+        "type": "fleet_destroyed",
+        "conditions": [
+          { "fleet": "reinhard_direct" }
+        ]
+      },
+      "description": "라인하르트 함대가 전멸했다!",
+      "effects": [
+        { "type": "death_check", "target": "reinhard", "probability": 0.7 },
+        { "type": "message", "text": "라인하르트 함대 전멸! 전사 확률 체크!" }
+      ]
+    },
+    {
+      "id": "evt_reinhard_death",
+      "name": "라인하르트 전사",
+      "category": "result",
+      "priority": 650,
+      "trigger": {
+        "type": "character_death",
+        "conditions": [
+          { "character": "reinhard" }
+        ]
+      },
+      "description": "라인하르트 폰 로엔그람 전사! 동맹 승리!",
+      "effects": [
+        { "type": "scenario_victory", "faction": "alliance" },
+        { "type": "message", "text": "라인하르트 전사! 최고권력자 사망! 자유행성동맹의 승리!" }
+      ],
+      "notes": "시나리오 종결 트리거. 고증에서는 일어나지 않았지만 게임에서는 가능."
+    },
+    {
+      "id": "evt_reinhard_retreat",
+      "name": "라인하르트 후퇴",
+      "category": "military",
+      "priority": 600,
+      "trigger": {
+        "type": "fleet_damage",
+        "conditions": [
+          { "fleet": "reinhard_direct" },
+          { "damage": ">=", "value": 50 }
+        ]
+      },
+      "description": "전황 불리! 라인하르트가 후퇴를 선택!",
+      "effects": [
+        { "type": "fleet_retreat", "fleet": "reinhard_direct" },
+        { "type": "message", "text": "라인하르트 후퇴 시도! 추격하여 격파하라!" }
+      ],
+      "notes": "빠르게 접근하여 타격해야 함!"
+    },
+    {
+      "id": "evt_small_fleet_death",
+      "name": "분함대 전멸",
+      "category": "battle",
+      "priority": 550,
+      "trigger": {
+        "type": "fleet_destroyed",
+        "conditions": [
+          { "fleet_type": "small_fleet" },
+          { "faction": "alliance" }
+        ]
+      },
+      "description": "분함대가 전멸! 제독 전사!",
+      "effects": [
+        { "type": "death_check", "probability": 0.9 },
+        { "type": "message", "text": "분함대 전멸! 제독 전사 확률 90%!" }
+      ],
+      "notes": "칼센/피셔 등 분함대급 주의"
+    },
+    {
+      "id": "evt_capital_siege",
+      "name": "수도 포위",
+      "category": "military",
+      "priority": 500,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "faction": "empire" },
+          { "location": "heinessen_orbit" }
+        ]
+      },
+      "description": "제국군이 하이네센을 포위했다!",
+      "effects": [
+        { "type": "siege_start", "target": "heinessen" },
+        { "type": "message", "text": "하이네센 포위! 시간이 없습니다!" }
+      ]
+    },
+    {
+      "id": "evt_alliance_victory_path",
+      "name": "동맹 역전 경로",
+      "category": "strategy",
+      "priority": 450,
+      "trigger": {
+        "type": "scenario_start",
+        "conditions": [
+          { "player_faction": "alliance" }
+        ]
+      },
+      "description": "동맹 역전 방법 안내",
+      "effects": [
+        { "type": "strategy_guide", "text": "1) 버밀리온에서 라인하르트 직접 공격\n2) 라인하르트 전사 시 동맹 승리\n3) 또는 록웰 확보 → 쿠데타 → 직접 통제 → 페잔/이제르론 탈환 → 제국 격퇴" }
+      ]
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_reinhard_kill",
+      "name": "라인하르트 척살 체인",
+      "events": [
+        "evt_vermilion_battle",
+        "evt_reinhard_vulnerability",
+        "evt_reinhard_defeat",
+        "evt_reinhard_death"
+      ],
+      "description": "회전 개시 → 취약점 파악 → 함대 격파 → 전사"
+    },
+    {
+      "id": "chain_coup_recovery",
+      "name": "쿠데타 역전 체인",
+      "events": [
+        "evt_rockwell_capture",
+        "evt_coup_execution",
+        "evt_alliance_victory_path"
+      ],
+      "description": "록웰 확보 → 쿠데타 → 직접 통제 → 역전"
+    }
+  ]
+}
+
+
+
+

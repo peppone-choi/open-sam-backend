@@ -1,0 +1,167 @@
+{
+  "id": "logh-06-lippstadt",
+  "name": "황금나무 넘어짐",
+  "nameJa": "黄金樹は倒れた",
+  "nameEn": "The Golden Tree Falls",
+  "description": "우주력 797년 4월, 립슈타트 전역. 제국과 동맹에서 동시에 내전이 발발한다. 4파전의 혼돈 속에서 살아남아라!",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 797,
+    "startMonth": 4,
+    "imperialYear": 488,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire_lohengramm": 28,
+    "empire_lippstadt": 6,
+    "phezzan": 1,
+    "alliance_government": 20,
+    "alliance_coup": 3
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [2, 4, 5, 6, 7, 8, 14, 15, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": true,
+    "locations": ["gaiesburg", "heinessen"],
+    "description": "제국에서 귀족연합 반란, 동맹에서 구국군사회의 쿠데타 발생"
+  },
+  
+  "difficulty": {
+    "empire_lohengramm": 3,
+    "empire_lippstadt": 5,
+    "alliance_government": 4,
+    "alliance_coup": 5,
+    "description": "4파전! 가장 복잡한 시나리오."
+  },
+  
+  "factions": [
+    {
+      "id": "empire_lohengramm",
+      "name": "로엔그람 원수부",
+      "leader": "라인하르트",
+      "capital": "오딘",
+      "color": "#8B0000",
+      "description": "라인하르트 폰 로엔그람을 중심으로 한 제국 정통 세력"
+    },
+    {
+      "id": "empire_lippstadt",
+      "name": "립슈타트 귀족연합",
+      "leader": "브라운슈바이크",
+      "capital": "가이에스부르크",
+      "color": "#FF4500",
+      "description": "문벌귀족들의 반 라인하르트 연합. 3개 요새와 6개 성계 장악."
+    },
+    {
+      "id": "alliance_government",
+      "name": "자유행성동맹 정부",
+      "leader": "양 웬리",
+      "capital": "하이네센",
+      "color": "#000080",
+      "description": "합법적인 동맹 정부와 진압군"
+    },
+    {
+      "id": "alliance_coup",
+      "name": "구국군사회의",
+      "leader": "드와이트 그린힐",
+      "capital": "하이네센 (점거)",
+      "color": "#4169E1",
+      "description": "부패한 민주주의 타도를 외치는 군사 쿠데타 세력"
+    }
+  ],
+  
+  "playableCharacters": {
+    "empire_lohengramm": {
+      "recommended": ["reinhard", "kircheis"],
+      "available": "소장급 이상 (개노답 3대장 제외, 은퇴)",
+      "notes": "귀족연합 제압 후 동맹 침공. 발할라 방어 주의."
+    },
+    "empire_lippstadt": {
+      "recommended": ["merkatz", "fahrenheit"],
+      "available": "소장급 이상",
+      "notes": "브라운슈바이크는 능력 최악. 메르카츠/파렌하이트 권장."
+    },
+    "alliance_government": {
+      "recommended": ["yang_wenli"],
+      "available": "소장급 이상",
+      "notes": "쿠데타 진압 후 제국 내전 개입 기회."
+    },
+    "alliance_coup": {
+      "recommended": ["greenhill"],
+      "available": "소장급 이상",
+      "notes": "바라트 장악 → 이제르론의 양 웬리 제거 필요. 최고 난이도."
+    }
+  },
+  
+  "specialRules": {
+    "fourWayWar": {
+      "description": "4파전 발생. 각 세력이 독립적으로 행동.",
+      "civilWars": ["empire_civil_war", "alliance_coup"]
+    },
+    "civilWarVictory": {
+      "empire": "반란 성계 전부 제압 OR 반란군 맹주(브라운슈바이크) 함대 전멸",
+      "alliance": "쿠데타군 맹주(그린힐) 함대 전멸"
+    },
+    "fleetSeizure": {
+      "description": "제국 11~17함대가 귀족연합에 점거됨",
+      "restriction": "쿠데타 상황이므로 인사/특수 탭 사용 불가"
+    },
+    "capitalWarning": {
+      "description": "발할라/바라트 성계의 조병창 파괴 시 함선/미사일/함재기 재고 전부 소멸",
+      "note": "절대 수도 건드리지 말 것!"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire_lohengramm": [
+      "귀족연합 제압 (성계 전부 탈환 또는 브라운슈바이크 함대 전멸)",
+      "이후 동맹 정복"
+    ],
+    "empire_lippstadt": [
+      "라인하르트 함대 전멸",
+      "제국 장악"
+    ],
+    "alliance_government": [
+      "쿠데타 진압 (그린힐 함대 전멸)",
+      "이후 제국 정복"
+    ],
+    "alliance_coup": [
+      "바라트 성계 완전 장악",
+      "이제르론의 양 웬리 제거"
+    ]
+  },
+  
+  "tips": {
+    "empire_lohengramm": [
+      "수도 발할라 방어 최우선! 조병창 파괴 시 재고 전부 소멸.",
+      "브라운슈바이크 성계 점령 → 귀족연합 맹주 유인 → 격파가 정석.",
+      "가이에스부르크 요새 정면 공략은 하책. 맹주 함대 핀포인트 제거.",
+      "동맹 내전 틈타 군사공작 4000 달성 → 이제르론 점거 기회."
+    ],
+    "empire_lippstadt": [
+      "라인하르트 다굴 필수. 단독 교전은 패배.",
+      "가이에스부르크 요새 주변에서 싸워 요새포 지원 받기.",
+      "브라운슈바이크로 하면 최악 난이도. 메르카츠/파렌하이트 권장."
+    ],
+    "alliance_government": [
+      "쿠데타 진압이 급선무. 그린힐 함대만 핀포인트 제거.",
+      "하이네센 공격 시 아르테미스의 목걸이 주의. 조병창 파괴 피할 것.",
+      "제국 내전 시 셴코프로 이제르론 방어 → 제국령 침투 기회."
+    ],
+    "alliance_coup": [
+      "바라트 장악 후 이제르론의 양 웬리 제거 필요.",
+      "이제르론 정면 공략은 불가. 제국 내전 종료 전에 해결해야 함.",
+      "시간 끌면 제국군 몰려옴. 최고 난이도 시나리오."
+    ]
+  }
+}
+
+
+
+

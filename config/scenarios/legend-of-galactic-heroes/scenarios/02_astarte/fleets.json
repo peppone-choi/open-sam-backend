@@ -1,0 +1,196 @@
+{
+  "description": "시나리오 2 (UC796.2) 함대 배치. 아스타테 성역 회전 시점.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "empire_reinhard",
+        "name": "라인하르트 함대",
+        "commander": "라인하르트 폰 로엔그람",
+        "commanderId": 1,
+        "size": 20000,
+        "location": "astarte",
+        "status": "combat",
+        "subCommanders": [
+          { "id": 3, "name": "키르히아이스", "role": "부사령관" },
+          { "id": 5, "name": "로이엔탈", "role": "분함대장" },
+          { "id": 6, "name": "미터마이어", "role": "분함대장" }
+        ],
+        "composition": {
+          "battleship": 6000,
+          "cruiser": 7000,
+          "destroyer": 5000,
+          "carrier": 1500,
+          "transport": 500
+        },
+        "notes": "라인하르트 직속 함대. 각개격파 전술 수행 가능."
+      },
+      {
+        "id": "empire_1st",
+        "name": "제1함대",
+        "commander": "뮈켄베르거",
+        "commanderId": 101,
+        "size": 15000,
+        "location": "valhalla",
+        "status": "reserve"
+      },
+      {
+        "id": "empire_3rd",
+        "name": "제3함대",
+        "commander": "메르카츠",
+        "commanderId": 103,
+        "size": 13000,
+        "location": "empire_rear",
+        "status": "reserve"
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_garrison",
+        "name": "이제르론 주둔함대",
+        "fortress": "iserlohn",
+        "commander": "제크트",
+        "size": 10000,
+        "status": "garrison",
+        "staff": [
+          { "id": 4, "name": "오베르슈타인", "role": "참모" }
+        ]
+      }
+    ]
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "alliance_2nd",
+        "name": "제2함대",
+        "commander": "파에타",
+        "commanderId": 204,
+        "size": 13000,
+        "location": "astarte_sector_a",
+        "status": "combat",
+        "staff": [
+          { "id": 2, "name": "양 웬리", "role": "참모", "rank": "준장" }
+        ],
+        "composition": {
+          "battleship": 3800,
+          "cruiser": 4500,
+          "destroyer": 3200,
+          "carrier": 1200,
+          "transport": 300
+        },
+        "notes": "양 웬리 참모 보유. 레그니처 조우전 피해 없음."
+      },
+      {
+        "id": "alliance_4th",
+        "name": "제4함대",
+        "commander": "파스토레",
+        "commanderId": 205,
+        "size": 12000,
+        "location": "astarte_sector_b",
+        "status": "combat",
+        "composition": {
+          "battleship": 3500,
+          "cruiser": 4200,
+          "destroyer": 3000,
+          "carrier": 1000,
+          "transport": 300
+        },
+        "tacticalRole": "defense",
+        "notes": "방어진 구축 중. 제국군 공격 시 버티기 역할."
+      },
+      {
+        "id": "alliance_6th",
+        "name": "제6함대",
+        "commander": "무어",
+        "commanderId": 206,
+        "size": 11000,
+        "location": "astarte_sector_c",
+        "status": "combat",
+        "composition": {
+          "battleship": 3200,
+          "cruiser": 4000,
+          "destroyer": 2800,
+          "carrier": 700,
+          "transport": 300
+        },
+        "notes": "협공 참여 가능."
+      },
+      {
+        "id": "alliance_5th",
+        "name": "제5함대",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 13000,
+        "location": "alliance_rear",
+        "status": "reserve"
+      },
+      {
+        "id": "alliance_1st",
+        "name": "제1함대",
+        "commander": "큐브르슬리",
+        "size": 14000,
+        "location": "heinessen",
+        "status": "reserve"
+      }
+    ]
+  },
+  
+  "battleSituation": {
+    "location": "astarte",
+    "turn": 1,
+    "formation": {
+      "description": "동맹군 3개 함대가 아스타테 성역 내 분산 배치",
+      "sectors": {
+        "a": { "fleet": "alliance_2nd", "position": "east" },
+        "b": { "fleet": "alliance_4th", "position": "center" },
+        "c": { "fleet": "alliance_6th", "position": "west" }
+      },
+      "empireApproach": "north",
+      "notes": "원작과 달리 통신 양호, 서로 위치 파악 가능"
+    },
+    "empireForces": {
+      "totalShips": 20000,
+      "fleets": ["empire_reinhard"],
+      "morale": 90,
+      "supply": 85,
+      "commander": "라인하르트",
+      "advantages": [
+        "라인하르트의 천재적 지휘",
+        "집중된 병력",
+        "각개격파 전술 가능"
+      ]
+    },
+    "allianceForces": {
+      "totalShips": 36000,
+      "fleets": ["alliance_2nd", "alliance_4th", "alliance_6th"],
+      "morale": 80,
+      "supply": 80,
+      "advantages": [
+        "수적 우세 (2배 가까운 병력)",
+        "양 웬리의 전술 조언",
+        "협공 가능한 배치"
+      ],
+      "disadvantages": [
+        "병력 분산",
+        "무능한 지휘관들 (파스토레, 무어)"
+      ]
+    },
+    "tacticalOptions": {
+      "empire": [
+        { "name": "각개격파", "description": "제4함대 → 제6함대 → 제2함대 순으로 격파" },
+        { "name": "중앙돌파", "description": "제4함대 집중 공격 후 후방 교란" },
+        { "name": "퇴각", "description": "전력 열세 인정, 재정비 후 재침공" }
+      ],
+      "alliance": [
+        { "name": "협공", "description": "제4함대 방어 + 제2,6함대 측면 공격" },
+        { "name": "집결", "description": "3개 함대 한 곳에 집결 후 결전" },
+        { "name": "지연전", "description": "제국군 소모 유도 후 역습" }
+      ]
+    }
+  }
+}
+
+
+
+

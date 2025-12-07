@@ -181,6 +181,40 @@ export class ActionLogger {
   }
 
   /**
+   * 전투 결과 템플릿 로그
+   * PHP ActionLogger.pushBattleResultTemplate() 이식
+   * 전투 결과를 정형화된 형식으로 로그에 기록
+   * 
+   * @param me - 내 전투 유닛
+   * @param oppose - 상대 전투 유닛
+   */
+  pushBattleResultTemplate(me: any, oppose: any): void {
+    // 도시인 경우 전투 결과 로그 기록 안 함
+    if (!me || me.constructor?.name === 'WarUnitCity') {
+      return;
+    }
+
+    try {
+      const myCrewType = me.getCrewTypeShortName?.() || me.getCrewTypeName?.() || '병사';
+      const myName = me.getName?.() || '나';
+      const myRemainCrew = me.getHP?.() || 0;
+      const myKilledCrew = -(me.getDeadCurrentBattle?.() || me.getDead?.() || 0);
+
+      const opposeCrewType = oppose?.getCrewTypeShortName?.() || oppose?.getCrewTypeName?.() || '적병';
+      const opposeName = oppose?.getName?.() || '상대';
+      const opposeRemainCrew = oppose?.getHP?.() || 0;
+      const opposeKilledCrew = -(oppose?.getDeadCurrentBattle?.() || oppose?.getDead?.() || 0);
+
+      // 전투 결과 텍스트 생성
+      const resultText = `【전투결과】 ${myName}(${myCrewType}) ${myRemainCrew}(${myKilledCrew >= 0 ? '+' : ''}${myKilledCrew}) vs ${opposeName}(${opposeCrewType}) ${opposeRemainCrew}(${opposeKilledCrew >= 0 ? '+' : ''}${opposeKilledCrew})`;
+
+      this.pushGeneralBattleResultLog(resultText, LogFormatType.PLAIN);
+    } catch (error) {
+      logger.error('[ActionLogger] pushBattleResultTemplate error:', error);
+    }
+  }
+
+  /**
    * 텍스트 포맷팅
    * PHP의 formatText() 메서드를 참고
    */

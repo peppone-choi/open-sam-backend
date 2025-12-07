@@ -1,0 +1,107 @@
+{
+  "id": "logh-08-ragnarok",
+  "name": "걀라르호른을 울렸다",
+  "nameJa": "ギャラルホルンを吹き鳴らした",
+  "nameEn": "The Gjallarhorn Sounds",
+  "description": "우주력 798년 11월, 제1차 라그나뢰크 작전. 제국군이 페잔을 정복하고 동맹 본토로 침공한다!",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 798,
+    "startMonth": 11,
+    "imperialYear": 489,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 33,
+    "alliance": 24,
+    "phezzan": "about_to_fall"
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": false,
+    "location": "phezzan",
+    "description": "페잔 침공 직전 상황"
+  },
+  
+  "difficulty": {
+    "empire": 2,
+    "alliance": 4,
+    "description": "제국 유리. 페잔 루트 개방, 이제르론 약화."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard", "mittemeyer"],
+      "available": "소장급 이상",
+      "notes": "페잔 정복 후 동맹 본토 침공. 첩보 불가능해짐 주의."
+    },
+    "alliance": {
+      "recommended": ["yang_wenli"],
+      "available": "소장급 이상",
+      "notes": "이제르론 포기 또는 방어 선택. 페잔 루트 방어 급선무."
+    }
+  },
+  
+  "specialRules": {
+    "phezzanConquest": {
+      "description": "이벤트로 페잔 정복 예정",
+      "effects": [
+        "페잔 멸망 → 첩보 불가",
+        "제국이 동맹에 대한 빚 소멸",
+        "동맹이 제국에 대한 빚 2배 증가"
+      ]
+    },
+    "debtCrisis": {
+      "description": "페잔 멸망 시까지 페잔 차관 최대 활용 권장",
+      "note": "어차피 곧 망할 페잔이니 빚을 갚을 필요 없음"
+    },
+    "iserlohnWeakened": {
+      "description": "이제르론 요새 방어력 30,000으로 하락",
+      "previousDefense": 60000,
+      "currentDefense": 30000
+    },
+    "twoFronts": {
+      "description": "이제르론 + 페잔 양면 방어 필요",
+      "challenge": "병력 분산 강요"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "페잔 정복",
+      "란테마리오 성역 돌파",
+      "동맹 수도 바라트 성계 점령"
+    ],
+    "alliance": [
+      "페잔 방면 방어선 구축",
+      "제국군 격퇴"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "이제르론 공략은 불필요. 페잔 직행이 정석.",
+      "페잔 정복 후 첩보 불가능해짐. 복병 주의.",
+      "보급선이 길어지므로 군사예산 관리 필수.",
+      "양 웬리 함대 추적 어려움. 위치 파악에 주의."
+    ],
+    "alliance": [
+      "이제르론 포기 고려. 양 웬리 이벤트로 자동 포기 안됨.",
+      "란테마리오에 병력 집결 급선무.",
+      "페잔 멸망 전 차관 최대 활용.",
+      "페잔 방면 잠시드/란테마리오 방어선 구축."
+    ]
+  }
+}
+
+
+
+

@@ -1,0 +1,135 @@
+{
+  "description": "시나리오 8 (UC798.11) 함대 배치. 제1차 라그나뢰크 작전.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "reinhard_main",
+        "name": "라인하르트 본대",
+        "commander": "라인하르트",
+        "commanderId": 1,
+        "size": 40000,
+        "location": "empire_staging",
+        "status": "mobilizing",
+        "notes": "전략 총지휘. 페잔 방면 총대장."
+      },
+      {
+        "id": "mittemeyer_fleet",
+        "name": "미터마이어 선봉대",
+        "commander": "미터마이어",
+        "commanderId": 6,
+        "size": 25000,
+        "location": "phezzan_corridor",
+        "status": "advancing",
+        "notes": "질풍 볼프. 페잔 선제 점령."
+      },
+      {
+        "id": "reuenthal_fleet",
+        "name": "로이엔탈 견제대",
+        "commander": "로이엔탈",
+        "commanderId": 5,
+        "size": 30000,
+        "location": "amritsar",
+        "status": "combat",
+        "notes": "제9차 이제르론 공방전. 견제 역할."
+      },
+      {
+        "id": "muller_fleet",
+        "name": "뮐러 함대",
+        "commander": "뮐러",
+        "commanderId": 7,
+        "size": 18000,
+        "location": "empire_staging",
+        "status": "reserve"
+      },
+      {
+        "id": "wahlen_fleet",
+        "name": "발렌 함대",
+        "commander": "발렌",
+        "size": 15000,
+        "location": "empire_staging",
+        "status": "reserve"
+      },
+      {
+        "id": "bittenfeld_fleet",
+        "name": "비텐펠트 함대",
+        "commander": "비텐펠트",
+        "size": 18000,
+        "location": "empire_staging",
+        "status": "reserve",
+        "notes": "흑색창기병 함대"
+      }
+    ]
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "yang_fleet",
+        "name": "양 웬리 함대",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 20000,
+        "location": "iserlohn",
+        "status": "garrison",
+        "notes": "이제르론 포기 여부 선택."
+      },
+      {
+        "id": "bucock_fleet",
+        "name": "뷰코크 함대",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 18000,
+        "location": "heinessen",
+        "status": "reserve",
+        "notes": "우주함대 사령장관."
+      },
+      {
+        "id": "homeland_defense",
+        "name": "본토 방위대",
+        "size": 30000,
+        "location": "heinessen",
+        "status": "garrison"
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_garrison",
+        "name": "이제르론 주둔함대",
+        "fortress": "iserlohn",
+        "commander": "양 웬리",
+        "size": 20000,
+        "defense": 30000,
+        "status": "garrison",
+        "notes": "방어력 하락 상태 (3만)"
+      }
+    ]
+  },
+  
+  "phezzan": {
+    "status": "neutral_about_to_fall",
+    "defense": {
+      "description": "실질적 방어 전력 없음",
+      "fleets": 0,
+      "note": "제국군 접근 시 무혈 점령 예상"
+    }
+  },
+  
+  "strategicSituation": {
+    "phezzanCorridor": {
+      "description": "페잔 회랑 - 새로운 침공 루트",
+      "status": "open",
+      "imperialAdvance": "mittemeyer_fleet"
+    },
+    "iserlohnCorridor": {
+      "description": "이제르론 회랑 - 견제 작전",
+      "status": "contested",
+      "imperialForce": "reuenthal_fleet",
+      "allianceDefense": "yang_fleet"
+    }
+  }
+}
+
+
+
+

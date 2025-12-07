@@ -3,8 +3,33 @@ import { autoExtractToken } from '../../middleware/auth';
 import { Gin7FrontendService, Gin7TelemetryPayload } from '../../services/logh/Gin7Frontend.service';
 import { Gin7EnergyProfile } from '../../models/logh/Gin7TacticalPreference.model';
 import { gin7CommandCatalog } from '../../config/gin7/catalog';
+import { TimeEngine } from '../../core/gin7/TimeEngine';
 
 const router = Router();
+
+/**
+ * GET /api/gin7/status
+ * Returns server status and current game time for all active sessions
+ * (No authentication required - public endpoint)
+ */
+router.get('/status', async (_req, res) => {
+  try {
+    const engine = TimeEngine.getInstance();
+    const status = engine.getStatus();
+    
+    res.json({
+      success: true,
+      schemaVersion: '2025-12-02.gin7.status.1',
+      data: {
+        serverTime: new Date().toISOString(),
+        ...status,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 router.use(autoExtractToken);
 
 router.get('/session', async (req, res) => {

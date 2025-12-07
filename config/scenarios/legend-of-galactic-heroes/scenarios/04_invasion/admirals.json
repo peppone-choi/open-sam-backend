@@ -1,0 +1,177 @@
+{
+  "description": "시나리오 4 (UC796.8) 제독 오버라이드. 제국령 침공작전 시점.",
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 20,
+      "faction": 1,
+      "position": "우주함대 부사령장관",
+      "location": "valhalla",
+      "status": "command",
+      "merit": 20000,
+      "notes": "이제르론 상실. 청야전술로 동맹군 유인 계획."
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 7,
+      "rankName": "중장",
+      "age": 29,
+      "faction": 2,
+      "position": "이제르론 주둔함대 사령관",
+      "location": "iserlohn",
+      "status": "garrison",
+      "playable": true,
+      "merit": 15000,
+      "notes": "이제르론 요새 사령관. 침공작전에 반대하지만..."
+    },
+    {
+      "id": 3,
+      "name": "지크프리트 키르히아이스",
+      "rank": 8,
+      "rankName": "대장",
+      "age": 20,
+      "faction": 1,
+      "position": "라인하르트 함대 부사령관",
+      "location": "valhalla",
+      "status": "reserve"
+    },
+    {
+      "id": 10,
+      "name": "알렉산드르 뷰코크",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 65,
+      "faction": 2,
+      "position": "제5함대 사령관",
+      "location": "heinessen",
+      "status": "reserve",
+      "notes": "침공작전 참가 예정."
+    },
+    {
+      "id": 11,
+      "name": "발터 폰 쉔코프",
+      "rank": 6,
+      "rankName": "소장",
+      "age": 35,
+      "faction": 2,
+      "position": "이제르론 육전대장",
+      "location": "iserlohn",
+      "status": "garrison",
+      "specialAbility": "occupy",
+      "militaryOperation": 4000
+    }
+  ],
+  
+  "newCharacters": [
+    {
+      "id": 110,
+      "name": "오프레서",
+      "nameEn": "Oppressor",
+      "faction": 1,
+      "rank": 10,
+      "rankName": "상급대장",
+      "position": "장갑척탄병 사령관",
+      "location": "valhalla",
+      "status": "reserve",
+      "militaryOperation": 2500,
+      "notes": "점거 가능 후보. 군사공작 4000 미달.",
+      "description": "장갑척탄병 사령관. 육전 전문."
+    },
+    {
+      "id": 111,
+      "name": "크라프",
+      "nameEn": "Kraft",
+      "faction": 1,
+      "rank": 7,
+      "rankName": "중장",
+      "position": "특수작전 담당",
+      "location": "empire_rear",
+      "status": "reserve",
+      "militaryOperation": 3200,
+      "notes": "점거 가능 후보. 군사공작 4000 미달.",
+      "description": "특수작전 전문가."
+    },
+    {
+      "id": 112,
+      "name": "그래저",
+      "nameEn": "Glazer",
+      "faction": 1,
+      "rank": 6,
+      "rankName": "소장",
+      "position": "육전 지휘관",
+      "location": "empire_rear",
+      "status": "reserve",
+      "militaryOperation": 2800,
+      "notes": "점거 가능 후보. 군사공작 4000 미달."
+    },
+    {
+      "id": 113,
+      "name": "린저",
+      "nameEn": "Linzer",
+      "faction": 1,
+      "rank": 6,
+      "rankName": "소장",
+      "position": "육전 지휘관",
+      "location": "empire_rear",
+      "status": "reserve",
+      "militaryOperation": 2600,
+      "notes": "점거 가능 후보. 군사공작 4000 미달."
+    },
+    {
+      "id": 201,
+      "name": "드와이트 그린힐",
+      "faction": 2,
+      "rank": 9,
+      "rankName": "대장",
+      "position": "통합작전본부차장",
+      "location": "heinessen",
+      "status": "command",
+      "politicalOperation": 5000,
+      "notes": "정치공작 8000 도달 시 쿠데타! 함대 보유 시 수도에서 반란.",
+      "description": "프레데리카의 아버지. 후에 구국군사회의 쿠데타 주동."
+    },
+    {
+      "id": 212,
+      "name": "앤드류 포크",
+      "nameEn": "Andrew Fork",
+      "faction": 2,
+      "rank": 5,
+      "rankName": "준장",
+      "position": "통합작전본부 작전참모",
+      "location": "heinessen",
+      "status": "command",
+      "leadership": 45,
+      "politics": 70,
+      "operations": 55,
+      "intelligence": 60,
+      "command": 40,
+      "maneuver": 35,
+      "attack": 38,
+      "defense": 42,
+      "notes": "제국령 침공작전의 주창자. 무능하지만 정치력으로 작전 통과.",
+      "description": "야심만 높고 능력 없는 참모. 침공작전의 원흉."
+    },
+    {
+      "id": 213,
+      "name": "록웰",
+      "nameEn": "Rockwell",
+      "faction": 2,
+      "rank": 9,
+      "rankName": "대장",
+      "position": "후방근무본부장",
+      "location": "heinessen",
+      "status": "command",
+      "politicalOperation": 3000,
+      "notes": "정치공작 8000 도달 시 쿠데타 가능. 방위사령관 임명으로 정치공작 감소.",
+      "description": "후방근무본부장. 그린힐과 함께 쿠데타 가담 가능성."
+    }
+  ]
+}
+
+
+
+

@@ -4,6 +4,7 @@
  */
 
 import mongoose, { Schema, Document } from 'mongoose';
+import type { NobilityRank, CharacterNobility, LegacyInheritance } from '../../types/gin7/nobility.types';
 
 export interface ILoghCommander extends Document {
   session_id: string;
@@ -75,6 +76,9 @@ export interface ILoghCommander extends Document {
     z: number;
   };
 
+  // Character type (군인/정치가 구분)
+  characterType: 'military' | 'politician';
+
   // Game state
   isActive: boolean;
   turnDone: boolean;
@@ -91,6 +95,12 @@ export interface ILoghCommander extends Document {
 
   // Custom data storage
   customData: Record<string, any>;
+
+  // Nobility system (제국 전용)
+  nobility: CharacterNobility | null;
+
+  // Legacy & Succession (유산 상속)
+  legacy: LegacyInheritance | null;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -168,6 +178,9 @@ const LoghCommanderSchema = new Schema<ILoghCommander>(
       z: { type: Number, default: 0 },
     },
 
+    // Character type (군인/정치가 구분)
+    characterType: { type: String, enum: ['military', 'politician'], default: 'military' },
+
     isActive: { type: Boolean, default: true },
     turnDone: { type: Boolean, default: false },
     status: { type: String, enum: ['active', 'imprisoned', 'defected', 'executed'], default: 'active' },
@@ -181,6 +194,30 @@ const LoghCommanderSchema = new Schema<ILoghCommander>(
     }],
 
     customData: { type: Schema.Types.Mixed, default: {} },
+
+    // Nobility system (제국 전용)
+    nobility: {
+      rank: { type: String, enum: ['knight', 'baron', 'viscount', 'count', 'marquis', 'duke'], default: null },
+      fiefs: [{
+        planetId: String,
+        planetName: String,
+        grantedAt: Date,
+        annualIncome: { type: Number, default: 0 },
+      }],
+      ennobbledAt: Date,
+      lastPromotedAt: Date,
+      totalTaxIncome: { type: Number, default: 0 },
+    },
+
+    // Legacy & Succession (유산 상속)
+    legacy: {
+      previousCharacterId: String,
+      previousCharacterName: String,
+      inheritedWealth: { type: Number, default: 0 },
+      inheritedFame: { type: Number, default: 0 },
+      karma: { type: Number, default: 0 },
+      inheritedAt: Date,
+    },
   },
   {
     timestamps: true,

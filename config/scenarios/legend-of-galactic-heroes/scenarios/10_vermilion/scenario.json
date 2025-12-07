@@ -1,0 +1,105 @@
+{
+  "id": "logh-10-vermilion",
+  "name": "황제 만세!",
+  "nameJa": "皇帝万歳!",
+  "nameEn": "Long Live the Emperor!",
+  "description": "우주력 799년 4월, 버밀리온 성역 회전. 양 웬리가 라인하르트에게 도전하는 최후의 회전!",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 799,
+    "startMonth": 4,
+    "imperialYear": 490,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 17,
+    "allianceOccupied": 41,
+    "alliance": 0
+  },
+  
+  "availableFleets": {
+    "empire": [17, 18],
+    "alliance": [3, 4, 6, 7, 8, 9, 10, 11, 12, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": true,
+    "locations": ["vermilion", "tasiri", "erysera", "rio_verde", "lyukas"],
+    "description": "5개 성계에서 동시다발 교전 중"
+  },
+  
+  "difficulty": {
+    "empire": 3,
+    "alliance": 5,
+    "description": "제국 멸망 직전의 동맹. 라인하르트 척살만이 유일한 희망."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard"],
+      "available": "소장급 이상",
+      "notes": "예산 관리 핵심. 군무성/통수본부 예산 2종류 관리."
+    },
+    "alliance": {
+      "recommended": ["yang_wenli"],
+      "available": "소장급 이상",
+      "notes": "버밀리온에서 라인하르트 척살! 분함대 편성으로 직접 치고 들어가라!"
+    }
+  },
+  
+  "specialRules": {
+    "dualBudget": {
+      "description": "제국 군사예산이 2종류 (군무성 + 통수본부)",
+      "ministry": 20000,
+      "headquarters": "감소 중",
+      "warning": "예산 관리 실패 시 함대 보급 끊김 → 제독 줄줄이 전사"
+    },
+    "noIntelligence": {
+      "description": "첩보 불가 상태",
+      "reason": "페잔 멸망으로 정보망 소멸"
+    },
+    "reinhardVulnerability": {
+      "description": "라인하르트 직속 함대가 소규모 분함대로 구성",
+      "composition": "전함부대 2개 + 수송함부대 1개",
+      "weakness": "양 웬리에게 핀포인트 격파 가능",
+      "note": "고증을 위한 밸런스 조정. 게임에서 타격하기 좋은 구성."
+    },
+    "smallFleetComposition": {
+      "description": "동맹군 함대가 분함대 다수로 구성",
+      "issue": "칼센/피셔 등은 전함 2부대만 → 전멸+전사 확률 높음"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "바라트 성계 함락",
+      "하이네센 점령"
+    ],
+    "alliance": [
+      "라인하르트 전사 (사실상 유일한 승리 조건)",
+      "버밀리온에서 라인하르트 함대 전멸"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "버밀리온은 불리. 철수 후 리오 베르데 집중 공략 권장.",
+      "병력 분산 작전은 취소하고 주력 집중.",
+      "잠시드 함락으로 동맹 우회로 차단.",
+      "양 웬리 함대 추적 시 복병 주의. 첩보 불가!"
+    ],
+    "alliance": [
+      "버밀리온에서 라인하르트 직접 공격! 분함대로 구성되어 있어 타격 가능!",
+      "다른 전선은 포기하고 라인하르트 척살에 집중!",
+      "록웰 확보 필수! 쿠데타로 평의회 제거 → 직접 통제 가능.",
+      "시간 끌면 제국이 수도 포위 → 라인하르트 도주 → 실패."
+    ]
+  }
+}
+
+
+
+

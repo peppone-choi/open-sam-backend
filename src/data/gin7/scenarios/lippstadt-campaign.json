@@ -1,0 +1,1927 @@
+{
+  "meta": {
+    "id": "lippstadt-campaign",
+    "name": "립슈타트 전역",
+    "nameEn": "Lippstadt Campaign",
+    "description": "은하제국 내전. 라인하르트 폰 로엔그람 원수와 귀족연합의 전면전. 제국의 운명을 건 결전이 시작된다.",
+    "author": "System",
+    "version": "1.0.0",
+    "difficulty": "hard",
+    "estimatedTurns": 30,
+    "tags": ["campaign", "civil-war", "historical", "empire", "nobility"],
+    "createdAt": "2025-12-04T00:00:00Z",
+    "updatedAt": "2025-12-04T00:00:00Z"
+  },
+  
+  "factions": [
+    {
+      "factionId": "lohengramm-faction",
+      "name": "로엔그람 진영",
+      "type": "empire",
+      "isPlayable": true,
+      "aiPersonality": "cunning",
+      "color": "#FFD700",
+      "emblemUrl": "/assets/emblems/lohengramm.png"
+    },
+    {
+      "factionId": "lippstadt-coalition",
+      "name": "립슈타트 귀족연합",
+      "type": "empire",
+      "isPlayable": true,
+      "aiPersonality": "reckless",
+      "color": "#8B4513",
+      "emblemUrl": "/assets/emblems/lippstadt.png"
+    },
+    {
+      "factionId": "imperial-neutral",
+      "name": "중립 제국령",
+      "type": "neutral",
+      "isPlayable": false,
+      "aiPersonality": "cautious",
+      "color": "#808080",
+      "emblemUrl": "/assets/emblems/empire-neutral.png"
+    }
+  ],
+  
+  "initialState": {
+    "gameDate": {
+      "year": 797,
+      "month": 4,
+      "day": 1
+    },
+    
+    "territories": [
+      {
+        "starSystemId": "odin",
+        "ownerId": "lohengramm-faction",
+        "support": 80,
+        "publicOrder": 95,
+        "population": 50000000000
+      },
+      {
+        "starSystemId": "geiersburg",
+        "ownerId": "lippstadt-coalition",
+        "support": 90,
+        "publicOrder": 85,
+        "population": 5000000000
+      },
+      {
+        "starSystemId": "rentenberg",
+        "ownerId": "lippstadt-coalition",
+        "support": 75,
+        "publicOrder": 80,
+        "population": 2000000000
+      },
+      {
+        "starSystemId": "schaffhausen",
+        "ownerId": "lohengramm-faction",
+        "support": 70,
+        "publicOrder": 90,
+        "population": 8000000000
+      },
+      {
+        "starSystemId": "westerland",
+        "ownerId": "lippstadt-coalition",
+        "support": 40,
+        "publicOrder": 60,
+        "population": 2000000
+      },
+      {
+        "starSystemId": "altena",
+        "ownerId": "imperial-neutral",
+        "support": 50,
+        "publicOrder": 70,
+        "population": 3000000000
+      },
+      {
+        "starSystemId": "gandahar",
+        "ownerId": "lippstadt-coalition",
+        "support": 65,
+        "publicOrder": 75,
+        "population": 1500000000
+      },
+      {
+        "starSystemId": "castrop",
+        "ownerId": "imperial-neutral",
+        "support": 55,
+        "publicOrder": 65,
+        "population": 1000000000
+      }
+    ],
+    
+    "characters": [
+      {
+        "characterId": "reinhard-lohengramm",
+        "templateId": "reinhard-lohengramm",
+        "name": "라인하르트 폰 로엔그람",
+        "factionId": "lohengramm-faction",
+        "locationId": "fleet-reinhard-main",
+        "locationType": "fleet",
+        "rank": "G5",
+        "position": "supreme_commander",
+        "statsOverride": {
+          "command": 98,
+          "might": 78,
+          "intellect": 96,
+          "politics": 88,
+          "charm": 92
+        },
+        "traits": ["genius_tactician", "charismatic_leader", "ambitious", "golden_hair"],
+        "skills": ["concentrated_fire", "pincer_attack", "pursuit", "inspire_troops"]
+      },
+      {
+        "characterId": "siegfried-kircheis",
+        "templateId": "siegfried-kircheis",
+        "name": "지크프리트 키르히아이스",
+        "factionId": "lohengramm-faction",
+        "locationId": "fleet-kircheis",
+        "locationType": "fleet",
+        "rank": "G4",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 94,
+          "might": 82,
+          "intellect": 90,
+          "politics": 72,
+          "charm": 88
+        },
+        "traits": ["loyal", "calm_commander", "tactical_insight", "red_hair"],
+        "skills": ["flanking_maneuver", "defensive_formation", "morale_boost"]
+      },
+      {
+        "characterId": "wolfgang-mittermeyer",
+        "templateId": "wolfgang-mittermeyer",
+        "name": "볼프강 미터마이어",
+        "factionId": "lohengramm-faction",
+        "locationId": "fleet-mittermeyer",
+        "locationType": "fleet",
+        "rank": "G3",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 90,
+          "might": 88,
+          "intellect": 82,
+          "politics": 62,
+          "charm": 78
+        },
+        "traits": ["swift_wolf", "aggressive", "loyal_friend"],
+        "skills": ["rapid_assault", "breakthrough", "pursuit"]
+      },
+      {
+        "characterId": "oskar-von-reuenthal",
+        "templateId": "oskar-von-reuenthal",
+        "name": "오스카 폰 로이엔탈",
+        "factionId": "lohengramm-faction",
+        "locationId": "fleet-reuenthal",
+        "locationType": "fleet",
+        "rank": "G3",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 92,
+          "might": 85,
+          "intellect": 86,
+          "politics": 70,
+          "charm": 82
+        },
+        "traits": ["heterochromia", "ambitious", "talented_commander"],
+        "skills": ["tactical_flexibility", "defensive_counter", "concentrated_fire"]
+      },
+      {
+        "characterId": "paul-von-oberstein",
+        "templateId": "paul-von-oberstein",
+        "name": "파울 폰 오베르슈타인",
+        "factionId": "lohengramm-faction",
+        "locationId": "odin",
+        "locationType": "planet",
+        "rank": "O6",
+        "position": "chief_of_staff",
+        "statsOverride": {
+          "command": 65,
+          "might": 40,
+          "intellect": 95,
+          "politics": 92,
+          "charm": 25
+        },
+        "traits": ["cold_rationalist", "schemer", "prosthetic_eyes"],
+        "skills": ["intelligence_analysis", "political_manipulation", "strategy_planning"]
+      },
+      {
+        "characterId": "braunschweig",
+        "templateId": "otto-von-braunschweig",
+        "name": "오토 폰 브라운슈바이크 공작",
+        "factionId": "lippstadt-coalition",
+        "locationId": "geiersburg",
+        "locationType": "planet",
+        "rank": "G5",
+        "position": "coalition_leader",
+        "statsOverride": {
+          "command": 55,
+          "might": 50,
+          "intellect": 45,
+          "politics": 70,
+          "charm": 60
+        },
+        "traits": ["arrogant", "noble_pride", "impulsive", "wealthy"],
+        "skills": ["noble_authority", "mass_mobilization"]
+      },
+      {
+        "characterId": "littenheim",
+        "templateId": "wilhelm-von-littenheim",
+        "name": "빌헬름 폰 리텐하임 후작",
+        "factionId": "lippstadt-coalition",
+        "locationId": "rentenberg",
+        "locationType": "planet",
+        "rank": "G4",
+        "position": "coalition_vice_leader",
+        "statsOverride": {
+          "command": 50,
+          "might": 45,
+          "intellect": 48,
+          "politics": 65,
+          "charm": 55
+        },
+        "traits": ["cautious", "noble_pride", "cowardly"],
+        "skills": ["defensive_stance"]
+      },
+      {
+        "characterId": "flegel",
+        "templateId": "flegel",
+        "name": "플레겔 남작",
+        "factionId": "lippstadt-coalition",
+        "locationId": "fleet-flegel",
+        "locationType": "fleet",
+        "rank": "G2",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 40,
+          "might": 55,
+          "intellect": 35,
+          "politics": 50,
+          "charm": 45
+        },
+        "traits": ["cruel", "reckless", "incompetent"],
+        "skills": []
+      },
+      {
+        "characterId": "ansbach",
+        "templateId": "ansbach",
+        "name": "안스바하 준장",
+        "factionId": "lippstadt-coalition",
+        "locationId": "geiersburg",
+        "locationType": "planet",
+        "rank": "G1",
+        "position": "military_advisor",
+        "statsOverride": {
+          "command": 72,
+          "might": 68,
+          "intellect": 75,
+          "politics": 60,
+          "charm": 50
+        },
+        "traits": ["loyal_vassal", "competent", "honorable"],
+        "skills": ["tactical_advice", "defensive_planning"]
+      },
+      {
+        "characterId": "merkatz",
+        "templateId": "merkatz",
+        "name": "빌리발트 요아힘 폰 메르카츠",
+        "factionId": "lippstadt-coalition",
+        "locationId": "fleet-merkatz",
+        "locationType": "fleet",
+        "rank": "G4",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 85,
+          "might": 70,
+          "intellect": 80,
+          "politics": 55,
+          "charm": 65
+        },
+        "traits": ["veteran_admiral", "honorable", "old_school"],
+        "skills": ["defensive_mastery", "fleet_coordination", "tactical_retreat"]
+      },
+      {
+        "characterId": "staaden",
+        "templateId": "staaden",
+        "name": "슈타덴",
+        "factionId": "lippstadt-coalition",
+        "locationId": "fleet-staaden",
+        "locationType": "fleet",
+        "rank": "G3",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 60,
+          "might": 55,
+          "intellect": 50,
+          "politics": 45,
+          "charm": 40
+        },
+        "traits": ["by_the_book", "mediocre"],
+        "skills": ["standard_tactics"]
+      }
+    ],
+    
+    "fleets": [
+      {
+        "fleetId": "fleet-reinhard-main",
+        "name": "로엔그람 본대",
+        "factionId": "lohengramm-faction",
+        "commanderId": "reinhard-lohengramm",
+        "locationId": "odin",
+        "composition": {
+          "battleships": 2000,
+          "cruisers": 1500,
+          "destroyers": 2500,
+          "carriers": 200,
+          "frigates": 1000,
+          "transports": 500,
+          "fighters": 8000
+        },
+        "formation": "wedge",
+        "morale": 98,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-kircheis",
+        "name": "키르히아이스 함대",
+        "factionId": "lohengramm-faction",
+        "commanderId": "siegfried-kircheis",
+        "locationId": "schaffhausen",
+        "composition": {
+          "battleships": 1500,
+          "cruisers": 1000,
+          "destroyers": 1800,
+          "carriers": 150,
+          "frigates": 800,
+          "transports": 400,
+          "fighters": 6000
+        },
+        "formation": "line",
+        "morale": 95,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-mittermeyer",
+        "name": "미터마이어 함대",
+        "factionId": "lohengramm-faction",
+        "commanderId": "wolfgang-mittermeyer",
+        "locationId": "odin",
+        "composition": {
+          "battleships": 1200,
+          "cruisers": 900,
+          "destroyers": 1500,
+          "carriers": 120,
+          "frigates": 700,
+          "transports": 350,
+          "fighters": 5000
+        },
+        "formation": "assault",
+        "morale": 94,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-reuenthal",
+        "name": "로이엔탈 함대",
+        "factionId": "lohengramm-faction",
+        "commanderId": "oskar-von-reuenthal",
+        "locationId": "odin",
+        "composition": {
+          "battleships": 1200,
+          "cruisers": 900,
+          "destroyers": 1500,
+          "carriers": 120,
+          "frigates": 700,
+          "transports": 350,
+          "fighters": 5000
+        },
+        "formation": "flexible",
+        "morale": 93,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-coalition-main",
+        "name": "귀족연합 본대",
+        "factionId": "lippstadt-coalition",
+        "commanderId": "braunschweig",
+        "locationId": "geiersburg",
+        "composition": {
+          "battleships": 3000,
+          "cruisers": 2500,
+          "destroyers": 4000,
+          "carriers": 300,
+          "frigates": 2000,
+          "transports": 1000,
+          "fighters": 12000
+        },
+        "formation": "defensive",
+        "morale": 75,
+        "supply": 95
+      },
+      {
+        "fleetId": "fleet-merkatz",
+        "name": "메르카츠 함대",
+        "factionId": "lippstadt-coalition",
+        "commanderId": "merkatz",
+        "locationId": "rentenberg",
+        "composition": {
+          "battleships": 1000,
+          "cruisers": 800,
+          "destroyers": 1200,
+          "carriers": 100,
+          "frigates": 600,
+          "transports": 300,
+          "fighters": 4000
+        },
+        "formation": "defensive",
+        "morale": 85,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-flegel",
+        "name": "플레겔 함대",
+        "factionId": "lippstadt-coalition",
+        "commanderId": "flegel",
+        "locationId": "gandahar",
+        "composition": {
+          "battleships": 500,
+          "cruisers": 400,
+          "destroyers": 600,
+          "carriers": 50,
+          "frigates": 300,
+          "transports": 150,
+          "fighters": 2000
+        },
+        "formation": "assault",
+        "morale": 70,
+        "supply": 90
+      },
+      {
+        "fleetId": "fleet-staaden",
+        "name": "슈타덴 함대",
+        "factionId": "lippstadt-coalition",
+        "commanderId": "staaden",
+        "locationId": "geiersburg",
+        "composition": {
+          "battleships": 800,
+          "cruisers": 600,
+          "destroyers": 1000,
+          "carriers": 80,
+          "frigates": 500,
+          "transports": 250,
+          "fighters": 3200
+        },
+        "formation": "line",
+        "morale": 72,
+        "supply": 95
+      }
+    ],
+    
+    "resources": [
+      {
+        "factionId": "lohengramm-faction",
+        "credits": 500000000,
+        "materials": 2000000,
+        "fuel": 5000000,
+        "food": 1000000,
+        "manpower": 500000
+      },
+      {
+        "factionId": "lippstadt-coalition",
+        "credits": 800000000,
+        "materials": 3000000,
+        "fuel": 4000000,
+        "food": 1500000,
+        "manpower": 400000
+      }
+    ]
+  },
+  
+  "victoryConditions": [
+    {
+      "id": "lohengramm-total-victory",
+      "type": "CAPTURE_SYSTEM",
+      "description": "가이에스부르크 요새 함락 및 귀족연합 괴멸",
+      "targetFactionId": "lohengramm-faction",
+      "params": {
+        "locationIds": ["geiersburg"],
+        "requireAllFleets": false
+      },
+      "priority": 1
+    },
+    {
+      "id": "lohengramm-decisive-victory",
+      "type": "DESTROY_FLEET",
+      "description": "귀족연합 본대 격멸",
+      "targetFactionId": "lohengramm-faction",
+      "params": {
+        "targetIds": ["fleet-coalition-main"]
+      },
+      "priority": 2
+    },
+    {
+      "id": "coalition-victory",
+      "type": "CAPTURE_SYSTEM",
+      "description": "오딘 탈환 및 라인하르트 축출",
+      "targetFactionId": "lippstadt-coalition",
+      "params": {
+        "locationIds": ["odin"]
+      },
+      "priority": 1
+    },
+    {
+      "id": "coalition-survival",
+      "type": "SURVIVE_TURNS",
+      "description": "30턴 동안 가이에스부르크 유지",
+      "targetFactionId": "lippstadt-coalition",
+      "params": {
+        "turns": 30,
+        "locationIds": ["geiersburg"]
+      },
+      "priority": 3
+    }
+  ],
+  
+  "defeatConditions": [
+    {
+      "id": "lohengramm-defeat",
+      "type": "KILL_CHARACTER",
+      "description": "라인하르트 전사 또는 포로",
+      "targetFactionId": "lohengramm-faction",
+      "params": {
+        "targetIds": ["reinhard-lohengramm"]
+      },
+      "priority": 1
+    },
+    {
+      "id": "coalition-defeat",
+      "type": "DESTROY_ALL_FLEETS",
+      "description": "귀족연합 전 함대 괴멸",
+      "targetFactionId": "lippstadt-coalition",
+      "params": {
+        "targetIds": ["fleet-coalition-main", "fleet-merkatz", "fleet-flegel", "fleet-staaden"]
+      },
+      "priority": 1
+    }
+  ],
+  
+  "events": [
+    {
+      "id": "campaign-intro",
+      "name": "립슈타트 전역 서막",
+      "description": "내전의 시작을 알리는 선전포고",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 1 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "우주력 797년 4월, 은하제국은 내전의 소용돌이에 휩싸였다. 급격히 권력을 장악한 라인하르트 폰 로엔그람에 대항하여 제국의 명문 귀족들이 연합을 결성했다.",
+            "duration": 6000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "비천한 혈통의 자가 감히 제국을 농단하다니! 500년 골덴바움 왕조의 명예를 위해, 저 금발의 악동을 반드시 쓰러뜨리겠다!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 5000
+          },
+          "delay": 1000
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "civil_war_started",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 100,
+      "enabled": true
+    },
+    
+    {
+      "id": "event-1-nobility-discontent",
+      "name": "귀족 불만 축적",
+      "description": "라인하르트의 권력 장악에 귀족들의 불만이 고조된다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 2 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "라인하르트 원수의 권력이 날로 커지면서, 기존 귀족 세력의 불만이 임계점에 다다르고 있었다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "littenheim",
+            "speakerName": "리텐하임 후작",
+            "text": "저 자는 황제 폐하의 총애를 빌미로 우리의 권리를 빼앗고 있소. 이대로 가다간 귀족은 모두 몰락할 것이오.",
+            "portrait": "/assets/portraits/littenheim.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "nobility_discontent",
+            "flagValue": 60
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-coalition-main",
+            "statName": "morale",
+            "value": 5,
+            "operation": "add"
+          }
+        }
+      ],
+      "once": true,
+      "priority": 90,
+      "enabled": true
+    },
+    
+    {
+      "id": "event-2-coalition-formation",
+      "name": "귀족연합 결성",
+      "description": "립슈타트 귀족연합이 공식적으로 결성된다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 3 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "nobility_discontent" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "오늘, 이 자리에서 우리는 립슈타트 귀족연합을 결성한다! 정통 골덴바움 왕조의 회복을 위해!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "ansbach",
+            "speakerName": "안스바하",
+            "text": "연합 병력은 총 10만 척에 달합니다. 병력만으로는 로엔그람 군을 압도합니다.",
+            "portrait": "/assets/portraits/ansbach.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "merkatz",
+            "speakerName": "메르카츠",
+            "text": "(내심) 하지만 전쟁은 숫자만으로 결정되지 않는다...",
+            "portrait": "/assets/portraits/merkatz.png",
+            "duration": 3000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "coalition_formed",
+            "flagValue": true
+          }
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "nobility_discontent",
+            "flagValue": 100
+          }
+        }
+      ],
+      "once": true,
+      "priority": 85,
+      "enabled": true
+    },
+    
+    {
+      "id": "event-3-civil-war-begins",
+      "name": "내전 발발",
+      "description": "전면적인 내전이 시작된다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 4 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "coalition_formed" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "귀족들이 드디어 움직였군. 좋다, 이 기회에 썩은 귀족 체제를 완전히 뿌리 뽑겠다.",
+            "portrait": "/assets/portraits/reinhard.png",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "라인하르트님, 귀족연합의 병력은 우리의 두 배입니다. 하지만...",
+            "portrait": "/assets/portraits/kircheis.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "숫자가 전쟁의 승패를 결정하지 않는다. 그들에겐 지휘관이 없다. 키르히아이스, 자네가 선봉을 맡아주게.",
+            "portrait": "/assets/portraits/reinhard.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "full_war",
+            "flagValue": true
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-reinhard-main",
+            "statName": "morale",
+            "value": 10,
+            "operation": "add"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-kircheis",
+            "statName": "morale",
+            "value": 10,
+            "operation": "add"
+          }
+        }
+      ],
+      "once": true,
+      "priority": 80,
+      "enabled": true
+    },
+    
+    {
+      "id": "player-faction-choice",
+      "name": "진영 선택",
+      "description": "플레이어가 어느 편에 설 것인지 선택한다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 5 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "full_war" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "내전이 본격화되었다. 이제 당신은 선택해야 한다. 새로운 시대를 열 것인가, 전통을 지킬 것인가.",
+            "duration": 4000
+          }
+        }
+      ],
+      "choices": [
+        {
+          "id": "support-lohengramm",
+          "text": "라인하르트 진영에 합류한다 - 새로운 제국을 위해",
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "player_faction",
+                "flagValue": "lohengramm"
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "reinhard-lohengramm",
+                "speakerName": "라인하르트",
+                "text": "훌륭한 결단이다. 함께 썩은 귀족 체제를 무너뜨리고 새로운 은하를 열자.",
+                "portrait": "/assets/portraits/reinhard.png"
+              }
+            },
+            {
+              "type": "MODIFY_STAT",
+              "params": {
+                "targetId": "fleet-reinhard-main",
+                "statName": "morale",
+                "value": 5,
+                "operation": "add"
+              }
+            }
+          ],
+          "consequences": "로엔그람 진영으로 참전, 귀족연합과 적대"
+        },
+        {
+          "id": "support-coalition",
+          "text": "귀족연합에 합류한다 - 전통적 질서를 수호하기 위해",
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "player_faction",
+                "flagValue": "coalition"
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "braunschweig",
+                "speakerName": "브라운슈바이크 공작",
+                "text": "현명한 선택이오. 500년 전통의 은하제국을 지키는 데 힘을 보태주시오.",
+                "portrait": "/assets/portraits/braunschweig.png"
+              }
+            },
+            {
+              "type": "MODIFY_STAT",
+              "params": {
+                "targetId": "fleet-coalition-main",
+                "statName": "morale",
+                "value": 5,
+                "operation": "add"
+              }
+            }
+          ],
+          "consequences": "귀족연합으로 참전, 로엔그람 진영과 적대"
+        },
+        {
+          "id": "stay-neutral",
+          "text": "중립을 유지한다 - 때를 기다린다",
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "player_faction",
+                "flagValue": "neutral"
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "narrator",
+                "speakerName": "내레이터",
+                "text": "당신은 관망하기로 했다. 하지만 내전의 소용돌이는 어느 누구도 피해갈 수 없을 것이다..."
+              }
+            }
+          ],
+          "consequences": "중립 유지, 양측 모두와 접촉 가능하나 위험"
+        }
+      ],
+      "once": true,
+      "priority": 75,
+      "enabled": true
+    },
+    
+    {
+      "id": "first-battle-schaffen",
+      "name": "샤펜하우젠 회전",
+      "description": "첫 대규모 교전이 샤펜하우젠에서 발생한다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 8 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "full_war" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "양군의 선봉이 샤펜하우젠 성역에서 조우했다. 내전 최초의 대규모 교전이 시작된다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "staaden",
+            "speakerName": "슈타덴",
+            "text": "적 함대 발견! 병력은... 절반 이하입니다! 전 함대 돌격!",
+            "portrait": "/assets/portraits/staaden.png",
+            "duration": 3000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "예상대로 곧바로 돌격해 오는군요. 계획대로 유인한 후 포위합니다.",
+            "portrait": "/assets/portraits/kircheis.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "battle_schaffen",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 70,
+      "enabled": true
+    },
+    
+    {
+      "id": "staaden-defeat",
+      "name": "슈타덴 함대 패배",
+      "description": "슈타덴 함대가 대패한다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 10 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "battle_schaffen" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "슈타덴 함대가 키르히아이스의 함정에 빠져 대패했다. 귀족연합의 첫 패배였다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "뭐라고?! 슈타덴이 패배했다고?! 그 무능한 자를 당장 처형하라!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "merkatz",
+            "speakerName": "메르카츠",
+            "text": "(내심) 시작부터 이런 식이라면... 이 전쟁의 결말은 뻔하다.",
+            "portrait": "/assets/portraits/merkatz.png",
+            "duration": 3000
+          },
+          "delay": 500
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-staaden",
+            "statName": "morale",
+            "value": -30,
+            "operation": "add"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-coalition-main",
+            "statName": "morale",
+            "value": -10,
+            "operation": "add"
+          }
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "staaden_defeated",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 65,
+      "enabled": true
+    },
+    
+    {
+      "id": "westerland-crisis",
+      "name": "베스터란트 위기",
+      "description": "베스터란트에서 반란이 발생하고 브라운슈바이크 공작의 결단이 요구된다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 15 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "full_war" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "베스터란트 행성에서 귀족 영주에 대항한 민중 봉기가 발생했다. 브라운슈바이크 공작은 분노했다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "감히 비천한 평민들이 귀족에게 반기를 들다니! 핵미사일로 행성 전체를 쓸어버려라!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "ansbach",
+            "speakerName": "안스바하",
+            "text": "공작님, 200만 명의 민간인이 있습니다. 그것은...",
+            "portrait": "/assets/portraits/ansbach.png",
+            "duration": 3000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "westerland_crisis",
+            "flagValue": true
+          }
+        }
+      ],
+      "choices": [
+        {
+          "id": "westerland-attack",
+          "text": "핵 공격을 승인한다",
+          "conditions": [
+            {
+              "type": "AND",
+              "checks": [
+                {
+                  "checkType": "CUSTOM",
+                  "params": { "faction_is": "coalition" }
+                }
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "westerland_nuked",
+                "flagValue": true
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "narrator",
+                "speakerName": "내레이터",
+                "text": "핵미사일이 베스터란트를 강타했다. 200만 명의 민간인이 순식간에 증발했다. 이 소식은 전 은하에 충격을 주었다."
+              }
+            },
+            {
+              "type": "MODIFY_STAT",
+              "params": {
+                "targetId": "fleet-coalition-main",
+                "statName": "morale",
+                "value": -20,
+                "operation": "add"
+              }
+            },
+            {
+              "type": "TRIGGER_EVENT",
+              "params": {
+                "eventId": "westerland-aftermath-attack"
+              }
+            }
+          ],
+          "consequences": "귀족연합의 명성 추락, 중립 세력 이탈"
+        },
+        {
+          "id": "westerland-stop",
+          "text": "공격을 중지시킨다",
+          "conditions": [
+            {
+              "type": "AND",
+              "checks": [
+                {
+                  "checkType": "CUSTOM",
+                  "params": { "faction_is": "coalition" }
+                }
+              ]
+            }
+          ],
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "westerland_saved",
+                "flagValue": true
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "merkatz",
+                "speakerName": "메르카츠",
+                "text": "현명한 결정입니다. 민간인 학살은 우리의 대의를 더럽힐 뿐입니다.",
+                "portrait": "/assets/portraits/merkatz.png"
+              }
+            },
+            {
+              "type": "MODIFY_STAT",
+              "params": {
+                "targetId": "fleet-merkatz",
+                "statName": "morale",
+                "value": 10,
+                "operation": "add"
+              }
+            }
+          ],
+          "consequences": "귀족연합의 명예 보존, 메르카츠 충성도 상승"
+        }
+      ],
+      "once": true,
+      "priority": 60,
+      "enabled": true
+    },
+    
+    {
+      "id": "westerland-aftermath-attack",
+      "name": "베스터란트 학살의 여파",
+      "description": "핵 공격 후의 반응",
+      "trigger": {
+        "type": "ON_EVENT_TRIGGERED",
+        "params": {
+          "eventId": "westerland-crisis"
+        }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "westerland_nuked" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "paul-von-oberstein",
+            "speakerName": "오베르슈타인",
+            "text": "예하, 베스터란트 학살 영상을 전 은하에 송출했습니다. 이것으로 귀족들은 끝났습니다.",
+            "portrait": "/assets/portraits/oberstein.png",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "오베르슈타인! 왜 공격을 저지하지 않았습니까?! 200만 명이 죽었어요!",
+            "portrait": "/assets/portraits/kircheis.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "paul-von-oberstein",
+            "speakerName": "오베르슈타인",
+            "text": "200만의 희생으로 내전이 빨리 끝나면, 결과적으로 더 많은 목숨을 구하게 됩니다.",
+            "portrait": "/assets/portraits/oberstein.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "kircheis_angry",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 55,
+      "enabled": false
+    },
+    
+    {
+      "id": "rentenberg-siege",
+      "name": "렌텐베르크 요새 공략",
+      "description": "로엔그람군이 렌텐베르크 요새를 공격한다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 20 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "full_war" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "로엔그람군이 귀족연합의 주요 거점인 렌텐베르크 요새를 포위했다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "wolfgang-mittermeyer",
+            "speakerName": "미터마이어",
+            "text": "요새를 포위했습니다. 정면 공격은 손실이 크니, 보급선 차단으로 항복을 유도하겠습니다.",
+            "portrait": "/assets/portraits/mittermeyer.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "rentenberg_siege",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 50,
+      "enabled": true
+    },
+    
+    {
+      "id": "littenheim-death",
+      "name": "리텐하임 후작의 최후",
+      "description": "리텐하임 후작이 전사한다",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 22 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "rentenberg_siege" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "렌텐베르크 요새가 함락되었다. 리텐하임 후작은 도주 중 부하에게 살해되었다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "리텐하임이 죽었다고?! 저... 저 비겁한 자!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 3000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "littenheim_dead",
+            "flagValue": true
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-coalition-main",
+            "statName": "morale",
+            "value": -15,
+            "operation": "add"
+          }
+        },
+        {
+          "type": "CHANGE_OWNER",
+          "params": {
+            "locationId": "rentenberg",
+            "newOwnerId": "lohengramm-faction"
+          }
+        }
+      ],
+      "once": true,
+      "priority": 45,
+      "enabled": true
+    },
+    
+    {
+      "id": "final-battle-geiersburg",
+      "name": "가이에스부르크 결전",
+      "description": "내전의 마지막 결전",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 25 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "littenheim_dead" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "귀족연합의 마지막 보루, 가이에스부르크 요새. 양군의 최종 결전이 시작된다.",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "이것으로 끝이다. 전 함대, 가이에스부르크를 공격한다!",
+            "portrait": "/assets/portraits/reinhard.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "두려워 마라! 우리에겐 아직 가이에스부르크 요새가 있다! 저 금발 악동에게 귀족의 힘을 보여주마!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "final_battle",
+            "flagValue": true
+          }
+        },
+        {
+          "type": "START_BATTLE",
+          "params": {
+            "attackerFleetId": "fleet-reinhard-main",
+            "defenderFleetId": "fleet-coalition-main",
+            "battleType": "siege",
+            "specialRules": ["fortress_defense", "last_stand"]
+          }
+        }
+      ],
+      "once": true,
+      "priority": 40,
+      "enabled": true
+    },
+    
+    {
+      "id": "event-4-civil-war-end-lohengramm",
+      "name": "내전 종결 - 로엔그람 승리",
+      "description": "로엔그람 진영이 승리한다",
+      "trigger": {
+        "type": "ON_TURN_RANGE",
+        "params": { "turnMin": 26, "turnMax": 30 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "final_battle" }
+            },
+            {
+              "checkType": "FACTION_CONTROLS",
+              "params": { 
+                "factionId": "lohengramm-faction", 
+                "locationId": "geiersburg" 
+              }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "가이에스부르크 요새가 함락되었다. 브라운슈바이크 공작은 안스바하의 손에 독살되어 명예로운 최후를 맞이했다.",
+            "duration": 5000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "이것으로 귀족들의 시대는 끝났다. 새로운 은하제국의 시대가 열린다.",
+            "portrait": "/assets/portraits/reinhard.png",
+            "duration": 4000
+          },
+          "delay": 1000
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "라인하르트님, 축하드립니다. 하지만 이것은 시작일 뿐입니다.",
+            "portrait": "/assets/portraits/kircheis.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "civil_war_ended",
+            "flagValue": "lohengramm_victory"
+          }
+        }
+      ],
+      "once": true,
+      "priority": 30,
+      "enabled": true
+    },
+    
+    {
+      "id": "event-4-civil-war-end-coalition",
+      "name": "내전 종결 - 귀족연합 승리 (IF 루트)",
+      "description": "귀족연합이 승리하는 대체 역사",
+      "trigger": {
+        "type": "ON_TURN_RANGE",
+        "params": { "turnMin": 26, "turnMax": 30 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "final_battle" }
+            },
+            {
+              "checkType": "FACTION_CONTROLS",
+              "params": { 
+                "factionId": "lippstadt-coalition", 
+                "locationId": "odin" 
+              }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "[IF 루트] 예상을 뒤엎고 귀족연합이 승리했다. 라인하르트는 전사하고, 골덴바움 왕조의 전통이 유지되었다.",
+            "duration": 5000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "braunschweig",
+            "speakerName": "브라운슈바이크 공작",
+            "text": "하하하! 저 금발 악동이 드디어 쓰러졌다! 귀족의 힘을 깔보더니!",
+            "portrait": "/assets/portraits/braunschweig.png",
+            "duration": 4000
+          },
+          "delay": 500
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "merkatz",
+            "speakerName": "메르카츠",
+            "text": "(내심) 이것이 은하에 좋은 결과를 가져올지는... 알 수 없다.",
+            "portrait": "/assets/portraits/merkatz.png",
+            "duration": 3500
+          },
+          "delay": 500
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "civil_war_ended",
+            "flagValue": "coalition_victory"
+          }
+        }
+      ],
+      "once": true,
+      "priority": 30,
+      "enabled": true
+    },
+    
+    {
+      "id": "kircheis-death-foreshadow",
+      "name": "키르히아이스의 불길한 예감",
+      "description": "키르히아이스에게 드리우는 그림자",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 28 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "kircheis_angry" }
+            },
+            {
+              "checkType": "CHARACTER_ALIVE",
+              "params": { "characterId": "siegfried-kircheis" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "(안스바하가 숨긴 것이 있다... 느낌이 좋지 않다.)",
+            "portrait": "/assets/portraits/kircheis.png",
+            "duration": 3000
+          }
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "kircheis_danger",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 25,
+      "enabled": true
+    },
+    
+    {
+      "id": "merkatz-escape",
+      "name": "메르카츠의 탈출",
+      "description": "메르카츠 제독이 동맹으로 탈출한다",
+      "trigger": {
+        "type": "ON_TURN_RANGE",
+        "params": { "turnMin": 26, "turnMax": 30 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "civil_war_ended" }
+            },
+            {
+              "checkType": "CHARACTER_ALIVE",
+              "params": { "characterId": "merkatz" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "merkatz",
+            "speakerName": "메르카츠",
+            "text": "패잔병을 이끌고 동맹으로 망명하겠다. 여기서 죽는 것보다 싸울 수 있는 곳에서 살아남겠다.",
+            "portrait": "/assets/portraits/merkatz.png",
+            "duration": 4000
+          }
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "merkatz_escaped",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "priority": 20,
+      "enabled": true
+    }
+  ],
+  
+  "scriptedBattles": [
+    {
+      "id": "battle-schaffhausen",
+      "name": "샤펜하우젠 회전",
+      "description": "내전 최초의 대규모 교전",
+      "attackerFactionId": "lippstadt-coalition",
+      "defenderFactionId": "lohengramm-faction",
+      "attackerFleets": [],
+      "defenderFleets": [],
+      "battleType": "space",
+      "specialRules": [
+        {
+          "id": "overconfidence",
+          "name": "자만",
+          "description": "귀족연합 초기 공격력 +20%, 3턴 후 -30%",
+          "type": "DAMAGE_MODIFIER",
+          "params": {
+            "attackerId": "lippstadt-coalition",
+            "modifier": 1.2,
+            "duration": 3
+          }
+        },
+        {
+          "id": "tactical-trap",
+          "name": "전술적 함정",
+          "description": "로엔그람군 방어력 +30%, 반격 데미지 +50%",
+          "type": "DAMAGE_MODIFIER",
+          "params": {
+            "defenderId": "lohengramm-faction",
+            "modifier": 1.3,
+            "duration": 5
+          }
+        }
+      ],
+      "battleEvents": [],
+      "victoryConditions": [
+        {
+          "id": "defeat-staaden",
+          "type": "FLEET_SIZE",
+          "description": "슈타덴 함대 전력 30% 이하로 격감",
+          "params": {
+            "targetIds": ["fleet-staaden"],
+            "maxSize": 30
+          }
+        }
+      ],
+      "defeatConditions": [
+        {
+          "id": "kircheis-damaged",
+          "type": "FLEET_SIZE",
+          "description": "키르히아이스 함대 전력 50% 이하",
+          "params": {
+            "targetIds": ["fleet-kircheis"],
+            "maxSize": 50
+          }
+        }
+      ]
+    },
+    {
+      "id": "battle-geiersburg",
+      "name": "가이에스부르크 공방전",
+      "description": "귀족연합 본거지 최종 결전",
+      "attackerFactionId": "lohengramm-faction",
+      "defenderFactionId": "lippstadt-coalition",
+      "attackerFleets": [],
+      "defenderFleets": [],
+      "battleType": "siege",
+      "specialRules": [
+        {
+          "id": "fortress-defense",
+          "name": "요새 방어",
+          "description": "가이에스부르크 요새 방어력 +50%",
+          "type": "DAMAGE_MODIFIER",
+          "params": {
+            "defenderId": "lippstadt-coalition",
+            "modifier": 1.5,
+            "duration": 10
+          }
+        },
+        {
+          "id": "last-stand",
+          "name": "최후의 저항",
+          "description": "귀족연합 사기 감소 방지, 전멸 시까지 싸움",
+          "type": "MORALE_BOOST",
+          "params": {
+            "targetFactionId": "lippstadt-coalition",
+            "moraleLock": true
+          }
+        },
+        {
+          "id": "overwhelming-force",
+          "name": "압도적 전력",
+          "description": "로엔그람군 공격력 +20%",
+          "type": "DAMAGE_MODIFIER",
+          "params": {
+            "attackerId": "lohengramm-faction",
+            "modifier": 1.2,
+            "duration": 10
+          }
+        }
+      ],
+      "battleEvents": [],
+      "victoryConditions": [
+        {
+          "id": "capture-fortress",
+          "type": "FLEET_SIZE",
+          "description": "귀족연합 본대 전멸",
+          "params": {
+            "targetIds": ["fleet-coalition-main"],
+            "maxSize": 0
+          }
+        }
+      ],
+      "defeatConditions": [
+        {
+          "id": "reinhard-retreat",
+          "type": "FLEET_SIZE",
+          "description": "로엔그람 본대 전력 40% 이하",
+          "params": {
+            "targetIds": ["fleet-reinhard-main"],
+            "maxSize": 40
+          }
+        }
+      ]
+    }
+  ],
+  
+  "customData": {
+    "historicalNote": "립슈타트 전역은 은하영웅전설에서 라인하르트가 제국 내의 구귀족 세력을 일소한 내전입니다. 브라운슈바이크 공작과 리텐하임 후작이 이끄는 귀족연합은 병력에서 우세했으나, 지휘관의 무능과 내부 분열로 패배했습니다. 이 전역 중 베스터란트 핵 공격 사건이 발생했고, 이후 키르히아이스가 안스바하에게 암살당하는 비극이 이어집니다.",
+    "recommendedStrategy": {
+      "lohengramm": "귀족연합의 분열을 유도하세요. 직접 정면 대결보다 각개격파가 효과적입니다. 메르카츠 함대만 경계하세요.",
+      "coalition": "병력 우위를 활용해 속전속결하세요. 시간이 지날수록 불리해집니다. 메르카츠의 조언을 따르는 것이 현명합니다."
+    },
+    "keyCharacters": [
+      {
+        "id": "reinhard-lohengramm",
+        "role": "로엔그람 진영 총사령관",
+        "importance": "critical"
+      },
+      {
+        "id": "siegfried-kircheis",
+        "role": "로엔그람 진영 부사령관",
+        "importance": "critical"
+      },
+      {
+        "id": "braunschweig",
+        "role": "귀족연합 맹주",
+        "importance": "critical"
+      },
+      {
+        "id": "merkatz",
+        "role": "귀족연합 유일한 명장",
+        "importance": "high"
+      }
+    ],
+    "timeline": [
+      {
+        "turn": 1,
+        "event": "내전 선포"
+      },
+      {
+        "turn": 8,
+        "event": "샤펜하우젠 회전"
+      },
+      {
+        "turn": 15,
+        "event": "베스터란트 위기"
+      },
+      {
+        "turn": 20,
+        "event": "렌텐베르크 공략"
+      },
+      {
+        "turn": 25,
+        "event": "가이에스부르크 결전"
+      }
+    ]
+  },
+  
+  "isPublished": true,
+  "isOfficial": true
+}
+
+
+
+
+

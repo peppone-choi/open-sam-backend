@@ -1,0 +1,945 @@
+{
+  "meta": {
+    "id": "astate-battle",
+    "name": "아스타테 회전",
+    "nameEn": "Battle of Astate",
+    "description": "은하제국군과 자유행성동맹군이 아스타테 성역에서 격돌한 역사적 전투. 라인하르트 폰 로엔그람 원수의 천재적 전술이 빛난 전투입니다.",
+    "author": "System",
+    "version": "1.0.0",
+    "difficulty": "normal",
+    "estimatedTurns": 15,
+    "tags": ["classic", "historical", "space-battle", "beginner-friendly"],
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  
+  "factions": [
+    {
+      "factionId": "galactic-empire",
+      "name": "은하제국",
+      "type": "empire",
+      "isPlayable": true,
+      "aiPersonality": "cunning",
+      "color": "#FFD700",
+      "emblemUrl": "/assets/emblems/empire.png"
+    },
+    {
+      "factionId": "free-planets-alliance",
+      "name": "자유행성동맹",
+      "type": "alliance",
+      "isPlayable": true,
+      "aiPersonality": "balanced",
+      "color": "#4169E1",
+      "emblemUrl": "/assets/emblems/alliance.png"
+    }
+  ],
+  
+  "initialState": {
+    "gameDate": {
+      "year": 796,
+      "month": 2,
+      "day": 1
+    },
+    
+    "territories": [
+      {
+        "starSystemId": "astate",
+        "ownerId": "neutral",
+        "support": 50,
+        "publicOrder": 100
+      }
+    ],
+    
+    "characters": [
+      {
+        "characterId": "reinhard-lohengramm",
+        "templateId": "reinhard-lohengramm",
+        "name": "라인하르트 폰 로엔그람",
+        "factionId": "galactic-empire",
+        "locationId": "fleet-reinhard",
+        "locationType": "fleet",
+        "rank": "G5",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 98,
+          "might": 75,
+          "intellect": 95,
+          "politics": 85,
+          "charm": 90
+        },
+        "traits": ["genius_tactician", "charismatic_leader", "ambitious"],
+        "skills": ["concentrated_fire", "pincer_attack", "pursuit"]
+      },
+      {
+        "characterId": "siegfried-kircheis",
+        "templateId": "siegfried-kircheis",
+        "name": "지크프리트 키르히아이스",
+        "factionId": "galactic-empire",
+        "locationId": "fleet-kircheis",
+        "locationType": "fleet",
+        "rank": "G2",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 92,
+          "might": 80,
+          "intellect": 88,
+          "politics": 70,
+          "charm": 85
+        },
+        "traits": ["loyal", "calm_commander", "tactical_insight"],
+        "skills": ["flanking_maneuver", "defensive_formation"]
+      },
+      {
+        "characterId": "wolfgang-mittermeyer",
+        "templateId": "wolfgang-mittermeyer",
+        "name": "볼프강 미터마이어",
+        "factionId": "galactic-empire",
+        "locationId": "fleet-mittermeyer",
+        "locationType": "fleet",
+        "rank": "G1",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 88,
+          "might": 85,
+          "intellect": 80,
+          "politics": 60,
+          "charm": 75
+        },
+        "traits": ["swift_wolf", "aggressive"],
+        "skills": ["rapid_assault", "breakthrough"]
+      },
+      {
+        "characterId": "yang-wenli",
+        "templateId": "yang-wenli",
+        "name": "양 웬리",
+        "factionId": "free-planets-alliance",
+        "locationId": "fleet-yang",
+        "locationType": "fleet",
+        "rank": "O6",
+        "position": "squadron_commander",
+        "statsOverride": {
+          "command": 97,
+          "might": 50,
+          "intellect": 98,
+          "politics": 65,
+          "charm": 80
+        },
+        "traits": ["miracle_worker", "lazy_genius", "historian"],
+        "skills": ["tactical_retreat", "ambush", "defensive_genius"]
+      },
+      {
+        "characterId": "dusty-attenborough",
+        "templateId": "dusty-attenborough",
+        "name": "더스티 애튼보로",
+        "factionId": "free-planets-alliance",
+        "locationId": "fleet-yang",
+        "locationType": "fleet",
+        "rank": "O5",
+        "position": "operations_staff",
+        "statsOverride": {
+          "command": 75,
+          "might": 70,
+          "intellect": 78,
+          "politics": 55,
+          "charm": 72
+        },
+        "traits": ["reliable", "quick_thinker"],
+        "skills": ["emergency_maneuver"]
+      },
+      {
+        "characterId": "paetta",
+        "templateId": "paetta",
+        "name": "파에타",
+        "factionId": "free-planets-alliance",
+        "locationId": "fleet-2nd",
+        "locationType": "fleet",
+        "rank": "G2",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 65,
+          "might": 60,
+          "intellect": 55,
+          "politics": 50,
+          "charm": 45
+        },
+        "traits": ["stubborn", "by_the_book"],
+        "skills": []
+      },
+      {
+        "characterId": "moore",
+        "templateId": "moore",
+        "name": "무어",
+        "factionId": "free-planets-alliance",
+        "locationId": "fleet-4th",
+        "locationType": "fleet",
+        "rank": "G2",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 60,
+          "might": 55,
+          "intellect": 50,
+          "politics": 45,
+          "charm": 40
+        },
+        "traits": ["cautious", "defensive"],
+        "skills": []
+      },
+      {
+        "characterId": "pastole",
+        "templateId": "pastole",
+        "name": "파스톨레",
+        "factionId": "free-planets-alliance",
+        "locationId": "fleet-6th",
+        "locationType": "fleet",
+        "rank": "G2",
+        "position": "fleet_commander",
+        "statsOverride": {
+          "command": 58,
+          "might": 52,
+          "intellect": 48,
+          "politics": 42,
+          "charm": 38
+        },
+        "traits": ["impulsive"],
+        "skills": []
+      }
+    ],
+    
+    "fleets": [
+      {
+        "fleetId": "fleet-reinhard",
+        "name": "로엔그람 함대",
+        "factionId": "galactic-empire",
+        "commanderId": "reinhard-lohengramm",
+        "locationId": "astate-north",
+        "composition": {
+          "battleships": 800,
+          "cruisers": 400,
+          "destroyers": 600,
+          "carriers": 50,
+          "frigates": 300,
+          "transports": 100,
+          "fighters": 2000
+        },
+        "formation": "wedge",
+        "morale": 95,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-kircheis",
+        "name": "키르히아이스 함대",
+        "factionId": "galactic-empire",
+        "commanderId": "siegfried-kircheis",
+        "locationId": "astate-east",
+        "composition": {
+          "battleships": 500,
+          "cruisers": 300,
+          "destroyers": 400,
+          "carriers": 30,
+          "frigates": 200,
+          "transports": 80,
+          "fighters": 1200
+        },
+        "formation": "line",
+        "morale": 90,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-mittermeyer",
+        "name": "미터마이어 함대",
+        "factionId": "galactic-empire",
+        "commanderId": "wolfgang-mittermeyer",
+        "locationId": "astate-west",
+        "composition": {
+          "battleships": 400,
+          "cruisers": 250,
+          "destroyers": 350,
+          "carriers": 25,
+          "frigates": 180,
+          "transports": 60,
+          "fighters": 1000
+        },
+        "formation": "assault",
+        "morale": 92,
+        "supply": 100
+      },
+      {
+        "fleetId": "fleet-2nd",
+        "name": "제2함대",
+        "factionId": "free-planets-alliance",
+        "commanderId": "paetta",
+        "locationId": "astate-center",
+        "composition": {
+          "battleships": 1000,
+          "cruisers": 600,
+          "destroyers": 800,
+          "carriers": 60,
+          "frigates": 400,
+          "transports": 150,
+          "fighters": 2400
+        },
+        "formation": "defensive",
+        "morale": 75,
+        "supply": 90
+      },
+      {
+        "fleetId": "fleet-4th",
+        "name": "제4함대",
+        "factionId": "free-planets-alliance",
+        "commanderId": "moore",
+        "locationId": "astate-south",
+        "composition": {
+          "battleships": 900,
+          "cruisers": 550,
+          "destroyers": 750,
+          "carriers": 55,
+          "frigates": 380,
+          "transports": 140,
+          "fighters": 2200
+        },
+        "formation": "defensive",
+        "morale": 72,
+        "supply": 88
+      },
+      {
+        "fleetId": "fleet-6th",
+        "name": "제6함대",
+        "factionId": "free-planets-alliance",
+        "commanderId": "pastole",
+        "locationId": "astate-rear",
+        "composition": {
+          "battleships": 800,
+          "cruisers": 500,
+          "destroyers": 700,
+          "carriers": 50,
+          "frigates": 350,
+          "transports": 120,
+          "fighters": 2000
+        },
+        "formation": "reserve",
+        "morale": 70,
+        "supply": 85
+      },
+      {
+        "fleetId": "fleet-yang",
+        "name": "양 웬리 분함대",
+        "factionId": "free-planets-alliance",
+        "commanderId": "yang-wenli",
+        "locationId": "astate-center",
+        "composition": {
+          "battleships": 200,
+          "cruisers": 120,
+          "destroyers": 180,
+          "carriers": 15,
+          "frigates": 100,
+          "transports": 40,
+          "fighters": 600
+        },
+        "formation": "flexible",
+        "morale": 85,
+        "supply": 95
+      }
+    ],
+    
+    "resources": [
+      {
+        "factionId": "galactic-empire",
+        "credits": 100000,
+        "materials": 50000,
+        "fuel": 80000,
+        "food": 30000,
+        "manpower": 100000
+      },
+      {
+        "factionId": "free-planets-alliance",
+        "credits": 120000,
+        "materials": 60000,
+        "fuel": 90000,
+        "food": 35000,
+        "manpower": 150000
+      }
+    ]
+  },
+  
+  "victoryConditions": [
+    {
+      "id": "empire-total-victory",
+      "type": "DESTROY_ALL_FLEETS",
+      "description": "동맹군 전 함대 격멸",
+      "targetFactionId": "galactic-empire",
+      "params": {
+        "targetIds": ["fleet-2nd", "fleet-4th", "fleet-6th", "fleet-yang"]
+      },
+      "priority": 1
+    },
+    {
+      "id": "empire-objective-victory",
+      "type": "DESTROY_FLEET",
+      "description": "동맹군 2개 이상 함대 격멸",
+      "targetFactionId": "galactic-empire",
+      "params": {
+        "targetIds": ["fleet-2nd", "fleet-4th", "fleet-6th"],
+        "minCount": 2
+      },
+      "priority": 2
+    },
+    {
+      "id": "alliance-survival-victory",
+      "type": "SURVIVE_TURNS",
+      "description": "15턴 동안 2개 이상 함대 유지",
+      "targetFactionId": "free-planets-alliance",
+      "params": {
+        "turns": 15,
+        "minFleets": 2
+      },
+      "priority": 1
+    },
+    {
+      "id": "alliance-counterattack-victory",
+      "type": "DESTROY_FLEET",
+      "description": "제국군 사령부 함대 격멸",
+      "targetFactionId": "free-planets-alliance",
+      "params": {
+        "targetIds": ["fleet-reinhard"]
+      },
+      "priority": 2
+    }
+  ],
+  
+  "defeatConditions": [
+    {
+      "id": "empire-defeat",
+      "type": "DESTROY_FLEET",
+      "description": "로엔그람 함대 격멸",
+      "targetFactionId": "galactic-empire",
+      "params": {
+        "targetIds": ["fleet-reinhard"]
+      },
+      "priority": 1
+    },
+    {
+      "id": "alliance-defeat",
+      "type": "DESTROY_ALL_FLEETS",
+      "description": "동맹군 전 함대 격멸",
+      "targetFactionId": "free-planets-alliance",
+      "params": {
+        "targetIds": ["fleet-2nd", "fleet-4th", "fleet-6th", "fleet-yang"]
+      },
+      "priority": 1
+    }
+  ],
+  
+  "events": [
+    {
+      "id": "battle-start-briefing",
+      "name": "전투 개시 브리핑",
+      "description": "아스타테 성역에서의 조우전 시작",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 1 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "우주력 796년, 아스타테 성역. 은하제국군과 자유행성동맹군이 격돌하려 하고 있다.",
+            "duration": 5000
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "적은 수적으로 우세하지만, 분산되어 있다. 각개격파하면 승산이 있다.",
+            "portrait": "/assets/portraits/reinhard.png",
+            "duration": 4000
+          },
+          "delay": 1000
+        }
+      ],
+      "once": true,
+      "priority": 100,
+      "enabled": true
+    },
+    {
+      "id": "reinhard-first-strike",
+      "name": "라인하르트의 선제공격",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 2 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "제4함대를 먼저 친다! 전 함대 돌격!",
+            "portrait": "/assets/portraits/reinhard.png"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-reinhard",
+            "statName": "morale",
+            "value": 5,
+            "operation": "add"
+          }
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "moore-panic",
+      "name": "무어 제독의 당황",
+      "trigger": {
+        "type": "ON_BATTLE_START",
+        "params": {
+          "fleetId": "fleet-4th"
+        }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "TURN_GTE",
+              "params": { "turn": 2 }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "moore",
+            "speakerName": "무어",
+            "text": "뭐, 뭐야! 적이 우리를 노리고 있다고?! 제2, 제6함대는 어디 있는 거야!",
+            "portrait": "/assets/portraits/moore.png"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-4th",
+            "statName": "morale",
+            "value": -10,
+            "operation": "add"
+          }
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "yang-tactical-advice",
+      "name": "양 웬리의 전술 조언",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 3 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "CHARACTER_ALIVE",
+              "params": { "characterId": "yang-wenli" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "yang-wenli",
+            "speakerName": "양 웬리",
+            "text": "적은 분산된 우리 함대를 각개격파하려 합니다. 합류하지 않으면 위험합니다.",
+            "portrait": "/assets/portraits/yang.png"
+          }
+        }
+      ],
+      "choices": [
+        {
+          "id": "listen-to-yang",
+          "text": "양 웬리의 조언을 따른다",
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "listened_to_yang",
+                "flagValue": true
+              }
+            },
+            {
+              "type": "MODIFY_STAT",
+              "params": {
+                "targetId": "fleet-yang",
+                "statName": "morale",
+                "value": 10,
+                "operation": "add"
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "yang-wenli",
+                "speakerName": "양 웬리",
+                "text": "현명한 판단입니다. 일단 후퇴하면서 시간을 벌겠습니다.",
+                "portrait": "/assets/portraits/yang.png"
+              }
+            }
+          ],
+          "consequences": "함대 사기 증가, 전술적 유연성 확보"
+        },
+        {
+          "id": "ignore-yang",
+          "text": "무시하고 공격 명령을 유지한다",
+          "actions": [
+            {
+              "type": "SET_FLAG",
+              "params": {
+                "flagName": "ignored_yang",
+                "flagValue": true
+              }
+            },
+            {
+              "type": "SHOW_DIALOGUE",
+              "params": {
+                "speakerId": "paetta",
+                "speakerName": "파에타",
+                "text": "겁쟁이 같은 소리! 우리는 수적으로 우세하다! 공격을 계속한다!",
+                "portrait": "/assets/portraits/paetta.png"
+              }
+            }
+          ],
+          "consequences": "기존 전략 유지, 위험 증가"
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "kircheis-flanking",
+      "name": "키르히아이스의 측면 공격",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 5 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "라인하르트님의 신호입니다. 측면 공격을 개시합니다!",
+            "portrait": "/assets/portraits/kircheis.png"
+          }
+        },
+        {
+          "type": "MOVE_FLEET",
+          "params": {
+            "fleetId": "fleet-kircheis",
+            "targetLocationId": "astate-center"
+          }
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "mittermeyer-swift-assault",
+      "name": "질풍 볼프의 돌격",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 6 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "wolfgang-mittermeyer",
+            "speakerName": "미터마이어",
+            "text": "적의 퇴로를 차단한다! 전속력!",
+            "portrait": "/assets/portraits/mittermeyer.png"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-mittermeyer",
+            "statName": "morale",
+            "value": 8,
+            "operation": "add"
+          }
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "paetta-wounded",
+      "name": "파에타 제독 부상",
+      "trigger": {
+        "type": "ON_BATTLE_END",
+        "params": {
+          "fleetId": "fleet-2nd"
+        }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "TURN_GTE",
+              "params": { "turn": 8 }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "narrator",
+            "speakerName": "내레이터",
+            "text": "제2함대 기함이 피탄! 파에타 제독이 중상을 입었습니다!"
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "paetta",
+            "speakerName": "파에타",
+            "text": "으윽... 양, 양 웬리 대령에게... 지휘권을 넘겨라...",
+            "portrait": "/assets/portraits/paetta.png"
+          },
+          "delay": 1000
+        },
+        {
+          "type": "SET_FLAG",
+          "params": {
+            "flagName": "yang_in_command",
+            "flagValue": true
+          }
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "yang-takes-command",
+      "name": "양 웬리 지휘권 인수",
+      "trigger": {
+        "type": "ON_EVENT_TRIGGERED",
+        "params": {
+          "eventId": "paetta-wounded"
+        }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "yang-wenli",
+            "speakerName": "양 웬리",
+            "text": "...알겠습니다. 전 함대, 철수 태세를 갖추시오. 가능한 많은 장병을 살려야 합니다.",
+            "portrait": "/assets/portraits/yang.png"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-yang",
+            "statName": "morale",
+            "value": 15,
+            "operation": "add"
+          }
+        },
+        {
+          "type": "MODIFY_STAT",
+          "params": {
+            "targetId": "fleet-2nd",
+            "statName": "morale",
+            "value": 5,
+            "operation": "add"
+          }
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "miracle-yang",
+      "name": "기적의 양",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 12 }
+      },
+      "conditions": [
+        {
+          "type": "AND",
+          "checks": [
+            {
+              "checkType": "FLAG_SET",
+              "params": { "flagName": "yang_in_command" }
+            },
+            {
+              "checkType": "CHARACTER_ALIVE",
+              "params": { "characterId": "yang-wenli" }
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "dusty-attenborough",
+            "speakerName": "애튼보로",
+            "text": "양 제독! 적 함대가 추격을 중단했습니다! 철수에 성공한 겁니다!",
+            "portrait": "/assets/portraits/attenborough.png"
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "yang-wenli",
+            "speakerName": "양 웬리",
+            "text": "...많은 사람이 죽었어. 승리라고 부를 수 있을까?",
+            "portrait": "/assets/portraits/yang.png"
+          },
+          "delay": 2000
+        }
+      ],
+      "once": true,
+      "enabled": true
+    },
+    {
+      "id": "reinhard-observation",
+      "name": "라인하르트의 관찰",
+      "trigger": {
+        "type": "ON_TURN",
+        "params": { "turn": 13 }
+      },
+      "actions": [
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "저 함대를 지휘하는 자는 누구지? 패배를 최소화하는 저 솜씨... 평범한 자가 아니군.",
+            "portrait": "/assets/portraits/reinhard.png"
+          }
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "siegfried-kircheis",
+            "speakerName": "키르히아이스",
+            "text": "정보에 의하면 양 웬리라는 대령입니다. 엘 파실의 영웅이라고 합니다.",
+            "portrait": "/assets/portraits/kircheis.png"
+          },
+          "delay": 1000
+        },
+        {
+          "type": "SHOW_DIALOGUE",
+          "params": {
+            "speakerId": "reinhard-lohengramm",
+            "speakerName": "라인하르트",
+            "text": "양 웬리... 기억해 두겠다.",
+            "portrait": "/assets/portraits/reinhard.png"
+          },
+          "delay": 1000
+        }
+      ],
+      "once": true,
+      "enabled": true
+    }
+  ],
+  
+  "scriptedBattles": [
+    {
+      "id": "fourth-fleet-annihilation",
+      "name": "제4함대 격멸전",
+      "description": "라인하르트 함대의 제4함대 기습 공격",
+      "attackerFactionId": "galactic-empire",
+      "defenderFactionId": "free-planets-alliance",
+      "attackerFleets": [],
+      "defenderFleets": [],
+      "battleType": "space",
+      "specialRules": [
+        {
+          "id": "surprise-attack",
+          "name": "기습 공격",
+          "description": "첫 턴 공격력 +30%",
+          "type": "DAMAGE_MODIFIER",
+          "params": {
+            "attackerId": "galactic-empire",
+            "modifier": 1.3,
+            "duration": 1
+          }
+        },
+        {
+          "id": "scattered-defense",
+          "name": "분산된 방어",
+          "description": "동맹군 초기 방어력 -20%",
+          "type": "DAMAGE_MODIFIER",
+          "params": {
+            "defenderId": "free-planets-alliance",
+            "modifier": 0.8,
+            "duration": 2
+          }
+        }
+      ],
+      "battleEvents": [],
+      "victoryConditions": [
+        {
+          "id": "destroy-4th",
+          "type": "FLEET_SIZE",
+          "description": "제4함대 전력 50% 이하로 격감",
+          "params": {
+            "targetIds": ["fleet-4th"],
+            "maxSize": 50
+          }
+        }
+      ],
+      "defeatConditions": [
+        {
+          "id": "attacker-retreat",
+          "type": "FLEET_SIZE",
+          "description": "제국군 전력 70% 이하",
+          "params": {
+            "targetIds": ["fleet-reinhard"],
+            "maxSize": 70
+          }
+        }
+      ]
+    }
+  ],
+  
+  "customData": {
+    "historicalNote": "아스타테 회전은 은하영웅전설에서 라인하르트와 양 웬리가 처음으로 대결한 전투입니다. 이 전투에서 라인하르트는 수적 열세에도 불구하고 분산된 동맹군을 각개격파하여 승리했습니다.",
+    "recommendedStrategy": {
+      "empire": "적 함대가 합류하기 전에 빠르게 각개격파하세요. 제4함대를 먼저 공격하는 것이 유리합니다.",
+      "alliance": "함대를 가능한 빨리 합류시키세요. 양 웬리의 조언을 따르면 생존 확률이 높아집니다."
+    }
+  },
+  
+  "isPublished": true,
+  "isOfficial": true
+}
+
+
+
+
+
+
+
+

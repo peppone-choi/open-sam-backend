@@ -94,12 +94,8 @@ export class NpcAutoCommand extends GeneralCommand {
       this.setResultTurn(new LastTurn(NpcAutoCommand.getName(), this.arg));
     }
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
+    // 공통 후처리 (NPC 자동은 아이템 추첨/유산 포인트 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
 
     await this.saveGeneral();
 

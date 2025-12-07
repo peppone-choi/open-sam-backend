@@ -1,0 +1,142 @@
+{
+  "description": "시나리오 7 (UC798.4) 함대 배치. 제8차 이제르론 공방전 (요새 대 요새).",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "kempf_fleet",
+        "name": "켐프 함대",
+        "commander": "켐프",
+        "commanderId": 114,
+        "size": 20000,
+        "location": "iserlohn_corridor",
+        "status": "combat",
+        "notes": "가이에스부르크 호위 함대."
+      },
+      {
+        "id": "muller_fleet",
+        "name": "뮐러 함대",
+        "commander": "뮐러",
+        "commanderId": 7,
+        "size": 15000,
+        "location": "iserlohn_corridor",
+        "status": "combat",
+        "notes": "켐프 함대 지원."
+      }
+    ],
+    "fortressFleets": [
+      {
+        "id": "gaiesburg_mobile",
+        "name": "가이에스부르크 이동요새",
+        "commander": "켐프",
+        "size": 10000,
+        "location": "iserlohn_corridor",
+        "status": "combat",
+        "mainCannon": {
+          "name": "가이에스하켄",
+          "power": 12000,
+          "range": 8
+        },
+        "defense": 20000,
+        "warpCapable": true,
+        "notes": "워프하여 이제르론 성계에 진입. 승리해도 사용불능."
+      }
+    ]
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "yang_fleet",
+        "name": "양 웬리 함대 (귀환 중)",
+        "commander": "양 웬리 (부재)",
+        "commanderId": 2,
+        "size": 18000,
+        "location": "iserlohn",
+        "status": "garrison",
+        "notes": "양 웬리 사문회 출석 중. 메르카츠가 임시 지휘."
+      },
+      {
+        "id": "attenborough_fleet",
+        "name": "아텐보로 분함대",
+        "commander": "아텐보로",
+        "commanderId": 12,
+        "size": 3000,
+        "location": "iserlohn",
+        "status": "combat",
+        "notes": "전함 2부대만. 전멸 시 전사 확률 높음."
+      },
+      {
+        "id": "fischer_fleet",
+        "name": "피셔 분함대",
+        "commander": "피셔",
+        "commanderId": 207,
+        "size": 3000,
+        "location": "iserlohn",
+        "status": "combat",
+        "notes": "전함 2부대만. 전멸 시 전사 확률 높음."
+      },
+      {
+        "id": "nguyen_fleet",
+        "name": "구엔 분함대",
+        "commander": "구엔",
+        "commanderId": 208,
+        "size": 3000,
+        "location": "iserlohn",
+        "status": "combat",
+        "notes": "전함 2부대만. 전멸 시 전사 확률 높음."
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_garrison",
+        "name": "이제르론 요새 주둔대",
+        "fortress": "iserlohn",
+        "commander": "메르카츠 (임시)",
+        "size": 20000,
+        "status": "garrison",
+        "mainCannon": {
+          "name": "토르해머",
+          "power": 15000,
+          "range": 10
+        },
+        "defense": 30000,
+        "notes": "방어력 내전 이전 대비 하락 (이전 6만 → 3만)"
+      }
+    ]
+  },
+  
+  "battleSituation": {
+    "location": "iserlohn",
+    "turn": 1,
+    "fortressBattle": {
+      "iserlohn": {
+        "name": "이제르론 요새",
+        "mainCannon": "토르해머",
+        "cannonPower": 15000,
+        "defense": 30000,
+        "defenseNote": "이전 내전으로 방어력 하락"
+      },
+      "gaiesburg": {
+        "name": "가이에스부르크 요새 (이동)",
+        "mainCannon": "가이에스하켄",
+        "cannonPower": 12000,
+        "defense": 20000,
+        "statusNote": "화력/방어력 열세. 승리해도 사용불능."
+      },
+      "analysis": "요새포 대결 시 이제르론 우세. 가이에스부르크의 접근 필요."
+    },
+    "dangerZone": {
+      "description": "요새들 인근은 요새포+대공사격 범위",
+      "effects": [
+        "가이에스하켄 직격 시 함대 큰 피해",
+        "토르해머 직격 시 함대 전멸 가능",
+        "분함대급은 전멸 시 제독 전사 확률 높음"
+      ]
+    }
+  }
+}
+
+
+
+

@@ -1,0 +1,69 @@
+{
+  "description": "시나리오 9 (UC799.2) 제독 오버라이드. 제1차 란테마리오 성역 회전 시점.",
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 22,
+      "faction": 1,
+      "position": "제국 총사령관",
+      "location": "rantemario",
+      "status": "combat",
+      "notes": "최정예 9개 함대 직접 지휘."
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 32,
+      "faction": 2,
+      "position": "증원군 사령관",
+      "location": "approaching_rantemario",
+      "status": "advancing",
+      "playable": true,
+      "notes": "전략턴 1 후 란테마리오에 합류."
+    },
+    {
+      "id": 5,
+      "name": "오스카 폰 로이엔탈",
+      "rank": 10,
+      "rankName": "상급대장",
+      "age": 32,
+      "faction": 1,
+      "position": "후속 함대 지휘관",
+      "location": "en_route",
+      "status": "advancing",
+      "notes": "전략턴 2-3 후 란테마리오 합류."
+    },
+    {
+      "id": 6,
+      "name": "볼프강 미터마이어",
+      "rank": 10,
+      "rankName": "상급대장",
+      "age": 31,
+      "faction": 1,
+      "position": "선봉 사령관",
+      "location": "rantemario",
+      "status": "combat"
+    },
+    {
+      "id": 10,
+      "name": "알렉산드르 뷰코크",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 67,
+      "faction": 2,
+      "position": "우주함대 사령장관",
+      "location": "rantemario",
+      "status": "combat",
+      "notes": "동맹군 주력 지휘. 포위당한 상황."
+    }
+  ]
+}
+
+
+
+

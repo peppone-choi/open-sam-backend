@@ -1,0 +1,102 @@
+{
+  "description": "시나리오 10 (UC799.4) 제독 오버라이드. 버밀리온 성역 회전 시점.",
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 23,
+      "faction": 1,
+      "position": "제국 총사령관",
+      "location": "vermilion",
+      "status": "combat",
+      "fleetComposition": {
+        "description": "소규모 분함대 (고증)",
+        "units": ["전함부대 x2", "수송함부대 x1"],
+        "vulnerability": "핀포인트 격파 가능"
+      },
+      "notes": "분함대 구성으로 양 웬리에게 타격당할 수 있음!"
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 10,
+      "rankName": "상급대장",
+      "age": 33,
+      "faction": 2,
+      "position": "동맹군 총사령관",
+      "location": "vermilion",
+      "status": "combat",
+      "playable": true,
+      "notes": "라인하르트와 직접 대결 중! 전사시키면 동맹 승리!"
+    },
+    {
+      "id": 10,
+      "name": "알렉산드르 뷰코크",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 68,
+      "faction": 2,
+      "position": "우주함대 사령장관",
+      "location": "heinessen",
+      "status": "defense",
+      "notes": "수도 방어. 함대 없는 상태."
+    }
+  ],
+  
+  "newCharacters": [
+    {
+      "id": 218,
+      "name": "록웰",
+      "nameEn": "Rockwell",
+      "faction": 2,
+      "rank": 6,
+      "rankName": "소장",
+      "position": "통합작전본부차장 후보",
+      "location": "heinessen",
+      "status": "political",
+      "politicalOperation": 6500,
+      "leadership": 45,
+      "politics": 70,
+      "notes": "쿠데타 가능한 유일한 인물. 정치공작 8000 도달 시 쿠데타 가능."
+    },
+    {
+      "id": 219,
+      "name": "칼센",
+      "nameEn": "Carlsen",
+      "faction": 2,
+      "rank": 6,
+      "rankName": "소장",
+      "location": "vermilion",
+      "status": "combat",
+      "fleetSize": "small",
+      "units": ["전함부대 x2"],
+      "notes": "분함대 편성. 전멸 시 전사 확률 높음."
+    },
+    {
+      "id": 207,
+      "name": "에드윈 피셔",
+      "faction": 2,
+      "rank": 7,
+      "rankName": "중장",
+      "location": "vermilion",
+      "status": "combat",
+      "fleetSize": "small",
+      "units": ["전함부대 x2"],
+      "notes": "분함대 편성. 전멸 시 전사 확률 높음."
+    }
+  ],
+  
+  "coupCandidate": {
+    "character": "록웰",
+    "currentPoliticalOperation": 6500,
+    "requiredForCoup": 8000,
+    "turnsToReady": "약 5-7턴",
+    "notes": "경제 파탄 전에 쿠데타 실행해야 함!"
+  }
+}
+
+
+
+

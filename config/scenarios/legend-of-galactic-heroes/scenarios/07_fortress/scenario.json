@@ -1,0 +1,103 @@
+{
+  "id": "logh-07-fortress",
+  "name": "요새 대 요새",
+  "nameJa": "要塞対要塞",
+  "nameEn": "Fortress vs Fortress",
+  "description": "우주력 798년 4월, 제8차 이제르론 공방전. 가이에스부르크 요새가 워프하여 이제르론에 도전한다!",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 798,
+    "startMonth": 4,
+    "imperialYear": 489,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 33,
+    "phezzan": 1,
+    "alliance": 24
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [3, 4, 6, 7, 8, 11, 14, 15, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": true,
+    "location": "iserlohn",
+    "description": "이제르론 성계에서 요새 대 요새 전투 진행 중"
+  },
+  
+  "difficulty": {
+    "empire": 4,
+    "alliance": 3,
+    "description": "요새전 특수 상황. 가이에스부르크가 화력/방어력 열세."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["kempf", "muller"],
+      "available": "소장급 이상",
+      "notes": "리히텐라데 사망, 귀족 숙청 완료. 원수급 요직 공백."
+    },
+    "alliance": {
+      "recommended": ["yang_wenli", "merkatz"],
+      "available": "소장급 이상",
+      "notes": "양 웬리 사문회 출석 중 → 귀환 중. 메르카츠가 히페리온 지휘."
+    }
+  },
+  
+  "specialRules": {
+    "fortressWarp": {
+      "description": "가이에스부르크 요새가 워프하여 이제르론 성계에 진입",
+      "note": "요새 이동 시스템의 첫 실전 사용"
+    },
+    "fortressBattle": {
+      "description": "토르해머 vs 가이에스하켄 요새포 대결",
+      "iserlohn": { "mainCannon": "토르해머", "power": 15000, "defense": 30000 },
+      "gaiesburg": { "mainCannon": "가이에스하켄", "power": 12000, "defense": 20000 },
+      "note": "가이에스부르크가 화력/방어력 열세"
+    },
+    "gaiesburg_destruction": {
+      "description": "전투 승리해도 가이에스부르크 요새 사용불능",
+      "reason": "워프 엔진 손상으로 귀환 불가"
+    },
+    "yangAbsence": {
+      "description": "양 웬리는 사문회 출석 후 귀환 중",
+      "substitute": "메르카츠가 히페리온으로 임시 지휘"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "이제르론 요새 함락",
+      "동맹 수도 바라트 성계 점령"
+    ],
+    "alliance": [
+      "가이에스부르크 요새 격퇴",
+      "제국군 함대 궤멸"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "가이에스부르크 vs 이제르론 정면승부 시 패배 확정. 화력/방어력 열세.",
+      "함대전으로 전환하여 동맹 함대 타격 후 요새 공략 시도.",
+      "켐프/뮐러 함대의 지원이 핵심.",
+      "승리해도 가이에스부르크 사용불능 → 함대 보존 중요."
+    ],
+    "alliance": [
+      "양 웬리 귀환 전까지 메르카츠가 버텨야 함.",
+      "요새포 대결에서 이제르론 우세. 가이에스하켄 사정거리 주의.",
+      "분함대급 제독들(아텐보로, 피셔, 구엔) 전멸 시 전사 확률 높음.",
+      "양 웬리 귀환 후 반격으로 제국군 격퇴."
+    ]
+  }
+}
+
+
+
+

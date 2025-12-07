@@ -53,19 +53,8 @@ export class RestCureCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(RestCureCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // StaticEventHandler 처리
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(
-        general,
-        null,
-        this,
-        this.env,
-        this.arg
-      );
-    } catch (error: any) {
-      console.error('StaticEventHandler failed:', error);
-    }
+    // 공통 후처리 (요양은 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true });
 
     await this.saveGeneral();
 

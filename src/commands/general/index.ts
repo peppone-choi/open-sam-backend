@@ -32,6 +32,10 @@ export { RaiseArmyCommand } from './raiseArmy';
 export { ForceMarchCommand } from './forceMarch';
 export { FireAttackCommand } from './fireAttack';
 export { DestroyCommand } from './destroy';
+export { AmbushCommand } from './ambush';
+export { TrapCommand } from './trap';
+export { BuildWallCommand } from './buildWall';
+export { BuildIrrigationCommand } from './buildIrrigation';
 export { FoundNationCommand } from './foundNation';
 export { RandomFoundNationCommand } from './randomFoundNation';
 export { CrFoundNationCommand } from './crFoundNation';
@@ -69,3 +73,8 @@ export { SpyCommand } from './spy';
 export { RecruitGeneralCommand } from './recruitGeneral';
 export { ConvertExpCommand } from './convertExp';
 export { JoinNationCommand } from './joinNation';
+
+// 포로 시스템 커맨드
+export { RecruitPrisonerCommand } from './recruitPrisoner';
+export { ReleasePrisonerCommand } from './releasePrisoner';
+export { ExecutePrisonerCommand } from './executePrisoner';

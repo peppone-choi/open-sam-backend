@@ -1,0 +1,72 @@
+{
+  "id": "logh-lippstadt",
+  "name": "립슈타트 전역",
+  "description": "우주력 797년, 은하제국과 자유행성동맹을 뒤흔드는 내전의 불길",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  "startYear": 797,
+  "startMonth": 3,
+  "factions": [
+    {
+      "id": "empire_lohengramm",
+      "name": "로엔그람 원수부",
+      "color": "#8B0000",
+      "leader": "라인하르트",
+      "capital": "오딘",
+      "description": "라인하르트 폰 로엔그람을 중심으로 한 제국 개혁 세력"
+    },
+    {
+      "id": "empire_lippstadt",
+      "name": "립슈타트 귀족연합",
+      "color": "#FF4500",
+      "leader": "브라운슈바이크",
+      "capital": "가이에스부르크",
+      "description": "문벌귀족들이 결성한 반 라인하르트 연합"
+    },
+    {
+      "id": "alliance_government",
+      "name": "자유행성동맹 정부",
+      "color": "#000080",
+      "leader": "트뤼니히트",
+      "capital": "하이네센",
+      "description": "합법적인 동맹 정부와 양 웬리 함대"
+    },
+    {
+      "id": "alliance_coup",
+      "name": "구국군사회의",
+      "color": "#4169E1",
+      "leader": "드와이트 그린힐",
+      "capital": "하이네센",
+      "description": "부패한 민주주의를 타도하려는 군사 쿠데타 세력"
+    },
+    {
+      "id": "phezzan",
+      "name": "페잔 자치령",
+      "color": "#FFD700",
+      "leader": "루빈스키",
+      "capital": "페잔",
+      "description": "중립 상업 국가"
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_lippstadt_decl",
+      "trigger": { "type": "date", "year": 797, "month": 4 },
+      "title": "립슈타트 선언",
+      "description": "문벌귀족들이 라인하르트 타도를 외치며 궐기했습니다.",
+      "effect": { "type": "diplomacy", "from": "empire_lohengramm", "to": "empire_lippstadt", "state": "war" }
+    },
+    {
+      "id": "evt_coup_heinessen",
+      "trigger": { "type": "date", "year": 797, "month": 4 },
+      "title": "구국군사회의 쿠데타",
+      "description": "하이네센에서 군사 쿠데타가 발생했습니다. 정부 요인들이 구금되었습니다.",
+      "effect": { "type": "spawn_faction", "factionId": "alliance_coup", "location": "heinessen" }
+    }
+  ]
+}
+
+
+
+
+

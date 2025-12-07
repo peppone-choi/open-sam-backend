@@ -9,6 +9,8 @@ import { GameSocketHandler } from './game.socket';
 import { GeneralSocketHandler } from './general.socket';
 import { NationSocketHandler } from './nation.socket';
 import { WebSocketHandler } from '../services/logh/WebSocketHandler.service';
+import { TacticalSocketHandler, initTacticalSocket } from './tactical.socket';
+import { MessengerSocketHandler } from './messenger.socket';
 import { logger } from '../common/logger';
 
 /**
@@ -22,6 +24,8 @@ export class SocketManager {
   private generalHandler: GeneralSocketHandler;
   private nationHandler: NationSocketHandler;
   private loghHandler: WebSocketHandler | null = null;
+  private tacticalHandler: TacticalSocketHandler | null = null;
+  private messengerHandler: MessengerSocketHandler | null = null;
 
   constructor(httpServer: HTTPServer) {
     // Socket.IO 서버 초기화
@@ -58,6 +62,18 @@ export class SocketManager {
     if (process.env.ENABLE_LOGH_WEBSOCKET !== 'false') {
       this.loghHandler = new WebSocketHandler(this.io);
       logger.info('LOGH WebSocket 핸들러 초기화 완료');
+    }
+
+    // GIN7 Tactical 핸들러 초기화 (/tactical 네임스페이스)
+    if (process.env.ENABLE_GIN7_TACTICAL !== 'false') {
+      this.tacticalHandler = initTacticalSocket(this.io);
+      logger.info('GIN7 Tactical WebSocket 핸들러 초기화 완료 (/tactical 네임스페이스)');
+    }
+
+    // GIN7 Messenger 핸들러 초기화
+    if (process.env.ENABLE_GIN7_MESSENGER !== 'false') {
+      this.messengerHandler = new MessengerSocketHandler(this.io);
+      logger.info('GIN7 Messenger WebSocket 핸들러 초기화 완료');
     }
 
     // 연결 처리
@@ -139,6 +155,10 @@ export class SocketManager {
     // LOGH 세션인 경우 LOGH 핸들러로 처리
     if (sessionId && sessionId.startsWith('logh_') && this.loghHandler) {
       this.loghHandler.handleConnection(socket);
+      // GIN7 메신저 핸들러도 연결 (LOGH 세션에서도 메신저 사용 가능)
+      if (this.messengerHandler) {
+        this.messengerHandler.handleConnection(socket);
+      }
       return; // LOGH는 별도 처리
     }
 
@@ -147,6 +167,11 @@ export class SocketManager {
     this.gameHandler.handleConnection(socket);
     this.generalHandler.handleConnection(socket);
     this.nationHandler.handleConnection(socket);
+    
+    // GIN7 메신저 핸들러 연결 (모든 세션에서 사용 가능)
+    if (this.messengerHandler) {
+      this.messengerHandler.handleConnection(socket);
+    }
 
     // 연결 해제 처리
     socket.on('disconnect', (reason: string) => {
@@ -292,6 +317,20 @@ export class SocketManager {
    */
   getIO(): SocketIOServer {
     return this.io;
+  }
+
+  /**
+   * GIN7 Tactical 핸들러 반환
+   */
+  getTacticalHandler(): TacticalSocketHandler | null {
+    return this.tacticalHandler;
+  }
+
+  /**
+   * GIN7 Messenger 핸들러 반환
+   */
+  getMessengerHandler(): MessengerSocketHandler | null {
+    return this.messengerHandler;
   }
 
   /**

@@ -457,6 +457,15 @@ export class ConstraintHelper {
     };
   }
 
+  /**
+   * createCustom - Custom의 별칭 (logh 커맨드 호환용)
+   */
+  static createCustom(testFn: (ctx: any) => boolean, message: string): IConstraint {
+    return {
+      test: (input: any, env: any) => testFn(input) ? null : message
+    };
+  }
+
   static NearCity(distance: number): IConstraint {
     return {
       test: (input: any, env: any) => {
@@ -1358,6 +1367,73 @@ export class ConstraintHelper {
         }
 
         return '도시에 상인이 없습니다.';
+      }
+    };
+  }
+
+  /**
+   * 대상 장수의 값 확인
+   * @param key 확인할 데이터 키
+   * @param name 표시 이름
+   * @param operator 비교 연산자
+   * @param value 비교 값
+   * @param message 에러 메시지
+   */
+  static ReqDestGeneralValue(
+    key: string,
+    name: string,
+    operator: string,
+    value: any,
+    message?: string
+  ): IConstraint {
+    const actualMessage = message || `대상 장수의 ${name} 조건을 만족하지 않습니다.`;
+    return {
+      test: (input: any, env: any) => {
+        const destGeneral = input.destGeneral;
+        if (!destGeneral) {
+          return '대상 장수가 없습니다.';
+        }
+
+        const generalValue = this.getGenVar(destGeneral, key);
+        let result = false;
+        switch (operator) {
+          case '>=': result = generalValue >= value; break;
+          case '>': result = generalValue > value; break;
+          case '<=': result = generalValue <= value; break;
+          case '<': result = generalValue < value; break;
+          case '===': result = generalValue === value; break;
+          case '!==': result = generalValue !== value; break;
+          case '==': result = generalValue == value; break;
+          case '!=': result = generalValue != value; break;
+          case '=': result = generalValue == value; break;
+        }
+        return result ? null : actualMessage;
+      }
+    };
+  }
+
+  /**
+   * 대상 포로가 자국 소속인지 확인
+   * 포로 시스템용 제약조건
+   */
+  static SameNationDestGeneralPrisoner(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const general = input.general;
+        const destGeneral = input.destGeneral;
+
+        if (!destGeneral) {
+          return '대상 장수가 없습니다.';
+        }
+
+        const generalNationId = this.getGenVar(general, 'nation');
+        const prisonerOf = this.getGenVar(destGeneral, 'prisoner_of');
+
+        if (prisonerOf === generalNationId) {
+          return null;
+        }
+
+        return '자국의 포로가 아닙니다.';
       }
     };
   }

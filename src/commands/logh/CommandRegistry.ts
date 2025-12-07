@@ -88,6 +88,7 @@ class CommandRegistry {
     this.registerCommand('parade', StrategicCommands.ParadeCommand);
     this.registerCommand('peerage', StrategicCommands.PeerageCommand);
     this.registerCommand('persuasion', StrategicCommands.PersuasionCommand);
+    this.registerCommand('politician_punishment', StrategicCommands.PoliticianPunishmentCommand);
     this.registerCommand('port', StrategicCommands.PortCommand);
     this.registerCommand('production', StrategicCommands.ProductionCommand);
     this.registerCommand('promotion', StrategicCommands.PromotionCommand);

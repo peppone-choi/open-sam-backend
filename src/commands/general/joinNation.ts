@@ -174,7 +174,10 @@ export class JoinNationCommand extends GeneralCommand {
 
     // InheritancePoint 처리
     try {
-      // TODO: general.increaseInheritancePoint('active_action', 1);
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
     } catch (error: any) {
       console.error('InheritancePoint 실패:', error);
     }
@@ -183,22 +186,6 @@ export class JoinNationCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(JoinNationCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // StaticEventHandler 처리
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error: any) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // tryUniqueItemLottery 처리
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      await tryUniqueItemLottery(rng, general, sessionId, '임관');
-    } catch (error: any) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
-
     console.log(`[JoinNation] 저장 전 데이터 확인:`, {
       no: general.getID(),
       name: general.data.name || general.name,
@@ -206,6 +193,9 @@ export class JoinNationCommand extends GeneralCommand {
       officer_level: general.data.officer_level,
       city: general.data.city
     });
+
+    // 공통 후처리 (임관은 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipInheritancePoint: true });
 
     await this.saveGeneral();
 

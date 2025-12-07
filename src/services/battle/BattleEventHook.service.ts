@@ -438,6 +438,17 @@ export async function onUnified(sessionId: string, unifiedNationId: number): Pro
     // 명예의 전당 기록 (통일 시 모든 장수)
     await recordHallOfFame(sessionId, unifiedNationId, gameEnv.year, gameEnv.month);
 
+    try {
+      const { HistoryService } = await import('../HistoryService');
+      await HistoryService.saveGameResult(sessionId, unifiedNationId);
+    } catch (historyError: any) {
+      logger.error('[BattleEventHook] HistoryService 저장 실패', {
+        sessionId,
+        unifiedNationId,
+        error: historyError?.message
+      });
+    }
+
     logger.info('[BattleEventHook] Unified event processed', {
       sessionId,
       unifiedNationId,

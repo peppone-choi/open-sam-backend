@@ -199,9 +199,14 @@ export class ScorchedEarthCommand extends NationCommand {
     if (refreshNationStaticInfo) await refreshNationStaticInfo();
     if (SetNationFront) await SetNationFront(nationID);
 
-    const InheritanceKey = global.InheritanceKey;
-    if (general.increaseInheritancePoint && InheritanceKey?.active_action) {
-      // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
     }
 
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaUl} 초토화했습니다. <1>${date}</>`);

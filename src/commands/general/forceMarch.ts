@@ -153,10 +153,6 @@ export class ForceMarchCommand extends GeneralCommand {
             .filter((id: any) => id !== undefined);
           await this.updateOtherGeneralsCity(targetIds, destCityID);
           
-import { ActionLogger } from '../../utils/ActionLogger'; // Ensure this import is added at top
-
-// ... inside run method ...
-
           for (const targetGen of generals) {
             const targetGeneralID = targetGen.data?.no ?? targetGen.no;
             if (targetGeneralID) {
@@ -181,22 +177,8 @@ import { ActionLogger } from '../../utils/ActionLogger'; // Ensure this import i
     this.setResultTurn(new LastTurn(ForceMarchCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // StaticEventHandler
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // UniqueItemLottery
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '강행');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
 
     await this.saveGeneral();
 

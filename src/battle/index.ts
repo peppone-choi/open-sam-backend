@@ -5,4 +5,5 @@
 export { WarUnit } from './WarUnit';
 export { WarUnitGeneral } from './WarUnitGeneral';
 export { WarUnitCity } from './WarUnitCity';
-export { processWar, extractBattleOrder, processWar_NG, ConquerCity } from './ProcessWar';
+export { processWar, processWar_NG, ConquerCity } from './ProcessWar';
+export { extractBattleOrder, sortDefendersByBattleOrder } from './extractBattleOrder';

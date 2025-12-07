@@ -92,25 +92,8 @@ export class ReturnCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(ReturnCommand.getName(), this.arg));
     general.checkStatChange();
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(
-        rng,
-        general,
-        sessionId,
-        '귀환'
-      );
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
 
     await this.saveGeneral();
 

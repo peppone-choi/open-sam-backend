@@ -1,0 +1,179 @@
+{
+  "description": "시나리오 9 (UC799.2) 이벤트 목록. 제1차 란테마리오 성역 회전.",
+  
+  "events": [
+    {
+      "id": "evt_rantemario_battle",
+      "name": "란테마리오 회전 개시",
+      "category": "battle",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "제국군 9개 함대 vs 동맹군 주력! 쌍두의 뱀 진형!",
+      "effects": [
+        { "type": "battle_start", "location": "rantemario" },
+        { "type": "message", "text": "란테마리오 회전 개시! 제국군 15만+ vs 동맹군 3.4만! 압도적 열세!" }
+      ]
+    },
+    {
+      "id": "evt_alliance_encirclement",
+      "name": "동맹군 포위",
+      "category": "battle",
+      "priority": 950,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "동맹군 주력이 3개 행성에 분산되어 포위당했다!",
+      "effects": [
+        { "type": "debuff", "target": "alliance_fleets", "stat": "morale", "value": -20 },
+        { "type": "warning", "text": "동맹군 포위당함! 즉시 철수 또는 양 웬리 합류 대기!" }
+      ]
+    },
+    {
+      "id": "evt_yang_arrival",
+      "name": "양 웬리 함대 도착",
+      "category": "military",
+      "priority": 900,
+      "trigger": {
+        "type": "turns_passed",
+        "conditions": [
+          { "turns": 1 }
+        ]
+      },
+      "description": "양 웬리 함대가 란테마리오에 도착한다!",
+      "effects": [
+        { "type": "fleet_arrive", "fleet": "yang_fleet", "location": "rantemario" },
+        { "type": "buff", "target": "alliance_fleets", "stat": "morale", "value": 30 },
+        { "type": "message", "text": "양 웬리 함대 도착! '지금부터 반격입니다!'" }
+      ]
+    },
+    {
+      "id": "evt_reuenthal_arrival",
+      "name": "로이엔탈 함대 합류",
+      "category": "military",
+      "priority": 850,
+      "trigger": {
+        "type": "turns_passed",
+        "conditions": [
+          { "turns": "2-3" }
+        ]
+      },
+      "description": "로이엔탈 함대가 란테마리오에 합류한다!",
+      "effects": [
+        { "type": "fleet_arrive", "fleet": "reuenthal_fleet", "location": "rantemario" },
+        { "type": "message", "text": "로이엔탈 함대 합류! 제국군 총병력 17만 돌파!" }
+      ]
+    },
+    {
+      "id": "evt_space_currents",
+      "name": "우주조류 영향",
+      "category": "environment",
+      "priority": 800,
+      "trigger": {
+        "type": "fleet_movement",
+        "conditions": [
+          { "location": "rantemario" }
+        ]
+      },
+      "description": "우주조류로 함대 진행 방향이 틀어진다.",
+      "effects": [
+        { "type": "movement_deviation", "probability": 0.3 },
+        { "type": "message", "text": "우주조류 영향! 함대 진행 방향 변경 가능성!" }
+      ]
+    },
+    {
+      "id": "evt_alliance_retreat_to_iserlohn",
+      "name": "이제르론 철수 불가",
+      "category": "strategy",
+      "priority": 750,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "retreat" },
+          { "destination": "iserlohn" }
+        ]
+      },
+      "description": "이제르론은 이미 제국군 수중에 있다!",
+      "effects": [
+        { "type": "action_blocked" },
+        { "type": "message", "text": "이제르론은 제국군이 점령 중! 철수 불가!" }
+      ]
+    },
+    {
+      "id": "evt_jamsid_retreat",
+      "name": "잠시드 방어선 철수",
+      "category": "strategy",
+      "priority": 700,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "retreat" },
+          { "destination": "jamsid" }
+        ]
+      },
+      "description": "잠시드 방어선까지 후퇴하면 그나마 버틸 수 있다.",
+      "effects": [
+        { "type": "fleet_move", "destination": "jamsid" },
+        { "type": "message", "text": "잠시드 방어선으로 철수! 여기서 재정비하세요." }
+      ]
+    },
+    {
+      "id": "evt_alliance_annihilation",
+      "name": "동맹군 주력 궤멸",
+      "category": "result",
+      "priority": 600,
+      "trigger": {
+        "type": "fleet_losses",
+        "conditions": [
+          { "faction": "alliance" },
+          { "losses": ">=", "value": 0.7 }
+        ]
+      },
+      "description": "동맹군 주력이 궤멸당했다!",
+      "effects": [
+        { "type": "death_check", "targets": "participating_admirals", "probability": 0.6 },
+        { "type": "message", "text": "동맹군 주력 궤멸! 바라트 성계 직접 위협!" }
+      ]
+    },
+    {
+      "id": "evt_reinhard_kill_chance",
+      "name": "라인하르트 척살 기회",
+      "category": "battle",
+      "priority": 550,
+      "trigger": {
+        "type": "fleet_engagement",
+        "conditions": [
+          { "attacker": "yang_fleet" },
+          { "defender": "reinhard_fleet" }
+        ]
+      },
+      "description": "양 웬리가 라인하르트에게 접근한다!",
+      "effects": [
+        { "type": "critical_battle" },
+        { "type": "message", "text": "양 웬리 vs 라인하르트! 라인하르트 척살 기회!" }
+      ],
+      "notes": "동맹의 사실상 유일한 승리 조건."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_rantemario_battle",
+      "name": "란테마리오 회전 체인",
+      "events": [
+        "evt_rantemario_battle",
+        "evt_alliance_encirclement",
+        "evt_yang_arrival",
+        "evt_reuenthal_arrival"
+      ],
+      "description": "회전 개시 → 포위 → 양 합류 → 로이엔탈 합류"
+    }
+  ]
+}
+
+
+
+

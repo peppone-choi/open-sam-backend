@@ -47,13 +47,8 @@ export class RestCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn());
     
-    // StaticEventHandler 처리
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error: any) {
-      console.error('StaticEventHandler failed:', error);
-    }
+    // 공통 후처리 (휴식은 아이템 추첨/유산포인트 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
     
     general.applyDB(DB.db());
     

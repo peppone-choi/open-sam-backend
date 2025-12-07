@@ -5,6 +5,9 @@
 
 import { BaseLoghCommand, ILoghCommandContext } from '../BaseLoghCommand';
 import { IConstraint } from '../../../constraints/ConstraintHelper';
+import { LoghCommander } from '../../../models/logh/Commander.model';
+import { Planet } from '../../../models/logh/Planet.model';
+import { SocialInteractionService } from '../../../services/logh/SocialInteractionService';
 
 export class SpeechCommand extends BaseLoghCommand {
   getName(): string {
@@ -24,7 +27,7 @@ export class SpeechCommand extends BaseLoghCommand {
   }
 
   getRequiredCommandPoints(): number {
-    return 320;
+    return 30;
   }
 
   getRequiredTurns(): number {
@@ -44,15 +47,45 @@ export class SpeechCommand extends BaseLoghCommand {
     message: string;
     effects?: any[];
   }> {
-    const { commander } = context;
+    const { commander, env } = context;
+    const planetId = env?.planetId;
+
+    if (!planetId) {
+      return { success: false, message: '연설할 행성을 지정하세요.' };
+    }
+
+    const commanderDoc = await LoghCommander.findOne({ 
+      session_id: commander.session_id, 
+      no: commander.no 
+    });
+    if (!commanderDoc) {
+      return { success: false, message: '커맨더를 찾을 수 없습니다.' };
+    }
+
+    const planet = await Planet.findOne({ 
+      session_id: commander.session_id, 
+      planetId 
+    });
+    if (!planet) {
+      return { success: false, message: '행성을 찾을 수 없습니다.' };
+    }
+
+    // 연설 실행
+    const result = await SocialInteractionService.deliverSpeech(
+      commander.session_id,
+      commander.no,
+      planetId,
+      commanderDoc.stats?.politics || 50,
+      commanderDoc.stats?.leadership || 50
+    );
 
     commander.consumeCommandPoints(this.getRequiredCommandPoints());
     await commander.save();
 
     return {
-      success: true,
-      message: `${this.getDisplayName()}을(를) 실행했습니다.`,
-      effects: [],
+      success: result.success,
+      message: result.message,
+      effects: result.effects,
     };
   }
 }

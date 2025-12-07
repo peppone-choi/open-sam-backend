@@ -92,23 +92,18 @@ export class AttemptRebellionCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(AttemptRebellionCommand.getName(), this.arg));
     
     try {
-      if (typeof general.increaseInheritancePoint === 'function') {
-        // TODO: general.increaseInheritancePoint('active_action', 1);
-      }
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
     }
     
     general.checkStatChange();
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, lordGeneral, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // PHP: tryUniqueItemLottery 호출 안 함
+    // 공통 후처리 (모반은 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
     
     await this.saveGeneral();
     await lordGeneral.save();

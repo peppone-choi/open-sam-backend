@@ -1,0 +1,190 @@
+{
+  "session_id": "test_session_1",
+  "battleId": "battle_sample_001",
+  "attackerNationId": 101,
+  "defenderNationId": 202,
+  "targetCityId": 15,
+  "terrain": "plains",
+  "status": "completed",
+  "currentPhase": "resolution",
+  "currentTurn": 3,
+  "maxTurns": 30,
+  "winner": "attacker",
+  "startedAt": "2024-05-20T10:00:00.000Z",
+  "completedAt": "2024-05-20T10:15:00.000Z",
+  
+  "map": {
+    "width": 800,
+    "height": 600,
+    "entryDirection": "horizontal",
+    "attackerZone": {
+      "x": [0, 200],
+      "y": [0, 600]
+    },
+    "defenderZone": {
+      "x": [600, 800],
+      "y": [0, 600]
+    },
+    "terrain": [
+      {
+        "type": "forest",
+        "area": { "x": 350, "y": 250, "width": 100, "height": 100 }
+      },
+      {
+        "type": "river",
+        "path": [
+          { "x": 400, "y": 0 },
+          { "x": 400, "y": 600 }
+        ]
+      }
+    ]
+  },
+
+  "initialAttackerUnits": [
+    {
+      "generalId": 1001,
+      "generalName": "관우",
+      "troops": 5000,
+      "maxTroops": 5000,
+      "leadership": 98,
+      "strength": 99,
+      "intelligence": 85,
+      "unitType": "cavalry",
+      "morale": 100,
+      "training": 90,
+      "position": { "x": 100, "y": 300 },
+      "collisionRadius": 20,
+      "moveSpeed": 15,
+      "attackRange": 10,
+      "formation": "wedge"
+    },
+    {
+      "generalId": 1002,
+      "generalName": "장비",
+      "troops": 4500,
+      "maxTroops": 4500,
+      "leadership": 95,
+      "strength": 99,
+      "intelligence": 40,
+      "unitType": "spearman",
+      "morale": 95,
+      "training": 85,
+      "position": { "x": 100, "y": 400 },
+      "collisionRadius": 20,
+      "moveSpeed": 12,
+      "attackRange": 10,
+      "formation": "line"
+    }
+  ],
+
+  "initialDefenderUnits": [
+    {
+      "generalId": 2001,
+      "generalName": "여포",
+      "troops": 8000,
+      "maxTroops": 8000,
+      "leadership": 90,
+      "strength": 100,
+      "intelligence": 30,
+      "unitType": "cavalry",
+      "morale": 100,
+      "training": 95,
+      "position": { "x": 700, "y": 300 },
+      "collisionRadius": 20,
+      "moveSpeed": 16,
+      "attackRange": 10,
+      "formation": "wedge"
+    }
+  ],
+
+  "turnHistory": [
+    {
+      "turnNumber": 1,
+      "timestamp": "2024-05-20T10:01:00.000Z",
+      "actions": [
+        {
+          "generalId": 1001,
+          "action": "move",
+          "target": { "x": 200, "y": 300 }
+        },
+        {
+          "generalId": 1002,
+          "action": "move",
+          "target": { "x": 200, "y": 400 }
+        },
+        {
+          "generalId": 2001,
+          "action": "move",
+          "target": { "x": 600, "y": 300 }
+        }
+      ],
+      "results": {
+        "attackerDamage": 0,
+        "defenderDamage": 0,
+        "events": ["양측 부대가 전진했습니다."],
+        "detailedEvents": []
+      },
+      "battleLog": [
+        "10:01:00 - 관우 부대가 (200, 300)으로 이동했습니다.",
+        "10:01:00 - 장비 부대가 (200, 400)으로 이동했습니다.",
+        "10:01:00 - 여포 부대가 (600, 300)으로 이동했습니다."
+      ]
+    },
+    {
+      "turnNumber": 2,
+      "timestamp": "2024-05-20T10:02:00.000Z",
+      "actions": [
+        {
+          "generalId": 1001,
+          "action": "move",
+          "target": { "x": 400, "y": 300 }
+        },
+        {
+          "generalId": 2001,
+          "action": "move",
+          "target": { "x": 450, "y": 300 }
+        }
+      ],
+      "results": {
+        "attackerDamage": 0,
+        "defenderDamage": 0,
+        "events": ["선봉 부대가 접근하고 있습니다."],
+        "detailedEvents": []
+      },
+      "battleLog": [
+        "10:02:00 - 관우 부대가 (400, 300)으로 이동했습니다.",
+        "10:02:00 - 여포 부대가 (450, 300)으로 이동했습니다."
+      ]
+    },
+    {
+      "turnNumber": 3,
+      "timestamp": "2024-05-20T10:03:00.000Z",
+      "actions": [
+        {
+          "generalId": 1001,
+          "action": "attack",
+          "targetGeneralId": 2001
+        },
+        {
+          "generalId": 2001,
+          "action": "attack",
+          "targetGeneralId": 1001
+        }
+      ],
+      "results": {
+        "attackerDamage": 500,
+        "defenderDamage": 800,
+        "events": ["관우와 여포가 격돌했습니다!", "치열한 교전이 발생했습니다."],
+        "detailedEvents": [
+          { "type": "damage", "sourceId": 1001, "targetId": 2001, "value": 800, "isCritical": true },
+          { "type": "damage", "sourceId": 2001, "targetId": 1001, "value": 500, "isCritical": false }
+        ]
+      },
+      "battleLog": [
+        "10:03:00 - 관우 부대가 여포 부대를 공격하여 800의 피해를 입혔습니다! (치명타!)",
+        "10:03:00 - 여포 부대가 관우 부대를 공격하여 500의 피해를 입혔습니다."
+      ]
+    }
+  ]
+}
+

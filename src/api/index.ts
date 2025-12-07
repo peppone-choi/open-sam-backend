@@ -27,6 +27,7 @@ import chiefRoutes from '../routes/chief.routes';
 import processingRoutes from '../routes/processing.routes';
 import systemRoutes from '../routes/system.routes';
 import adminSessionRoutes from '../routes/admin-session.routes';
+import rankingRoutes from '../routes/ranking.routes';
 
 // === Advanced Routes (src/api/) ===
 import adminRouter from './admin/router/admin.router';
@@ -95,6 +96,7 @@ export const mountRoutes = (app: Express) => {
   // Info & World
   app.use('/api/info', infoRoutes);
   app.use('/api/world', worldRoutes);
+  app.use('/api/ranking', rankingRoutes); // 랭킹 및 역사 조회
   
   // NPC & Control
   app.use('/api/npc', npcRoutes);

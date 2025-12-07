@@ -1,0 +1,127 @@
+{
+  "description": "시나리오 10 (UC799.4) 함대 배치. 버밀리온 성역 회전.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "reinhard_direct",
+        "name": "라인하르트 직속대",
+        "commander": "라인하르트",
+        "commanderId": 1,
+        "size": 5000,
+        "composition": [
+          { "type": "battleship", "count": 2000, "units": 2 },
+          { "type": "transport", "count": 1000, "units": 1 }
+        ],
+        "location": "vermilion",
+        "status": "combat",
+        "notes": "고증 반영 - 매우 작은 규모! 핀포인트 격파 가능!"
+      },
+      {
+        "id": "reinhard_sub_a",
+        "name": "직속대 분함대 A",
+        "size": 3000,
+        "composition": [{ "type": "battleship", "count": 3000, "units": 3 }],
+        "location": "vermilion",
+        "status": "combat"
+      },
+      {
+        "id": "reinhard_sub_b",
+        "name": "직속대 분함대 B",
+        "size": 3000,
+        "composition": [{ "type": "battleship", "count": 3000, "units": 3 }],
+        "location": "vermilion",
+        "status": "combat"
+      },
+      {
+        "id": "reinhard_sub_c",
+        "name": "직속대 분함대 C",
+        "size": 3000,
+        "composition": [{ "type": "battleship", "count": 3000, "units": 3 }],
+        "location": "vermilion",
+        "status": "combat"
+      }
+    ],
+    "dispersedFleets": [
+      { "location": "erysera", "size": 15000, "status": "combat" },
+      { "location": "tasiri", "size": 15000, "status": "combat" },
+      { "location": "rio_verde", "size": 20000, "status": "combat" },
+      { "location": "lyukas", "size": 12000, "status": "combat" }
+    ],
+    "budget": {
+      "ministry": 20000,
+      "headquarters": "decreasing",
+      "warning": "예산 부족 시 보급 끊김"
+    }
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "yang_fleet",
+        "name": "양 웬리 함대",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 16000,
+        "location": "vermilion",
+        "status": "combat",
+        "notes": "라인하르트 직접 공격 중!"
+      },
+      {
+        "id": "carlsen_fleet",
+        "name": "칼센 분함대",
+        "commander": "칼센",
+        "commanderId": 219,
+        "size": 2000,
+        "composition": [{ "type": "battleship", "count": 2000, "units": 2 }],
+        "location": "vermilion",
+        "status": "combat",
+        "notes": "소규모! 전멸 시 전사 확률 높음!"
+      },
+      {
+        "id": "fischer_fleet",
+        "name": "피셔 분함대",
+        "commander": "피셔",
+        "commanderId": 207,
+        "size": 2000,
+        "composition": [{ "type": "battleship", "count": 2000, "units": 2 }],
+        "location": "vermilion",
+        "status": "combat",
+        "notes": "소규모! 전멸 시 전사 확률 높음!"
+      }
+    ],
+    "capitalDefense": {
+      "location": "heinessen",
+      "fleets": 0,
+      "notes": "수도에 함대 전무! 위기 상황!"
+    },
+    "coupPreparation": {
+      "candidate": "록웰",
+      "currentPoliticalOp": 6500,
+      "required": 8000,
+      "action": "록웰을 확보하여 쿠데타 준비"
+    }
+  },
+  
+  "battleSituation": {
+    "vermilion": {
+      "empire": {
+        "reinhard_total": 14000,
+        "notes": "라인하르트 직속대 + 분함대 3개"
+      },
+      "alliance": {
+        "yang_total": 20000,
+        "notes": "양 웬리 함대 + 분함대들"
+      },
+      "key": "라인하르트 직속대(5000)를 격파하면 동맹 승리!"
+    },
+    "otherFronts": {
+      "description": "에뤼세라, 타시리, 리오베르데, 뤼카스에서 동시다발 교전",
+      "recommendation": "포기하고 버밀리온 집중!"
+    }
+  }
+}
+
+
+
+

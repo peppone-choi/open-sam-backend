@@ -5,134 +5,18 @@
 
 import { RandUtil } from '../utils/RandUtil';
 import { LiteHashDRBG } from '../utils/LiteHashDRBG';
-import { WarUnit } from './WarUnit';
 import { WarUnitGeneral } from './WarUnitGeneral';
 import { WarUnitCity } from './WarUnitCity';
+import { WarUnit } from './WarUnit';
 import { DB } from '../config/db';
 import { GameConst } from '../constants/GameConst';
 import { Util } from '../utils/Util';
 import { JosaUtil } from '../utils/JosaUtil';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
-import { WarUnitTriggerCaller } from '../game/triggers/WarUnitTriggerCaller';
-import { ensureTriggerEnv, type TriggerEnv } from '../game/triggers/TriggerEnv';
-
-/**
- * extractBattleOrder - 수비 순서 결정
- * 
- * @param defender 수비자
- * @param attacker 공격자
- * @returns 수비 순서 점수 (높을수록 우선 수비)
- */
-export function extractBattleOrder(defender: WarUnit, attacker: WarUnit): number {
-  // 도시인 경우
-  if (defender instanceof WarUnitCity) {
-    if (!(attacker instanceof WarUnitGeneral)) {
-      return 0;
-    }
-    const attackerGeneral = attacker.getGeneral();
-    // onCalcOpposeStat 호출
-    if (typeof attackerGeneral.onCalcOpposeStat === 'function') {
-      return attackerGeneral.onCalcOpposeStat(defender.getGeneral(), 'cityBattleOrder', -1);
-    }
-    return -1;
-  }
-  
-  // 장수인 경우
-  const general = defender.getGeneral();
-  const crew = general.data?.crew || 0;
-  
-  // 병력이 없으면 수비 불가
-  if (crew === 0) {
-    return 0;
-  }
-  
-  // 군량이 부족하면 수비 불가
-  const rice = general.data?.rice || 0;
-  if (rice <= crew / 100) {
-    return 0;
-  }
-  
-  // 수비 훈련도 체크
-  const defence_train = general.data?.defence_train || 999;
-  const train = general.data?.train || 0;
-  const atmos = general.data?.atmos || 0;
-  
-  if (train < defence_train) {
-    return 0;
-  }
-  
-  if (atmos < defence_train) {
-    return 0;
-  }
-  
-  // 능력치 합산
-  const realLeadership = typeof general.getLeadership === 'function' 
-    ? general.getLeadership(true) 
-    : general.data?.leadership || 50;
-  const realStrength = typeof general.getStrength === 'function'
-    ? general.getStrength(true)
-    : general.data?.strength || 50;
-  const realIntel = typeof general.getIntel === 'function'
-    ? general.getIntel(true)
-    : general.data?.intel || 50;
-    
-  const fullLeadership = typeof general.getLeadership === 'function'
-    ? general.getLeadership(false)
-    : realLeadership;
-  const fullStrength = typeof general.getStrength === 'function'
-    ? general.getStrength(false)
-    : realStrength;
-  const fullIntel = typeof general.getIntel === 'function'
-    ? general.getIntel(false)
-    : realIntel;
-  
-  const realStat = realLeadership + realStrength + realIntel;
-  const fullStat = fullLeadership + fullStrength + fullIntel;
-  const totalStat = (realStat + fullStat) / 2;
-  
-  // 병력 보정
-  const totalCrew = crew / 1000000 * Math.pow(train * atmos, 1.5);
-  
-  return totalStat + totalCrew / 100;
-}
-
-type BattleTriggerMethod = 'getBattleInitSkillTriggerList' | 'getBattlePhaseSkillTriggerList';
-
-function resolveBattleTriggerCaller(unit: WarUnit | null | undefined, method: BattleTriggerMethod): WarUnitTriggerCaller | null {
-  if (!unit) {
-    return null;
-  }
-  const general = unit.getGeneral?.();
-  if (!general || typeof general[method] !== 'function') {
-    return null;
-  }
-  try {
-    return general[method](unit) ?? null;
-  } catch (error) {
-    console.error(`[ProcessWar] Failed to resolve ${method}:`, error);
-    return null;
-  }
-}
-
-function fireBattleTriggers(
-  attackerCaller: WarUnitTriggerCaller | null,
-  defenderCaller: WarUnitTriggerCaller | null,
-  attacker: WarUnit,
-  defender: WarUnit | null,
-  env?: TriggerEnv | null
-): TriggerEnv | null {
-  if ((!attackerCaller && !defenderCaller) || !defender) {
-    return env ?? null;
-  }
-  let currentEnv = ensureTriggerEnv(env || undefined);
-  if (attackerCaller) {
-    currentEnv = attackerCaller.fire(attacker.rng, currentEnv, [attacker, defender]);
-  }
-  if (defenderCaller) {
-    currentEnv = defenderCaller.fire(attacker.rng, currentEnv, [attacker, defender]);
-  }
-  return currentEnv;
-}
+import { NationDestructionService } from '../services/nation/NationDestruction.service';
+import { BattleSkillService, type BattleSkillContextState } from '../services/battle/BattleSkillService';
+import { calculateBattleOrder, resolveDamageOutcome } from '../services/battle/BattleCalculationService';
+import { ReplayBuilder, ReplayMetadata } from '../services/war/BattleReplay';
 
 /**
  * processWar - 전투 처리 메인 함수
@@ -230,7 +114,7 @@ export async function processWar(
       defGeneral.setRawCity?.(rawDefenderCity);
       const defenderCandidate = new WarUnitGeneral(rng, defGeneral, rawDefenderNation, false);
       
-      if (extractBattleOrder(defenderCandidate, attacker) <= 0) {
+      if (calculateBattleOrder(defenderCandidate, attacker) <= 0) {
         continue;
       }
       
@@ -243,12 +127,12 @@ export async function processWar(
   // 수비 순서 정렬
   const defenderList: WarUnit[] = [...defenderCityGeneralList];
   
-  if (defenderList.length > 0 && extractBattleOrder(city, attacker) > 0) {
+  if (defenderList.length > 0 && calculateBattleOrder(city, attacker) > 0) {
     defenderList.push(city);
   }
   
   defenderList.sort((lhs, rhs) => {
-    return extractBattleOrder(rhs, attacker) - extractBattleOrder(lhs, attacker);
+    return calculateBattleOrder(rhs, attacker) - calculateBattleOrder(lhs, attacker);
   });
   
   // 수비자 이터레이터
@@ -267,7 +151,7 @@ export async function processWar(
     }
     
     const nextDefender = defenderList[defenderIndex];
-    if (extractBattleOrder(nextDefender, attacker) <= 0) {
+    if (calculateBattleOrder(nextDefender, attacker) <= 0) {
       return null;
     }
     
@@ -390,10 +274,33 @@ async function processWar_NG(
   const date = attacker.getGeneral().getTurnTime?.('HM') || '';
   
   let defender = await getNextDefender(null, true);
+  
+  // ReplayBuilder 초기화
+  const replayBuilder = new ReplayBuilder({
+    sessionId: attacker.getGeneral().getSessionID?.() || 'unknown',
+    battleId: warSeed,
+    date: new Date(),
+    seed: warSeed,
+    attacker: {
+      id: attacker.getGeneral().getID?.() || 0,
+      name: attacker.getName(),
+      nationId: attacker.getNationVar('nation') || 0,
+      nationName: attacker.getNationVar('name'),
+      generalName: attacker.getName(),
+      crew: attacker.getHP(),
+      crewType: attacker.getCrewTypeName(),
+    },
+    defender: {
+      cityId: city.getVar('city'),
+      cityName: city.getName(),
+      nationId: city.getVar('nation'),
+      nationName: city.getNationVar('name'),
+      defenders: [], // 진행하면서 추가
+    }
+  });
+
   let conquerCity = false;
-  let battleTriggerEnv: TriggerEnv | null = null;
-  let attackerPhaseCaller: WarUnitTriggerCaller | null = null;
-  let defenderPhaseCaller: WarUnitTriggerCaller | null = null;
+  let battleSkillContext: BattleSkillContextState | null = null;
   
   const josaRo = JosaUtil.pick(city.getName(), '로');
   const josaYi = JosaUtil.pick(attacker.getName(), '이');
@@ -406,214 +313,32 @@ async function processWar_NG(
   
   // 전투 루프
   while (attacker.getPhase() < attacker.getMaxPhase()) {
-    logWritten = false;
-    
-    // 수비자가 없으면 도시 공성
-    if (defender === null) {
-      defender = city;
-      defender.setSiege();
-      battleTriggerEnv = null;
-      attackerPhaseCaller = null;
-      defenderPhaseCaller = null;
-      
-      // 병량 부족으로 패퇴 체크
-      if (city.getNationVar('rice') <= 0 && city.getVar('supply')) {
-        attacker.setOppose(defender);
-        defender.setOppose(attacker);
-        
-        attacker.addTrain(1);
-        attacker.addWin();
-        defender.addLose();
-        (defender as WarUnitCity).heavyDecreaseWealth();
-        
-        logger?.pushGlobalActionLog?.(`병량 부족으로 <G><b>${defender.getName()}</b></>의 수비병들이 <R>패퇴</>합니다.`);
-        
-        const josaUl = JosaUtil.pick(defender.getName(), '을');
-        const josaYi2 = JosaUtil.pick(defender.getNationVar('name'), '이');
-        logger?.pushGlobalHistoryLog?.(`<M><b>【패퇴】</b></><D><b>${defender.getNationVar('name')}</b></>${josaYi2} 병량 부족으로 <G><b>${defender.getName()}</b></>${josaUl} 뺏기고 말았습니다.`);
-        
-        conquerCity = true;
-        break;
-      }
-    }
-    
-    // 새로운 전투 시작
-    if (defender && defender.getPhase() === 0 && defender.getOppose() === null) {
-      defender.setPrePhase(attacker.getPhase());
-      
-      attacker.addTrain(1);
-      defender.addTrain(1);
-      
-      // 전투 로그
-      const attackerName = attacker.getName();
-      const attackerCrewTypeName = attacker.getCrewTypeName();
-      
-      if (defender instanceof WarUnitGeneral) {
-        const defenderName = defender.getName();
-        const defenderCrewTypeName = defender.getCrewTypeName();
-        
-        const josaWa = JosaUtil.pick(attackerCrewTypeName, '와');
-        const josaYi3 = JosaUtil.pick(defenderCrewTypeName, '이');
-        logger?.pushGlobalActionLog?.(`<Y>${attackerName}</>의 ${attackerCrewTypeName}${josaWa} <Y>${defenderName}</>의 ${defenderCrewTypeName}${josaYi3} 대결합니다.`);
-        
-        const josaRo2 = JosaUtil.pick(attackerCrewTypeName, '로');
-        const josaUl = JosaUtil.pick(defenderCrewTypeName, '을');
-        attacker.getLogger()?.pushGeneralActionLog?.(`${attackerCrewTypeName}${josaRo2} <Y>${defenderName}</>의 ${defenderCrewTypeName}${josaUl} <M>공격</>합니다.`);
-        
-        const josaRo3 = JosaUtil.pick(defenderCrewTypeName, '로');
-        const josaUl2 = JosaUtil.pick(attackerCrewTypeName, '을');
-        defender.getLogger()?.pushGeneralActionLog?.(`${defenderCrewTypeName}${josaRo3} <Y>${attackerName}</>의 ${attackerCrewTypeName}${josaUl2} <M>수비</>합니다.`);
-      } else {
-        const josaYi4 = JosaUtil.pick(attackerName, '이');
-        const josaRo4 = JosaUtil.pick(attackerCrewTypeName, '로');
-        logger?.pushGlobalActionLog?.(`<Y>${attackerName}</>${josaYi4} ${attackerCrewTypeName}${josaRo4} 성벽을 공격합니다.`);
-        logger?.pushGeneralActionLog?.(`${attackerCrewTypeName}${josaRo4} 성벽을 <M>공격</>합니다.`, 1);
-      }
-      
-      attacker.setOppose(defender);
-      defender.setOppose(attacker);
+    const turnResult = await processTurn({
+      warSeed,
+      attacker,
+      defender,
+      city,
+      replayBuilder,
+      logger,
+      battleSkillContext,
+      noRice,
+      getNextDefender
+    });
 
-      const attackerInitCaller = resolveBattleTriggerCaller(attacker, 'getBattleInitSkillTriggerList');
-      const defenderInitCaller = resolveBattleTriggerCaller(defender, 'getBattleInitSkillTriggerList');
-      battleTriggerEnv = fireBattleTriggers(attackerInitCaller, defenderInitCaller, attacker, defender, null);
-      attackerPhaseCaller = resolveBattleTriggerCaller(attacker, 'getBattlePhaseSkillTriggerList');
-      defenderPhaseCaller = resolveBattleTriggerCaller(defender, 'getBattlePhaseSkillTriggerList');
+    // 상태 업데이트
+    defender = turnResult.defender;
+    battleSkillContext = turnResult.battleSkillContext;
+    
+    if (turnResult.conquerCity) {
+      conquerCity = true;
     }
-    
-    // 페이즈 시작
-    battleTriggerEnv = fireBattleTriggers(attackerPhaseCaller, defenderPhaseCaller, attacker, defender, battleTriggerEnv);
-    attacker.beginPhase();
-    defender?.beginPhase();
-    
-    // 데미지 계산
-    const deadDefender = attacker.calcDamage();
-    const deadAttacker = defender?.calcDamage() || 0;
-    
-    let attackerHP = attacker.getHP();
-    let defenderHP = defender?.getHP() || 0;
-    
-    // 병력 부족 시 데미지 보정
-    if (deadAttacker > attackerHP || deadDefender > defenderHP) {
-      const deadAttackerRatio = deadAttacker / Math.max(1, attackerHP);
-      const deadDefenderRatio = deadDefender / Math.max(1, defenderHP);
-      
-      let finalDeadAttacker = deadAttacker;
-      let finalDeadDefender = deadDefender;
-      
-      if (deadDefenderRatio > deadAttackerRatio) {
-        finalDeadAttacker /= deadDefenderRatio;
-        finalDeadDefender = defenderHP;
-      } else {
-        finalDeadDefender /= deadAttackerRatio;
-        finalDeadAttacker = attackerHP;
-      }
-      
-      attacker.decreaseHP(Math.min(Math.ceil(finalDeadAttacker), attackerHP));
-      defender?.decreaseHP(Math.min(Math.ceil(finalDeadDefender), defenderHP));
-      
-      attacker.increaseKilled(Math.min(Math.ceil(finalDeadDefender), defenderHP));
-      defender?.increaseKilled(Math.min(Math.ceil(finalDeadAttacker), attackerHP));
-    } else {
-      attacker.decreaseHP(Math.min(Math.ceil(deadAttacker), attackerHP));
-      defender?.decreaseHP(Math.min(Math.ceil(deadDefender), defenderHP));
-      
-      attacker.increaseKilled(Math.min(Math.ceil(deadDefender), defenderHP));
-      defender?.increaseKilled(Math.min(Math.ceil(deadAttacker), attackerHP));
-    }
-    
-    // 페이즈 로그
-    const currPhase = attacker.getPhase() + 1;
-    const phaseNickname = defender && defender.getPhase() < 0 ? '先' : `${currPhase} `;
-    
-    if (deadAttacker > 0 || deadDefender > 0) {
-      attacker.getLogger()?.pushGeneralBattleDetailLog?.(
-        `${phaseNickname}: <Y1>【${attacker.getName()}】</> <C>${attacker.getHP()} (-${Math.ceil(deadAttacker)})</> VS <C>${defender?.getHP() || 0} (-${Math.ceil(deadDefender)})</> <Y1>【${defender?.getName() || ''}】</>`
-      );
-      
-      defender?.getLogger()?.pushGeneralBattleDetailLog?.(
-        `${phaseNickname}: <Y1>【${defender.getName()}】</> <C>${defender.getHP()} (-${Math.ceil(deadDefender)})</> VS <C>${attacker.getHP()} (-${Math.ceil(deadAttacker)})</> <Y1>【${attacker.getName()}】</>`
-      );
-    }
-    
-    attacker.addPhase();
-    defender?.addPhase();
-    
-    // 공격자 패배 체크
-    if (!attacker.continueWar(noRice)) {
+
+    if (turnResult.logWritten) {
       logWritten = true;
-      
-      attacker.logBattleResult();
-      defender?.logBattleResult();
-      
-      attacker.addLose();
-      defender?.addWin();
-      
-      attacker.tryWound();
-      defender?.tryWound();
-      
-      const josaYi5 = JosaUtil.pick(attacker.getCrewTypeName(), '이');
-      logger?.pushGlobalActionLog?.(`<Y>${attacker.getName()}</>의 ${attacker.getCrewTypeName()}${josaYi5} 퇴각했습니다.`);
-      
-      if (noRice.value) {
-        attacker.getLogger()?.pushGeneralActionLog?.("군량 부족으로 퇴각합니다.", 1);
-      } else {
-        attacker.getLogger()?.pushGeneralActionLog?.("퇴각했습니다.", 1);
-      }
-      
-      defender?.getLogger()?.pushGeneralActionLog?.(`<Y>${attacker.getName()}</>의 ${attacker.getCrewTypeName()}${josaYi5} 퇴각했습니다.`, 1);
-      
+    }
+
+    if (turnResult.shouldBreak) {
       break;
-    }
-    
-    // 수비자 패배 체크
-    if (defender && !defender.continueWar(noRice)) {
-      logWritten = true;
-      
-      attacker.logBattleResult();
-      defender.logBattleResult();
-      
-      if (!(defender instanceof WarUnitCity) || defender.isSiege()) {
-        attacker.addWin();
-        defender.addLose();
-        
-        attacker.tryWound();
-        defender.tryWound();
-        
-        if (defender === city) {
-          attacker.addLevelExp(1000);
-          conquerCity = true;
-          break;
-        }
-      }
-      
-      const josaYi6 = JosaUtil.pick(defender.getCrewTypeName(), '이');
-      
-      if (defender instanceof WarUnitCity && !defender.isSiege()) {
-        // 실제 공성을 위해 다시 초기화
-        defender.setOppose(null);
-      } else if (noRice.value) {
-        logger?.pushGlobalActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 패퇴했습니다.`);
-        attacker.getLogger()?.pushGeneralActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 패퇴했습니다.`, 1);
-        defender.getLogger()?.pushGeneralActionLog?.("군량 부족으로 패퇴합니다.", 1);
-      } else {
-        logger?.pushGlobalActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 전멸했습니다.`);
-        attacker.getLogger()?.pushGeneralActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 전멸했습니다.`, 1);
-        defender.getLogger()?.pushGeneralActionLog?.("전멸했습니다.", 1);
-      }
-      
-      if (attacker.getPhase() >= attacker.getMaxPhase()) {
-        break;
-      }
-      
-      defender.finishBattle();
-      defender = await getNextDefender(defender, true);
-      battleTriggerEnv = null;
-      attackerPhaseCaller = null;
-      defenderPhaseCaller = null;
-      
-      if (defender !== null && !(defender instanceof WarUnitGeneral)) {
-        throw new Error('다음 수비자를 받아오는데 실패');
-      }
     }
   }
   
@@ -647,11 +372,292 @@ async function processWar_NG(
   
   await getNextDefender(defender, false);
   
+  // 리플레이 데이터 생성
+  const replayData = replayBuilder.build();
+  // TODO: replayData 저장 로직 추가
+
   return conquerCity;
+}
+
+interface BattleContext {
+  warSeed: string;
+  attacker: WarUnitGeneral;
+  defender: WarUnit | null;
+  city: WarUnitCity;
+  replayBuilder: ReplayBuilder;
+  logger: any;
+  battleSkillContext: BattleSkillContextState | null;
+  noRice: { value: boolean };
+  getNextDefender: (prev: WarUnit | null, reqNext: boolean) => Promise<WarUnit | null>;
+}
+
+interface TurnResult {
+  defender: WarUnit | null;
+  battleSkillContext: BattleSkillContextState | null;
+  shouldBreak: boolean;
+  conquerCity: boolean;
+  logWritten: boolean;
+}
+
+/**
+ * processTurn - 턴(페이즈) 단위 처리 및 로깅
+ */
+async function processTurn(ctx: BattleContext): Promise<TurnResult> {
+  const {
+    warSeed,
+    attacker,
+    city,
+    replayBuilder,
+    logger,
+    noRice,
+    getNextDefender
+  } = ctx;
+
+  let {
+    defender,
+    battleSkillContext
+  } = ctx;
+
+  let shouldBreak = false;
+  let conquerCity = false;
+  let logWritten = false;
+
+  replayBuilder.startTurn(attacker.getPhase());
+
+  // 수비자가 없으면 도시 공성
+  if (defender === null) {
+    defender = city;
+    defender.setSiege();
+    battleSkillContext = null;
+    
+    // 병량 부족으로 패퇴 체크
+    if (city.getNationVar('rice') <= 0 && city.getVar('supply')) {
+      attacker.setOppose(defender);
+      defender.setOppose(attacker);
+      
+      attacker.addTrain(1);
+      attacker.addWin();
+      defender.addLose();
+      (defender as WarUnitCity).heavyDecreaseWealth();
+      
+      logger?.pushGlobalActionLog?.(`병량 부족으로 <G><b>${defender.getName()}</b></>의 수비병들이 <R>패퇴</>합니다.`);
+      
+      const josaUl = JosaUtil.pick(defender.getName(), '을');
+      const josaYi2 = JosaUtil.pick(defender.getNationVar('name'), '이');
+      logger?.pushGlobalHistoryLog?.(`<M><b>【패퇴】</b></><D><b>${defender.getNationVar('name')}</b></>${josaYi2} 병량 부족으로 <G><b>${defender.getName()}</b></>${josaUl} 뺏기고 말았습니다.`);
+      
+      conquerCity = true;
+      shouldBreak = true;
+      
+      replayBuilder.addAction({
+        type: 'win',
+        actorId: attacker.getGeneral().getID?.() || 0,
+        message: '병량 부족으로 승리'
+      });
+
+      return { defender, battleSkillContext, shouldBreak, conquerCity, logWritten };
+    }
+  }
+  
+  // 새로운 전투 시작
+  if (defender && defender.getPhase() === 0 && defender.getOppose() === null) {
+    defender.setPrePhase(attacker.getPhase());
+    
+    attacker.addTrain(1);
+    defender.addTrain(1);
+    
+    // 전투 로그
+    const attackerName = attacker.getName();
+    const attackerCrewTypeName = attacker.getCrewTypeName();
+    
+    if (defender instanceof WarUnitGeneral) {
+      const defenderName = defender.getName();
+      const defenderCrewTypeName = defender.getCrewTypeName();
+      
+      const josaWa = JosaUtil.pick(attackerCrewTypeName, '와');
+      const josaYi3 = JosaUtil.pick(defenderCrewTypeName, '이');
+      logger?.pushGlobalActionLog?.(`<Y>${attackerName}</>의 ${attackerCrewTypeName}${josaWa} <Y>${defenderName}</>의 ${defenderCrewTypeName}${josaYi3} 대결합니다.`);
+      
+      const josaRo2 = JosaUtil.pick(attackerCrewTypeName, '로');
+      const josaUl = JosaUtil.pick(defenderCrewTypeName, '을');
+      attacker.getLogger()?.pushGeneralActionLog?.(`${attackerCrewTypeName}${josaRo2} <Y>${defenderName}</>의 ${defenderCrewTypeName}${josaUl} <M>공격</>합니다.`);
+      
+      const josaRo3 = JosaUtil.pick(defenderCrewTypeName, '로');
+      const josaUl2 = JosaUtil.pick(attackerCrewTypeName, '을');
+      defender.getLogger()?.pushGeneralActionLog?.(`${defenderCrewTypeName}${josaRo3} <Y>${attackerName}</>의 ${attackerCrewTypeName}${josaUl2} <M>수비</>합니다.`);
+    } else {
+      const josaYi4 = JosaUtil.pick(attackerName, '이');
+      const josaRo4 = JosaUtil.pick(attackerCrewTypeName, '로');
+      logger?.pushGlobalActionLog?.(`<Y>${attackerName}</>${josaYi4} ${attackerCrewTypeName}${josaRo4} 성벽을 공격합니다.`);
+      logger?.pushGeneralActionLog?.(`${attackerCrewTypeName}${josaRo4} 성벽을 <M>공격</>합니다.`, 1);
+    }
+    
+    attacker.setOppose(defender);
+    defender.setOppose(attacker);
+
+    battleSkillContext = BattleSkillService.initializeBattle(attacker, defender);
+  }
+  
+  // 페이즈 시작
+  battleSkillContext = BattleSkillService.runPhaseTriggers(battleSkillContext);
+  attacker.beginPhase();
+  defender?.beginPhase();
+  
+  // 데미지 계산 (순수 계산 서비스 사용)
+  const rawDefenderDamage = attacker.calcDamage();
+  const rawAttackerDamage = defender?.calcDamage() || 0;
+
+  const { attackerDamage, defenderDamage } = resolveDamageOutcome({
+    attackerHP: attacker.getHP(),
+    defenderHP: defender?.getHP() || 0,
+    rawAttackerDamage,
+    rawDefenderDamage
+  });
+
+  attacker.decreaseHP(attackerDamage);
+  defender?.decreaseHP(defenderDamage);
+  
+  attacker.increaseKilled(defenderDamage);
+  defender?.increaseKilled(attackerDamage);
+
+  // Replay Log: Attack
+  const attackerId = attacker.getGeneral().getID?.() || 0;
+  const defenderId = defender instanceof WarUnitGeneral ? (defender.getGeneral().getID?.() || 0) : `city-${city.getVar('city')}`;
+  
+  if (attackerDamage > 0) {
+    replayBuilder.logAttack(defenderId, attackerId, attackerDamage, defender?.getHP() || 0, attacker.getHP());
+  }
+  if (defenderDamage > 0) {
+    replayBuilder.logAttack(attackerId, defenderId, defenderDamage, attacker.getHP(), defender?.getHP() || 0);
+  }
+  
+  // 페이즈 로그
+  const currPhase = attacker.getPhase() + 1;
+  const phaseNickname = defender && defender.getPhase() < 0 ? '先' : `${currPhase} `;
+  
+  if (attackerDamage > 0 || defenderDamage > 0) {
+    attacker.getLogger()?.pushGeneralBattleDetailLog?.(
+      `${phaseNickname}: <Y1>【${attacker.getName()}】</> <C>${attacker.getHP()} (-${attackerDamage})</> VS <C>${defender?.getHP() || 0} (-${defenderDamage})</> <Y1>【${defender?.getName() || ''}】</>`
+    );
+    
+    defender?.getLogger()?.pushGeneralBattleDetailLog?.(
+      `${phaseNickname}: <Y1>【${defender.getName()}】</> <C>${defender.getHP()} (-${defenderDamage})</> VS <C>${attacker.getHP()} (-${attackerDamage})</> <Y1>【${attacker.getName()}】</>`
+    );
+  }
+  
+  attacker.addPhase();
+  defender?.addPhase();
+  
+  // 공격자 패배 체크
+  if (!attacker.continueWar(noRice)) {
+    logWritten = true;
+    
+    attacker.logBattleResult();
+    defender?.logBattleResult();
+    
+    attacker.addLose();
+    defender?.addWin();
+    
+    attacker.tryWound();
+    defender?.tryWound();
+    
+    const josaYi5 = JosaUtil.pick(attacker.getCrewTypeName(), '이');
+    logger?.pushGlobalActionLog?.(`<Y>${attacker.getName()}</>의 ${attacker.getCrewTypeName()}${josaYi5} 퇴각했습니다.`);
+    
+    if (noRice.value) {
+      attacker.getLogger()?.pushGeneralActionLog?.("군량 부족으로 퇴각합니다.", 1);
+    } else {
+      attacker.getLogger()?.pushGeneralActionLog?.("퇴각했습니다.", 1);
+    }
+    
+    defender?.getLogger()?.pushGeneralActionLog?.(`<Y>${attacker.getName()}</>의 ${attacker.getCrewTypeName()}${josaYi5} 퇴각했습니다.`, 1);
+    
+    replayBuilder.addAction({
+      type: 'retreat',
+      actorId: attackerId,
+      message: noRice.value ? '군량 부족으로 퇴각' : '퇴각'
+    });
+
+    shouldBreak = true;
+    return { defender, battleSkillContext, shouldBreak, conquerCity, logWritten };
+  }
+  
+  // 수비자 패배 체크
+  if (defender && !defender.continueWar(noRice)) {
+    logWritten = true;
+    
+    attacker.logBattleResult();
+    defender.logBattleResult();
+    
+    if (!(defender instanceof WarUnitCity) || defender.isSiege()) {
+      attacker.addWin();
+      defender.addLose();
+      
+      attacker.tryWound();
+      defender.tryWound();
+      
+      if (defender === city) {
+        attacker.addLevelExp(1000);
+        conquerCity = true;
+        
+        replayBuilder.addAction({
+          type: 'win',
+          actorId: attackerId,
+          message: '도시 점령'
+        });
+
+        shouldBreak = true;
+        return { defender, battleSkillContext, shouldBreak, conquerCity, logWritten };
+      }
+    }
+    
+    const josaYi6 = JosaUtil.pick(defender.getCrewTypeName(), '이');
+    
+    if (defender instanceof WarUnitCity && !defender.isSiege()) {
+      // 실제 공성을 위해 다시 초기화
+      defender.setOppose(null);
+    } else if (noRice.value) {
+      logger?.pushGlobalActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 패퇴했습니다.`);
+      attacker.getLogger()?.pushGeneralActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 패퇴했습니다.`, 1);
+      defender.getLogger()?.pushGeneralActionLog?.("군량 부족으로 패퇴합니다.", 1);
+      
+      replayBuilder.addAction({
+        type: 'lose',
+        actorId: defenderId,
+        message: '군량 부족 패퇴'
+      });
+    } else {
+      logger?.pushGlobalActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 전멸했습니다.`);
+      attacker.getLogger()?.pushGeneralActionLog?.(`<Y>${defender.getName()}</>의 ${defender.getCrewTypeName()}${josaYi6} 전멸했습니다.`, 1);
+      defender.getLogger()?.pushGeneralActionLog?.("전멸했습니다.", 1);
+
+      replayBuilder.addAction({
+        type: 'lose',
+        actorId: defenderId,
+        message: '전멸'
+      });
+    }
+    
+    if (attacker.getPhase() >= attacker.getMaxPhase()) {
+      shouldBreak = true;
+      return { defender, battleSkillContext, shouldBreak, conquerCity, logWritten };
+    }
+    
+    defender.finishBattle();
+    defender = await getNextDefender(defender, true);
+    battleSkillContext = null;
+    
+    if (defender !== null && !(defender instanceof WarUnitGeneral)) {
+      throw new Error('다음 수비자를 받아오는데 실패');
+    }
+  }
+
+  return { defender, battleSkillContext, shouldBreak, conquerCity, logWritten };
 }
 
 /**
  * ConquerCity - 도시 점령 처리
+ * PHP process_war.php의 ConquerCity 함수 이식
  */
 async function ConquerCity(
   admin: any,
@@ -659,50 +665,526 @@ async function ConquerCity(
   city: any,
   defenderCityGeneralList: any[]
 ): Promise<void> {
-  // TODO: 도시 점령 로직 구현
-  // 현재는 기본 구현만 제공
-  
   const sessionId = general.getSessionID?.() || 'sangokushi_default';
+  const { year, month, join_mode: joinMode } = admin;
+  
+  const attackerID = general.getID?.() || general.no || general.data?.no || 0;
   const attackerNationID = general.getNationID();
+  const attackerGeneralName = general.getName?.() || general.name || '';
+  const attackerNation = general.getStaticNation?.() || { name: '공격국', nation: attackerNationID };
+  const attackerNationName = attackerNation.name || '공격국';
+  const attackerLogger = general.getLogger?.();
+  
   const cityID = city.city;
+  const cityName = city.name || `도시${cityID}`;
+  
+  const defenderNationID = city.nation || 0;
   
   try {
     const { cityRepository } = await import('../repositories/city.repository');
+    const { nationRepository } = await import('../repositories/nation.repository');
+    const { generalRepository } = await import('../repositories/general.repository');
     
-    // 도시 소유권 변경
-    await cityRepository.updateByCityNum(sessionId, cityID, {
-      nation: attackerNationID,
-      conflict: {}
-    });
-    
-    // 수비 장수들을 재야로
-    for (const defGeneral of defenderCityGeneralList) {
-      defGeneral.data.nation = 0;
-      defGeneral.data.officer_level = 1;
-      await defGeneral.save?.();
+    // 수비국 정보 조회
+    let defenderNation: any = null;
+    let defenderNationName = '공백지';
+    if (defenderNationID > 0) {
+      defenderNation = await nationRepository.findByNationNum(sessionId, defenderNationID);
+      defenderNationName = defenderNation?.name || '수비국';
     }
-
-    const resolvedGeneralId = general.getID?.() || general.no || general.data?.no || 0;
+    
+    const defenderNationDecoration = defenderNationID > 0
+      ? `<D><b>${defenderNationName}</b></>의`
+      : "공백지인";
+    
+    // 점령 로그 기록
+    const josaUl = JosaUtil.pick(cityName, '을');
+    const josaYiNation = JosaUtil.pick(attackerNationName, '이');
+    const josaYiGen = JosaUtil.pick(attackerGeneralName, '이');
+    const josaYiCity = JosaUtil.pick(cityName, '이');
+    
+    attackerLogger?.pushGeneralActionLog?.(`<G><b>${cityName}</b></> 공략에 <S>성공</>했습니다.`, 1);
+    attackerLogger?.pushGeneralHistoryLog?.(`<G><b>${cityName}</b></>${josaUl} <S>점령</>`);
+    attackerLogger?.pushGlobalActionLog?.(`<Y>${attackerGeneralName}</>${josaYiGen} <G><b>${cityName}</b></> 공략에 <S>성공</>했습니다.`);
+    attackerLogger?.pushGlobalHistoryLog?.(`<S><b>【지배】</b></><D><b>${attackerNationName}</b></>${josaYiNation} <G><b>${cityName}</b></>${josaUl} 지배했습니다.`);
+    attackerLogger?.pushNationalHistoryLog?.(`<Y>${attackerGeneralName}</>${josaYiGen} ${defenderNationDecoration} <G><b>${cityName}</b></> ${josaUl} <S>점령</>`);
+    
+    // 이벤트 훅 호출
     try {
-      await BattleEventHook.onCityOccupied(sessionId, cityID, attackerNationID, resolvedGeneralId);
+      await BattleEventHook.onCityOccupied(sessionId, cityID, attackerNationID, attackerID);
     } catch (hookError) {
-      console.error('[ProcessWar] BattleEventHook 처리 실패:', hookError);
+      console.error('[ProcessWar] BattleEventHook.onCityOccupied 처리 실패:', hookError);
     }
     
-    // 로그 기록
-    const logger = general.getLogger?.();
-    if (logger) {
-      const cityName = city.name;
-      const josaUl = JosaUtil.pick(cityName, '을');
-      logger.pushGeneralActionLog?.(`<G><b>${cityName}</b></> 공략에 <S>성공</>했습니다.`, 1);
-      logger.pushGeneralHistoryLog?.(`<G><b>${cityName}</b></>${josaUl} <S>점령</>`);
-      logger.pushGlobalActionLog?.(`<Y>${general.getName()}</>이(가) <G><b>${cityName}</b></> 공략에 <S>성공</>했습니다.`);
-      logger.pushGlobalHistoryLog?.(`<S><b>【지배】</b></><D><b>${general.getStaticNation?.().name || '아군'}</b></>이(가) <G><b>${cityName}</b></>${josaUl} 지배했습니다.`);
+    // 수비 장수들 포로 처리
+    const rng = new RandUtil(new LiteHashDRBG(`ConquerCity_${year}_${month}_${attackerNationID}_${attackerID}_${cityID}`));
+    
+    // PrisonerService import (동적)
+    let PrisonerService: any = null;
+    try {
+      const module = await import('../services/general/Prisoner.service');
+      PrisonerService = module.PrisonerService;
+    } catch (e) {
+      console.warn('[ConquerCity] PrisonerService 로드 실패, 직접 처리:', e);
     }
+    
+    for (const defGeneral of defenderCityGeneralList) {
+      const defGeneralName = defGeneral.getName?.() || defGeneral.name || defGeneral.data?.name || '적장';
+      const defGeneralID = defGeneral.getID?.() || defGeneral.no || defGeneral.data?.no || 0;
+      const originalNationId = defGeneral.getNationID?.() || defGeneral.data?.nation || defenderNationID;
+      
+      // 군주는 포로가 되지 않음 (재야로 전환)
+      const officerLevel = defGeneral.getVar?.('officer_level') ?? defGeneral.data?.officer_level ?? 1;
+      if (officerLevel === 12) {
+        // 군주는 재야로 전환
+        if (typeof defGeneral.releasePrisoner === 'function') {
+          defGeneral.releasePrisoner();
+        } else {
+          defGeneral.data = defGeneral.data || {};
+          defGeneral.data.nation = 0;
+          defGeneral.data.officer_level = 1;
+          defGeneral.data.officer_city = 0;
+          defGeneral.data.crew = 0;
+          defGeneral.data.troop = 0;
+        }
+        attackerLogger?.pushGlobalActionLog?.(`<Y>${defGeneralName}</> 군주가 도주했습니다.`);
+        await defGeneral.save?.();
+        continue;
+      }
+      
+      // 포로로 전환
+      if (PrisonerService) {
+        try {
+          await PrisonerService.capturePrisoner(
+            sessionId,
+            defGeneral,
+            attackerNationID,
+            new Date()
+          );
+        } catch (captureError) {
+          console.error('[ConquerCity] 포로 전환 실패:', captureError);
+        }
+      } else {
+        // PrisonerService 없으면 직접 처리
+        if (typeof defGeneral.setPrisoner === 'function') {
+          defGeneral.setPrisoner(attackerNationID);
+        } else {
+          defGeneral.data = defGeneral.data || {};
+          defGeneral.data.prisoner_of = attackerNationID;
+          defGeneral.data.captured_at = new Date();
+          defGeneral.data.original_nation = originalNationId;
+          defGeneral.data.crew = 0;
+          defGeneral.data.troop = 0;
+        }
+        await defGeneral.save?.();
+      }
+      
+      // 포로 로그
+      const josaYi = JosaUtil.pick(defGeneralName, '이');
+      attackerLogger?.pushGlobalActionLog?.(`<Y>${defGeneralName}</>${josaYi} <R>포로</>가 되었습니다.`);
+      
+      // PHP: 등용장 발부 (50% 확률)
+      if (joinMode !== 'onlyRandom' && rng.nextBool(0.5)) {
+        try {
+          const { messageRepository } = await import('../repositories/message.repository');
+          await messageRepository.create({
+            session_id: sessionId,
+            type: 'scout',
+            from_general: attackerID,
+            to_general: defGeneralID,
+            nation: attackerNationID,
+            message: `${attackerGeneralName}이(가) 등용을 제안합니다. (포로)`,
+            created_at: new Date()
+          });
+        } catch (msgError) {
+          console.warn('[ConquerCity] 등용장 발부 실패:', msgError);
+        }
+      }
+    }
+    
+    // 국가 멸망 체크 (마지막 도시인지 확인)
+    if (defenderNationID > 0) {
+      const remainingCities = await cityRepository.count({
+        session_id: sessionId,
+        nation: defenderNationID
+      });
+      
+      // 현재 도시 포함해서 1개 남았다면 (이 도시가 마지막)
+      if (remainingCities <= 1) {
+        // 국가 멸망 처리 (NationDestructionService 사용)
+        try {
+          const destructionResult = await NationDestructionService.destroyNation(
+            sessionId,
+            defenderNationID,
+            attackerNationID,
+            attackerID
+          );
+          
+          if (destructionResult.success) {
+            console.log('[ProcessWar] 국가 멸망 처리 완료:', destructionResult);
+            
+            // 통일 체크
+            const { isUnified, winnerNationId } = await NationDestructionService.checkUnification(sessionId);
+            if (isUnified && winnerNationId) {
+              await NationDestructionService.handleUnification(sessionId, winnerNationId);
+            }
+          } else {
+            console.error('[ProcessWar] 국가 멸망 처리 실패:', destructionResult.error);
+          }
+        } catch (destructionError) {
+          console.error('[ProcessWar] NationDestruction 처리 중 오류:', destructionError);
+        }
+      } else {
+        // 멸망이 아닌 경우
+        
+        // 태수, 군사, 종사는 일반으로 해임
+        await generalRepository.updateManyByFilter(
+          {
+            session_id: sessionId,
+            'data.officer_city': cityID,
+            'data.officer_level': { $in: [2, 3, 4] }  // 태수, 군사, 종사
+          },
+          {
+            'data.officer_level': 1,
+            'data.officer_city': 0
+          }
+        );
+        
+        // 수도였으면 긴급 천도
+        if (defenderNation && defenderNation.capital === cityID) {
+          await emergencyMoveCapital(
+            sessionId,
+            defenderNationID,
+            defenderNationName,
+            cityID,
+            year,
+            month,
+            attackerLogger
+          );
+        }
+      }
+    }
+    
+    // 분쟁 국가 확인 (PHP getConquerNation)
+    const conflict = city.conflict || {};
+    const conquerNation = Object.keys(conflict).length > 0
+      ? parseInt(Object.keys(conflict)[0], 10)
+      : attackerNationID;
+    
+    // 공격자가 분쟁 1순위가 아니면 양도 처리
+    if (conquerNation !== attackerNationID && conquerNation > 0) {
+      const conquerNationData = await nationRepository.findByNationNum(sessionId, conquerNation);
+      const conquerNationName = conquerNationData?.name || '양도국';
+      
+      const josaYi = JosaUtil.pick(conquerNationName, '이');
+      attackerLogger?.pushGlobalHistoryLog?.(
+        `<Y><b>【분쟁협상】</b></><D><b>${conquerNationName}</b></>${josaYi} 영토분쟁에서 우위를 점하여 <G><b>${cityName}</b></>${josaUl} 양도받았습니다.`
+      );
+    } else {
+      // 공격자가 도시로 이동
+      general.setVar?.('city', cityID);
+      
+      // 점령 장수를 태수로 자동 임명 (기존 태수가 아닌 경우)
+      const currentOfficerLevel = general.getVar?.('officer_level') ?? 1;
+      if (currentOfficerLevel < 4) {
+        // 일반 장수인 경우 태수로 임명
+        general.setVar?.('officer_level', 4); // 태수
+        general.setVar?.('officer_city', cityID);
+        
+        const josaYi2 = JosaUtil.pick(attackerGeneralName, '이');
+        attackerLogger?.pushGeneralActionLog?.(
+          `<G><b>${cityName}</b></> <M>태수</>로 임명되었습니다.`
+        );
+        attackerLogger?.pushGlobalActionLog?.(
+          `<Y>${attackerGeneralName}</>${josaYi2} <G><b>${cityName}</b></> 태수로 임명되었습니다.`
+        );
+      }
+      
+      await general.save?.();
+    }
+    
+    // 도시 업데이트
+    const cityUpdateData: any = {
+      nation: conquerNation,
+      supply: 1,
+      term: 0,
+      conflict: {},
+      officer_set: 1 // 태수 설정됨
+    };
+    
+    // 내정치 30% 감소
+    if (city.agri) cityUpdateData.agri = Math.floor(city.agri * 0.7);
+    if (city.comm) cityUpdateData.comm = Math.floor(city.comm * 0.7);
+    if (city.secu) cityUpdateData.secu = Math.floor(city.secu * 0.7);
+    
+    // 성벽 감소 (대도시는 기본값, 소도시는 절반)
+    if (city.level > 3) {
+      cityUpdateData.def = 1000; // 대도시 기본 방어값
+      cityUpdateData.wall = 1000; // 대도시 기본 성벽값
+    } else {
+      cityUpdateData.def = Math.floor((city.def_max || 1000) / 2);
+      cityUpdateData.wall = Math.floor((city.wall_max || 1000) / 2);
+    }
+    
+    await cityRepository.updateByCityNum(sessionId, cityID, cityUpdateData);
+    
+    // 통일 체크
+    await checkUnification(sessionId, conquerNation, attackerLogger);
+    
   } catch (error) {
-    console.error('ConquerCity failed:', error);
+    console.error('[ProcessWar] ConquerCity failed:', error);
     throw error;
   }
+}
+
+/**
+ * 국가 멸망 처리
+ * PHP process_war.php의 deleteNation 부분 이식
+ */
+async function deleteNation(
+  sessionId: string,
+  defenderNationID: number,
+  defenderNation: any,
+  attackerNationID: number,
+  attackerNationName: string,
+  attackerGeneralName: string,
+  attackerID: number,
+  admin: any,
+  attackerLogger: any,
+  rng: RandUtil
+): Promise<void> {
+  const { generalRepository } = await import('../repositories/general.repository');
+  const { nationRepository } = await import('../repositories/nation.repository');
+  
+  const defenderNationName = defenderNation?.name || '멸망국';
+  const { year, month, join_mode: joinMode } = admin;
+  
+  // 멸망 로그
+  const josaUl = JosaUtil.pick(defenderNationName, '을');
+  attackerLogger?.pushNationalHistoryLog?.(`<D><b>${defenderNationName}</b></>${josaUl} 정복`);
+  attackerLogger?.pushGlobalHistoryLog?.(`<R><b>【멸망】</b></><D><b>${defenderNationName}</b></>${josaUl} <D><b>${attackerNationName}</b></>이(가) 멸망시켰습니다.`);
+  
+  // 멸망국 장수 목록 조회
+  const oldNationGenerals = await generalRepository.findByFilter({
+    session_id: sessionId,
+    'data.nation': defenderNationID
+  });
+  
+  let loseGeneralGold = 0;
+  let loseGeneralRice = 0;
+  
+  for (const oldGeneral of oldNationGenerals) {
+    const generalData = (oldGeneral.data || oldGeneral) as Record<string, any>;
+    const generalGold = generalData.gold || 0;
+    const generalRice = generalData.rice || 0;
+    
+    // 도주 시 금쌀 분실 (20~50%)
+    const loseGold = Math.floor(generalGold * (0.2 + rng.next() * 0.3));
+    const loseRice = Math.floor(generalRice * (0.2 + rng.next() * 0.3));
+    
+    // 재야로 전환
+    if (typeof (oldGeneral as any).releasePrisoner === 'function') {
+      (oldGeneral as any).releasePrisoner();
+    } else {
+      (oldGeneral as any).data = (oldGeneral as any).data || {};
+      (oldGeneral as any).data.nation = 0;
+      (oldGeneral as any).data.officer_level = 1;
+      (oldGeneral as any).data.officer_city = 0;
+      (oldGeneral as any).data.prisoner_of = 0;
+    }
+    
+    // 금쌀 감소
+    if ((oldGeneral as any).data) {
+      (oldGeneral as any).data.gold = Math.max(0, generalGold - loseGold);
+      (oldGeneral as any).data.rice = Math.max(0, generalRice - loseRice);
+    }
+    
+    // 경험치/공헌도 감소
+    const experience = generalData.experience || 0;
+    const dedication = generalData.dedication || 0;
+    if ((oldGeneral as any).data) {
+      (oldGeneral as any).data.experience = Math.max(0, experience - Math.floor(experience * 0.1));
+      (oldGeneral as any).data.dedication = Math.max(0, dedication - Math.floor(dedication * 0.5));
+    }
+    
+    loseGeneralGold += loseGold;
+    loseGeneralRice += loseRice;
+    
+    // 도주 로그
+    const oldGeneralName = (oldGeneral as any).name || (oldGeneral as any).data?.name || '장수';
+    const generalLogger = (oldGeneral as any).getLogger?.();
+    generalLogger?.pushGeneralActionLog?.(
+      `도주하며 금<C>${loseGold}</> 쌀<C>${loseRice}</>을 분실했습니다.`,
+      1
+    );
+    
+    await (oldGeneral as any).save?.();
+    
+    // NPC인 경우 일정 확률로 승전국에 임관
+    const npcType = (oldGeneral as any).npc || (oldGeneral as any).data?.npc || 0;
+    if (joinMode !== 'onlyRandom' && npcType >= 2 && npcType <= 8 && npcType !== 5) {
+      if (rng.nextBool(0.3)) { // 30% 확률로 임관
+        // 간소화: 즉시 임관 처리
+        (oldGeneral as any).data = (oldGeneral as any).data || {};
+        (oldGeneral as any).data.nation = attackerNationID;
+        (oldGeneral as any).data.officer_level = 1;
+        await (oldGeneral as any).save?.();
+        
+        const josaYi = JosaUtil.pick(oldGeneralName, '이');
+        attackerLogger?.pushGlobalActionLog?.(`<Y>${oldGeneralName}</>${josaYi} <D><b>${attackerNationName}</b></>에 임관했습니다.`);
+      }
+    }
+  }
+  
+  // 승전국 보상 계산
+  const baseGold = GameConst.basegold || 1000;
+  const baseRice = GameConst.baserice || 1000;
+  
+  const nationGold = defenderNation?.gold || 0;
+  const nationRice = defenderNation?.rice || 0;
+  
+  const loseNationGold = Math.max(0, nationGold - baseGold);
+  const loseNationRice = Math.max(0, nationRice - baseRice);
+  
+  // 기본량 제외 금쌀 50% + 장수들 분실 금쌀 50% 흡수
+  const rewardGold = Math.floor((loseNationGold + loseGeneralGold) / 2);
+  const rewardRice = Math.floor((loseNationRice + loseGeneralRice) / 2);
+  
+  // 승전국에 보상 지급
+  const attackerNation = await nationRepository.findByNationNum(sessionId, attackerNationID);
+  if (attackerNation) {
+    await nationRepository.updateByNationNum(sessionId, attackerNationID, {
+      gold: (attackerNation.gold || 0) + rewardGold,
+      rice: (attackerNation.rice || 0) + rewardRice
+    });
+  }
+  
+  // 보상 로그 (수뇌부에게)
+  const rewardGoldText = rewardGold.toLocaleString();
+  const rewardRiceText = rewardRice.toLocaleString();
+  attackerLogger?.pushGeneralActionLog?.(
+    `<D><b>${defenderNationName}</b></> 정복으로 금<C>${rewardGoldText}</> 쌀<C>${rewardRiceText}</>을 획득했습니다.`,
+    1
+  );
+  
+  // 멸망국 레벨을 0으로 (실제 삭제 대신)
+  await nationRepository.updateByNationNum(sessionId, defenderNationID, {
+    level: 0
+  });
+  
+  // 이벤트 훅 호출 (BattleEventHook.onNationDestroyed는 별도로 처리되므로 생략)
+}
+
+/**
+ * 긴급 천도 처리
+ * PHP process_war.php의 findNextCapital + 긴급천도 로직 이식
+ */
+async function emergencyMoveCapital(
+  sessionId: string,
+  nationID: number,
+  nationName: string,
+  capitalID: number,
+  year: number,
+  month: number,
+  attackerLogger: any
+): Promise<void> {
+  const { cityRepository } = await import('../repositories/city.repository');
+  const { nationRepository } = await import('../repositories/nation.repository');
+  const { generalRepository } = await import('../repositories/general.repository');
+  
+  // 남은 도시 중 인구가 가장 많은 도시를 새 수도로
+  const remainingCities = await cityRepository.findByFilter({
+    session_id: sessionId,
+    nation: nationID,
+    city: { $ne: capitalID }
+  });
+  
+  if (!remainingCities || remainingCities.length === 0) {
+    console.warn(`[ProcessWar] 긴급천도 실패: ${nationName}의 남은 도시가 없음`);
+    return;
+  }
+  
+  // 인구 기준 정렬
+  const sortedCities = [...remainingCities].sort((a, b) => (b.pop || 0) - (a.pop || 0));
+  const newCapital = sortedCities[0];
+  const newCapitalID = newCapital.city;
+  const newCapitalName = newCapital.name || `도시${newCapitalID}`;
+  
+  // 천도 로그
+  const josaRo = JosaUtil.pick(newCapitalName, '로');
+  const josaYi = JosaUtil.pick(nationName, '이');
+  attackerLogger?.pushGlobalHistoryLog?.(
+    `<M><b>【긴급천도】</b></><D><b>${nationName}</b></>${josaYi} 수도가 함락되어 <G><b>${newCapitalName}</b></>${josaRo} 긴급천도하였습니다.`
+  );
+  
+  // 국가 수도 변경 + 금쌀 50% 감소
+  const nation = await nationRepository.findByNationNum(sessionId, nationID);
+  if (nation) {
+    await nationRepository.updateByNationNum(sessionId, nationID, {
+      capital: newCapitalID,
+      gold: Math.floor((nation.gold || 0) * 0.5),
+      rice: Math.floor((nation.rice || 0) * 0.5)
+    });
+  }
+  
+  // 새 수도를 보급도시로
+  await cityRepository.updateByCityNum(sessionId, newCapitalID, {
+    supply: 1
+  });
+  
+  // 수뇌부 (officer_level >= 5) 이동
+  await generalRepository.updateManyByFilter(
+    {
+      session_id: sessionId,
+      'data.nation': nationID,
+      'data.officer_level': { $gte: 5 }
+    },
+    {
+      'data.city': newCapitalID
+    }
+  );
+  
+  // 전체 장수 사기 감소
+  const nationGenerals = await generalRepository.findByFilter({
+    session_id: sessionId,
+    'data.nation': nationID
+  });
+  
+  for (const gen of nationGenerals) {
+    const currentAtmos = gen.data?.atmos || 0;
+    gen.data = gen.data || {};
+    gen.data.atmos = Math.floor(currentAtmos * 0.8);
+    await gen.save?.();
+  }
+}
+
+/**
+ * 통일 체크
+ * 모든 활성 도시가 한 국가 소유인지 확인
+ * BattleEventHook.checkUnified를 사용하여 처리
+ */
+async function checkUnification(
+  sessionId: string,
+  nationID: number,
+  logger: any
+): Promise<boolean> {
+  // BattleEventHook.checkUnified가 통일 여부 확인 및 onUnified 호출을 담당
+  try {
+    await BattleEventHook.checkUnified?.(sessionId, nationID);
+  } catch (hookError) {
+    console.error('[ProcessWar] BattleEventHook.checkUnified 처리 실패:', hookError);
+  }
+  
+  // 단순 체크만 반환
+  const { cityRepository } = await import('../repositories/city.repository');
+  
+  const allCities = await cityRepository.findBySession(sessionId);
+  if (!allCities || allCities.length === 0) {
+    return false;
+  }
+  
+  const nationCityCount = allCities.filter((c: any) => c.nation === nationID).length;
+  return nationCityCount === allCities.length;
 }
 
 export { processWar_NG, ConquerCity };

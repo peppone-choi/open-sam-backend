@@ -564,34 +564,130 @@ export class VoteSystemService {
    * 정책 투표 결과 처리
    */
   private static async processPolicyResult(
-    _sessionId: string,
+    sessionId: string,
     voteInfo: VoteInfo,
-    _result: VoteResult
+    result: VoteResult
   ): Promise<{ result: boolean; message?: string }> {
     const policyChange = voteInfo.metadata?.policyChange;
     if (!policyChange) {
       return { result: false, message: '정책 변경 정보가 없습니다.' };
     }
 
-    // TODO: 정책 변경 로직 구현
-    return { result: true, message: '정책이 변경되었습니다.' };
+    const nationId = voteInfo.nationId;
+    if (!nationId) {
+      return { result: false, message: '국가 정보가 없습니다.' };
+    }
+
+    // 투표 결과 확인 (통과 여부)
+    const passThreshold = voteInfo.metadata?.passThreshold || 0.5;
+    const totalVotes = result.totalVotes || 0;
+    const winnerVotes = result.options?.[result.winner || 0]?.votes || 0;
+    
+    if (totalVotes === 0 || winnerVotes / totalVotes < passThreshold) {
+      return { result: false, message: '정책 변경이 부결되었습니다.' };
+    }
+
+    try {
+      // PolicyService를 통해 정책 변경
+      const { PolicyService } = await import('../nation/Policy.service');
+      const { nationRepository } = await import('../../repositories/nation.repository');
+
+      const nation = await nationRepository.findBySessionAndNationId(sessionId, nationId);
+      const year = nation?.data?.year || 184;
+      const month = nation?.data?.month || 1;
+
+      const setResult = await PolicyService.setPolicy(
+        sessionId,
+        nationId,
+        policyChange.newPolicy,
+        0, // 투표에 의한 변경이므로 setterId = 0
+        year,
+        month
+      );
+
+      if (!setResult.success) {
+        return { result: false, message: setResult.error || '정책 변경에 실패했습니다.' };
+      }
+
+      return { result: true, message: `정책이 '${policyChange.newPolicyName || policyChange.newPolicy}'(으)로 변경되었습니다.` };
+    } catch (error: any) {
+      return { result: false, message: `정책 변경 처리 오류: ${error.message}` };
+    }
   }
 
   /**
    * 천도 투표 결과 처리
    */
   private static async processCapitalMoveResult(
-    _sessionId: string,
+    sessionId: string,
     voteInfo: VoteInfo,
-    _result: VoteResult
+    result: VoteResult
   ): Promise<{ result: boolean; message?: string }> {
     const targetCityId = voteInfo.metadata?.targetCityId;
     if (!targetCityId) {
       return { result: false, message: '천도 대상 도시가 없습니다.' };
     }
 
-    // TODO: 천도 로직 구현
-    return { result: true, message: '수도가 이전되었습니다.' };
+    const nationId = voteInfo.nationId;
+    if (!nationId) {
+      return { result: false, message: '국가 정보가 없습니다.' };
+    }
+
+    // 투표 결과 확인 (통과 여부)
+    const passThreshold = voteInfo.metadata?.passThreshold || 0.5;
+    const totalVotes = result.totalVotes || 0;
+    const winnerVotes = result.options?.[result.winner || 0]?.votes || 0;
+    
+    if (totalVotes === 0 || winnerVotes / totalVotes < passThreshold) {
+      return { result: false, message: '천도가 부결되었습니다.' };
+    }
+
+    try {
+      const { nationRepository } = await import('../../repositories/nation.repository');
+      const { cityRepository } = await import('../../repositories/city.repository');
+      const { ActionLogger } = await import('../../utils/ActionLogger');
+
+      // 국가 정보 조회
+      const nation = await nationRepository.findBySessionAndNationId(sessionId, nationId);
+      if (!nation) {
+        return { result: false, message: '국가를 찾을 수 없습니다.' };
+      }
+
+      const nationName = nation.name || `국가${nationId}`;
+      const oldCapitalId = nation.data?.capital || nation.capital;
+
+      // 대상 도시 확인
+      const targetCity = await cityRepository.findByCityNum(sessionId, targetCityId);
+      if (!targetCity) {
+        return { result: false, message: '대상 도시를 찾을 수 없습니다.' };
+      }
+
+      const targetCityNation = targetCity.nation || targetCity.data?.nation;
+      if (targetCityNation !== nationId) {
+        return { result: false, message: '자국 도시만 수도로 지정할 수 있습니다.' };
+      }
+
+      const targetCityName = targetCity.name || targetCity.data?.name || `도시${targetCityId}`;
+
+      // 수도 변경
+      await nationRepository.updateBySessionAndNationId(sessionId, nationId, {
+        capital: targetCityId,
+        'data.capital': targetCityId,
+      });
+
+      // 로그 기록
+      const year = nation.data?.year || 184;
+      const month = nation.data?.month || 1;
+      const actionLogger = new ActionLogger(0, nationId, year, month, sessionId, false);
+      actionLogger.pushGlobalHistoryLog(
+        `<S><b>【천도】</b></><D><b>${nationName}</b></>이(가) 투표로 <G><b>${targetCityName}</b></>(으)로 천도하였습니다.`
+      );
+      await actionLogger.flush();
+
+      return { result: true, message: `수도가 '${targetCityName}'(으)로 이전되었습니다.` };
+    } catch (error: any) {
+      return { result: false, message: `천도 처리 오류: ${error.message}` };
+    }
   }
 }
 

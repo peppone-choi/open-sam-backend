@@ -1,0 +1,251 @@
+{
+  "description": "시나리오 4 (UC796.8) 이벤트 목록. 제국령 침공작전.",
+  
+  "events": [
+    {
+      "id": "evt_invasion_proposal",
+      "name": "제국령 침공작전 제안",
+      "category": "political",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "앤드류 포크 준장이 제국령 침공작전을 제안한다.",
+      "effects": [
+        { "type": "proposal", "faction": "alliance", "operation": "imperial_invasion" },
+        { "type": "message", "text": "포크 준장이 제국령 침공작전을 제안했습니다. 최고평의회 투표가 진행됩니다." }
+      ]
+    },
+    {
+      "id": "evt_invasion_vote",
+      "name": "침공작전 가결",
+      "category": "political",
+      "priority": 950,
+      "trigger": {
+        "type": "vote_result",
+        "conditions": [
+          { "proposal": "imperial_invasion" }
+        ]
+      },
+      "description": "최고평의회에서 제국령 침공작전이 가결되었다.",
+      "effects": [
+        { "type": "operation_approved", "operation": "imperial_invasion" },
+        { "type": "fleet_mobilize", "fleets": ["alliance_1st", "alliance_3rd", "alliance_5th", "alliance_7th", "alliance_8th", "alliance_9th", "alliance_10th"] },
+        { "type": "message", "text": "제국령 침공작전이 가결되었습니다! 8개 함대가 동원됩니다." }
+      ],
+      "prevention": {
+        "method": "원수 플레이어는 제안 거부 가능",
+        "alternative": "정치공작으로 강제 시 함대 미출격 후 몇 턴 뒤 취소"
+      }
+    },
+    {
+      "id": "evt_scorched_earth",
+      "name": "청야전술",
+      "category": "strategy",
+      "priority": 900,
+      "trigger": {
+        "type": "territory_invasion",
+        "conditions": [
+          { "attacker": "alliance" },
+          { "target": "empire_territory" }
+        ]
+      },
+      "description": "라인하르트가 청야전술을 실행한다. 점령지의 물자가 모두 소각된다.",
+      "effects": [
+        { "type": "supply_destruction", "territory": "invaded" },
+        { "type": "alliance_supply", "modifier": -50 },
+        { "type": "message", "text": "제국군이 청야전술을 실행! 점령지에 물자가 없습니다!" }
+      ],
+      "notes": "동맹군 보급난의 원인."
+    },
+    {
+      "id": "evt_supply_crisis",
+      "name": "동맹군 보급 위기",
+      "category": "military",
+      "priority": 850,
+      "trigger": {
+        "type": "periodic",
+        "conditions": [
+          { "faction": "alliance" },
+          { "fleets_in_empire": true },
+          { "turns": 3 }
+        ]
+      },
+      "description": "청야전술로 동맹군의 보급이 고갈되어 간다.",
+      "effects": [
+        { "type": "morale_penalty", "faction": "alliance", "fleets": "in_empire", "value": -10 },
+        { "type": "supply_decrease", "faction": "alliance", "fleets": "in_empire", "value": -20 },
+        { "type": "message", "text": "보급 부족! 제국령 내 동맹 함대의 사기와 보급이 감소합니다." }
+      ]
+    },
+    {
+      "id": "evt_greenhill_warning",
+      "name": "그린힐 경고",
+      "category": "political",
+      "priority": 800,
+      "trigger": {
+        "type": "stat_threshold",
+        "conditions": [
+          { "character": "greenhill", "stat": "politicalOperation", "value": ">=", "threshold": 6000 }
+        ]
+      },
+      "description": "그린힐의 정치공작 수치가 위험 수준에 접근한다.",
+      "effects": [
+        { "type": "warning", "text": "그린힐의 정치공작 수치가 6000에 도달했습니다. 쿠데타에 주의하세요!" }
+      ]
+    },
+    {
+      "id": "evt_greenhill_coup_ready",
+      "name": "그린힐 쿠데타 준비 완료",
+      "category": "political",
+      "priority": 750,
+      "trigger": {
+        "type": "stat_threshold",
+        "conditions": [
+          { "character": "greenhill", "stat": "politicalOperation", "value": ">=", "threshold": 8000 },
+          { "character": "greenhill", "hasFleet": true }
+        ]
+      },
+      "description": "그린힐이 쿠데타를 실행할 준비가 되었다!",
+      "effects": [
+        { "type": "enable_event", "eventId": "evt_salvation_military_council" },
+        { "type": "critical_warning", "text": "그린힐이 함대를 보유한 채 정치공작 8000 도달! 다음 턴 쿠데타 발생!" }
+      ],
+      "prevention": {
+        "methods": [
+          { "action": "dissolve_fleet", "target": "greenhill" },
+          { "action": "assign_governor", "target": "rockwell" }
+        ]
+      }
+    },
+    {
+      "id": "evt_emperor_death_late",
+      "name": "프리드리히 4세 붕어 (지연)",
+      "category": "political",
+      "priority": 700,
+      "trigger": {
+        "type": "random",
+        "conditions": [
+          { "character": "friedrich_iv", "status": "alive" },
+          { "probability": 0.2 }
+        ]
+      },
+      "description": "프리드리히 4세가 붕어한다.",
+      "effects": [
+        { "type": "character_death", "target": "friedrich_iv" },
+        { "type": "enable_event", "eventId": "evt_noble_discontent" }
+      ]
+    },
+    {
+      "id": "evt_amritsar_battle",
+      "name": "암릿처 성역 회전",
+      "category": "battle",
+      "priority": 650,
+      "trigger": {
+        "type": "territory_invasion",
+        "conditions": [
+          { "attacker": "alliance" },
+          { "target": "amritsar" },
+          { "empire_defense": true }
+        ]
+      },
+      "description": "암릿처 성역에서 대규모 회전이 발생한다!",
+      "effects": [
+        { "type": "battle_start", "location": "amritsar", "scale": "large" },
+        { "type": "message", "text": "암릿처 성역에서 대규모 회전이 시작됩니다!" }
+      ],
+      "notes": "시나리오 5 '사선'의 전초전."
+    },
+    {
+      "id": "evt_civil_war_opportunity",
+      "name": "제국 내전 기회",
+      "category": "strategy",
+      "priority": 600,
+      "trigger": {
+        "type": "faction_state",
+        "conditions": [
+          { "faction": "empire", "state": "civil_war" }
+        ]
+      },
+      "description": "제국에서 내전이 발발! 동맹에게 기회가 왔다!",
+      "effects": [
+        { "type": "unlock_action", "action": "deep_invasion" },
+        { "type": "message", "text": "제국 내전 발발! 암릿처 → 샨타우 방면 침투 기회!" }
+      ],
+      "notes": "내전 중 제국령 깊숙이 침투 가능."
+    },
+    {
+      "id": "evt_invasion_cancel",
+      "name": "침공작전 취소",
+      "category": "military",
+      "priority": 550,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "cancel_operation" },
+          { "operation": "imperial_invasion" }
+        ]
+      },
+      "description": "제국령 침공작전을 취소한다.",
+      "effects": [
+        { "type": "fleet_return", "fleets": "mobilized" },
+        { "type": "prestige_change", "faction": "alliance", "value": -10 },
+        { "type": "message", "text": "제국령 침공작전이 취소되었습니다. 함대가 귀환합니다." }
+      ],
+      "notes": "원작 결말 회피. 함대 보존 가능."
+    },
+    {
+      "id": "evt_alliance_defeat",
+      "name": "동맹군 대패",
+      "category": "battle",
+      "priority": 500,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "amritsar" },
+          { "alliance_losses": ">=", "value": 0.5 },
+          { "alliance_supply": "<=", "value": 20 }
+        ]
+      },
+      "description": "청야전술과 보급난으로 동맹군이 대패한다!",
+      "effects": [
+        { "type": "prestige_change", "faction": "alliance", "value": -40 },
+        { "type": "prestige_change", "faction": "empire", "value": 30 },
+        { "type": "death_check", "probability": 0.5, "targets": "participating_admirals" },
+        { "type": "message", "text": "동맹군 대패! 제국령 침공작전은 참담한 실패로 끝났습니다." }
+      ],
+      "notes": "원작의 결말. 시나리오 5로 이어짐."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_imperial_invasion",
+      "name": "제국령 침공작전 체인",
+      "events": [
+        "evt_invasion_proposal",
+        "evt_invasion_vote",
+        "evt_scorched_earth",
+        "evt_supply_crisis",
+        "evt_amritsar_battle",
+        "evt_alliance_defeat"
+      ],
+      "description": "침공 제안 → 가결 → 청야전술 → 보급난 → 암릿처 회전 → 대패"
+    },
+    {
+      "id": "chain_greenhill_coup",
+      "name": "그린힐 쿠데타 체인",
+      "events": [
+        "evt_greenhill_warning",
+        "evt_greenhill_coup_ready",
+        "evt_salvation_military_council"
+      ],
+      "description": "그린힐 정치공작 상승 → 경고 → 쿠데타"
+    }
+  ]
+}
+
+
+
+

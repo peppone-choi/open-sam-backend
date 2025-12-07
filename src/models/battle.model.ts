@@ -83,6 +83,7 @@ export interface ITurnHistory {
     attackerDamage: number;
     defenderDamage: number;
     events: string[];
+    detailedEvents?: any[];
   };
   battleLog: string[];
 }
@@ -154,6 +155,9 @@ export interface IBattle extends Document {
   
   turnHistory: ITurnHistory[];
 
+  initialAttackerUnits?: IBattleUnit[];
+  initialDefenderUnits?: IBattleUnit[];
+
   participants?: IBattleParticipant[];
   
   // 좌표 기반 맵 정보
@@ -173,7 +177,7 @@ export interface IBattle extends Document {
   updatedAt: Date;
 }
 
-const BattleUnitSchema = new Schema({
+export const BattleUnitSchema = new Schema({
   generalId: { type: Number, required: true },
   generalName: { type: String, required: true },
   troops: { type: Number, required: true },
@@ -245,19 +249,20 @@ const TurnActionSchema = new Schema({
   skillId: { type: String }
 }, { _id: false });
 
-const TurnHistorySchema = new Schema({
+export const TurnHistorySchema = new Schema({
   turnNumber: { type: Number, required: true },
   timestamp: { type: Date, required: true },
   actions: [TurnActionSchema],
   results: {
     attackerDamage: { type: Number },
     defenderDamage: { type: Number },
-    events: [{ type: String }]
+    events: [{ type: String }],
+    detailedEvents: [{ type: Schema.Types.Mixed }]
   },
   battleLog: [{ type: String }]
 }, { _id: false });
 
-const BattleMapSchema = new Schema({
+export const BattleMapSchema = new Schema({
   width: { type: Number, default: 800 },
   height: { type: Number, default: 600 },
   entryDirection: { type: String, required: true },
@@ -331,6 +336,9 @@ const BattleSchema = new Schema({
   readyPlayers: [{ type: Number }],
   
   turnHistory: [TurnHistorySchema],
+
+  initialAttackerUnits: [BattleUnitSchema],
+  initialDefenderUnits: [BattleUnitSchema],
 
   participants: [{
     generalId: { type: Number, required: true },

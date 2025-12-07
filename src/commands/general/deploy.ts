@@ -259,9 +259,11 @@ export class DeployCommand extends GeneralCommand {
     
     if (totalCrew > 500 && effectiveTrain * effectiveMorale > 70 * 70) {
       try {
-        if (typeof general.increaseInheritancePoint === 'function') {
-          // TODO: general.increaseInheritancePoint('active_action', 1);
-        }
+        const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+        const sessionId = this.env.session_id || 'sangokushi_default';
+        const inheritanceService = new InheritancePointService(sessionId);
+        const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+        await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
       } catch (error) {
         console.error('InheritancePoint 처리 실패:', error);
       }
@@ -284,18 +286,8 @@ export class DeployCommand extends GeneralCommand {
       logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 시작되었습니다.`);
     }
 
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      DeployCommand,
-      this.env,
-      this.arg ?? {}
-    );
-    
-    await tryUniqueItemLottery(
-      // TODO: general.genGenericUniqueRNG(DeployCommand.actionName),
-      general
-    );
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
     
     await this.saveGeneral();
 

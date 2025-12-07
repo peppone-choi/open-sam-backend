@@ -1,0 +1,320 @@
+{
+  "description": "시나리오 6 (UC797.4) 이벤트 목록. 립슈타트 전역. 4파전.",
+  
+  "events": [
+    {
+      "id": "evt_lippstadt_declaration",
+      "name": "립슈타트 선언",
+      "category": "political",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "브라운슈바이크 공작이 귀족연합 결성을 선언한다!",
+      "effects": [
+        { "type": "civil_war_start", "factions": ["empire_lohengramm", "empire_lippstadt"] },
+        { "type": "message", "text": "립슈타트 귀족연합이 반기를 들었습니다! 제국 내전 발발!" }
+      ]
+    },
+    {
+      "id": "evt_salvation_coup",
+      "name": "구국군사회의 쿠데타",
+      "category": "political",
+      "priority": 990,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "그린힐 대장이 하이네센에서 쿠데타를 감행한다!",
+      "effects": [
+        { "type": "coup_start", "factions": ["alliance_government", "alliance_coup"] },
+        { "type": "territory_seizure", "territory": "heinessen", "by": "alliance_coup" },
+        { "type": "message", "text": "구국군사회의가 하이네센에서 쿠데타를 감행했습니다! 정부 요인 구금!" }
+      ]
+    },
+    {
+      "id": "evt_yang_suppression_order",
+      "name": "양 웬리 진압 명령",
+      "category": "military",
+      "priority": 950,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_salvation_coup" },
+          { "turns_after": 1 }
+        ]
+      },
+      "description": "양 웬리가 쿠데타 진압 명령을 수락한다.",
+      "effects": [
+        { "type": "mission_assign", "character": "yang_wenli", "mission": "coup_suppression" },
+        { "type": "message", "text": "양 웬리 대장이 쿠데타 진압 명령을 수락했습니다." }
+      ]
+    },
+    {
+      "id": "evt_artemis_warning",
+      "name": "아르테미스의 목걸이 경고",
+      "category": "military",
+      "priority": 900,
+      "trigger": {
+        "type": "fleet_approach",
+        "conditions": [
+          { "target": "heinessen" }
+        ]
+      },
+      "description": "하이네센 접근 시 아르테미스의 목걸이가 작동한다!",
+      "effects": [
+        { "type": "warning", "text": "아르테미스의 목걸이가 아군/적군 무차별 공격합니다! 하이네센 조병창 파괴 주의!" }
+      ]
+    },
+    {
+      "id": "evt_heinessen_battle",
+      "name": "하이네센 상공 전투",
+      "category": "battle",
+      "priority": 850,
+      "trigger": {
+        "type": "battle_start",
+        "conditions": [
+          { "location": "heinessen" }
+        ]
+      },
+      "description": "하이네센 상공에서 쿠데타군과 진압군의 전투가 벌어진다!",
+      "effects": [
+        { "type": "artemis_activation", "damage_all": true },
+        { "type": "message", "text": "하이네센 상공에서 전투 개시! 아르테미스의 목걸이가 아군과 적군 모두에게 피해를 입힙니다!" }
+      ],
+      "notes": "아르테미스로 양측 모두 피해. 그린힐 함대 전멸 시 쿠데타 종결."
+    },
+    {
+      "id": "evt_doria_battle",
+      "name": "도리아 성역 회전",
+      "category": "battle",
+      "priority": 800,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "doria" },
+          { "participants": ["yang_fleet", "coup_11th"] }
+        ]
+      },
+      "description": "양 웬리가 쿠데타군 제11함대를 격파한다.",
+      "effects": [
+        { "type": "fleet_destroy", "fleet": "coup_11th" },
+        { "type": "merit_gain", "target": "yang_wenli", "amount": 5000 },
+        { "type": "message", "text": "도리아 성역 회전 승리! 쿠데타군 제11함대 격파!" }
+      ]
+    },
+    {
+      "id": "evt_kifoiser_battle",
+      "name": "키포이저 성역 회전",
+      "category": "battle",
+      "priority": 750,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "kifoiser" },
+          { "participants": ["kircheis_fleet", "lippstadt_detachment"] }
+        ]
+      },
+      "description": "키르히아이스가 귀족연합 별동대를 격파한다.",
+      "effects": [
+        { "type": "merit_gain", "target": "kircheis", "amount": 5000 },
+        { "type": "message", "text": "키포이저 성역 회전 승리! 귀족연합 별동대 격파!" }
+      ]
+    },
+    {
+      "id": "evt_gaiesburg_siege",
+      "name": "가이에스부르크 포위",
+      "category": "military",
+      "priority": 700,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "fleet": "lohengramm_main" },
+          { "location": "gaiesburg" }
+        ]
+      },
+      "description": "라인하르트 함대가 가이에스부르크 요새를 포위한다.",
+      "effects": [
+        { "type": "siege_start", "target": "gaiesburg" },
+        { "type": "message", "text": "가이에스부르크 요새 포위 개시!" }
+      ],
+      "notes": "정면 공략은 하책. 브라운슈바이크 함대 유인이 정석."
+    },
+    {
+      "id": "evt_braunschweig_sortie",
+      "name": "브라운슈바이크 출격",
+      "category": "military",
+      "priority": 650,
+      "trigger": {
+        "type": "territory_fall",
+        "conditions": [
+          { "territory": "braunschweig_system" },
+          { "owner": "empire_lohengramm" }
+        ]
+      },
+      "description": "브라운슈바이크가 가이에스부르크에서 출격한다!",
+      "effects": [
+        { "type": "fleet_move", "fleet": "braunschweig_fleet", "to": "braunschweig_system" },
+        { "type": "message", "text": "브라운슈바이크 공작이 출격했습니다! 핀포인트 제거 기회!" }
+      ]
+    },
+    {
+      "id": "evt_empire_civil_war_end",
+      "name": "제국 내전 종결",
+      "category": "political",
+      "priority": 600,
+      "trigger": {
+        "type": "fleet_destroyed",
+        "conditions": [
+          { "fleet": "braunschweig_fleet" }
+        ]
+      },
+      "description": "브라운슈바이크 함대가 전멸하여 제국 내전이 종결된다!",
+      "effects": [
+        { "type": "civil_war_end", "winner": "empire_lohengramm" },
+        { "type": "territory_transfer", "from": "empire_lippstadt", "to": "empire_lohengramm" },
+        { "type": "enable_event", "eventId": "evt_military_tribunal" },
+        { "type": "message", "text": "립슈타트 전역 종결! 라인하르트 승리! 제국 재상 취임!" }
+      ]
+    },
+    {
+      "id": "evt_alliance_coup_end",
+      "name": "동맹 쿠데타 종결",
+      "category": "political",
+      "priority": 600,
+      "trigger": {
+        "type": "fleet_destroyed",
+        "conditions": [
+          { "fleet": "greenhill_fleet" }
+        ]
+      },
+      "description": "그린힐 함대가 전멸하여 쿠데타가 종결된다!",
+      "effects": [
+        { "type": "coup_end", "winner": "alliance_government" },
+        { "type": "message", "text": "구국군사회의 쿠데타 종결! 하이네센 해방!" }
+      ]
+    },
+    {
+      "id": "evt_military_tribunal",
+      "name": "군사재판",
+      "category": "political",
+      "priority": 550,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_empire_civil_war_end" },
+          { "turns_after": 1 }
+        ]
+      },
+      "description": "귀족연합 잔당에 대한 군사재판이 열린다.",
+      "effects": [
+        { "type": "enable_event", "eventId": "evt_assassination_attempt" },
+        { "type": "message", "text": "군사재판 개정. 귀족연합 잔당 처리 중..." }
+      ]
+    },
+    {
+      "id": "evt_assassination_attempt",
+      "name": "암살 시도",
+      "category": "character",
+      "priority": 500,
+      "trigger": {
+        "type": "random",
+        "conditions": [
+          { "after_event": "evt_military_tribunal" },
+          { "probability": 0.3 }
+        ]
+      },
+      "description": "패배한 측이 승자에게 암살을 시도한다!",
+      "effects": [
+        { "type": "assassination_check", "target": "winner_leader" },
+        { "type": "death_check", "targets": ["nearby_characters"], "probability": 0.5 },
+        { "type": "message", "text": "암살 시도 발생! 주변 인물들이 위험에 처합니다!" }
+      ],
+      "notes": "키르히아이스 사망 이벤트의 원형. 막으려다 다른 인물이 당할 수 있음."
+    },
+    {
+      "id": "evt_iserlohn_opportunity",
+      "name": "이제르론 점거 기회",
+      "category": "military",
+      "priority": 450,
+      "trigger": {
+        "type": "faction_state",
+        "conditions": [
+          { "faction": "alliance", "state": "coup" },
+          { "empire_civil_war": true }
+        ]
+      },
+      "description": "동맹 내전 + 제국 내전으로 이제르론 주변이 혼란!",
+      "effects": [
+        { "type": "message", "text": "양측 모두 내전 중! 이제르론 점거 또는 방어 기회!" }
+      ]
+    },
+    {
+      "id": "evt_fahrenheit_defection",
+      "name": "파렌하이트 투항",
+      "category": "character",
+      "priority": 400,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_empire_civil_war_end" }
+        ]
+      },
+      "description": "파렌하이트가 라인하르트에게 투항한다.",
+      "effects": [
+        { "type": "faction_change", "character": "fahrenheit", "to": "empire_lohengramm" },
+        { "type": "message", "text": "파렌하이트가 라인하르트에게 투항했습니다." }
+      ]
+    },
+    {
+      "id": "evt_merkatz_exile",
+      "name": "메르카츠 망명",
+      "category": "character",
+      "priority": 400,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_empire_civil_war_end" }
+        ]
+      },
+      "description": "메르카츠가 동맹으로 망명한다.",
+      "effects": [
+        { "type": "faction_change", "character": "merkatz", "to": "alliance_government" },
+        { "type": "message", "text": "메르카츠가 자유행성동맹으로 망명했습니다." }
+      ],
+      "notes": "이후 양 웬리 휘하에서 활동."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_empire_civil_war",
+      "name": "제국 내전 체인",
+      "events": [
+        "evt_lippstadt_declaration",
+        "evt_kifoiser_battle",
+        "evt_gaiesburg_siege",
+        "evt_braunschweig_sortie",
+        "evt_empire_civil_war_end",
+        "evt_military_tribunal",
+        "evt_assassination_attempt"
+      ],
+      "description": "립슈타트 선언 → 키포이저 회전 → 가이에스부르크 포위 → 내전 종결 → 재판 → 암살 시도"
+    },
+    {
+      "id": "chain_alliance_coup",
+      "name": "동맹 쿠데타 체인",
+      "events": [
+        "evt_salvation_coup",
+        "evt_yang_suppression_order",
+        "evt_doria_battle",
+        "evt_heinessen_battle",
+        "evt_alliance_coup_end"
+      ],
+      "description": "쿠데타 발발 → 양 진압 명령 → 도리아 회전 → 하이네센 전투 → 쿠데타 종결"
+    }
+  ]
+}
+
+
+
+

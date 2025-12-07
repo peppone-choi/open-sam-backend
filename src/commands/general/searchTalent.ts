@@ -181,9 +181,11 @@ export class SearchTalentCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
 
     try {
-      if (typeof general.increaseInheritancePoint === 'function') {
-        // TODO: general.increaseInheritancePoint('active_action', 1);
-      }
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
     }
@@ -196,20 +198,8 @@ export class SearchTalentCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(SearchTalentCommand.getName(), this.arg));
     general.checkStatChange();
     
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '인재탐색');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨) - 유산 포인트는 위에서 이미 처리
+    await this.postRunHooks(rng, { skipInheritancePoint: true });
     
     await this.saveGeneral();
     return true;

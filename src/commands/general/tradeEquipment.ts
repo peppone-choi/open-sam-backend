@@ -180,13 +180,8 @@ export class TradeEquipmentCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(TradeEquipmentCommand.getName(), this.arg));
     general.checkStatChange();
     
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      TradeEquipmentCommand,
-      this.env,
-      this.arg ?? {}
-    );
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
     
     await this.saveGeneral();
 

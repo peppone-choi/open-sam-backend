@@ -118,8 +118,10 @@ export class StepDownCommand extends GeneralCommand {
     general.data.troop = 0;
 
     try {
-      // TODO: general.increaseInheritancePoint('active_action', 1);
-      // InheritancePoint 시스템이 아직 구현되지 않음
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
       
       const npcType = general.data.npc ?? general.npc ?? 0;
       if (npcType < 2) {
@@ -133,14 +135,8 @@ export class StepDownCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(StepDownCommand.getName(), this.arg));
     general.checkStatChange();
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // PHP: tryUniqueItemLottery 호출하지 않음
+    // 공통 후처리 (하야는 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
     
     await this.saveGeneral();
 

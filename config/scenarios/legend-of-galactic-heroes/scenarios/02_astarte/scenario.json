@@ -1,0 +1,92 @@
+{
+  "id": "logh-02-astarte",
+  "name": "영원한 어둠 속에",
+  "nameJa": "永遠の闇の中で",
+  "nameEn": "Into Eternal Darkness",
+  "description": "우주력 796년 2월, 아스타테 성역 회전. 라인하르트와 양 웬리가 처음으로 맞붙는 운명의 전투.",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 796,
+    "startMonth": 2,
+    "imperialYear": 487,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 30,
+    "phezzan": 1,
+    "alliance": 27
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [13, 14, 15, 16, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": true,
+    "location": "astarte",
+    "description": "아스타테 성역에서 양군 교전 중"
+  },
+  
+  "difficulty": {
+    "empire": 2,
+    "alliance": 2,
+    "description": "라인하르트 개명 완료. 양측 모두 비교적 표준 난이도."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard"],
+      "available": "소장급 이상",
+      "notes": "라인하르트가 '로엔그람'으로 개명 완료. 원수 직책."
+    },
+    "alliance": {
+      "recommended": ["paeta", "bucock"],
+      "available": "소장급 이상",
+      "notes": "양 웬리는 여전히 준장이므로 플레이 불가. 파에타 선택 시 참모로 활용."
+    }
+  },
+  
+  "specialRules": {
+    "emperorDeathEvent": {
+      "description": "황제붕어 이벤트 발생 가능. 이후 귀족 반란 가능성 발생.",
+      "prevention": "브라운슈바이크/리텐하임 함대 해산 또는 전사시킴"
+    },
+    "astarteFormation": {
+      "description": "동맹군 3개 함대가 분산 배치. 원작처럼 각개격파 또는 협공 가능.",
+      "notes": "원작과 달리 통신 상황 양호, 서로 위치 파악 가능"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "동맹 수도 바라트 성계 점령",
+      "동맹군 주력 함대 궤멸"
+    ],
+    "alliance": [
+      "제국 수도 발할라 성계 점령",
+      "제국군 주력 함대 궤멸"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "아스타테에서 정공법 진행 시 전력 부족. 각개격파 또는 즉시 퇴각 권장.",
+      "황제붕어 이벤트 후 귀족 반란 방지: 브라운슈바이크/리텐하임 함대 해산.",
+      "귀족연합 피해 최소화: 귀족들의 함선 최소화 + 방위사령관 뺑뺑이."
+    ],
+    "alliance": [
+      "아스타테 전투 자체는 유리. 제4함대 방어 + 제2,6함대 협격.",
+      "파에타 선택 시 양 웬리 능력 간접 활용 가능.",
+      "제국 내전 시 셴코프로 이제르론 점거 → 암릿처 점령 → 제국령 밀어붙이기.",
+      "그린힐 정치공작 수치 주시. 쿠데타 가능 수준 도달 시 함대 운영 차단."
+    ]
+  }
+}
+
+
+
+

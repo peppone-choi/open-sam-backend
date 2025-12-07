@@ -7,6 +7,15 @@
  */
 
 import mongoose, { Schema, Document } from 'mongoose';
+import { SHIP_TYPES, ShipStats } from './ship-type.model';
+
+export interface IFleetCombatStats {
+  totalAttack: number;
+  totalDefense: number;
+  avgSpeed: number;
+  maxRange: number;
+  minRange: number;
+}
 
 export interface IFleet extends Document {
   session_id: string;
@@ -66,6 +75,11 @@ export interface IFleet extends Document {
     ground: number; // 육전 훈련도 (0-100)
     air: number; // 공전 훈련도 (0-100)
   };
+
+  // 숙련도 레벨 (Green -> Normal -> Veteran -> Elite)
+  // 훈련도 평균에 따라 자동 계산되거나 전투 경험으로 상승
+  experienceLevel: 'green' | 'normal' | 'veteran' | 'elite';
+  experiencePoints: number; // 경험치 (0-100), 레벨 산정 기준
 
   // 전략적 위치 (100x50 전략 그리드 좌표)
   strategicPosition: {
@@ -127,6 +141,9 @@ export interface IFleet extends Document {
   getShipCountByType?(type: string): number; // 함선 종류별 실제 함선 수
   getActualTroopCount?(): number; // 실제 육전대 병력 수 (유닛 × 2,000)
   getTroopCountByType?(type: string): number; // 병종별 실제 병력 수
+  
+  // 전투 능력 계산
+  getCombatStats?(): IFleetCombatStats;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -183,6 +200,13 @@ const FleetSchema = new Schema<IFleet>(
       ground: { type: Number, default: 50, min: 0, max: 100 },
       air: { type: Number, default: 50, min: 0, max: 100 },
     },
+
+    experienceLevel: {
+      type: String,
+      enum: ['green', 'normal', 'veteran', 'elite'],
+      default: 'green',
+    },
+    experiencePoints: { type: Number, default: 0, min: 0, max: 100 },
 
     strategicPosition: {
       x: { type: Number, required: true, min: 0, max: 99 },
@@ -316,6 +340,59 @@ FleetSchema.methods.getActualTroopCount = function(): number {
 FleetSchema.methods.getTroopCountByType = function(type: string): number {
   const troopGroup = this.groundTroops?.find((t: any) => t.type === type);
   return troopGroup ? troopGroup.count * TROOPS_PER_UNIT : 0;
+};
+
+FleetSchema.methods.getCombatStats = function(): IFleetCombatStats {
+  let totalAttack = 0;
+  let totalDefense = 0;
+  let minSpeed = 999;
+  let maxRange = 0;
+  let minRange = 999;
+  let hasShips = false;
+
+  if (!this.ships || this.ships.length === 0) {
+    return {
+      totalAttack: 0,
+      totalDefense: 0,
+      avgSpeed: 0,
+      maxRange: 0,
+      minRange: 0
+    };
+  }
+
+  for (const ship of this.ships) {
+    const stats = SHIP_TYPES[ship.type];
+    if (!stats) continue;
+
+    hasShips = true;
+    // count는 유닛 수
+    const count = ship.count || 0;
+    // health는 % (0-100)
+    const healthRatio = (ship.health ?? 100) / 100;
+
+    // 공격력/방어력은 수량과 상태에 비례
+    totalAttack += stats.attack * count * healthRatio;
+    totalDefense += stats.defense * count * healthRatio;
+
+    // 속도는 가장 느린 함선 기준 (함대 전체가 대형 유지)
+    if (stats.speed < minSpeed) minSpeed = stats.speed;
+    
+    // 사거리는 최대 사거리 (항모 등)
+    if (stats.range > maxRange) maxRange = stats.range;
+    if (stats.range < minRange) minRange = stats.range;
+  }
+
+  if (!hasShips) {
+    return { totalAttack: 0, totalDefense: 0, avgSpeed: 0, maxRange: 0, minRange: 0 };
+  }
+
+  return {
+    totalAttack: Math.floor(totalAttack),
+    totalDefense: Math.floor(totalDefense),
+    avgSpeed: minSpeed, // 함대 속도는 가장 느린 함선에 맞춤
+    maxRange: maxRange,
+    minRange: minRange === 999 ? 0 : minRange
+  };
 };
 
 // Unique index for session + fleetId

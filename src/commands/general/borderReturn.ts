@@ -106,14 +106,8 @@ export class BorderReturnCommand extends GeneralCommand {
     // PHP: TODO: InstantAction일때에만 설정하지 않는게 나은데..
     // this.setResultTurn(new LastTurn(BorderReturnCommand.getName(), this.arg));
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // PHP: tryUniqueItemLottery 호출하지 않음
+    // 공통 후처리 (접경귀환은 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
 
     await this.saveGeneral();
 

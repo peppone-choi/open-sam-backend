@@ -190,6 +190,12 @@ export interface IGeneral extends Document {
   // 사망/환생 메서드 (PHP General.php 대응)
   kill(options?: { sendDyingMessage?: boolean; dyingMessage?: string | null }): Promise<void>;
   rebirth(): Promise<void>;
+  
+  // 포로 시스템 메서드
+  isPrisoner(): boolean;
+  getPrisonerOf(): number;
+  setPrisoner(capturerNationId: number): void;
+  releasePrisoner(): void;
 }
 
 // Static 메서드 타입 정의
@@ -1397,6 +1403,53 @@ GeneralSchema.methods.rebirth = async function(): Promise<void> {
     logger.pushGlobalActionLog(`${generalName}(이)가 은퇴하고 그 자손이 유지를 이어받았습니다.`);
     logger.pushGeneralActionLog('나이가 들어 은퇴하고 자손에게 자리를 물려줍니다.');
   }
+};
+
+// ========================================
+// 포로 시스템 메서드
+// ========================================
+
+/**
+ * 포로 여부 확인
+ * PHP 대응: ConquerCity에서 포로 처리
+ * 
+ * @returns 포로 여부
+ */
+GeneralSchema.methods.isPrisoner = function(): boolean {
+  const prisonerOf = this.data?.prisoner_of ?? 0;
+  return prisonerOf > 0;
+};
+
+/**
+ * 포로로 잡힌 국가 ID 조회
+ * 
+ * @returns 포로로 잡힌 국가 ID (0이면 포로 아님)
+ */
+GeneralSchema.methods.getPrisonerOf = function(): number {
+  return this.data?.prisoner_of ?? 0;
+};
+
+/**
+ * 포로로 설정
+ * 
+ * @param capturerNationId - 포로로 잡은 국가 ID
+ */
+GeneralSchema.methods.setPrisoner = function(capturerNationId: number): void {
+  this.setVar('prisoner_of', capturerNationId);
+  // 포로가 되면 병력 0
+  this.setVar('crew', 0);
+  // 부대에서 제외
+  this.setVar('troop', 0);
+};
+
+/**
+ * 포로 해방 (재야로 전환)
+ */
+GeneralSchema.methods.releasePrisoner = function(): void {
+  this.setVar('prisoner_of', 0);
+  this.setVar('nation', 0);
+  this.setVar('officer_level', 1);
+  this.setVar('officer_city', 0);
 };
 
 // Static 메서드: DB에서 장수 객체 생성

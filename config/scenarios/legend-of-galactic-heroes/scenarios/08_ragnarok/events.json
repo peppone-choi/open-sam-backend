@@ -1,0 +1,197 @@
+{
+  "description": "시나리오 8 (UC798.11) 이벤트 목록. 제1차 라그나뢰크 작전.",
+  
+  "events": [
+    {
+      "id": "evt_ragnarok_start",
+      "name": "라그나뢰크 작전 발동",
+      "category": "military",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "걀라르호른이 울렸다! 라인하르트가 동맹 본토 침공을 명령!",
+      "effects": [
+        { "type": "operation_start", "name": "ragnarok" },
+        { "type": "message", "text": "제1차 라그나뢰크 작전 발동! 걀라르호른이 울렸다!" }
+      ]
+    },
+    {
+      "id": "evt_phezzan_conquest",
+      "name": "페잔 정복",
+      "category": "political",
+      "priority": 950,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "fleet": "mittemeyer_fleet" },
+          { "location": "phezzan" }
+        ]
+      },
+      "description": "미터마이어 함대가 페잔을 무혈 점령한다!",
+      "effects": [
+        { "type": "territory_conquest", "territory": "phezzan", "by": "empire" },
+        { "type": "faction_destroy", "faction": "phezzan" },
+        { "type": "intelligence_disabled", "note": "첩보 불가능해짐" },
+        { "type": "debt_clear", "faction": "empire" },
+        { "type": "debt_increase", "faction": "alliance", "multiplier": 2 },
+        { "type": "message", "text": "페잔 정복! 자치령 멸망! 첩보 불가능해집니다. 동맹 빚 2배 증가!" }
+      ]
+    },
+    {
+      "id": "evt_9th_iserlohn",
+      "name": "제9차 이제르론 공방전",
+      "category": "battle",
+      "priority": 900,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "fleet": "reuenthal_fleet" },
+          { "location": "iserlohn_corridor" }
+        ]
+      },
+      "description": "로이엔탈이 이제르론 방면에서 견제 공격을 감행한다.",
+      "effects": [
+        { "type": "battle_start", "location": "iserlohn_corridor" },
+        { "type": "message", "text": "제9차 이제르론 공방전 개시! (견제 작전)" }
+      ],
+      "notes": "양 웬리가 이제르론을 자발적으로 포기하는 이벤트는 게임에서 미발생."
+    },
+    {
+      "id": "evt_yang_choice",
+      "name": "양 웬리의 선택",
+      "category": "strategy",
+      "priority": 850,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_phezzan_conquest" },
+          { "player_faction": "alliance" }
+        ]
+      },
+      "description": "양 웬리는 이제르론을 포기하고 본토 방어에 합류할 것인가?",
+      "effects": [
+        { "type": "player_choice", "options": [
+          { "id": "abandon", "text": "이제르론 포기, 본토 방어 합류", "effects": [
+            { "type": "fortress_abandon", "fortress": "iserlohn" },
+            { "type": "fleet_move", "fleet": "yang_fleet", "to": "rantemario" }
+          ]},
+          { "id": "defend", "text": "이제르론 사수", "effects": [
+            { "type": "message", "text": "이제르론 사수! 제국군의 양면 작전 지속됨." }
+          ]}
+        ]}
+      ],
+      "notes": "원작에서는 자발적 포기. 게임에서는 선택 가능."
+    },
+    {
+      "id": "evt_two_front_warning",
+      "name": "양면 작전 경고",
+      "category": "strategy",
+      "priority": 800,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_phezzan_conquest" }
+        ]
+      },
+      "description": "동맹은 이제르론 + 페잔 양면 방어가 필요하다!",
+      "effects": [
+        { "type": "warning", "text": "양면 방어 필요! 병력 분산 주의! 페잔 방면 잠시드/란테마리오 방어선 구축 급선무!" }
+      ]
+    },
+    {
+      "id": "evt_rantemario_approach",
+      "name": "란테마리오 접근",
+      "category": "military",
+      "priority": 750,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "faction": "empire" },
+          { "location": "rantemario_corridor" }
+        ]
+      },
+      "description": "제국군이 란테마리오 성역에 접근한다!",
+      "effects": [
+        { "type": "message", "text": "제국군 란테마리오 접근! 동맹 본토 위기!" }
+      ]
+    },
+    {
+      "id": "evt_debt_exploit",
+      "name": "차관 활용 팁",
+      "category": "economy",
+      "priority": 700,
+      "trigger": {
+        "type": "scenario_start",
+        "conditions": [
+          { "phezzan_exists": true }
+        ]
+      },
+      "description": "페잔이 망하기 전에 차관을 최대로 끌어와라!",
+      "effects": [
+        { "type": "tip", "text": "페잔 차관 최대 활용 권장! 어차피 곧 망할 페잔에게 빚 갚을 필요 없음!" }
+      ]
+    },
+    {
+      "id": "evt_intelligence_warning",
+      "name": "첩보 불가 경고",
+      "category": "strategy",
+      "priority": 650,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_phezzan_conquest" }
+        ]
+      },
+      "description": "페잔 멸망으로 첩보가 불가능해졌다!",
+      "effects": [
+        { "type": "disable_intelligence" },
+        { "type": "warning", "text": "첩보 불가능! 적 함대 위치 파악 어려워짐! 복병 주의!" }
+      ]
+    },
+    {
+      "id": "evt_supply_line_warning",
+      "name": "보급선 경고",
+      "category": "logistics",
+      "priority": 600,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "faction": "empire" },
+          { "distance_from_capital": ">=", "value": 5 }
+        ]
+      },
+      "description": "보급선이 길어지고 있다!",
+      "effects": [
+        { "type": "warning", "faction": "empire", "text": "보급선 길어짐! 군사예산 관리 필수!" }
+      ]
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_ragnarok",
+      "name": "라그나뢰크 작전 체인",
+      "events": [
+        "evt_ragnarok_start",
+        "evt_phezzan_conquest",
+        "evt_two_front_warning",
+        "evt_rantemario_approach"
+      ],
+      "description": "작전 발동 → 페잔 정복 → 양면 방어 → 란테마리오 접근"
+    },
+    {
+      "id": "chain_iserlohn_decision",
+      "name": "이제르론 결정 체인",
+      "events": [
+        "evt_9th_iserlohn",
+        "evt_yang_choice"
+      ],
+      "description": "이제르론 공방 → 양의 선택 (포기/사수)"
+    }
+  ]
+}
+
+
+
+

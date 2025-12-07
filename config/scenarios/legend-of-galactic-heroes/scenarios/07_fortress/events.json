@@ -1,0 +1,221 @@
+{
+  "description": "시나리오 7 (UC798.4) 이벤트 목록. 제8차 이제르론 공방전 (요새 대 요새).",
+  
+  "events": [
+    {
+      "id": "evt_gaiesburg_warp",
+      "name": "가이에스부르크 워프",
+      "category": "military",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "가이에스부르크 요새가 워프하여 이제르론 성계에 도착!",
+      "effects": [
+        { "type": "fortress_deploy", "fortress": "gaiesburg", "location": "iserlohn_corridor" },
+        { "type": "message", "text": "가이에스부르크 요새가 워프 완료! 이제르론 성계에 진입했습니다!" }
+      ]
+    },
+    {
+      "id": "evt_yang_inquiry",
+      "name": "양 웬리 사문회 출석",
+      "category": "character",
+      "priority": 950,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "양 웬리가 사문회 출석 중이라 이제르론에 없다.",
+      "effects": [
+        { "type": "character_absent", "character": "yang_wenli" },
+        { "type": "command_transfer", "from": "yang_wenli", "to": "merkatz", "flagship": "히페리온" },
+        { "type": "message", "text": "양 웬리가 사문회 출석 중! 메르카츠가 히페리온으로 임시 지휘합니다." }
+      ]
+    },
+    {
+      "id": "evt_fortress_cannon_duel",
+      "name": "요새포 대결",
+      "category": "battle",
+      "priority": 900,
+      "trigger": {
+        "type": "fortress_approach",
+        "conditions": [
+          { "fortress1": "gaiesburg" },
+          { "fortress2": "iserlohn" },
+          { "range": "<=", "value": 8 }
+        ]
+      },
+      "description": "토르해머 vs 가이에스하켄! 요새포 대결 개시!",
+      "effects": [
+        { "type": "fortress_battle_start" },
+        { "type": "message", "text": "요새포 대결 개시! 토르해머(15000) vs 가이에스하켄(12000)!" }
+      ]
+    },
+    {
+      "id": "evt_yang_return",
+      "name": "양 웬리 귀환",
+      "category": "character",
+      "priority": 850,
+      "trigger": {
+        "type": "turns_passed",
+        "conditions": [
+          { "turns": 3 }
+        ]
+      },
+      "description": "양 웬리가 사문회를 마치고 이제르론으로 귀환한다!",
+      "effects": [
+        { "type": "character_return", "character": "yang_wenli", "location": "iserlohn" },
+        { "type": "command_transfer", "from": "merkatz", "to": "yang_wenli" },
+        { "type": "buff", "target": "alliance_fleets", "stat": "morale", "value": 20 },
+        { "type": "message", "text": "양 웬리 대장 귀환! '그냥 표준전함으로 출격합니다' (히페리온은 메르카츠가 미끼로 사용)" }
+      ]
+    },
+    {
+      "id": "evt_small_fleet_danger",
+      "name": "분함대 위험 경고",
+      "category": "battle",
+      "priority": 800,
+      "trigger": {
+        "type": "battle_start",
+        "conditions": [
+          { "location": "iserlohn" }
+        ]
+      },
+      "description": "분함대급 함대가 요새포 사정권에 진입!",
+      "effects": [
+        { "type": "warning", "text": "아텐보로/피셔/구엔 분함대는 전함 2부대만! 요새포 직격 시 전멸+제독 전사 위험!" }
+      ]
+    },
+    {
+      "id": "evt_gaiesburg_damage",
+      "name": "가이에스부르크 손상",
+      "category": "battle",
+      "priority": 750,
+      "trigger": {
+        "type": "fortress_damage",
+        "conditions": [
+          { "fortress": "gaiesburg" },
+          { "damage": ">=", "value": 50 }
+        ]
+      },
+      "description": "가이에스부르크 요새가 심각한 손상을 입었다!",
+      "effects": [
+        { "type": "message", "text": "가이에스부르크 요새 대파! 워프 엔진 손상으로 귀환 불가!" }
+      ]
+    },
+    {
+      "id": "evt_kempf_death",
+      "name": "켐프 전사",
+      "category": "character",
+      "priority": 700,
+      "trigger": {
+        "type": "fleet_destroyed",
+        "conditions": [
+          { "fleet": "kempf_fleet" }
+        ]
+      },
+      "description": "켐프 제독이 장렬히 전사한다.",
+      "effects": [
+        { "type": "character_death", "character": "kempf" },
+        { "type": "message", "text": "켐프 대장 전사! '건투를 빈다, 뮐러...'." }
+      ]
+    },
+    {
+      "id": "evt_iserlohn_damage",
+      "name": "이제르론 손상",
+      "category": "battle",
+      "priority": 650,
+      "trigger": {
+        "type": "fortress_damage",
+        "conditions": [
+          { "fortress": "iserlohn" },
+          { "damage": ">=", "value": 20 }
+        ]
+      },
+      "description": "이제르론 요새가 손상을 입었다.",
+      "effects": [
+        { "type": "fortress_defense_down", "fortress": "iserlohn", "value": 5000 },
+        { "type": "message", "text": "이제르론 요새 손상! 방어력 하락 (약 23,500까지)." }
+      ],
+      "notes": "이후 시나리오에서 이제르론 방어력이 하락한 상태로 시작."
+    },
+    {
+      "id": "evt_gaiesburg_retreat",
+      "name": "가이에스부르크 퇴각",
+      "category": "military",
+      "priority": 600,
+      "trigger": {
+        "type": "fortress_damage",
+        "conditions": [
+          { "fortress": "gaiesburg" },
+          { "damage": ">=", "value": 70 }
+        ]
+      },
+      "description": "가이에스부르크가 퇴각을 시도하지만...",
+      "effects": [
+        { "type": "message", "text": "가이에스부르크 퇴각 시도! 하지만 워프 엔진 손상으로 귀환 불가!" }
+      ]
+    },
+    {
+      "id": "evt_battle_end_empire_win",
+      "name": "제국 승리",
+      "category": "result",
+      "priority": 500,
+      "trigger": {
+        "type": "fortress_fall",
+        "conditions": [
+          { "fortress": "iserlohn" }
+        ]
+      },
+      "description": "이제르론 요새가 함락당했다!",
+      "effects": [
+        { "type": "fortress_capture", "fortress": "iserlohn", "by": "empire" },
+        { "type": "message", "text": "이제르론 요새 함락! 제국의 승리! (하지만 가이에스부르크는 사용불능)" }
+      ]
+    },
+    {
+      "id": "evt_battle_end_alliance_win",
+      "name": "동맹 승리",
+      "category": "result",
+      "priority": 500,
+      "trigger": {
+        "type": "fortress_destroyed",
+        "conditions": [
+          { "fortress": "gaiesburg" }
+        ]
+      },
+      "description": "가이에스부르크 요새가 괴멸당했다!",
+      "effects": [
+        { "type": "fortress_destroy", "fortress": "gaiesburg" },
+        { "type": "message", "text": "가이에스부르크 요새 괴멸! 동맹의 승리!" }
+      ],
+      "notes": "정상 결과. 가이에스부르크 완전 파괴."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_fortress_battle",
+      "name": "요새 대 요새 체인",
+      "events": [
+        "evt_gaiesburg_warp",
+        "evt_fortress_cannon_duel",
+        "evt_gaiesburg_damage",
+        "evt_battle_end_alliance_win"
+      ],
+      "description": "가이에스부르크 워프 → 요새포 대결 → 가이에스부르크 손상 → 동맹 승리"
+    },
+    {
+      "id": "chain_yang_return",
+      "name": "양 웬리 귀환 체인",
+      "events": [
+        "evt_yang_inquiry",
+        "evt_yang_return"
+      ],
+      "description": "양 사문회 출석 → 귀환 후 반격"
+    }
+  ]
+}
+
+
+
+

@@ -200,7 +200,15 @@ export class SpyCommand extends GeneralCommand {
     const [reqGold, reqRice] = this.getCost();
     
     // PHP: increaseInheritancePoint(InheritanceKey::active_action, 0.5) - 첩보만 예외!
-    // TODO: general.increaseInheritancePoint('active_action', 0.5);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 0.5);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     
     general.increaseVarWithLimit('gold', -reqGold, 0);
     general.increaseVarWithLimit('rice', -reqRice, 0);
@@ -210,15 +218,11 @@ export class SpyCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn(SpyCommand.getName(), this.arg));
     
-    // PHP: StaticEventHandler.handleEvent
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-    
     general.checkStatChange();
+    
+    // 공통 후처리 (첩보는 유산 포인트가 위에서 0.5로 특수 처리됨)
+    await this.postRunHooks(rng, { skipInheritancePoint: true });
+    
     await this.saveGeneral();
 
     return true;

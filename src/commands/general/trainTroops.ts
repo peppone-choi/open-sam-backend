@@ -137,22 +137,8 @@ export class TrainTroopsCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(TrainTroopsCommand.getName(), this.arg));
     general.checkStatChange();
     
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      TrainTroopsCommand,
-      this.env,
-      this.arg ?? {}
-    );
-
-    // PHP 원본과 동일: tryUniqueItemLottery 호출
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env['session_id'] || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '훈련');
-    } catch (error: any) {
-      console.error('tryUniqueItemLottery failed:', error);
-    }
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
     
     await this.saveGeneral();
 

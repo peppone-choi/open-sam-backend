@@ -160,14 +160,8 @@ export class WanderCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn(WanderCommand.getName(), this.arg));
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // PHP: tryUniqueItemLottery 호출하지 않음
+    // 공통 후처리 (방랑은 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
 
     await this.saveGeneral();
 

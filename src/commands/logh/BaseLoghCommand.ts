@@ -10,13 +10,21 @@ export interface ILoghCommandExecutor {
   no: number; // Commander ID
   session_id: string;
   data: any; // Commander data object (name, supplies, position, etc.)
+  
+  // 기본 속성
+  name?: string; // 캐릭터 이름
+  faction?: 'empire' | 'alliance' | 'neutral'; // 세력
+  fame?: number; // 명성
+  jobPosition?: string; // 직위 (황제, 원수, 대장, 등)
+  
   getVar(key: string): any;
   setVar(key: string, value: any): void;
   increaseVar(key: string, value: number): void;
   decreaseVar(key: string, value: number): void;
   getNationID(): number;
   getFactionType(): 'empire' | 'alliance';
-  getRank(): string;
+  getRank(): number; // 계급 번호 (숫자)
+  getRankName?(): string; // 계급 이름 (문자열)
   getCommandPoints(): number;
   consumeCommandPoints(amount: number): void;
   getFleetId(): string | null;

@@ -1,0 +1,152 @@
+{
+  "description": "시나리오 4 (UC796.8) 함대 배치. 제국령 침공작전 시점.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "empire_reinhard",
+        "name": "라인하르트 함대",
+        "commander": "라인하르트 폰 로엔그람",
+        "commanderId": 1,
+        "size": 25000,
+        "location": "amritsar",
+        "status": "defense",
+        "subCommanders": [
+          { "id": 3, "name": "키르히아이스", "role": "부사령관" },
+          { "id": 5, "name": "로이엔탈", "role": "분함대장" },
+          { "id": 6, "name": "미터마이어", "role": "분함대장" }
+        ],
+        "notes": "암릿처에서 청야전술 준비. 동맹군 유인 후 격파 계획."
+      },
+      {
+        "id": "empire_3rd",
+        "name": "제3함대",
+        "commander": "메르카츠",
+        "commanderId": 103,
+        "size": 13000,
+        "location": "empire_rear",
+        "status": "reserve"
+      }
+    ],
+    "strategicSituation": {
+      "iserlohn": "lost",
+      "amritsar": "defense_line",
+      "strategy": "scorched_earth",
+      "description": "이제르론 상실로 방어선 후퇴. 암릿처에서 청야전술로 동맹군 보급선 차단 계획."
+    }
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "alliance_13th",
+        "name": "제13함대 (이제르론 주둔)",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 15000,
+        "location": "iserlohn",
+        "status": "garrison",
+        "notes": "이제르론 요새 방어. 침공작전에는 소극적 참여."
+      },
+      {
+        "id": "alliance_1st",
+        "name": "제1함대",
+        "commander": "큐브르슬리",
+        "size": 14000,
+        "location": "heinessen",
+        "status": "preparing"
+      },
+      {
+        "id": "alliance_3rd",
+        "name": "제3함대",
+        "commander": "르페브르",
+        "size": 13000,
+        "location": "heinessen",
+        "status": "preparing"
+      },
+      {
+        "id": "alliance_5th",
+        "name": "제5함대",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 14000,
+        "location": "heinessen",
+        "status": "preparing"
+      },
+      {
+        "id": "alliance_7th",
+        "name": "제7함대",
+        "commander": "호우드",
+        "size": 12000,
+        "location": "heinessen",
+        "status": "preparing"
+      },
+      {
+        "id": "alliance_8th",
+        "name": "제8함대",
+        "commander": "애플턴",
+        "size": 12000,
+        "location": "heinessen",
+        "status": "preparing"
+      },
+      {
+        "id": "alliance_9th",
+        "name": "제9함대",
+        "commander": "알 살렘",
+        "size": 11000,
+        "location": "heinessen",
+        "status": "preparing"
+      },
+      {
+        "id": "alliance_10th",
+        "name": "제10함대",
+        "commander": "우란프",
+        "size": 12000,
+        "location": "heinessen",
+        "status": "preparing"
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_alliance",
+        "name": "이제르론 주둔함대",
+        "fortress": "iserlohn",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 15000,
+        "status": "garrison"
+      }
+    ],
+    "strategicSituation": {
+      "iserlohn": "controlled",
+      "status": "strongest_moment",
+      "description": "동맹 최강의 순간. 이제르론 장악, 주력 건재, 원수 다수 생존."
+    }
+  },
+  
+  "invasionPlan": {
+    "name": "제국령 침공작전",
+    "proposer": "앤드류 포크",
+    "objective": "제국 본토 침공 및 점령",
+    "mobilizedFleets": [
+      "alliance_1st", "alliance_3rd", "alliance_5th", "alliance_7th",
+      "alliance_8th", "alliance_9th", "alliance_10th"
+    ],
+    "totalForce": 90000,
+    "targetSystems": ["amritsar", "eisenherz", "inner_empire"],
+    "risks": [
+      "보급선 연장으로 보급난 예상",
+      "청야전술에 말려들 위험",
+      "제국군 주력과의 결전 시 피해 막대"
+    ],
+    "forksCalculation": {
+      "description": "포크의 낙관적 계산",
+      "estimatedVictory": "3개월 내 발할라 점령",
+      "reality": "청야전술 + 보급난으로 대패"
+    }
+  }
+}
+
+
+
+

@@ -974,10 +974,74 @@ export class ExecuteEngineService {
   }
 
   /**
-   * 전처리 (부상 경감, 병력 군량 소모)
+   * 전처리 (부상 경감, 병력 군량 소모, 포로 탈출 시도)
    */
   private static async preprocessCommand(sessionId: string, general: any, year: number, month: number) {
     await this.applyItemPreTurnEffects(sessionId, general, year, month);
+
+    // 포로인 경우 탈출 시도
+    const prisonerOf = general.prisoner_of || general.data?.prisoner_of || 0;
+    if (prisonerOf > 0) {
+      try {
+        const { PrisonerService } = await import('../general/Prisoner.service');
+        const generalId = general.no || general.data?.no;
+        const rng = this.createRNG(sessionId, year, month, generalId, 'escape');
+        await PrisonerService.attemptEscape(sessionId, generalId, rng);
+      } catch (error: any) {
+        logger.warn('[preprocessCommand] Prisoner escape attempt failed', { 
+          generalId: general.no, 
+          error: error.message 
+        });
+      }
+    }
+
+    // 사망 체크 (부상, 노환)
+    try {
+      const { InjuryService } = await import('../general/Injury.service');
+      const generalId = general.no || general.data?.no;
+      const rng = this.createRNG(sessionId, year, month, generalId, 'death_check');
+      
+      // 부상으로 인한 사망 체크 (위독 상태만)
+      const injury = general.injury || general.data?.injury || 0;
+      if (injury >= 61) {
+        const deathRate = 5; // 5% 확률
+        if (rng.nextBool(deathRate / 100)) {
+          const generalName = general.name || general.data?.name || '장수';
+          await this.pushGeneralActionLog(
+            sessionId,
+            generalId,
+            `<R>부상으로 인해 사망</>하였습니다.`,
+            year,
+            month
+          );
+          // 장수 삭제는 updateTurnTime에서 처리
+          general.killturn = 0;
+        }
+      }
+      
+      // 노환 사망 체크 (60세 이상)
+      const age = general.age || general.data?.age || 20;
+      if (age >= 60) {
+        const deathRate = Math.min(80, (age - 60) * 2); // (나이-60)*2%, 최대 80%
+        if (rng.nextBool(deathRate / 100)) {
+          const generalName = general.name || general.data?.name || '장수';
+          await this.pushGeneralActionLog(
+            sessionId,
+            generalId,
+            `<R>노환(${age}세)으로 인해 사망</>하였습니다.`,
+            year,
+            month
+          );
+          // 장수 삭제는 updateTurnTime에서 처리
+          general.killturn = 0;
+        }
+      }
+    } catch (error: any) {
+      logger.warn('[preprocessCommand] Death check failed', {
+        generalId: general.no,
+        error: error.message
+      });
+    }
 
     // 부상 경감
     if (general.injury > 0) {

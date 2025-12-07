@@ -109,13 +109,8 @@ export class ResetBattleSkillCommand extends GeneralCommand {
 
     this.setResultTurn(new LastTurn(ResetBattleSkillCommand.getName(), this.arg));
     
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      ResetBattleSkillCommand,
-      this.env,
-      this.arg ?? {}
-    );
+    // 공통 후처리 (특기 초기화는 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true });
     
     await this.saveGeneral();
 

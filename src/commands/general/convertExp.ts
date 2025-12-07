@@ -155,15 +155,10 @@ export class ConvertExpCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(ConvertExpCommand.getName(), this.arg));
     general.checkStatChange();
 
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      ConvertExpCommand,
-      this.env,
-      this.arg ?? {}
-    );
+    // 공통 후처리 (숙련 전환은 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true });
 
-      await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

@@ -28,6 +28,22 @@ export interface IPlanet extends Document {
     defense: number; // 방어력 (0-100)
     resources: number; // 자원 (0-100)
     loyalty: number; // 충성도 (0-100)
+    security: number; // 치안 (0-100)
+    approvalRating: number; // 정부 지지율 (0-100)
+    unrest: number; // 민심 불안 (0-100, 높을수록 폭동 위험)
+  };
+
+  // 민간인 관련 데이터
+  civilianData?: {
+    detainees: Array<{
+      id: string;
+      name: string;
+      crime: string;
+      arrestedAt: Date;
+      status: 'detained' | 'trial' | 'imprisoned' | 'released' | 'executed';
+    }>;
+    activeProtests: number; // 진행 중인 시위 수
+    lastRiotAt?: Date; // 마지막 폭동 발생일
   };
 
   // Production
@@ -131,6 +147,21 @@ const PlanetSchema = new Schema<IPlanet>(
       defense: { type: Number, default: 30 },
       resources: { type: Number, default: 40 },
       loyalty: { type: Number, default: 50 },
+      security: { type: Number, default: 50, min: 0, max: 100 }, // 치안
+      approvalRating: { type: Number, default: 50, min: 0, max: 100 }, // 정부 지지율
+      unrest: { type: Number, default: 0, min: 0, max: 100 }, // 민심 불안
+    },
+
+    civilianData: {
+      detainees: [{
+        id: String,
+        name: String,
+        crime: String,
+        arrestedAt: Date,
+        status: { type: String, enum: ['detained', 'trial', 'imprisoned', 'released', 'executed'] },
+      }],
+      activeProtests: { type: Number, default: 0 },
+      lastRiotAt: Date,
     },
 
     production: {

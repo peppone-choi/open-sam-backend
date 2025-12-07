@@ -1,0 +1,103 @@
+{
+  "id": "logh-04-invasion",
+  "name": "슬픈 비가 내리면",
+  "nameJa": "悲しみの雨が降る時",
+  "nameEn": "When Sorrow Rains",
+  "description": "우주력 796년 8월, 제국령 침공작전. 동맹이 역사상 처음으로 제국 본토를 침공한다. 동맹 최강의 순간.",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 796,
+    "startMonth": 8,
+    "imperialYear": 487,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 34,
+    "phezzan": 1,
+    "alliance": 24
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [2, 4, 6, 14, 15, 16, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": false,
+    "upcomingEvent": "암릿처에 동맹군 침공 직전",
+    "location": "amritsar"
+  },
+  
+  "difficulty": {
+    "empire": 3,
+    "alliance": 1,
+    "description": "동맹 최강 시나리오! 이제르론 점령, 주력 건재, 원수 다수 생존."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard"],
+      "available": "소장급 이상",
+      "notes": "이제르론 상실 상태. 점거 가능 장교 없음 (군사공작 4000 미달)."
+    },
+    "alliance": {
+      "recommended": ["yang_wenli", "bucock"],
+      "available": "소장급 이상",
+      "notes": "자유행성동맹이 가장 강한 시나리오! 양 웬리 중장 플레이 가능."
+    }
+  },
+  
+  "specialRules": {
+    "allianceStrongest": {
+      "description": "본작에서 자유행성동맹이 가장 강하게 등장하는 시나리오",
+      "advantages": [
+        "이제르론 요새 장악",
+        "주력 함대 건재",
+        "유능한 제독들 생존",
+        "원수급 지휘관 다수"
+      ]
+    },
+    "imperialInvasionEvent": {
+      "description": "이벤트로 제국령 침공작전 강제 발동",
+      "prevention": "원수 플레이어는 제안 거부 가능. 정치공작으로 강제되면 함대 미출격 후 작전 취소."
+    },
+    "noImperialOccupy": {
+      "description": "제국에 점거 가능 장교 없음 (군사공작 4000 미달)",
+      "characters": ["오프레서", "크라프", "그래저", "린저"],
+      "notes": "이들의 군사공작을 4000까지 키우면 점거 가능"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "이제르론 요새 탈환",
+      "동맹 수도 바라트 성계 점령",
+      "동맹군 주력 궤멸"
+    ],
+    "alliance": [
+      "제국 수도 발할라 성계 점령",
+      "제국군 주력 궤멸"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "이제르론 정면 공략은 토르 해머에 당함. 암릿처에서 동맹군 타격 후 군사공작 4000 달성 때까지 대기.",
+      "점거 가능 장교 육성: 오프레서, 크라프, 그래저, 린저 중 1명.",
+      "침공하는 동맹군을 암릿처에서 개박살내는 것이 핵심."
+    ],
+    "alliance": [
+      "제국령 침공작전 이벤트는 함정! 원작처럼 청야전술에 말려들 수 있음.",
+      "원수라면 제안 거부 권장. 강제 시 함대 미출격 후 몇 턴 뒤 취소.",
+      "그린힐 반란 경계: 정치공작 8000 도달 전에 함대 해산 또는 방위사령관 임명.",
+      "제국 내전 발생 시 암릿처 → 샨타우 방면 진격으로 제국령 침투 가능."
+    ]
+  }
+}
+
+
+
+

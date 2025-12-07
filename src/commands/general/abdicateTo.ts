@@ -124,23 +124,20 @@ export class AbdicateToCommand extends GeneralCommand {
     logger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 <Y>${destGeneralName}</>에게 선양`);
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>의 군주자리를 물려 받음`);
 
-    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     this.setResultTurn(new LastTurn(AbdicateToCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // StaticEventHandler 처리
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(
-        general,
-        destGeneral,
-        this,
-        this.env,
-        this.arg
-      );
-    } catch (error: any) {
-      console.error('StaticEventHandler failed:', error);
-    }
+    // 공통 후처리 (선양은 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
 
     // 장수 데이터 저장
     await this.saveGeneral();

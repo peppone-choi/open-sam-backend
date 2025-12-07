@@ -1,0 +1,215 @@
+{
+  "description": "시나리오 1 (UC795.9) 이벤트 목록",
+  
+  "events": [
+    {
+      "id": "evt_reinhard_rename",
+      "name": "로엔그람 개명",
+      "category": "character",
+      "priority": 1000,
+      "trigger": {
+        "type": "promotion",
+        "conditions": [
+          { "character": "reinhard", "rank": ">=", "value": 10 },
+          { "character": "friedrich_iv", "status": "!=", "value": "dead" }
+        ]
+      },
+      "description": "라인하르트가 상급대장으로 승진하면서 황제로부터 '로엔그람' 백작 작위를 받는다.",
+      "effects": [
+        { "type": "rename", "target": "reinhard", "from": "라인하르트 폰 뮤젤", "to": "라인하르트 폰 로엔그람" },
+        { "type": "title", "target": "reinhard", "value": "로엔그람 백작" },
+        { "type": "message", "text": "라인하르트 폰 뮤젤이 로엔그람 백작위를 하사받았습니다." }
+      ],
+      "notes": "황제 사망 전에 상급대장 달성 필요. 난이도 높음."
+    },
+    {
+      "id": "evt_emperor_death",
+      "name": "프리드리히 4세 붕어",
+      "category": "political",
+      "priority": 900,
+      "trigger": {
+        "type": "random",
+        "conditions": [
+          { "year": ">=", "value": 796 },
+          { "probability": 0.15 }
+        ]
+      },
+      "description": "프리드리히 4세가 붕어하고, 어린 에르빈 요제프 2세가 즉위한다.",
+      "effects": [
+        { "type": "character_death", "target": "friedrich_iv" },
+        { "type": "spawn_character", "character": "erwin_josef_ii" },
+        { "type": "enable_event", "eventId": "evt_lippstadt_possible" },
+        { "type": "message", "text": "프리드리히 4세가 붕어하였습니다. 제국에 격동의 시대가 도래합니다." }
+      ],
+      "notes": "이 이벤트 발생 후 라인하르트 개명 불가."
+    },
+    {
+      "id": "evt_lippstadt_possible",
+      "name": "귀족 불만 고조",
+      "category": "political",
+      "priority": 800,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_emperor_death" },
+          { "turns_after": 3 }
+        ]
+      },
+      "description": "브라운슈바이크, 리텐하임 등 대귀족들의 불만이 고조된다.",
+      "effects": [
+        { "type": "faction_tension", "faction": "nobles", "value": 30 },
+        { "type": "enable_event", "eventId": "evt_lippstadt_rebellion" },
+        { "type": "message", "text": "대귀족들 사이에서 라인하르트에 대한 불만이 고조되고 있습니다." }
+      ],
+      "prevention": {
+        "methods": [
+          "브라운슈바이크/리텐하임 함대 해산",
+          "두 인물을 방위사령관으로 임명",
+          "두 인물을 동맹군과의 전투에서 전사시킴"
+        ]
+      }
+    },
+    {
+      "id": "evt_tiamat_retreat_proposal",
+      "name": "티아마트 철수 건의",
+      "category": "military",
+      "priority": 700,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "location": "tiamat" },
+          { "action": "propose_retreat" }
+        ]
+      },
+      "description": "티아마트에서의 작전 취소를 건의한다.",
+      "effects": [
+        { "type": "approval_check", "approver": "steinhoff", "difficulty": "very_hard" },
+        { "type": "conditional", "on_success": "retreat_tiamat", "on_failure": "proposal_rejected" }
+      ],
+      "notes": "슈타인호프의 작전 허가 받기가 매우 어려움. 제안공작 노가다 필요."
+    },
+    {
+      "id": "evt_character_death_tiamat",
+      "name": "티아마트 전사",
+      "category": "battle",
+      "priority": 600,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "tiamat" },
+          { "fleet_destroyed": true },
+          { "fleet_size": "<=", "value": "small" }
+        ]
+      },
+      "description": "소함대급 함대가 전멸하면 지휘관이 전사할 수 있다.",
+      "effects": [
+        { "type": "death_check", "probability": 0.7 },
+        { "type": "conditional", "on_death": "character_death", "on_survive": "character_wounded" }
+      ],
+      "affectedCharacters": [
+        "kircheis", "reuenthal", "mittermeyer", "fahrenheit", "fogel", "erlach", "lennenkampf"
+      ],
+      "notes": "소함대급 지휘관들은 함대 전멸 시 70% 확률로 전사."
+    },
+    {
+      "id": "evt_kircheis_death_warning",
+      "name": "키르히아이스 위험 경고",
+      "category": "character",
+      "priority": 500,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "player": "reinhard" },
+          { "action": "assign_aide", "target": "kircheis" }
+        ]
+      },
+      "description": "키르히아이스를 부관으로 임명하면 함대 전멸 시 함께 사망할 수 있다.",
+      "effects": [
+        { "type": "warning", "text": "키르히아이스를 부관으로 임명하면 함대 전멸 시 높은 확률로 함께 전사합니다." }
+      ]
+    },
+    {
+      "id": "evt_alliance_budget_crisis",
+      "name": "동맹 재정 위기",
+      "category": "economic",
+      "priority": 400,
+      "trigger": {
+        "type": "periodic",
+        "conditions": [
+          { "faction": "alliance" },
+          { "turns": 12 },
+          { "budget": "<=", "value": 5000 }
+        ]
+      },
+      "description": "동맹의 재정이 악화되어 페잔에 대한 의존도가 높아진다.",
+      "effects": [
+        { "type": "debt_increase", "creditor": "phezzan", "amount": 2000 },
+        { "type": "message", "text": "동맹의 재정이 악화되고 있습니다. 페잔에 대한 빚이 늘어납니다." }
+      ],
+      "criticalCondition": {
+        "trigger": { "debt": ">=", "value": 50000 },
+        "effect": "phezzan_ending",
+        "description": "빚을 갚지 못하면 페잔 지배 엔딩"
+      }
+    },
+    {
+      "id": "evt_yang_merit",
+      "name": "양 웬리 공적 축적",
+      "category": "character",
+      "priority": 300,
+      "trigger": {
+        "type": "battle_victory",
+        "conditions": [
+          { "participant": "yang_wenli" },
+          { "role": "staff" }
+        ]
+      },
+      "description": "양 웬리가 참모로서 전투에 기여하면 공적이 쌓인다.",
+      "effects": [
+        { "type": "merit_gain", "target": "yang_wenli", "amount": 500 },
+        { "type": "fame_gain", "target": "yang_wenli", "amount": 200 }
+      ],
+      "notes": "양 웬리는 준장이므로 직접 플레이 불가. 파에타 선택 시 간접 활용."
+    },
+    {
+      "id": "evt_elgon_fortress",
+      "name": "엘곤 체제기지 건설",
+      "category": "military",
+      "priority": 200,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "alliance" },
+          { "action": "build_base", "location": "elgon" }
+        ]
+      },
+      "description": "엘곤에 체제기지를 건설하여 방어선을 구축한다.",
+      "effects": [
+        { "type": "build_facility", "location": "elgon", "facility": "defense_base" },
+        { "type": "defense_bonus", "location": "astarte", "value": 20 },
+        { "type": "message", "text": "엘곤에 체제기지가 건설되었습니다. 아스타테 방어가 강화됩니다." }
+      ],
+      "recommended": true,
+      "notes": "동맹 플레이 시 초반 권장 행동."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_emperor_succession",
+      "name": "제국 황위 계승",
+      "events": ["evt_emperor_death", "evt_lippstadt_possible", "evt_lippstadt_rebellion"],
+      "description": "황제 사망 → 귀족 불만 → 립슈타트 전역으로 이어지는 이벤트 체인"
+    },
+    {
+      "id": "chain_reinhard_rise",
+      "name": "라인하르트 부상",
+      "events": ["evt_reinhard_rename", "evt_reinhard_fleet_expansion"],
+      "description": "라인하르트의 개명과 세력 확장 이벤트 체인"
+    }
+  ]
+}
+
+
+
+

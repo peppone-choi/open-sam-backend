@@ -1,0 +1,191 @@
+{
+  "description": "시나리오 6 (UC797.4) 함대 배치. 립슈타트 전역 시점. 4파전.",
+  
+  "empire_lohengramm": {
+    "regularFleets": [
+      {
+        "id": "lohengramm_main",
+        "name": "라인하르트 함대",
+        "commander": "라인하르트 폰 로엔그람",
+        "commanderId": 1,
+        "size": 35000,
+        "location": "valhalla",
+        "status": "mobilizing",
+        "subCommanders": [
+          { "id": 4, "name": "오베르슈타인", "role": "참모장" },
+          { "id": 5, "name": "로이엔탈", "role": "분함대장" },
+          { "id": 6, "name": "미터마이어", "role": "분함대장" }
+        ]
+      },
+      {
+        "id": "kircheis_fleet",
+        "name": "키르히아이스 별동대",
+        "commander": "키르히아이스",
+        "commanderId": 3,
+        "size": 20000,
+        "location": "empire_east",
+        "status": "reserve",
+        "notes": "키포이저 성역 회전에서 귀족연합 별동대 격파 예정."
+      }
+    ],
+    "availableFleets": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "seizedFleets": {
+      "description": "11~17 함대가 귀족연합에 점거됨",
+      "fleets": [11, 12, 13, 14, 15, 16, 17]
+    }
+  },
+  
+  "empire_lippstadt": {
+    "regularFleets": [
+      {
+        "id": "braunschweig_fleet",
+        "name": "브라운슈바이크 함대",
+        "commander": "브라운슈바이크",
+        "commanderId": 302,
+        "size": 25000,
+        "location": "gaiesburg",
+        "status": "rebel",
+        "notes": "귀족연합 맹주. 이 함대 전멸 시 반란 종결."
+      },
+      {
+        "id": "littenheim_fleet",
+        "name": "리텐하임 함대",
+        "commander": "리텐하임",
+        "commanderId": 303,
+        "size": 20000,
+        "location": "littenheim",
+        "status": "rebel"
+      },
+      {
+        "id": "merkatz_fleet",
+        "name": "메르카츠 함대",
+        "commander": "메르카츠",
+        "commanderId": 103,
+        "size": 15000,
+        "location": "gaiesburg",
+        "status": "rebel",
+        "notes": "귀족연합 실질적 전력. 가장 유능."
+      },
+      {
+        "id": "fahrenheit_fleet",
+        "name": "파렌하이트 함대",
+        "commander": "파렌하이트",
+        "commanderId": 105,
+        "size": 12000,
+        "location": "gaiesburg",
+        "status": "rebel",
+        "notes": "후에 라인하르트에게 투항."
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "gaiesburg_garrison",
+        "name": "가이에스부르크 요새 주둔대",
+        "fortress": "gaiesburg",
+        "size": 10000,
+        "status": "rebel",
+        "mainCannon": {
+          "name": "가이에스하켄",
+          "power": 12000
+        }
+      }
+    ],
+    "controlledTerritories": {
+      "systems": 6,
+      "fortresses": 3,
+      "list": ["gaiesburg", "braunschweig", "littenheim", "rebel_system_1", "rebel_system_2", "rebel_system_3"]
+    }
+  },
+  
+  "alliance_government": {
+    "regularFleets": [
+      {
+        "id": "yang_fleet",
+        "name": "양 웬리 함대",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 18000,
+        "location": "iserlohn",
+        "status": "garrison",
+        "notes": "쿠데타 진압 명령 수락. 이제르론에서 출격."
+      },
+      {
+        "id": "bucock_fleet",
+        "name": "뷰코크 함대",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 15000,
+        "location": "alliance_loyal_territory",
+        "status": "mobilizing"
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_alliance",
+        "name": "이제르론 주둔함대",
+        "fortress": "iserlohn",
+        "commander": "양 웬리",
+        "size": 18000,
+        "status": "garrison"
+      }
+    ]
+  },
+  
+  "alliance_coup": {
+    "regularFleets": [
+      {
+        "id": "greenhill_fleet",
+        "name": "그린힐 함대",
+        "commander": "그린힐",
+        "commanderId": 201,
+        "size": 15000,
+        "location": "heinessen",
+        "status": "coup",
+        "notes": "쿠데타 주력. 이 함대 전멸 시 쿠데타 종결."
+      },
+      {
+        "id": "coup_11th",
+        "name": "제11함대 (쿠데타 가담)",
+        "size": 10000,
+        "location": "heinessen",
+        "status": "coup"
+      }
+    ],
+    "controlledTerritories": {
+      "systems": 3,
+      "capital": "heinessen (점거)",
+      "defenses": {
+        "artemisNecklace": {
+          "description": "아르테미스의 목걸이",
+          "power": 8000,
+          "note": "아군/적군 무차별 공격 주의"
+        }
+      }
+    }
+  },
+  
+  "civilWarStatus": {
+    "empire": {
+      "type": "noble_rebellion",
+      "rebels": "empire_lippstadt",
+      "government": "empire_lohengramm",
+      "victoryCondition": {
+        "government": "반란 성계 전부 탈환 OR 브라운슈바이크 함대 전멸",
+        "rebels": "라인하르트 함대 전멸"
+      }
+    },
+    "alliance": {
+      "type": "military_coup",
+      "rebels": "alliance_coup",
+      "government": "alliance_government",
+      "victoryCondition": {
+        "government": "그린힐 함대 전멸",
+        "rebels": "바라트 완전 장악 + 양 웬리 제거"
+      }
+    }
+  }
+}
+
+
+
+

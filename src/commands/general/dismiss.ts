@@ -131,7 +131,8 @@ export class DismissCommand extends GeneralCommand {
     general.addDedication(ded);
     this.setResultTurn(new LastTurn((this.constructor as typeof DismissCommand).getName(), this.arg));
     general.checkStatChange();
-    await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, DismissCommand, this.env, this.arg ?? {});
+    // 공통 후처리 (해산은 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true });
     await this.saveGeneral();
 
     return true;

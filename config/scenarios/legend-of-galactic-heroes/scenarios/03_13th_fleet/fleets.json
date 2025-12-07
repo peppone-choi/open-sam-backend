@@ -1,0 +1,168 @@
+{
+  "description": "시나리오 3 (UC796.5) 함대 배치. 제7차 이제르론 공방전 시점.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "empire_reinhard",
+        "name": "라인하르트 함대",
+        "commander": "라인하르트 폰 로엔그람",
+        "commanderId": 1,
+        "size": 20000,
+        "location": "valhalla",
+        "status": "reserve",
+        "subCommanders": [
+          { "id": 3, "name": "키르히아이스", "role": "부사령관" },
+          { "id": 5, "name": "로이엔탈", "role": "분함대장" },
+          { "id": 6, "name": "미터마이어", "role": "분함대장" }
+        ],
+        "notes": "이제르론 방어 배치 권장. 양 함대 진입 경로 차단 가능."
+      },
+      {
+        "id": "empire_3rd",
+        "name": "제3함대",
+        "commander": "메르카츠",
+        "commanderId": 103,
+        "size": 13000,
+        "location": "empire_rear",
+        "status": "reserve"
+      }
+    ],
+    "fortressGarrisons": [
+      {
+        "id": "iserlohn_garrison",
+        "name": "이제르론 주둔함대",
+        "fortress": "iserlohn",
+        "commander": "제크트",
+        "commanderId": 108,
+        "size": 15000,
+        "status": "garrison",
+        "staff": [
+          { "id": 4, "name": "오베르슈타인", "role": "참모" }
+        ],
+        "composition": {
+          "battleship": 4500,
+          "cruiser": 5000,
+          "destroyer": 4000,
+          "carrier": 1200,
+          "transport": 300
+        },
+        "fortressCommander": {
+          "id": 109,
+          "name": "슈톡하우젠",
+          "role": "요새사령관"
+        },
+        "notes": "양 함대 접근 시 교전 발생. 위치 파악 후 우회 필요."
+      }
+    ],
+    "fortress": {
+      "id": "iserlohn",
+      "name": "이제르론 요새",
+      "defense": 50000,
+      "mainCannon": {
+        "name": "토르 해머",
+        "power": 15000,
+        "range": "long",
+        "cooldown": 3
+      },
+      "antiAir": {
+        "power": 5000,
+        "range": "medium"
+      },
+      "garrison": {
+        "capacity": 20000,
+        "current": 15000
+      },
+      "notes": "난공불락의 요새. 정면 공략 시 막대한 피해. 점거가 유일한 방법."
+    }
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "alliance_13th",
+        "name": "제13함대",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 6400,
+        "location": "heinessen",
+        "status": "preparing",
+        "staff": [
+          { "id": 14, "name": "프레데리카 그린힐", "role": "부관" },
+          { "id": 11, "name": "쉔코프", "role": "육전대장" },
+          { "id": 210, "name": "파트리치프", "role": "항해장" }
+        ],
+        "subCommanders": [
+          { "id": 12, "name": "아텐보로", "role": "분함대장", "ships": 800 },
+          { "id": 207, "name": "피셔", "role": "분함대장", "ships": 600 },
+          { "id": 208, "name": "구엔", "role": "분함대장", "ships": 600 }
+        ],
+        "composition": {
+          "battleship": 1800,
+          "cruiser": 2200,
+          "destroyer": 1600,
+          "carrier": 600,
+          "transport": 200
+        },
+        "specialUnits": [
+          {
+            "name": "로젠리터 연대",
+            "commander": "쉔코프",
+            "type": "ground_assault",
+            "ability": "occupy",
+            "militaryOperation": 4000
+          }
+        ],
+        "notes": "반함대 규모지만 정예. 셴코프의 점거 능력이 핵심."
+      },
+      {
+        "id": "alliance_5th",
+        "name": "제5함대",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 13000,
+        "location": "alliance_rear",
+        "status": "reserve"
+      }
+    ],
+    "casualties": {
+      "description": "아스타테 전투 결과 잉여 제독 2명 전사",
+      "dead": ["파스토레", "무어"],
+      "promotion": "사후 원수 승진"
+    }
+  },
+  
+  "iserlohnCaptureMechanism": {
+    "description": "이제르론 요새 점거 메커니즘",
+    "requirements": [
+      { "ability": "occupy", "value": true },
+      { "skill": "militaryOperation", "value": 4000 },
+      { "status": "communication_jamming", "value": true }
+    ],
+    "executor": {
+      "recommended": "schenkopp",
+      "unit": "rosenritter"
+    },
+    "procedure": [
+      "1. 통신방해 발동 → 함대 스텔스화",
+      "2. 정찰대 파견 → 제크트 함대 위치 파악",
+      "3. 제크트 함대 우회 → 요새 접근",
+      "4. 점거 실행 → 내부 침투",
+      "5. 요새 장악 → 함락 완료"
+    ],
+    "risks": [
+      "제크트 함대와 접촉 시 이동 속도 저하 → 점거 실패",
+      "통신방해 해제 시 위치 노출 → 요새포 공격"
+    ],
+    "rewards": {
+      "territory": "iserlohn",
+      "prestige": 50,
+      "yangPromotion": { "from": 6, "to": 7 },
+      "allianceMorale": 30
+    }
+  }
+}
+
+
+
+

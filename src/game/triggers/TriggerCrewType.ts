@@ -7,7 +7,10 @@
 
 import type { GameAction } from '../actions/Action';
 import type { WarUnit } from '../../battle/WarUnit';
-import type { WarUnitTriggerCaller } from './WarUnitTriggerCaller';
+import { WarUnitTriggerCaller } from './WarUnitTriggerCaller';
+import { CheSeonjeAttemptTrigger } from './effects/CheSeonjeAttemptTrigger';
+import { CheSeonjeActivateTrigger } from './effects/CheSeonjeActivateTrigger';
+import { CheDolgeokPersistTrigger } from './effects/CheDolgeokPersistTrigger';
 
 /**
  * 병종 타입 상수
@@ -196,14 +199,84 @@ export class TriggerCrewType implements GameAction {
     return this.crewInfo.defenceCoef[targetArmType] ?? 1;
   }
   
+  /**
+   * 병종별 전투 시작(초기화) 트리거 목록
+   * PHP 대응: GameUnitDetail::initSkillTrigger
+   * 
+   * @param unit 전투 유닛
+   * @returns 트리거 호출자 또는 null
+   */
   getBattleInitSkillTriggerList(unit: WarUnit): WarUnitTriggerCaller | null {
-    // TODO: 병종별 전투 시작 트리거 (궁병 선제사격 등)
-    return null;
+    const caller = new WarUnitTriggerCaller();
+    
+    switch (this.crewInfo.armType) {
+      case CrewArmType.T_ARCHER:
+        // 궁병: 선제 사격 시도 + 발동
+        caller.add(new CheSeonjeAttemptTrigger(unit));
+        caller.add(new CheSeonjeActivateTrigger(unit));
+        break;
+        
+      case CrewArmType.T_CAVALRY:
+        // 기병: 초기화 단계에서는 특별한 트리거 없음
+        // 돌격 지속은 페이즈 트리거에서 처리
+        break;
+        
+      case CrewArmType.T_FOOTMAN:
+        // 보병: 기본 트리거 없음 (방어 보너스는 상성으로 처리)
+        break;
+        
+      case CrewArmType.T_WIZARD:
+        // 귀병: 기본 트리거 없음 (계략은 별도 시스템)
+        break;
+        
+      case CrewArmType.T_SIEGE:
+        // 차병: 기본 트리거 없음 (공성 보너스는 상성으로 처리)
+        break;
+        
+      default:
+        break;
+    }
+    
+    return caller.isEmpty() ? null : caller;
   }
   
+  /**
+   * 병종별 전투 페이즈 트리거 목록
+   * PHP 대응: GameUnitDetail::phaseSkillTrigger
+   * 
+   * @param unit 전투 유닛
+   * @returns 트리거 호출자 또는 null
+   */
   getBattlePhaseSkillTriggerList(unit: WarUnit): WarUnitTriggerCaller | null {
-    // TODO: 병종별 전투 페이즈 트리거
-    return null;
+    const caller = new WarUnitTriggerCaller();
+    
+    switch (this.crewInfo.armType) {
+      case CrewArmType.T_CAVALRY:
+        // 기병: 돌격 지속 (상성 우위일 때 추가 공격)
+        caller.add(new CheDolgeokPersistTrigger(unit));
+        break;
+        
+      case CrewArmType.T_ARCHER:
+        // 궁병: 페이즈 트리거 없음
+        break;
+        
+      case CrewArmType.T_FOOTMAN:
+        // 보병: 페이즈 트리거 없음
+        break;
+        
+      case CrewArmType.T_WIZARD:
+        // 귀병: 페이즈 트리거 없음 (계략은 별도 시스템)
+        break;
+        
+      case CrewArmType.T_SIEGE:
+        // 차병: 페이즈 트리거 없음
+        break;
+        
+      default:
+        break;
+    }
+    
+    return caller.isEmpty() ? null : caller;
   }
 }
 

@@ -177,7 +177,10 @@ export class CrFoundNationCommand extends GeneralCommand {
 
     // InheritancePoint 처리
     try {
-      // TODO: general.increaseInheritancePoint('active_action', 1);
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
     } catch (error: any) {
       console.error('InheritancePoint 실패:', error);
     }
@@ -185,21 +188,8 @@ export class CrFoundNationCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(CrFoundNationCommand.getName(), this.arg));
     general.checkStatChange();
 
-    // StaticEventHandler 처리
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error: any) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    // tryUniqueItemLottery 처리
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      await tryUniqueItemLottery(rng, general, sessionId, '건국');
-    } catch (error: any) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // 공통 후처리 (건국은 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipInheritancePoint: true });
 
     await this.saveGeneral();
 

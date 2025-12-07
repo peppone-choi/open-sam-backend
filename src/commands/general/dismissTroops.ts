@@ -121,22 +121,8 @@ export class DismissTroopsCommand extends GeneralCommand {
     general.checkStatChange();
 
 
-    // StaticEventHandler 처리
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(
-        general,
-        null,
-        this,
-        this.env,
-        this.arg
-      );
-    } catch (error: any) {
-      // StaticEventHandler 실패해도 계속 진행
-      console.error('StaticEventHandler failed:', error);
-    }
-
-    // PHP: tryUniqueItemLottery 호출하지 않음
+    // 공통 후처리 (소집해제는 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true });
 
     await this.saveGeneral();
 

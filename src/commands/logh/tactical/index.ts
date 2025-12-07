@@ -10,6 +10,7 @@ export { GroundDeployTacticalCommand } from './GroundDeploy';
 export { GroundWithdrawTacticalCommand } from './GroundWithdraw';
 export { MoveTacticalCommand } from './Move';
 export { ParallelMoveTacticalCommand } from './ParallelMove';
+export { RepairTacticalCommand } from './Repair';
 export { RetreatTacticalCommand } from './Retreat';
 export { ReverseTacticalCommand } from './Reverse';
 export { SortieTacticalCommand } from './Sortie';

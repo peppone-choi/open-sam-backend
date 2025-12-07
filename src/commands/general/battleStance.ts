@@ -153,11 +153,8 @@ export class BattleStanceCommand extends GeneralCommand {
     general.increaseVar('leadership_exp', 3);
     this.setResultTurn(turnResult);
     general.checkStatChange();
-    await StaticEventHandler.handleEvent(this.generalObj, this.destGeneralObj, BattleStanceCommand, this.env, this.arg ?? {});
-    
-    // PHP: tryUniqueItemLottery(genGenericUniqueRNGFromGeneral($general, static::$actionName), $general);
-    const sessionId = this.env.session_id || 'sangokushi_default';
-    await tryUniqueItemLottery(rng, this.generalObj, sessionId, '전투태세');
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
     
     await this.saveGeneral();
 

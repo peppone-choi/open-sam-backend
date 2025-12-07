@@ -430,3 +430,546 @@ describe('PostBattleProcessor.calculatePopulationTrust', () => {
     expect(result.trust).toBe(50);
   });
 });
+
+describe('ConquerCity 국가 멸망 시나리오', () => {
+  const admin = {
+    startyear: 184,
+    year: 200,
+    month: 1,
+    join_mode: 'normal',
+  };
+
+  const makeAttacker = (overrides: Partial<any> = {}) => ({
+    getID: () => 1,
+    getNationID: () => 1,
+    getName: () => '조조',
+    getSessionID: () => 's1',
+    getStaticNation: () => ({ nation: 1, name: '위' }),
+    getLogger: () => ({
+      pushGeneralActionLog: jest.fn(),
+      pushGeneralHistoryLog: jest.fn(),
+      pushGlobalActionLog: jest.fn(),
+      pushGlobalHistoryLog: jest.fn(),
+      pushNationalHistoryLog: jest.fn(),
+    }),
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Scenario 6: 마지막 도시 점령 → 국가 멸망', () => {
+    beforeEach(() => {
+      // 수비국의 유일한 도시 설정
+      cityRepository.__setMockCities([
+        {
+          session_id: 's1',
+          city: 20,
+          name: '마지막성',
+          nation: 3,
+          level: 3,
+          agri: 4000,
+          comm: 3000,
+          secu: 3000,
+          def: 600,
+          wall: 600,
+          def_max: 1000,
+          wall_max: 1000,
+          pop: 30000,
+        },
+      ]);
+
+      nationRepository.__setMockNations([
+        {
+          session_id: 's1',
+          nation: 1,
+          name: '위',
+          capital: 5,
+          gold: 15000,
+          rice: 25000,
+          level: 1,
+        },
+        {
+          session_id: 's1',
+          nation: 3,
+          name: '동탁군',
+          capital: 20, // 마지막 도시가 수도
+          gold: 5000,
+          rice: 8000,
+          level: 1,
+        },
+      ]);
+
+      generalRepository.__setMockGenerals([
+        { session_id: 's1', no: 1, data: { no: 1, city: 5, nation: 1 } },
+      ]);
+    });
+
+    it('should mark nation as destroyed when last city is conquered', async () => {
+      const attacker = makeAttacker();
+      const city = {
+        city: 20,
+        name: '마지막성',
+        nation: 3,
+        level: 3,
+        agri: 4000,
+        comm: 3000,
+        secu: 3000,
+        def: 600,
+        wall: 600,
+        def_max: 1000,
+        wall_max: 1000,
+        conflict: JSON.stringify({ '1': 2000 }),
+      };
+
+      const result = await ConquerCity(admin, attacker, city as any, []);
+
+      // 검증: 국가 멸망
+      expect(result.nationDestroyed).toBe(true);
+      expect(result.conquerNationId).toBe(1);
+      expect(result.attackerMoved).toBe(true);
+    });
+
+    it('should not mark nation as destroyed when more cities remain', async () => {
+      // 도시 2개로 변경
+      cityRepository.__setMockCities([
+        {
+          session_id: 's1',
+          city: 20,
+          name: '점령당할성',
+          nation: 3,
+          level: 3,
+          agri: 4000,
+          comm: 3000,
+          secu: 3000,
+          def: 600,
+          wall: 600,
+          def_max: 1000,
+          wall_max: 1000,
+          pop: 30000,
+        },
+        {
+          session_id: 's1',
+          city: 21,
+          name: '남은성',
+          nation: 3,
+          level: 4,
+          agri: 5000,
+          comm: 4000,
+          secu: 4000,
+          def: 800,
+          wall: 800,
+          def_max: 1200,
+          wall_max: 1200,
+          pop: 50000,
+        },
+      ]);
+
+      const attacker = makeAttacker();
+      const city = {
+        city: 20,
+        name: '점령당할성',
+        nation: 3,
+        level: 3,
+        agri: 4000,
+        comm: 3000,
+        secu: 3000,
+        def: 600,
+        wall: 600,
+        def_max: 1000,
+        wall_max: 1000,
+        conflict: JSON.stringify({ '1': 2000 }),
+      };
+
+      const result = await ConquerCity(admin, attacker, city as any, []);
+
+      // 검증: 국가 멸망 아님
+      expect(result.nationDestroyed).toBe(false);
+      expect(result.conquerNationId).toBe(1);
+    });
+  });
+
+  describe('Scenario 7: 수도 점령 → 긴급 천도', () => {
+    beforeEach(() => {
+      // 수비국의 도시 여러 개 (수도 포함)
+      cityRepository.__setMockCities([
+        {
+          session_id: 's1',
+          city: 30, // 수도
+          name: '낙양',
+          nation: 4,
+          level: 5,
+          agri: 8000,
+          comm: 7000,
+          secu: 7000,
+          def: 1500,
+          wall: 1500,
+          def_max: 2500,
+          wall_max: 2500,
+          pop: 80000,
+        },
+        {
+          session_id: 's1',
+          city: 31, // 인구 가장 많은 다른 도시
+          name: '장안',
+          nation: 4,
+          level: 4,
+          agri: 6000,
+          comm: 5000,
+          secu: 5000,
+          def: 1200,
+          wall: 1200,
+          def_max: 2000,
+          wall_max: 2000,
+          pop: 100000, // 가장 높은 인구
+        },
+        {
+          session_id: 's1',
+          city: 32,
+          name: '완성',
+          nation: 4,
+          level: 3,
+          agri: 4000,
+          comm: 3000,
+          secu: 3000,
+          def: 800,
+          wall: 800,
+          def_max: 1500,
+          wall_max: 1500,
+          pop: 40000,
+        },
+      ]);
+
+      nationRepository.__setMockNations([
+        {
+          session_id: 's1',
+          nation: 1,
+          name: '위',
+          capital: 5,
+          gold: 20000,
+          rice: 30000,
+          level: 1,
+        },
+        {
+          session_id: 's1',
+          nation: 4,
+          name: '한',
+          capital: 30, // 낙양이 수도
+          gold: 12000,
+          rice: 18000,
+          level: 1,
+        },
+      ]);
+
+      generalRepository.__setMockGenerals([
+        { session_id: 's1', no: 1, data: { no: 1, city: 5, nation: 1 } },
+      ]);
+    });
+
+    it('should trigger emergency capital move when capital is conquered', async () => {
+      const attacker = makeAttacker();
+      const city = {
+        city: 30, // 수도 낙양
+        name: '낙양',
+        nation: 4,
+        level: 5,
+        agri: 8000,
+        comm: 7000,
+        secu: 7000,
+        def: 1500,
+        wall: 1500,
+        def_max: 2500,
+        wall_max: 2500,
+        conflict: JSON.stringify({ '1': 5000 }),
+      };
+
+      const result = await ConquerCity(admin, attacker, city as any, []);
+
+      // 검증: 긴급 천도
+      expect(result.nationDestroyed).toBe(false);
+      // 인구가 가장 많은 장안(31)으로 천도
+      expect(result.newCapitalCityId).toBe(31);
+    });
+  });
+});
+
+describe('ConquerCity 통일 조건 시나리오', () => {
+  const admin = {
+    startyear: 184,
+    year: 220,
+    month: 6,
+    join_mode: 'normal',
+  };
+
+  const makeAttacker = (overrides: Partial<any> = {}) => ({
+    getID: () => 1,
+    getNationID: () => 1,
+    getName: () => '조조',
+    getSessionID: () => 's1',
+    getStaticNation: () => ({ nation: 1, name: '위' }),
+    getLogger: () => ({
+      pushGeneralActionLog: jest.fn(),
+      pushGeneralHistoryLog: jest.fn(),
+      pushGlobalActionLog: jest.fn(),
+      pushGlobalHistoryLog: jest.fn(),
+      pushNationalHistoryLog: jest.fn(),
+    }),
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Scenario 8: 마지막 적국 멸망 → 통일 달성', () => {
+    beforeEach(() => {
+      // 공격국이 이미 대부분 도시 보유, 마지막 1개 도시만 적국 보유
+      cityRepository.__setMockCities([
+        // 공격국 소유 도시들
+        {
+          session_id: 's1',
+          city: 1,
+          name: '낙양',
+          nation: 1,
+          level: 5,
+          agri: 8000,
+          comm: 7000,
+          secu: 7000,
+          def: 2000,
+          wall: 2000,
+          def_max: 3000,
+          wall_max: 3000,
+          pop: 100000,
+        },
+        {
+          session_id: 's1',
+          city: 2,
+          name: '장안',
+          nation: 1,
+          level: 4,
+          agri: 6000,
+          comm: 5000,
+          secu: 5000,
+          def: 1500,
+          wall: 1500,
+          def_max: 2500,
+          wall_max: 2500,
+          pop: 80000,
+        },
+        {
+          session_id: 's1',
+          city: 3,
+          name: '업성',
+          nation: 1,
+          level: 4,
+          agri: 5500,
+          comm: 5000,
+          secu: 4500,
+          def: 1300,
+          wall: 1300,
+          def_max: 2200,
+          wall_max: 2200,
+          pop: 70000,
+        },
+        // 마지막 적국 도시
+        {
+          session_id: 's1',
+          city: 99,
+          name: '마지막저항지',
+          nation: 5,
+          level: 3,
+          agri: 3000,
+          comm: 2500,
+          secu: 2000,
+          def: 500,
+          wall: 500,
+          def_max: 1000,
+          wall_max: 1000,
+          pop: 20000,
+        },
+      ]);
+
+      nationRepository.__setMockNations([
+        {
+          session_id: 's1',
+          nation: 1,
+          name: '위',
+          capital: 1,
+          gold: 50000,
+          rice: 80000,
+          level: 1,
+        },
+        {
+          session_id: 's1',
+          nation: 5,
+          name: '저항군',
+          capital: 99,
+          gold: 1000,
+          rice: 2000,
+          level: 1,
+        },
+      ]);
+
+      generalRepository.__setMockGenerals([
+        { session_id: 's1', no: 1, data: { no: 1, city: 1, nation: 1 } },
+      ]);
+    });
+
+    it('should achieve unification when conquering last enemy city', async () => {
+      const attacker = makeAttacker();
+      const city = {
+        city: 99,
+        name: '마지막저항지',
+        nation: 5,
+        level: 3,
+        agri: 3000,
+        comm: 2500,
+        secu: 2000,
+        def: 500,
+        wall: 500,
+        def_max: 1000,
+        wall_max: 1000,
+        conflict: JSON.stringify({ '1': 3000 }),
+      };
+
+      const result = await ConquerCity(admin, attacker, city as any, []);
+
+      // 검증: 적국 멸망 및 점령 성공
+      expect(result.nationDestroyed).toBe(true);
+      expect(result.conquerNationId).toBe(1);
+
+      // 점령 후 모든 도시가 공격국(1)의 소유가 됨
+      // (실제 통일 체크는 별도 함수에서 처리되지만, 조건은 충족됨)
+    });
+  });
+
+  describe('Scenario 9: 일반 도시 점령 (통일 아님)', () => {
+    beforeEach(() => {
+      // 여러 국가가 도시를 보유
+      cityRepository.__setMockCities([
+        {
+          session_id: 's1',
+          city: 1,
+          name: '낙양',
+          nation: 1,
+          level: 5,
+          agri: 8000,
+          comm: 7000,
+          secu: 7000,
+          def: 2000,
+          wall: 2000,
+          def_max: 3000,
+          wall_max: 3000,
+          pop: 100000,
+        },
+        {
+          session_id: 's1',
+          city: 10,
+          name: '성도',
+          nation: 2, // 다른 국가
+          level: 4,
+          agri: 6000,
+          comm: 5000,
+          secu: 5000,
+          def: 1500,
+          wall: 1500,
+          def_max: 2500,
+          wall_max: 2500,
+          pop: 75000,
+        },
+        {
+          session_id: 's1',
+          city: 20,
+          name: '건업',
+          nation: 3, // 또 다른 국가 (점령 대상)
+          level: 4,
+          agri: 5500,
+          comm: 5000,
+          secu: 4500,
+          def: 1200,
+          wall: 1200,
+          def_max: 2000,
+          wall_max: 2000,
+          pop: 60000,
+        },
+        {
+          session_id: 's1',
+          city: 21,
+          name: '오성',
+          nation: 3,
+          level: 3,
+          agri: 4000,
+          comm: 3500,
+          secu: 3000,
+          def: 800,
+          wall: 800,
+          def_max: 1500,
+          wall_max: 1500,
+          pop: 40000,
+        },
+      ]);
+
+      nationRepository.__setMockNations([
+        {
+          session_id: 's1',
+          nation: 1,
+          name: '위',
+          capital: 1,
+          gold: 30000,
+          rice: 50000,
+          level: 1,
+        },
+        {
+          session_id: 's1',
+          nation: 2,
+          name: '촉',
+          capital: 10,
+          gold: 20000,
+          rice: 35000,
+          level: 1,
+        },
+        {
+          session_id: 's1',
+          nation: 3,
+          name: '오',
+          capital: 20,
+          gold: 18000,
+          rice: 30000,
+          level: 1,
+        },
+      ]);
+
+      generalRepository.__setMockGenerals([
+        { session_id: 's1', no: 1, data: { no: 1, city: 1, nation: 1 } },
+      ]);
+    });
+
+    it('should conquer city without achieving unification', async () => {
+      const attacker = makeAttacker();
+      const city = {
+        city: 20, // 오나라 수도
+        name: '건업',
+        nation: 3,
+        level: 4,
+        agri: 5500,
+        comm: 5000,
+        secu: 4500,
+        def: 1200,
+        wall: 1200,
+        def_max: 2000,
+        wall_max: 2000,
+        conflict: JSON.stringify({ '1': 4000 }),
+      };
+
+      const result = await ConquerCity(admin, attacker, city as any, []);
+
+      // 검증: 일반 점령 (멸망 아님 - 오나라는 아직 오성 보유)
+      expect(result.nationDestroyed).toBe(false);
+      expect(result.conquerNationId).toBe(1);
+
+      // 수도가 점령되었으므로 긴급 천도 발생
+      expect(result.newCapitalCityId).toBe(21); // 오성으로 천도
+    });
+  });
+});

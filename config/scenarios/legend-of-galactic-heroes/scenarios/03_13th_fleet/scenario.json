@@ -1,0 +1,96 @@
+{
+  "id": "logh-03-13th-fleet",
+  "name": "제13함대 탄생",
+  "nameJa": "第13艦隊誕生",
+  "nameEn": "Birth of the 13th Fleet",
+  "description": "우주력 796년 5월, 제7차 이제르론 공방전. 양 웬리가 역사상 처음으로 함대를 이끌고 난공불락의 이제르론 요새에 도전한다.",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 796,
+    "startMonth": 5,
+    "imperialYear": 487,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 31,
+    "phezzan": 1,
+    "alliance": 26
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [2, 4, 6, 14, 15, 16, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": false,
+    "upcomingEvent": "이제르론 요새 공략 부대 출격 직전",
+    "location": "iserlohn_corridor"
+  },
+  
+  "difficulty": {
+    "empire": 3,
+    "alliance": 2,
+    "description": "제국은 이제르론 방어 필수. 동맹은 드디어 양 웬리로 플레이 가능!"
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard"],
+      "available": "소장급 이상",
+      "notes": "라인하르트를 이제르론에 배치하면 양 웬리 점거 차단 가능."
+    },
+    "alliance": {
+      "recommended": ["yang_wenli"],
+      "available": "소장급 이상",
+      "notes": "드디어 양 웬리 플레이 가능! (소장, 제13함대 사령관)"
+    }
+  },
+  
+  "specialRules": {
+    "iserlohnCapture": {
+      "description": "이제르론 점거에는 통신방해 + 군사공작 4000 필요",
+      "method": "셴코프(로젠리터) 이용한 내부 침투",
+      "warning": "제크트 함대와 접촉 시 이동 속도 저하로 점거 실패 위험"
+    },
+    "yangPlayable": {
+      "description": "양 웬리가 소장으로 승진하여 처음으로 플레이 가능",
+      "notes": "계급이 아직 낮아 참모편성요구 등 거절당하기 쉬움"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "동맹 수도 바라트 성계 점령",
+      "이제르론 요새 방어 유지"
+    ],
+    "alliance": [
+      "이제르론 요새 점령",
+      "제국 수도 발할라 성계 점령"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "라인하르트를 이제르론에 배치 → 양 함대 진입 경로 차단 (센터백 역할).",
+      "함대 겹침 시 이동 속도 저하 → 양 함대 점거 방해.",
+      "통신방해 해제 후 요새 방공 + 함대 협공으로 제13함대 전멸 가능.",
+      "동맹 주요 인물 다수 전사시키면 이후 동맹 전력 약화.",
+      "오베르슈타인을 참모로 영입 추천 (제크트 함대에서 해임 후)."
+    ],
+    "alliance": [
+      "양 웬리로 시작! 통신방해 사용하여 함대 스텔스화 필수.",
+      "정찰대로 제크트 함대 위치 파악 → 우회하여 요새 접근.",
+      "제크트 함대와 접촉 절대 회피. 겹치면 점거 불가.",
+      "요새 함락 후 계급 상승 → 이후 국정 개입 가능.",
+      "함락 후 암릿처 방면 소모전 유도 → 제국 인재 사살."
+    ]
+  }
+}
+
+
+
+

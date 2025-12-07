@@ -228,6 +228,8 @@ export class StartBattleService {
         terrain,
         attackerUnits: attackerUnits as any,
         defenderUnits: defenderUnits as any,
+        initialAttackerUnits: JSON.parse(JSON.stringify(attackerUnits)),
+        initialDefenderUnits: JSON.parse(JSON.stringify(defenderUnits)),
         status: BattleStatus.DEPLOYING,
         currentPhase: BattlePhase.PLANNING,
         currentTurn: 0,

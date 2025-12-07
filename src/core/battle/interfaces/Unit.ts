@@ -211,6 +211,19 @@ export interface IShipGroup {
 }
 
 /**
+ * 전술 스타일 타입 (npc-ai.types.ts와 동일)
+ */
+export type AdmiralTacticalStyle = 
+  | 'REINHARD'      // 라인하르트 스타일 - 공세적, 선제공격, 집중화력
+  | 'YANG_WENLI'    // 양 웬리 스타일 - 방어적/기동적, 적 실수 유도
+  | 'MITTERMEYER'   // 미터마이어 스타일 - 고속기동, 측면공격
+  | 'REUENTHAL'     // 로이엔탈 스타일 - 균형잡힌 상황적응
+  | 'BITTENFELD'    // 비텐펠트 스타일 - 극도의 공격성, 돌격 특화
+  | 'MERKATZ'       // 메르카츠 스타일 - 노련한 방어전
+  | 'FAHRENHEIT'    // 파렌하이트 스타일 - 충성스런 돌격
+  | 'DEFAULT';      // 기본 AI 스타일
+
+/**
  * 제독 정보
  */
 export interface IAdmiral {
@@ -231,6 +244,9 @@ export interface IAdmiral {
   // 경험치/레벨
   level: number;
   experience: number;
+  
+  // 전술 스타일 (신규)
+  tacticalStyle?: AdmiralTacticalStyle;
 }
 
 /**

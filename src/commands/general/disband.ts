@@ -98,13 +98,8 @@ export class DisbandCommand extends GeneralCommand {
       await oldGeneral.save();
     }
     
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      DisbandCommand,
-      this.env,
-      this.arg ?? {}
-    );
+    // 공통 후처리 (해산은 아이템 추첨 제외)
+    await this.postRunHooks(rng, { skipItemLottery: true });
     
     await this.saveGeneral();
 

@@ -1,6 +1,7 @@
 import { BattleStatus, BattlePhase, IBattleUnit, ITurnAction } from '../../models/battle.model';
 import { battleRepository } from '../../repositories/battle.repository';
 import { CrewType } from '../../models/crew-type.model';
+import { ReplayService } from './Replay.service';
 
 /**
  * ResolveTurn - 전술 전투 턴 해결 로직
@@ -145,12 +146,21 @@ export class ResolveTurnService {
         results: {
           attackerDamage: combatResults.filter(r => this.isAttacker(battle, r.defenderId)).reduce((sum, r) => sum + r.damage, 0),
           defenderDamage: combatResults.filter(r => !this.isAttacker(battle, r.defenderId)).reduce((sum, r) => sum + r.damage, 0),
-          events: events.map(e => e.message)
+          events: events.map(e => e.message),
+          detailedEvents: events
         },
         battleLog: events.map(e => e.message)
       });
 
       await battle.save();
+
+      // 전투 종료 시 리플레이 저장
+      if (battle.status === BattleStatus.COMPLETED) {
+        // 비동기로 저장 (응답 지연 방지)
+        setImmediate(async () => {
+          await ReplayService.saveReplay(battleId);
+        });
+      }
 
       return {
         success: true,

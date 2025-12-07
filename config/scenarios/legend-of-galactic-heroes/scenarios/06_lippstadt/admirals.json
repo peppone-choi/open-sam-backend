@@ -1,0 +1,243 @@
+{
+  "description": "시나리오 6 (UC797.4) 제독 오버라이드. 립슈타트 전역 시점. 4파전.",
+  
+  "factionAssignments": {
+    "empire_lohengramm": [1, 3, 4, 5, 6, 7, 8, 9, 17, 18, 19],
+    "empire_lippstadt": [103, 105, 302, 303, 304, 305, 306, 307],
+    "alliance_government": [2, 10, 11, 12],
+    "alliance_coup": [201, 213]
+  },
+  
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 21,
+      "faction": "empire_lohengramm",
+      "position": "제국 재상",
+      "location": "valhalla",
+      "status": "command",
+      "merit": 30000,
+      "notes": "제국 재상 취임. 귀족연합 제압이 급선무."
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 8,
+      "rankName": "대장",
+      "age": 30,
+      "faction": "alliance_government",
+      "position": "이제르론 요새 사령관",
+      "location": "iserlohn",
+      "status": "garrison",
+      "playable": true,
+      "merit": 25000,
+      "notes": "쿠데타 진압 명령 수락. 이제르론에서 출격."
+    },
+    {
+      "id": 3,
+      "name": "지크프리트 키르히아이스",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 21,
+      "faction": "empire_lohengramm",
+      "position": "별동대 사령관",
+      "location": "valhalla",
+      "status": "reserve",
+      "notes": "키포이저 성역 회전에서 귀족연합 별동대 격파."
+    },
+    {
+      "id": 4,
+      "name": "파울 폰 오베르슈타인",
+      "rank": 8,
+      "rankName": "대장",
+      "age": 36,
+      "faction": "empire_lohengramm",
+      "position": "라인하르트 참모장",
+      "location": "valhalla",
+      "status": "command"
+    },
+    {
+      "id": 10,
+      "name": "알렉산드르 뷰코크",
+      "rank": 10,
+      "rankName": "상급대장",
+      "age": 66,
+      "faction": "alliance_government",
+      "position": "우주함대 사령장관",
+      "location": "heinessen",
+      "status": "command",
+      "notes": "시트레/로보스 은퇴 후 사령장관 취임."
+    },
+    {
+      "id": 103,
+      "name": "빌리바르트 요아힘 폰 메르카츠",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 57,
+      "faction": "empire_lippstadt",
+      "position": "귀족연합군 총사령관 (실질)",
+      "location": "gaiesburg",
+      "status": "combat",
+      "notes": "명예를 지키기 위해 귀족연합에 가담. 가장 유능한 귀족측 제독."
+    },
+    {
+      "id": 105,
+      "name": "아달베르트 폰 파렌하이트",
+      "rank": 7,
+      "rankName": "중장",
+      "age": 36,
+      "faction": "empire_lippstadt",
+      "position": "귀족연합군 지휘관",
+      "location": "gaiesburg",
+      "status": "combat",
+      "notes": "후에 라인하르트에게 투항."
+    }
+  ],
+  
+  "newCharacters": [
+    {
+      "id": 201,
+      "name": "드와이트 그린힐",
+      "faction": "alliance_coup",
+      "rank": 10,
+      "rankName": "원수",
+      "age": 54,
+      "position": "구국군사회의 의장",
+      "location": "heinessen",
+      "status": "coup_leader",
+      "leadership": 72,
+      "politics": 80,
+      "operations": 75,
+      "intelligence": 70,
+      "command": 70,
+      "notes": "쿠데타 주동자. 함대 전멸 시 쿠데타 종결."
+    },
+    {
+      "id": 302,
+      "name": "오토 폰 브라운슈바이크",
+      "faction": "empire_lippstadt",
+      "rank": 11,
+      "rankName": "원수",
+      "title": "공작",
+      "age": 56,
+      "position": "귀족연합 맹주",
+      "location": "gaiesburg",
+      "status": "rebel_leader",
+      "leadership": 45,
+      "politics": 55,
+      "operations": 40,
+      "intelligence": 38,
+      "command": 42,
+      "maneuver": 35,
+      "attack": 40,
+      "defense": 42,
+      "notes": "귀족연합 맹주. 능력 최악. 함대 전멸 시 반란 종결."
+    },
+    {
+      "id": 303,
+      "name": "빌헬름 폰 리텐하임",
+      "faction": "empire_lippstadt",
+      "rank": 11,
+      "rankName": "원수",
+      "title": "후작",
+      "age": 53,
+      "position": "귀족연합 부맹주",
+      "location": "littenheim",
+      "status": "rebel",
+      "leadership": 42,
+      "politics": 52,
+      "operations": 38,
+      "intelligence": 35,
+      "command": 40
+    },
+    {
+      "id": 304,
+      "name": "플레겔",
+      "faction": "empire_lippstadt",
+      "rank": 7,
+      "rankName": "중장",
+      "position": "브라운슈바이크 조카",
+      "location": "gaiesburg",
+      "status": "rebel",
+      "leadership": 35,
+      "politics": 30,
+      "operations": 28,
+      "intelligence": 25,
+      "command": 38,
+      "notes": "무능하고 잔인함. 키르히아이스 암살 시도."
+    },
+    {
+      "id": 305,
+      "name": "안스바흐",
+      "faction": "empire_lippstadt",
+      "rank": 6,
+      "rankName": "소장",
+      "position": "브라운슈바이크 부관",
+      "location": "gaiesburg",
+      "status": "rebel",
+      "leadership": 50,
+      "politics": 45,
+      "operations": 55,
+      "intelligence": 60,
+      "command": 48,
+      "notes": "충성스러운 부관. 군사재판에서 암살 시도."
+    },
+    {
+      "id": 306,
+      "name": "슈타덴",
+      "faction": "empire_lippstadt",
+      "rank": 7,
+      "rankName": "중장",
+      "position": "귀족연합군 지휘관",
+      "location": "gaiesburg",
+      "status": "rebel",
+      "leadership": 48,
+      "politics": 35,
+      "operations": 42,
+      "intelligence": 38,
+      "command": 50
+    },
+    {
+      "id": 307,
+      "name": "힐데스하임",
+      "faction": "empire_lippstadt",
+      "rank": 6,
+      "rankName": "소장",
+      "title": "백작",
+      "position": "귀족연합군 지휘관",
+      "location": "gaiesburg",
+      "status": "rebel",
+      "leadership": 40,
+      "politics": 50,
+      "operations": 35,
+      "intelligence": 32,
+      "command": 42
+    },
+    {
+      "id": 216,
+      "name": "크리스찬 대령",
+      "faction": "alliance_coup",
+      "rank": 6,
+      "rankName": "대령",
+      "position": "구국군사회의 멤버",
+      "location": "heinessen",
+      "status": "coup",
+      "playable": false
+    }
+  ],
+  
+  "retiredCharacters": [
+    { "name": "뮈켄베르거", "reason": "은퇴 선언" },
+    { "name": "슈타인호프", "reason": "은퇴 선언" },
+    { "name": "에렌베르크", "reason": "은퇴 선언" },
+    { "name": "시트레", "reason": "암릿처 패배 책임" },
+    { "name": "로보스", "reason": "암릿처 패배 책임" }
+  ]
+}
+
+
+
+

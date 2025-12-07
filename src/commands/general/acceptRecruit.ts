@@ -213,9 +213,11 @@ export class AcceptRecruitCommand extends GeneralCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>${josaRo} <S>망명</>하였습니다.`);
 
     try {
-      if (typeof general.increaseInheritancePoint === 'function') {
-        // TODO: general.increaseInheritancePoint('active_action', 1);
-      }
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = general.getSessionID();
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
     }
@@ -254,14 +256,11 @@ export class AcceptRecruitCommand extends GeneralCommand {
       }
     }
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, destGeneral, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
     this.setResultTurn(new LastTurn(AcceptRecruitCommand.getName(), this.arg));
+    
+    // 공통 후처리 (등용 수락은 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipInheritancePoint: true });
+    
     await this.saveGeneral();
     await destGeneral.save();
 

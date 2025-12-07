@@ -1,0 +1,94 @@
+{
+  "description": "시나리오 8 (UC798.11) 제독 오버라이드. 제1차 라그나뢰크 작전 시점.",
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 22,
+      "faction": 1,
+      "position": "제국 재상",
+      "location": "empire_staging",
+      "status": "mobilizing",
+      "notes": "라그나뢰크 작전 발동. 페잔 경유 동맹 본토 침공."
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 32,
+      "faction": 2,
+      "position": "이제르론 요새 사령관",
+      "location": "iserlohn",
+      "status": "garrison",
+      "playable": true,
+      "notes": "이제르론 포기 여부 선택. 원작에서는 자발적 포기."
+    },
+    {
+      "id": 5,
+      "name": "오스카 폰 로이엔탈",
+      "rank": 10,
+      "rankName": "상급대장",
+      "age": 31,
+      "faction": 1,
+      "position": "이제르론 방면 공격군 사령관",
+      "location": "amritsar",
+      "status": "combat",
+      "notes": "제9차 이제르론 공방전 지휘. 견제 역할."
+    },
+    {
+      "id": 6,
+      "name": "볼프강 미터마이어",
+      "rank": 10,
+      "rankName": "상급대장",
+      "age": 30,
+      "faction": 1,
+      "position": "페잔 방면 선봉",
+      "location": "phezzan_corridor",
+      "status": "advancing",
+      "notes": "질풍 볼프. 페잔 선제 점령 임무."
+    }
+  ],
+  
+  "newCharacters": [
+    {
+      "id": 116,
+      "name": "아드리안 루빈스키",
+      "nameEn": "Adrian Rubinsky",
+      "faction": 3,
+      "rank": 0,
+      "title": "자치령주",
+      "age": 52,
+      "position": "페잔 자치령주",
+      "location": "phezzan",
+      "status": "political",
+      "leadership": 40,
+      "politics": 95,
+      "intelligence": 90,
+      "notes": "페잔의 지배자. 지구교와 연결."
+    },
+    {
+      "id": 117,
+      "name": "보리스 코넬프",
+      "faction": 3,
+      "rank": 0,
+      "title": "고등판무관",
+      "position": "제국주재 고등판무관",
+      "location": "odin",
+      "status": "political",
+      "notes": "페잔의 제국 정보원."
+    }
+  ],
+  
+  "casualties": {
+    "description": "제8차 이제르론 공방전 결과",
+    "dead": ["켐프"],
+    "note": "가이에스부르크 요새 파괴됨"
+  }
+}
+
+
+
+

@@ -130,7 +130,15 @@ export class che_국호변경 extends NationCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} 국호를 <D><b>${newNationName}</b></>${josaRo} 변경합니다.`);
     logger.pushGlobalHistoryLog(`<S><b>【국호변경】</b></><D><b>${nationName}</b></>${josaYiNation} 국호를 <D><b>${newNationName}</b></>${josaRo} 변경합니다.`) as any;
 
-    // TODO: general.increaseInheritancePoint('active_action', 1);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
     await general.applyDB(db);
 

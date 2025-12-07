@@ -1,0 +1,150 @@
+{
+  "description": "시나리오 5 (UC796.10) 제독 오버라이드. 암릿처 성역 회전 시점.",
+  "overrides": [
+    {
+      "id": 1,
+      "name": "라인하르트 폰 로엔그람",
+      "rank": 11,
+      "rankName": "원수",
+      "age": 20,
+      "faction": 1,
+      "position": "우주함대 부사령장관",
+      "location": "amritsar",
+      "status": "combat",
+      "merit": 25000,
+      "notes": "청야전술 성공. 동맹군 주력 궤멸 기회."
+    },
+    {
+      "id": 2,
+      "name": "양 웬리",
+      "rank": 7,
+      "rankName": "중장",
+      "age": 29,
+      "faction": 2,
+      "position": "이제르론 주둔함대 사령관",
+      "location": "iserlohn",
+      "status": "garrison",
+      "playable": true,
+      "merit": 18000,
+      "notes": "이제르론 방어 중. 대장 승진에는 노가다 필요."
+    },
+    {
+      "id": 3,
+      "name": "지크프리트 키르히아이스",
+      "rank": 8,
+      "rankName": "대장",
+      "age": 20,
+      "faction": 1,
+      "position": "라인하르트 함대 부사령관",
+      "location": "amritsar",
+      "status": "combat"
+    },
+    {
+      "id": 10,
+      "name": "알렉산드르 뷰코크",
+      "rank": 9,
+      "rankName": "대장",
+      "age": 65,
+      "faction": 2,
+      "position": "제5함대 사령관",
+      "location": "amritsar",
+      "status": "combat",
+      "morale": -30,
+      "supply": 0,
+      "notes": "보급 부족 상태로 전투 중."
+    }
+  ],
+  
+  "casualties": {
+    "description": "이전 전투에서 전사한 제독들",
+    "dead": [
+      { "name": "파스토레", "rank": "중장 → 원수 (사후)", "cause": "제국령 침공작전" },
+      { "name": "무어", "rank": "중장 → 원수 (사후)", "cause": "제국령 침공작전" }
+    ]
+  },
+  
+  "newCharacters": [
+    {
+      "id": 201,
+      "name": "드와이트 그린힐",
+      "faction": 2,
+      "rank": 9,
+      "rankName": "대장",
+      "position": "통합작전본부차장",
+      "location": "heinessen",
+      "status": "command",
+      "politicalOperation": 6000,
+      "notes": "정치공작 8000 도달 임박. 쿠데타 위험."
+    },
+    {
+      "id": 202,
+      "name": "시드니 시트레",
+      "faction": 2,
+      "rank": 11,
+      "rankName": "원수",
+      "position": "통합작전본부장",
+      "location": "heinessen",
+      "status": "command",
+      "notes": "침공작전 실패 책임으로 은퇴 이벤트 발생 가능."
+    },
+    {
+      "id": 203,
+      "name": "라자르 로보스",
+      "faction": 2,
+      "rank": 11,
+      "rankName": "원수",
+      "position": "우주함대 사령장관",
+      "location": "heinessen",
+      "status": "command",
+      "notes": "침공작전 실패 책임으로 은퇴 이벤트 발생 가능."
+    },
+    {
+      "id": 214,
+      "name": "우란프",
+      "nameEn": "Ulanhu",
+      "faction": 2,
+      "rank": 7,
+      "rankName": "중장",
+      "position": "제10함대 사령관",
+      "location": "amritsar",
+      "status": "combat",
+      "leadership": 72,
+      "politics": 50,
+      "operations": 58,
+      "intelligence": 55,
+      "command": 75,
+      "maneuver": 70,
+      "attack": 72,
+      "defense": 68,
+      "morale": -30,
+      "supply": 0,
+      "description": "유능한 기병 출신 제독."
+    },
+    {
+      "id": 215,
+      "name": "보로딘",
+      "nameEn": "Borodin",
+      "faction": 2,
+      "rank": 7,
+      "rankName": "중장",
+      "position": "제12함대 사령관",
+      "location": "amritsar",
+      "status": "combat",
+      "leadership": 68,
+      "politics": 45,
+      "operations": 52,
+      "intelligence": 50,
+      "command": 70,
+      "maneuver": 65,
+      "attack": 68,
+      "defense": 65,
+      "morale": -30,
+      "supply": 0,
+      "description": "중견 제독."
+    }
+  ]
+}
+
+
+
+

@@ -176,7 +176,15 @@ export class ReduceForceCommand extends NationCommand {
     logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>${josaUl} <M>감축</>하였습니다.`);
     logger.pushGlobalHistoryLog(`<M><b>【감축】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>${josaUl} <M>감축</>하였습니다.`);
 
-    // TODO: general.increaseInheritancePoint('active_action', 1);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
     this.setResultTurn(new LastTurn(ReduceForceCommand.getName(), this.arg, 0));
     await await this.saveGeneral();
 

@@ -1,0 +1,163 @@
+{
+  "description": "시나리오 9 (UC799.2) 함대 배치. 제1차 란테마리오 성역 회전.",
+  
+  "empire": {
+    "regularFleets": [
+      {
+        "id": "reinhard_fleet",
+        "name": "라인하르트 직속대",
+        "commander": "라인하르트",
+        "commanderId": 1,
+        "size": 25000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "mittemeyer_fleet",
+        "name": "미터마이어 함대",
+        "commander": "미터마이어",
+        "commanderId": 6,
+        "size": 20000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "bittenfeld_fleet",
+        "name": "비텐펠트 함대 (흑색창기병)",
+        "commander": "비텐펠트",
+        "size": 18000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "muller_fleet",
+        "name": "뮐러 함대",
+        "commander": "뮐러",
+        "commanderId": 7,
+        "size": 15000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "wahlen_fleet",
+        "name": "발렌 함대",
+        "commander": "발렌",
+        "size": 15000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "lutz_fleet",
+        "name": "루츠 함대",
+        "commander": "루츠",
+        "size": 15000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "steinmetz_fleet",
+        "name": "슈타인메츠 함대",
+        "commander": "슈타인메츠",
+        "size": 14000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "lennenkampf_fleet",
+        "name": "렌넨캄프 함대",
+        "commander": "렌넨캄프",
+        "size": 13000,
+        "location": "rantemario",
+        "status": "combat"
+      },
+      {
+        "id": "eisenach_fleet",
+        "name": "아이젠아흐 함대",
+        "commander": "아이젠아흐",
+        "size": 12000,
+        "location": "rantemario",
+        "status": "combat"
+      }
+    ],
+    "reinforcement": [
+      {
+        "id": "reuenthal_fleet",
+        "name": "로이엔탈 함대",
+        "commander": "로이엔탈",
+        "commanderId": 5,
+        "size": 25000,
+        "location": "en_route",
+        "status": "advancing",
+        "arrivalTurn": "2-3"
+      }
+    ],
+    "totalStrength": 172000
+  },
+  
+  "alliance": {
+    "regularFleets": [
+      {
+        "id": "bucock_fleet",
+        "name": "뷰코크 함대 (본대)",
+        "commander": "뷰코크",
+        "commanderId": 10,
+        "size": 15000,
+        "location": "rantemario_a",
+        "status": "surrounded",
+        "notes": "3개 행성에 분산 포위당한 상황"
+      },
+      {
+        "id": "alliance_2nd",
+        "name": "제2함대",
+        "size": 10000,
+        "location": "rantemario_b",
+        "status": "surrounded"
+      },
+      {
+        "id": "alliance_5th",
+        "name": "제5함대",
+        "size": 9000,
+        "location": "rantemario_c",
+        "status": "surrounded"
+      }
+    ],
+    "reinforcement": [
+      {
+        "id": "yang_fleet",
+        "name": "양 웬리 함대",
+        "commander": "양 웬리",
+        "commanderId": 2,
+        "size": 20000,
+        "location": "approaching",
+        "status": "advancing",
+        "arrivalTurn": 1,
+        "notes": "전략턴 1 후 합류"
+      }
+    ],
+    "totalStrength": 54000,
+    "notes": "제국군의 1/3 수준. 압도적 열세."
+  },
+  
+  "battleSituation": {
+    "location": "rantemario",
+    "turn": 1,
+    "empireAdvantage": {
+      "ships": "150,000+",
+      "fleets": 9,
+      "reinforcement": "로이엔탈 함대 (2-3턴 후)"
+    },
+    "allianceDisadvantage": {
+      "ships": "34,000 (본대)",
+      "status": "3개 행성에 분산 포위",
+      "reinforcement": "양 웬리 함대 (1턴 후)"
+    },
+    "spaceCurrents": {
+      "description": "우주조류로 함대 방향 틀어짐",
+      "effect": "전진 함대 경로 변경 가능"
+    }
+  }
+}
+
+
+
+

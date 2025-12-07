@@ -1,0 +1,107 @@
+{
+  "id": "logh-09-rantemario",
+  "name": "쌍두의 뱀",
+  "nameJa": "双頭の蛇",
+  "nameEn": "The Two-Headed Snake",
+  "description": "우주력 799년 2월, 제1차 란테마리오 성역 회전. 제국군 9개 함대가 동맹 본토를 침공한다!",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 799,
+    "startMonth": 2,
+    "imperialYear": 490,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 24,
+    "phezzanOccupied": 34,
+    "alliance": 0
+  },
+  
+  "availableFleets": {
+    "empire": [18],
+    "alliance": [2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": true,
+    "location": "rantemario",
+    "description": "란테마리오 성역에서 대규모 회전 진행 중"
+  },
+  
+  "difficulty": {
+    "empire": 1,
+    "alliance": 5,
+    "description": "압도적 제국 우위. 동맹은 라인하르트 척살만이 희망."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard"],
+      "available": "소장급 이상",
+      "notes": "최정예 9개 함대로 동맹 주력 궤멸. 양 웬리 함대 주의."
+    },
+    "alliance": {
+      "recommended": ["yang_wenli", "bucock"],
+      "available": "소장급 이상",
+      "notes": "포위당한 주력 구출 + 양 웬리 합류 필수."
+    }
+  },
+  
+  "specialRules": {
+    "overwhelmingForce": {
+      "description": "제국군 최정예 9개 함대 투입",
+      "totalShips": 150000,
+      "commander": "라인하르트"
+    },
+    "allianceEncirclement": {
+      "description": "동맹군 주력이 3개 행성에 분산되어 포위당한 상황",
+      "locations": ["rantemario_a", "rantemario_b", "rantemario_c"]
+    },
+    "yangReinforcement": {
+      "description": "양 웬리 함대가 전략턴 1 후 증원 투입",
+      "delay": 1
+    },
+    "reuenthalReinforcement": {
+      "description": "로이엔탈 함대가 전략턴 2-3 후 합류",
+      "delay": "2-3"
+    },
+    "iserlohnFallen": {
+      "description": "이제르론 요새가 제국군 수중에",
+      "defense": 23500,
+      "note": "방어력 크게 하락"
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "동맹군 주력 궤멸",
+      "바라트 성계 점령"
+    ],
+    "alliance": [
+      "라인하르트 척살 (사실상 유일한 승리 조건)",
+      "또는 란테마리오에서 함대 보존하며 철수 후 반격"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "란테마리오에서 동맹군 완전 궤멸 노림.",
+      "양 웬리 함대 합류 전 신속 결전.",
+      "로이엔탈 함대 합류 후 수적 압도.",
+      "양 웬리 함대 추적 시 복병 주의."
+    ],
+    "alliance": [
+      "란테마리오 주력은 무조건 철수. 시간 벌기만 해라.",
+      "양 웬리 함대 합류 후 각개격파 시도.",
+      "잠시드 방어선까지 후퇴하면 그나마 버틸 수 있음.",
+      "라인하르트 척살만이 진정한 승리 조건."
+    ]
+  }
+}
+
+
+
+

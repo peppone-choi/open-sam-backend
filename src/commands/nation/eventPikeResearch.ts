@@ -104,8 +104,15 @@ export class event_극병연구 extends NationCommand {
     logger.pushGeneralHistoryLog(`<M>${actionName}</> 완료`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <M>${actionName}</> 완료`);
 
-    const InheritanceKey = global.InheritanceKey;
-    // TODO: general.increaseInheritancePoint(InheritanceKey.active_action, 1);
+    try {
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
+    } catch (error) {
+      console.error('InheritancePoint 처리 실패:', error);
+    }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
     

@@ -208,9 +208,10 @@ export class RandomJoinNationCommand extends GeneralCommand {
     });
 
     try {
-      if (typeof general.increaseInheritancePoint === 'function') {
-        // TODO: general.increaseInheritancePoint('active_action', 1);
-      }
+      const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
+      const inheritanceService = new InheritancePointService(sessionId);
+      const userId = general.data.owner ?? general.data.user_id ?? general.getID();
+      await inheritanceService.recordActivity(userId, InheritanceKey.ACTIVE_ACTION, 1);
     } catch (error) {
       console.error('InheritancePoint 처리 실패:', error);
     }
@@ -219,19 +220,8 @@ export class RandomJoinNationCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(RandomJoinNationCommand.getName(), this.arg));
     general.checkStatChange();
 
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      await tryUniqueItemLottery(rng, general, sessionId, '랜덤 임관');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // 공통 후처리 (임관은 유산 포인트가 위에서 이미 처리됨)
+    await this.postRunHooks(rng, { skipInheritancePoint: true });
 
     await this.saveGeneral();
 

@@ -1,0 +1,272 @@
+{
+  "description": "시나리오 2 (UC796.2) 이벤트 목록. 아스타테 성역 회전 시점.",
+  
+  "events": [
+    {
+      "id": "evt_astarte_battle_start",
+      "name": "아스타테 회전 개시",
+      "category": "battle",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "라인하르트 2만 척 vs 동맹군 4만 척. 역사적 전투가 시작된다.",
+      "effects": [
+        { "type": "battle_start", "location": "astarte" },
+        { "type": "message", "text": "아스타테 성역에서 제국군과 동맹군이 조우했습니다!" }
+      ]
+    },
+    {
+      "id": "evt_astarte_separate_attack",
+      "name": "각개격파 시도",
+      "category": "battle",
+      "priority": 900,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "faction": "empire" },
+          { "action": "attack", "target": "single_fleet" }
+        ]
+      },
+      "description": "라인하르트가 분산된 동맹 함대를 하나씩 격파한다.",
+      "effects": [
+        { "type": "tactical_bonus", "value": 30 },
+        { "type": "message", "text": "각개격파 전술을 개시합니다." }
+      ],
+      "notes": "원작의 라인하르트 전술. 행성 점령 없이 함대만 격파 권장."
+    },
+    {
+      "id": "evt_yang_advice",
+      "name": "양 웬리의 조언",
+      "category": "character",
+      "priority": 850,
+      "trigger": {
+        "type": "battle_phase",
+        "conditions": [
+          { "player_fleet": "alliance_2nd" },
+          { "phase": "planning" }
+        ]
+      },
+      "description": "양 웬리가 파에타에게 전술적 조언을 제공한다.",
+      "effects": [
+        { "type": "tactical_option", "name": "양 웬리 조언", "bonus": 20 },
+        { "type": "message", "text": "양 준장이 적 함대의 움직임을 분석합니다." }
+      ],
+      "notes": "파에타 선택 시 양의 능력 간접 활용."
+    },
+    {
+      "id": "evt_emperor_death",
+      "name": "프리드리히 4세 붕어",
+      "category": "political",
+      "priority": 800,
+      "trigger": {
+        "type": "random",
+        "conditions": [
+          { "month": ">=", "value": 6 },
+          { "probability": 0.12 }
+        ]
+      },
+      "description": "프리드리히 4세가 붕어하고, 어린 에르빈 요제프 2세가 즉위한다.",
+      "effects": [
+        { "type": "character_death", "target": "friedrich_iv" },
+        { "type": "spawn_character", "character": "erwin_josef_ii" },
+        { "type": "enable_event", "eventId": "evt_noble_discontent" },
+        { "type": "message", "text": "프리드리히 4세가 붕어하였습니다." }
+      ]
+    },
+    {
+      "id": "evt_noble_discontent",
+      "name": "귀족 불만 고조",
+      "category": "political",
+      "priority": 750,
+      "trigger": {
+        "type": "after_event",
+        "conditions": [
+          { "eventId": "evt_emperor_death" },
+          { "turns_after": 2 }
+        ]
+      },
+      "description": "대귀족들이 라인하르트에 대한 불만을 표출하기 시작한다.",
+      "effects": [
+        { "type": "faction_tension", "faction": "nobles", "value": 40 },
+        { "type": "enable_event", "eventId": "evt_lippstadt_rebellion" }
+      ],
+      "prevention": {
+        "methods": [
+          { "action": "dissolve_fleet", "targets": ["braunschweig", "littenheim"] },
+          { "action": "assign_governor", "targets": ["braunschweig", "littenheim"] },
+          { "action": "kill_in_battle", "targets": ["braunschweig", "littenheim"] }
+        ],
+        "notes": "귀족들의 함대 해산 또는 방위사령관 임명 또는 전사시킴"
+      }
+    },
+    {
+      "id": "evt_lippstadt_rebellion",
+      "name": "립슈타트 귀족연합 결성",
+      "category": "political",
+      "priority": 700,
+      "trigger": {
+        "type": "faction_tension",
+        "conditions": [
+          { "faction": "nobles", "tension": ">=", "value": 80 }
+        ]
+      },
+      "description": "브라운슈바이크와 리텐하임이 귀족연합을 결성한다.",
+      "effects": [
+        { "type": "spawn_faction", "id": "lippstadt_league", "name": "립슈타트 귀족연합" },
+        { "type": "territory_transfer", "systems": 6, "to": "lippstadt_league" },
+        { "type": "civil_war_start", "factions": ["empire", "lippstadt_league"] },
+        { "type": "message", "text": "립슈타트 귀족연합이 반기를 들었습니다! 제국 내전 발발!" }
+      ],
+      "notes": "내전 시 제국 약화 → 동맹에게 기회"
+    },
+    {
+      "id": "evt_greenhill_political_rise",
+      "name": "그린힐 정치공작 상승",
+      "category": "political",
+      "priority": 650,
+      "trigger": {
+        "type": "periodic",
+        "conditions": [
+          { "character": "greenhill" },
+          { "turns": 3 }
+        ]
+      },
+      "description": "그린힐의 정치공작 수치가 상승한다.",
+      "effects": [
+        { "type": "stat_increase", "target": "greenhill", "stat": "politicalOperation", "value": 500 }
+      ],
+      "warning": {
+        "threshold": 7000,
+        "message": "그린힐의 정치공작 수치가 위험 수준에 접근하고 있습니다!"
+      }
+    },
+    {
+      "id": "evt_greenhill_coup_ready",
+      "name": "그린힐 쿠데타 준비 완료",
+      "category": "political",
+      "priority": 600,
+      "trigger": {
+        "type": "stat_threshold",
+        "conditions": [
+          { "character": "greenhill", "stat": "politicalOperation", "value": ">=", "threshold": 8000 },
+          { "character": "greenhill", "hasFleet": true }
+        ]
+      },
+      "description": "그린힐이 쿠데타를 일으킬 준비가 되었다.",
+      "effects": [
+        { "type": "enable_event", "eventId": "evt_salvation_military_council" },
+        { "type": "warning", "text": "그린힐이 함대를 보유한 채 정치공작 8000에 도달했습니다. 쿠데타 임박!" }
+      ],
+      "prevention": {
+        "methods": [
+          { "action": "dissolve_fleet", "target": "greenhill" },
+          { "action": "remove_from_command", "target": "greenhill" }
+        ]
+      }
+    },
+    {
+      "id": "evt_iserlohn_capture_opportunity",
+      "name": "이제르론 점거 기회",
+      "category": "military",
+      "priority": 550,
+      "trigger": {
+        "type": "faction_state",
+        "conditions": [
+          { "faction": "empire", "state": "civil_war" },
+          { "character": "schenkopp", "available": true }
+        ]
+      },
+      "description": "제국 내전 중 이제르론 요새 점거 기회가 열렸다.",
+      "effects": [
+        { "type": "unlock_action", "action": "iserlohn_capture" },
+        { "type": "message", "text": "제국이 내전 중입니다. 셴코프를 이용해 이제르론을 점거할 수 있습니다!" }
+      ],
+      "notes": "셴코프 군사공작 4000으로 점거 실행 가능."
+    },
+    {
+      "id": "evt_astarte_victory_empire",
+      "name": "아스타테 제국 승리",
+      "category": "battle",
+      "priority": 500,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "astarte" },
+          { "winner": "empire" },
+          { "alliance_losses": ">=", "value": 0.6 }
+        ]
+      },
+      "description": "제국군이 아스타테에서 대승을 거두었다.",
+      "effects": [
+        { "type": "prestige_change", "faction": "empire", "value": 30 },
+        { "type": "prestige_change", "faction": "alliance", "value": -30 },
+        { "type": "morale_change", "faction": "empire", "value": 20 },
+        { "type": "death_check", "targets": ["pastore", "moore"], "probability": 0.8 },
+        { "type": "message", "text": "아스타테 대첩! 동맹군에 큰 타격을 입혔습니다." }
+      ]
+    },
+    {
+      "id": "evt_astarte_alliance_defense",
+      "name": "아스타테 동맹 방어 성공",
+      "category": "battle",
+      "priority": 500,
+      "trigger": {
+        "type": "battle_result",
+        "conditions": [
+          { "location": "astarte" },
+          { "empire_retreat": true }
+        ]
+      },
+      "description": "동맹군이 제국군 침공을 막아냈다.",
+      "effects": [
+        { "type": "prestige_change", "faction": "alliance", "value": 20 },
+        { "type": "merit_gain", "target": "yang_wenli", "amount": 3000 },
+        { "type": "message", "text": "아스타테 방어 성공! 제국군이 퇴각했습니다." }
+      ]
+    },
+    {
+      "id": "evt_yang_promotion_trigger",
+      "name": "양 웬리 승진 조건",
+      "category": "character",
+      "priority": 400,
+      "trigger": {
+        "type": "merit_threshold",
+        "conditions": [
+          { "character": "yang_wenli", "merit": ">=", "value": 8000 }
+        ]
+      },
+      "description": "양 웬리가 충분한 공적을 쌓아 승진 대상이 되었다.",
+      "effects": [
+        { "type": "promotion", "target": "yang_wenli", "to_rank": 6 },
+        { "type": "message", "text": "양 웬리가 소장으로 승진했습니다!" }
+      ],
+      "notes": "소장 승진 후에도 함대 지휘권 부여 전까지는 직접 플레이 불가."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_noble_rebellion",
+      "name": "귀족 반란 체인",
+      "events": ["evt_emperor_death", "evt_noble_discontent", "evt_lippstadt_rebellion"],
+      "description": "황제 사망 → 귀족 불만 → 립슈타트 전역"
+    },
+    {
+      "id": "chain_greenhill_coup",
+      "name": "그린힐 쿠데타 체인",
+      "events": ["evt_greenhill_political_rise", "evt_greenhill_coup_ready", "evt_salvation_military_council"],
+      "description": "그린힐 정치공작 상승 → 쿠데타 준비 → 구국군사회의"
+    },
+    {
+      "id": "chain_iserlohn_opportunity",
+      "name": "이제르론 점거 기회",
+      "events": ["evt_lippstadt_rebellion", "evt_iserlohn_capture_opportunity"],
+      "description": "제국 내전 → 이제르론 점거 기회 (동맹)"
+    }
+  ]
+}
+
+
+
+

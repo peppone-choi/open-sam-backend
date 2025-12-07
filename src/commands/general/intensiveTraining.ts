@@ -130,22 +130,8 @@ export class IntensiveTrainingCommand extends GeneralCommand {
     this.setResultTurn(new LastTurn(IntensiveTrainingCommand.getName(), this.arg));
     general.checkStatChange();
     
-    await StaticEventHandler.handleEvent(
-      this.generalObj,
-      this.destGeneralObj,
-      IntensiveTrainingCommand,
-      this.env,
-      this.arg ?? {}
-    );
-
-    // UniqueItemLottery
-    try {
-      const { tryUniqueItemLottery } = await import('../../utils/unique-item-lottery');
-      const sessionId = this.env.session_id || 'sangokushi_default';
-      await tryUniqueItemLottery(rng, general, sessionId, '맹훈련');
-    } catch (error) {
-      console.error('tryUniqueItemLottery 실패:', error);
-    }
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
     
     await this.saveGeneral();
 

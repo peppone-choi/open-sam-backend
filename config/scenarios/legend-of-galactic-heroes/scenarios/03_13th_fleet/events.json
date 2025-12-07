@@ -1,0 +1,298 @@
+{
+  "description": "시나리오 3 (UC796.5) 이벤트 목록. 제7차 이제르론 공방전.",
+  
+  "events": [
+    {
+      "id": "evt_13th_fleet_formed",
+      "name": "제13함대 편성",
+      "category": "military",
+      "priority": 1000,
+      "trigger": {
+        "type": "scenario_start"
+      },
+      "description": "양 웬리가 제13함대 사령관으로 임명되어 이제르론 공략을 명령받는다.",
+      "effects": [
+        { "type": "fleet_activate", "fleetId": "alliance_13th" },
+        { "type": "message", "text": "양 웬리 소장이 제13함대 사령관으로 임명되었습니다. 이제르론 공략이 시작됩니다!" }
+      ]
+    },
+    {
+      "id": "evt_iserlohn_mission",
+      "name": "이제르론 공략 임무",
+      "category": "military",
+      "priority": 950,
+      "trigger": {
+        "type": "faction_turn",
+        "conditions": [
+          { "faction": "alliance" },
+          { "turn": 1 }
+        ]
+      },
+      "description": "제13함대에 이제르론 요새 공략 임무가 하달된다.",
+      "effects": [
+        { "type": "mission_assign", "fleet": "alliance_13th", "target": "iserlohn" },
+        { "type": "message", "text": "목표: 이제르론 요새 점령. 통신방해와 로젠리터를 활용하십시오." }
+      ]
+    },
+    {
+      "id": "evt_communication_jamming",
+      "name": "통신방해 발동",
+      "category": "tactical",
+      "priority": 900,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "fleet": "alliance_13th" },
+          { "action": "communication_jamming" }
+        ]
+      },
+      "description": "제13함대가 통신방해를 발동하여 스텔스 상태가 된다.",
+      "effects": [
+        { "type": "stealth", "fleet": "alliance_13th", "duration": 5 },
+        { "type": "message", "text": "통신방해 발동! 제13함대가 스텔스 상태가 되었습니다." }
+      ],
+      "notes": "제크트 함대에 감지되지 않고 이동 가능."
+    },
+    {
+      "id": "evt_seckendorff_contact",
+      "name": "제크트 함대 접촉",
+      "category": "battle",
+      "priority": 850,
+      "trigger": {
+        "type": "fleet_contact",
+        "conditions": [
+          { "fleet_a": "alliance_13th" },
+          { "fleet_b": "iserlohn_garrison" }
+        ]
+      },
+      "description": "제13함대가 제크트 함대와 접촉! 이동 속도가 저하된다.",
+      "effects": [
+        { "type": "speed_penalty", "fleet": "alliance_13th", "value": 0.3 },
+        { "type": "battle_start", "auto": false },
+        { "type": "warning", "text": "제크트 함대와 접촉! 겹친 상태에서는 요새 접근이 매우 어렵습니다!" }
+      ],
+      "notes": "함대끼리 겹치면 이동 속도 저하 → 점거 실패 위험."
+    },
+    {
+      "id": "evt_iserlohn_approach",
+      "name": "이제르론 요새 접근",
+      "category": "military",
+      "priority": 800,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "fleet": "alliance_13th" },
+          { "distance_from": "iserlohn", "value": "<=", "threshold": "close" },
+          { "stealth": true }
+        ]
+      },
+      "description": "제13함대가 이제르론 요새에 접근했다.",
+      "effects": [
+        { "type": "unlock_action", "action": "occupy" },
+        { "type": "message", "text": "이제르론 요새에 근접했습니다. 점거를 실행할 수 있습니다." }
+      ]
+    },
+    {
+      "id": "evt_iserlohn_capture_attempt",
+      "name": "이제르론 점거 시도",
+      "category": "military",
+      "priority": 750,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "fleet": "alliance_13th" },
+          { "action": "occupy" },
+          { "target": "iserlohn" }
+        ]
+      },
+      "description": "셴코프가 이끄는 로젠리터가 요새 내부 침투를 시도한다.",
+      "effects": [
+        { "type": "occupy_check", "executor": "schenkopp", "target": "iserlohn" },
+        { "type": "message", "text": "로젠리터 연대가 요새 내부 침투를 시작합니다..." }
+      ],
+      "requirements": {
+        "character": "schenkopp",
+        "ability": "occupy",
+        "militaryOperation": 4000
+      }
+    },
+    {
+      "id": "evt_iserlohn_capture_success",
+      "name": "이제르론 함락",
+      "category": "military",
+      "priority": 700,
+      "trigger": {
+        "type": "occupy_result",
+        "conditions": [
+          { "target": "iserlohn" },
+          { "result": "success" }
+        ]
+      },
+      "description": "제7차 이제르론 공방전 승리! 난공불락의 요새가 함락되었다!",
+      "effects": [
+        { "type": "territory_transfer", "target": "iserlohn", "to": "alliance" },
+        { "type": "prestige_change", "faction": "alliance", "value": 50 },
+        { "type": "prestige_change", "faction": "empire", "value": -50 },
+        { "type": "promotion", "target": "yang_wenli", "to_rank": 7 },
+        { "type": "level_up", "faction": "alliance", "all_admirals": true },
+        { "type": "capture_check", "targets": ["stockhausen", "seckendorff"] },
+        { "type": "message", "text": "이제르론 요새 함락! 양 웬리가 중장으로 승진합니다. 동맹 전 제독 레벨업!" }
+      ],
+      "notes": "함락 시 제국 지지율 대폭 하락 + 동맹 전원 레벨업."
+    },
+    {
+      "id": "evt_oberstein_defection",
+      "name": "오베르슈타인 투항",
+      "category": "character",
+      "priority": 650,
+      "trigger": {
+        "type": "player_action",
+        "conditions": [
+          { "player": "reinhard" },
+          { "location": "iserlohn" }
+        ]
+      },
+      "description": "오베르슈타인이 라인하르트에게 투항을 청한다.",
+      "effects": [
+        { "type": "recruitment", "character": "oberstein", "to": "reinhard_fleet" },
+        { "type": "message", "text": "오베르슈타인이 라인하르트에게 투항했습니다." }
+      ],
+      "alternative": {
+        "trigger": {
+          "type": "iserlohn_fall",
+          "conditions": [{ "oberstein_captured": false }]
+        },
+        "description": "이제르론 함락 후 오베르슈타인이 라인하르트에게 투항",
+        "effects": [
+          { "type": "recruitment", "character": "oberstein", "to": "reinhard_fleet" }
+        ]
+      }
+    },
+    {
+      "id": "evt_reinhard_iserlohn_defense",
+      "name": "라인하르트 이제르론 배치",
+      "category": "military",
+      "priority": 600,
+      "trigger": {
+        "type": "fleet_position",
+        "conditions": [
+          { "fleet": "empire_reinhard" },
+          { "location": "iserlohn" }
+        ]
+      },
+      "description": "라인하르트 함대가 이제르론에 배치되었다.",
+      "effects": [
+        { "type": "defense_bonus", "location": "iserlohn", "value": 30 },
+        { "type": "message", "text": "라인하르트 함대가 이제르론에 배치되었습니다. 양 함대 진입 경로 차단 가능." }
+      ],
+      "notes": "센터백 역할로 양 함대 경로 차단."
+    },
+    {
+      "id": "evt_yang_fleet_intercept",
+      "name": "양 함대 요격",
+      "category": "battle",
+      "priority": 550,
+      "trigger": {
+        "type": "fleet_contact",
+        "conditions": [
+          { "fleet_a": "empire_reinhard" },
+          { "fleet_b": "alliance_13th" }
+        ]
+      },
+      "description": "라인하르트 함대가 양 웬리 함대를 포착했다!",
+      "effects": [
+        { "type": "stealth_break", "fleet": "alliance_13th" },
+        { "type": "battle_start" },
+        { "type": "message", "text": "라인하르트 함대가 제13함대를 포착! 전투 개시!" }
+      ],
+      "notes": "라인하르트 이제르론 배치 시 발생 가능."
+    },
+    {
+      "id": "evt_13th_fleet_destroyed",
+      "name": "제13함대 전멸",
+      "category": "battle",
+      "priority": 500,
+      "trigger": {
+        "type": "fleet_destroyed",
+        "conditions": [
+          { "fleet": "alliance_13th" }
+        ]
+      },
+      "description": "제13함대가 전멸했다. 양 웬리의 운명은...",
+      "effects": [
+        { "type": "death_check", "target": "yang_wenli", "probability": 0.3 },
+        { "type": "death_check", "targets": ["attenborough", "fischer", "nguyen"], "probability": 0.7 },
+        { "type": "prestige_change", "faction": "alliance", "value": -30 },
+        { "type": "message", "text": "제13함대가 전멸했습니다!" }
+      ],
+      "notes": "분함대급 지휘관들은 전멸 시 70% 확률로 전사."
+    },
+    {
+      "id": "evt_amritsar_attrition",
+      "name": "암릿처 소모전 유도",
+      "category": "strategy",
+      "priority": 450,
+      "trigger": {
+        "type": "territory_state",
+        "conditions": [
+          { "territory": "iserlohn", "owner": "alliance" },
+          { "faction": "empire", "action": "attack", "target": "iserlohn", "count": ">=", "value": 3 }
+        ]
+      },
+      "description": "이제르론을 점령한 동맹이 제국군을 소모전으로 유도한다.",
+      "effects": [
+        { "type": "message", "text": "제국군이 이제르론 공략을 반복하고 있습니다. 소모전으로 유도하세요." }
+      ],
+      "notes": "이제르론 점령 후 제국 인재 사살 기회."
+    },
+    {
+      "id": "evt_ai_cancel_iserlohn",
+      "name": "제국 AI 이제르론 공략 포기",
+      "category": "ai",
+      "priority": 400,
+      "trigger": {
+        "type": "ai_decision",
+        "conditions": [
+          { "faction": "empire" },
+          { "target": "iserlohn" },
+          { "failure_count": ">=", "value": 5 }
+        ]
+      },
+      "description": "제국 AI가 이제르론 공략을 포기한다.",
+      "effects": [
+        { "type": "cancel_operation", "faction": "empire", "target": "iserlohn" },
+        { "type": "message", "text": "제국이 이제르론 공략을 중단했습니다. 암릿처 방면으로 전환해야 합니다." }
+      ],
+      "notes": "소모전 유도 실패 시 암릿처로 전환 필요."
+    }
+  ],
+  
+  "eventChains": [
+    {
+      "id": "chain_iserlohn_capture",
+      "name": "이제르론 점거 체인",
+      "events": [
+        "evt_13th_fleet_formed",
+        "evt_communication_jamming",
+        "evt_iserlohn_approach",
+        "evt_iserlohn_capture_attempt",
+        "evt_iserlohn_capture_success"
+      ],
+      "description": "제13함대 편성 → 통신방해 → 접근 → 점거 → 함락"
+    },
+    {
+      "id": "chain_iserlohn_defense",
+      "name": "이제르론 방어 체인 (제국)",
+      "events": [
+        "evt_reinhard_iserlohn_defense",
+        "evt_yang_fleet_intercept",
+        "evt_13th_fleet_destroyed"
+      ],
+      "description": "라인하르트 배치 → 양 함대 요격 → 제13함대 전멸"
+    }
+  ]
+}
+
+
+
+

@@ -388,15 +388,11 @@ export class InciteCommand extends GeneralCommand {
     }
     
     this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
-    
-    try {
-      const { StaticEventHandler } = await import('../../events/StaticEventHandler');
-      await StaticEventHandler.handleEvent(general, null, this, this.env, this.arg);
-    } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
-    }
-    
     general.checkStatChange();
+    
+    // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)
+    await this.postRunHooks(rng);
+    
     await this.saveGeneral();
 
     return true;

@@ -1,0 +1,92 @@
+{
+  "id": "logh-01-tiamat",
+  "name": "내 길은 별의 바다",
+  "nameJa": "我が征くは星の大海",
+  "nameEn": "My Conquest is the Sea of Stars",
+  "description": "우주력 795년 9월, 제4차 티아마트 회전. 젊은 중장 라인하르트 폰 뮤젤이 역사의 무대에 등장하는 서막.",
+  "version": "1.0.0",
+  "baseScenarioId": "legend-of-galactic-heroes",
+  
+  "timeline": {
+    "startYear": 795,
+    "startMonth": 9,
+    "imperialYear": 486,
+    "calendar": "우주력"
+  },
+  
+  "territoryBalance": {
+    "empire": 29,
+    "phezzan": 1,
+    "alliance": 28
+  },
+  
+  "availableFleets": {
+    "empire": [17, 18],
+    "alliance": [13, 14, 15, 16, 18]
+  },
+  
+  "battleStatus": {
+    "ongoing": true,
+    "location": "tiamat",
+    "description": "티아마트 성계에서 양군 교전 중"
+  },
+  
+  "difficulty": {
+    "empire": 3,
+    "alliance": 3,
+    "description": "양측 모두 어려움. 제국은 축차투입 문제, 동맹은 경제 문제."
+  },
+  
+  "playableCharacters": {
+    "empire": {
+      "recommended": ["reinhard", "mittermeyer", "reuenthal"],
+      "available": "소장급 이상",
+      "notes": "라인하르트는 '뮤젤'로 시작. 티아마트 전투 참가자 추천."
+    },
+    "alliance": {
+      "recommended": ["paeta", "bucock"],
+      "available": "소장급 이상",
+      "notes": "양 웬리는 준장이므로 플레이 불가. 파에타 선택 시 참모로 양 웬리 이용 가능."
+    }
+  },
+  
+  "specialRules": {
+    "reinhardRename": {
+      "description": "라인하르트는 상급대장 승진 시 '로엔그람' 개명 이벤트 발생",
+      "condition": "황제 사망 전 상급대장 달성 필요"
+    },
+    "highCasualtyRisk": {
+      "description": "티아마트 전투 참가자들은 소함대급 병력으로 참전 중이라 사망 확률 높음",
+      "affectedCharacters": ["kircheis", "reuenthal", "mittermeyer", "fahrenheit", "fogel"]
+    }
+  },
+  
+  "victoryConditions": {
+    "empire": [
+      "동맹 수도 바라트 성계 점령",
+      "동맹군 주력 함대 궤멸"
+    ],
+    "alliance": [
+      "제국 수도 발할라 성계 점령",
+      "제국군 주력 함대 궤멸",
+      "라인하르트 전사 시 유리한 강화 가능"
+    ]
+  },
+  
+  "tips": {
+    "empire": [
+      "티아마트 전투는 즉시 철수 권장. 작전 취소에는 슈타인호프 설득 필요.",
+      "힐데스하임으로 시작 시 최고 난이도 (낮은 능력치 + 공적 부족 + 거리 문제).",
+      "쌍벽(미터마이어/로이엔탈)이 티아마트에서 전사할 수 있으니 주의."
+    ],
+    "alliance": [
+      "티아마트에서 제국의 미래 인재들을 사살할 기회.",
+      "예산 부족으로 장기전 시 페잔에 흡수될 수 있음.",
+      "엘곤에 체제기지 건설 후 아스타테 집중 방어 권장."
+    ]
+  }
+}
+
+
+
+
