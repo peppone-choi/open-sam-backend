@@ -12,7 +12,6 @@ import { verifyGeneralOwnership } from '../../common/auth-utils';
 export class SetRateService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const generalId = user?.generalId || data.general_id;
     const userId = user?.userId || user?.id;
     const amount = parseInt(data.amount);
     
@@ -21,21 +20,28 @@ export class SetRateService {
         return { success: false, message: '세율은 5~30 사이여야 합니다' };
       }
 
-      if (!generalId) {
-        return { success: false, message: '장수 ID가 필요합니다' };
-      }
-
       if (!userId) {
         return { success: false, message: '사용자 인증이 필요합니다' };
       }
 
-      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
-      if (!ownershipCheck.valid) {
-        return { success: false, message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.' };
+      // generalId가 없으면 userId로 장수 조회
+      let generalId = user?.generalId || data.general_id;
+      let general;
+      
+      if (generalId) {
+        const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
+        if (!ownershipCheck.valid) {
+          return { success: false, message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.' };
+        }
+        general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+      } else {
+        // userId로 장수 찾기
+        general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
+        if (general) {
+          generalId = general.no || general.data?.no;
+        }
       }
-
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
-
+      
       if (!general) {
         return { success: false, message: '장수를 찾을 수 없습니다' };
       }
