@@ -42,9 +42,15 @@ function findProjectRoot(): string {
 
 const PROJECT_ROOT = findProjectRoot();
 
+console.log('[scenario-data] PROJECT_ROOT:', PROJECT_ROOT);
+console.log('[scenario-data] __dirname:', __dirname);
+
 const scenarioDataDir = path.join(PROJECT_ROOT, 'config', 'scenarios', DEFAULT_SCENARIO_ID, 'data');
 const constantsPath = path.join(scenarioDataDir, 'constants.json');
 const itemsPath = path.join(scenarioDataDir, 'items.json');
+
+console.log('[scenario-data] constantsPath:', constantsPath);
+console.log('[scenario-data] exists:', fs.existsSync(constantsPath));
 
 let cachedConstants: any | null = null;
 let cachedItems: any[] | null = null;

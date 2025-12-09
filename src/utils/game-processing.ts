@@ -14,8 +14,9 @@ function loadConstants(scenarioId: string = 'sangokushi') {
     return constantsCache[scenarioId];
   }
   
-  // dist 폴더에서 실행되므로 프로젝트 루트로 이동 (dist/utils -> config)
-  const constantsPath = path.join(__dirname, '../../../config/scenarios', scenarioId, 'data/constants.json');
+  // dist 폴더에서 실행되므로 프로젝트 루트로 이동 (dist/utils -> open-sam-backend)
+  // dist/utils에서 2단계 상위가 프로젝트 루트
+  const constantsPath = path.join(__dirname, '../../config/scenarios', scenarioId, 'data/constants.json');
   if (!fs.existsSync(constantsPath)) {
     throw new Error(`Constants file not found: ${constantsPath}`);
   }
