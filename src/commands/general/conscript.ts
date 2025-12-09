@@ -161,6 +161,8 @@ export class ConscriptCommand extends GeneralCommand {
     this.reqCrew = Math.max(100, this.arg.amount);
     this.reqCrewType = reqCrewType;
     this.currCrewType = currCrewType;
+    
+    console.log('[징병 initWithArg] this.reqCrewType 설정됨:', JSON.stringify(this.reqCrewType));
 
     const [reqGold, reqRice] = this.getCost();
     const minRecruitPop = GameConst.minAvailableRecruitPop || 0;

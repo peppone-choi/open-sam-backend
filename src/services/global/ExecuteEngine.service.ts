@@ -2153,54 +2153,77 @@ export class ExecuteEngineService {
   }
 
   /**
-   * 도시 이벤트 상태 처리
+   * 도시 이벤트 상태 처리 (캐시 경유)
    * - term이 0보다 큰 도시는 term을 1 감소
    * - term이 0 이하가 된 도시는 state를 0으로 초기화
    */
   private static async processCityEventStates(sessionId: string) {
     try {
-      const { City } = await import('../../models/city.model');
+      const { saveCity } = await import('../../common/cache/model-cache.helper');
       
-      // 1단계: state > 0이고 term > 0인 도시들의 term을 1 감소
-      const decrementResult = await City.updateMany(
-        {
-          session_id: sessionId,
-          state: { $gt: 0 },
-          term: { $gt: 0 }
-        },
-        {
-          $inc: { term: -1 }
+      // 캐시에서 모든 도시 조회
+      const cities = await cityRepository.findByFilter({ session_id: sessionId });
+      
+      let decrementCount = 0;
+      let resetCount = 0;
+      
+      for (const city of cities) {
+        const cityNum = city.city || city.data?.city;
+        const state = city.state ?? city.data?.state ?? 0;
+        const term = city.term ?? city.data?.term ?? 0;
+        
+        if (state > 0) {
+          if (term > 0) {
+            // term을 1 감소
+            const newTerm = term - 1;
+            city.term = newTerm;
+            if (city.data) city.data.term = newTerm;
+            
+            if (newTerm <= 0) {
+              // term이 0 이하가 되면 state도 0으로
+              city.state = 0;
+              city.term = 0;
+              if (city.data) {
+                city.data.state = 0;
+                city.data.term = 0;
+              }
+              resetCount++;
+            } else {
+              decrementCount++;
+            }
+            
+            // 캐시를 통해 저장
+            const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
+            await saveCity(sessionId, cityNum, cityData);
+          } else {
+            // term이 이미 0 이하인데 state가 있으면 초기화
+            city.state = 0;
+            city.term = 0;
+            if (city.data) {
+              city.data.state = 0;
+              city.data.term = 0;
+            }
+            
+            const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
+            await saveCity(sessionId, cityNum, cityData);
+            resetCount++;
+          }
         }
-      );
+      }
       
-      if (decrementResult.modifiedCount > 0) {
+      if (decrementCount > 0) {
         logger.info('[processCityEventStates] Decremented term for cities', { 
           sessionId, 
-          count: decrementResult.modifiedCount 
+          count: decrementCount 
         });
       }
-
-      // 2단계: term이 0 이하가 된 도시들의 state를 0으로 초기화
-      const resetResult = await City.updateMany(
-        {
-          session_id: sessionId,
-          state: { $gt: 0 },
-          term: { $lte: 0 }
-        },
-        {
-          $set: { state: 0, term: 0 }
-        }
-      );
       
-      if (resetResult.modifiedCount > 0) {
+      if (resetCount > 0) {
         logger.info('[processCityEventStates] Reset state for cities', { 
           sessionId, 
-          count: resetResult.modifiedCount 
+          count: resetCount 
         });
       }
-
-      // 캐시 무효화
-      await invalidateCache('city', sessionId);
       
       logger.debug('[processCityEventStates] City event states processed', { sessionId });
     } catch (error: any) {
