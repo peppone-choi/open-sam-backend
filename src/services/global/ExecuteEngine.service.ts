@@ -2159,40 +2159,49 @@ export class ExecuteEngineService {
    */
   private static async processCityEventStates(sessionId: string) {
     try {
-      // state > 0이고 term > 0인 도시들의 term을 1 감소
-      await cityRepository.updateManyByFilter(
+      const { City } = await import('../../models/city.model');
+      
+      // 1단계: state > 0이고 term > 0인 도시들의 term을 1 감소
+      const decrementResult = await City.updateMany(
         {
           session_id: sessionId,
-          $or: [
-            { state: { $gt: 0 }, term: { $gt: 0 } },
-            { 'data.state': { $gt: 0 }, 'data.term': { $gt: 0 } }
-          ]
+          state: { $gt: 0 },
+          term: { $gt: 0 }
         },
         {
-          $inc: { 
-            term: -1,
-            'data.term': -1
-          }
+          $inc: { term: -1 }
         }
       );
+      
+      if (decrementResult.modifiedCount > 0) {
+        logger.info('[processCityEventStates] Decremented term for cities', { 
+          sessionId, 
+          count: decrementResult.modifiedCount 
+        });
+      }
 
-      // term이 0 이하가 된 도시들의 state를 0으로 초기화
-      await cityRepository.updateManyByFilter(
+      // 2단계: term이 0 이하가 된 도시들의 state를 0으로 초기화
+      const resetResult = await City.updateMany(
         {
           session_id: sessionId,
-          $or: [
-            { state: { $gt: 0 }, term: { $lte: 0 } },
-            { 'data.state': { $gt: 0 }, 'data.term': { $lte: 0 } }
-          ]
+          state: { $gt: 0 },
+          term: { $lte: 0 }
         },
         {
-          $set: {
-            state: 0,
-            'data.state': 0
-          }
+          $set: { state: 0, term: 0 }
         }
       );
+      
+      if (resetResult.modifiedCount > 0) {
+        logger.info('[processCityEventStates] Reset state for cities', { 
+          sessionId, 
+          count: resetResult.modifiedCount 
+        });
+      }
 
+      // 캐시 무효화
+      await invalidateCache('city', sessionId);
+      
       logger.debug('[processCityEventStates] City event states processed', { sessionId });
     } catch (error: any) {
       logger.error('[processCityEventStates] Failed to process city event states', {
@@ -2200,6 +2209,7 @@ export class ExecuteEngineService {
         error: error.message
       });
     }
+  }
 
   /**
    * 랜덤 이벤트 처리

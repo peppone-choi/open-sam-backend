@@ -927,9 +927,10 @@ export class AIEngine {
       const recruitCost = 1000; // 대략적 비용
       
       if (popRatio >= this.policy.safeRecruitPopRatio && gold >= recruitCost && rice >= 10) {
+        // crewType: 1100 = 도민병 (기본 병종, units.json 기준)
         return {
           command: mapAICommandToGameCommand('recruit'),
-          args: { crewType: 0, amount: Math.min(1000, Math.floor(leadership * 100)) },
+          args: { crewType: 1100, amount: Math.min(1000, Math.floor(leadership * 100)) },
           reason: 'need_crew',
           priority: 90
         };

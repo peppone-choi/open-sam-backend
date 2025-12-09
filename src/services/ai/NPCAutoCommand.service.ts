@@ -129,6 +129,23 @@ export class NPCAutoCommandService {
 
       // SimpleAI를 사용하여 명령 결정
       const ai = new SimpleAI(general, city, nation, gameEnv);
+      
+      // NPC 유형에 따른 AI 옵션 설정
+      const npcType = generalData.npc || 0;
+      const officerLevel = generalData.officer_level || 0;
+      
+      // 모든 NPC에게 기본 AI 옵션 제공 (징병/내정/훈련/전투 허용)
+      const aiOptions = {
+        chief: officerLevel >= 5,  // 수뇌 권한 (officer_level >= 5)
+        develop: true,             // 내정 허용
+        recruit: true,             // 징병 허용
+        train: true,               // 훈련 허용
+        battle: true,              // 전투 허용
+        warp: false,               // 일반 장수는 워프 불가
+      };
+      
+      ai.initializePolicies(aiOptions, null, null);
+      
       const decision = await ai.decideNextCommand();
       
       if (!decision) {
@@ -321,8 +338,20 @@ export class NPCAutoCommandService {
       // 국가 정책 초기화 (수뇌: officer_level >= 5)
       const npcType = generalData.npc || 0;
       
+      // NPC 유형에 따른 AI 옵션 설정
+      // npc >= 2: 완전 자동 NPC (AutorunGeneralPolicy에서 기본값 사용)
+      // npc < 2: 유저장/반자동 (aiOptions에 따라 활성화)
+      const aiOptions = {
+        chief: true,        // 수뇌 권한
+        develop: true,      // 내정 허용
+        recruit: true,      // 징병 허용
+        train: true,        // 훈련 허용
+        battle: true,       // 전투 허용
+        warp: true,         // 워프 허용
+      };
+      
       ai.initializePolicies(
-        { chief: true }, // 수뇌 여부
+        aiOptions,
         null, // nationPolicyOverride
         null  // serverPolicyOverride
       );

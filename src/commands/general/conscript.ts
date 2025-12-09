@@ -270,6 +270,9 @@ export class ConscriptCommand extends GeneralCommand {
     const reqCrewType = this.reqCrewType;
     const currCrewType = this.currCrewType;
     const crewTypeName = reqCrewType?.name || '병종';
+    
+    console.log('[징병 run] this.reqCrewType:', JSON.stringify(this.reqCrewType));
+    console.log('[징병 run] crewTypeName:', crewTypeName);
 
     const logger = general.getLogger();
 

@@ -2,8 +2,45 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const DEFAULT_SCENARIO_ID = process.env.DEFAULT_SCENARIO_ID || 'sangokushi';
-// __dirname 기반으로 프로젝트 루트 계산 (dist/utils -> 프로젝트 루트)
-const PROJECT_ROOT = process.env.PROJECT_ROOT || path.resolve(__dirname, '../..');
+
+// 프로젝트 루트 찾기: package.json이 있는 디렉토리 탐색
+function findProjectRoot(): string {
+  // 환경변수가 설정되어 있으면 사용
+  if (process.env.PROJECT_ROOT) {
+    return process.env.PROJECT_ROOT;
+  }
+  
+  // __dirname 기반으로 탐색 (dist/utils -> 프로젝트 루트)
+  let currentDir = __dirname;
+  
+  // 최대 5단계까지 상위 디렉토리 탐색
+  for (let i = 0; i < 5; i++) {
+    const packageJsonPath = path.join(currentDir, 'package.json');
+    const configDir = path.join(currentDir, 'config', 'scenarios');
+    
+    // config/scenarios 폴더가 있는 디렉토리를 프로젝트 루트로 간주
+    if (fs.existsSync(configDir)) {
+      return currentDir;
+    }
+    
+    // package.json이 있고 이름이 open-sam-backend인지 확인
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        if (pkg.name === 'open-sam-backend') {
+          return currentDir;
+        }
+      } catch {}
+    }
+    
+    currentDir = path.dirname(currentDir);
+  }
+  
+  // 폴백: __dirname 기반
+  return path.resolve(__dirname, '../..');
+}
+
+const PROJECT_ROOT = findProjectRoot();
 
 const scenarioDataDir = path.join(PROJECT_ROOT, 'config', 'scenarios', DEFAULT_SCENARIO_ID, 'data');
 const constantsPath = path.join(scenarioDataDir, 'constants.json');
