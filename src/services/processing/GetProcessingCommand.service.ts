@@ -153,8 +153,8 @@ export class GetProcessingCommandService {
       return await this.getConscriptData(sessionId, generalId, general, env, command);
     }
 
-    // 헌납 커맨드
-    if (command === '헌납' || command === 'che_헌납' || command === 'tribute') {
+    // 헌납/조공 커맨드
+    if (['헌납', 'che_헌납', '조공', 'che_조공', 'tribute'].includes(command)) {
       return await this.getTributeData(sessionId, generalId, generalData);
     }
 
@@ -198,8 +198,8 @@ export class GetProcessingCommandService {
       return await this.getDomesticInvestData(command, general, env);
     }
  
-    // 장비매매 커맨드
-    if (command === '장비매매' || command === 'che_장비매매' || command === 'tradeEquipment') {
+    // 장비매매/장비거래 커맨드
+    if (['장비매매', 'che_장비매매', '장비거래', 'che_장비거래', '재정거래', 'che_재정거래', 'tradeEquipment'].includes(command)) {
       return await this.getTradeEquipmentData(sessionId, generalId);
     }
  
@@ -225,8 +225,8 @@ export class GetProcessingCommandService {
       };
     }
 
-    // 발령 커맨드 (Nation)
-    if (command === '발령' || command === 'che_발령' || command === 'appointGeneral') {
+    // 발령/임명 커맨드 (Nation)
+    if (['발령', 'che_발령', '임명', 'che_임명', 'appointGeneral'].includes(command)) {
       const data = await this.getAppointGeneralData(sessionId, generalId);
       // 맵 데이터 추가
       const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
@@ -242,13 +242,28 @@ export class GetProcessingCommandService {
     }
 
     // 종전제의 커맨드 (Nation)
-    if (command === '종전제의' || command === 'che_종전제의' || command === 'peaceTreaty') {
+    if (['종전제의', 'che_종전제의', 'peaceTreaty'].includes(command)) {
       return await this.getNationTargetData(sessionId, generalId, 'peaceTreaty');
     }
 
     // 불가침파기제의 커맨드 (Nation)
-    if (command === '불가침파기제의' || command === 'che_불가침파기제의' || command === 'breakNoAggression') {
+    if (['불가침파기제의', 'che_불가침파기제의', 'breakNoAggression'].includes(command)) {
       return await this.getNationTargetData(sessionId, generalId, 'breakNoAggression');
+    }
+
+    // 급습 커맨드 (Nation) - 선포/전쟁 중인 국가만 가능
+    if (['급습', 'che_급습', 'surprise'].includes(command)) {
+      return await this.getNationTargetData(sessionId, generalId, 'surprise');
+    }
+
+    // 이호경식 커맨드 (Nation) - 선포/전쟁 중인 국가만 가능
+    if (['이호경식', 'che_이호경식', 'tigerBait'].includes(command)) {
+      return await this.getNationTargetData(sessionId, generalId, 'tigerBait');
+    }
+
+    // 부대탈퇴지시 커맨드 (같은 국가 장수 선택)
+    if (['부대탈퇴지시', 'che_부대탈퇴지시', 'leaveSquad'].includes(command)) {
+      return await this.getGeneralTargetData(sessionId, generalId);
     }
 
     // 불가침제의 커맨드 (Nation)
@@ -266,8 +281,8 @@ export class GetProcessingCommandService {
       return await this.getMovePopulationData(sessionId, generalId);
     }
 
-    // 주둔 재배치 커맨드
-    if (['주둔 재배치', 'reassignUnit', 'REASSIGN_UNIT'].includes(command)) {
+    // 주둔 재배치/부대재편성 커맨드
+    if (['주둔 재배치', '부대재편성', 'che_부대재편성', 'reassignUnit', 'REASSIGN_UNIT'].includes(command)) {
       return await this.getReassignUnitData(sessionId, general);
     }
 
@@ -2044,6 +2059,9 @@ export class GetProcessingCommandService {
       } else if (commandType === 'breakNoAggression') {
         // 불가침파기제의: 불가침(7)인 국가만 가능
         notAvailable = !dip || dip.state !== 7;
+      } else if (commandType === 'surprise' || commandType === 'tigerBait') {
+        // 급습/이호경식: 전쟁중(0) 또는 선포중(1)인 국가만 가능
+        notAvailable = !dip || (dip.state !== 0 && dip.state !== 1);
       }
       
       return {
@@ -2061,6 +2079,50 @@ export class GetProcessingCommandService {
     return {
       nations: nationList,
       mapData: mapData.success && mapData.result ? mapData : null,
+    };
+  }
+
+  /**
+   * 장수 타겟 커맨드 데이터 (부대탈퇴지시 등)
+   */
+  private static async getGeneralTargetData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
+    if (!general) {
+      return { generals: [] };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 같은 국가의 장수 목록 (자기 자신 제외)
+    const generals = (await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.nation': nationID,
+      no: { $ne: generalId }
+    }).exec())
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    const generalList = generals.map((gen: any) => {
+      const genData = gen.data || {};
+      return {
+        no: gen.no,
+        name: gen.name,
+        nationID: genData.nation || 0,
+        officerLevel: genData.officer_level || 1,
+        npc: genData.npc || 0,
+        leadership: genData.leadership || 0,
+        strength: genData.strength || 0,
+        intel: genData.intel || 0,
+        cityID: genData.city || 0,
+      };
+    });
+
+    return {
+      generals: generalList,
     };
   }
 }

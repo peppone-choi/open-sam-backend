@@ -1433,7 +1433,15 @@ export class SimpleAI {
   }
 
   /**
-   * 국가 명령 평가 (군주 전용)
+   * 국가 명령 평가 (수뇌/군주)
+   * 
+   * PHP availableChiefCommand 기반:
+   * - 휴식: 휴식
+   * - 인사: 발령, 포상, 몰수, 부대탈퇴지시
+   * - 외교: 물자원조, 불가침제의, 선전포고, 종전제의, 불가침파기제의
+   * - 특수: 초토화, 천도, 증축, 감축
+   * - 전략: 필사즉생, 백성동원, 수몰, 허보, 의병모집, 이호경식, 급습, 피장파장
+   * - 기타: 국기변경, 국호변경
    */
   private async evaluateNationCommands(
     stats: GeneralStats,
@@ -1441,34 +1449,256 @@ export class SimpleAI {
   ): Promise<AICommandDecision[]> {
     const commands: AICommandDecision[] = [];
     const nationData = this.nation?.data || this.nation;
+    const cityData = this.city?.data || this.city;
 
-    // 포상
-    if (stats.gold >= 10000 && nationData.gold >= 5000) {
+    if (!nationData) {
+      console.log('[SimpleAI] 국가 명령 평가 - 국가 데이터 없음');
+      return commands;
+    }
+
+    const nationGold = nationData.gold || 0;
+    const nationRice = nationData.rice || 0;
+    const isAtWar = nationData.war || (nationData.diplomatic_state === 'war');
+    const officerLevel = stats.officerLevel || 0;
+
+    // ========================================
+    // 1. 휴식 (항상 가능)
+    // ========================================
+    commands.push({
+      command: '휴식',
+      args: {},
+      weight: 1,
+      reason: '기본 명령'
+    });
+
+    // ========================================
+    // 2. 인사 명령
+    // ========================================
+
+    // 포상 - 자금 충분할 때
+    if (nationGold >= 5000) {
       commands.push({
-        command: '포상',
+        command: 'che_포상',
         args: {},
         weight: 5,
         reason: '국가 자금 충분, 장수 사기 증진'
       });
     }
 
-    // 선전포고 (평화 시, 자원 충분, 기술 발전)
+    // 발령 - 항상 가능 (수뇌만)
+    if (officerLevel >= 5) {
+      commands.push({
+        command: 'che_발령',
+        args: {},
+        weight: 3,
+        reason: '장수 관직 임명/해임'
+      });
+    }
+
+    // 몰수 - 항상 가능
+    commands.push({
+      command: 'che_몰수',
+      args: {},
+      weight: 2,
+      reason: '장수 자원 몰수'
+    });
+
+    // 부대탈퇴지시
+    commands.push({
+      command: 'che_부대탈퇴지시',
+      args: {},
+      weight: 1,
+      reason: '부대원 탈퇴 지시'
+    });
+
+    // ========================================
+    // 3. 외교 명령
+    // ========================================
+
+    // 물자원조 - 자원 충분할 때 동맹국에
+    if (nationGold >= 10000 || nationRice >= 10000) {
+      commands.push({
+        command: 'che_물자원조',
+        args: {},
+        weight: 3,
+        reason: '동맹국 지원'
+      });
+    }
+
+    // 불가침제의 - 평화 시
+    if (!isAtWar) {
+      commands.push({
+        command: 'che_불가침제의',
+        args: {},
+        weight: 4,
+        reason: '평화 유지'
+      });
+    }
+
+    // 선전포고 - 조건 충족 시
     const canDeclareWar = await this.shouldDeclareWar(nationData);
     if (canDeclareWar) {
       commands.push({
-        command: '선전포고',
+        command: 'che_선전포고',
         args: { targetNationId: canDeclareWar },
         weight: 15,
         reason: '전쟁 준비 완료'
       });
     }
 
-    // 부대 발령 명령 평가 (수뇌/군주만)
+    // 종전제의 - 전쟁 중일 때
+    if (isAtWar) {
+      commands.push({
+        command: 'che_종전제의',
+        args: {},
+        weight: 3,
+        reason: '전쟁 종료 요청'
+      });
+    }
+
+    // 불가침파기제의
+    commands.push({
+      command: 'che_불가침파기제의',
+      args: {},
+      weight: 1,
+      reason: '불가침 조약 파기'
+    });
+
+    // ========================================
+    // 4. 특수 명령
+    // ========================================
+
+    // 초토화 - 전쟁 중이고 상황이 불리할 때
+    if (isAtWar) {
+      commands.push({
+        command: 'che_초토화',
+        args: {},
+        weight: 2,
+        reason: '적군 보급 차단'
+      });
+    }
+
+    // 천도 - 수도 이전 (큰 결정)
+    if (nationGold >= 50000) {
+      commands.push({
+        command: 'che_천도',
+        args: {},
+        weight: 1,
+        reason: '수도 이전'
+      });
+    }
+
+    // 증축 - 도시 레벨 업
+    if (nationGold >= 10000) {
+      commands.push({
+        command: 'che_증축',
+        args: {},
+        weight: 4,
+        reason: '도시 레벨 향상'
+      });
+    }
+
+    // 감축 - 도시 레벨 다운
+    commands.push({
+      command: 'che_감축',
+      args: {},
+      weight: 1,
+      reason: '도시 레벨 축소'
+    });
+
+    // ========================================
+    // 5. 전략 명령
+    // ========================================
+
+    // 필사즉생 - 전쟁 중 위급할 때
+    if (isAtWar) {
+      commands.push({
+        command: 'che_필사즉생',
+        args: {},
+        weight: 2,
+        reason: '위급 상황 돌파'
+      });
+    }
+
+    // 백성동원 - 인구 충분할 때
+    if (cityData && (cityData.pop || 0) >= 50000) {
+      commands.push({
+        command: 'che_백성동원',
+        args: {},
+        weight: 5,
+        reason: '병력 확보'
+      });
+    }
+
+    // 수몰 - 물이 있는 도시에서
+    if (isAtWar) {
+      commands.push({
+        command: 'che_수몰',
+        args: {},
+        weight: 2,
+        reason: '수공 작전'
+      });
+    }
+
+    // 허보 - 정보전
+    commands.push({
+      command: 'che_허보',
+      args: {},
+      weight: 3,
+      reason: '거짓 정보 유포'
+    });
+
+    // 의병모집
+    if (isAtWar) {
+      commands.push({
+        command: 'che_의병모집',
+        args: {},
+        weight: 4,
+        reason: '의병 소집'
+      });
+    }
+
+    // 이호경식 - 이간계
+    commands.push({
+      command: 'che_이호경식',
+      args: {},
+      weight: 2,
+      reason: '적국 분열 유도'
+    });
+
+    // 급습 - 기습 공격
+    if (isAtWar) {
+      commands.push({
+        command: 'che_급습',
+        args: {},
+        weight: 6,
+        reason: '기습 공격'
+      });
+    }
+
+    // 피장파장 - 동시 피해
+    if (isAtWar) {
+      commands.push({
+        command: 'che_피장파장',
+        args: {},
+        weight: 2,
+        reason: '상호 피해'
+      });
+    }
+
+    // ========================================
+    // 6. 기타 명령 (AI는 잘 안씀)
+    // ========================================
+    // 국기변경, 국호변경은 AI가 사용하지 않음
+
+    // ========================================
+    // 7. 부대 발령 명령 평가 (기존 로직)
+    // ========================================
     const dispatchCommands = await this.evaluateTroopDispatchCommands();
     commands.push(...dispatchCommands);
 
-    // FUTURE: 천도, 외교 등 추가
-
+    console.log(`[SimpleAI] 국가 명령 후보 생성: ${commands.length}개 (전쟁중: ${isAtWar}, 자금: ${nationGold})`);
+    
     return commands;
   }
 
