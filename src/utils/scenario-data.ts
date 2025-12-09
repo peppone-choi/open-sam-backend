@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const DEFAULT_SCENARIO_ID = process.env.DEFAULT_SCENARIO_ID || 'sangokushi';
-const PROJECT_ROOT = process.env.PROJECT_ROOT || process.cwd();
+// __dirname 기반으로 프로젝트 루트 계산 (dist/utils -> 프로젝트 루트)
+const PROJECT_ROOT = process.env.PROJECT_ROOT || path.resolve(__dirname, '../..');
 
 const scenarioDataDir = path.join(PROJECT_ROOT, 'config', 'scenarios', DEFAULT_SCENARIO_ID, 'data');
 const constantsPath = path.join(scenarioDataDir, 'constants.json');
