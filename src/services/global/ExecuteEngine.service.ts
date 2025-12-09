@@ -2147,7 +2147,59 @@ export class ExecuteEngineService {
 
     // 랜덤 이벤트 처리 (매월)
     await this.processRandomEvents(sessionId, gameEnv);
+
+    // 도시 이벤트 상태 감소 및 초기화 (매월)
+    await this.processCityEventStates(sessionId);
   }
+
+  /**
+   * 도시 이벤트 상태 처리
+   * - term이 0보다 큰 도시는 term을 1 감소
+   * - term이 0 이하가 된 도시는 state를 0으로 초기화
+   */
+  private static async processCityEventStates(sessionId: string) {
+    try {
+      // state > 0이고 term > 0인 도시들의 term을 1 감소
+      await cityRepository.updateManyByFilter(
+        {
+          session_id: sessionId,
+          $or: [
+            { state: { $gt: 0 }, term: { $gt: 0 } },
+            { 'data.state': { $gt: 0 }, 'data.term': { $gt: 0 } }
+          ]
+        },
+        {
+          $inc: { 
+            term: -1,
+            'data.term': -1
+          }
+        }
+      );
+
+      // term이 0 이하가 된 도시들의 state를 0으로 초기화
+      await cityRepository.updateManyByFilter(
+        {
+          session_id: sessionId,
+          $or: [
+            { state: { $gt: 0 }, term: { $lte: 0 } },
+            { 'data.state': { $gt: 0 }, 'data.term': { $lte: 0 } }
+          ]
+        },
+        {
+          $set: {
+            state: 0,
+            'data.state': 0
+          }
+        }
+      );
+
+      logger.debug('[processCityEventStates] City event states processed', { sessionId });
+    } catch (error: any) {
+      logger.error('[processCityEventStates] Failed to process city event states', {
+        sessionId,
+        error: error.message
+      });
+    }
 
   /**
    * 랜덤 이벤트 처리

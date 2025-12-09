@@ -48,6 +48,10 @@ export class BountifulHarvest extends Action {
       city.pop = (city.pop || 0) + popBonus;
       city.trust = Math.min(100, (city.trust || 50) + trustBonus);
 
+      // 도시 상태 설정 (이벤트 아이콘 표시용) - event1.gif = 풍년
+      city.state = 1;
+      city.term = 2; // 2턴 동안 표시
+
       // 도시 저장
       const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
       await saveCity(sessionId, city.city, cityData);

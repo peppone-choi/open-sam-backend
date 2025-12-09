@@ -20,6 +20,7 @@ interface DisasterConfig {
     troops?: number;   // 병사 감소율 (역병)
   };
   message: string;
+  stateCode: number;   // 도시 상태 코드 (이벤트 아이콘)
 }
 
 const DISASTER_CONFIGS: Record<DisasterType, DisasterConfig> = {
@@ -27,25 +28,29 @@ const DISASTER_CONFIGS: Record<DisasterType, DisasterConfig> = {
     name: '가뭄',
     icon: '☀️',
     effects: { pop: 0.05, agri: 0.15, trust: 5 },
-    message: '가뭄으로 인해 농작물이 말라버렸습니다.'
+    message: '가뭄으로 인해 농작물이 말라버렸습니다.',
+    stateCode: 2 // event2.gif
   },
   flood: {
     name: '홍수',
     icon: '🌊',
     effects: { pop: 0.08, agri: 0.20, comm: 0.10, trust: 8 },
-    message: '홍수로 인해 도시가 큰 피해를 입었습니다.'
+    message: '홍수로 인해 도시가 큰 피해를 입었습니다.',
+    stateCode: 5 // event5.gif
   },
   plague: {
     name: '역병',
     icon: '🦠',
     effects: { pop: 0.15, troops: 0.10, trust: 10 },
-    message: '역병이 창궐하여 백성들이 쓰러지고 있습니다.'
+    message: '역병이 창궐하여 백성들이 쓰러지고 있습니다.',
+    stateCode: 6 // event6.gif
   },
   locust: {
     name: '메뚜기떼',
     icon: '🦗',
     effects: { agri: 0.25, trust: 3 },
-    message: '메뚜기떼가 농작물을 모두 먹어치웠습니다.'
+    message: '메뚜기떼가 농작물을 모두 먹어치웠습니다.',
+    stateCode: 3 // event3.gif
   }
 };
 
@@ -118,6 +123,10 @@ export class RandomDisaster extends Action {
       if (config.effects.trust) {
         city.trust = Math.max(0, (city.trust || 50) - config.effects.trust);
       }
+
+      // 도시 상태 설정 (이벤트 아이콘 표시용)
+      city.state = config.stateCode;
+      city.term = 2; // 2턴 동안 표시
 
       // 역병인 경우 해당 도시 병사들에게도 피해
       if (selectedType === 'plague' && config.effects.troops) {

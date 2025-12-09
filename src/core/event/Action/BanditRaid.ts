@@ -73,6 +73,10 @@ export class BanditRaid extends Action {
         await saveNation(sessionId, nationId, nationData);
       }
 
+      // 5. 도시 상태 설정 (이벤트 아이콘 표시용) - event4.gif = 도적
+      city.state = 4;
+      city.term = 2; // 2턴 동안 표시
+
       // 도시 저장
       const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
       await saveCity(sessionId, city.city, cityData);

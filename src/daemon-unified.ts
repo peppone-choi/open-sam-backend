@@ -505,8 +505,8 @@ async function syncToDB() {
         // 큐 아이템 조회
         const queueData = await getSyncQueueItem(item.key);
         if (!queueData || !queueData.data) {
-          // Invalid sync queue item - 로그 추가하고 삭제
-          logger.warn('Invalid sync queue item', { key: item.key });
+          // TTL 만료 또는 다른 프로세스가 이미 처리 - 정상 상황
+          // scanSyncQueue와 getSyncQueueItem 사이에 TTL 만료될 수 있음
           await removeFromSyncQueue(item.key);
           continue;
         }

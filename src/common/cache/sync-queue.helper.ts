@@ -82,16 +82,38 @@ export async function scanSyncQueue(
 
 /**
  * 동기화 큐 아이템 조회
+ * 
+ * 참고: scanSyncQueue와 getSyncQueueItem 사이에 TTL이 만료될 수 있음
+ * 이 경우 null을 반환하며, 이는 정상적인 상황임 (경고 아님)
  */
 export async function getSyncQueueItem(key: string): Promise<any | null> {
   try {
     const data: any = await cacheManager.getL2(key);
     if (!data) {
-      logger.debug('동기화 큐 아이템 없음 (TTL 만료 또는 삭제됨)', { key });
+      // TTL 만료 또는 다른 프로세스가 처리 완료 - 정상 상황
+      logger.debug('동기화 큐 아이템 없음 (TTL 만료 또는 이미 처리됨)', { key });
       return null;
     }
     if (!data.data) {
-      logger.warn('동기화 큐 아이템에 data 필드 없음', { key, itemKeys: Object.keys(data) });
+      // data 필드가 없는 경우 - 데이터 구조 문제
+      // 단, type/id/timestamp만 있고 data가 빈 객체일 수 있으므로 상세 확인
+      if (data.type && data.id !== undefined) {
+        // 최소 필수 필드는 있으나 data가 비어있음 - 삭제 대상
+        logger.debug('동기화 큐 아이템 data 필드 비어있음 (삭제 예정)', { 
+          key, 
+          type: data.type, 
+          id: data.id 
+        });
+      } else {
+        // 완전히 손상된 데이터
+        logger.warn('동기화 큐 아이템 구조 손상', { 
+          key, 
+          itemKeys: Object.keys(data),
+          hasType: !!data.type,
+          hasId: data.id !== undefined,
+          hasData: !!data.data
+        });
+      }
       return null;
     }
     return data;
