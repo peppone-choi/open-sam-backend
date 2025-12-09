@@ -584,7 +584,9 @@ router.post('/characters/:sessionId/:characterId/modify-resources', requireGM, a
     character.markModified('resources');
     await character.save();
 
-    await logAudit(req, value > 0 ? 'RESOURCE_ADD' : 'RESOURCE_REMOVE', {
+    // 자원 변경량 총합으로 액션 유형 결정
+    const totalChange = Object.values(resources as Record<string, number>).reduce((sum: number, v) => sum + (typeof v === 'number' ? v : 0), 0);
+    await logAudit(req, totalChange >= 0 ? 'RESOURCE_ADD' : 'RESOURCE_REMOVE', {
       category: 'resource',
       targetId: characterId,
       targetType: 'character',

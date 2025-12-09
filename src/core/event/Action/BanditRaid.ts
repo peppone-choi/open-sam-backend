@@ -80,7 +80,7 @@ export class BanditRaid extends Action {
       affectedCities.push(cityName);
 
       // 로그 기록
-      const logger = new ActionLogger(0, nationId, year, month);
+      const logger = new ActionLogger(0, nationId, year, month, sessionId);
       logger.pushGlobalHistoryLog(
         `<R><b>【🏴‍☠️ 도적】</b></><Y>${cityName}</>에 도적떼가 출현하여 약탈을 자행했습니다!`
       );

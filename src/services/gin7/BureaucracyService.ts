@@ -24,10 +24,10 @@ import {
   OPERATION_MERIT_BONUS,
   OPERATION_PARTICIPATION_BONUS,
 } from '../../models/gin7/OperationPlan';
-import { GovernmentStructure, IPositionHolder } from '../../models/gin7/GovernmentStructure';
+import { GovernmentStructure, IPositionHolder, PositionType } from '../../models/gin7/GovernmentStructure';
 import { Fleet, IFleet } from '../../models/gin7/Fleet';
 import { RankLadder } from '../../models/gin7/RankLadder';
-import { Message } from '../../models/gin7/Message';
+import { Gin7Message as Message } from '../../models/gin7/Message';
 import { logger } from '../../common/logger';
 
 // ============================================================================
@@ -720,7 +720,10 @@ export class BureaucracyService extends EventEmitter {
     
     if (activeOperation) {
       // 작전 구역 내 여부 확인
-      inOperationZone = activeOperation.isInOperationZone(systemId, planetId);
+      const zone = activeOperation.operationZone;
+      inOperationZone = zone?.systemIds?.includes(systemId) || 
+                        zone?.planetIds?.includes(planetId || '') || 
+                        false;
       
       if (inOperationZone) {
         // 작전 구역 내: +20%
@@ -1023,7 +1026,7 @@ export class BureaucracyService extends EventEmitter {
     }).then(operations =>
       operations.filter(op => {
         const currentStep = op.approvalChain[op.currentApprovalStep];
-        return currentStep && positionTypes.includes(currentStep.positionType);
+        return currentStep && positionTypes.includes(currentStep.positionType as PositionType);
       })
     );
   }

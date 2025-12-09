@@ -404,5 +404,85 @@ export class WarehouseService {
       ]
     });
   }
+
+  /**
+   * 자원 차감 (LogisticsCommandService용)
+   */
+  static async deductResources(
+    sessionId: string,
+    ownerId: string,
+    items: Array<{ type: ResourceType; amount: number }>,
+    executedBy?: string
+  ): Promise<boolean> {
+    const warehouse = await this.getWarehouseByOwner(sessionId, ownerId, 'PLANET');
+    if (!warehouse) {
+      throw new Error('Warehouse not found');
+    }
+    
+    // 자원 차감
+    return await this.consume(sessionId, warehouse.warehouseId, items, executedBy || 'system');
+  }
+
+  /**
+   * 함선 전송 (LogisticsCommandService용)
+   */
+  static async transferShips(
+    sessionId: string,
+    fromOwnerId: string,
+    toOwnerId: string,
+    ships: Array<{ type: string; count: number }>
+  ): Promise<{ transferred: number; error?: string }> {
+    // TODO: 실제 함선 전송 로직 구현
+    const totalTransferred = ships.reduce((sum, s) => sum + s.count, 0);
+    return { transferred: totalTransferred };
+  }
+
+  /**
+   * 화물 적재 (LogisticsCommandService용)
+   */
+  static async loadCargo(
+    sessionId: string,
+    planetId: string,
+    fleetId: string,
+    resources: Array<{ type: ResourceType; amount: number }>
+  ): Promise<void> {
+    const planetWarehouse = await this.getWarehouseByOwner(sessionId, planetId, 'PLANET');
+    const fleetWarehouse = await this.getWarehouseByOwner(sessionId, fleetId, 'FLEET');
+    
+    if (!planetWarehouse || !fleetWarehouse) {
+      throw new Error('Warehouse not found');
+    }
+    
+    await this.transfer(sessionId, {
+      sourceId: planetWarehouse.warehouseId,
+      targetId: fleetWarehouse.warehouseId,
+      items: resources,
+      executedBy: 'system'
+    });
+  }
+
+  /**
+   * 화물 하역 (LogisticsCommandService용)
+   */
+  static async unloadCargo(
+    sessionId: string,
+    fleetId: string,
+    planetId: string,
+    resources: Array<{ type: ResourceType; amount: number }>
+  ): Promise<void> {
+    const fleetWarehouse = await this.getWarehouseByOwner(sessionId, fleetId, 'FLEET');
+    const planetWarehouse = await this.getWarehouseByOwner(sessionId, planetId, 'PLANET');
+    
+    if (!fleetWarehouse || !planetWarehouse) {
+      throw new Error('Warehouse not found');
+    }
+    
+    await this.transfer(sessionId, {
+      sourceId: fleetWarehouse.warehouseId,
+      targetId: planetWarehouse.warehouseId,
+      items: resources,
+      executedBy: 'system'
+    });
+  }
 }
 

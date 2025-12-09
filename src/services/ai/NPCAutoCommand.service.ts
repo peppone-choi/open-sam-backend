@@ -43,25 +43,31 @@ export class NPCAutoCommandService {
     const npcType = general.npc || general.data?.npc || 0;
     const generalData = general.data || general;
     const owner = generalData.owner || general.owner;
+    const generalName = generalData.name || general.name || `General ${general.no}`;
     
     // 플레이어(npc=0)는 스킵
     if (npcType < 1) {
+      // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 플레이어 (npc=${npcType})`);
       return { success: false };
     }
     
     // 유저가 소유한 NPC는 스킵 (owner가 있으면 유저가 플레이 중)
-    if (owner) {
+    // NOTE: owner가 숫자 0이거나 '0' 문자열이면 무시 (실제 소유자가 없음)
+    if (owner && owner !== 0 && owner !== '0') {
+      // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 유저 소유 (owner=${owner})`);
       return { success: false };
     }
     
     // 반자동 NPC(npc=1)는 플레이어 접속 중이면 스킵
     if (npcType === 1 && isPlayerActive(general)) {
+      // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 반자동 NPC 접속 중`);
       return { success: false };
     }
 
     // city=0 (방랑/미등장) 장수는 스킵
     const cityId = generalData.city;
     if (!cityId || cityId === 0) {
+      // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 도시 없음 (city=${cityId})`);
       return { success: false };
     }
 

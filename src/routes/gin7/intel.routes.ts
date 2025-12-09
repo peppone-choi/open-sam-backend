@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import MailService from '../../services/gin7/MailService';
+import { mailService } from '../../services/gin7/MailService';
 import IntelService from '../../services/gin7/IntelService';
 import ConspiracyService from '../../services/gin7/ConspiracyService';
 
@@ -23,7 +23,7 @@ router.get('/mail/:boxId', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'sessionId required' });
     }
 
-    const result = await MailService.getMessages({
+    const result = await mailService.getInbox({
       sessionId,
       mailBoxId: boxId,
       page,
@@ -66,7 +66,7 @@ router.post('/mail/send', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Either recipientId or recipientRoleId required' });
     }
 
-    const message = await MailService.sendMail({
+    const result = await mailService.sendMail({
       sessionId,
       senderId,
       senderName,
@@ -80,7 +80,7 @@ router.post('/mail/send', async (req: Request, res: Response) => {
       replyToId
     });
 
-    return res.json({ success: true, message });
+    return res.json({ success: true, messageId: result.messageId });
   } catch (error: any) {
     console.error('Send mail error:', error);
     return res.status(500).json({ error: error.message || 'Failed to send message' });
@@ -100,8 +100,8 @@ router.post('/mail/:messageId/read', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'sessionId required' });
     }
 
-    const message = await MailService.markAsRead(sessionId, messageId);
-    return res.json({ success: true, message });
+    const success = await mailService.markAsRead(sessionId, messageId);
+    return res.json({ success });
   } catch (error) {
     console.error('Mark read error:', error);
     return res.status(500).json({ error: 'Failed to mark as read' });
@@ -122,8 +122,8 @@ router.delete('/mail/:messageId', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'sessionId and mailBoxId required' });
     }
 
-    const success = await MailService.deleteMessage(sessionId, messageId, mailBoxId);
-    return res.json({ success });
+    const result = await mailService.deleteMail(sessionId, messageId, mailBoxId);
+    return res.json({ success: result.success });
   } catch (error) {
     console.error('Delete message error:', error);
     return res.status(500).json({ error: 'Failed to delete message' });
@@ -146,9 +146,9 @@ router.get('/mailbox', async (req: Request, res: Response) => {
 
     let mailBox;
     if (characterId) {
-      mailBox = await MailService.getOrCreateMailBox(sessionId, characterId);
+      mailBox = await mailService.getOrCreateMailBox(sessionId, characterId);
     } else if (roleId) {
-      mailBox = await MailService.getOrCreateRoleMailBox(sessionId, roleId);
+      mailBox = await mailService.getOrCreateRoleMailBox(sessionId, roleId);
     } else {
       return res.status(400).json({ error: 'characterId or roleId required' });
     }

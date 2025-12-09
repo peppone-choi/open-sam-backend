@@ -42,3 +42,8 @@ const BattleLogSchema = new Schema({
 
 export const BattleLog = mongoose.models.BattleLog || mongoose.model<IBattleLog>('BattleLog', BattleLogSchema);
 
+
+
+
+
+

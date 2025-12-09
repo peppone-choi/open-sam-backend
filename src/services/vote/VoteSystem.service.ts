@@ -599,7 +599,7 @@ export class VoteSystemService {
       const setResult = await PolicyService.setPolicy(
         sessionId,
         nationId,
-        policyChange.newPolicy,
+        policyChange.newPolicy as any,
         0, // 투표에 의한 변경이므로 setterId = 0
         year,
         month
@@ -662,12 +662,14 @@ export class VoteSystemService {
         return { result: false, message: '대상 도시를 찾을 수 없습니다.' };
       }
 
-      const targetCityNation = targetCity.nation || targetCity.data?.nation;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cityData = targetCity as any;
+      const targetCityNation = cityData.nation || cityData.data?.nation;
       if (targetCityNation !== nationId) {
         return { result: false, message: '자국 도시만 수도로 지정할 수 있습니다.' };
       }
 
-      const targetCityName = targetCity.name || targetCity.data?.name || `도시${targetCityId}`;
+      const targetCityName = cityData.name || cityData.data?.name || `도시${targetCityId}`;
 
       // 수도 변경
       await nationRepository.updateBySessionAndNationId(sessionId, nationId, {

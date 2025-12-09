@@ -443,7 +443,7 @@ export class TacticalSession extends EventEmitter {
             fleetFormationService.startFormationChange({
               fleetId,
               targetFormation: formationData.targetFormation as AdvFormationType,
-              priority: formationData.priority,
+              priority: formationData.priority as 'NORMAL' | 'URGENT',
             });
             
             logger.debug('[TacticalSession] Formation change initiated', {
@@ -763,6 +763,7 @@ export class TacticalSession extends EventEmitter {
       frigate: 1.0,
       corvette: 1.2,
       transport: 0.4,
+      landing: 0.45,
       engineering: 0.5,
     };
     const baseTurnRate = turnRateByClass[unit.shipClass] ?? 0.5;

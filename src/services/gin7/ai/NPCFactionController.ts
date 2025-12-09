@@ -247,7 +247,8 @@ export class NPCFactionController extends EventEmitter {
     
     // 적 진영 정보
     const gameSession = await GameSession.findOne({ sessionId: this.sessionId }).lean();
-    const allFactions = gameSession?.factions || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allFactions = (gameSession as any)?.factions || [];
     const atWarWith = allFactions
       .filter(f => f.factionId !== faction.factionId && f.isAtWar)
       .map(f => f.factionId);

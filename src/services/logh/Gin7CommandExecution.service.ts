@@ -404,7 +404,28 @@ class GalaxyCommanderAdapter implements ILoghCommandExecutor {
     return this.character.faction === 'empire' ? 'empire' : 'alliance';
   }
 
-  getRank(): string {
+  getRank(): number {
+    // 계급 문자열을 숫자로 변환 (예: 'lieutenant' -> 3)
+    const rankMap: Record<string, number> = {
+      'private': 1,
+      'corporal': 2,
+      'sergeant': 3,
+      'lieutenant': 4,
+      'captain': 5,
+      'major': 6,
+      'lieutenant_colonel': 7,
+      'colonel': 8,
+      'brigadier': 9,
+      'major_general': 10,
+      'lieutenant_general': 11,
+      'general': 12,
+      'admiral': 13,
+      'marshal': 14
+    };
+    return rankMap[this.character.rank] || 1;
+  }
+
+  getRankName(): string {
     return this.character.rank;
   }
 

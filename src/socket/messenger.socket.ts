@@ -45,7 +45,8 @@ export class MessengerSocketHandler {
    * 소켓 연결 처리
    */
   handleConnection(socket: Socket): void {
-    const user = socket.user as { userId?: string; characterId?: string };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (socket as any).user as { userId?: string; characterId?: string };
     const sessionId = socket.handshake.query?.sessionId as string;
     
     if (!sessionId) {

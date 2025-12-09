@@ -36,3 +36,8 @@ Mongoose 스키마 코드를 작성해주세요.
 `saveGameResult(gameId, winnerNationId)` 메서드를 만들어, 게임이 끝났을 때 관련 데이터를 긁어모아 DB에 저장하는 로직을 완성해주세요.
 ```
 
+
+
+
+
+

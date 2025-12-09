@@ -233,5 +233,5 @@ RankLadderSchema.statics.getPromotionCandidate = async function(
 // ============================================================================
 
 export const RankLadder: RankLadderModel = 
-  mongoose.models.RankLadder || mongoose.model<IRankLadderEntry, RankLadderModel>('RankLadder', RankLadderSchema);
+  (mongoose.models.RankLadder as RankLadderModel) || mongoose.model<IRankLadderEntry, RankLadderModel>('RankLadder', RankLadderSchema);
 

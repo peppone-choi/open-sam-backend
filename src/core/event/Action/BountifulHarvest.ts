@@ -55,7 +55,7 @@ export class BountifulHarvest extends Action {
       affectedCities.push(cityName);
 
       // 로그 기록
-      const logger = new ActionLogger(0, nationId, year, month);
+      const logger = new ActionLogger(0, nationId, year, month, sessionId);
       logger.pushGlobalHistoryLog(
         `<G><b>【🌾 풍년】</b></><Y>${cityName}</>에 풍년이 들어 백성들이 기뻐하고 있습니다!`
       );

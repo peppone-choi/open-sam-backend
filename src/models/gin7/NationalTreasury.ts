@@ -113,6 +113,9 @@ export interface INationalTreasury extends Document {
   // 메타데이터
   lastUpdated: Date;
   data: Record<string, unknown>;
+  
+  // Methods
+  recalculateCreditRating(): void;
 }
 
 const BudgetAllocationSchema = new Schema<IBudgetAllocation>({

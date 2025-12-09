@@ -5,12 +5,12 @@ import mongoose from 'mongoose';
 export class GetHistoryService {
   static async execute(data: any, _user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
-    const year = parseInt(data.year) || 0;
-    const month = parseInt(data.month) || 0;
-    const serverID = data.serverID || 'sangokushi';
+    const year = data.year ? parseInt(data.year) : undefined;
+    const month = data.month ? parseInt(data.month) : undefined;
+    const serverID = data.serverID || sessionId || 'sangokushi';
     
     try {
-      const session = await sessionRepository.findBySessionId(sessionId );
+      const session = await sessionRepository.findBySessionId(sessionId);
       if (!session) {
         return {
           success: false,
@@ -18,12 +18,21 @@ export class GetHistoryService {
         };
       }
 
-      // Mongoose 모델 사용 (히스토리는 로그 데이터이므로 DB 직접 조회 허용)
-      const history = await (NgHistory as any).findOne({
-        server_id: serverID,
-        year: year,
-        month: month
-      });
+      let history;
+      
+      // year/month가 없으면 최신 기록 반환
+      if (!year || !month) {
+        history = await (NgHistory as any).findOne({
+          server_id: serverID
+        }).sort({ year: -1, month: -1 });
+      } else {
+        // 특정 년/월 기록 조회
+        history = await (NgHistory as any).findOne({
+          server_id: serverID,
+          year: year,
+          month: month
+        });
+      }
 
       if (!history) {
         return {

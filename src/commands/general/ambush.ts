@@ -40,8 +40,10 @@ export class AmbushCommand extends FireAttackCommand {
     const affectedCount = destGenerals.length;
 
     for (const destGen of destGenerals) {
-      const crew = destGen.data?.crew || destGen.crew || 0;
-      const atmos = destGen.data?.atmos || destGen.atmos || 100;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const genData = destGen as any;
+      const crew = genData.data?.crew || genData.crew || 0;
+      const atmos = genData.data?.atmos || genData.atmos || 100;
       
       // 병력 5-15% 손실
       const crewLossRate = rng.nextRangeInt(5, 15) / 100;

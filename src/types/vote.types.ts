@@ -164,9 +164,12 @@ export interface CandidateInfo {
 }
 
 export interface PolicyChangeInfo {
-  type: 'tax_rate' | 'bill' | 'secret_limit' | 'block_war' | 'block_scout';
+  type: 'tax_rate' | 'bill' | 'secret_limit' | 'block_war' | 'block_scout' | 'capital_move';
   currentValue: number | boolean;
   newValue: number | boolean;
+  newPolicy?: string;         // 새 정책 ID
+  newPolicyName?: string;     // 새 정책 이름
+  targetCityId?: number;      // 천도 대상 도시 ID
 }
 
 export interface DiplomacyVoteInfo {
@@ -190,8 +193,10 @@ export interface VoteRecord {
 export interface VoteResult {
   voteId: number;
   totalVoters: number;
+  totalVotes?: number;  // Alias for totalVoters (backwards compatibility)
   votesCast: number;
   results: VoteOptionResult[];
+  options?: Array<{ votes: number }>;  // Simplified options array
   status: VoteStatus;
   winner?: number;
 }

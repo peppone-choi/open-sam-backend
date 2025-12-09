@@ -276,11 +276,10 @@ router.post('/city', authenticate, async (req, res) => {
     const myNationId = (general as any).data?.nation || (general as any).nation || 0;
     const cityNationId = city.data?.nation ?? city.nation ?? 0;
 
-    // 권한 체크: 아군 도시, 공백지, 또는 스파이한 도시만 볼 수 있음
-    const isMyNation = myNationId === cityNationId;
-    const isNeutral = cityNationId === 0;
+    // 권한 체크: 아군 도시 또는 스파이한 도시만 볼 수 있음 (공백지도 첩보 필요)
+    const isMyNation = myNationId === cityNationId && myNationId > 0;
 
-    let canView = isMyNation || isNeutral;
+    let canView = isMyNation;
 
     // 타국 도시는 스파이 여부 확인
     if (!canView && myNationId > 0) {

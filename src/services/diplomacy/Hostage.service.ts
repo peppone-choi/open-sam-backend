@@ -358,7 +358,7 @@ export class HostageService {
         sessionId,
         hostage.hostNationId,
         hostage.originalNationId,
-        1 // 적대
+        'hostile' // 적대
       );
 
       // 로그 기록

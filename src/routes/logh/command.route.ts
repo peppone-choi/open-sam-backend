@@ -92,7 +92,8 @@ router.post('/command/execute', authenticate, validateSession, async (req, res) 
       },
       getNationID: () => commander.faction === 'empire' ? 1 : 2,
       getFactionType: () => commander.faction,
-      getRank: () => commander.getRankName(),
+      getRank: () => commander.rank,
+      getRankName: () => commander.getRankName(),
       getCommandPoints: () => commander.commandPoints.military,
       consumeCommandPoints: (amount: number, type: 'PCP' | 'MCP' = 'MCP') => {
         if (type === 'PCP') {

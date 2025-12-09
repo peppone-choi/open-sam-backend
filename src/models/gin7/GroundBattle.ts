@@ -156,6 +156,9 @@ export interface IGroundBattle extends Document {
   
   // Metadata
   data: Record<string, unknown>;
+  
+  // Methods
+  addCombatLog(entry: Omit<ICombatLogEntry, 'tick' | 'timestamp'>): void;
 }
 
 // ============================================================

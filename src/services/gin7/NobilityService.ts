@@ -1,396 +1,434 @@
 /**
- * NobilityService
- * 작위 및 봉토 시스템 서비스
- * 은하제국 전용 귀족 시스템 관리
+ * NobilityService - 귀족/작위 시스템 서비스
+ * 매뉴얼 5229~5298행 기반
+ * 
+ * 주요 기능:
+ * - 작위 수여 (서작)
+ * - 작위 박탈
+ * - 계급 래더 보너스 계산
+ * - 봉토 소유 자격 검증
  */
 
-import { LoghCommander, ILoghCommander } from '../../models/logh/Commander.model';
-import { Planet } from '../../models/logh/Planet.model';
+import { EventEmitter } from 'events';
+import { Gin7Character, IGin7Character } from '../../models/gin7/Character';
 import {
-  NobilityRank,
-  CharacterNobility,
-  Fief,
-  NOBILITY_RANKS,
-  NOBILITY_RANK_ORDER,
-  canPromoteNobility,
-  canGrantFief,
-  EnnobleResult,
-  GrantFiefResult,
-} from '../../types/gin7/nobility.types';
+  TitleCode,
+  TitleDefinition,
+  TITLE_DEFINITIONS,
+  getTitleLadderBonus,
+  canPromoteTitle,
+  canOwnFief,
+  compareTitles,
+} from '../../constants/gin7/nobility_definitions';
+import { logger } from '../../common/logger';
 
-export class NobilityService {
+export interface TitleAwardResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+  previousTitle?: TitleCode;
+  newTitle?: TitleCode;
+  previousRank?: string;
+  newRank?: string;
+  ladderBonusChange?: number;
+}
+
+export interface TitleRevocationResult {
+  success: boolean;
+  error?: string;
+  revokedTitle?: TitleCode;
+  fiefRevoked?: boolean;
+}
+
+/**
+ * NobilityService 클래스
+ */
+export class NobilityService extends EventEmitter {
+  private static instance: NobilityService;
+
+  private constructor() {
+    super();
+    logger.info('[NobilityService] Initialized');
+  }
+
+  public static getInstance(): NobilityService {
+    if (!NobilityService.instance) {
+      NobilityService.instance = new NobilityService();
+    }
+    return NobilityService.instance;
+  }
+
   /**
-   * 서작 (작위 수여)
-   * 황제 전용 커맨드
+   * 작위 수여 (서작)
+   * @param sessionId 세션 ID
+   * @param grantorId 수여자 ID (황제)
+   * @param targetId 대상자 ID
+   * @param newTitle 새 작위
    */
-  async ennoble(
+  public async awardTitle(
     sessionId: string,
-    granterNo: number,
-    targetNo: number,
-    newRank: NobilityRank
-  ): Promise<EnnobleResult> {
-    // 수여자 확인 (황제 권한 체크)
-    const granter = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: granterNo,
-    });
-
-    if (!granter) {
-      return { success: false, message: '수여자를 찾을 수 없습니다.' };
-    }
-
-    // 제국 소속 체크
-    if (granter.faction !== 'empire') {
-      return { success: false, message: '작위는 제국에서만 수여할 수 있습니다.' };
-    }
-
-    // 황제 권한 체크 (jobPosition 또는 authorityCards 확인)
-    const hasEmperorAuthority = 
-      granter.jobPosition === '황제' ||
-      granter.authorityCards.includes('EMPEROR') ||
-      granter.authorityCards.includes('PEERAGE_GRANT');
-
-    if (!hasEmperorAuthority) {
-      return { success: false, message: '작위를 수여할 권한이 없습니다. (황제 전용)' };
-    }
-
-    // 대상자 확인
-    const target = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: targetNo,
-    });
-
-    if (!target) {
-      return { success: false, message: '대상자를 찾을 수 없습니다.' };
-    }
-
-    // 제국 소속 체크
-    if (target.faction !== 'empire') {
-      return { success: false, message: '작위는 제국 소속 인물에게만 수여할 수 있습니다.' };
-    }
-
-    // 현재 작위 확인
-    const currentRank = target.nobility?.rank || null;
-
-    // 승작 가능 여부 체크
-    const { canPromote, reason } = canPromoteNobility(currentRank, newRank, target.merit);
-
-    if (!canPromote) {
-      return { success: false, message: reason || '승작할 수 없습니다.' };
-    }
-
-    // 작위 수여
-    const now = new Date();
-    const previousRank = currentRank;
-
-    if (!target.nobility) {
-      target.nobility = {
-        rank: newRank,
-        fiefs: [],
-        ennobbledAt: now,
-        lastPromotedAt: now,
-        totalTaxIncome: 0,
-      };
-    } else {
-      target.nobility.rank = newRank;
-      target.nobility.lastPromotedAt = now;
-      if (!target.nobility.ennobbledAt) {
-        target.nobility.ennobbledAt = now;
+    grantorId: string,
+    targetId: string,
+    newTitle: TitleCode
+  ): Promise<TitleAwardResult> {
+    try {
+      // 수여자 확인 (황제만 가능)
+      const grantor = await Gin7Character.findOne({ sessionId, characterId: grantorId });
+      if (!grantor) {
+        return { success: false, error: '수여자를 찾을 수 없습니다.' };
       }
-    }
 
-    target.markModified('nobility');
-    await target.save();
+      // 황제 권한 확인
+      const hasEmperorAuthority = grantor.position?.includes('EMPEROR') ||
+        grantor.commandCards?.some(card => card.cardId === 'EMPEROR_CARD');
+      
+      if (!hasEmperorAuthority) {
+        return { success: false, error: '서작 권한이 없습니다. 황제만 서작할 수 있습니다.' };
+      }
 
-    const rankInfo = NOBILITY_RANKS[newRank];
+      // 대상자 확인
+      const target = await Gin7Character.findOne({ sessionId, characterId: targetId });
+      if (!target) {
+        return { success: false, error: '대상자를 찾을 수 없습니다.' };
+      }
 
-    return {
-      success: true,
-      message: `${target.name}에게 ${rankInfo.name} 작위를 수여했습니다.`,
-      previousRank,
-      newRank,
-    };
-  }
+      // 제국 소속 확인
+      if (target.faction !== 'EMPIRE') {
+        return { success: false, error: '제국 소속 캐릭터만 작위를 받을 수 있습니다.' };
+      }
 
-  /**
-   * 봉토 수여
-   * 남작 이상 작위 보유자에게 봉토 수여
-   */
-  async grantFief(
-    sessionId: string,
-    granterNo: number,
-    targetNo: number,
-    planetId: string
-  ): Promise<GrantFiefResult> {
-    // 수여자 확인
-    const granter = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: granterNo,
-    });
+      // 현재 작위 확인
+      const currentTitle = (target.nobility?.title as TitleCode) || TitleCode.COMMONER;
 
-    if (!granter) {
-      return { success: false, message: '수여자를 찾을 수 없습니다.' };
-    }
+      // 서작 가능 여부 확인 (순차적 승급만 가능)
+      if (!canPromoteTitle(currentTitle, newTitle)) {
+        const currentDef = TITLE_DEFINITIONS[currentTitle];
+        const newDef = TITLE_DEFINITIONS[newTitle];
+        return {
+          success: false,
+          error: `${currentDef.nameKo}에서 ${newDef.nameKo}로 바로 서작할 수 없습니다. 순차적으로 서작해야 합니다.`,
+        };
+      }
 
-    // 제국 소속 체크
-    if (granter.faction !== 'empire') {
-      return { success: false, message: '봉토는 제국에서만 수여할 수 있습니다.' };
-    }
+      // 작위 수여
+      const previousLadderBonus = getTitleLadderBonus(currentTitle);
+      const newLadderBonus = getTitleLadderBonus(newTitle);
+      const ladderBonusChange = newLadderBonus - previousLadderBonus;
 
-    // 황제 권한 체크
-    const hasEmperorAuthority = 
-      granter.jobPosition === '황제' ||
-      granter.authorityCards.includes('EMPEROR') ||
-      granter.authorityCards.includes('FIEF_GRANT');
+      await Gin7Character.updateOne(
+        { sessionId, characterId: targetId },
+        {
+          $set: {
+            'nobility.title': newTitle,
+            'nobility.titleAwardedAt': new Date(),
+            'nobility.titleAwardedBy': grantorId,
+          },
+          $inc: {
+            meritPoints: ladderBonusChange, // 계급 래더 보너스 적용
+          },
+        }
+      );
 
-    if (!hasEmperorAuthority) {
-      return { success: false, message: '봉토를 수여할 권한이 없습니다. (황제 전용)' };
-    }
+      // 이벤트 발생
+      this.emit('TITLE_AWARDED', {
+        sessionId,
+        targetId,
+        grantorId,
+        previousTitle: currentTitle,
+        newTitle,
+        ladderBonusChange,
+      });
 
-    // 대상자 확인
-    const target = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: targetNo,
-    });
+      logger.info(`[NobilityService] Title awarded: ${targetId} promoted from ${currentTitle} to ${newTitle}`);
 
-    if (!target) {
-      return { success: false, message: '대상자를 찾을 수 없습니다.' };
-    }
-
-    // 봉토 수여 가능 여부 체크
-    const { canGrant, reason } = canGrantFief(target.nobility);
-
-    if (!canGrant) {
-      return { success: false, message: reason || '봉토를 수여할 수 없습니다.' };
-    }
-
-    // 행성 확인
-    const planet = await Planet.findOne({
-      session_id: sessionId,
-      planetId: planetId,
-    });
-
-    if (!planet) {
-      return { success: false, message: '해당 행성을 찾을 수 없습니다.' };
-    }
-
-    // 이미 봉토로 지정된 행성인지 확인
-    const existingFiefHolder = await LoghCommander.findOne({
-      session_id: sessionId,
-      'nobility.fiefs.planetId': planetId,
-    });
-
-    if (existingFiefHolder) {
       return {
-        success: false,
-        message: `해당 행성은 이미 ${existingFiefHolder.name}의 봉토입니다.`,
+        success: true,
+        previousTitle: currentTitle,
+        newTitle,
+        ladderBonusChange,
       };
+    } catch (error: any) {
+      logger.error(`[NobilityService] Error awarding title: ${error.message}`);
+      return { success: false, error: error.message };
     }
-
-    // 봉토 수여
-    const rankInfo = NOBILITY_RANKS[target.nobility!.rank!];
-    const annualIncome = Math.floor((planet.economy?.gdp || 10000) * rankInfo.taxRate);
-
-    const newFief: Fief = {
-      planetId: planetId,
-      planetName: planet.name,
-      grantedAt: new Date(),
-      annualIncome,
-    };
-
-    target.nobility!.fiefs.push(newFief);
-    target.markModified('nobility');
-    await target.save();
-
-    return {
-      success: true,
-      message: `${target.name}에게 ${planet.name}을(를) 봉토로 수여했습니다. (연간 수입: ${annualIncome})`,
-      fief: newFief,
-    };
-  }
-
-  /**
-   * 봉토 회수
-   */
-  async revokeFief(
-    sessionId: string,
-    granterNo: number,
-    targetNo: number,
-    planetId: string
-  ): Promise<{ success: boolean; message: string }> {
-    // 수여자 확인
-    const granter = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: granterNo,
-    });
-
-    if (!granter) {
-      return { success: false, message: '회수자를 찾을 수 없습니다.' };
-    }
-
-    // 황제 권한 체크
-    const hasEmperorAuthority = 
-      granter.jobPosition === '황제' ||
-      granter.authorityCards.includes('EMPEROR') ||
-      granter.authorityCards.includes('FIEF_REVOKE');
-
-    if (!hasEmperorAuthority) {
-      return { success: false, message: '봉토를 회수할 권한이 없습니다. (황제 전용)' };
-    }
-
-    // 대상자 확인
-    const target = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: targetNo,
-    });
-
-    if (!target || !target.nobility) {
-      return { success: false, message: '대상자를 찾을 수 없습니다.' };
-    }
-
-    // 봉토 확인
-    const fiefIndex = target.nobility.fiefs.findIndex(f => f.planetId === planetId);
-
-    if (fiefIndex === -1) {
-      return { success: false, message: '해당 봉토를 보유하고 있지 않습니다.' };
-    }
-
-    const revokedFief = target.nobility.fiefs[fiefIndex];
-    target.nobility.fiefs.splice(fiefIndex, 1);
-    target.markModified('nobility');
-    await target.save();
-
-    return {
-      success: true,
-      message: `${target.name}의 봉토 ${revokedFief.planetName}을(를) 회수했습니다.`,
-    };
   }
 
   /**
    * 작위 박탈
+   * @param sessionId 세션 ID
+   * @param revokerId 박탈자 ID
+   * @param targetId 대상자 ID
+   * @param reason 박탈 사유
    */
-  async stripNobility(
+  public async revokeTitle(
     sessionId: string,
-    granterNo: number,
-    targetNo: number
-  ): Promise<{ success: boolean; message: string }> {
-    // 수여자 확인
-    const granter = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: granterNo,
-    });
+    revokerId: string,
+    targetId: string,
+    reason: string
+  ): Promise<TitleRevocationResult> {
+    try {
+      // 박탈자 확인 (황제 또는 사법부)
+      const revoker = await Gin7Character.findOne({ sessionId, characterId: revokerId });
+      if (!revoker) {
+        return { success: false, error: '박탈자를 찾을 수 없습니다.' };
+      }
 
-    if (!granter) {
-      return { success: false, message: '박탈자를 찾을 수 없습니다.' };
+      const hasAuthority = revoker.position?.includes('EMPEROR') ||
+        revoker.position?.includes('JUSTICE_MINISTER') ||
+        revoker.commandCards?.some(card => 
+          card.cardId === 'EMPEROR_CARD' || card.cardId === 'JUSTICE_CARD'
+        );
+
+      if (!hasAuthority) {
+        return { success: false, error: '작위 박탈 권한이 없습니다.' };
+      }
+
+      // 대상자 확인
+      const target = await Gin7Character.findOne({ sessionId, characterId: targetId });
+      if (!target) {
+        return { success: false, error: '대상자를 찾을 수 없습니다.' };
+      }
+
+      const currentTitle = (target.nobility?.title as TitleCode) || TitleCode.COMMONER;
+      
+      if (currentTitle === TitleCode.COMMONER) {
+        return { success: false, error: '평민에게는 박탈할 작위가 없습니다.' };
+      }
+
+      // 봉토 소유 확인 (봉토 자동 몰수)
+      const hadFief = !!target.nobility?.fiefPlanetId;
+
+      // 작위 박탈 (평민으로)
+      const ladderBonusLoss = getTitleLadderBonus(currentTitle);
+
+      await Gin7Character.updateOne(
+        { sessionId, characterId: targetId },
+        {
+          $set: {
+            'nobility.title': TitleCode.COMMONER,
+            'nobility.titleRevokedAt': new Date(),
+            'nobility.titleRevokedBy': revokerId,
+            'nobility.revocationReason': reason,
+            'nobility.fiefPlanetId': null,
+          },
+          $inc: {
+            meritPoints: -ladderBonusLoss, // 계급 래더 보너스 제거
+          },
+        }
+      );
+
+      // 이벤트 발생
+      this.emit('TITLE_REVOKED', {
+        sessionId,
+        targetId,
+        revokerId,
+        revokedTitle: currentTitle,
+        reason,
+        fiefRevoked: hadFief,
+      });
+
+      logger.info(`[NobilityService] Title revoked: ${targetId} lost ${currentTitle}, reason: ${reason}`);
+
+      return {
+        success: true,
+        revokedTitle: currentTitle,
+        fiefRevoked: hadFief,
+      };
+    } catch (error: any) {
+      logger.error(`[NobilityService] Error revoking title: ${error.message}`);
+      return { success: false, error: error.message };
     }
-
-    // 황제 권한 체크
-    const hasEmperorAuthority = 
-      granter.jobPosition === '황제' ||
-      granter.authorityCards.includes('EMPEROR');
-
-    if (!hasEmperorAuthority) {
-      return { success: false, message: '작위를 박탈할 권한이 없습니다. (황제 전용)' };
-    }
-
-    // 대상자 확인
-    const target = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: targetNo,
-    });
-
-    if (!target || !target.nobility || !target.nobility.rank) {
-      return { success: false, message: '대상자가 작위를 보유하고 있지 않습니다.' };
-    }
-
-    const oldRank = NOBILITY_RANKS[target.nobility.rank].name;
-    
-    // 작위 박탈 (봉토도 함께 회수)
-    target.nobility = {
-      rank: null,
-      fiefs: [],
-      totalTaxIncome: target.nobility.totalTaxIncome, // 누적 수입은 유지
-    };
-
-    target.markModified('nobility');
-    await target.save();
-
-    return {
-      success: true,
-      message: `${target.name}의 ${oldRank} 작위를 박탈했습니다. (봉토 전부 회수)`,
-    };
   }
 
   /**
-   * 봉토 세금 수입 계산 및 지급 (턴 처리용)
+   * 캐릭터의 총 계급 래더 보너스 계산 (작위 + 훈장)
    */
-  async processFiefIncome(sessionId: string): Promise<{ processed: number; totalIncome: number }> {
-    const commanders = await LoghCommander.find({
-      session_id: sessionId,
-      'nobility.fiefs': { $exists: true, $not: { $size: 0 } },
-    });
+  public async calculateTotalLadderBonus(
+    sessionId: string,
+    characterId: string
+  ): Promise<number> {
+    const character = await Gin7Character.findOne({ sessionId, characterId });
+    if (!character) return 0;
 
-    let processed = 0;
-    let totalIncome = 0;
+    // 작위 보너스
+    const titleCode = (character.nobility?.title as TitleCode) || TitleCode.COMMONER;
+    const titleBonus = getTitleLadderBonus(titleCode);
 
-    for (const commander of commanders) {
-      if (!commander.nobility?.fiefs.length) continue;
+    // 훈장 보너스 (MedalService에서 처리)
+    const medalBonus = character.medals?.reduce((sum, medal) => {
+      // 훈장별 보너스는 MedalService에서 계산
+      return sum + (medal.ladderBonus || 0);
+    }, 0) || 0;
 
-      let commanderIncome = 0;
-      for (const fief of commander.nobility.fiefs) {
-        commanderIncome += fief.annualIncome;
-      }
+    return titleBonus + medalBonus;
+  }
 
-      // 개인 자금에 추가
-      const currentFunds = commander.customData?.personalFunds || 0;
-      if (!commander.customData) commander.customData = {};
-      commander.customData.personalFunds = currentFunds + commanderIncome;
-      
-      // 누적 세금 수입 업데이트
-      commander.nobility.totalTaxIncome += commanderIncome;
+  /**
+   * 봉토 소유 자격 확인
+   */
+  public async canCharacterOwnFief(
+    sessionId: string,
+    characterId: string
+  ): Promise<boolean> {
+    const character = await Gin7Character.findOne({ sessionId, characterId });
+    if (!character) return false;
 
-      commander.markModified('customData');
-      commander.markModified('nobility');
-      await commander.save();
-
-      processed++;
-      totalIncome += commanderIncome;
-    }
-
-    return { processed, totalIncome };
+    const titleCode = (character.nobility?.title as TitleCode) || TitleCode.COMMONER;
+    return canOwnFief(titleCode);
   }
 
   /**
    * 작위 정보 조회
    */
-  async getNobilityInfo(sessionId: string, commanderNo: number): Promise<{
-    success: boolean;
-    nobility?: CharacterNobility | null;
-    rankInfo?: typeof NOBILITY_RANKS[NobilityRank];
-  }> {
-    const commander = await LoghCommander.findOne({
-      session_id: sessionId,
-      no: commanderNo,
-    });
+  public getTitleDefinition(titleCode: TitleCode): TitleDefinition | undefined {
+    return TITLE_DEFINITIONS[titleCode];
+  }
 
-    if (!commander) {
-      return { success: false };
-    }
+  /**
+   * 세력 내 귀족 목록 조회
+   */
+  public async getNoblesInFaction(
+    sessionId: string,
+    faction: 'EMPIRE' | 'ALLIANCE'
+  ): Promise<IGin7Character[]> {
+    // 동맹에는 귀족 제도가 없음
+    if (faction === 'ALLIANCE') return [];
+
+    return Gin7Character.find({
+      sessionId,
+      faction,
+      'nobility.title': { $ne: TitleCode.COMMONER, $exists: true },
+    }).sort({ 'nobility.title': 1 }); // 작위 높은 순
+  }
+
+  /**
+   * 특정 작위 보유자 목록 조회
+   */
+  public async getCharactersByTitle(
+    sessionId: string,
+    titleCode: TitleCode
+  ): Promise<IGin7Character[]> {
+    return Gin7Character.find({
+      sessionId,
+      'nobility.title': titleCode,
+    });
+  }
+
+  // ============================================================
+  // Routes 호환용 별칭 메서드
+  // ============================================================
+
+  /**
+   * 작위 정보 조회 (routes 호환)
+   */
+  public async getNobilityInfo(
+    sessionId: string,
+    commanderNo: number
+  ): Promise<{ title: string; fiefdoms: string[] } | null> {
+    const character = await Gin7Character.findOne({ 
+      sessionId, 
+      characterId: `${commanderNo}` 
+    });
+    if (!character) return null;
 
     return {
-      success: true,
-      nobility: commander.nobility,
-      rankInfo: commander.nobility?.rank ? NOBILITY_RANKS[commander.nobility.rank] : undefined,
+      title: (character.nobility?.title as string) || 'COMMONER',
+      fiefdoms: (character.nobility as any)?.fiefdoms || [],
     };
+  }
+
+  /**
+   * 서작 (routes 호환) - awardTitle의 별칭
+   */
+  public async ennoble(
+    sessionId: string,
+    granterNo: number,
+    targetNo: number,
+    newRank: string
+  ): Promise<TitleAwardResult> {
+    return this.awardTitle(
+      sessionId,
+      `${granterNo}`,
+      `${targetNo}`,
+      newRank as TitleCode
+    );
+  }
+
+  /**
+   * 봉토 수여 (routes 호환)
+   */
+  public async grantFief(
+    sessionId: string,
+    granterNo: number | string,
+    targetNo: number | string,
+    planetId: string
+  ): Promise<{ success: boolean; message?: string; error?: string; fief?: any }> {
+    // FiefService에 위임
+    const { fiefService } = await import('./FiefService');
+    const result = await fiefService.grantFief(sessionId, String(granterNo), String(targetNo), planetId);
+    return {
+      success: result.success,
+      message: result.success ? `행성 ${planetId}를 봉토로 수여했습니다.` : result.error,
+      error: result.error,
+      fief: result.success ? { planetId } : undefined
+    };
+  }
+
+  /**
+   * 봉토 회수 (routes 호환)
+   */
+  public async revokeFief(
+    sessionId: string,
+    revokerNo: number | string,
+    targetNo: number | string,
+    planetId: string
+  ): Promise<{ success: boolean; message: string; error?: string }> {
+    // FiefService에 위임
+    const { fiefService } = await import('./FiefService');
+    const result = await fiefService.revokeFief(sessionId, String(revokerNo), planetId);
+    return {
+      success: result.success,
+      message: result.success ? `봉토가 회수되었습니다.` : (result.error || '봉토 회수 실패'),
+      error: result.error
+    };
+  }
+
+  /**
+   * 작위 박탈 (routes 호환) - revokeTitle의 별칭
+   */
+  public async stripNobility(
+    sessionId: string,
+    granterNo: number,
+    targetNo: number
+  ): Promise<TitleRevocationResult> {
+    return this.revokeTitle(
+      sessionId,
+      `${granterNo}`,
+      `${targetNo}`,
+      'Imperial Decree'
+    );
+  }
+
+  /**
+   * 작위 수여 (PersonnelCommandService 호환)
+   */
+  public async grantTitle(
+    sessionId: string,
+    targetId: string,
+    titleCode: string,
+    granterId: string
+  ): Promise<TitleAwardResult> {
+    return this.awardTitle(sessionId, granterId, targetId, titleCode as TitleCode);
+  }
+
+  /**
+   * 작위에 따른 계급 래더 보너스 (MeritService 호환)
+   */
+  public getNobilityMeritBonus(character: IGin7Character): number {
+    const titleCode = (character.nobility?.title as TitleCode) || TitleCode.COMMONER;
+    return getTitleLadderBonus(titleCode);
   }
 }
 
-// 싱글톤 인스턴스
-export const nobilityService = new NobilityService();
-
-
-
-
-
-
-
+export const nobilityService = NobilityService.getInstance();
+export default NobilityService;

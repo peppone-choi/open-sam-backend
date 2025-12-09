@@ -9,6 +9,16 @@ import { GameConst } from '../constants/GameConst';
 import { Util } from '../utils/Util';
 import { getDexBonus } from '../utils/dex-calculator';
 
+/**
+ * 데미지 계산 결과 인터페이스
+ * 크리티컬 여부와 배율을 함께 반환
+ */
+export interface DamageResult {
+  damage: number;
+  isCritical: boolean;
+  criticalMultiplier?: number; // 크리티컬 발동 시 배율
+}
+
 export abstract class WarUnit {
   protected general: any;
   protected rawNation: any;
@@ -488,10 +498,43 @@ export abstract class WarUnit {
     return GameConst.maxAtmosByCommand || 100;
   }
   
+  /**
+   * 크리티컬 확률 계산 (무력/운 기반)
+   * 
+   * PHP sammo에서는 병종별 기본 확률 + 능력치 보정으로 계산
+   * - 기본 확률: 병종 criticalRate (기본 5%)
+   * - 무력 보정: 무력 50 기준, 10당 +0.5%
+   * - 운 보정: 운 50 기준, 10당 +0.3%
+   * 
+   * 최소 3%, 최대 25%
+   */
   getComputedCriticalRatio(): number {
-    if (!this.crewType) return 0.05;
-    // PHP: $this->getCrewType()->getCriticalRatio($this->general)
-    return 0.05; // 기본 5%
+    // 기본 확률 (병종에서 가져오거나 5%)
+    const baseCritRate = (this.crewType as any)?.criticalRate ?? 0.05;
+    
+    const general = this.general;
+    
+    // 무력(strength) 기반 보정
+    const strength = (typeof general.getStrength === 'function'
+      ? general.getStrength(true, true, true)
+      : general.getVar?.('strength') ?? general.data?.strength ?? general.strength ?? 50);
+    
+    // 운(luck) 기반 보정
+    const luck = (typeof general.getLuck === 'function'
+      ? general.getLuck()
+      : general.data?.luck ?? general.luck ?? 0);
+    
+    // 무력 보정: 무력 50 기준, 10당 +0.005 (0.5%)
+    const strengthBonus = Math.max(0, (strength - 50) / 10) * 0.005;
+    
+    // 운 보정: 운 0 기준, 10당 +0.003 (0.3%)
+    const luckBonus = Math.max(0, luck / 10) * 0.003;
+    
+    // 최종 확률 계산 (최소 3%, 최대 25%)
+    let criticalRatio = baseCritRate + strengthBonus + luckBonus;
+    criticalRatio = Math.max(0.03, Math.min(0.25, criticalRatio));
+    
+    return criticalRatio;
   }
   
   getComputedAvoidRatio(): number {
@@ -542,10 +585,48 @@ export abstract class WarUnit {
   
   abstract increaseKilled(damage: number): number;
   
-  calcDamage(): number {
+  /**
+   * 데미지 계산 (크리티컬 포함)
+   * 
+   * 계산 흐름:
+   * 1. 기본 전투력에 0.9~1.1 랜덤 배율 적용
+   * 2. 크리티컬 확률(무력/운 기반) 판정
+   * 3. 크리티컬 시 추가 배율(무력/운 기반) 적용
+   * 
+   * @returns DamageResult - 데미지, 크리티컬 여부, 크리티컬 배율
+   */
+  calcDamageWithCritical(): DamageResult {
     let warPower = this.getWarPower();
     warPower *= this.rng.nextRange(0.9, 1.1);
-    return Util.round(warPower);
+    
+    let isCritical = false;
+    let criticalMultiplier: number | undefined = undefined;
+    
+    // 크리티컬 판정
+    const criticalRatio = this.getComputedCriticalRatio();
+    if (this.rng.nextBool(criticalRatio)) {
+      isCritical = true;
+      criticalMultiplier = this.criticalDamage();
+      warPower *= criticalMultiplier;
+      
+      // 크리티컬 스킬 활성화 (로그용)
+      this.activateSkill('critical_hit');
+    }
+    
+    return {
+      damage: Util.round(warPower),
+      isCritical,
+      criticalMultiplier
+    };
+  }
+  
+  /**
+   * 데미지 계산 (단순 숫자 반환 - 기존 호환용)
+   * @deprecated calcDamageWithCritical() 사용 권장
+   */
+  calcDamage(): number {
+    const result = this.calcDamageWithCritical();
+    return result.damage;
   }
   
   tryWound(): boolean {
@@ -566,14 +647,45 @@ export abstract class WarUnit {
   }
   
   criticalDamage(): number {
-    const range: [number, number] = [1.3, 2.0];
+    // 기본 크리티컬 배율 범위 (1.5배 ~ 2.0배)
+    let minRate = 1.5;
+    let maxRate = 2.0;
+
+    const general = this.general;
     
+    // 무력 보정: 무력이 100을 넘으면 10당 0.05배 추가
+    const strength = (typeof general.getStrength === 'function' 
+      ? general.getStrength() 
+      : (general.data?.strength || general.strength || 0));
+      
+    if (strength > 50) {
+      const strBonus = (strength - 50) / 100; // 예: 무력 100 -> 0.5 추가
+      minRate += strBonus * 0.5;
+      maxRate += strBonus;
+    }
+
+    // 행운(운) 보정: 운이 높을수록 최대 데미지 확률 증가 (범위 확장)
+    const luck = (typeof general.getLuck === 'function'
+        ? general.getLuck()
+        : (general.data?.luck || 0)); // 운이 없으면 0 처리
+    
+    if (luck > 0) {
+        // 운 100 기준 0.2배 추가
+        const luckBonus = luck / 500;
+        maxRate += luckBonus;
+    }
+
     // 전특, 병종에 따라 필살 데미지가 달라질 수 있음
     if (typeof this.general.onCalcStat === 'function') {
-      // TODO: range = general.onCalcStat(general, 'criticalDamageRange', range)
+      const range: [number, number] = [minRate, maxRate];
+      const newRange = this.general.onCalcStat(this.general, 'criticalDamageRange', range);
+      if (Array.isArray(newRange) && newRange.length === 2) {
+        minRate = newRange[0];
+        maxRate = newRange[1];
+      }
     }
     
-    return this.rng.nextRange(range[0], range[1]);
+    return this.rng.nextRange(minRate, maxRate);
   }
   
   abstract applyDB(db: any): Promise<boolean>;

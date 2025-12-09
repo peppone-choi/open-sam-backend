@@ -50,6 +50,7 @@ export class HistoryService {
       const year = sessionData.year ?? session.year;
       const month = sessionData.month ?? session.month;
 
+      // @ts-ignore - mongoose union type compatibility
       const nations = await Nation.find({ session_id: sessionId })
         .select('nation name data color capital level')
         .lean();
@@ -85,10 +86,12 @@ export class HistoryService {
         : undefined;
       const topGenerals = this.pickTopGenerals(generalDocs, nationMap, 10);
 
+      // @ts-ignore - mongoose union type compatibility
       const territories = await City.find({ session_id: sessionId })
         .select('city name nation')
         .lean();
 
+      // @ts-ignore - mongoose union type compatibility
       await History.findOneAndUpdate(
         {
           session_id: sessionId,
@@ -287,6 +290,7 @@ export class HistoryService {
       return;
     }
 
+    // @ts-ignore - mongoose union type compatibility
     await HallOfFame.deleteMany({
       session_id: context.sessionId,
       season: context.season

@@ -26,12 +26,13 @@ export class ActionLogger {
   private year?: number;
   private month?: number;
 
-  constructor(generalNo?: number, nationId?: number, year?: number, month?: number, sessionId: string = 'sangokushi_default') {
+  constructor(generalNo?: number, nationId?: number, year?: number, month?: number, sessionId: string = 'sangokushi_default', _autoFlush: boolean = true) {
     this.sessionId = sessionId;
     this.generalNo = generalNo;
     this.nationId = nationId;
     this.year = year;
     this.month = month;
+    // _autoFlush is accepted for compatibility but not used in this implementation
   }
 
   pushGeneralActionLog(message: string, type: string = ActionLogger.PLAIN): void {
@@ -181,8 +182,66 @@ export class ActionLogger {
     }
     
     try {
+      const { NgHistory } = await import('../models/ng_history.model');
+      const { sessionRepository } = await import('../repositories/session.repository');
       
-      // await WorldHistory.insertMany(this.nationalHistoryLogs);
+      // 세션별로 로그 그룹화
+      const logsBySession = new Map<string, { global_history: string[], global_action: string[] }>();
+      
+      for (const log of this.nationalHistoryLogs) {
+        const sessionId = log.sessionId || 'sangokushi_default';
+        if (!logsBySession.has(sessionId)) {
+          logsBySession.set(sessionId, { global_history: [], global_action: [] });
+        }
+        
+        const sessionLogs = logsBySession.get(sessionId)!;
+        if (log.action === 'global_history') {
+          sessionLogs.global_history.push(log.message);
+        } else if (log.action === 'global_action') {
+          sessionLogs.global_action.push(log.message);
+        }
+      }
+      
+      // 각 세션별로 현재 년/월 히스토리에 추가
+      for (const [sessionId, logs] of logsBySession) {
+        const session = await sessionRepository.findBySessionId(sessionId);
+        if (!session) continue;
+        
+        const sessionData = session.data || {};
+        const gameEnv = sessionData.game_env || {};
+        const year = gameEnv.year || sessionData.year || 1;
+        const month = gameEnv.month || sessionData.month || 1;
+        
+        // 기존 히스토리 찾기 또는 새로 생성
+        let history = await (NgHistory as any).findOne({
+          server_id: sessionId,
+          year: year,
+          month: month
+        });
+        
+        if (!history) {
+          history = new (NgHistory as any)({
+            server_id: sessionId,
+            year: year,
+            month: month,
+            global_history: [],
+            global_action: [],
+            nations: [],
+            map: null
+          });
+        }
+        
+        // 기존 배열에 새 로그 추가
+        const existingHistory = Array.isArray(history.global_history) ? history.global_history : [];
+        const existingAction = Array.isArray(history.global_action) ? history.global_action : [];
+        
+        history.global_history = [...existingHistory, ...logs.global_history];
+        history.global_action = [...existingAction, ...logs.global_action];
+        
+        await history.save();
+        
+        logger.debug(`[ActionLogger] Flushed ${logs.global_history.length} global_history, ${logs.global_action.length} global_action logs for ${sessionId} ${year}/${month}`);
+      }
       
       // 로그 초기화
       this.nationalHistoryLogs = [];

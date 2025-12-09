@@ -11,6 +11,7 @@ export type ShipClass =
   | 'frigate'         // 프리깃 - 호위/정찰
   | 'corvette'        // 초계함 - 소형, 저가
   | 'transport'       // 수송함 - 병력/물자 수송
+  | 'landing'         // 상륙정 - 병력 상륙
   | 'engineering'     // 공병함 - 수리/건설
   | 'flagship';       // 기함 - 지휘함
 
@@ -70,12 +71,20 @@ export interface IShipSpec {
  */
 export interface IShipUnit {
   unitId: string;
+  name?: string;           // Unit display name
   shipClass: ShipClass;
   count: number;          // Number of ships (max 300)
+  currentShipCount?: number; // Current active ship count
+  maxShipCount?: number;   // Maximum ships in this unit
   
   // Current state
   hp: number;             // Average HP percentage (0-100)
+  currentHp?: number;     // Current HP value
+  maxHp?: number;         // Maximum HP value
   morale: number;         // 0-100
+  
+  // Confusion/Rout state (기함 격침 등으로 인한 혼란/패주)
+  confusionLevel?: 'NONE' | 'MINOR' | 'MODERATE' | 'SEVERE' | 'ROUTED';
   
   // Resources
   fuel: number;
@@ -86,6 +95,11 @@ export interface IShipUnit {
   // Crew
   crewCount: number;
   maxCrew: number;
+  currentCrewCount?: number;   // Current crew count
+  crewQualityBonus?: number;   // Crew quality modifier
+  
+  // Command
+  commanderId?: string;   // Character ID of unit commander
   
   // Experience
   veterancy: number;      // 0-100, affects combat performance
@@ -93,6 +107,27 @@ export interface IShipUnit {
   // Damage tracking
   destroyed: number;      // Ships destroyed in this unit
   damaged: number;        // Ships currently damaged
+  
+  // Training
+  training?: {
+    navigation: number;
+    ground: number;
+    air: number;
+    discipline: number;
+    gunnery?: number;
+    engineering?: number;
+    boarding?: number;
+  };
+  
+  // Position
+  position?: {
+    x: number;
+    y: number;
+    z?: number;
+  };
+  
+  // Extensible data
+  data?: Record<string, any>;
 }
 
 /**
@@ -161,6 +196,34 @@ export interface IFleet extends Document {
   lockedReason?: string;
   lockedUntil?: Date;
   
+  // Crew management
+  crewPool?: number;       // Available crew pool for the fleet
+  
+  // Training levels
+  training?: {
+    gunnery: number;       // 포술 훈련도
+    navigation: number;    // 항해 훈련도
+    engineering: number;   // 기관 훈련도
+    boarding: number;      // 백병전 훈련도
+    // Alternative training types (for TrainingCommandService)
+    discipline?: number;   // 군기 유지
+    ground?: number;       // 육전 훈련도
+    air?: number;          // 공전 훈련도
+  };
+  
+  // Cargo & Supplies
+  cargo?: {
+    fuel: number;
+    ammo: number;
+    supplies: number;
+    parts: number;
+    credits: number;
+    materials: number;
+  };
+  
+  // Docking status
+  dockedAt?: string;       // Planet/Station ID where docked
+  
   // Metadata
   createdAt: Date;
   data: Record<string, unknown>;
@@ -168,15 +231,27 @@ export interface IFleet extends Document {
 
 const ShipUnitSchema = new Schema<IShipUnit>({
   unitId: { type: String, required: true },
+  name: { type: String },
   shipClass: {
     type: String,
     enum: ['battleship', 'cruiser', 'destroyer', 'carrier', 'frigate', 'corvette', 'transport', 'engineering', 'flagship'],
     required: true
   },
   count: { type: Number, default: 1, min: 0, max: 300 },
+  currentShipCount: { type: Number },
+  maxShipCount: { type: Number, default: 300 },
   
   hp: { type: Number, default: 100, min: 0, max: 100 },
+  currentHp: { type: Number },
+  maxHp: { type: Number },
   morale: { type: Number, default: 100, min: 0, max: 100 },
+  
+  // Confusion/Rout state
+  confusionLevel: {
+    type: String,
+    enum: ['NONE', 'MINOR', 'MODERATE', 'SEVERE', 'ROUTED'],
+    default: 'NONE'
+  },
   
   fuel: { type: Number, default: 100 },
   maxFuel: { type: Number, default: 100 },
@@ -185,6 +260,10 @@ const ShipUnitSchema = new Schema<IShipUnit>({
   
   crewCount: { type: Number, default: 100 },
   maxCrew: { type: Number, default: 100 },
+  currentCrewCount: { type: Number },
+  crewQualityBonus: { type: Number, default: 0 },
+  
+  commanderId: { type: String },
   
   veterancy: { type: Number, default: 0, min: 0, max: 100 },
   
@@ -264,6 +343,30 @@ const FleetSchema = new Schema<IFleet>({
   lockedReason: String,
   lockedUntil: Date,
   
+  // Crew management
+  crewPool: { type: Number, default: 0 },
+  
+  // Training levels
+  training: {
+    gunnery: { type: Number, default: 50, min: 0, max: 100 },
+    navigation: { type: Number, default: 50, min: 0, max: 100 },
+    engineering: { type: Number, default: 50, min: 0, max: 100 },
+    boarding: { type: Number, default: 50, min: 0, max: 100 }
+  },
+  
+  // Cargo & Supplies
+  cargo: {
+    fuel: { type: Number, default: 0 },
+    ammo: { type: Number, default: 0 },
+    supplies: { type: Number, default: 0 },
+    parts: { type: Number, default: 0 },
+    credits: { type: Number, default: 0 },
+    materials: { type: Number, default: 0 }
+  },
+  
+  // Docking status
+  dockedAt: { type: String },
+  
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true
@@ -299,6 +402,7 @@ FleetSchema.virtual('combatPower').get(function() {
     frigate: 20,
     corvette: 10,
     transport: 5,
+    landing: 5,
     engineering: 5
   };
   
@@ -345,6 +449,7 @@ FleetSchema.methods.getFuelConsumption = function(): number {
     frigate: 2,
     corvette: 1,
     transport: 4,
+    landing: 3,
     engineering: 3
   };
   
@@ -366,6 +471,7 @@ FleetSchema.methods.getAmmoConsumption = function(): number {
     frigate: 3,
     corvette: 2,
     transport: 1,
+    landing: 2,
     engineering: 1
   };
   
@@ -551,6 +657,25 @@ export const SHIP_SPECS: Record<ShipClass, IShipSpec> = {
     buildCost: { credits: 3500, minerals: 2500, shipParts: 1500 },
     buildTurns: 4,
     abilities: ['field_repair', 'salvage', 'construction']
+  },
+  landing: {
+    shipClass: 'landing',
+    name: 'Landing Craft',
+    nameKo: '상륙정',
+    maxHp: 800,
+    attack: 15,
+    defense: 45,
+    accuracy: 50,
+    evasion: 12,
+    fuelConsumption: 3,
+    ammoConsumption: 2,
+    cargoCapacity: 500,
+    crewCapacity: 300,
+    speed: 4,
+    warpCapable: true,
+    buildCost: { credits: 3000, minerals: 1500, shipParts: 800 },
+    buildTurns: 3,
+    abilities: ['troop_landing', 'beach_assault']
   }
 };
 

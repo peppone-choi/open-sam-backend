@@ -782,6 +782,7 @@ export const EXPLOSION_DAMAGE: Record<ShipClass, number> = {
   frigate: 50,
   corvette: 30,
   transport: 40,
+  landing: 35,
   engineering: 20,
 };
 

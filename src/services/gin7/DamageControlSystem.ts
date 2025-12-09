@@ -282,6 +282,7 @@ export class DamageControlSystem extends EventEmitter {
       frigate: 0.7,
       corvette: 0.6,
       transport: 0.9,
+      landing: 0.7,
       engineering: 0.8,
     };
 
@@ -893,6 +894,11 @@ export class DamageControlSystem extends EventEmitter {
 // ============================================================
 
 export const damageControlSystem = new DamageControlSystem();
+
+
+
+
+
 
 
 

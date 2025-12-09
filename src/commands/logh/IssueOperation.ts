@@ -57,9 +57,9 @@ export class IssueOperationCommand extends BaseLoghCommand {
       ConstraintHelper.Custom(
 
         (input: ILoghCommandContext) => {
-          const rank = input.commander.getRank();
-          const allowedRanks = ['准将', '少将', '中将', '大将', '上級大将', '元帥'];
-          return allowedRanks.includes(rank);
+          const rankIndex = input.commander.getRank();
+          // 준장 이상 (rank index 14 이상)
+          return rankIndex >= 14;
         },
         '작전 발령 권한이 없습니다. (준장 이상 필요)'
       ),
@@ -68,18 +68,16 @@ export class IssueOperationCommand extends BaseLoghCommand {
 
   /**
    * 계급별 작전 규모 제한
+   * @param rankIndex 계급 인덱스 (0-18)
    */
-  private getMaxFleetsByRank(rank: string): number {
-    const rankLimits: Record<string, number> = {
-      '准将': 2,
-      '少将': 3,
-      '中将': 5,
-      '大将': 8,
-      '上級大将': 12,
-      '元帥': 20,
-    };
-
-    return rankLimits[rank] || 1;
+  private getMaxFleetsByRank(rankIndex: number): number {
+    // 계급 인덱스 기준: 14=준장, 15=소장, 16=중장, 17=대장/상급대장, 18=원수
+    if (rankIndex >= 18) return 20; // 원수
+    if (rankIndex >= 17) return 12; // 상급대장/대장
+    if (rankIndex >= 16) return 8;  // 중장
+    if (rankIndex >= 15) return 5;  // 소장
+    if (rankIndex >= 14) return 2;  // 준장
+    return 1;
   }
 
   /**

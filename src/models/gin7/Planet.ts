@@ -27,7 +27,9 @@ export type FacilityType =
   | 'defense_grid'        // Planetary defense
   | 'spaceport'           // Trade hub
   | 'hospital'            // Population recovery
-  | 'entertainment';      // Morale boost
+  | 'entertainment'       // Morale boost
+  | 'refinery'            // Resource refinery
+  | 'fighter_factory';    // Fighter production
 
 export interface IPlanetFacility {
   facilityId: string;
@@ -37,6 +39,9 @@ export interface IPlanetFacility {
   maxHp: number;
   isOperational: boolean;
   productionBonus: number;
+  isBuilding?: boolean;    // Currently under construction
+  buildProgress?: number;  // Construction progress (0-100)
+  buildCompletesAt?: Date; // When construction will complete
   data?: Record<string, any>;
 }
 
@@ -57,7 +62,9 @@ export interface IPlanet extends Document {
   
   // Ownership
   ownerId?: string;       // Faction ID
+  controllingFaction?: string; // Current controlling faction ID
   governorId?: string;    // Character ID of governor
+  faction?: string;       // Faction alias for controllingFaction
   
   // Population & Economy
   population: number;
@@ -115,7 +122,7 @@ const PlanetFacilitySchema = new Schema<IPlanetFacility>({
   type: {
     type: String,
     enum: ['capital_building', 'military_academy', 'shipyard', 'factory', 'farm', 
-           'mine', 'research_lab', 'defense_grid', 'spaceport', 'hospital', 'entertainment'],
+           'mine', 'research_lab', 'defense_grid', 'spaceport', 'hospital', 'entertainment', 'refinery'],
     required: true
   },
   level: { type: Number, default: 1, min: 1, max: 10 },
@@ -123,6 +130,8 @@ const PlanetFacilitySchema = new Schema<IPlanetFacility>({
   maxHp: { type: Number, default: 100 },
   isOperational: { type: Boolean, default: true },
   productionBonus: { type: Number, default: 0 },
+  isBuilding: { type: Boolean, default: false },
+  buildProgress: { type: Number, default: 0, min: 0, max: 100 },
   data: { type: Schema.Types.Mixed }
 }, { _id: false });
 
@@ -145,6 +154,7 @@ const PlanetSchema = new Schema<IPlanet>({
   orbitIndex: { type: Number, default: 1, min: 1, max: 20 },
   
   ownerId: String,
+  controllingFaction: String,
   governorId: String,
   
   population: { type: Number, default: 1000000 },

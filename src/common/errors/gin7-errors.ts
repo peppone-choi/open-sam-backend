@@ -20,7 +20,7 @@ export const GIN7_ERROR_CODES = {
 
 export type Gin7ErrorCode = (typeof GIN7_ERROR_CODES)[keyof typeof GIN7_ERROR_CODES];
 
-export interface Gin7Error {
+export interface IGin7Error {
   code: Gin7ErrorCode;
   message: string;
   details?: Record<string, any>;
@@ -40,6 +40,22 @@ export const GIN7_ERROR_MESSAGES: Record<Gin7ErrorCode, string> = {
 /**
  * GIN7 API 에러 클래스
  */
+/**
+ * GIN7 Error Class (서비스에서 사용)
+ * Gin7ApiError의 간단한 버전
+ */
+export class Gin7Error extends Error {
+  public readonly errorCode: string;
+  public readonly details?: string;
+
+  constructor(errorCode: string, details?: string) {
+    super(details || errorCode);
+    this.name = 'Gin7Error';
+    this.errorCode = errorCode;
+    this.details = details;
+  }
+}
+
 export class Gin7ApiError extends Error {
   public readonly code: Gin7ErrorCode;
   public readonly statusCode: number;
@@ -58,7 +74,7 @@ export class Gin7ApiError extends Error {
     this.details = details;
   }
 
-  toJSON(): Gin7Error {
+  toJSON(): IGin7Error {
     return {
       code: this.code,
       message: this.message,

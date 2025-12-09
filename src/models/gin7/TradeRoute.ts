@@ -111,6 +111,13 @@ export interface ITradeRoute extends Document {
   createdAt: Date;
   updatedAt: Date;
   data: Record<string, unknown>;
+  
+  // Methods
+  calculateEstimatedProfit(sourcePrices: Record<ResourceType, number>, targetPrices: Record<ResourceType, number>): number;
+  recordTransaction(transaction: Omit<ITradeTransaction, 'transactionId' | 'timestamp'>): void;
+  completeTrip(success: boolean, cargoLostAmount?: number): void;
+  canOperate(): { canOperate: boolean; reason?: string };
+  rollPiracyCheck(): { attacked: boolean; severity: number };
 }
 
 const TradeItemSchema = new Schema<ITradeItem>({
@@ -402,5 +409,5 @@ export interface ITradeRouteModel extends Model<ITradeRoute> {
 }
 
 export const TradeRoute: ITradeRouteModel = 
-  mongoose.models.TradeRoute || mongoose.model<ITradeRoute, ITradeRouteModel>('TradeRoute', TradeRouteSchema);
+  (mongoose.models.TradeRoute as ITradeRouteModel) || mongoose.model<ITradeRoute, ITradeRouteModel>('TradeRoute', TradeRouteSchema);
 

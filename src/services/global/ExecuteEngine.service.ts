@@ -1418,7 +1418,7 @@ export class ExecuteEngineService {
     // - 'shadow': AI 결정만 로깅, 실제 적용 안함 (테스트용)
     // - 'partial': npc >= 3 (명장급)만 AI 사용
     // - 'full' 또는 true: 모든 NPC에 AI 사용
-    const npcAiMode = gameEnv.npc_ai_mode || 'disabled';
+    const npcAiMode = gameEnv.npc_ai_mode || 'full'; // 기본값을 'full'로 변경하여 AI 활성화
     const aiEnabled = npcAiMode === 'full' || npcAiMode === true || 
                       npcAiMode === 'partial' || npcAiMode === 'shadow';
     

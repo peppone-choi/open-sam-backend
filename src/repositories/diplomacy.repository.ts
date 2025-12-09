@@ -152,6 +152,145 @@ class DiplomacyRepository {
   async deleteBySession(sessionId: string): Promise<DeleteResult> {
     return Diplomacy.deleteMany({ session_id: sessionId });
   }
+
+  // ============================================
+  // 인질 관련 메서드
+  // ============================================
+
+  /**
+   * 인질 생성
+   */
+  async createHostage(data: any) {
+    return Diplomacy.create({ ...data, type: 'hostage' });
+  }
+
+  /**
+   * 인질 ID로 조회
+   */
+  async findHostageById(sessionId: string, hostageId: string) {
+    return Diplomacy.findOne({ 
+      session_id: sessionId, 
+      hostageId,
+      type: 'hostage' 
+    });
+  }
+
+  /**
+   * 인질 업데이트
+   */
+  async updateHostage(sessionId: string, hostageId: string, update: any) {
+    return Diplomacy.updateOne(
+      { session_id: sessionId, hostageId, type: 'hostage' },
+      { $set: update }
+    );
+  }
+
+  /**
+   * 특정 국가가 보유한 인질 목록
+   */
+  async findHostagesByHost(sessionId: string, hostNationId: number, status?: string) {
+    return Diplomacy.find({ 
+      session_id: sessionId, 
+      hostNationId,
+      type: 'hostage',
+      status: status || 'held'
+    });
+  }
+
+  /**
+   * 특정 국가 출신 인질 목록
+   */
+  async findHostagesByOrigin(sessionId: string, originNationId: number, status?: string) {
+    return Diplomacy.find({ 
+      session_id: sessionId, 
+      originNationId,
+      type: 'hostage',
+      status: status || 'held'
+    });
+  }
+
+  /**
+   * 외교 관계 설정
+   */
+  async setRelation(sessionId: string, meNationId: number, youNationId: number, relationType: string) {
+    return Diplomacy.updateOne(
+      { session_id: sessionId, me: meNationId, you: youNationId },
+      { $set: { state: relationType } },
+      { upsert: true }
+    );
+  }
+
+  // ============================================
+  // 조공 관련 메서드
+  // ============================================
+
+  /**
+   * 조공 요청 생성
+   */
+  async createTributeRequest(data: any) {
+    return Diplomacy.create({ ...data, type: 'tribute' });
+  }
+
+  /**
+   * 조공 요청 조회
+   */
+  async findTributeRequest(sessionId: string, fromNationId: number, toNationId: number, status: string = 'pending') {
+    return Diplomacy.findOne({
+      session_id: sessionId,
+      fromNationId,
+      toNationId,
+      type: 'tribute',
+      status
+    });
+  }
+
+  /**
+   * 조공 요청 ID로 조회
+   */
+  async findTributeRequestById(sessionId: string, requestId: string) {
+    return Diplomacy.findOne({
+      session_id: sessionId,
+      requestId,
+      type: 'tribute'
+    });
+  }
+
+  /**
+   * 조공 요청 업데이트
+   */
+  async updateTributeRequest(sessionId: string, requestId: string, update: any) {
+    return Diplomacy.updateOne(
+      { session_id: sessionId, requestId, type: 'tribute' },
+      { $set: update }
+    );
+  }
+
+  /**
+   * 특정 국가 대상 조공 요청 목록
+   */
+  async findTributeRequestsByTarget(sessionId: string, targetNationId: number, status: string = 'pending') {
+    return Diplomacy.find({
+      session_id: sessionId,
+      toNationId: targetNationId,
+      type: 'tribute',
+      status
+    });
+  }
+
+  /**
+   * 만료된 조공 요청 처리
+   */
+  async expireTributeRequests(sessionId: string, beforeDate: Date) {
+    return Diplomacy.updateMany(
+      { 
+        session_id: sessionId, 
+        type: 'tribute',
+        status: 'pending',
+        expiresAt: { $lt: beforeDate }
+      },
+      { $set: { status: 'expired' } }
+    );
+  }
 }
 
 /**

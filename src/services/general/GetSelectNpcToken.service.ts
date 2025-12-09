@@ -122,9 +122,8 @@ export class GetSelectNpcTokenService {
 
           // ✅ 첫 번째 다시 뽑기인지 확인 (pick_more_from이 2010년 이전이면 첫 번째)
           const isFirstRefresh = pickMoreFromTime.getFullYear() < 2010;
-          const nextPickMoreFrom = isFirstRefresh 
-            ? new Date(now.getTime() + pickMoreSecond * 1000)  // 첫 번째 이후부터 유예 시간 적용
-            : pickMoreFrom;  // 이미 계산된 미래 시간 사용
+          // 항상 새로운 유예 시간 적용 (첫 번째든 아니든)
+          const nextPickMoreFrom = new Date(now.getTime() + pickMoreSecond * 1000);
 
           // 새로 뽑기
           const newPick = await this.generateNpcPick(sessionId, userId, pickResult);
@@ -147,7 +146,7 @@ export class GetSelectNpcTokenService {
             result: true,
             pick: { ...pickResult, ...newPick },
             pickMoreFrom: nextPickMoreFrom.toISOString(),
-            pickMoreSeconds: isFirstRefresh ? pickMoreSecond : 0,
+            pickMoreSeconds: pickMoreSecond,  // 항상 유예 시간 반환
             validUntil: validUntil.toISOString()
           };
         } else {

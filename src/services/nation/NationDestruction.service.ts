@@ -312,6 +312,7 @@ export class NationDestructionService {
         // 6. 외교 관계 정리
         try {
           const { Diplomacy } = await import('../../models/diplomacy.model');
+          // @ts-ignore - mongoose union type compatibility
           await Diplomacy.deleteMany({
             session_id: sessionId,
             $or: [

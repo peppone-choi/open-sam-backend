@@ -416,6 +416,10 @@ export class InitService {
     session.status = 'preparing';
     SessionSync.syncIsunited(session, 2); // 2 = 폐쇄
     
+    // NPC AI 기본값 설정 (full = 모든 NPC에 AI 활성화)
+    session.data.game_env.npc_ai_mode = session.data.game_env.npc_ai_mode || 'full';
+    console.log(`   ✅ NPC AI 모드: ${session.data.game_env.npc_ai_mode}`);
+    
     console.log(`   ✅ 게임 시작 시간 설정: ${now.toISOString()}`);
     console.log(`   ✅ 게임 시작 년도: ${scenarioStartYear}년 1월`);
     console.log(`   ✅ 서버 상태: 폐쇄 (preparing), isunited: 2`);

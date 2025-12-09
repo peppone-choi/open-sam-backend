@@ -533,7 +533,7 @@ OperationPlanSchema.statics.findCharacterOperations = async function(
 // ============================================================================
 
 export const OperationPlan: OperationPlanModel = 
-  mongoose.models.OperationPlan || 
+  (mongoose.models.OperationPlan as OperationPlanModel) || 
   mongoose.model<IOperationPlan, OperationPlanModel>('OperationPlan', OperationPlanSchema);
 
 // ============================================================================

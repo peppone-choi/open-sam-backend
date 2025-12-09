@@ -157,6 +157,11 @@ function buildUnitCache(scenarioId: string = 'sangokushi'): void {
 
   for (const [idStr, unitData] of Object.entries(units)) {
     const id = Number(idStr);
+    // NaN ID 건너뛰기 (숫자가 아닌 키)
+    if (!Number.isFinite(id)) {
+      console.warn(`[GameUnitConst] Skipping unit with invalid ID: ${idStr}`);
+      continue;
+    }
     const unit = unitData as any;
     const armType = TYPE_MAP[unit.type] ?? ARM_TYPE.FOOTMAN;
     
@@ -302,6 +307,11 @@ export function getAllUnitTypes(): Record<number, string> {
 }
 
 export function getUnitByID(id: number, scenarioId: string = 'sangokushi'): GameUnitDetail | null {
+  // NaN 또는 유효하지 않은 ID 체크
+  if (!Number.isFinite(id)) {
+    console.warn(`[GameUnitConst] getUnitByID called with invalid ID: ${id}`);
+    return null;
+  }
   buildUnitCache(scenarioId);
   const unitCache = unitCacheByScenario.get(scenarioId);
   return unitCache?.get(id) || null;
@@ -309,6 +319,11 @@ export function getUnitByID(id: number, scenarioId: string = 'sangokushi'): Game
 
 export const GameUnitConst = {
   byID: (id: number, scenarioId: string = 'sangokushi'): GameUnitDetail => {
+    // NaN 또는 유효하지 않은 ID인 경우 기본 병종 반환
+    if (!Number.isFinite(id)) {
+      console.warn(`[GameUnitConst] byID called with invalid ID: ${id}, returning default unit`);
+      return createFallbackUnit(1100); // 기본 병종 ID 사용
+    }
     return getUnitByID(id, scenarioId) ?? createFallbackUnit(id);
   },
   allType: () => ARM_TYPE_NAMES,

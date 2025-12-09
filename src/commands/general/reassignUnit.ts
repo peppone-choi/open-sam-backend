@@ -156,16 +156,28 @@ export class ReassignUnitCommand extends GeneralCommand {
       throw new Error('분할 수량이 스택 전체를 초과할 수 없습니다.');
     }
 
+    // 국가 ID 가져오기 (여러 소스에서 확인)
+    const generalRaw = this.generalObj as any;
+    const nationId = Number(
+      this.generalObj.getNationID?.() ?? 
+      this.generalObj.nation ?? 
+      generalRaw?.data?.nation ?? 
+      generalRaw?.nation ?? 
+      0
+    );
+    
+    console.log(`[주둔 재배치] 국가 ID 확인 - nationId: ${nationId}, generalNo: ${generalNo}, targetCityId: ${targetCityId}`);
+
     const ownerId = typeof stack.owner_id === 'number' ? stack.owner_id : Number(stack.owner_id);
     if (stack.owner_type === 'general' && ownerId === generalNo) {
-      await this.ensureCityBelongsToNation(targetCityId, this.generalObj.getNationID?.() ?? this.generalObj.nation ?? 0);
+      await this.ensureCityBelongsToNation(targetCityId, nationId);
       await this.transferFromGeneral(stackId, splitCount, targetCityId, currentCityId);
       return true;
     }
 
     if (stack.owner_type === 'city') {
       const sourceCityId = Number(stack.owner_id);
-      await this.ensureCityBelongsToNation(sourceCityId, this.generalObj.getNationID?.() ?? this.generalObj.nation ?? 0);
+      await this.ensureCityBelongsToNation(sourceCityId, nationId);
       await this.transferFromCity(stackId, splitCount, sourceCityId, currentCityId);
       return true;
     }
@@ -183,7 +195,15 @@ export class ReassignUnitCommand extends GeneralCommand {
     if (!destinationCityId) {
       throw new Error('재배치할 도시를 찾을 수 없습니다.');
     }
-    await this.ensureCityBelongsToNation(destinationCityId, this.generalObj.getNationID?.() ?? this.generalObj.nation ?? 0);
+    const generalRaw = this.generalObj as any;
+    const nationId = Number(
+      this.generalObj.getNationID?.() ?? 
+      this.generalObj.nation ?? 
+      generalRaw?.data?.nation ?? 
+      generalRaw?.nation ?? 
+      0
+    );
+    await this.ensureCityBelongsToNation(destinationCityId, nationId);
 
     const movedStack = await unitTransferService.transfer({
       stackId,
@@ -266,9 +286,13 @@ export class ReassignUnitCommand extends GeneralCommand {
     if (!city) {
       throw new Error('대상 도시를 찾을 수 없습니다.');
     }
-    const cityNation = (city as any).nation ?? (city as any).data?.nation ?? 0;
-    if (cityNation !== nationId) {
-      throw new Error('아국 도시가 아닙니다.');
+    const cityNation = Number((city as any).nation ?? (city as any).data?.nation ?? 0);
+    const myNation = Number(nationId);
+    
+    console.log(`[주둔 재배치] 도시 소속 확인 - cityId: ${cityId}, cityNation: ${cityNation}, myNation: ${myNation}`);
+    
+    if (cityNation !== myNation) {
+      throw new Error(`아국 도시가 아닙니다. (도시 소속: ${cityNation}, 내 국가: ${myNation})`);
     }
   }
 }

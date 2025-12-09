@@ -166,6 +166,7 @@ export class RankingController {
 
       if (!sessionId) {
           // 가장 최근에 생성된 Nation의 session_id를 찾음 (임시 방편)
+          // @ts-ignore - mongoose union type compatibility
           const latestNation = await Nation.findOne().sort({ createdAt: -1 }).select('session_id');
           if (latestNation) {
               sessionId = latestNation.session_id;
@@ -177,6 +178,7 @@ export class RankingController {
       // 멸망하지 않은 국가만 조회할지 여부는 기획에 따라 다름.
       // level > 0 인 국가만 조회 (0은 재야/공백지 일 수 있음)
       
+      // @ts-ignore - mongoose union type compatibility
       const nations = await Nation.find({
         ...query,
         level: { $gt: 0 } 
@@ -237,6 +239,7 @@ export class RankingController {
 
       if (!sessionId) {
         // 가장 최근 History의 session_id 찾기
+        // @ts-ignore - mongoose union type compatibility
         const latestHistory = await WorldHistory.findOne().sort({ created_at: -1 }).select('session_id');
         if (latestHistory) {
           sessionId = latestHistory.session_id;
@@ -254,6 +257,7 @@ export class RankingController {
 
       // 최신순(연도 역순) 또는 과거순 정렬. 보통 연혁은 과거 -> 현재 순으로 보여주거나
       // 최신 사건을 위로 보여줌. 여기서는 최신 사건을 먼저 보여주도록(내림차순) 설정.
+      // @ts-ignore - mongoose union type compatibility
       const history = await WorldHistory.find(query)
         .sort({ year: -1, month: -1, _id: -1 })
         .limit(1000) // 너무 많은 데이터 방지

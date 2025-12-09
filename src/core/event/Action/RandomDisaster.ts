@@ -158,7 +158,7 @@ export class RandomDisaster extends Action {
       affectedCities.push(cityName);
 
       // 로그 기록
-      const logger = new ActionLogger(0, nationId, year, month);
+      const logger = new ActionLogger(0, nationId, year, month, sessionId);
       logger.pushGlobalHistoryLog(
         `<R><b>【${config.icon} ${config.name}】</b></><Y>${cityName}</>에 ${config.message}`
       );
@@ -171,7 +171,7 @@ export class RandomDisaster extends Action {
       });
       
       for (const general of cityGenerals) {
-        const generalLogger = new ActionLogger(general.no || general.data?.no || 0, nationId, year, month);
+        const generalLogger = new ActionLogger(general.no || general.data?.no || 0, nationId, year, month, sessionId);
         generalLogger.pushGeneralActionLog(
           `<R>${config.icon} ${config.name}</> - ${config.message}`,
           ActionLogger.PLAIN

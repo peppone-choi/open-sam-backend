@@ -4,6 +4,132 @@
  */
 
 // ============================================================
+// AI Personality Types (New)
+// ============================================================
+
+export enum AIPersonalityType {
+  AGGRESSIVE = 'AGGRESSIVE',
+  DEFENSIVE = 'DEFENSIVE',
+  BALANCED = 'BALANCED',
+  CAUTIOUS = 'CAUTIOUS',
+  RECKLESS = 'RECKLESS',
+}
+
+export interface NPCBehavior {
+  personality: AIPersonalityType;
+  priorities: string[];
+  riskTolerance: number;        // 0-100
+  preferredTactics: string[];
+}
+
+export interface OfflineMode {
+  enabled: boolean;
+  defenseThreshold: number;     // HP % at which defense mode activates
+  retreatThreshold: number;     // HP % at which retreat is triggered
+  autoResupply: boolean;
+  autoRepair: boolean;
+  dangerAvoidance: boolean;
+}
+
+export interface OfflineAIConfig {
+  mode: OfflineMode;
+  lastActivity: Date;
+  afkDuration: number;          // minutes since last activity
+  autoActions: OfflineAutoAction[];
+}
+
+export interface OfflineAutoAction {
+  type: 'DEFEND' | 'RETREAT' | 'RESUPPLY' | 'REPAIR' | 'EVADE';
+  triggered: boolean;
+  triggeredAt?: Date;
+  parameters?: Record<string, unknown>;
+}
+
+// ============================================================
+// Admiral Personality Types
+// ============================================================
+
+export interface AdmiralPersonalityData {
+  admiralId: string;
+  name: string;
+  nameKo: string;
+  faction: 'GALACTIC_EMPIRE' | 'FREE_PLANETS_ALLIANCE' | 'PHEZZAN' | 'NEUTRAL';
+  
+  // Historical attributes
+  isHistorical: boolean;
+  canonDescription?: string;
+  
+  // Personality traits
+  personality: AIPersonality;
+  
+  // Combat preferences
+  preferredShipClasses: string[];
+  signatureManeuvers: string[];
+  weaknesses: string[];
+  
+  // Decision weights
+  decisionWeights: AdmiralDecisionWeights;
+}
+
+export interface AdmiralDecisionWeights {
+  attackWeight: number;         // 공격 결정 가중치
+  defenseWeight: number;        // 방어 결정 가중치
+  retreatWeight: number;        // 퇴각 결정 가중치
+  flankWeight: number;          // 측면 공격 가중치
+  feintWeight: number;          // 양동 작전 가중치
+  ambushWeight: number;         // 매복 가중치
+}
+
+// ============================================================
+// Faction AI Types
+// ============================================================
+
+export interface FactionAIGoal {
+  type: FactionGoalType;
+  priority: number;             // 1-100
+  targetId?: string;
+  parameters?: Record<string, unknown>;
+  deadline?: number;            // tick deadline
+  progress: number;             // 0-100
+}
+
+export type FactionGoalType =
+  | 'CONQUER_SYSTEM'
+  | 'DEFEND_TERRITORY'
+  | 'DESTROY_ENEMY_FLEET'
+  | 'ESTABLISH_TRADE'
+  | 'BUILD_MILITARY'
+  | 'ECONOMIC_GROWTH'
+  | 'DIPLOMATIC_ALLIANCE'
+  | 'RESEARCH_TECH';
+
+export interface FactionResourceAllocation {
+  military: number;             // % of resources to military
+  economy: number;              // % to economic development
+  research: number;             // % to research
+  diplomacy: number;            // % to diplomatic activities
+  reserve: number;              // % kept in reserve
+}
+
+export interface FactionDiplomacyDecision {
+  type: 'DECLARE_WAR' | 'PROPOSE_PEACE' | 'FORM_ALLIANCE' | 'BREAK_ALLIANCE' | 'TRADE_AGREEMENT';
+  targetFactionId: string;
+  urgency: number;              // 1-100
+  reasoning: string;
+  expectedOutcome: string;
+}
+
+export interface FactionWarPlan {
+  warId: string;
+  enemyFactionId: string;
+  phase: 'PREPARATION' | 'OFFENSIVE' | 'DEFENSIVE' | 'STALEMATE' | 'VICTORY_PUSH' | 'RETREAT';
+  objectives: FactionAIGoal[];
+  assignedFleets: string[];
+  estimatedDuration: number;    // turns
+  successProbability: number;   // 0-100
+}
+
+// ============================================================
 // Behavior Tree Node Status
 // ============================================================
 

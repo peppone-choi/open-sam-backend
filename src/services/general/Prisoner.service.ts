@@ -577,7 +577,7 @@ export class PrisonerService {
       session_id: sessionId,
       'data.prisoner_of': nationId,
     });
-    return prisoners;
+    return prisoners as IGeneral[];
   }
 
   /**

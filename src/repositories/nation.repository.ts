@@ -273,6 +273,27 @@ class NationRepository {
   }
 
   /**
+   * 세션과 국가 ID로 조회 (findByNationNum의 별칭)
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 번호
+   * @returns 국가 문서 또는 null
+   */
+  async findBySessionAndNationId(sessionId: string, nationId: number) {
+    return this.findByNationNum(sessionId, nationId);
+  }
+
+  /**
+   * 세션과 국가 ID로 업데이트 (updateByNationNum의 별칭)
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 번호
+   * @param update - 업데이트할 데이터
+   * @returns 업데이트 결과
+   */
+  async updateBySessionAndNationId(sessionId: string, nationId: number, update: any) {
+    return this.updateByNationNum(sessionId, nationId, update);
+  }
+
+  /**
    * 조건으로 국가 조회
    * @param filter - 검색 조건
    * @returns 국가 목록

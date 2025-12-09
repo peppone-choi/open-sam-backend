@@ -3,6 +3,8 @@ import { nationRepository } from '../../repositories/nation.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { COMMON_ERRORS } from '../../constants/messages';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * GetMap Service
@@ -147,6 +149,8 @@ export class GetMapService {
         ;
 
       const cityList: any[] = [];
+      const cityPositionMap: Map<number, { x: number; y: number }> = new Map();
+      
       for (const city of cities) {
         // data 필드 폴백 (MongoDB 스키마 유연성 대응)
         const d = city.data || {};
@@ -170,6 +174,60 @@ export class GetMapService {
           x,
           y
         ]);
+        
+        cityPositionMap.set(city.city, { x, y });
+      }
+
+      // 도로 연결 정보 로드 (neighbors 기반)
+      let roadList: [number, number][] = [];
+      const processedPairs = new Set<string>();
+      
+      try {
+        // 시나리오 ID 추출
+        const scenarioId = session.scenarioId || sessionData.scenarioId || 'sangokushi';
+        const citiesJsonPath = path.join(
+          __dirname,
+          '../../../config/scenarios',
+          scenarioId,
+          'data/cities.json'
+        );
+        
+        if (fs.existsSync(citiesJsonPath)) {
+          const citiesData = JSON.parse(fs.readFileSync(citiesJsonPath, 'utf-8'));
+          if (citiesData.cities && Array.isArray(citiesData.cities)) {
+            for (const cityData of citiesData.cities) {
+              if (cityData.id && cityData.neighbors && Array.isArray(cityData.neighbors)) {
+                for (const neighborId of cityData.neighbors) {
+                  // 중복 방지 (1-2와 2-1은 같은 도로)
+                  const pairKey = [Math.min(cityData.id, neighborId), Math.max(cityData.id, neighborId)].join('-');
+                  if (!processedPairs.has(pairKey)) {
+                    processedPairs.add(pairKey);
+                    roadList.push([cityData.id, neighborId]);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load road connections from scenario:', error);
+        // DB에서 neighbors 필드 시도
+        for (const city of cities) {
+          const d = city.data || {};
+          const neighbors = city.neighbors || d.neighbors || [];
+          if (Array.isArray(neighbors)) {
+            for (const neighbor of neighbors) {
+              const neighborId = typeof neighbor === 'number' ? neighbor : parseInt(String(neighbor), 10);
+              if (!isNaN(neighborId)) {
+                const pairKey = [Math.min(city.city, neighborId), Math.max(city.city, neighborId)].join('-');
+                if (!processedPairs.has(pairKey)) {
+                  processedPairs.add(pairKey);
+                  roadList.push([city.city, neighborId]);
+                }
+              }
+            }
+          }
+        }
       }
 
       // If admin (userGrade >= 5), show all cities in spy info
@@ -190,6 +248,7 @@ export class GetMapService {
         month,
         cityList,
         nationList,
+        roadList,  // 도시 간 도로 연결 정보 [fromCity, toCity][]
         spyList: spyInfo,
         shownByGeneralList,
         myCity,

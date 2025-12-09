@@ -212,8 +212,8 @@ export class TriggerCrewType implements GameAction {
     switch (this.crewInfo.armType) {
       case CrewArmType.T_ARCHER:
         // 궁병: 선제 사격 시도 + 발동
-        caller.add(new CheSeonjeAttemptTrigger(unit));
-        caller.add(new CheSeonjeActivateTrigger(unit));
+        caller.append(new CheSeonjeAttemptTrigger(unit));
+        caller.append(new CheSeonjeActivateTrigger(unit));
         break;
         
       case CrewArmType.T_CAVALRY:
@@ -253,7 +253,7 @@ export class TriggerCrewType implements GameAction {
     switch (this.crewInfo.armType) {
       case CrewArmType.T_CAVALRY:
         // 기병: 돌격 지속 (상성 우위일 때 추가 공격)
-        caller.add(new CheDolgeokPersistTrigger(unit));
+        caller.append(new CheDolgeokPersistTrigger(unit));
         break;
         
       case CrewArmType.T_ARCHER:

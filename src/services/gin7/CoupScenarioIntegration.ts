@@ -460,13 +460,14 @@ export class CoupScenarioIntegration {
       // 귀족연합 가담: 공모에 참여
       const conspiracy = await coupService.canAttemptCoup(
         context.sessionId,
-        ['braunschweig', 'littenheim', playerCharacter.characterId]
+        playerCharacter.characterId
       );
       
       logger.info('[CoupScenarioIntegration] Player joined noble rebellion', {
         sessionId: context.sessionId,
         playerId: playerCharacter.characterId,
-        feasibility: conspiracy.overallChance
+        canAttempt: conspiracy.canAttempt,
+        reason: conspiracy.reason
       });
     }
   }
@@ -508,15 +509,18 @@ export class CoupScenarioIntegration {
     }
   ): Promise<void> {
     try {
-      const result = await coupService.executeCoup({
-        sessionId: context.sessionId,
-        leaderId: data.leaderId,
-        targetGovernmentId: `GOV-${data.targetFactionId}`,
-        targetFactionId: data.targetFactionId,
-        coupType: data.coupType,
-        conspirators: data.conspirators,
-        fleetIds: data.fleetIds
-      });
+      const result = await coupService.executeCoup(
+        context.sessionId,
+        data.leaderId,
+        {
+          targetGovernmentId: `GOV-${data.targetFactionId}`,
+          targetFactionId: data.targetFactionId,
+          coupType: data.coupType,
+          conspirators: data.conspirators,
+          fleetIds: data.fleetIds,
+          targetPlanetSupport: 50  // 기본값
+        }
+      );
       
       // 결과를 시나리오 플래그로 저장
       if (result.success) {
@@ -533,8 +537,8 @@ export class CoupScenarioIntegration {
       
       logger.info('[CoupScenarioIntegration] Coup executed from scenario', {
         sessionId: context.sessionId,
-        coupId: result.coupId,
-        success: result.success
+        success: result.success,
+        error: result.error
       });
     } catch (error) {
       logger.error('[CoupScenarioIntegration] Failed to execute coup from scenario', { error });
@@ -662,6 +666,11 @@ export const COUP_SCENARIO_EVENTS = {
   LIPSTADT_WAR: LIPSTADT_WAR_EVENT,
   SALVATION_MILITARY_COUNCIL: SALVATION_MILITARY_COUNCIL_EVENT
 };
+
+
+
+
+
 
 
 

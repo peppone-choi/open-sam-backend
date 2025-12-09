@@ -86,6 +86,13 @@ export interface IWarehouse extends Document {
   
   // Metadata
   data: Record<string, unknown>;
+  
+  // Methods
+  getAvailable(resourceType: ResourceType): number;
+  getTotalUsage(): number;
+  hasCapacity(amount: number): boolean;
+  addResource(type: ResourceType, amount: number): boolean;
+  removeResource(type: ResourceType, amount: number, ignoreReserved?: boolean): boolean;
 }
 
 const ResourceItemSchema = new Schema<IResourceItem>({
@@ -351,5 +358,5 @@ export interface IWarehouseModel extends Model<IWarehouse> {
 }
 
 export const Warehouse: IWarehouseModel = 
-  mongoose.models.Warehouse || mongoose.model<IWarehouse, IWarehouseModel>('Warehouse', WarehouseSchema);
+  (mongoose.models.Warehouse as IWarehouseModel) || mongoose.model<IWarehouse, IWarehouseModel>('Warehouse', WarehouseSchema);
 

@@ -17,7 +17,7 @@ export const WARP_EVENTS = {
   WARP_FAILED: 'GIN7:WARP_FAILED',
 } as const;
 
-// Warp calculation constants
+// Warp calculation constants (gin7manual Chapter3 §와프항행)
 export const WARP_CONSTANTS = {
   BASE_CHARGE_TIME: 10,         // Base ticks to charge
   BASE_WARP_SPEED: 10,          // Light-years per tick at engine level 1
@@ -26,6 +26,11 @@ export const WARP_CONSTANTS = {
   MISJUMP_DISTANCE_FACTOR: 0.001, // Additional chance per light-year
   MAX_MISJUMP_OFFSET: 5,        // Max grids off target
   ENGINE_LEVEL_MULTIPLIER: 0.15, // Each level adds 15% speed
+  
+  // Fuel consumption (매뉴얼: 와프 연료 소비)
+  FUEL_BASE_COST: 100,          // Base fuel per warp
+  FUEL_DISTANCE_FACTOR: 10,     // Additional fuel per 100 light-years
+  FUEL_ENGINE_REDUCTION: 0.05,  // Each engine level reduces fuel by 5%
 } as const;
 
 export interface WarpRequest {
@@ -45,14 +50,28 @@ export interface WarpRequest {
     planetId?: string;
   };
   engineLevel: number;
+  currentFuel?: number;   // 현재 연료량 (검증용)
+  maxFuel?: number;       // 최대 연료량
 }
 
 export interface WarpResult {
   success: boolean;
   travelId?: string;
   estimatedDuration?: number;
+  fuelCost?: number;          // 연료 소비량
+  distance?: number;          // 이동 거리 (광년)
   error?: string;
   errorCode?: string;
+}
+
+/**
+ * 연료 소비량 계산 결과
+ */
+export interface FuelCalculation {
+  baseCost: number;
+  distanceCost: number;
+  engineBonus: number;
+  totalCost: number;
 }
 
 /**
@@ -150,6 +169,26 @@ export class WarpNavigationService extends EventEmitter {
   }
 
   /**
+   * Calculate fuel consumption for warp
+   * 연료 소비량 = 기본비용 + (거리 * 거리계수) - 엔진 보너스
+   */
+  public calculateFuelCost(distance: number, engineLevel: number): FuelCalculation {
+    const baseCost = WARP_CONSTANTS.FUEL_BASE_COST;
+    const distanceCost = Math.ceil((distance / 100) * WARP_CONSTANTS.FUEL_DISTANCE_FACTOR);
+    const rawCost = baseCost + distanceCost;
+    const engineReduction = 1 - (engineLevel * WARP_CONSTANTS.FUEL_ENGINE_REDUCTION);
+    const engineBonus = Math.floor(rawCost * (1 - engineReduction));
+    const totalCost = Math.max(50, Math.ceil(rawCost * engineReduction)); // 최소 50
+
+    return {
+      baseCost,
+      distanceCost,
+      engineBonus,
+      totalCost,
+    };
+  }
+
+  /**
    * Calculate misjump probability and offset
    * Chance increases with distance, decreases with engine level
    */
@@ -229,12 +268,26 @@ export class WarpNavigationService extends EventEmitter {
         };
       }
 
-      // Calculate travel parameters
+      // Calculate distance first for fuel check
       const distance = this.calculateDistance(
         request.origin.gridX, request.origin.gridY,
         request.destination.gridX, request.destination.gridY
       );
+
+      // Calculate fuel cost
+      const fuelCalc = this.calculateFuelCost(distance, request.engineLevel);
       
+      // Verify fuel availability if provided
+      if (request.currentFuel !== undefined && request.currentFuel < fuelCalc.totalCost) {
+        return {
+          success: false,
+          error: `Insufficient fuel: need ${fuelCalc.totalCost}, have ${request.currentFuel}`,
+          errorCode: 'INSUFFICIENT_FUEL',
+          fuelCost: fuelCalc.totalCost,
+          distance,
+        };
+      }
+
       const warpDuration = this.calculateWarpTime(distance, request.engineLevel);
       const misjumpResult = this.calculateMisjump(distance, request.engineLevel);
 
@@ -254,6 +307,7 @@ export class WarpNavigationService extends EventEmitter {
         warpDuration,
         coolingDuration: WARP_CONSTANTS.COOLING_TIME,
         distance,
+        fuelCost: fuelCalc.totalCost,
         engineLevel: request.engineLevel,
         hasMisjump: misjumpResult.hasMisjump,
         misjumpOffset: misjumpResult.offset,
@@ -281,12 +335,14 @@ export class WarpNavigationService extends EventEmitter {
         estimatedDuration: WARP_CONSTANTS.BASE_CHARGE_TIME + warpDuration + WARP_CONSTANTS.COOLING_TIME
       });
 
-      logger.info(`[WarpNavigationService] Warp requested: ${travelId}, distance: ${distance}ly, duration: ${warpDuration} ticks`);
+      logger.info(`[WarpNavigationService] Warp requested: ${travelId}, distance: ${distance}ly, fuel: ${fuelCalc.totalCost}, duration: ${warpDuration} ticks`);
 
       return {
         success: true,
         travelId,
-        estimatedDuration: WARP_CONSTANTS.BASE_CHARGE_TIME + warpDuration + WARP_CONSTANTS.COOLING_TIME
+        estimatedDuration: WARP_CONSTANTS.BASE_CHARGE_TIME + warpDuration + WARP_CONSTANTS.COOLING_TIME,
+        fuelCost: fuelCalc.totalCost,
+        distance,
       };
     } catch (error: any) {
       logger.error('[WarpNavigationService] Failed to request warp:', error);

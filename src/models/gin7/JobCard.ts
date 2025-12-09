@@ -1,88 +1,59 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-/**
- * JobCard represents a queued or active command/action for a Character.
- * 
- * Design rationale:
- * - Decoupled from Character to avoid circular reference issues
- * - Uses string IDs (not ObjectId refs) to prevent Mongoose populate overhead
- * - Indexed for efficient lookup by session, character, and status
- */
-export interface IGin7JobCard extends Document {
-  jobId: string;
-  sessionId: string;
+export type JobCardType = 
+  | 'PERSONAL'          // 개인 (기본)
+  | 'CAPTAIN'           // 함장 (기본)
+  | 'FLEET_COMMANDER'   // 함대사령관
+  | 'TRANSPORT_COMMANDER' // 수송함대사령관
+  | 'PATROL_COMMANDER'  // 순찰대사령관
+  | 'BASE_COMMANDER'    // 요새사령관
+  | 'PLANET_GOVERNOR'   // 행성총독 / 지사
+  | 'DEFENSE_COMMANDER' // 방위사령관
+  | 'FLEET_STAFF'       // 함대참모
+  | 'HIGH_ADMIRAL'      // 우주함대사령장관
+  | 'SUPREME_COMMANDER' // 제국군최고사령관 / 통합작전본부장
+  | 'DOMESTIC_MINISTER' // 국무상서 / 국무위원장
+  | 'MILITARY_MINISTER' // 군무상서 / 국방위원장
+  | 'FINANCE_MINISTER'  // 재무상서 / 재정위원장
+  | 'INTELLIGENCE_DIRECTOR'; // 군무성조사국장 / 정보부장
+
+export interface IJobCard extends Document {
   characterId: string;
-  
-  // Job Definition
-  jobType: string;  // e.g., 'DEVELOP', 'RECRUIT', 'MARCH', 'BATTLE', 'REST'
-  priority: number; // Lower = higher priority (0 = immediate)
-  
-  // Timing
-  startTick: number;      // Game tick when job started
-  durationTicks: number;  // How many ticks this job takes
-  endTick: number;        // Calculated: startTick + durationTicks
-  
-  // Status
-  status: 'queued' | 'active' | 'completed' | 'cancelled' | 'failed';
-  progress: number;       // 0-100 percentage
-  
-  // Job Parameters (flexible)
-  params: Record<string, any>;
-  // Example for MARCH: { targetX: 10, targetY: 20, speed: 1.5 }
-  // Example for DEVELOP: { cityId: 5, field: 'agriculture', amount: 10 }
-  
-  // Result (populated on completion)
-  result?: {
-    success: boolean;
-    message?: string;
-    rewards?: Record<string, number>;
-    changes?: Record<string, any>;
-  };
-  
-  // Extensibility
-  data: Record<string, any>;
+  type: JobCardType;
+  name: string; // 직책명 (예: "제13함대 사령관", "이제르론 요새 사령관")
+  targetId?: string; // 대상 ID (함대ID, 행성ID 등)
+  rankRequirement?: number; // 최소 요구 계급
+  commands: string[]; // 실행 가능한 커맨드 목록
+  isActive: boolean;
+  grantedAt: Date;
 }
 
-const Gin7JobCardSchema = new Schema<IGin7JobCard>({
-  jobId: { type: String, required: true },
-  sessionId: { type: String, required: true },
-  characterId: { type: String, required: true },
-  
-  jobType: { type: String, required: true },
-  priority: { type: Number, default: 10 },
-  
-  startTick: { type: Number, default: 0 },
-  durationTicks: { type: Number, default: 1 },
-  endTick: { type: Number, default: 0 },
-  
-  status: { 
-    type: String, 
-    enum: ['queued', 'active', 'completed', 'cancelled', 'failed'], 
-    default: 'queued' 
-  },
-  progress: { type: Number, default: 0 },
-  
-  params: { type: Schema.Types.Mixed, default: {} },
-  result: { type: Schema.Types.Mixed },
-  
-  data: { type: Schema.Types.Mixed, default: {} }
-}, {
-  timestamps: true
+const JobCardSchema: Schema = new Schema({
+  characterId: { type: String, required: true, index: true },
+  type: { type: String, required: true },
+  name: { type: String, required: true },
+  targetId: { type: String }, // 함대나 행성의 ID
+  rankRequirement: { type: Number, default: 0 },
+  commands: [{ type: String }],
+  isActive: { type: Boolean, default: true },
+  grantedAt: { type: Date, default: Date.now }
 });
 
-// === INDEXES ===
-// Primary lookup: find jobs for a character in a session
-Gin7JobCardSchema.index({ sessionId: 1, characterId: 1, status: 1 });
+// 캐릭터당 최대 16장 제한 (메뉴얼 1086행)
+// 이 검증은 Service 레벨에서 수행하는 것이 좋음
 
-// Find all active jobs in a session (for tick processing)
-Gin7JobCardSchema.index({ sessionId: 1, status: 1, endTick: 1 });
+export const JobCard = mongoose.model<IJobCard>('JobCard', JobCardSchema);
 
-// Unique job ID within session
-Gin7JobCardSchema.index({ jobId: 1, sessionId: 1 }, { unique: true });
-
-// Priority queue lookup
-Gin7JobCardSchema.index({ sessionId: 1, characterId: 1, priority: 1, status: 1 });
-
-export const Gin7JobCard: Model<IGin7JobCard> = 
-  mongoose.models.Gin7JobCard || mongoose.model<IGin7JobCard>('Gin7JobCard', Gin7JobCardSchema);
-
+// 기본 제공 카드 (메뉴얼 1083행: 개인, 함장)
+export const DEFAULT_CARDS: { type: JobCardType; name: string; commands: string[] }[] = [
+  {
+    type: 'PERSONAL',
+    name: '개인',
+    commands: ['MOVE_SHORT', 'MOVE_LONG', 'MEET', 'DEFECTION', 'RETIRE'] // 근거리이동, 원거리이동, 면담, 망명, 퇴역 등
+  },
+  {
+    type: 'CAPTAIN',
+    name: '함장',
+    commands: ['WARP', 'MOVE_SYSTEM', 'DOCK', 'REFUEL'] // 워프, 성계내이동, 기항, 연료보급
+  }
+];

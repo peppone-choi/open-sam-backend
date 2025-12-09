@@ -49,47 +49,62 @@ export interface IGeneral extends Document {
   city?: number;
   owner_name?: string;
   
-  // 완전 동적 데이터 (모든 것이 세션 설정에 따라 다름!)
+  /**
+   * 완전 동적 데이터 (모든 것이 세션 설정에 따라 다름!)
+   * PHP General::$raw와 대응
+   * 
+   * 주요 필드 설명:
+   * 
+   * === 자원 (resources) ===
+   * - gold: 소지금
+   * - rice: 군량
+   * - crew: 병력 수
+   * - crewtype: 병종 ID (1100=보병, 1200=궁병, 1300=기병, 1400=귀병, 1500=차병)
+   * 
+   * === 능력치 (attributes) ===
+   * - leadership: 통솔 (PHP: 統)
+   * - strength: 무력 (PHP: 武)
+   * - intel: 지력 (PHP: 智)
+   * - leadership_exp, strength_exp, intel_exp: 능력치 경험치
+   * - experience: 총 경험치 (explevel 레벨 계산용)
+   * - dedication: 공헌도 (dedlevel 계급 계산용)
+   * - train: 훈련도 (0~100)
+   * - atmos: 사기 (0~100)
+   * - injury: 부상 (0~100, 능력치 감소율)
+   * 
+   * === 숙련도 (proficiency by arm type) ===
+   * - dex1~dex5: 병종별 숙련도 (보병/궁병/기병/귀병/차병)
+   * 
+   * === 관직/소속 (officer/affiliation) - PHP officerLevelObj 대응 ===
+   * - nation: 소속 국가 ID (0=재야)
+   * - city: 현재 위치 도시 ID
+   * - officer_level: 관직 레벨 (1=평민, 2~4=태수, 5~11=고위직, 12=군주)
+   * - officer_city: 담당 도시 (태수용)
+   * - troop: 부대장 장수 ID (0=부대 없음)
+   * 
+   * === 특성/성격 (special/personality) - PHP specialObj/personalityObj 대응 ===
+   * - special: 내정 특기 코드 (예: 'farming', 'None')
+   * - special2: 전투 특기 코드 (예: 'charge', 'None')
+   * - personal: 성격 코드 (예: 'brave', 'None')
+   * 
+   * === 아이템 (items) - PHP itemObjs 대응 ===
+   * - horse: 말 아이템 코드 (예: 'RedHare', 'None')
+   * - weapon: 무기 아이템 코드
+   * - book: 서적 아이템 코드
+   * - item: 도구 아이템 코드
+   * 
+   * === 유산/시나리오 (inheritance/scenario) ===
+   * - aux.inheritBuff: 유산 버프 객체 (PHP inheritBuffObj 대응)
+   *   예: { warAvoidRatio: 5, warCriticalRatio: 3 }
+   * - _scenarioEffect: 시나리오 효과 키 (PHP scenarioEffect 대응)
+   * 
+   * === 기타 ===
+   * - recent_war: 최근 전쟁 시간 (Date)
+   * - turntime: 다음 턴 시간 (Date)
+   * - last_turn: 마지막 턴 정보 (JSON)
+   * - npc: NPC 타입 (0=유저, 1=NPC, 2=시스템NPC)
+   */
   data: Record<string, any>;
-  // 예시:
-  // {
-  //   // 자원 (resources)
-  //   gold: 10000,
-  //   rice: 5000,
-  //   crew: 0,
-  //   crewtype: 0,
-  //   
-  //   // 능력치 (attributes)
-  //   leadership: 80,
-  //   strength: 75,
-  //   intel: 85,
-  //   leadership_exp: 0,
-  //   strength_exp: 0,
-  //   intel_exp: 0,
-  //   experience: 0,
-  //   dedication: 0,
-  //   train: 0,
-  //   atmos: 0,
-  //   injury: 0,
-  //   
-  //   // 숙련도 (proficiency by crew type)
-  //   dex0: 0,  // 보병
-  //   dex1: 0,  // 궁병
-  //   dex2: 0,  // 기병
-  //   dex3: 0,  // 귀병
-  //   dex4: 0,  // 차병
-  //   
-  //   // 게임 로직 필드 (하드코딩 아님!)
-  //   nation: 1,
-  //   city: 10,
-  //   officer_level: 12,
-  //   troop: 0,
-  //   weapon: 'None',
-  //   book: 'None',
-  //   horse: 'None',
-  //   special: 'None',
-  //   personal: 'None'
-  // }
   
   // 헬퍼 메서드
   getVar(key: string): any;
@@ -604,19 +619,17 @@ function buildActionCacheKey(general: any): string {
  * ActionList 생성
  * PHP 대응: General::getActionList()
  * 
- * PHP 원본:
- * ```php
- * return array_merge([
- *     $this->nationType,
- *     $this->officerLevelObj,     // TODO: 미구현
- *     $this->specialDomesticObj,  // ✅ 구현
- *     $this->specialWarObj,       // ✅ 구현
- *     $this->personalityObj,      // ✅ 구현
- *     $this->crewType,            // TODO: 미구현
- *     $this->inheritBuffObj,      // TODO: 미구현
- *     $this->scenarioEffect       // TODO: 미구현
- * ], $this->itemObjs);            // TODO: 미구현
- * ```
+ * 아래 모든 객체는 GameAction 인터페이스를 구현하며, 내정/전투 보정에 사용됨:
+ * 
+ * - nationType: 국가 타입 (NationTypeAction) - 국가 고유 특성
+ * - officerLevelObj: 관직 레벨 (TriggerOfficerLevel) - 관직에 따른 통솔/내정 보너스
+ * - specialDomesticObj: 내정 특기 (SpecialDomesticAction) - 농업/상업 등 내정 보정
+ * - specialWarObj: 전투 특기 (SpecialWarAction) - 전투 시 공격/방어 보정
+ * - personalityObj: 성격 (PersonalityAction) - 다양한 행동 보정
+ * - crewType: 병종 (TriggerCrewType) - 병종별 상성/속도/회피
+ * - inheritBuffObj: 유산 버프 (TriggerInheritBuff) - 유산 포인트로 구매한 버프
+ * - scenarioEffect: 시나리오 효과 (ScenarioEffectAction) - 세션별 특수 효과
+ * - itemObjs: 아이템들 (ItemAction[]) - 말/무기/서적/도구
  */
 function createActionList(general: any): GameAction[] {
   const actions: GameAction[] = [];

@@ -215,7 +215,7 @@ export class FacilityService {
     for (const item of resourceItems) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const available = (warehouse as any).getAvailable?.(item.type) ?? 
-        (warehouse.items.find(i => i.type === item.type)?.quantity || 0);
+        (warehouse.items.find(i => i.type === item.type)?.amount || 0);
       if (available < item.amount) {
         return { 
           success: false, 
@@ -350,7 +350,7 @@ export class FacilityService {
     for (const item of resourceItems) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const available = (warehouse as any).getAvailable?.(item.type) ?? 
-        (warehouse.items.find(i => i.type === item.type)?.quantity || 0);
+        (warehouse.items.find(i => i.type === item.type)?.amount || 0);
       if (available < item.amount) {
         return { 
           success: false, 
@@ -468,7 +468,7 @@ export class FacilityService {
     for (const item of resourceItems) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const available = (warehouse as any).getAvailable?.(item.type) ?? 
-        (warehouse.items.find(i => i.type === item.type)?.quantity || 0);
+        (warehouse.items.find(i => i.type === item.type)?.amount || 0);
       if (available < item.amount) {
         return { 
           success: false, 
@@ -905,6 +905,293 @@ export class FacilityService {
     await planet.save();
     
     return { success: true };
+  }
+
+  // ==================== CHECKLIST B: 시설 조회/피해 API ====================
+
+  /**
+   * 특정 시설 조회
+   * @param sessionId 세션 ID
+   * @param planetId 행성 ID
+   * @param facilityId 시설 ID
+   * @returns 시설 정보 또는 null
+   * 
+   * 사용 예시:
+   * const facility = await FacilityService.getFacilityById('session1', 'planet1', 'FAC-123');
+   * if (facility && FacilityService.isFacilityOperational(facility)) { ... }
+   */
+  static async getFacilityById(
+    sessionId: string,
+    planetId: string,
+    facilityId: string
+  ): Promise<IPlanetFacility | null> {
+    try {
+      const planet = await Planet.findOne({ sessionId, planetId });
+      if (!planet) {
+        logger.warn(`[FacilityService] Planet not found: ${planetId}`);
+        return null;
+      }
+      
+      const facility = planet.facilities.find(f => f.facilityId === facilityId);
+      return facility || null;
+    } catch (error) {
+      logger.error(`[FacilityService] Error getting facility ${facilityId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 시설에 피해를 입힘 (SpyService 및 기타 에이전트용 공개 API)
+   * @param sessionId 세션 ID
+   * @param planetId 행성 ID
+   * @param facilityId 시설 ID
+   * @param damageAmount 피해량
+   * @returns 피해 결과 (파괴 여부, 남은 HP, 레벨 다운 여부)
+   * 
+   * 사용 예시:
+   * const result = await FacilityService.damageFacility('session1', 'planet1', 'FAC-123', 50);
+   * if (result.destroyed) { logger.info('시설 파괴됨!'); }
+   */
+  static async damageFacility(
+    sessionId: string,
+    planetId: string,
+    facilityId: string,
+    damageAmount: number
+  ): Promise<{
+    success: boolean;
+    destroyed: boolean;
+    remainingHp: number;
+    levelDowngraded: boolean;
+    operationalStatusChanged: boolean;
+    error?: string;
+  }> {
+    try {
+      const planet = await Planet.findOne({ sessionId, planetId });
+      if (!planet) {
+        return { 
+          success: false, 
+          destroyed: false, 
+          remainingHp: 0, 
+          levelDowngraded: false,
+          operationalStatusChanged: false,
+          error: 'Planet not found' 
+        };
+      }
+      
+      const facility = planet.facilities.find(f => f.facilityId === facilityId);
+      if (!facility) {
+        return { 
+          success: false, 
+          destroyed: false, 
+          remainingHp: 0, 
+          levelDowngraded: false,
+          operationalStatusChanged: false,
+          error: 'Facility not found' 
+        };
+      }
+      
+      const previousHp = facility.hp;
+      const previousOperational = facility.isOperational;
+      const previousLevel = facility.level;
+      
+      // 방어막 효과 적용 (있다면)
+      const shieldFacility = planet.facilities.find(
+        f => (f.type as string) === 'defense_shield' && f.isOperational
+      );
+      
+      let actualDamage = damageAmount;
+      if (shieldFacility) {
+        const effect = getFacilityEffect('defense_shield', shieldFacility.level);
+        const shieldAbsorb = Math.min(damageAmount * 0.3, effect.shieldStrength || 0);
+        actualDamage = Math.max(0, damageAmount - shieldAbsorb);
+        logger.debug(`[FacilityService] Shield absorbed ${shieldAbsorb} damage`);
+      }
+      
+      // 피해 적용
+      facility.hp = Math.max(0, facility.hp - actualDamage);
+      
+      let levelDowngraded = false;
+      let operationalStatusChanged = false;
+      
+      // HP 기반 상태 결정
+      if (facility.hp === 0) {
+        // 완전 파괴 - 운영 중단
+        facility.isOperational = false;
+        operationalStatusChanged = previousOperational;
+        logger.info(`[FacilityService] Facility destroyed: ${facility.type} on ${planetId}`);
+      } else if (facility.hp < facility.maxHp * 0.3 && facility.level > 1) {
+        // 30% 이하 && 레벨 2 이상 -> 레벨 다운 (심각한 피해)
+        facility.level = Math.max(1, facility.level - 1);
+        facility.maxHp = calculateFacilityMaxHp(facility.type as ExtendedFacilityType, facility.level);
+        facility.hp = Math.min(facility.hp, facility.maxHp); // maxHp 초과 방지
+        levelDowngraded = true;
+        logger.info(`[FacilityService] Facility level downgraded: ${facility.type} to level ${facility.level}`);
+      } else if (facility.hp < facility.maxHp * 0.5) {
+        // 50% 이하 - 효율 감소
+        facility.productionBonus = -0.5;
+        if (facility.hp < facility.maxHp * 0.2) {
+          // 20% 이하 - 운영 중단
+          facility.isOperational = false;
+          operationalStatusChanged = previousOperational;
+        }
+        logger.debug(`[FacilityService] Facility damaged (efficiency reduced): ${facility.type}`);
+      }
+      
+      await planet.save();
+      
+      return {
+        success: true,
+        destroyed: facility.hp === 0,
+        remainingHp: facility.hp,
+        levelDowngraded,
+        operationalStatusChanged
+      };
+    } catch (error) {
+      logger.error(`[FacilityService] Error damaging facility ${facilityId}:`, error);
+      return { 
+        success: false, 
+        destroyed: false, 
+        remainingHp: 0, 
+        levelDowngraded: false,
+        operationalStatusChanged: false,
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * 시설 파괴 여부 확인 헬퍼
+   * @param facility 시설 정보
+   * @returns HP가 0인지 여부
+   */
+  static isFacilityDestroyed(facility: IPlanetFacility): boolean {
+    return facility.hp <= 0;
+  }
+
+  /**
+   * 시설 비활성 여부 확인 헬퍼
+   * @param facility 시설 정보
+   * @returns 운영 중단 여부
+   */
+  static isFacilityDisabled(facility: IPlanetFacility): boolean {
+    return !facility.isOperational || facility.hp <= 0;
+  }
+
+  /**
+   * 시설 운영 가능 여부 확인 헬퍼
+   * @param facility 시설 정보
+   * @returns 운영 가능 여부
+   */
+  static isFacilityOperational(facility: IPlanetFacility): boolean {
+    return facility.isOperational && facility.hp > 0;
+  }
+
+  /**
+   * 첩보/사보타주로 시설을 손상시킨 것을 기록
+   * 사보타주 메타데이터를 시설에 저장 (추후 복구/수사 등에 활용)
+   * @param sessionId 세션 ID
+   * @param planetId 행성 ID
+   * @param facilityId 시설 ID
+   * @param sabotageData 사보타주 정보
+   * @returns 성공 여부
+   * 
+   * 사용 예시:
+   * await FacilityService.markFacilitySabotaged('session1', 'planet1', 'FAC-123', {
+   *   operationType: 'spy_sabotage',
+   *   executedBy: 'spy-char-id',
+   *   damage: 50,
+   *   timestamp: new Date()
+   * });
+   */
+  static async markFacilitySabotaged(
+    sessionId: string,
+    planetId: string,
+    facilityId: string,
+    sabotageData: {
+      operationType: string;
+      executedBy?: string;
+      damage?: number;
+      timestamp?: Date;
+      notes?: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const planet = await Planet.findOne({ sessionId, planetId });
+      if (!planet) {
+        return { success: false, error: 'Planet not found' };
+      }
+      
+      const facility = planet.facilities.find(f => f.facilityId === facilityId);
+      if (!facility) {
+        return { success: false, error: 'Facility not found' };
+      }
+      
+      // 시설 데이터에 사보타주 기록 추가
+      facility.data = facility.data || {};
+      facility.data.sabotageHistory = facility.data.sabotageHistory || [];
+      facility.data.sabotageHistory.push({
+        ...sabotageData,
+        timestamp: sabotageData.timestamp || new Date(),
+        recordedAt: new Date()
+      });
+      
+      // 마지막 사보타주 기록
+      facility.data.lastSabotage = {
+        operationType: sabotageData.operationType,
+        timestamp: sabotageData.timestamp || new Date()
+      };
+      
+      await planet.save();
+      
+      logger.info(`[FacilityService] Facility sabotage recorded: ${facilityId} on ${planetId}`);
+      
+      return { success: true };
+    } catch (error) {
+      logger.error(`[FacilityService] Error marking facility sabotaged:`, error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * 행성의 특정 타입 시설 조회
+   * @param sessionId 세션 ID
+   * @param planetId 행성 ID
+   * @param facilityType 시설 타입
+   * @returns 해당 타입의 시설 목록
+   */
+  static async getFacilitiesByType(
+    sessionId: string,
+    planetId: string,
+    facilityType: ExtendedFacilityType | FacilityType
+  ): Promise<IPlanetFacility[]> {
+    try {
+      const planet = await Planet.findOne({ sessionId, planetId });
+      if (!planet) return [];
+      
+      return planet.facilities.filter(f => f.type === facilityType);
+    } catch (error) {
+      logger.error(`[FacilityService] Error getting facilities by type:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 행성의 운영 중인 시설만 조회
+   * @param sessionId 세션 ID
+   * @param planetId 행성 ID
+   * @returns 운영 중인 시설 목록
+   */
+  static async getOperationalFacilities(
+    sessionId: string,
+    planetId: string
+  ): Promise<IPlanetFacility[]> {
+    try {
+      const facilities = await this.getPlanetFacilities(sessionId, planetId);
+      return facilities.filter(f => this.isFacilityOperational(f));
+    } catch (error) {
+      logger.error(`[FacilityService] Error getting operational facilities:`, error);
+      return [];
+    }
   }
 }
 

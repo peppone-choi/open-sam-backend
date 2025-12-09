@@ -3,6 +3,11 @@ import { InvestCommerceCommand } from './investCommerce';
 import { LastTurn } from '../base/BaseCommand';
 import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
+import { 
+  CriticalRatioDomestic, 
+  CriticalScoreEx, 
+  updateMaxDomesticCritical 
+} from '../../utils/game-processing';
 
 /**
  * 기술 연구 커맨드
@@ -58,7 +63,12 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
     let score = Math.max(1, this.calcBaseScore(rng));
 
-    let { success: successRatio, fail: failRatio } = this.criticalRatioDomestic(general, statKey);
+    // PHP CriticalRatioDomestic와 동일하게 3개 능력치 사용
+    const leadership = general.getLeadership(true, true, true, false);
+    const strength = general.getStrength(true, true, true, false);
+    const intel = general.getIntel(true, true, true, false);
+
+    let { success: successRatio, fail: failRatio } = CriticalRatioDomestic(leadership, strength, intel, statKey as 'leadership' | 'strength' | 'intel');
     if (trust < 80) {
       // 0으로 나누기 방지 (trust는 이미 50~100 범위)
       successRatio *= trust / 80;
@@ -79,7 +89,7 @@ export class ResearchTechCommand extends InvestCommerceCommand {
     const logger = general.getLogger();
     const date = general.getTurnTime(general.TURNTIME_HM);
 
-    score *= this.criticalScoreEx(rng, pick);
+    score *= CriticalScoreEx(rng, pick);
     score = Math.round(score);
 
     const exp = score * 0.7;
@@ -87,9 +97,8 @@ export class ResearchTechCommand extends InvestCommerceCommand {
 
     if (pick === 'success') {
       try {
-        if (typeof general.updateMaxDomesticCritical === 'function') {
-          // TODO: general.updateMaxDomesticCritical();
-        }
+        // 내정 크리티컬 성공 시 상한 갱신 (PHP updateMaxDomesticCritical 대응)
+        updateMaxDomesticCritical(general, score);
       } catch (error) {
         console.error('updateMaxDomesticCritical 실패:', error);
       }

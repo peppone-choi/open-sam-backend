@@ -7,7 +7,7 @@ import { RandUtil } from '../utils/RandUtil';
 import { LiteHashDRBG } from '../utils/LiteHashDRBG';
 import { WarUnitGeneral } from './WarUnitGeneral';
 import { WarUnitCity } from './WarUnitCity';
-import { WarUnit } from './WarUnit';
+import { WarUnit, DamageResult } from './WarUnit';
 import { DB } from '../config/db';
 import { GameConst } from '../constants/GameConst';
 import { Util } from '../utils/Util';
@@ -374,7 +374,19 @@ async function processWar_NG(
   
   // 리플레이 데이터 생성
   const replayData = replayBuilder.build();
-  // TODO: replayData 저장 로직 추가
+  
+  try {
+    const { battleReplayRepository } = await import('../repositories/battle-replay.repository');
+    // 리포지토리가 없다면 직접 DB 저장 시도
+    if (battleReplayRepository) {
+      await battleReplayRepository.create(replayData);
+    } else {
+      await (DB as any).db().collection('battle_replay').insertOne(replayData);
+    }
+    // console.log(`Battle replay saved: ${warSeed}`);
+  } catch (error) {
+    console.error('Failed to save battle replay:', error);
+  }
 
   return conquerCity;
 }
@@ -503,9 +515,12 @@ async function processTurn(ctx: BattleContext): Promise<TurnResult> {
   attacker.beginPhase();
   defender?.beginPhase();
   
-  // 데미지 계산 (순수 계산 서비스 사용)
-  const rawDefenderDamage = attacker.calcDamage();
-  const rawAttackerDamage = defender?.calcDamage() || 0;
+  // 데미지 계산 (크리티컬 포함)
+  const attackerDamageResult = attacker.calcDamageWithCritical();
+  const defenderDamageResult = defender?.calcDamageWithCritical() || { damage: 0, isCritical: false };
+  
+  const rawDefenderDamage = attackerDamageResult.damage;
+  const rawAttackerDamage = defenderDamageResult.damage;
 
   const { attackerDamage, defenderDamage } = resolveDamageOutcome({
     attackerHP: attacker.getHP(),
@@ -519,30 +534,50 @@ async function processTurn(ctx: BattleContext): Promise<TurnResult> {
   
   attacker.increaseKilled(defenderDamage);
   defender?.increaseKilled(attackerDamage);
+  
+  // 크리티컬 정보 추출
+  const isAttackerCritical = attackerDamageResult.isCritical;
+  const isDefenderCritical = defenderDamageResult.isCritical;
 
-  // Replay Log: Attack
+  // Replay Log: Attack (크리티컬 여부 포함)
   const attackerId = attacker.getGeneral().getID?.() || 0;
   const defenderId = defender instanceof WarUnitGeneral ? (defender.getGeneral().getID?.() || 0) : `city-${city.getVar('city')}`;
   
-  if (attackerDamage > 0) {
-    replayBuilder.logAttack(defenderId, attackerId, attackerDamage, defender?.getHP() || 0, attacker.getHP());
-  }
   if (defenderDamage > 0) {
-    replayBuilder.logAttack(attackerId, defenderId, defenderDamage, attacker.getHP(), defender?.getHP() || 0);
+    // 공격자가 수비자에게 가한 데미지 (공격자의 크리티컬)
+    replayBuilder.logAttack(attackerId, defenderId, defenderDamage, attacker.getHP(), defender?.getHP() || 0, isAttackerCritical);
+  }
+  if (attackerDamage > 0) {
+    // 수비자가 공격자에게 가한 데미지 (수비자의 크리티컬)
+    replayBuilder.logAttack(defenderId, attackerId, attackerDamage, defender?.getHP() || 0, attacker.getHP(), isDefenderCritical);
   }
   
-  // 페이즈 로그
+  // 페이즈 로그 (크리티컬 표시 포함)
   const currPhase = attacker.getPhase() + 1;
   const phaseNickname = defender && defender.getPhase() < 0 ? '先' : `${currPhase} `;
   
+  // 크리티컬 표시 문자열 생성
+  const attackerCritMark = isAttackerCritical ? ' <R>★필살!</>' : '';
+  const defenderCritMark = isDefenderCritical ? ' <R>★필살!</>' : '';
+  
   if (attackerDamage > 0 || defenderDamage > 0) {
+    // 공격자 로그: 공격자 크리티컬 시 표시
     attacker.getLogger()?.pushGeneralBattleDetailLog?.(
-      `${phaseNickname}: <Y1>【${attacker.getName()}】</> <C>${attacker.getHP()} (-${attackerDamage})</> VS <C>${defender?.getHP() || 0} (-${defenderDamage})</> <Y1>【${defender?.getName() || ''}】</>`
+      `${phaseNickname}: <Y1>【${attacker.getName()}】</> <C>${attacker.getHP()} (-${attackerDamage})</>${defenderCritMark} VS <C>${defender?.getHP() || 0} (-${defenderDamage})</>${attackerCritMark} <Y1>【${defender?.getName() || ''}】</>`
     );
     
+    // 수비자 로그: 수비자 크리티컬 시 표시
     defender?.getLogger()?.pushGeneralBattleDetailLog?.(
-      `${phaseNickname}: <Y1>【${defender.getName()}】</> <C>${defender.getHP()} (-${defenderDamage})</> VS <C>${attacker.getHP()} (-${attackerDamage})</> <Y1>【${attacker.getName()}】</>`
+      `${phaseNickname}: <Y1>【${defender.getName()}】</> <C>${defender.getHP()} (-${defenderDamage})</>${attackerCritMark} VS <C>${attacker.getHP()} (-${attackerDamage})</>${defenderCritMark} <Y1>【${attacker.getName()}】</>`
     );
+  }
+  
+  // 크리티컬 발동 시 글로벌 로그에도 알림 (선택적)
+  if (isAttackerCritical && defenderDamage > 0) {
+    logger?.pushGlobalActionLog?.(`<R>★</> <Y>${attacker.getName()}</> 필살 공격!`);
+  }
+  if (isDefenderCritical && attackerDamage > 0) {
+    logger?.pushGlobalActionLog?.(`<R>★</> <Y>${defender?.getName()}</> 필살 반격!`);
   }
   
   attacker.addPhase();

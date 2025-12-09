@@ -105,6 +105,15 @@ export interface IMarketPrice extends Document {
   // Metadata
   updatedAt: Date;
   data: Record<string, unknown>;
+  
+  // Methods
+  calculateSupplyModifier(): number;
+  calculateDemandModifier(): number;
+  recalculatePrice(): number;
+  getBuyPrice(quantity: number): number;
+  getSellPrice(quantity: number): number;
+  recordPriceHistory(): void;
+  getPriceTrend(): number;
 }
 
 const PriceHistorySchema = new Schema<IPriceHistory>({
@@ -384,5 +393,5 @@ export interface IMarketPriceModel extends Model<IMarketPrice> {
 }
 
 export const MarketPrice: IMarketPriceModel = 
-  mongoose.models.MarketPrice || mongoose.model<IMarketPrice, IMarketPriceModel>('MarketPrice', MarketPriceSchema);
+  (mongoose.models.MarketPrice as IMarketPriceModel) || mongoose.model<IMarketPrice, IMarketPriceModel>('MarketPrice', MarketPriceSchema);
 

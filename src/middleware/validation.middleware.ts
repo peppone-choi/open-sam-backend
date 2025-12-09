@@ -96,6 +96,7 @@ export const dieOnPrestartSchema = yup.object({
 export const getCommandTableSchema = yup.object({
   session_id: yup.string().default('sangokushi_default'),
   category: yup.string().oneOf(['all', 'internal', 'military', 'personnel', 'diplomacy', 'special']).default('all'),
+  general_id: yup.number().integer().min(0).optional(),
 });
 
 export const getFrontInfoSchema = yup.object({
@@ -655,8 +656,10 @@ export const getMessageListSchema = yup.object({
 
 export const getMessagesSchema = yup.object({
   session_id: yup.string().default('sangokushi_default'),
-  type: yup.string().oneOf(['received', 'sent']).optional(),
+  type: yup.string().oneOf(['received', 'sent', 'system', 'nation', 'personal', 'diplomacy', 'all']).optional(),
   limit: yup.number().integer().min(1).max(100).optional(),
+  offset: yup.number().integer().min(0).optional(),
+  general_id: yup.number().integer().min(0).optional(),
 });
 
 export const getOldMessageSchema = yup.object({

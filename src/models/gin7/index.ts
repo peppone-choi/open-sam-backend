@@ -49,6 +49,9 @@ export * from './Fighter';
 // gin7-npc-ai models
 export * from './NPCFaction';
 
+// gin7-faction models
+export * from './Faction';
+
 // gin7-scenario-script models
 export * from './Scenario';
 export * from './ScenarioSession';

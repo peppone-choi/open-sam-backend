@@ -57,7 +57,12 @@ export class CommanderWrapper implements ILoghCommandExecutor {
     return this.commander.faction;
   }
 
-  getRank(): string {
+  getRank(): number {
+    // 숫자 rank 반환
+    return this.commander.rank;
+  }
+
+  getRankName(): string {
     // 숫자 rank를 문자열 계급명으로 변환
     return getRankName(this.commander.rank, this.commander.faction);
   }

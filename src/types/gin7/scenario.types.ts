@@ -331,15 +331,20 @@ export interface ActionParams {
   // MOVE_FLEET, REMOVE_FLEET
   fleetId?: string;
   targetLocationId?: string;
+  targetLocationType?: 'planet' | 'fleet' | 'base' | 'system';
   
   // MODIFY_STAT, MODIFY_RESOURCE, MODIFY_MORALE
   targetId?: string;
+  targetType?: 'PLANET' | 'CHARACTER' | 'FLEET' | 'FACTION';
   statName?: string;
+  resourceType?: string;
+  amount?: number;
   value?: number;
   operation?: 'set' | 'add' | 'subtract' | 'multiply';
   
   // CHANGE_OWNER
   locationId?: string;
+  locationType?: 'planet' | 'system' | 'base';
   newOwnerId?: string;
   
   // SET_FLAG

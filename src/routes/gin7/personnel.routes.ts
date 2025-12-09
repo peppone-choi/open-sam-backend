@@ -13,7 +13,7 @@
 import { Router, Request, Response } from 'express';
 import { RankLadderService } from '../../services/gin7/RankLadderService';
 import { PromotionService } from '../../services/gin7/PromotionService';
-import { AppointmentService, PositionCode } from '../../services/gin7/AppointmentService';
+import { AppointmentService } from '../../services/gin7/AppointmentService';
 import { StatsGrowthService } from '../../services/gin7/StatsGrowthService';
 import { LifeCycleService, RetirementType, DeathType } from '../../services/gin7/LifeCycleService';
 import { RankCode, getAllRanks, getRankDefinition } from '../../config/gin7/ranks';
@@ -222,7 +222,7 @@ router.post('/personnel/appoint', async (req: Request, res: Response) => {
       sessionId,
       appointerId,
       targetId,
-      positionCode as PositionCode,
+      positionCode as string,
       scopeId
     );
     

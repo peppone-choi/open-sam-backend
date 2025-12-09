@@ -225,7 +225,7 @@ export class RankLadderService extends EventEmitter {
       return RankLadder.calculateRankInLadder(sessionId, factionId, rank, characterId);
     }
     
-    return rankIndex + 1; // 1-based
+    return (rankIndex as number) + 1; // 1-based
   }
   
   /**

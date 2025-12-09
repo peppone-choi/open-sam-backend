@@ -38,7 +38,7 @@ export const requireGin7Admin = (minRole: AdminRole = 'observer') => {
       // Gin7User에서 권한 정보 조회
       const gin7User = await Gin7User.findOne({ userId: user.userId })
         .select('userId username role isBanned')
-        .lean() as IGin7User | null;
+        .lean() as unknown as IGin7User | null;
 
       if (!gin7User) {
         return res.status(403).json({

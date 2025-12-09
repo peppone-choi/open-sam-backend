@@ -201,6 +201,11 @@ export interface IGovernmentStructure extends Document {
   foundedAt: Date;
   lastUpdated: Date;
   data: Record<string, unknown>;
+  
+  // 메서드
+  appointToPosition(positionId: string, characterId: string, characterName: string, appointedBy: string): boolean;
+  removeFromPosition(positionId: string): boolean;
+  hasAuthority(characterId: string, authority: AuthorityType): boolean;
 }
 
 const PositionHolderSchema = new Schema<IPositionHolder>({

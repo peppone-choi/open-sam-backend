@@ -10,7 +10,7 @@ export interface StartConspiracyParams {
   targetLeaderId?: string;
 }
 
-export interface RecruitResult {
+export interface ConspiracyRecruitResult {
   success: boolean;
   accepted: boolean;
   discovered: boolean;
@@ -74,7 +74,7 @@ class ConspiracyService {
     conspiracyId: string,
     recruiterId: string,
     targetId: string
-  ): Promise<RecruitResult> {
+  ): Promise<ConspiracyRecruitResult> {
     const conspiracy = await Gin7Conspiracy.findOne({
       sessionId,
       conspiracyId,

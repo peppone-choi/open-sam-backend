@@ -521,6 +521,7 @@ export class FleetService {
       frigate: 20,
       corvette: 10,
       transport: 5,
+      landing: 5,
       engineering: 5
     };
     

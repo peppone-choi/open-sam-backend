@@ -92,6 +92,14 @@ export interface IPlanetSupport extends Document {
   // 메타데이터
   lastUpdated: Date;
   data: Record<string, unknown>;
+  
+  // Methods
+  calculateEffectiveSupportRate(): number;
+  calculateEffectiveSecurityLevel(): number;
+  calculateRiotRisk(): number;
+  calculateTaxCompliance(): number;
+  updateProductionPenalty(): void;
+  updateRiotStatus(): void;
 }
 
 const SupportFactorSchema = new Schema<ISupportFactor>({

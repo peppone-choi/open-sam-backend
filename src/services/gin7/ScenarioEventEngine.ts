@@ -47,7 +47,7 @@ export interface EventExecutionResult {
 
 export interface TriggerContext {
   sessionId: string;
-  turn: number;
+  turn?: number;
   gameDate: GameDate;
   
   // 트리거 관련 데이터
@@ -117,7 +117,6 @@ export class ScenarioEventEngine extends EventEmitter {
   private async handleDayStart(payload: DayStartPayload): Promise<void> {
     await this.checkTriggersForType('ON_DAY_START', {
       sessionId: payload.sessionId,
-      turn: payload.turn,
       gameDate: { year: payload.year, month: payload.month, day: payload.day },
     });
   }
@@ -125,7 +124,6 @@ export class ScenarioEventEngine extends EventEmitter {
   private async handleMonthStart(payload: MonthStartPayload): Promise<void> {
     await this.checkTriggersForType('ON_MONTH_START', {
       sessionId: payload.sessionId,
-      turn: payload.turn,
       gameDate: { year: payload.year, month: payload.month, day: 1 },
     });
   }
@@ -603,11 +601,11 @@ export class ScenarioEventEngine extends EventEmitter {
             const currentValue = planet.resources[key] || 0;
             let newValue = currentValue;
             
-            if (operation === 'ADD' || !operation) {
+            if (operation === 'add' || !operation) {
               newValue = currentValue + (amount as number || 0);
-            } else if (operation === 'SET') {
+            } else if (operation === 'set') {
               newValue = amount as number || 0;
-            } else if (operation === 'SUBTRACT') {
+            } else if (operation === 'subtract') {
               newValue = Math.max(0, currentValue - (amount as number || 0));
             }
             
@@ -630,11 +628,11 @@ export class ScenarioEventEngine extends EventEmitter {
             const currentValue = character.resources[resourceType as string] || 0;
             let newValue = currentValue;
             
-            if (operation === 'ADD' || !operation) {
+            if (operation === 'add' || !operation) {
               newValue = currentValue + (amount as number || 0);
-            } else if (operation === 'SET') {
+            } else if (operation === 'set') {
               newValue = amount as number || 0;
-            } else if (operation === 'SUBTRACT') {
+            } else if (operation === 'subtract') {
               newValue = Math.max(0, currentValue - (amount as number || 0));
             }
             
@@ -820,7 +818,7 @@ export class ScenarioEventEngine extends EventEmitter {
             systemId: locationId as string 
           });
           
-          if (system || locationType === 'SYSTEM') {
+          if (system || locationType === 'system') {
             await StarSystem.updateOne(
               { sessionId: context.sessionId, systemId: locationId as string },
               { $set: { controllingFactionId: newOwnerId as string } }
@@ -977,10 +975,10 @@ export class ScenarioEventEngine extends EventEmitter {
         return false;
         
       case 'DESTROY_FLEET':
-        // 특정 함대 격파 조건
+        // 특정 함대 격파 조건 (fleet이 없으면 격파됨)
         if (params.fleetId) {
           const fleet = await FleetService.getFleet(context.sessionId, params.fleetId);
-          return !fleet || fleet.status === 'DESTROYED';
+          return !fleet;
         }
         return false;
         

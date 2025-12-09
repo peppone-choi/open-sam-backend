@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Gin7Spy, IGin7Spy } from '../../models/gin7/Spy';
 import { Gin7IntelReport, IGin7IntelReport } from '../../models/gin7/IntelReport';
 import { Gin7Character } from '../../models/gin7/Character';
-import { Gin7Planet } from '../../models/gin7/Planet';
+import { Planet as Gin7Planet } from '../../models/gin7/Planet';
 
 export interface DeploySpyParams {
   sessionId: string;

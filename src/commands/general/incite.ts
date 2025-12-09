@@ -14,7 +14,8 @@ export class InciteCommand extends GeneralCommand {
   protected static actionName = '선동';
   public static reqArg = true;
 
-  protected static statType = 'charm'; // 선동은 매력 주력 (+ 지력 보조)
+  // PHP 원본: static protected $statType = 'leadership';
+  protected static statType = 'leadership'; // 선동은 통솔 기반 (che_화계를 상속하며 같은 statType 사용)
   protected static injuryGeneral = true;
 
   protected argTest(): boolean {
@@ -40,6 +41,7 @@ export class InciteCommand extends GeneralCommand {
     const statType = (this.constructor as typeof InciteCommand).statType;
     const general = this.generalObj;
 
+    // PHP 원본: statType에 따라 단일 스탯만 사용
     let genScore = 0;
     if (statType === 'leadership') {
       genScore = general.getLeadership();
@@ -50,10 +52,9 @@ export class InciteCommand extends GeneralCommand {
     } else if (statType === 'politics') {
       genScore = general.getPolitics();
     } else if (statType === 'charm') {
-      // 선동은 매력 70% + 지력 30% 복합
-      const charm = general.getCharm();
-      const intel = general.getIntel();
-      genScore = charm * 0.7 + intel * 0.3;
+      genScore = general.getCharm();
+    } else {
+      throw new Error('Invalid stat type');
     }
 
     // 0으로 나누기 방지
@@ -84,6 +85,7 @@ export class InciteCommand extends GeneralCommand {
 
       affectGeneralCount++;
 
+      // PHP 원본: statType에 따라 단일 스탯만 사용
       let genScore = 0;
       if (statType === 'leadership') {
         genScore = destGeneral.getLeadership();
@@ -94,10 +96,7 @@ export class InciteCommand extends GeneralCommand {
       } else if (statType === 'politics') {
         genScore = destGeneral.getPolitics();
       } else if (statType === 'charm') {
-        // 선동 방어도 매력 70% + 지력 30%
-        const charm = destGeneral.getCharm();
-        const intel = destGeneral.getIntel();
-        genScore = charm * 0.7 + intel * 0.3;
+        genScore = destGeneral.getCharm();
       }
       maxGenScore = Math.max(maxGenScore, genScore);
       
@@ -133,40 +132,39 @@ export class InciteCommand extends GeneralCommand {
   }
 
   protected initWithArg(): void {
+    // PHP 원본과 동일하게: setDestCity, setDestNation을 먼저 설정
     this.setNation();
-    const [reqGold, reqRice] = this.getCost();
-
-    // fullConditionConstraints를 먼저 설정
-    this.fullConditionConstraints = [
-      ConstraintHelper.NotBeNeutral(),
-      ConstraintHelper.OccupiedCity(),
-      ConstraintHelper.SuppliedCity(),
-      ConstraintHelper.NotSameDestCity(),
-      ConstraintHelper.ReqGeneralGold(reqGold),
-      ConstraintHelper.ReqGeneralRice(reqRice),
-      ConstraintHelper.ReqGeneralValue('leadership', '통솔', '>=', 80),
-      ConstraintHelper.ReqGeneralValue('intel', '지력', '>=', 80),
-    ];
-    
-    // setDestCity, setDestNation은 비동기 작업이므로 나중에 처리
     this.setDestCity(this.arg.destCityID);
     if (this.destCity) {
       this.setDestNation(this.destCity.nation);
     }
+
+    const [reqGold, reqRice] = this.getCost();
+
+    // PHP 원본 (che_화계.php initWithArg)과 동일한 조건들
+    this.fullConditionConstraints = [
+      ConstraintHelper.NotBeNeutral(),
+      ConstraintHelper.OccupiedCity(),
+      ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.NotOccupiedDestCity(),
+      ConstraintHelper.NotNeutralDestCity(),
+      ConstraintHelper.ReqGeneralGold(reqGold),
+      ConstraintHelper.ReqGeneralRice(reqRice),
+      ConstraintHelper.DisallowDiplomacyBetweenStatus({7: '불가침국입니다.'}),
+    ];
   }
 
   public getCommandDetailTitle(): string {
     const name = (this.constructor as typeof GeneralCommand).getName();
     const statType = (this.constructor as typeof InciteCommand).statType;
     
+    // PHP 원본: 통솔/무력/지력 3종만 지원
     const statTypeBase: Record<string, string> = {
       'leadership': '통솔경험',
       'strength': '무력경험',
       'intel': '지력경험',
-      'politics': '정치경험',
-      'charm': '매력경험',
     };
-    const statTypeName = statTypeBase[statType];
+    const statTypeName = statTypeBase[statType] || '경험';
     const [reqGold, reqRice] = this.getCost();
 
     let title = `${name}(${statTypeName}`;
@@ -269,7 +267,6 @@ export class InciteCommand extends GeneralCommand {
       await this.setDestNation(this.destCity.nation);
     }
 
-    const env = this.env;
     const general = this.generalObj;
     const sessionId = general.getSessionID();
     const date = general.getTurnTime('HM');
@@ -284,7 +281,7 @@ export class InciteCommand extends GeneralCommand {
 
     const logger = general.getLogger();
 
-    // 거리 계산
+    // 거리 계산 (PHP: $dist = searchDistance($general->getCityID(), 5, false)[$destCityID] ?? 99;)
     let dist = 1;
     try {
       const { searchDistance } = await import('../../func/searchDistance');
@@ -294,18 +291,19 @@ export class InciteCommand extends GeneralCommand {
       console.error('거리 계산 실패:', error);
     }
 
-    // 목표 도시의 장수 로드
+    // 목표 도시의 장수 로드 (PHP: General::createObjListFromDB)
     const destCityGeneralList: any[] = [];
     try {
       const generals = await generalRepository.findByFilter({
         session_id: sessionId,
-        'data.city': destCityID
+        'data.city': destCityID,
+        'data.nation': destNationID
       });
       
       for (const genDoc of generals) {
-        const { General } = await import('../../models/general.model');
         const genObj = await General.createObjFromDB(genDoc.data?.no, sessionId);
         if (genObj) {
+          genObj.setRawCity?.(destCity);
           destCityGeneralList.push(genObj);
         }
       }
@@ -313,12 +311,15 @@ export class InciteCommand extends GeneralCommand {
       console.error('장수 로드 실패:', error);
     }
 
-    const prob = Util.valueFit(
-      ((GameConst.sabotageDefaultProb || GameConstCompat.sabotageDefaultProb) + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList)) / dist,
-      0,
-      0.5
-    );
+    // PHP 원본: $prob = GameConst::$sabotageDefaultProb + $this->calcSabotageAttackProb() - $this->calcSabotageDefenceProb($destCityGeneralList);
+    // $prob /= $dist;
+    // $prob = Util::valueFit($prob, 0, 0.5);
+    const sabotageDefaultProb = GameConst.sabotageDefaultProb || GameConstCompat.sabotageDefaultProb || 0.05;
+    let prob = sabotageDefaultProb + this.calcSabotageAttackProb() - this.calcSabotageDefenceProb(destCityGeneralList);
+    prob /= dist;
+    prob = Util.valueFit(prob, 0, 0.5);
 
+    // 실패 처리
     if (!rng.nextBool(prob)) {
       const josaYi = JosaUtil.pick(commandName, '이');
       logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>에 ${commandName}${josaYi} 실패했습니다. <1>${date}</>`);
@@ -331,9 +332,8 @@ export class InciteCommand extends GeneralCommand {
       general.increaseVarWithLimit('rice', -reqRice, 0);
       general.addExperience(exp);
       general.addDedication(ded);
-      // 선동은 매력 70% + 지력 30%
-      general.increaseVar('charm_exp', 1);
-      general.increaseVar('intel_exp', 0.5);
+      // PHP 원본: $general->increaseVar($statType . '_exp', 1);
+      general.increaseVar(`${statType}_exp`, 1);
 
       this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
       general.checkStatChange();
@@ -341,14 +341,12 @@ export class InciteCommand extends GeneralCommand {
       return false;
     }
 
+    // 부상 처리 (PHP: SabotageInjury)
     let injuryCount = 0;
     if ((this.constructor as typeof InciteCommand).injuryGeneral) {
       try {
-        const { SabotageService } = await import('../../common/services/sabotage.service');
-        // 간단한 부상 처리: 20% 확률로 장수 1명 부상
-        if (rng.nextFloat1() < 0.2 && destCityGeneralList.length > 0) {
-          injuryCount = 1;
-        }
+        const { SabotageInjury } = await import('../../func/sabotageInjury');
+        injuryCount = await SabotageInjury(rng, destCityGeneralList, '계략');
       } catch (error) {
         console.error('부상 처리 실패:', error);
         injuryCount = 0;
@@ -357,15 +355,25 @@ export class InciteCommand extends GeneralCommand {
 
     await this.affectDestCity(rng, injuryCount);
 
-    // 아이템 소모 처리
-    // TODO: general.consumeSabotageItem() 구현 필요
-    // try {
-    //   if (typeof general.consumeSabotageItem === 'function') {
-    //     await general.consumeSabotageItem();
-    //   }
-    // } catch (error) {
-    //   console.error('아이템 소모 실패:', error);
-    // }
+    // 아이템 소모 처리 (PHP 원본: tryConsumeNow 방식)
+    try {
+      const itemObj = general.getItem?.();
+      if (itemObj && typeof itemObj.tryConsumeNow === 'function') {
+        if (await itemObj.tryConsumeNow(general, 'GeneralCommand', '계략')) {
+          const itemName = itemObj.getName?.() || '아이템';
+          const itemRawName = itemObj.getRawName?.() || itemName;
+          const josaUl = JosaUtil.pick(itemRawName, '을');
+          logger.pushGeneralActionLog(`<C>${itemName}</>${josaUl} 사용!`, 'PLAIN' as any);
+          if (typeof general.deleteItem === 'function') {
+            general.deleteItem('item');
+          } else if (typeof general.setVar === 'function') {
+            general.setVar('item', 'None');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('아이템 소모 실패:', error);
+    }
 
     const exp = rng.nextRangeInt(201, 300);
     const ded = rng.nextRangeInt(141, 210);
@@ -375,13 +383,13 @@ export class InciteCommand extends GeneralCommand {
     general.increaseVarWithLimit('rice', -reqRice, 0);
     general.addExperience(exp);
     general.addDedication(ded);
-    // 선동은 매력 70% + 지력 30%
-    general.increaseVar('charm_exp', 1);
-    general.increaseVar('intel_exp', 0.5);
+    // PHP 원본: $general->increaseVar($statType . '_exp', 1);
+    general.increaseVar(`${statType}_exp`, 1);
     
+    // 화공 횟수 증가 (랭킹) - PHP: $general->increaseRankVar(RankColumn::firenum, 1);
     try {
       if (typeof general.increaseRankVar === 'function') {
-        // TODO: general.increaseRankVar('firenum', 1);
+        general.increaseRankVar('firenum', 1);
       }
     } catch (error) {
       console.error('랭크 변수 증가 실패:', error);

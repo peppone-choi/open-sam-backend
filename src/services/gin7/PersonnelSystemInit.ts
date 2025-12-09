@@ -146,7 +146,7 @@ function setupEventConnections(
 // Export services for direct access
 export { RankLadderService } from './RankLadderService';
 export { PromotionService } from './PromotionService';
-export { AppointmentService, PositionCode, POSITION_TABLE } from './AppointmentService';
+export { AppointmentService } from './AppointmentService';
 export { StatsGrowthService, StatType } from './StatsGrowthService';
 export { LifeCycleService, RetirementType, DeathType } from './LifeCycleService';
 

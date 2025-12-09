@@ -5,7 +5,25 @@
  * @see agents/gin7-agents/gin7-auth-card/CHECKLIST.md Phase 4
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+
+/**
+ * 기본 인증 미들웨어 (세션 기반)
+ * 세션 ID만 필요한 간단한 인증용
+ */
+export const gin7AuthMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+  const sessionId = req.params.sessionId || req.body?.sessionId || req.query?.sessionId;
+  
+  if (!sessionId) {
+    res.status(400).json({
+      success: false,
+      error: { code: 'MISSING_SESSION_ID', message: 'sessionId가 필요합니다.' }
+    });
+    return;
+  }
+  
+  next();
+};
 import { Gin7ApiError, GIN7_ERROR_CODES } from '../common/errors/gin7-errors';
 import { Gin7Character, IGin7Character } from '../models/gin7/Character';
 import { getCommandMeta } from '../config/gin7/catalog';
@@ -359,5 +377,136 @@ export async function deductCP(
   }
 
   await character.save();
+}
+
+// ============================================================================
+// Command Authority Validation (JobCardService Integration)
+// ============================================================================
+
+import { JobCardService } from '../services/gin7/JobCardService';
+
+/**
+ * 커맨드 실행 권한 검증 미들웨어
+ * 
+ * 직위 기반 권한 + 커맨드 카드 기반 권한을 체크합니다.
+ * JobCardService를 통해 권한 매트릭스를 검증합니다.
+ * 
+ * 사용법:
+ * router.post('/execute', validateCommandAuth(), handler);
+ */
+export function validateCommandAuth(options?: {
+  commandIdSource?: 'params' | 'body' | 'query';
+  characterIdSource?: 'params' | 'body' | 'query';
+  skipPersonalCommands?: boolean; // 개인 커맨드는 스킵 (기본: true)
+}) {
+  const commandIdSource = options?.commandIdSource || 'body';
+  const characterIdSource = options?.characterIdSource || 'body';
+  const skipPersonalCommands = options?.skipPersonalCommands ?? true;
+
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+      const commandId = (req as any)[commandIdSource]?.commandId || 
+                        (req as any)[commandIdSource]?.commandCode;
+      const characterId = (req as any)[characterIdSource]?.characterId;
+
+      if (!sessionId) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'MISSING_SESSION_ID', message: 'sessionId가 필요합니다.' }
+        });
+      }
+
+      if (!commandId) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'MISSING_COMMAND_ID', message: 'commandId가 필요합니다.' }
+        });
+      }
+
+      if (!characterId) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'MISSING_CHARACTER_ID', message: 'characterId가 필요합니다.' }
+        });
+      }
+
+      const jobCardService = JobCardService.getInstance();
+      const authResult = await jobCardService.checkCommandAuth(
+        sessionId,
+        characterId,
+        commandId
+      );
+
+      if (!authResult.allowed) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'COMMAND_AUTH_DENIED',
+            message: authResult.reason || '커맨드 실행 권한이 없습니다.',
+            details: {
+              commandId: authResult.commandId,
+              commandName: authResult.commandName,
+              requiredAuthority: authResult.requiredAuthority,
+              characterPosition: authResult.characterPosition,
+            }
+          }
+        });
+      }
+
+      // 다음 미들웨어에서 사용할 수 있도록 저장
+      req.gin7 = {
+        ...req.gin7,
+        commandCode: commandId,
+      };
+
+      next();
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: error.message }
+      });
+    }
+  };
+}
+
+/**
+ * 카드 소유권 + CP + 권한 검증을 한번에 처리하는 통합 미들웨어
+ * 
+ * 체크 순서:
+ * 1. 카드 소유권 (validateCardOwnership)
+ * 2. 커맨드 실행 권한 (validateCommandAuth)
+ * 3. CP 잔량 (validateCP)
+ */
+export function validateFullCommandExecution(options?: {
+  cardIdSource?: 'params' | 'body' | 'query';
+  characterIdSource?: 'params' | 'body' | 'query';
+  commandIdSource?: 'params' | 'body' | 'query';
+  allowSubstitution?: boolean;
+}) {
+  const cardOwnershipValidator = validateCardOwnership({
+    cardIdSource: options?.cardIdSource,
+    characterIdSource: options?.characterIdSource
+  });
+
+  const commandAuthValidator = validateCommandAuth({
+    commandIdSource: options?.commandIdSource,
+    characterIdSource: options?.characterIdSource,
+  });
+
+  const cpValidator = validateCP({
+    commandCodeSource: options?.commandIdSource,
+    allowSubstitution: options?.allowSubstitution
+  });
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    cardOwnershipValidator(req, res, (err1?: any) => {
+      if (err1) return next(err1);
+      commandAuthValidator(req, res, (err2?: any) => {
+        if (err2) return next(err2);
+        cpValidator(req, res, next);
+      });
+    });
+  };
 }
 

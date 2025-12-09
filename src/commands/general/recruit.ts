@@ -151,8 +151,8 @@ export class RecruitCommand extends GeneralCommand {
     const date = general.getTurnTime(general.TURNTIME_HM);
 
     // 등용 성공률 계산
-    const scoutPower = this.nation.scout * 3 + general.getIntel(); // TODO: general.getStat('intel') -> getIntel() 사용
-    const destScoutPower = destGeneral.getNation().scout * 3 + destGeneral.getIntel(); // TODO: destGeneral.getStat('intel') -> getIntel() 사용
+    const scoutPower = this.nation.scout * 3 + general.getIntel();
+    const destScoutPower = destGeneral.getNation().scout * 3 + destGeneral.getIntel();
     
     let recruitProb = 0.3; // 기본 30%
     

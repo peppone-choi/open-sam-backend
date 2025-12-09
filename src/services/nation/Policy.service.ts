@@ -402,7 +402,7 @@ export class PolicyService {
         const effectKey = key as keyof PolicyEffect;
         if (typeof value === 'number') {
           if (totalEffect[effectKey] === undefined) {
-            totalEffect[effectKey] = value;
+            (totalEffect as any)[effectKey] = value;
           } else {
             // 성장률은 곱셈, 나머지는 덧셈
             if (key.endsWith('Rate') || key.endsWith('Cost') || key.endsWith('Speed')) {

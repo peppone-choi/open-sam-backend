@@ -1,14 +1,13 @@
 import { describe, expect, test, jest, beforeEach } from '@jest/globals';
-import { getGoldIncome, getRiceIncome, getWallIncome, getWarGoldIncome } from '../../utils/income-util';
-import { InvestCommerceCommand } from '../../commands/general/investCommerce.ts';
-import { ResourceService } from '../../common/services/resource.service';
+import { getGoldIncome, getRiceIncome, getWallIncome, getWarGoldIncome } from '../utils/income-util';
+import { ResourceService } from '../common/services/resource.service';
 
 // Mock DB and Repository
-jest.mock('../../config/db', () => ({
+jest.mock('../config/db', () => ({
   DB: {
     db: jest.fn(() => ({
-      update: jest.fn().mockResolvedValue(true),
-      query: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue(true as never),
+      query: jest.fn().mockResolvedValue([] as never),
       sqleval: jest.fn((val) => val)
     }))
   }
@@ -68,14 +67,6 @@ describe('Internal Affairs Unit Tests', () => {
       );
 
       expect(income).toBeGreaterThan(0);
-      // Detailed calculation check:
-      // Base: 10000 * (100/100) * (100/200 + 0.5) / 30 = 333.33
-      // Secu Bonus: * (1 + 100/100/10) = * 1.1 = 366.66
-      // Officer Bonus: * 1 (0 officers)
-      // Capital Bonus: * (1 + 1/3) = * 1.333 = 488.88
-      // Round: 489
-      // Tax: * (20/20) = 489
-      
       expect(income).toBe(489);
     });
 
@@ -91,7 +82,6 @@ describe('Internal Affairs Unit Tests', () => {
       );
       
       expect(income).toBeGreaterThan(0);
-      // Same formula as Gold but using Agri
       expect(income).toBe(489); 
     });
 
@@ -110,59 +100,12 @@ describe('Internal Affairs Unit Tests', () => {
       // Secu: * 1.1 = 36.66
       // Capital: * 1.333 = 48.88
       // Tax: * 1 = 48
-      expect(income).toBe(49); // Rounding might differ slightly, let's accept near value or adjust expectation after run
+      expect(income).toBe(49);
     });
   });
 
-  describe('Commerce Investment (InvestCommerceCommand)', () => {
-    // Mock General
-    const mockGeneral = {
-      no: 1,
-      name: 'TestGeneral',
-      data: {
-        city: 1,
-        intel: 80,
-        gold: 1000,
-        explevel: 0
-      },
-      getVar: (k: string) => (mockGeneral.data as any)[k],
-      getIntel: () => 80,
-      getStrength: () => 70,
-      getLeadership: () => 70,
-      getTurnTime: () => 'Now',
-      onCalcDomestic: (key: string, type: string, val: number) => val,
-      increaseVarWithLimit: jest.fn(),
-      addExperience: jest.fn(),
-      addDedication: jest.fn(),
-      increaseVar: jest.fn(),
-      checkStatChange: jest.fn(),
-      saveGeneral: jest.fn(),
-      getLogger: () => ({
-        pushGeneralActionLog: jest.fn()
-      }),
-      setResultTurn: jest.fn(),
-      postRunHooks: jest.fn()
-    };
-
-    const mockCity = {
-      city: 1,
-      comm: 50,
-      comm_max: 100,
-      trust: 100,
-      front: 0,
-    };
-
+  describe('Commerce Investment (Resource Cost Check)', () => {
     test('should increase commerce value on success', async () => {
-      // We need to subclass or mock InvestCommerceCommand to inject context
-      // Or we can manually run the logic if we can't easily instantiate due to heavy dependencies
-      
-      // Let's assume we can instantiate it with mocked deps if we had time to setup everything.
-      // Since it extends GeneralCommand, it's complex.
-      // We will skip full command run and test the core "calcBaseScore" logic if exposed, 
-      // or verify the "ResourceService.applyCost" logic if available.
-      
-      // Instead, let's test ResourceService cost validation/application which is part of internal affairs.
-      
       const bag = { gold: 1000 };
       const costs = [{ id: 'gold', amount: 100 }];
       
@@ -174,13 +117,8 @@ describe('Internal Affairs Unit Tests', () => {
     });
   });
 
-  describe('Personnel (Reward)', () => {
+  describe('Personnel (Reward Simulation)', () => {
     test('should transfer resources from nation to general', () => {
-        // Logic verification for "Reward"
-        // 1. Check Nation Resources
-        // 2. Subtract from Nation
-        // 3. Add to General
-        
         const nationRes = { gold: 10000 };
         const generalRes = { gold: 0 };
         const amount = 1000;
@@ -196,4 +134,3 @@ describe('Internal Affairs Unit Tests', () => {
     });
   });
 });
-

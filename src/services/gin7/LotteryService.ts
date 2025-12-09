@@ -384,10 +384,11 @@ export async function getLotteryPools(
 
   const pools = await LotteryPoolModel.find(query).sort({ closesAt: 1 });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return pools.map(pool => ({
     ...pool.toObject(),
     character: getOriginalCharacterById(pool.characterId)
-  }));
+  })) as any;
 }
 
 /**
@@ -402,10 +403,11 @@ export async function getUserApplications(
     userId
   }).sort({ appliedAt: -1 });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return applications.map(app => ({
     ...app.toObject(),
     character: getOriginalCharacterById(app.targetCharacterId)
-  }));
+  })) as any;
 }
 
 /**

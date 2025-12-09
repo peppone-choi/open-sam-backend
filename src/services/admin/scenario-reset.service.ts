@@ -336,7 +336,11 @@ export class ScenarioResetService {
     session.data.game_env.killturn = scenarioMetadata.gameSettings?.killturn || 30;     // 삭턴
     session.data.game_env.scenario = scenarioMetadata.gameSettings?.scenario || 0;      // 시나리오 번호
     session.data.game_env.allow_rebellion = scenarioMetadata.gameSettings?.allow_rebellion ?? true; // 모반 허용
-    console.log(`[ScenarioReset] Set game_env: develcost=${session.data.game_env.develcost}, killturn=${session.data.game_env.killturn}`);
+    
+    // NPC AI 기본값 설정 (full = 모든 NPC에 AI 활성화)
+    session.data.game_env.npc_ai_mode = scenarioMetadata.gameSettings?.npc_ai_mode || 'full';
+    
+    console.log(`[ScenarioReset] Set game_env: develcost=${session.data.game_env.develcost}, killturn=${session.data.game_env.killturn}, npc_ai_mode=${session.data.game_env.npc_ai_mode}`);
 
     // 서버 상태를 폐쇄(준비중)로 설정
     // 시나리오 리셋 후에는 관리자가 수동으로 서버를 오픈해야 함

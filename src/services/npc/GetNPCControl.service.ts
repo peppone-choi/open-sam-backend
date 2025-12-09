@@ -51,9 +51,11 @@ export class GetNPCControlService {
         };
       }
       
-      // 권한 확인 (수뇌부 이상)
+      // 권한 확인 (군주 또는 수뇌부 이상)
       const officerLevel = generalData.officer_level || 0;
-      if (officerLevel < 5) {
+      const isRuler = generalData.chief === true || generalData.officer_level >= 12;
+      
+      if (officerLevel < 5 && !isRuler) {
         return {
           result: false,
           reason: '권한이 부족합니다. 수뇌부가 아니거나 사관년도가 부족합니다'

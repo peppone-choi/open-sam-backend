@@ -140,5 +140,5 @@ export interface IAuditLogModel extends Model<IAuditLog> {
 }
 
 export const AuditLog: IAuditLogModel = 
-  mongoose.models.AuditLog || mongoose.model<IAuditLog, IAuditLogModel>('AuditLog', AuditLogSchema);
+  (mongoose.models.AuditLog as IAuditLogModel) || mongoose.model<IAuditLog, IAuditLogModel>('AuditLog', AuditLogSchema);
 

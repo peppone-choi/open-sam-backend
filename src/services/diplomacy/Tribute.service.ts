@@ -323,7 +323,8 @@ export class TributeService {
   static async cleanupExpiredRequests(sessionId: string): Promise<number> {
     try {
       const now = new Date();
-      const count = await diplomacyRepository.expireTributeRequests(sessionId, now);
+      const result = await diplomacyRepository.expireTributeRequests(sessionId, now);
+      const count = result.modifiedCount;
       
       if (count > 0) {
         logger.info('[Tribute] Expired requests cleaned up', {

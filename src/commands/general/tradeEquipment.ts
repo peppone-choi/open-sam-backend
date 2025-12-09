@@ -228,9 +228,23 @@ export class TradeEquipmentCommand extends GeneralCommand {
       };
     }
 
+    const ownItem: any = this.getItems();
+
+    return {
+      procRes: {
+        citySecu,
+        gold: general.data.gold,
+        itemList,
+        ownItem,
+      }
+    };
+  }
+
+  private getItems(): any {
+    const general = this.generalObj;
     const ownItem: any = {};
-    // TODO: getItems() 메서드가 없으므로 직접 아이템 필드를 조회
     const itemTypes = ['horse', 'weapon', 'book', 'item'];
+    
     for (const itemType of itemTypes) {
       const itemCode = general.data[itemType] || general[itemType];
       if (itemCode && itemCode !== 'None') {
@@ -245,15 +259,7 @@ export class TradeEquipmentCommand extends GeneralCommand {
         };
       }
     }
-
-    return {
-      procRes: {
-        citySecu,
-        gold: general.data.gold,
-        itemList,
-        ownItem,
-      }
-    };
+    return ownItem;
   }
 
   private buildItemClass(itemCode: string): any {

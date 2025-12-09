@@ -391,7 +391,8 @@ export class BlackMarketService {
       
       const fine = Math.round(item.currentPrice * quantity * template.penalty.fineMultiplier);
       const reputationLoss = template.penalty.reputationLoss;
-      const arrested = template.penalty.jailTime ? Math.random() < 0.3 : false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const arrested = (template.penalty as any).jailTime ? Math.random() < 0.3 : false;
 
       return {
         success: false,

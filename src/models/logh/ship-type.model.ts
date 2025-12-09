@@ -118,3 +118,35 @@ export const getShipsByClass = (shipClass: ShipClass): ShipType[] =>
 
 export const getFlagships = (faction?: ShipFaction): ShipType[] => 
   ALL_SHIPS.filter(ship => ship.class === 'flagship' && (!faction || ship.faction === faction));
+
+// 함선 스탯 인터페이스
+export interface ShipStats {
+  attack: number;
+  defense: number;
+  speed: number;
+  range: number;
+  capacity: number;
+  cost: number;
+}
+
+// 함선 타입별 스탯 (기본값 - 실제 값은 별도 데이터로 관리)
+export const SHIP_TYPES: Record<string, ShipStats> = ALL_SHIPS.reduce((acc, ship) => {
+  // 기본 스탯 (클래스 기반)
+  const classStats: Record<ShipClass, ShipStats> = {
+    battleship: { attack: 100, defense: 80, speed: 40, range: 3, capacity: 0, cost: 1000 },
+    battleship_fast: { attack: 90, defense: 70, speed: 60, range: 3, capacity: 0, cost: 1200 },
+    cruiser: { attack: 60, defense: 50, speed: 50, range: 2, capacity: 0, cost: 600 },
+    destroyer: { attack: 40, defense: 30, speed: 70, range: 2, capacity: 0, cost: 400 },
+    carrier: { attack: 30, defense: 60, speed: 35, range: 4, capacity: 12, cost: 1500 },
+    flagship: { attack: 150, defense: 120, speed: 45, range: 4, capacity: 0, cost: 5000 },
+    fighter: { attack: 20, defense: 10, speed: 100, range: 1, capacity: 0, cost: 50 },
+    landing: { attack: 10, defense: 40, speed: 30, range: 1, capacity: 3000, cost: 800 },
+    scout: { attack: 20, defense: 20, speed: 90, range: 5, capacity: 0, cost: 300 },
+    minelayer: { attack: 30, defense: 35, speed: 40, range: 2, capacity: 100, cost: 500 },
+    minesweeper: { attack: 25, defense: 35, speed: 50, range: 2, capacity: 0, cost: 450 },
+    transport: { attack: 5, defense: 30, speed: 35, range: 1, capacity: 5000, cost: 600 },
+    resupply: { attack: 5, defense: 25, speed: 35, range: 1, capacity: 2000, cost: 700 },
+  };
+  acc[ship.id] = classStats[ship.class];
+  return acc;
+}, {} as Record<string, ShipStats>);

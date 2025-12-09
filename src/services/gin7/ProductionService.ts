@@ -119,11 +119,12 @@ export class ProductionService {
     });
     
     if (!warehouse) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       warehouse = await WarehouseService.initializePlanetWarehouse(
         sessionId, 
         planetId, 
         planet.ownerId || 'NEUTRAL'
-      );
+      ) as any;
     }
     
     // Add production to warehouse
