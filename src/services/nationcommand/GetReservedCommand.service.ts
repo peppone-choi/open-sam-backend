@@ -288,8 +288,8 @@ export class GetReservedCommandService {
         try {
           const fs = require('fs');
           const path = require('path');
-          // __dirname 기반으로 프로젝트 루트 계산 (dist/services/nationcommand -> 프로젝트 루트)
-          const projectRoot = path.resolve(__dirname, '../..');
+          // 빌드 후: dist/services/nationcommand -> 3단계 상위가 프로젝트 루트
+          const projectRoot = path.resolve(__dirname, '../../..');
           const constantsPath = path.join(projectRoot, 'config/scenarios/sangokushi/data/constants.json');
           const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
           availableChiefCommand = constantsData.availableChiefCommand || {};

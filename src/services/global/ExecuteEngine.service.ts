@@ -1196,7 +1196,8 @@ export class ExecuteEngineService {
       );
 
       const env = { year, month, session_id: sessionId };
-      let command = new CommandClass(general, env, lastTurn, arg);
+      // 수정: lastTurn은 별도로 처리하고, BaseCommand 생성자에는 (general, env, arg)만 전달
+      let command = new CommandClass(general, env, arg);
 
       // PHP 로직: while(true)로 조건 체크 및 실행 반복
       while (true) {
