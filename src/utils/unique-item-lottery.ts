@@ -29,9 +29,10 @@ type UniqueItemConstants = {
   minMonthToAllowInheritItem: number;
 };
 
+// dist/utils에서 2단계 상위가 프로젝트 루트
 const constantsFilePath = path.join(
   __dirname,
-  '../../../config/scenarios/sangokushi/data/constants.json'
+  '../../config/scenarios/sangokushi/data/constants.json'
 );
 
 const SessionKVStorageModel = KVStorageCollection as unknown as Model<IKVStorage>;

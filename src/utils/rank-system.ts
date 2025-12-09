@@ -12,8 +12,8 @@ let constantsData: any = null;
 function loadConstants() {
   if (constantsData) return constantsData;
   
-  // dist 폴더에서 실행되므로 프로젝트 루트로 이동 (dist/utils -> config)
-  const constantsPath = path.join(__dirname, '../../../config/scenarios/sangokushi/data/constants.json');
+  // dist/utils에서 2단계 상위가 프로젝트 루트 (dist/utils -> open-sam-backend)
+  const constantsPath = path.join(__dirname, '../../config/scenarios/sangokushi/data/constants.json');
   const data = fs.readFileSync(constantsPath, 'utf-8');
   constantsData = JSON.parse(data);
   return constantsData;
