@@ -286,13 +286,9 @@ export class GetReservedCommandService {
       // availableChiefCommand가 없으면 직접 로드
       if (!availableChiefCommand || Object.keys(availableChiefCommand).length === 0) {
         try {
-          const fs = require('fs');
-          const path = require('path');
-          // 빌드 후: dist/services/nationcommand -> 3단계 상위가 프로젝트 루트
-          const projectRoot = path.resolve(__dirname, '../../..');
-          const constantsPath = path.join(projectRoot, 'config/scenarios/sangokushi/data/constants.json');
-          const constantsData = JSON.parse(fs.readFileSync(constantsPath, 'utf-8'));
-          availableChiefCommand = constantsData.availableChiefCommand || {};
+          const { getScenarioConstants } = require('../../utils/scenario-data');
+          const constantsData = getScenarioConstants();
+          availableChiefCommand = constantsData?.availableChiefCommand || {};
         } catch (err) {
           console.error('[GetReservedCommand] Failed to load availableChiefCommand:', err);
           availableChiefCommand = {};
