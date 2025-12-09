@@ -269,6 +269,30 @@ export class ConscriptCommand extends GeneralCommand {
       this.maxCrew = reqCrew;
     }
 
+    // initWithArg()와 run()이 다른 인스턴스에서 호출될 수 있으므로, 여기서 다시 설정
+    if (!this.reqCrewType && this.arg?.crewType) {
+      const crewTypeId = this.arg.crewType;
+      try {
+        const { GameUnitConst } = require('../../const/GameUnitConst');
+        const unitType = GameUnitConst.byID(crewTypeId);
+        console.log('[징병 run] reqCrewType 재설정:', crewTypeId, '->', unitType?.name);
+        if (unitType) {
+          const costObj = unitType.cost;
+          const goldCost = typeof costObj === 'object' ? (costObj?.gold ?? 1) : (costObj ?? 1);
+          const riceCost = typeof costObj === 'object' ? (costObj?.rice ?? 1) : (unitType.rice ?? 1);
+          this.reqCrewType = {
+            id: unitType.id,
+            name: unitType.name,
+            armType: unitType.armType,
+            cost: goldCost,
+            rice: riceCost
+          };
+        }
+      } catch (error: any) {
+        console.error('[징병 run] GameUnitConst 로드 실패:', error?.message);
+      }
+    }
+    
     const reqCrewType = this.reqCrewType;
     const currCrewType = this.currCrewType;
     const crewTypeName = reqCrewType?.name || '병종';
