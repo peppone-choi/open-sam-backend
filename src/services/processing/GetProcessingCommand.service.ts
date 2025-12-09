@@ -236,6 +236,21 @@ export class GetProcessingCommandService {
       };
     }
 
+    // 선전포고 커맨드 (Nation)
+    if (command === '선전포고' || command === 'che_선전포고' || command === 'declareWar') {
+      return await this.getDeclareWarData(sessionId, generalId);
+    }
+
+    // 종전제의 커맨드 (Nation)
+    if (command === '종전제의' || command === 'che_종전제의' || command === 'peaceTreaty') {
+      return await this.getNationTargetData(sessionId, generalId, 'peaceTreaty');
+    }
+
+    // 불가침파기제의 커맨드 (Nation)
+    if (command === '불가침파기제의' || command === 'che_불가침파기제의' || command === 'breakNoAggression') {
+      return await this.getNationTargetData(sessionId, generalId, 'breakNoAggression');
+    }
+
     // 불가침제의 커맨드 (Nation)
     if (command === '불가침제의' || command === 'che_불가침제의' || command === 'noAggressionProposal') {
       return await this.getNoAggressionProposalData(sessionId, generalId);
@@ -1913,5 +1928,139 @@ export class GetProcessingCommandService {
     const unitSize = typeof stack.unit_size === 'number' ? stack.unit_size : 100;
     const stackCount = typeof stack.stack_count === 'number' ? stack.stack_count : 0;
     return unitSize * stackCount;
+  }
+
+  /**
+   * 선전포고 커맨드 데이터 (Nation)
+   */
+  private static async getDeclareWarData(
+    sessionId: string,
+    generalId: number
+  ): Promise<any> {
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
+    if (!general) {
+      return { nations: [] };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 외교 관계 확인
+    const diplomacyRecords = await diplomacyRepository.findByFilter({
+      session_id: sessionId,
+      $or: [
+        { me: nationID },
+        { you: nationID }
+      ]
+    });
+
+    const diplomacyMap: Record<number, { state: number; term: number }> = {};
+    for (const dip of diplomacyRecords) {
+      const otherNation = dip.me === nationID ? dip.you : dip.me;
+      if (!diplomacyMap[otherNation] || dip.term > diplomacyMap[otherNation].term) {
+        diplomacyMap[otherNation] = { state: dip.state || 2, term: dip.term || 0 };
+      }
+    }
+
+    // 국가 목록 (자신 제외)
+    const nations = await nationRepository.findByFilter({
+      session_id: sessionId,
+      nation: { $ne: nationID }
+    });
+
+    const nationList = nations.map((nation: any) => {
+      const nationData = nation.data || {};
+      const dip = diplomacyMap[nation.nation];
+      // 이미 전쟁중(0), 선포중(1), 불가침(7)이면 불가능
+      const notAvailable = dip && (dip.state === 0 || dip.state === 1 || dip.state === 7);
+      
+      return {
+        id: nation.nation,
+        name: nation.name,
+        color: nationData.color || '#808080',
+        power: nationData.power || 0,
+        notAvailable,
+      };
+    });
+
+    // 맵 데이터 추가
+    const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+
+    return {
+      nations: nationList,
+      mapData: mapData.success && mapData.result ? mapData : null,
+    };
+  }
+
+  /**
+   * 일반적인 국가 타겟 커맨드 데이터 (종전제의, 불가침파기제의 등)
+   */
+  private static async getNationTargetData(
+    sessionId: string,
+    generalId: number,
+    commandType: string
+  ): Promise<any> {
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+
+    if (!general) {
+      return { nations: [] };
+    }
+
+    const generalData = general.data || {};
+    const nationID = generalData.nation || 0;
+
+    // 외교 관계 확인
+    const diplomacyRecords = await diplomacyRepository.findByFilter({
+      session_id: sessionId,
+      $or: [
+        { me: nationID },
+        { you: nationID }
+      ]
+    });
+
+    const diplomacyMap: Record<number, { state: number; term: number }> = {};
+    for (const dip of diplomacyRecords) {
+      const otherNation = dip.me === nationID ? dip.you : dip.me;
+      if (!diplomacyMap[otherNation] || dip.term > diplomacyMap[otherNation].term) {
+        diplomacyMap[otherNation] = { state: dip.state || 2, term: dip.term || 0 };
+      }
+    }
+
+    // 국가 목록 (자신 제외)
+    const nations = await nationRepository.findByFilter({
+      session_id: sessionId,
+      nation: { $ne: nationID }
+    });
+
+    const nationList = nations.map((nation: any) => {
+      const nationData = nation.data || {};
+      const dip = diplomacyMap[nation.nation];
+      let notAvailable = false;
+
+      if (commandType === 'peaceTreaty') {
+        // 종전제의: 전쟁중(0) 또는 선포중(1)인 국가만 가능
+        notAvailable = !dip || (dip.state !== 0 && dip.state !== 1);
+      } else if (commandType === 'breakNoAggression') {
+        // 불가침파기제의: 불가침(7)인 국가만 가능
+        notAvailable = !dip || dip.state !== 7;
+      }
+      
+      return {
+        id: nation.nation,
+        name: nation.name,
+        color: nationData.color || '#808080',
+        power: nationData.power || 0,
+        notAvailable,
+      };
+    });
+
+    // 맵 데이터 추가
+    const mapData = await GetMapService.execute({ session_id: sessionId, neutralView: 0, showMe: 1 });
+
+    return {
+      nations: nationList,
+      mapData: mapData.success && mapData.result ? mapData : null,
+    };
   }
 }

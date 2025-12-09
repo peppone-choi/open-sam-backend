@@ -3301,6 +3301,61 @@ export class SimpleAI {
     // 전쟁 내정 시도
     return this.dipStateSelector?.pickGeneralActionWarDomestic() || null;
   }
+
+  /**
+   * 국가 명령만 결정 (국가턴 전용)
+   * 
+   * 장수 명령(내정, 군사 등)을 제외하고 국가 명령만 평가합니다.
+   */
+  async decideNationCommandOnly(): Promise<AICommandDecision | null> {
+    const genData = this.general.data || this.general;
+    const stats = this.extractGeneralStats(genData);
+    const genType = this.calculateGeneralType(stats);
+
+    // 군주/수뇌가 아니면 국가 명령 불가
+    if (stats.officerLevel < 5) {
+      console.log(`[SimpleAI] 국가 명령 결정 불가 - 수뇌 이상만 가능 (officerLevel: ${stats.officerLevel})`);
+      return null;
+    }
+
+    // 국가 명령만 평가
+    const nationCommandCandidates = await this.evaluateNationCommands(stats, genType);
+    console.log(`[SimpleAI] 국가 명령 후보: ${nationCommandCandidates.length}개`);
+
+    if (nationCommandCandidates.length === 0) {
+      // 기본적으로 휴식 반환 (국가 명령이 없으면)
+      console.log('[SimpleAI] 국가 명령 후보 없음 - 휴식 반환');
+      return {
+        command: '휴식',
+        args: {},
+        weight: 1,
+        reason: '국가 명령 후보 없음'
+      };
+    }
+
+    // Policy 필터링
+    let filteredCandidates = nationCommandCandidates;
+    if (this.nationPolicy) {
+      filteredCandidates = this.applyPolicyFilter(nationCommandCandidates);
+      console.log(`[SimpleAI] 국가 Policy 필터 적용: ${nationCommandCandidates.length} -> ${filteredCandidates.length} 명령`);
+    }
+
+    if (filteredCandidates.length === 0) {
+      return {
+        command: '휴식',
+        args: {},
+        weight: 1,
+        reason: '국가 Policy 필터 후 후보 없음'
+      };
+    }
+
+    // 가중치 기반 선택
+    const selected = this.selectByWeight(filteredCandidates);
+    if (selected) {
+      console.log(`[SimpleAI] 국가 명령 선택: ${selected.command} (가중치: ${selected.weight?.toFixed(2)}, 이유: ${selected.reason})`);
+    }
+    return selected;
+  }
 }
 
 // ================================================================

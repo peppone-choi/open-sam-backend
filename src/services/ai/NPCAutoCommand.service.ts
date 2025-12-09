@@ -356,14 +356,15 @@ export class NPCAutoCommandService {
         null  // serverPolicyOverride
       );
       
-      const decision = await ai.decideNextCommand();
+      // 국가 명령만 결정 (장수 명령 제외)
+      const decision = await ai.decideNationCommandOnly();
       
-      // 국가 명령이 아니면 스킵
-      const nationCommands = ['선전포고', '불가침제의', '천도', '포상', '발령'];
-      if (!decision || !nationCommands.includes(decision.command)) {
-        console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}) - 국가 명령 없음`);
+      if (!decision) {
+        console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}) - 국가 명령 결정 실패`);
         return { success: false };
       }
+      
+      console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}) - 국가 명령 선택: ${decision.command}`);
 
       // 결정된 명령 등록 (general_id 포함)
       // id는 고유해야 함: nation_general_turn 형식
