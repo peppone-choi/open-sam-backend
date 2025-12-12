@@ -27,12 +27,14 @@ import { CheckHallService } from '../admin/CheckHall.service';
  * @param cityId 점령된 도시 ID
  * @param attackerNationId 공격자 국가 ID
  * @param attackerGeneralId 공격자 장수 ID
+ * @param providedOldNationId 이전 소유 국가 ID (선택적, 이미 소유권이 변경된 경우 전달)
  */
 export async function onCityOccupied(
   sessionId: string,
   cityId: number,
   attackerNationId: number,
-  attackerGeneralId: number
+  attackerGeneralId: number,
+  providedOldNationId?: number
 ): Promise<void> {
   try {
     // CQRS: 캐시 우선 조회
@@ -61,8 +63,21 @@ export async function onCityOccupied(
     const cityAny = city as any;
     const cityData = cityAny.data as Record<string, unknown> | undefined;
     const cityDoc = cityAny as Record<string, unknown>;
-    const oldNationId = (cityData?.nation ?? cityDoc.nation ?? 0) as number;
+    // providedOldNationId가 전달되면 사용, 아니면 도시에서 조회
+    const oldNationId = providedOldNationId ?? (cityData?.nation ?? cityDoc.nation ?? 0) as number;
     const cityName = (cityData?.name ?? cityDoc.name ?? '도시') as string;
+    
+    // 이미 같은 국가 소유인 경우 (providedOldNationId가 없고 도시가 이미 변경된 경우)
+    // providedOldNationId가 전달되면 정상 처리
+    if (providedOldNationId === undefined && oldNationId === attackerNationId) {
+      logger.warn('[BattleEventHook] 도시가 이미 공격자 국가 소유입니다. 중복 점령 처리 무시.', {
+        sessionId,
+        cityId,
+        cityName,
+        nationId: attackerNationId
+      });
+      return;
+    }
     
     // 1. 도시 내 장수들 처리 (일반 장수 & NPC 이동)
     await moveGeneralsOnOccupation(sessionId, cityId, oldNationId, attackerNationId);
@@ -820,11 +835,19 @@ async function createDiplomaticLog(
       const defenseMsg = `<R>${event.cityName}</R> 도시를 빼앗겼습니다.`;
 
       attackerLogger.pushGlobalActionLog(attackMsg, LogFormatType.PLAIN);
-      defenderLogger.pushGlobalActionLog(defenseMsg, LogFormatType.PLAIN);
+      
+      // 공격자와 수비자가 같은 국가가 아닌 경우에만 수비자 로그 생성
+      if (event.attackerNationId !== event.defenderNationId && event.defenderNationId > 0) {
+        defenderLogger.pushGlobalActionLog(defenseMsg, LogFormatType.PLAIN);
+      }
     }
 
     await attackerLogger.flush();
-    await defenderLogger.flush();
+    
+    // 공격자와 수비자가 다른 경우에만 수비자 로그 flush
+    if (event.attackerNationId !== event.defenderNationId && event.defenderNationId > 0) {
+      await defenderLogger.flush();
+    }
 
     logger.info('[BattleEventHook] Diplomatic log created', {
       sessionId,

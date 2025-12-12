@@ -76,3 +76,5 @@ export const CommandPoint = mongoose.model<ICommandPoint>('CommandPoint', Comman
 
 
 
+
+

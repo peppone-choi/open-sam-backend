@@ -1,5 +1,20 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+/**
+ * Battle statistics for character
+ */
+export interface ICharacterBattleStats {
+  battlesWon: number;
+  battlesLost: number;
+  battlesDrawn: number;
+  shipsDestroyed: number;
+  shipsLost: number;
+  damageDealt: number;
+  damageTaken: number;
+  killCount: number;         // Enemy admirals killed
+  captureCount: number;      // Enemy admirals captured
+}
+
 export interface IGin7Character extends Document {
   characterId: string;    // Unique Character ID within the session or globally
   sessionId: string;      // Link to GameSession
@@ -7,6 +22,14 @@ export interface IGin7Character extends Document {
   playerId?: string;      // Link to Player (if controlled)
   
   name: string;
+  
+  // Online presence (MMO-Battle integration)
+  isOnline?: boolean;
+  lastActiveAt?: Date;
+  socketId?: string;         // Current WebSocket connection ID
+  
+  // Battle statistics
+  battleStats?: ICharacterBattleStats;
   
   // Faction & Origin
   faction?: string;       // Faction ID (e.g., 'EMPIRE', 'ALLIANCE')
@@ -152,6 +175,24 @@ const Gin7CharacterSchema = new Schema<IGin7Character>({
   
   name: { type: String, required: true },
   
+  // Online presence (MMO-Battle integration)
+  isOnline: { type: Boolean, default: false },
+  lastActiveAt: { type: Date },
+  socketId: { type: String },
+  
+  // Battle statistics
+  battleStats: {
+    battlesWon: { type: Number, default: 0 },
+    battlesLost: { type: Number, default: 0 },
+    battlesDrawn: { type: Number, default: 0 },
+    shipsDestroyed: { type: Number, default: 0 },
+    shipsLost: { type: Number, default: 0 },
+    damageDealt: { type: Number, default: 0 },
+    damageTaken: { type: Number, default: 0 },
+    killCount: { type: Number, default: 0 },
+    captureCount: { type: Number, default: 0 }
+  },
+  
   // Faction & Origin
   faction: { type: String },
   factionId: { type: String },
@@ -277,6 +318,10 @@ Gin7CharacterSchema.index({ sessionId: 1, locationPlanetId: 1 });
 Gin7CharacterSchema.index({ sessionId: 1, 'location.x': 1, 'location.y': 1 }); // Spatial query support
 Gin7CharacterSchema.index({ sessionId: 1, state: 1 });
 Gin7CharacterSchema.index({ sessionId: 1, status: 1 });
+// Online presence indexes (MMO-Battle integration)
+Gin7CharacterSchema.index({ sessionId: 1, isOnline: 1 });
+Gin7CharacterSchema.index({ sessionId: 1, socketId: 1 });
+Gin7CharacterSchema.index({ sessionId: 1, factionId: 1, isOnline: 1 });
 
 export const Gin7Character: Model<IGin7Character> = 
   mongoose.models.Gin7Character || mongoose.model<IGin7Character>('Gin7Character', Gin7CharacterSchema);

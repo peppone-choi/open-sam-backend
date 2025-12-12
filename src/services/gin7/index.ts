@@ -250,3 +250,8 @@ export * from './DiplomacyCommandService';
 export * from './IntelService';
 export * from './ConspiracyService';
 export * from './ContactService';
+
+// gin7-mmo-battle services (MMO-전투 통합 Phase 1-3)
+export * from './GridService';
+export * from './PlayerPresenceService';
+export * from './SupplyService';

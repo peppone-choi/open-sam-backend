@@ -364,14 +364,18 @@ export abstract class BaseCommand {
     }
  
     if (this.dirtyCities.size > 0) {
+      // 도시 정보는 saveCity에서 캐시를 갱신하므로 entity는 무효화하지 않음
+      // lists만 무효화하여 목록 캐시 갱신
       for (const cityId of this.dirtyCities) {
-        tasks.push(invalidateCache('city', sessionId, cityId));
+        tasks.push(invalidateCache('city', sessionId, cityId, { targets: ['lists'] }));
       }
     }
  
     if (this.dirtyNations.size > 0) {
+      // 국가 정보는 saveNation에서 캐시를 갱신하므로 entity는 무효화하지 않음
+      // lists만 무효화하여 목록 캐시 갱신
       for (const nationId of this.dirtyNations) {
-        tasks.push(invalidateCache('nation', sessionId, nationId));
+        tasks.push(invalidateCache('nation', sessionId, nationId, { targets: ['lists'] }));
       }
     }
  

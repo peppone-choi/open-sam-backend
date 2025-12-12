@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../middleware/auth';
 import { tokenBlacklist } from '../utils/tokenBlacklist';
 import { BattleSocketHandler } from '../handlers/battle.socket';
+import { RealtimeBattleSocketHandler } from '../handlers/realtime-battle.socket';
 import { GameSocketHandler } from './game.socket';
 import { GeneralSocketHandler } from './general.socket';
 import { NationSocketHandler } from './nation.socket';
@@ -20,6 +21,7 @@ import { logger } from '../common/logger';
 export class SocketManager {
   private io: SocketIOServer;
   private battleHandler: BattleSocketHandler;
+  private realtimeBattleHandler: RealtimeBattleSocketHandler | null = null;
   private gameHandler: GameSocketHandler;
   private generalHandler: GeneralSocketHandler;
   private nationHandler: NationSocketHandler;
@@ -74,6 +76,12 @@ export class SocketManager {
     if (process.env.ENABLE_GIN7_MESSENGER !== 'false') {
       this.messengerHandler = new MessengerSocketHandler(this.io);
       logger.info('GIN7 Messenger WebSocket 핸들러 초기화 완료');
+    }
+
+    // GIN7 Realtime Battle 핸들러 초기화 (/rtbattle 네임스페이스)
+    if (process.env.ENABLE_GIN7_RTBATTLE !== 'false') {
+      this.realtimeBattleHandler = new RealtimeBattleSocketHandler(this.io);
+      logger.info('GIN7 Realtime Battle WebSocket 핸들러 초기화 완료 (/rtbattle 네임스페이스)');
     }
 
     // 연결 처리
@@ -334,6 +342,13 @@ export class SocketManager {
   }
 
   /**
+   * GIN7 Realtime Battle 핸들러 반환
+   */
+  getRealtimeBattleHandler(): RealtimeBattleSocketHandler | null {
+    return this.realtimeBattleHandler;
+  }
+
+  /**
    * 접속 중인 사용자 수 조회
    */
   getOnlineUserCount(sessionId?: string): number {
@@ -450,6 +465,10 @@ export function initializeSocket(httpServer: HTTPServer): SocketManager {
 
 export function getSocketManager(): SocketManager | null {
   return socketManagerInstance;
+}
+
+export function setSocketManager(manager: SocketManager): void {
+  socketManagerInstance = manager;
 }
 
 

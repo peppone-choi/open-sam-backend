@@ -691,5 +691,212 @@ router.post('/battles/:battleId/maneuver', async (req: Request, res: Response) =
   });
 });
 
+// ============================================================
+// Demo Battle Routes (for testing)
+// ============================================================
+
+/**
+ * @swagger
+ * /api/gin7/tactical/demo/create:
+ *   post:
+ *     summary: Create a demo battle with mock fleets for testing
+ *     tags: [GIN7 Tactical Demo]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sessionId:
+ *                 type: string
+ *                 default: demo-session
+ *               empireShips:
+ *                 type: number
+ *                 default: 5000
+ *               allianceShips:
+ *                 type: number
+ *                 default: 5000
+ *     responses:
+ *       201:
+ *         description: Demo battle created with fleet IDs
+ */
+router.post('/demo/create', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { 
+      sessionId = 'demo-session', 
+      empireShips = 5000, 
+      allianceShips = 5000 
+    } = req.body;
+
+    // Create demo fleets
+    const empireFleetId = `demo-empire-fleet-${Date.now()}`;
+    const allianceFleetId = `demo-alliance-fleet-${Date.now()}`;
+
+    // Empire Fleet (Galactic Empire)
+    const empireFleet = new Fleet({
+      fleetId: empireFleetId,
+      sessionId,
+      factionId: 'empire',
+      name: '제1함대 (라인하르트)',
+      commanderId: 'reinhard',
+      ships: {
+        battleship: Math.floor(empireShips * 0.3),
+        cruiser: Math.floor(empireShips * 0.3),
+        destroyer: Math.floor(empireShips * 0.3),
+        carrier: Math.floor(empireShips * 0.05),
+        flagship: 1,
+        support: Math.floor(empireShips * 0.05),
+      },
+      totalShips: empireShips,
+      hp: empireShips * 100,
+      maxHp: empireShips * 100,
+      morale: 90,
+      supplies: 100,
+      location: {
+        gridId: 'demo-grid',
+        x: -1500,
+        y: 0,
+        z: 0,
+      },
+      status: 'IDLE',
+      formation: 'SPINDLE',
+      experience: 80,
+      veterancy: 0.3,
+      realtimeCombat: {
+        position: { x: -1500, y: 0, z: 0 },
+        velocity: { x: 0, y: 0, z: 0 },
+        heading: 0,
+        angularVelocity: 0,
+        speed: 0,
+        maxSpeed: 50,
+        acceleration: 5,
+        turnRate: 0.1,
+      },
+    });
+    await empireFleet.save();
+
+    // Alliance Fleet (Free Planets Alliance)
+    const allianceFleet = new Fleet({
+      fleetId: allianceFleetId,
+      sessionId,
+      factionId: 'alliance',
+      name: '제13함대 (양 웬리)',
+      commanderId: 'yang-wenli',
+      ships: {
+        battleship: Math.floor(allianceShips * 0.25),
+        cruiser: Math.floor(allianceShips * 0.35),
+        destroyer: Math.floor(allianceShips * 0.25),
+        carrier: Math.floor(allianceShips * 0.08),
+        flagship: 1,
+        support: Math.floor(allianceShips * 0.07),
+      },
+      totalShips: allianceShips,
+      hp: allianceShips * 100,
+      maxHp: allianceShips * 100,
+      morale: 85,
+      supplies: 100,
+      location: {
+        gridId: 'demo-grid',
+        x: 1500,
+        y: 0,
+        z: 0,
+      },
+      status: 'IDLE',
+      formation: 'STANDARD',
+      experience: 75,
+      veterancy: 0.25,
+      realtimeCombat: {
+        position: { x: 1500, y: 0, z: 0 },
+        velocity: { x: 0, y: 0, z: 0 },
+        heading: Math.PI,
+        angularVelocity: 0,
+        speed: 0,
+        maxSpeed: 55,
+        acceleration: 6,
+        turnRate: 0.12,
+      },
+    });
+    await allianceFleet.save();
+
+    logger.info('[Tactical Demo] Demo fleets created', {
+      sessionId,
+      empireFleetId,
+      allianceFleetId,
+      empireShips,
+      allianceShips,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        sessionId,
+        fleets: [
+          {
+            fleetId: empireFleetId,
+            name: empireFleet.name,
+            faction: 'empire',
+            ships: empireShips,
+          },
+          {
+            fleetId: allianceFleetId,
+            name: allianceFleet.name,
+            faction: 'alliance',
+            ships: allianceShips,
+          },
+        ],
+        message: 'Demo fleets created. Use these fleet IDs to create a battle via WebSocket.',
+      },
+    });
+  } catch (error) {
+    logger.error('[Tactical Demo] Create demo fleets error', { error });
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/gin7/tactical/demo/cleanup:
+ *   delete:
+ *     summary: Clean up demo fleets and battles
+ *     tags: [GIN7 Tactical Demo]
+ *     parameters:
+ *       - in: query
+ *         name: sessionId
+ *         schema:
+ *           type: string
+ *           default: demo-session
+ *     responses:
+ *       200:
+ *         description: Demo data cleaned up
+ */
+router.delete('/demo/cleanup', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionId = req.query.sessionId as string || 'demo-session';
+
+    // Delete demo fleets
+    const result = await Fleet.deleteMany({
+      sessionId,
+      fleetId: { $regex: /^demo-/ },
+    });
+
+    logger.info('[Tactical Demo] Cleanup completed', {
+      sessionId,
+      deletedFleets: result.deletedCount,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        sessionId,
+        deletedFleets: result.deletedCount,
+        message: 'Demo data cleaned up',
+      },
+    });
+  } catch (error) {
+    logger.error('[Tactical Demo] Cleanup error', { error });
+    next(error);
+  }
+});
+
 export default router;
 

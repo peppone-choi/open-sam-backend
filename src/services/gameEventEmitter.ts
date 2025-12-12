@@ -101,6 +101,42 @@ export class GameEventEmitter {
   }
 
   /**
+   * 커맨드 에러 브로드캐스트
+   * 커맨드 실행 중 오류 발생 시 프론트엔드에 알림
+   */
+  static broadcastCommandError(sessionId: string, generalId: number, commandName: string, errorMessage: string, errorStack?: string) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'command_error', {
+        generalId,
+        commandName,
+        errorMessage,
+        errorStack: errorStack?.substring(0, 500), // 스택 길이 제한
+        timestamp: new Date().toISOString()
+      });
+    }
+    // 콘솔에도 출력
+    console.error(`[CommandError] ${sessionId} - 장수 ${generalId} - ${commandName}: ${errorMessage}`);
+  }
+
+  /**
+   * 시스템 에러 브로드캐스트
+   * 일반 시스템 오류 발생 시 알림
+   */
+  static broadcastSystemError(sessionId: string, errorType: string, errorMessage: string, context?: any) {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.broadcastGameEvent(sessionId, 'system_error', {
+        errorType,
+        errorMessage,
+        context,
+        timestamp: new Date().toISOString()
+      });
+    }
+    console.error(`[SystemError] ${sessionId} - ${errorType}: ${errorMessage}`, context);
+  }
+
+  /**
    * 경매 상태 변경 브로드캐스트
    */
   static broadcastAuctionUpdate(sessionId: string, auctionId: string, updates: any) {

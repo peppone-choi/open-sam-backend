@@ -404,4 +404,4 @@ FleetSchema.index({ session_id: 1, isInCombat: 1 });
 FleetSchema.index({ session_id: 1, tacticalMapId: 1 });
 FleetSchema.index({ session_id: 1, faction: 1, status: 1 });
 
-export const Fleet = mongoose.model<IFleet>('Fleet', FleetSchema);
+export const Fleet = mongoose.models.Fleet || mongoose.model<IFleet>('Fleet', FleetSchema);

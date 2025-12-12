@@ -895,10 +895,11 @@ export class ExecuteEngineService {
     // cityId는 위에서 이미 선언됨 - 재사용
     // nationId는 위(line 739)에서 이미 선언됨 - 재사용
 
-    // 도시/국가 정보가 변경되었을 수 있으므로 캐시 무효화
+    // 도시/국가 정보가 변경되었을 수 있으므로 목록 캐시만 무효화
+    // entity 캐시는 saveCity/saveNation에서 이미 업데이트됨
     if (cityId) {
       try {
-        await invalidateCache('city', sessionId, cityId);
+        await invalidateCache('city', sessionId, cityId, { targets: ['lists'] });
       } catch (error: any) {
         // 캐시 무효화 실패해도 계속 진행
       }
@@ -906,7 +907,7 @@ export class ExecuteEngineService {
 
     if (nationId) {
       try {
-        await invalidateCache('nation', sessionId, nationId);
+        await invalidateCache('nation', sessionId, nationId, { targets: ['lists'] });
       } catch (error: any) {
         // 캐시 무효화 실패해도 계속 진행
       }
@@ -1219,7 +1220,31 @@ export class ExecuteEngineService {
 
         // RNG 생성 (PHP와 동일한 시드 사용)
         const rng = this.createRNG(sessionId, year, month, general.no, action);
-        const result = await command.run(rng);
+        
+        let result = false;
+        try {
+          const generalName = general.name || general.data?.name || `장수${general.no}`;
+          console.log(`[ExecuteEngine] 국가 커맨드 실행: ${action}, 장수: ${generalName}, 국가: ${nationId}`);
+          result = await command.run(rng);
+          console.log(`[ExecuteEngine] 국가 커맨드 완료: ${action}, 결과: ${result}`);
+        } catch (cmdError: any) {
+          const generalName = general.name || general.data?.name || `장수${general.no}`;
+          console.error(`[ExecuteEngine] 국가 커맨드 실행 에러: ${action}, 장수: ${generalName}(${general.no}), 국가: ${nationId}`);
+          console.error(`[ExecuteEngine] 에러 메시지:`, cmdError?.message || cmdError);
+          console.error(`[ExecuteEngine] 스택:`, cmdError?.stack);
+          
+          // 에러 로그 기록
+          const errorText = `<R>커맨드 실행 중 오류 발생:</> ${cmdError?.message || '알 수 없는 오류'}`;
+          await this.pushGeneralActionLog(sessionId, general.no, errorText, year, month);
+          
+          // WebSocket으로 에러 브로드캐스트 (프론트엔드에 실시간 알림)
+          try {
+            const { GameEventEmitter } = await import('../gameEventEmitter');
+            GameEventEmitter.broadcastCommandError(sessionId, general.no, action, cmdError?.message || '알 수 없는 오류', cmdError?.stack);
+          } catch (e) {
+            // 브로드캐스트 실패는 무시
+          }
+        }
 
         // 로그 flush
         try {
@@ -1629,15 +1654,39 @@ export class ExecuteEngineService {
 
         // RNG 생성 (PHP와 동일한 시드 사용)
         const rng = this.createRNG(sessionId, year, month, generalId, action);
-        const result = await command.run(rng);
+        
+        let result = false;
+        try {
+          const generalName = general.name || general.data?.name || `장수${generalId}`;
+          console.log(`[ExecuteEngine] 장수 커맨드 실행: ${action}, 장수: ${generalName}(${generalId})`);
+          result = await command.run(rng);
+          console.log(`[ExecuteEngine] 장수 커맨드 완료: ${action}, 장수: ${generalName}, 결과: ${result}`);
+        } catch (cmdError: any) {
+          const generalName = general.name || general.data?.name || `장수${generalId}`;
+          console.error(`[ExecuteEngine] 장수 커맨드 실행 에러: ${action}, 장수: ${generalName}(${generalId})`);
+          console.error(`[ExecuteEngine] 에러 메시지:`, cmdError?.message || cmdError);
+          console.error(`[ExecuteEngine] 스택:`, cmdError?.stack);
+          
+          // 에러 로그 기록
+          const errorText = `<R>커맨드 실행 중 오류 발생:</> ${cmdError?.message || '알 수 없는 오류'}`;
+          await this.pushGeneralActionLog(sessionId, generalId, errorText, year, month);
+          
+          // WebSocket으로 에러 브로드캐스트 (프론트엔드에 실시간 알림)
+          try {
+            const { GameEventEmitter } = await import('../gameEventEmitter');
+            GameEventEmitter.broadcastCommandError(sessionId, generalId, action, cmdError?.message || '알 수 없는 오류', cmdError?.stack);
+          } catch (e) {
+            // 브로드캐스트 실패는 무시
+          }
+        }
 
         // 로그 flush
         try {
           const generalObj = command.getGeneral?.();
           if (generalObj && typeof generalObj.getLogger === 'function') {
-            const logger = generalObj.getLogger();
-            if (logger && typeof logger.flush === 'function') {
-              await logger.flush();
+            const cmdLogger = generalObj.getLogger();
+            if (cmdLogger && typeof cmdLogger.flush === 'function') {
+              await cmdLogger.flush();
             }
           }
         } catch (error: any) {

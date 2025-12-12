@@ -18,6 +18,8 @@ import { errorMiddleware } from './common/middleware/error.middleware';
 import { globalLimiter } from './middleware/rate-limit.middleware';
 import gatewayRoutes from './routes/gateway.routes';
 import authRoutes from './routes/auth.routes';
+import gin7TacticalRoutes from './routes/gin7/tactical.routes';
+import { SocketManager, setSocketManager } from './socket/socketManager';
 
 dotenv.config();
 
@@ -106,17 +108,26 @@ async function start() {
     app.use('/api/auth', authRoutes);
     app.use('/api/gateway', gatewayRoutes);
     
+    // GIN7 Tactical routes (for demo/testing)
+    app.use('/api/gin7/tactical', gin7TacticalRoutes);
+    
     // 에러 핸들러
     app.use(errorMiddleware);
     
     // HTTP 서버 시작
     const httpServer = createHTTPServer(app);
     
+    // Socket.IO 초기화 (WebSocket 실시간 통신용)
+    const socketManager = new SocketManager(httpServer);
+    setSocketManager(socketManager);
+    logger.info('✅ Socket.IO 서버 초기화 완료');
+    
     httpServer.listen(PORT, () => {
       logger.info('✅ API 서버 시작 완료', { port: PORT });
       console.log('\n🚀 서버가 성공적으로 시작되었습니다!');
       console.log(`📍 포트: ${PORT}`);
       console.log(`🌍 환경: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📡 WebSocket: enabled (/rtbattle namespace)`);
       console.log(`⚠️  게임 데몬은 별도 실행 필요: npm run dev:daemon\n`);
     });
     

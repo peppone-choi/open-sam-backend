@@ -59,3 +59,6 @@ export * from './ScenarioSession';
 // gin7-bureaucracy models
 export * from './OperationPlan';
 
+// gin7-realtime-battle models
+export * from './RealtimeBattle';
+

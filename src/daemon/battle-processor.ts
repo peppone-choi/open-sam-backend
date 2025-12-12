@@ -401,13 +401,14 @@ async function handleBattleEnded(battle: any, winner: string | undefined) {
       }
     }
 
+    // 목록 캐시만 무효화 - entity 캐시는 saveCity/saveNation에서 이미 업데이트됨
     const invalidations: Promise<void>[] = [];
     if (targetCityId) {
-      invalidations.push(invalidateCache('city', sessionId, targetCityId));
+      invalidations.push(invalidateCache('city', sessionId, targetCityId, { targets: ['lists'] }));
     }
     const nationIds = [attackerNationId, defenderNationId].filter((nationId): nationId is number => typeof nationId === 'number' && nationId > 0);
     for (const nationId of nationIds) {
-      invalidations.push(invalidateCache('nation', sessionId, nationId));
+      invalidations.push(invalidateCache('nation', sessionId, nationId, { targets: ['lists'] }));
     }
     if (invalidations.length > 0) {
       await Promise.all(invalidations);

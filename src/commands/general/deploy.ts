@@ -275,15 +275,23 @@ export class DeployCommand extends GeneralCommand {
     // 전투 처리
     try {
       // 전투 RNG 시드 생성
-      const warRngSeed = `${this.env.year}_${this.env.month}_${general.getID()}_${defenderCityID}_${Date.now()}`;
+      const generalId = general.getID?.() || general.no || general.data?.no || 0;
+      const generalName = general.getName?.() || general.name || general.data?.name || '장수';
+      const warRngSeed = `${this.env.year}_${this.env.month}_${generalId}_${defenderCityID}_${Date.now()}`;
       const warRng = new RandUtil(warRngSeed);
       
-        // 전투 결과 처리
-        const { ProcessWarService } = await import('../../services/war/ProcessWar.service');
-        await ProcessWarService.process(warRng, general, this.nation, this.destCity);
-    } catch (error) {
-      console.error('전투 처리 실패:', error);
-      logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 시작되었습니다.`);
+      console.log(`[출병] 전투 시작: ${generalName} -> ${defenderCityName} (seed: ${warRngSeed})`);
+      
+      // 전투 결과 처리
+      const { ProcessWarService } = await import('../../services/war/ProcessWar.service');
+      await ProcessWarService.process(warRng, general, this.nation, this.destCity);
+      
+      console.log(`[출병] 전투 완료: ${generalName} -> ${defenderCityName}`);
+    } catch (error: any) {
+      console.error('[출병] 전투 처리 실패:', error?.message || error);
+      console.error('[출병] 스택:', error?.stack);
+      logger.pushGeneralActionLog(`<R>전투 처리 중 오류 발생:</> ${error?.message || '알 수 없는 오류'}`);
+      logger.pushGeneralActionLog(`<G><b>${defenderCityName}</b></>에 대한 전투가 실패했습니다.`);
     }
 
     // 공통 후처리 (StaticEventHandler + 아이템 추첨 + 유산 포인트)

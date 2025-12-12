@@ -47,6 +47,9 @@ export interface ProcessWarParams {
 // 기본값은 true로 두고, 명시적으로 false를 주면 비활성화하도록 한다.
 const enableLegacyProcessWar = process.env.ENABLE_LEGACY_PROCESS_WAR !== 'false';
 
+// 모든 전투를 자동 전투로 처리 (전술 전투 비활성화)
+const FORCE_ALL_AUTO_BATTLE = true;
+
 export class ProcessWarService {
   /**
    * 출병 후 전투 처리 메인 함수
@@ -59,15 +62,26 @@ export class ProcessWarService {
     defenderCity: any,
     options: { warSeed?: string } = {}
   ): Promise<void> {
-    const sessionId = attackerGeneral.session_id;
-    const attackerNationID = attackerGeneral.nation || attackerGeneral.getNationID?.();
-    const defenderNationID = defenderCity.nation;
-    const defenderCityID = defenderCity.city;
+    // 안전한 값 추출
+    const sessionId = attackerGeneral.session_id || attackerGeneral.data?.session_id || 'sangokushi_default';
+    const attackerNationID = attackerGeneral.nation || attackerGeneral.data?.nation || attackerGeneral.getNationID?.() || 0;
+    const defenderNationID = defenderCity?.nation || defenderCity?.data?.nation || 0;
+    const defenderCityID = defenderCity?.city || defenderCity?.data?.city || 0;
+    const defenderCityName = defenderCity?.name || defenderCity?.data?.name || '도시';
 
-    const attackerGeneralId = attackerGeneral.no || attackerGeneral.getID?.();
-    const initialAttackerCrew = attackerGeneralId
-      ? await this.getGeneralTotalCrew(sessionId, attackerGeneralId)
-      : 0;
+    const attackerGeneralId = attackerGeneral.no || attackerGeneral.data?.no || attackerGeneral.getID?.() || 0;
+    const attackerGeneralName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+    
+    console.log(`[ProcessWar] 전투 시작 - 공격: ${attackerGeneralName}(${attackerGeneralId}) -> 방어: ${defenderCityName}(${defenderCityID})`);
+    
+    let initialAttackerCrew = 0;
+    try {
+      initialAttackerCrew = attackerGeneralId
+        ? await this.getGeneralTotalCrew(sessionId, attackerGeneralId)
+        : 0;
+    } catch (e: any) {
+      console.error('[ProcessWar] 초기 병력 조회 실패:', e?.message);
+    }
 
     const warSeed = options.warSeed ?? rng.uuid();
  
@@ -134,8 +148,10 @@ export class ProcessWarService {
         intel: fallbackDefender.unit.intel,
       };
 
+      const attackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+      const nationName = attackerNation.name || attackerNation.data?.name || '국가';
       logger.pushGlobalActionLog?.(
-        `<D><b>${attackerNation.name}</b></>의 <Y>${attackerGeneral.name}</>이(가) 공백지 <G><b>${defenderCity.name}</b></>에 진격합니다. [${defenderType} ${militiaUnit.crew}명 저항]`
+        `<D><b>${nationName}</b></>의 <Y>${attackerName}</>이(가) 공백지 <G><b>${defenderCity.name}</b></>에 진격합니다. [${defenderType} ${militiaUnit.crew}명 저항]`
       );
 
       // 자동 전투 실행
@@ -154,7 +170,9 @@ export class ProcessWarService {
         result: battleResult.winner,
         attackerLoss: battleResult.attackerLoss,
         defenderLoss: battleResult.defenderLoss,
-        battleLabel: '공백지 전투'
+        battleLabel: '공백지 전투',
+        turnLogs: battleResult.turnLogs,
+        unitStates: battleResult.unitStates
       });
 
       if (battleResult.winner === 'attacker') {
@@ -205,7 +223,7 @@ export class ProcessWarService {
       attackerNation,
       defenderNationID
     );
-    const forceAutoBattle = process.env.FORCE_AUTO_BATTLE === 'true';
+    const forceAutoBattle = FORCE_ALL_AUTO_BATTLE || process.env.FORCE_AUTO_BATTLE === 'true';
 
     if (!forceAutoBattle && enableLegacyProcessWar && !shouldUseAutoBattle) {
       await this.executeLegacyProcessWar({
@@ -258,7 +276,9 @@ export class ProcessWarService {
         result: battleResult.winner,
         attackerLoss: battleResult.attackerLoss,
         defenderLoss: battleResult.defenderLoss,
-        battleLabel: '자동 전투'
+        battleLabel: '자동 전투',
+        turnLogs: battleResult.turnLogs,
+        unitStates: battleResult.unitStates
       });
 
       const totalDefenderCrewBefore = defendersForBattle.reduce((sum, unit) => sum + this.getUnitCrewValue(unit), 0);
@@ -277,8 +297,10 @@ export class ProcessWarService {
       );
 
       if (battleResult.winner === 'attacker') {
+        const attackerNameForLog = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+        const nationNameForLog = attackerNation.name || attackerNation.data?.name || '국가';
         logger.pushGlobalActionLog?.(
-          `<D><b>${attackerNation.name}</b></>의 <Y>${attackerGeneral.name}</>이(가) <G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [자동 전투]`
+          `<D><b>${nationNameForLog}</b></>의 <Y>${attackerNameForLog}</>이(가) <G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [자동 전투]`
         );
         logger.pushGeneralActionLog?.(
           `<G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [자동 전투] [손실: ${battleResult.attackerLoss}명]`
@@ -343,8 +365,10 @@ export class ProcessWarService {
 
     const battleId = startResult.battleId;
 
+    const tacticalAttackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+    const tacticalNationName = attackerNation.name || attackerNation.data?.name || '국가';
     logger.pushGlobalActionLog?.(
-      `<D><b>${attackerNation.name}</b></>의 <Y>${attackerGeneral.name}</>이(가) <G><b>${defenderCity.name}</b></>에 진격합니다. [전술 전투] (ID: ${battleId})`
+      `<D><b>${tacticalNationName}</b></>의 <Y>${tacticalAttackerName}</>이(가) <G><b>${defenderCity.name}</b></>에 진격합니다. [전술 전투] (ID: ${battleId})`
     );
     logger.pushGeneralActionLog?.(
       `<G><b>${defenderCity.name}</b></>로 진격합니다. [전술 전투 시작] (ID: ${battleId})`
@@ -512,7 +536,9 @@ export class ProcessWarService {
     return {
       winner,
       attackerLoss: Math.round(summary.attackerCasualties),
-      defenderLoss: Math.round(summary.defenderCasualties)
+      defenderLoss: Math.round(summary.defenderCasualties),
+      turnLogs: result.turnLogs,
+      unitStates: result.unitStates
     };
   }
 
@@ -525,6 +551,8 @@ export class ProcessWarService {
       attackerLoss: number;
       defenderLoss: number;
       battleLabel: string;
+      turnLogs?: any[];
+      unitStates?: any[];
     }
   ): void {
     if (
@@ -535,7 +563,7 @@ export class ProcessWarService {
       return;
     }
 
-    const { cityName, defenderLabel, result, attackerLoss, defenderLoss, battleLabel } = options;
+    const { cityName, defenderLabel, result, attackerLoss, defenderLoss, battleLabel, turnLogs, unitStates } = options;
     const outcome = result === 'attacker' ? '승리' : '패배';
 
     logger.pushGeneralBattleResultLog(
@@ -543,6 +571,30 @@ export class ProcessWarService {
       LogFormatType.PLAIN
     );
 
+    // PHP 스타일 페이즈별 상세 로그
+    if (turnLogs && turnLogs.length > 0 && unitStates) {
+      // 유닛 이름 맵 생성
+      const unitNameMap = new Map<number, string>();
+      for (const unit of unitStates) {
+        unitNameMap.set(unit.generalId, unit.name || `유닛${unit.generalId}`);
+      }
+
+      for (const turnLog of turnLogs) {
+        for (const action of turnLog.actions) {
+          const attackerName = unitNameMap.get(action.attackerId) || '공격자';
+          const defenderName = unitNameMap.get(action.defenderId) || '수비자';
+          const phaseLabel = turnLog.turn === 0 ? '先' : `${turnLog.turn} `;
+          
+          // PHP 형식: "$phaseNickname: 【공격자】 HP (-피해) VS HP (-피해) 【수비자】"
+          logger.pushGeneralBattleDetailLog(
+            `${phaseLabel}: <Y>【${attackerName}】</> → <Y>【${defenderName}】</> <C>-${action.damage}</>`,
+            LogFormatType.PLAIN
+          );
+        }
+      }
+    }
+
+    // 요약 로그
     const detailLines = [
       `[${battleLabel}] 상대: ${defenderLabel}`,
       `[${battleLabel}] 결과: ${outcome}`,
@@ -792,7 +844,8 @@ export class ProcessWarService {
 
     const resolvedGeneralId = attackerGeneralId ?? 0;
     try {
-      await BattleEventHook.onCityOccupied(sessionId, cityId, attackerNationId, resolvedGeneralId);
+      // oldNationId를 전달하여 이미 소유권이 변경된 상태에서도 정상 처리되도록 함
+      await BattleEventHook.onCityOccupied(sessionId, cityId, attackerNationId, resolvedGeneralId, oldNationId);
     } catch (hookError) {
       console.error('[ProcessWar] BattleEventHook 처리 실패:', hookError);
     }

@@ -25,7 +25,58 @@ export type FleetStatus =
   | 'COMBAT'          // 전투 중
   | 'REORG'           // 재편성 중 (행동 불가)
   | 'DOCKED'          // 정박 (행성/스테이션)
-  | 'RESUPPLY';       // 보급 중
+  | 'RESUPPLY'        // 보급 중
+  | 'IN_BATTLE'       // 실시간 전투 중
+  | 'REINFORCING'     // 전투 합류 중
+  | 'RETREATING';     // 퇴각 중
+
+/**
+ * Battle initiation type
+ */
+export type BattleInitiationType = 'MANUAL' | 'AUTO' | 'DEFENSIVE';
+
+/**
+ * AI delegation profile for offline players
+ */
+export interface IAIDelegation {
+  enabled: boolean;
+  delegatedTo?: string;      // Character ID of subordinate
+  profile: 'AGGRESSIVE' | 'BALANCED' | 'DEFENSIVE' | 'RETREAT_PRONE';
+}
+
+/**
+ * Battle configuration for fleet
+ */
+export interface IFleetBattleConfig {
+  initiationType: BattleInitiationType;
+  retreatThreshold: number;    // HP % to auto-retreat (0-100)
+  autoEngage: boolean;         // Auto-engage when hostile detected
+  aiDelegation: IAIDelegation;
+}
+
+/**
+ * Fleet supply state
+ */
+export interface IFleetSupply {
+  fuel: number;
+  maxFuel: number;
+  ammo: number;
+  maxAmmo: number;
+  supplies: number;           // General supplies for morale/repair
+  maxSupplies: number;
+}
+
+/**
+ * Fleet's current battle state (when in battle)
+ */
+export interface IFleetBattleState {
+  battleId: string;
+  gridId: string;
+  joinedAt: Date;
+  role: 'INITIATOR' | 'DEFENDER' | 'REINFORCEMENT';
+  initialUnits: number;
+  currentUnits: number;
+}
 
 /**
  * Ship type specifications (static data)
@@ -131,6 +182,39 @@ export interface IShipUnit {
 }
 
 /**
+ * 3D Vector for physics calculations
+ */
+export interface IVector3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * Realtime combat state for fleet
+ */
+export interface IRealtimeCombatState {
+  // Position in 3D space (float, units in km)
+  position: IVector3;
+  // Velocity vector (units/tick, 1 tick = 100ms)
+  velocity: IVector3;
+  // Heading angle (0-360 degrees, 0 = positive X axis)
+  heading: number;
+  // Angular velocity (degrees/tick)
+  angularVelocity: number;
+  // Target heading for rotation
+  targetHeading?: number;
+  // Current speed (magnitude of velocity)
+  speed: number;
+  // Maximum speed
+  maxSpeed: number;
+  // Acceleration rate
+  acceleration: number;
+  // Turn rate (degrees per tick)
+  turnRate: number;
+}
+
+/**
  * Fleet Schema
  * A fleet is a collection of ship units commanded by a character
  */
@@ -151,7 +235,20 @@ export interface IFleet extends Document {
   status: FleetStatus;
   statusData: Record<string, unknown>;  // Context data for current status
   
-  // Location
+  // Grid location (MMO-Battle integration)
+  gridId?: string;              // Current grid position (grid_x_y)
+  previousGridId?: string;      // Previous grid (for retreat destination)
+  
+  // Battle configuration
+  battleConfig?: IFleetBattleConfig;
+  
+  // Supply state
+  supply?: IFleetSupply;
+  
+  // Current battle state (if in battle)
+  battleState?: IFleetBattleState;
+  
+  // Location (legacy)
   location: {
     type: 'SYSTEM' | 'PLANET' | 'WARP' | 'DEEP_SPACE';
     systemId?: string;
@@ -159,6 +256,9 @@ export interface IFleet extends Document {
     warpTravelId?: string;
     coordinates?: { x: number; y: number };
   };
+  
+  // Realtime combat state (used during active battles)
+  realtimeCombat?: IRealtimeCombatState;
   
   // Units
   units: IShipUnit[];
@@ -229,6 +329,26 @@ export interface IFleet extends Document {
   data: Record<string, unknown>;
 }
 
+// Vector3 Schema for 3D coordinates
+const Vector3Schema = new Schema<IVector3>({
+  x: { type: Number, default: 0 },
+  y: { type: Number, default: 0 },
+  z: { type: Number, default: 0 }
+}, { _id: false });
+
+// Realtime combat state schema
+const RealtimeCombatStateSchema = new Schema<IRealtimeCombatState>({
+  position: { type: Vector3Schema, default: () => ({ x: 0, y: 0, z: 0 }) },
+  velocity: { type: Vector3Schema, default: () => ({ x: 0, y: 0, z: 0 }) },
+  heading: { type: Number, default: 0, min: 0, max: 360 },
+  angularVelocity: { type: Number, default: 0 },
+  targetHeading: { type: Number },
+  speed: { type: Number, default: 0 },
+  maxSpeed: { type: Number, default: 10 },  // Default max speed
+  acceleration: { type: Number, default: 1 },  // Default acceleration
+  turnRate: { type: Number, default: 5 }  // Default turn rate (degrees/tick)
+}, { _id: false });
+
 const ShipUnitSchema = new Schema<IShipUnit>({
   unitId: { type: String, required: true },
   name: { type: String },
@@ -271,6 +391,50 @@ const ShipUnitSchema = new Schema<IShipUnit>({
   damaged: { type: Number, default: 0 }
 }, { _id: false });
 
+// Battle config sub-schema
+const FleetBattleConfigSchema = new Schema({
+  initiationType: { 
+    type: String, 
+    enum: ['MANUAL', 'AUTO', 'DEFENSIVE'],
+    default: 'MANUAL'
+  },
+  retreatThreshold: { type: Number, default: 20, min: 0, max: 100 },
+  autoEngage: { type: Boolean, default: false },
+  aiDelegation: {
+    enabled: { type: Boolean, default: true },
+    delegatedTo: { type: String },
+    profile: { 
+      type: String, 
+      enum: ['AGGRESSIVE', 'BALANCED', 'DEFENSIVE', 'RETREAT_PRONE'],
+      default: 'BALANCED'
+    }
+  }
+}, { _id: false });
+
+// Fleet supply sub-schema
+const FleetSupplySchema = new Schema({
+  fuel: { type: Number, default: 100 },
+  maxFuel: { type: Number, default: 100 },
+  ammo: { type: Number, default: 100 },
+  maxAmmo: { type: Number, default: 100 },
+  supplies: { type: Number, default: 100 },
+  maxSupplies: { type: Number, default: 100 }
+}, { _id: false });
+
+// Fleet battle state sub-schema
+const FleetBattleStateSchema = new Schema({
+  battleId: { type: String, required: true },
+  gridId: { type: String, required: true },
+  joinedAt: { type: Date, default: Date.now },
+  role: { 
+    type: String, 
+    enum: ['INITIATOR', 'DEFENDER', 'REINFORCEMENT'],
+    default: 'DEFENDER'
+  },
+  initialUnits: { type: Number, default: 0 },
+  currentUnits: { type: Number, default: 0 }
+}, { _id: false });
+
 const FleetSchema = new Schema<IFleet>({
   fleetId: { type: String, required: true },
   sessionId: { type: String, required: true },
@@ -284,10 +448,23 @@ const FleetSchema = new Schema<IFleet>({
   
   status: {
     type: String,
-    enum: ['IDLE', 'MOVING', 'WARPING', 'COMBAT', 'REORG', 'DOCKED', 'RESUPPLY'],
+    enum: ['IDLE', 'MOVING', 'WARPING', 'COMBAT', 'REORG', 'DOCKED', 'RESUPPLY', 'IN_BATTLE', 'REINFORCING', 'RETREATING'],
     default: 'IDLE'
   },
   statusData: { type: Schema.Types.Mixed, default: {} },
+  
+  // Grid location (MMO-Battle integration)
+  gridId: { type: String },
+  previousGridId: { type: String },
+  
+  // Battle configuration
+  battleConfig: { type: FleetBattleConfigSchema },
+  
+  // Supply state
+  supply: { type: FleetSupplySchema },
+  
+  // Current battle state
+  battleState: { type: FleetBattleStateSchema },
   
   location: {
     type: {
@@ -367,6 +544,9 @@ const FleetSchema = new Schema<IFleet>({
   // Docking status
   dockedAt: { type: String },
   
+  // Realtime combat state (used during active battles)
+  realtimeCombat: { type: RealtimeCombatStateSchema },
+  
   data: { type: Schema.Types.Mixed, default: {} }
 }, {
   timestamps: true
@@ -379,6 +559,10 @@ FleetSchema.index({ sessionId: 1, factionId: 1 });
 FleetSchema.index({ sessionId: 1, status: 1 });
 FleetSchema.index({ sessionId: 1, 'location.systemId': 1 });
 FleetSchema.index({ sessionId: 1, 'location.planetId': 1 });
+// MMO-Battle integration indexes
+FleetSchema.index({ sessionId: 1, gridId: 1 });
+FleetSchema.index({ sessionId: 1, 'battleState.battleId': 1 });
+FleetSchema.index({ sessionId: 1, factionId: 1, gridId: 1 });
 
 /**
  * Pre-save hook to calculate total ships

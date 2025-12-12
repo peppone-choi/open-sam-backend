@@ -1478,7 +1478,7 @@ export class SimpleAI {
     // 포상 - 자금 충분할 때
     if (nationGold >= 5000) {
       commands.push({
-        command: 'che_포상',
+        command: '포상',
         args: {},
         weight: 5,
         reason: '국가 자금 충분, 장수 사기 증진'
@@ -1488,7 +1488,7 @@ export class SimpleAI {
     // 발령 - 항상 가능 (수뇌만)
     if (officerLevel >= 5) {
       commands.push({
-        command: 'che_발령',
+        command: '발령',
         args: {},
         weight: 3,
         reason: '장수 관직 임명/해임'
@@ -1497,7 +1497,7 @@ export class SimpleAI {
 
     // 몰수 - 항상 가능
     commands.push({
-      command: 'che_몰수',
+      command: '몰수',
       args: {},
       weight: 2,
       reason: '장수 자원 몰수'
@@ -1505,7 +1505,7 @@ export class SimpleAI {
 
     // 부대탈퇴지시
     commands.push({
-      command: 'che_부대탈퇴지시',
+      command: '부대탈퇴지시',
       args: {},
       weight: 1,
       reason: '부대원 탈퇴 지시'
@@ -1518,7 +1518,7 @@ export class SimpleAI {
     // 물자원조 - 자원 충분할 때 동맹국에
     if (nationGold >= 10000 || nationRice >= 10000) {
       commands.push({
-        command: 'che_물자원조',
+        command: '물자원조',
         args: {},
         weight: 3,
         reason: '동맹국 지원'
@@ -1528,7 +1528,7 @@ export class SimpleAI {
     // 불가침제의 - 평화 시
     if (!isAtWar) {
       commands.push({
-        command: 'che_불가침제의',
+        command: '불가침제의',
         args: {},
         weight: 4,
         reason: '평화 유지'
@@ -1539,7 +1539,7 @@ export class SimpleAI {
     const canDeclareWar = await this.shouldDeclareWar(nationData);
     if (canDeclareWar) {
       commands.push({
-        command: 'che_선전포고',
+        command: '선전포고',
         args: { targetNationId: canDeclareWar },
         weight: 15,
         reason: '전쟁 준비 완료'
@@ -1549,7 +1549,7 @@ export class SimpleAI {
     // 종전제의 - 전쟁 중일 때
     if (isAtWar) {
       commands.push({
-        command: 'che_종전제의',
+        command: '종전제의',
         args: {},
         weight: 3,
         reason: '전쟁 종료 요청'
@@ -1558,7 +1558,7 @@ export class SimpleAI {
 
     // 불가침파기제의
     commands.push({
-      command: 'che_불가침파기제의',
+      command: '불가침파기제의',
       args: {},
       weight: 1,
       reason: '불가침 조약 파기'
@@ -1571,7 +1571,7 @@ export class SimpleAI {
     // 초토화 - 전쟁 중이고 상황이 불리할 때
     if (isAtWar) {
       commands.push({
-        command: 'che_초토화',
+        command: '초토화',
         args: {},
         weight: 2,
         reason: '적군 보급 차단'
@@ -1581,7 +1581,7 @@ export class SimpleAI {
     // 천도 - 수도 이전 (큰 결정)
     if (nationGold >= 50000) {
       commands.push({
-        command: 'che_천도',
+        command: '천도',
         args: {},
         weight: 1,
         reason: '수도 이전'
@@ -1591,7 +1591,7 @@ export class SimpleAI {
     // 증축 - 도시 레벨 업
     if (nationGold >= 10000) {
       commands.push({
-        command: 'che_증축',
+        command: '증축',
         args: {},
         weight: 4,
         reason: '도시 레벨 향상'
@@ -1600,7 +1600,7 @@ export class SimpleAI {
 
     // 감축 - 도시 레벨 다운
     commands.push({
-      command: 'che_감축',
+      command: '감축',
       args: {},
       weight: 1,
       reason: '도시 레벨 축소'
@@ -1613,7 +1613,7 @@ export class SimpleAI {
     // 필사즉생 - 전쟁 중 위급할 때
     if (isAtWar) {
       commands.push({
-        command: 'che_필사즉생',
+        command: '필사즉생',
         args: {},
         weight: 2,
         reason: '위급 상황 돌파'
@@ -1623,7 +1623,7 @@ export class SimpleAI {
     // 백성동원 - 인구 충분할 때
     if (cityData && (cityData.pop || 0) >= 50000) {
       commands.push({
-        command: 'che_백성동원',
+        command: '백성동원',
         args: {},
         weight: 5,
         reason: '병력 확보'
@@ -1633,7 +1633,7 @@ export class SimpleAI {
     // 수몰 - 물이 있는 도시에서
     if (isAtWar) {
       commands.push({
-        command: 'che_수몰',
+        command: '수몰',
         args: {},
         weight: 2,
         reason: '수공 작전'
@@ -1642,7 +1642,7 @@ export class SimpleAI {
 
     // 허보 - 정보전
     commands.push({
-      command: 'che_허보',
+      command: '허보',
       args: {},
       weight: 3,
       reason: '거짓 정보 유포'
@@ -1651,7 +1651,7 @@ export class SimpleAI {
     // 의병모집
     if (isAtWar) {
       commands.push({
-        command: 'che_의병모집',
+        command: '의병모집',
         args: {},
         weight: 4,
         reason: '의병 소집'
@@ -1660,7 +1660,7 @@ export class SimpleAI {
 
     // 이호경식 - 이간계
     commands.push({
-      command: 'che_이호경식',
+      command: '이호경식',
       args: {},
       weight: 2,
       reason: '적국 분열 유도'
@@ -1669,7 +1669,7 @@ export class SimpleAI {
     // 급습 - 기습 공격
     if (isAtWar) {
       commands.push({
-        command: 'che_급습',
+        command: '급습',
         args: {},
         weight: 6,
         reason: '기습 공격'
@@ -1679,7 +1679,7 @@ export class SimpleAI {
     // 피장파장 - 동시 피해
     if (isAtWar) {
       commands.push({
-        command: 'che_피장파장',
+        command: '피장파장',
         args: {},
         weight: 2,
         reason: '상호 피해'
@@ -1870,17 +1870,78 @@ export class SimpleAI {
     // 수도가 없으면 불가
     if (!nationData.capital) return null;
 
-    // 자원 충분 여부 (평균 자원의 1.5배 이상)
-    const avgGold = 10000; // FUTURE: 실제 평균 계산
-    const avgRice = 10000;
-    
-    if (nationData.gold < avgGold * 1.5 || nationData.rice < avgRice * 1.5) {
+    const nationGold = nationData.gold || 0;
+    const nationRice = nationData.rice || 0;
+    const nationId = nationData.nation || 0;
+
+    // 자원 충분 여부 (최소 5000 이상)
+    if (nationGold < 5000 || nationRice < 5000) {
       return null;
     }
 
-    // FUTURE: 외교 상태 확인, 약한 국가 찾기
-    // 현재는 간단히 null 반환 (선포 안 함)
-    return null;
+    // 이미 전쟁 중이면 추가 선포 안 함
+    const warList = nationData.war_list || nationData.warList || [];
+    if (Array.isArray(warList) && warList.length >= 2) {
+      return null; // 이미 2개국 이상과 전쟁 중
+    }
+
+    // 인접한 적 국가 찾기
+    try {
+      const sessionId = this.env?.session_id;
+      if (!sessionId) return null;
+
+      const { cityRepository } = await import('../repositories/city.repository');
+      const { nationRepository } = await import('../repositories/nation.repository');
+      
+      // 우리 국가의 도시들
+      const ourCities = await cityRepository.findByNation(sessionId, nationId);
+      if (!ourCities || ourCities.length === 0) return null;
+
+      // 인접한 다른 국가 도시 찾기
+      const adjacentNations = new Set<number>();
+      
+      for (const city of ourCities) {
+        const neighbors = (city as any).connect || [];
+        for (const neighborId of neighbors) {
+          const neighborCity = await cityRepository.findByCityNum(sessionId, neighborId) as any;
+          if (neighborCity && neighborCity.nation && neighborCity.nation !== nationId && neighborCity.nation !== 0) {
+            adjacentNations.add(neighborCity.nation);
+          }
+        }
+      }
+
+      if (adjacentNations.size === 0) return null;
+
+      // 가장 약한 국가 선택 (장수 수 기준)
+      let targetNationId: number | null = null;
+      let minGenCount = Infinity;
+
+      for (const adjNationId of adjacentNations) {
+        // 이미 전쟁 중인 국가 제외
+        if (warList.includes(adjNationId)) continue;
+
+        const adjNation = await nationRepository.findByNationNum(sessionId, adjNationId);
+        if (!adjNation) continue;
+
+        const genCount = adjNation.gennum || 0;
+        if (genCount < minGenCount) {
+          minGenCount = genCount;
+          targetNationId = adjNationId;
+        }
+      }
+
+      // 상대 국가의 장수 수가 우리의 1.5배 이상이면 선포 안 함
+      const ourGenCount = nationData.gennum || 1;
+      if (minGenCount > ourGenCount * 1.5) {
+        return null;
+      }
+
+      console.log(`[SimpleAI] 선전포고 대상 발견: 국가 ${targetNationId} (장수 ${minGenCount}명)`);
+      return targetNationId;
+    } catch (error) {
+      console.error('[SimpleAI] 선전포고 대상 탐색 실패:', error);
+      return null;
+    }
   }
 
   /**
@@ -1919,14 +1980,15 @@ export class SimpleAI {
       return null;
     }
 
-    // 도시 레벨 5-6만 가능 (중형 도시) - PHP 3231-3234줄
+    // 도시 레벨 4-7 가능 (중형~대형 도시) - PHP 3231-3234줄 수정
+    // 원본 PHP는 5-6이었으나 거병 활성화를 위해 범위 확장
     const cityData = this.city?.data || this.city;
     const currentCityLevel = cityData?.level || cityData?.levelId || 0;
-    if ((currentCityLevel < 5 || 6 < currentCityLevel) && this.rng.nextBool(0.5)) {
+    if ((currentCityLevel < 4 || 7 < currentCityLevel) && this.rng.nextBool(0.5)) {
       return null;
     }
 
-    // 주변 3칸 이내에 거병 가능한 도시(레벨 5-6, 무주) 있는지 체크 - PHP 3236-3266줄
+    // 주변 3칸 이내에 거병 가능한 도시(레벨 4-7, 무주) 있는지 체크 - PHP 3236-3266줄 수정
     const currentCityID = cityData?.city || genData.city || 0;
     const occupiedCities = await this.getOccupiedCities();
     
@@ -1942,10 +2004,10 @@ export class SimpleAI {
           continue;
         }
         
-        // 도시 레벨 체크 (5-6만 가능)
+        // 도시 레벨 체크 (4-7 가능) - 범위 확장
         const cityConst = CityConst.byID(targetCityID);
         const cityLevel = cityConst?.levelId || 0;
-        if (cityLevel < 5 || 6 < cityLevel) {
+        if (cityLevel < 4 || 7 < cityLevel) {
           continue;
         }
         
@@ -1959,8 +2021,8 @@ export class SimpleAI {
       }
     } catch (error) {
       console.warn('[SimpleAI] tryRaiseArmy: searchDistance failed, fallback to probability', error);
-      // 폴백: 50% 확률로 가능하다고 판단
-      availableNearCity = this.rng.nextBool(0.5);
+      // 폴백: 70% 확률로 가능하다고 판단 (50%에서 상향)
+      availableNearCity = this.rng.nextBool(0.7);
     }
     
     if (!availableNearCity) {
@@ -1985,8 +2047,9 @@ export class SimpleAI {
     const relYear = (env.year || 0) - (env.init_year || env.startyear || 0);
     const yearBonus = Math.max(1, Math.min(5, 5 - relYear));
     
-    // 최종 확률: 5% * yearBonus (최대 25%)
-    const raiseChance = 0.05 * yearBonus;
+    // 최종 확률: 15% * yearBonus (최대 75%)
+    // 원본 PHP는 5%였으나 NPC 활성화를 위해 상향
+    const raiseChance = 0.15 * yearBonus;
     if (!this.rng.nextBool(raiseChance)) {
       return null;
     }
@@ -2061,10 +2124,11 @@ export class SimpleAI {
       return null;
     }
 
-    // 현재 도시가 건국 가능한 도시(레벨 5-6)인지 확인
+    // 현재 도시가 건국 가능한 도시(레벨 4-7)인지 확인
+    // 원본 PHP는 5-6이었으나 건국 활성화를 위해 범위 확장
     const cityData = this.city?.data || this.city;
     const cityLevel = cityData?.level || cityData?.levelId || 0;
-    if (cityLevel < 5 || 6 < cityLevel) {
+    if (cityLevel < 4 || 7 < cityLevel) {
       return null;
     }
 
@@ -2997,13 +3061,14 @@ export class SimpleAI {
     const atmos = genData.atmos || 0;
     const leadership = genData.leadership || 50;
 
-    // === 병사 체크 - 완화됨 ===
+    // === 병사 체크 - 대폭 완화 ===
     if (crew <= 0) {
       return { canDeploy: false, reason: '병사 없음' };
     }
 
-    // 최소 병사 수: (통솔-20) * 50, 최소 500, 최대 1500 (대폭 완화)
-    const minCrew = Math.max(500, Math.min((leadership - 20) * 50, 1500));
+    // 최소 병사 수: (통솔-20) * 10, 최소 200, 최대 500 (대폭 완화)
+    // 게임 초반에도 출병 가능하도록 설정
+    const minCrew = Math.max(200, Math.min((leadership - 20) * 10, 500));
     if (crew < minCrew) {
       return { canDeploy: false, reason: `병사 부족 (${crew} < ${minCrew})` };
     }
@@ -3580,7 +3645,7 @@ export class SimpleAI {
     }
 
     // 가중치 기반 선택
-    const selected = this.selectByWeight(filteredCandidates);
+    const selected = this.selectCommandByWeight(filteredCandidates);
     if (selected) {
       console.log(`[SimpleAI] 국가 명령 선택: ${selected.command} (가중치: ${selected.weight?.toFixed(2)}, 이유: ${selected.reason})`);
     }

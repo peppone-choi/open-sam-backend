@@ -19,6 +19,7 @@ import fighterRoutes from './fighter.routes';
 import commandDelayRoutes from './command-delay.routes';
 import fezzanRoutes from './fezzan.routes';
 import socialRoutes from './social.routes';
+import battleRoutes from './battle.routes';
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use('/fighter', fighterRoutes);  // gin7-fighter-wing: fighter launch/rec
 router.use('/command-delay', commandDelayRoutes);  // gin7-command-delay: command queue, delay, electronic warfare
 router.use('/fezzan', fezzanRoutes);  // gin7-fezzan-diplomacy: pass permits, info broker, financial services
 router.use('/social', socialRoutes);  // gin7-social-interaction: relationships, factions, private funds
+router.use('/battle', battleRoutes);  // gin7-mmo-battle: MMO-Battle integration, realtime combat
 
 export default router;

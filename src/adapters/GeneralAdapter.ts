@@ -447,7 +447,26 @@ export class GeneralAdapter {
 
   // 원본 데이터 접근 (필요한 경우)
   get data(): any {
-    return this.raw.data || {};
+    // raw.data가 없으면 초기화하여 참조를 유지
+    if (!this.raw.data) {
+      this.raw.data = {};
+    }
+    return this.raw.data;
+  }
+
+  set data(value: any) {
+    if (!this.raw.data) {
+      this.raw.data = {};
+    }
+    // 객체 병합 (기존 데이터 유지하면서 새 값 추가)
+    if (value && typeof value === 'object') {
+      Object.assign(this.raw.data, value);
+    } else {
+      this.raw.data = value;
+    }
+    if (typeof this.raw.markModified === 'function') {
+      this.raw.markModified('data');
+    }
   }
 
   get session_id(): string {
@@ -468,6 +487,38 @@ export class GeneralAdapter {
 
   get city(): number {
     return this.raw.data?.city || this.raw.city || 0;
+  }
+
+  set city(value: number) {
+    // raw에 직접 설정
+    this.raw.city = value;
+    // data에도 동기화
+    if (!this.raw.data) {
+      this.raw.data = {};
+    }
+    this.raw.data.city = value;
+    if (typeof this.raw.markModified === 'function') {
+      this.raw.markModified('data');
+      this.raw.markModified('city');
+    }
+  }
+
+  get crew(): number {
+    return this.raw.data?.crew || this.raw.crew || 0;
+  }
+
+  set crew(value: number) {
+    // raw에 직접 설정
+    this.raw.crew = value;
+    // data에도 동기화
+    if (!this.raw.data) {
+      this.raw.data = {};
+    }
+    this.raw.data.crew = value;
+    if (typeof this.raw.markModified === 'function') {
+      this.raw.markModified('data');
+      this.raw.markModified('crew');
+    }
   }
 
   get officer_level(): number {

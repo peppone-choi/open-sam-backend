@@ -378,6 +378,16 @@ class GalaxyCommanderAdapter implements ILoghCommandExecutor {
     return this.character;
   }
 
+  set data(value: any) {
+    // 객체인 경우 속성 병합
+    if (value && typeof value === 'object') {
+      Object.assign(this.character, value);
+      if (typeof (this.character as any).markModified === 'function') {
+        (this.character as any).markModified('customData');
+      }
+    }
+  }
+
   getVar(key: string): any {
     return this.stateStore[key];
   }

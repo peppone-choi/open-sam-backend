@@ -637,3 +637,5 @@ export function calculateShipCombatPower(spec: ShipSpec): number {
 
 
 
+
+

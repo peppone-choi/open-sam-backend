@@ -64,9 +64,17 @@ export class NPCAutoCommandService {
       return { success: false };
     }
 
-    // city=0 (방랑/미등장) 장수는 스킵
+    // city=0 (방랑/미등장) 장수 처리
     const cityId = generalData.city;
-    if (!cityId || cityId === 0) {
+    const nationId = generalData.nation || 0;
+    const officerLevel = generalData.officer_level || 0;
+    
+    // 방랑군 대장(nation > 0이고 officer_level >= 12)이면 city=0이어도 처리
+    // 재야 NPC(nation=0, npc >= 2)도 거병을 위해 처리
+    const isWanderingLord = nationId > 0 && officerLevel >= 12;
+    const isIndependentNPC = nationId === 0 && npcType >= 2;
+    
+    if ((!cityId || cityId === 0) && !isWanderingLord && !isIndependentNPC) {
       // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 도시 없음 (city=${cityId})`);
       return { success: false };
     }

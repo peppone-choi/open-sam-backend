@@ -237,13 +237,32 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   if (typeof data.nation === 'number') immediateUpdate.nation = data.nation;
   
   if (Object.keys(immediateUpdate).length > 0) {
-    City.updateOne(
-      { session_id: sessionId, city: cityId },
-      { $set: immediateUpdate },
-      { strict: false }
-    ).catch(err => {
-      logger.warn('City DB 즉시 업데이트 실패', { sessionId, cityId, err: err?.message });
-    });
+    // nation 변경(점령)은 동기적으로 처리 - 캐시 미스 시 DB에서 옛날 값 읽는 것 방지
+    // 나머지 필드는 비동기로 처리 (성능 유지)
+    const hasNationChange = typeof immediateUpdate.nation === 'number';
+    
+    if (hasNationChange) {
+      // Critical: nation 변경은 await로 동기 처리
+      try {
+        await City.updateOne(
+          { session_id: sessionId, city: cityId },
+          { $set: immediateUpdate },
+          { strict: false }
+        );
+        logger.debug('City DB 즉시 업데이트 성공 (nation 변경)', { sessionId, cityId, nation: immediateUpdate.nation });
+      } catch (err: any) {
+        logger.warn('City DB 즉시 업데이트 실패', { sessionId, cityId, err: err?.message });
+      }
+    } else {
+      // 일반 필드는 비동기로 처리 (fire-and-forget)
+      City.updateOne(
+        { session_id: sessionId, city: cityId },
+        { $set: immediateUpdate },
+        { strict: false }
+      ).catch(err => {
+        logger.warn('City DB 비동기 업데이트 실패', { sessionId, cityId, err: err?.message });
+      });
+    }
   }
   
   logger.debug('City Redis 저장', { sessionId, cityId });

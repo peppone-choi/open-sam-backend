@@ -26,6 +26,16 @@ export class CommanderWrapper implements ILoghCommandExecutor {
     return this.commander;
   }
 
+  set data(value: any) {
+    // 객체인 경우 속성 병합
+    if (value && typeof value === 'object') {
+      Object.assign(this.commander, value);
+      if (typeof this.commander.markModified === 'function') {
+        this.commander.markModified('customData');
+      }
+    }
+  }
+
   getVar(key: string): any {
     return this.commander.customData?.[key];
   }

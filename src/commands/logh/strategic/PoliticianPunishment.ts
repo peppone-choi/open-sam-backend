@@ -259,3 +259,5 @@ export class PoliticianPunishmentCommand extends BaseLoghCommand {
 
 
 
+
+
