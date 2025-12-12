@@ -1857,7 +1857,16 @@ export class SimpleAI {
   private cutTurnTime(turnTimeStr: string, turnterm: number): number {
     if (!turnTimeStr) return 0;
     const d = new Date(turnTimeStr);
-    return Math.floor(d.getTime() / (turnterm * 60 * 1000));
+    
+    // 유효하지 않은 날짜면 0 반환
+    if (isNaN(d.getTime())) {
+      console.warn(`[SimpleAI] cutTurnTime: 유효하지 않은 날짜 문자열 - ${turnTimeStr}`);
+      return 0;
+    }
+    
+    // turnterm이 0 이하면 기본값 10 사용
+    const safeTurnterm = turnterm > 0 ? turnterm : 10;
+    return Math.floor(d.getTime() / (safeTurnterm * 60 * 1000));
   }
 
   /**
@@ -1901,11 +1910,20 @@ export class SimpleAI {
       const adjacentNations = new Set<number>();
       
       for (const city of ourCities) {
-        const neighbors = (city as any).connect || [];
+        // neighbors 필드 또는 connect 필드에서 인접 도시 가져오기
+        const cityData = (city as any).data || city;
+        const neighbors = cityData.neighbors || (city as any).neighbors || (city as any).connect || [];
+        
         for (const neighborId of neighbors) {
-          const neighborCity = await cityRepository.findByCityNum(sessionId, neighborId) as any;
-          if (neighborCity && neighborCity.nation && neighborCity.nation !== nationId && neighborCity.nation !== 0) {
-            adjacentNations.add(neighborCity.nation);
+          // neighborId가 숫자가 아니면 파싱
+          const nId = typeof neighborId === 'number' ? neighborId : parseInt(String(neighborId), 10);
+          if (isNaN(nId)) continue;
+          
+          const neighborCity = await cityRepository.findByCityNum(sessionId, nId) as any;
+          const neighborNation = neighborCity?.nation ?? neighborCity?.data?.nation ?? 0;
+          
+          if (neighborNation && neighborNation !== nationId && neighborNation !== 0) {
+            adjacentNations.add(neighborNation);
           }
         }
       }
@@ -2166,8 +2184,8 @@ export class SimpleAI {
     const availableTypes = GameConst.availableNationType || ['왕', '공', '후', '백'];
     const availableColors = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
     
-    const nationType = this.rng.choice(availableTypes);
-    const colorType = this.rng.choice(availableColors);
+    const nationType = this.rng.choice(availableTypes) as string;
+    const colorType = this.rng.choice(availableColors) as number;
     
     // 국가명: ㉿ + 장수명 (첫 글자 제외) - PHP 3307줄
     const generalName = genData.name || '방랑군';
@@ -2229,7 +2247,10 @@ export class SimpleAI {
       }
       
       // 랜덤 선택
-      const selectedGeneral = this.rng.choice(candidates);
+      const selectedGeneral = this.rng.choice(candidates) as any;
+      if (!selectedGeneral) {
+        return null;
+      }
       const destGeneralID = selectedGeneral.data?.no || selectedGeneral.no;
       
       console.log(`[SimpleAI] 선양 시도 - ${genData.name || genData.no} -> ${selectedGeneral.data?.name || destGeneralID}`);
@@ -2319,6 +2340,10 @@ export class SimpleAI {
       // 가중치 기반 랜덤 선택
       movingTargetCityID = this.choiceUsingWeightPair(candidateCities);
       
+      if (!movingTargetCityID) {
+        return null; // 선택 실패
+      }
+      
       // 목표 저장 (FUTURE: aux 필드에 저장)
       console.log(`[SimpleAI] 방랑군 새 목표 설정: ${currentCityID} -> ${movingTargetCityID}`);
     }
@@ -2366,6 +2391,10 @@ export class SimpleAI {
       
       const destCityID = this.choiceUsingWeightPair(nextCandidates);
       
+      if (!destCityID) {
+        return null; // 선택 실패
+      }
+      
       console.log(`[SimpleAI] 방랑군 이동: ${currentCityID} -> ${destCityID} (목표: ${movingTargetCityID})`);
       return {
         command: '이동',
@@ -2399,8 +2428,20 @@ export class SimpleAI {
   /**
    * 가중치 기반 랜덤 선택 (PHP rng->choiceUsingWeightPair 포팅)
    */
-  private choiceUsingWeightPair<T>(pairs: Array<[T, number]>): T {
+  private choiceUsingWeightPair<T>(pairs: Array<[T, number]>): T | null {
+    // 빈 배열 체크
+    if (!pairs || pairs.length === 0) {
+      console.warn('[SimpleAI] choiceUsingWeightPair: 빈 배열 입력');
+      return null;
+    }
+    
     const totalWeight = pairs.reduce((sum, [, weight]) => sum + weight, 0);
+    
+    // 가중치 합이 0 이하면 첫 번째 항목 반환
+    if (totalWeight <= 0) {
+      return pairs[0][0];
+    }
+    
     let random = this.rng.next() * totalWeight;
     
     for (const [item, weight] of pairs) {
@@ -2846,7 +2887,7 @@ export class SimpleAI {
           reason: `[${priority.toUpperCase()}] ${reason} (병사:${stats.crew}, 징병량:${recruitAmount}, 금:${stats.gold}, 양:${stats.rice})`
         });
       } else {
-        console.log(`[SimpleAI] 징병 불가 - 자원 부족 (금:${stats.gold} < 300 또는 양:${stats.rice} < 300)`);
+        console.log(`[SimpleAI] 징병 불가 - 자원 부족 (금:${stats.gold} < 200 또는 양:${stats.rice} < 200)`);
       }
     }
 
@@ -2890,8 +2931,41 @@ export class SimpleAI {
       console.log(`[SimpleAI] 출병 불가 - ${deployResult.reason}`);
     }
 
+    // === 정찰/첩보/선동을 위한 적 도시 탐색 ===
+    let targetEnemyCity: { cityID: number; distance: number } | null = null;
+    
+    if (stats.intel >= 60) {
+      try {
+        const sessionId = genData.session_id || 'sangokushi_default';
+        const currentCityID = genData.city || this.city?.city || this.city?.data?.city;
+        
+        if (currentCityID) {
+          const nearbyDistances = await searchDistanceAsync(sessionId, currentCityID, 3, false);
+          const nearbyIDs = Object.keys(nearbyDistances).map(Number);
+          
+          if (nearbyIDs.length > 0) {
+            const cities = await cityRepository.findByCityNums(sessionId, nearbyIDs);
+            
+            for (const cityID of nearbyIDs) {
+              const city = cities.get(cityID);
+              if (!city) continue;
+              
+              const cityNation = city.nation ?? city.data?.nation ?? 0;
+              if (cityNation !== 0 && cityNation !== nationID) {
+                // 적 도시 발견
+                targetEnemyCity = { cityID, distance: nearbyDistances[cityID] };
+                break; // 가장 가까운 적 도시 선택
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('[SimpleAI] 정찰/첩보/선동 대상 탐색 실패:', error);
+      }
+    }
+
     // === 정찰 평가 (지력이 높은 장수) ===
-    if (stats.intel >= 60 && stats.crew >= 100) {
+    if (stats.intel >= 60 && stats.crew >= 100 && targetEnemyCity) {
       // 전선 도시에 있을 때 정찰 확률 증가
       const cityData = this.city?.data || this.city;
       const isFrontline = cityData?.front === 1 || cityData?.supply === 0;
@@ -2899,35 +2973,35 @@ export class SimpleAI {
       if (isFrontline || this.rng.nextBool(0.2)) {
         commands.push({
           command: '정찰',
-          args: {},
+          args: { destCityID: targetEnemyCity.cityID },
           weight: stats.intel / 5,
-          reason: `적 정보 수집 (지력:${stats.intel})`
+          reason: `적 정보 수집 (지력:${stats.intel}, 대상:도시${targetEnemyCity.cityID})`
         });
       }
     }
 
     // === 첩보 평가 (지력이 매우 높은 장수) ===
-    if (stats.intel >= 75 && stats.gold >= 500) {
+    if (stats.intel >= 75 && stats.gold >= 500 && targetEnemyCity) {
       // 20% 확률로 첩보 활동
       if (this.rng.nextBool(0.2)) {
         commands.push({
           command: '첩보',
-          args: {},
+          args: { destCityID: targetEnemyCity.cityID },
           weight: stats.intel / 4,
-          reason: `첩보 활동 (지력:${stats.intel})`
+          reason: `첩보 활동 (지력:${stats.intel}, 대상:도시${targetEnemyCity.cityID})`
         });
       }
     }
 
     // === 선동 평가 (적 도시 민심 떨어뜨리기) ===
-    if (stats.intel >= 70 && stats.gold >= 300) {
+    if (stats.intel >= 70 && stats.gold >= 300 && targetEnemyCity) {
       // 15% 확률로 선동 시도
       if (this.rng.nextBool(0.15)) {
         commands.push({
           command: '선동',
-          args: {},
+          args: { destCityID: targetEnemyCity.cityID },
           weight: stats.intel / 5,
-          reason: `적 민심 교란 (지력:${stats.intel})`
+          reason: `적 민심 교란 (지력:${stats.intel}, 대상:도시${targetEnemyCity.cityID})`
         });
       }
     }
@@ -3099,29 +3173,149 @@ export class SimpleAI {
 
   /**
    * 출병 대상 선택
+   * 인접 도시 중 적 도시를 찾아 반환
    */
   private async selectDeployTarget(genData: any): Promise<any> {
-    // FUTURE: 인접 적 도시 찾기
-    return { destCityID: 1 };
+    const sessionId = genData.session_id || 'sangokushi_default';
+    const currentCityID = genData.city || this.city?.city || this.city?.data?.city;
+    const myNationID = genData.nation || 0;
+
+    if (!currentCityID) {
+      console.warn('[SimpleAI] selectDeployTarget: 현재 도시 ID를 알 수 없습니다.');
+      return { destCityID: 0 };
+    }
+
+    try {
+      // 인접 도시들 조회 (거리 1인 도시들)
+      const nearbyDistances = await searchDistanceAsync(sessionId, currentCityID, 3, false);
+      const nearbyIDs = Object.keys(nearbyDistances)
+        .map(Number)
+        .sort((a, b) => nearbyDistances[a] - nearbyDistances[b]); // 가까운 순서대로
+      
+      if (nearbyIDs.length === 0) {
+        console.warn('[SimpleAI] selectDeployTarget: 인접 도시가 없습니다.');
+        return { destCityID: 0 };
+      }
+
+      // 인접 도시들 중 적 도시 찾기
+      const cities = await cityRepository.findByCityNums(sessionId, nearbyIDs);
+      
+      const enemyCities: Array<{ cityID: number; distance: number; nation: number }> = [];
+      const neutralCities: Array<{ cityID: number; distance: number }> = [];
+      
+      for (const cityID of nearbyIDs) {
+        const city = cities.get(cityID);
+        if (!city) continue;
+        
+        const cityNation = city.nation ?? city.data?.nation ?? 0;
+        const distance = nearbyDistances[cityID];
+        
+        if (cityNation !== 0 && cityNation !== myNationID) {
+          // 적 도시
+          enemyCities.push({ cityID, distance, nation: cityNation });
+        } else if (cityNation === 0) {
+          // 공백지
+          neutralCities.push({ cityID, distance });
+        }
+      }
+
+      // 적 도시가 있으면 가장 가까운 적 도시 선택
+      if (enemyCities.length > 0) {
+        // 가장 가까운 적 도시 (이미 거리순 정렬됨)
+        const target = enemyCities[0];
+        console.log(`[SimpleAI] 출병 대상: 도시 ${target.cityID} (적국 ${target.nation}, 거리: ${target.distance})`);
+        return { destCityID: target.cityID };
+      }
+
+      // 적 도시가 없으면 공백지 선택
+      if (neutralCities.length > 0) {
+        const target = neutralCities[0];
+        console.log(`[SimpleAI] 출병 대상: 도시 ${target.cityID} (공백지, 거리: ${target.distance})`);
+        return { destCityID: target.cityID };
+      }
+
+      // 적도 공백지도 없으면 출병 불가
+      console.log('[SimpleAI] selectDeployTarget: 출병 가능한 대상 도시가 없습니다.');
+      return { destCityID: 0 };
+      
+    } catch (error) {
+      console.error('[SimpleAI] selectDeployTarget 오류:', error);
+      return { destCityID: 0 };
+    }
   }
 
   /**
    * 인접 도시 중 랜덤 선택 (방랑용)
+   * DB의 neighbors 필드 또는 searchDistance를 사용하여 유효한 인접 도시 반환
+   */
+  private async selectRandomNeighborCityAsync(): Promise<number> {
+    const genData = this.general.data || this.general;
+    const sessionId = genData.session_id || 'sangokushi_default';
+    const cityData = this.city?.data || this.city || {};
+    const currentCityID = cityData.city || 1;
+    
+    // 먼저 DB의 neighbors 필드 확인
+    const neighbors = cityData.neighbors || this.city?.neighbors || [];
+    
+    if (neighbors.length > 0) {
+      // 유효한 숫자 ID만 필터링
+      const validNeighbors = neighbors
+        .map((n: any) => typeof n === 'number' ? n : parseInt(String(n), 10))
+        .filter((n: number) => !isNaN(n) && n > 0);
+      
+      if (validNeighbors.length > 0) {
+        const selected = this.rng.choice(validNeighbors) as number;
+        console.log(`[SimpleAI] 인접 도시 선택 (neighbors): ${selected}`);
+        return selected;
+      }
+    }
+    
+    // neighbors가 없으면 searchDistance로 인접 도시 찾기
+    try {
+      const nearbyDistances = await searchDistanceAsync(sessionId, currentCityID, 1, false);
+      const nearbyIDs = Object.keys(nearbyDistances).map(Number);
+      
+      if (nearbyIDs.length > 0) {
+        const selected = this.rng.choice(nearbyIDs) as number;
+        console.log(`[SimpleAI] 인접 도시 선택 (searchDistance): ${selected}`);
+        return selected;
+      }
+    } catch (error) {
+      console.warn('[SimpleAI] selectRandomNeighborCityAsync: searchDistance 실패', error);
+    }
+    
+    // 그래도 없으면 현재 도시 반환 (이동 안 함)
+    console.warn(`[SimpleAI] 인접 도시를 찾을 수 없습니다. 현재 도시 ${currentCityID} 유지`);
+    return currentCityID;
+  }
+
+  /**
+   * 인접 도시 중 랜덤 선택 (동기 버전 - 레거시 호환)
    */
   private selectRandomNeighborCity(): number {
     const cityData = this.city?.data || this.city || {};
-    const neighbors = cityData.neighbors || [];
+    const currentCityID = cityData.city || 1;
+    const neighbors = cityData.neighbors || this.city?.neighbors || [];
     
     if (neighbors.length === 0) {
-      // 인접 도시 없으면 현재 도시 + 1 (임시)
-      return (cityData.city || 1) + 1;
+      // 인접 도시 없으면 현재 도시 반환 (이동 안 함)
+      console.warn(`[SimpleAI] 인접 도시가 없습니다. 현재 도시 ${currentCityID} 유지`);
+      return currentCityID;
+    }
+    
+    // 유효한 숫자 ID만 필터링
+    const validNeighbors = neighbors
+      .map((n: any) => typeof n === 'number' ? n : parseInt(String(n), 10))
+      .filter((n: number) => !isNaN(n) && n > 0);
+    
+    if (validNeighbors.length === 0) {
+      console.warn(`[SimpleAI] 유효한 인접 도시가 없습니다. 현재 도시 ${currentCityID} 유지`);
+      return currentCityID;
     }
     
     // 인접 도시 중 랜덤 선택
-    const neighbor = this.rng.choice(neighbors as any[]);
-    
-    // neighbor가 숫자면 그대로, 객체면 city 필드
-    return typeof neighbor === 'number' ? neighbor : ((neighbor as any)?.city || (neighbor as any)?.id || 1);
+    const selected = this.rng.choice(validNeighbors) as number;
+    return selected;
   }
 
   /**

@@ -46,6 +46,18 @@ export abstract class Action {
           ActionModule = require('./Action/RaiseNPCNation');
           ActionClass = ActionModule.RaiseNPCNation;
           break;
+        case 'ProcessWarIncome':
+          ActionModule = require('./Action/ProcessWarIncome');
+          ActionClass = ActionModule.ProcessWarIncome;
+          break;
+        case 'LostUniqueItem':
+          ActionModule = require('./Action/LostUniqueItem');
+          ActionClass = ActionModule.LostUniqueItem;
+          break;
+        case 'RandomizeCityTradeRate':
+          ActionModule = require('./Action/RandomizeCityTradeRate');
+          ActionClass = ActionModule.RandomizeCityTradeRate;
+          break;
         default:
           ActionModule = require(`./Action/${className}`);
           ActionClass = ActionModule[className] || ActionModule.default;

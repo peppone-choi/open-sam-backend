@@ -2195,6 +2195,39 @@ export class ExecuteEngineService {
       });
     }
 
+    // 전쟁 수입 처리 (매월)
+    // - 국가별 전쟁 금 수입 (dead / 10)
+    // - 부상병 회복 (dead의 20% -> pop으로 회복, dead = 0)
+    try {
+      const { ProcessWarIncome } = await import('../../core/event/Action/ProcessWarIncome');
+      const warIncomeProcessor = new ProcessWarIncome();
+      await warIncomeProcessor.run({ session_id: sessionId, year, month });
+    } catch (error: any) {
+      logger.error('[ProcessWarIncome] Failed to process war income', {
+        sessionId,
+        year,
+        month,
+        error: error.message,
+        stack: error.stack
+      });
+    }
+
+    // 도시 교역율 랜덤화 (매월)
+    // - 도시 레벨에 따라 교역율 변동
+    try {
+      const { RandomizeCityTradeRate } = await import('../../core/event/Action/RandomizeCityTradeRate');
+      const tradeRateProcessor = new RandomizeCityTradeRate();
+      await tradeRateProcessor.run({ session_id: sessionId, year, month });
+    } catch (error: any) {
+      logger.error('[RandomizeCityTradeRate] Failed to randomize city trade rate', {
+        sessionId,
+        year,
+        month,
+        error: error.message,
+        stack: error.stack
+      });
+    }
+
     // 랜덤 이벤트 처리 (매월)
     await this.processRandomEvents(sessionId, gameEnv);
 
