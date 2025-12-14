@@ -195,6 +195,103 @@ export class GetOfficerInfoService {
         };
       });
 
+      // 외교권자/조언자 조회
+      const specialPermissionGenerals = await generalRepository
+        .findByFilter({
+          session_id: sessionId,
+          'data.nation': nationId,
+          'data.permission': { $in: ['ambassador', 'auditor'] },
+        })
+        .exec();
+
+      const ambassadors: any[] = [];
+      const auditors: any[] = [];
+
+      specialPermissionGenerals.forEach((gen: any) => {
+        const gd = gen.data || {};
+        const info = {
+          no: gd.no || gen.no,
+          name: gd.name || '무명',
+          officerLevel: gd.officer_level || 0,
+          permission: gd.permission || 'normal',
+        };
+        if (gd.permission === 'ambassador') {
+          ambassadors.push(info);
+        } else if (gd.permission === 'auditor') {
+          auditors.push(info);
+        }
+      });
+
+      // 외교권자/조언자 후보 계산 (권한 체크)
+      // 후보 조건: 군주가 아니고, 사관년도 등을 체크 (PHP 버전 참조)
+      const allGeneralsForPermission = await generalRepository
+        .findByFilter({
+          session_id: sessionId,
+          'data.nation': nationId,
+          'data.officer_level': { $ne: 12 }, // 군주 제외
+          'data.npc': { $lt: 2 }, // NPC 제외
+        })
+        .exec();
+
+      const candidateAmbassadors: any[] = [];
+      const candidateAuditors: any[] = [];
+
+      allGeneralsForPermission.forEach((gen: any) => {
+        const gd = gen.data || {};
+        const belong = gd.belong || 0;
+        const permission = gd.permission || 'normal';
+        const officerLevel = gd.officer_level || 0;
+        const penalty = gd.penalty || {};
+
+        // 현재 외교권자/조언자는 포함
+        if (permission === 'ambassador') {
+          candidateAmbassadors.push({
+            no: gd.no || gen.no,
+            name: gd.name || '무명',
+            officerLevel,
+            selected: true,
+          });
+          candidateAuditors.push({
+            no: gd.no || gen.no,
+            name: gd.name || '무명',
+            officerLevel,
+            selected: true,
+          });
+          return;
+        }
+
+        if (permission === 'auditor') {
+          candidateAuditors.push({
+            no: gd.no || gen.no,
+            name: gd.name || '무명',
+            officerLevel,
+            selected: true,
+          });
+          return;
+        }
+
+        // 일반 장수의 후보 체크
+        // 외교권자 후보: 사관년도 24개월 이상
+        if (belong >= 24 && !penalty?.noAmbassador) {
+          candidateAmbassadors.push({
+            no: gd.no || gen.no,
+            name: gd.name || '무명',
+            officerLevel,
+            selected: false,
+          });
+        }
+
+        // 조언자 후보: 사관년도 12개월 이상
+        if (belong >= 12 && !penalty?.noAuditor) {
+          candidateAuditors.push({
+            no: gd.no || gen.no,
+            name: gd.name || '무명',
+            officerLevel,
+            selected: false,
+          });
+        }
+      });
+
       // 도시 목록 조회
       const cities = await cityRepository.findByFilter({
         session_id: sessionId,
@@ -253,6 +350,10 @@ export class GetOfficerInfoService {
           tigers: tigersList,
           eagles: eaglesList,
           cities: cityList,
+          ambassadors,
+          auditors,
+          candidateAmbassadors,
+          candidateAuditors,
         },
       };
     } catch (error: any) {

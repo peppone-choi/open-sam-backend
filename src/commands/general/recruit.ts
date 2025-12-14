@@ -150,9 +150,12 @@ export class RecruitCommand extends GeneralCommand {
     const logger = general.getLogger();
     const date = general.getTurnTime(general.TURNTIME_HM);
 
-    // 등용 성공률 계산
-    const scoutPower = this.nation.scout * 3 + general.getIntel();
-    const destScoutPower = destGeneral.getNation().scout * 3 + destGeneral.getIntel();
+    // 등용 성공률 계산 (통무지정매 시스템: 매력 기반)
+    // 매력 + 국가 정탐력으로 등용력 계산
+    const myCharm = general.getCharm(true, true, true, false);
+    const destCharm = destGeneral.getCharm ? destGeneral.getCharm(true, true, true, false) : 50;
+    const scoutPower = this.nation.scout * 3 + myCharm;
+    const destScoutPower = (destGeneral.getNation()?.scout || 0) * 3 + destCharm;
     
     let recruitProb = 0.3; // 기본 30%
     
@@ -160,6 +163,11 @@ export class RecruitCommand extends GeneralCommand {
       recruitProb = 0.7; // 70%
     } else if (scoutPower > destScoutPower) {
       recruitProb = 0.5; // 50%
+    }
+    
+    // 매력 차이 보정 (매력이 20 이상 높으면 +10% 추가)
+    if (myCharm - destCharm >= 20) {
+      recruitProb = Math.min(0.9, recruitProb + 0.1);
     }
 
     const success = rng.nextBool(recruitProb);
@@ -207,7 +215,8 @@ export class RecruitCommand extends GeneralCommand {
     // 경험치 증가
     const exp = 50;
     general.addExperience(exp);
-    // PHP: charm_exp 없음 - leadership_exp만 있음
+    // 통무지정매 시스템: 등용은 매력 경험치 획득
+    general.increaseVar('charm_exp', 1);
 
     this.setResultTurn(new LastTurn(RecruitCommand.getName(), this.arg));
     general.checkStatChange();

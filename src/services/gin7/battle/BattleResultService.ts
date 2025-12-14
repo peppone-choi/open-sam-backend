@@ -39,7 +39,7 @@ export interface IBattleOutcome {
   gridY: number;
   winner?: string;           // Winning faction ID
   winnerFaction?: string;
-  endReason: 'VICTORY' | 'RETREAT' | 'TIMEOUT' | 'DRAW' | 'CANCELLED';
+  endReason: 'VICTORY' | 'RETREAT' | 'TIMEOUT' | 'DRAW' | 'CANCELLED' | 'STALEMATE' | 'SUPPLY_DEPLETION';
   duration: number;          // In ticks
   realDuration: number;      // In milliseconds
   participantResults: IParticipantResult[];

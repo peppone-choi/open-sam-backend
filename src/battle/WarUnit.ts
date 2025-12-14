@@ -647,45 +647,23 @@ export abstract class WarUnit {
   }
   
   criticalDamage(): number {
-    // 기본 크리티컬 배율 범위 (1.5배 ~ 2.0배)
-    let minRate = 1.5;
-    let maxRate = 2.0;
-
-    const general = this.general;
-    
-    // 무력 보정: 무력이 100을 넘으면 10당 0.05배 추가
-    const strength = (typeof general.getStrength === 'function' 
-      ? general.getStrength() 
-      : (general.data?.strength || general.strength || 0));
-      
-    if (strength > 50) {
-      const strBonus = (strength - 50) / 100; // 예: 무력 100 -> 0.5 추가
-      minRate += strBonus * 0.5;
-      maxRate += strBonus;
-    }
-
-    // 행운(운) 보정: 운이 높을수록 최대 데미지 확률 증가 (범위 확장)
-    const luck = (typeof general.getLuck === 'function'
-        ? general.getLuck()
-        : (general.data?.luck || 0)); // 운이 없으면 0 처리
-    
-    if (luck > 0) {
-        // 운 100 기준 0.2배 추가
-        const luckBonus = luck / 500;
-        maxRate += luckBonus;
-    }
+    // PHP 원본과 동일: 기본 크리티컬 배율 범위 (1.3배 ~ 2.0배)
+    // PHP WarUnit.php line 437-447:
+    // $range = [1.3, 2.0];
+    // $range = $general->onCalcStat($general, 'criticalDamageRange', $range);
+    // return $this->rng->nextRange(...$range);
+    let range: [number, number] = [1.3, 2.0];
 
     // 전특, 병종에 따라 필살 데미지가 달라질 수 있음
-    if (typeof this.general.onCalcStat === 'function') {
-      const range: [number, number] = [minRate, maxRate];
+    // PHP: if($this instanceof WarUnitGeneral) { $range = $general->onCalcStat(...) }
+    if (typeof this.general?.onCalcStat === 'function') {
       const newRange = this.general.onCalcStat(this.general, 'criticalDamageRange', range);
       if (Array.isArray(newRange) && newRange.length === 2) {
-        minRate = newRange[0];
-        maxRate = newRange[1];
+        range = newRange as [number, number];
       }
     }
     
-    return this.rng.nextRange(minRate, maxRate);
+    return this.rng.nextRange(range[0], range[1]);
   }
   
   abstract applyDB(db: any): Promise<boolean>;

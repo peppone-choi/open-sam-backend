@@ -814,6 +814,13 @@ async function start() {
     const commandStats = CommandRegistry.getStats();
     console.log('[DAEMON START] ✅ 커맨드 시스템 초기화 완료', commandStats);
     logger.info('✅ 커맨드 시스템 초기화 완료', commandStats);
+
+    // 이벤트 핸들러 등록
+    console.log('[DAEMON START] 이벤트 핸들러 등록 중...');
+    const { registerAllEventHandlers } = await import('./events');
+    registerAllEventHandlers();
+    console.log('[DAEMON START] ✅ 이벤트 핸들러 등록 완료');
+    logger.info('✅ 이벤트 핸들러 등록 완료');
     
     // LOGH 커맨드 레지스트리 상태 확인
     const loghStats = LoghCommandRegistry.getStats();

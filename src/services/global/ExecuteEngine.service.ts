@@ -2237,8 +2237,8 @@ export class ExecuteEngineService {
 
   /**
    * 도시 이벤트 상태 처리 (캐시 경유)
-   * - term이 0보다 큰 도시는 term을 1 감소
-   * - term이 0 이하가 된 도시는 state를 0으로 초기화
+   * PHP와 동일: state <= 10인 도시만 초기화 (43 전쟁 상태는 유지)
+   * 분기(1, 4, 7, 10월) 시작 시 호출됨
    */
   private static async processCityEventStates(sessionId: string) {
     try {
@@ -2247,62 +2247,30 @@ export class ExecuteEngineService {
       // 캐시에서 모든 도시 조회
       const cities = await cityRepository.findByFilter({ session_id: sessionId });
       
-      let decrementCount = 0;
       let resetCount = 0;
       
       for (const city of cities) {
         const cityNum = city.city || city.data?.city;
         const state = city.state ?? city.data?.state ?? 0;
-        const term = city.term ?? city.data?.term ?? 0;
         
-        if (state > 0) {
-          if (term > 0) {
-            // term을 1 감소
-            const newTerm = term - 1;
-            city.term = newTerm;
-            if (city.data) city.data.term = newTerm;
-            
-            if (newTerm <= 0) {
-              // term이 0 이하가 되면 state도 0으로
-              city.state = 0;
-              city.term = 0;
-              if (city.data) {
-                city.data.state = 0;
-                city.data.term = 0;
-              }
-              resetCount++;
-            } else {
-              decrementCount++;
-            }
-            
-            // 캐시를 통해 저장
-            const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
-            await saveCity(sessionId, cityNum, cityData);
-          } else {
-            // term이 이미 0 이하인데 state가 있으면 초기화
-            city.state = 0;
-            city.term = 0;
-            if (city.data) {
-              city.data.state = 0;
-              city.data.term = 0;
-            }
-            
-            const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
-            await saveCity(sessionId, cityNum, cityData);
-            resetCount++;
+        // PHP와 동일: state가 10 이하인 경우에만 초기화 (43 전쟁은 유지)
+        if (state > 0 && state <= 10) {
+          city.state = 0;
+          city.term = 0;
+          if (city.data) {
+            city.data.state = 0;
+            city.data.term = 0;
           }
+          
+          // 캐시를 통해 저장
+          const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
+          await saveCity(sessionId, cityNum, cityData);
+          resetCount++;
         }
       }
       
-      if (decrementCount > 0) {
-        logger.info('[processCityEventStates] Decremented term for cities', { 
-          sessionId, 
-          count: decrementCount 
-        });
-      }
-      
       if (resetCount > 0) {
-        logger.info('[processCityEventStates] Reset state for cities', { 
+        logger.info('[processCityEventStates] Reset state for cities (state <= 10)', { 
           sessionId, 
           count: resetCount 
         });

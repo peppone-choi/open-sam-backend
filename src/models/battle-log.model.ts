@@ -21,7 +21,7 @@ export interface IBattleLog extends Document {
 }
 
 const BattleLogSchema = new Schema({
-  battleId: { type: String, required: true, unique: true, index: true },
+  battleId: { type: String, required: true, unique: true },
   session_id: { type: String, required: true, index: true },
   
   attackerNationId: { type: Number, required: true },

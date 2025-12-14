@@ -12,12 +12,12 @@ const logger = createLogger('UpdateNationLevel');
 
 /**
  * 국가 레벨(작위) 테이블
- * 0: 방랑군, 1: 호족, 2: 군벌, 3: 주자사, 4: 주목, 5: 공, 6: 왕, 7: 황제
+ * 0: 방랑군, 1: 호족, 2: 방백, 3: 주자사, 4: 주목, 5: 승상, 6: 공, 7: 왕, 8: 황제
  */
 const NATION_LEVEL_BY_CITY_COUNT = [
   0,  // 방랑군 (0개 도시)
   1,  // 호족 (1개 도시)
-  2,  // 군벌 (2개 도시)
+  2,  // 방백 (2개 도시)
   5,  // 주자사 (5개 도시)
   8,  // 주목 (8개 도시)
   11, // 공 (11개 도시)
@@ -29,7 +29,7 @@ const NATION_LEVEL_BY_CITY_COUNT = [
  * 국가 레벨 텍스트 반환
  */
 function getNationLevel(level: number): string {
-  const levels = ['방랑군', '호족', '군벌', '주자사', '주목', '공', '왕', '황제'];
+  const levels = ['방랑군', '호족', '방백', '주자사', '주목', '승상', '공', '왕', '황제'];
   return levels[level] || '방랑군';
 }
 
@@ -43,7 +43,7 @@ function getNationChiefLevel(nationLevel: number): number {
   if (nationLevel >= 5) return 7;  // 공
   if (nationLevel >= 4) return 8;  // 주목
   if (nationLevel >= 3) return 9;  // 주자사
-  if (nationLevel >= 2) return 10; // 군벌
+  if (nationLevel >= 2) return 10; // 방백
   return 11; // 호족
 }
 
@@ -68,7 +68,7 @@ function pickJosa(word: string, josas: string): string {
 /**
  * 국가 레벨(작위) 업데이트 액션
  * - 도시 수에 따른 작위 변경
- * - 호족 → 군벌 → 주자사 → 주목 → 공 → 왕 → 황제
+ * - 호족 → 방백 → 주자사 → 주목 → 승상 → 공 → 왕 → 황제
  * - 레벨업 시 보상 지급
  */
 export class UpdateNationLevel extends Action {
@@ -177,7 +177,7 @@ export class UpdateNationLevel extends Action {
             );
             break;
 
-          case 2: // 군벌
+          case 2: // 방백
             const josaRa = pickJosa(nationName, '라는/는');
             actionLogger.pushGlobalHistoryLog(
               `<Y><b>【작위】</b></><Y>${lordName}</>${josaYi} 독립하여 <D><b>${nationName}</b></>${josaRa} <C>${nationLevelText}</>${josaRo} 나섰습니다.`

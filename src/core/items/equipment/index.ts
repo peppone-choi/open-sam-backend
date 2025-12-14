@@ -187,6 +187,108 @@ export {
 } from './BookBase';
 
 // ============================================
+// 특수 효과 아이템 시스템
+// ============================================
+
+export {
+  // 기본 클래스
+  SpecialItemBase,
+  type SpecialItemConfig,
+  type IBattleTriggerItem,
+  type IStatModifierItem,
+  type IOpposeStatModifierItem,
+  
+  // 전투 효과 아이템
+  DungapCheonseoPilsal,
+  DungapCheonseoHoepi,
+  TaepyeongYosul,
+  GujeongSindangyeong,
+  Jomoksak,
+  Baekuseon,
+  Pachoseon,
+  BattleEffectItemCreators,
+  
+  // 계략/전술 효과 아이템
+  JeongukChaek,
+  NoneojipHae,
+  MaehwaSujeon,
+  Bido,
+  Sugeuk,
+  TacticsEffectItemCreators,
+  
+  // 지원/보조 효과 아이템
+  CheongnangSeo,
+  GwasilJu,
+  DugangJuSagi,
+  NapgeumBaksanRo,
+  SupportEffectItemCreators,
+  
+  // 능력치 부스트 아이템
+  DugangJuStrength,
+  IgangJuIntel,
+  BoryeongApJuLeadership,
+  StatBoostItemCreators,
+  
+  // 기타 효과 아이템
+  HwanYak,
+  OkByeok,
+  DoGi,
+  MiscEffectItemCreators,
+  
+  // 전체 통합
+  AllSpecialItemCreators
+} from './special';
+
+// ============================================
+// 이벤트 아이템 시스템 (비급 - 전투특기 부여)
+// ============================================
+
+export {
+  // 기본 클래스
+  EventItemBase,
+  ArmType,
+  type EventItemConfig,
+  type IStatModifierEventItem,
+  type IOpposeStatModifierEventItem,
+  type IDomesticModifierEventItem,
+  type IBattleTriggerEventItem,
+  
+  // 전투계 비급
+  EventPilsal,
+  EventGyeokno,
+  EventBangye,
+  EventWiap,
+  EventJeogyeok,
+  EventGyeonGo,
+  EventDolgyeok,
+  EventMusang,
+  BattleSpecialityItemCreators,
+  
+  // 계략계 비급
+  EventHwansul,
+  EventJipjung,
+  EventSinsan,
+  EventSinjung,
+  TacticsSpecialityItemCreators,
+  
+  // 병종계 비급
+  EventBobyeong,
+  EventGibyeong,
+  EventGungbyeong,
+  EventGwibyeong,
+  EventGongseong,
+  EventJingbyeong,
+  EventCheoksa,
+  EventUisul,
+  UnitSpecialityItemCreators,
+  
+  // 전체 통합
+  AllEventItemCreators,
+  EventItemMap,
+  createEventItem
+} from './event';
+
+// ============================================
 // 레지스트리 시스템
 // ============================================
 

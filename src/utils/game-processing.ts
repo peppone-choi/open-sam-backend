@@ -28,28 +28,49 @@ function loadConstants(scenarioId: string = 'sangokushi') {
 /**
  * 내정 커맨드 성공 확률 계산
  * PHP: CriticalRatioDomestic
+ * 
+ * 통무지정매 5대 능력치 시스템:
+ * - leadership (통솔): 징병, 훈련, 군사 지휘
+ * - strength (무력): 전투, 일기토
+ * - intel (지력): 계략, 정보 수집
+ * - politics (정치): 내정(농업/상업/치안), 외교
+ * - charm (매력): 등용, 징병 효율, 민심
  */
 export function CriticalRatioDomestic(
   leadership: number,
   strength: number,
   intel: number,
-  type: 'leadership' | 'strength' | 'intel'
+  type: 'leadership' | 'strength' | 'intel' | 'politics' | 'charm',
+  politics?: number,
+  charm?: number
 ): { success: number; fail: number } {
-  const avg = (leadership + strength + intel) / 3;
+  // 정치/매력 값이 없으면 지력 기반으로 추정
+  const politicsVal = politics ?? intel;
+  const charmVal = charm ?? Math.round((politicsVal + leadership) / 2);
+  
+  // 5대 능력치 평균
+  const avg = (leadership + strength + intel + politicsVal + charmVal) / 5;
 
   let ratio: number;
   switch (type) {
     case 'leadership':
-      ratio = avg / leadership;
+      ratio = avg / Math.max(1, leadership);
       break;
     case 'strength':
-      ratio = avg / strength;
+      ratio = avg / Math.max(1, strength);
       break;
     case 'intel':
-      ratio = avg / intel;
+      ratio = avg / Math.max(1, intel);
+      break;
+    case 'politics':
+      ratio = avg / Math.max(1, politicsVal);
+      break;
+    case 'charm':
+      ratio = avg / Math.max(1, charmVal);
       break;
     default:
-      throw new Error('Invalid type');
+      // 알 수 없는 타입은 intel 기반으로 처리
+      ratio = avg / Math.max(1, intel);
   }
 
   ratio = Math.min(ratio, 1.2);

@@ -471,7 +471,7 @@ export async function giveRandomUniqueItem(
     general.markModified('data');
     // CQRS: 캐시에 저장
     const generalNo = general.no || generalData.no;
-    await saveGeneral(sessionId, generalNo, general.toObject());
+    await saveGeneral(sessionId, generalNo, general.toObject ? general.toObject() : general);
 
     // 로그 기록
     const [year, month] = await gameStor.getValuesAsArray(['year', 'month']);
@@ -610,8 +610,11 @@ export async function tryUniqueItemLottery(
     // 확률 시도
     let result = false;
     for (let i = 0; i < maxCnt; i++) {
-      const nextBool = rng.nextBool || ((p: number) => Math.random() < p);
-      if (nextBool(prob)) {
+      // rng.nextBool을 직접 추출하면 this 바인딩이 끊어지므로 직접 호출
+      const rollResult = rng && typeof rng.nextBool === 'function' 
+        ? rng.nextBool(prob) 
+        : Math.random() < prob;
+      if (rollResult) {
         result = true;
         break;
       }

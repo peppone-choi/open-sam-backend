@@ -507,6 +507,15 @@ async function start() {
     // 이 서버는 HTTP API 요청만 처리하고 커맨드를 Redis Queue에 전달
     // ========================================
     
+    // 이벤트 핸들러 등록 (JoinTroop 등 API에서 사용)
+    try {
+      const { registerAllEventHandlers } = await import('./events');
+      registerAllEventHandlers();
+      logger.info('✅ 이벤트 핸들러 등록 완료');
+    } catch (error) {
+      logger.warn('이벤트 핸들러 등록 실패 (무시)', { error });
+    }
+    
     const commandStats = { generalCount: 0, nationCount: 0, loghCount: 0, total: 0 };
     
     // HTTP 서버 생성 (Socket.IO를 위한)

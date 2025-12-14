@@ -15,7 +15,7 @@ export interface INation extends Document {
   gold?: number;
   rice?: number;
   capital?: number;
-  level?: number;      // 국가 크기 (0=재야, 1=영주, 2=군벌, 3=주자사, 4=주목, 5=공, 6=왕, 7=황제)
+  level?: number;      // 국가 크기 (0=방랑군, 1=호족, 2=방백, 3=주자사, 4=주목, 5=승상, 6=공, 7=왕, 8=황제)
   type?: string;       // 국가 성향 (병가, 법가, 유가 등)
   leader?: number;     // 지도자 장수 ID
   gennum?: number;     // 소속 장수 수

@@ -260,8 +260,7 @@ const RealtimeBattleSchema = new Schema<IRealtimeBattle>({
   timestamps: true
 });
 
-// Indexes
-RealtimeBattleSchema.index({ battleId: 1 }, { unique: true });
+// Indexes (battleId unique index already created via schema unique: true)
 RealtimeBattleSchema.index({ sessionId: 1 });
 RealtimeBattleSchema.index({ sessionId: 1, status: 1 });
 RealtimeBattleSchema.index({ 'participants.fleetId': 1 });

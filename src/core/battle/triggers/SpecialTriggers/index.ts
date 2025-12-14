@@ -36,5 +36,3 @@ export const allSpecialTriggers: ITrigger[] = [
   ...statModifierTriggers,
   ...eventTriggers,
 ];
-
-

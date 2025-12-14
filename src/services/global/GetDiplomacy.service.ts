@@ -1,9 +1,8 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { cityRepository } from '../../repositories/city.repository';
-import { NgDiplomacy } from '../../models/ng_diplomacy.model';
+import { Diplomacy } from '../../models/diplomacy.model';
 import { sessionRepository } from '../../repositories/session.repository';
-import { ngDiplomacyRepository } from '../../repositories/ng-diplomacy.repository';
 
 /**
  * GetDiplomacy Service
@@ -125,16 +124,15 @@ export class GetDiplomacyService {
         7: 2,
       };
 
-      // Get diplomacy relationships
-      const diplomacyData: any = await ngDiplomacyRepository.findByFilter({ session_id: sessionId });
+      // Get diplomacy relationships from diplomacy table
+      const diplomacyData: any = await Diplomacy.find({ session_id: sessionId });
       
       const diplomacyList: Record<number, Record<number, number>> = {};
       
       for (const diplo of diplomacyData) {
-        const diploData: any = diplo.data as any || {};
-        const me: any = diploData.me || 0;
-        const you: any = diploData.you || 0;
-        const state: any = diploData.state || 0;
+        const me: any = diplo.me || 0;
+        const you: any = diplo.you || 0;
+        const state: any = diplo.state || 0;
 
         if (!diplomacyList[me]) {
           diplomacyList[me] = {};

@@ -112,7 +112,13 @@ export class ProcessWarService {
 
     // === 2. 공백지 체크 - 한나라 잔존 세력과 자동 전투 ===
     if (defenderGenerals.length === 0 && garrisonUnits.length === 0 && defenderNationID === 0) {
-      if (!fallbackDefender) {
+      // PHP 방식: 도시 def * 10 = 수비병 HP
+      // $this->hp = $this->getCityVar('def') * 10;
+      const cityDef = defenderCity?.def ?? defenderCity?.data?.def ?? 0;
+      const cityWall = defenderCity?.wall ?? defenderCity?.data?.wall ?? 0;
+      const cityDefenseHP = cityDef * 10; // PHP: WarUnitCity.php line 30
+      
+      if (!fallbackDefender && cityDefenseHP <= 0) {
         logger.pushGeneralActionLog?.(
           `<G><b>${defenderCity.name}</b></>에는 저항군이 없어 무혈입성했습니다.`
         );
@@ -130,22 +136,30 @@ export class ProcessWarService {
       const cityId = (defenderCity as any).city || 0;
       
       // 로그용 방어 세력 표시
-      let defenderType = fallbackDefender.label;
+      let defenderType = fallbackDefender?.label ?? `${defenderCity.name} 수비대`;
       if (cityLevel >= 10 && (cityId === 3 || cityId === 4)) {
         defenderType = cityId === 3 ? '<R>한 사예교위 휘하 하남윤</>' : '<R>한 사예교위 휘하 경조윤</>';
       }
       
+      // PHP 방식으로 수비병 HP 계산 (도시 def * 10)
+      // 기존 fallbackDefender 병력 또는 도시 방어력 기반 HP 중 큰 값 사용
+      const fallbackCrew = fallbackDefender?.unit.crew ?? 0;
+      const effectiveDefenderCrew = Math.max(fallbackCrew, cityDefenseHP);
+      
+      // PHP: getComputedAttack/Defence = ($this->raw['def'] + $this->raw['wall'] * 9) / 500 + 200
+      const cityBasePower = (cityDef + cityWall * 9) / 500 + 200;
+      
       const militiaUnit = {
         no: -999,
-        name: fallbackDefender.unit.name,
+        name: fallbackDefender?.unit.name ?? `${defenderCity.name} 수비대`,
         nation: 0,
-        crew: fallbackDefender.unit.crew,
-        crewtype: fallbackDefender.unit.crewtype,
-        train: fallbackDefender.unit.train,
-        atmos: fallbackDefender.unit.morale,
-        leadership: fallbackDefender.unit.leadership,
-        strength: fallbackDefender.unit.strength,
-        intel: fallbackDefender.unit.intel,
+        crew: effectiveDefenderCrew,
+        crewtype: fallbackDefender?.unit.crewtype ?? 100, // 100 = 성문 병종
+        train: fallbackDefender?.unit.train ?? 70,
+        atmos: fallbackDefender?.unit.morale ?? 70,
+        leadership: fallbackDefender?.unit.leadership ?? Math.round(cityBasePower * 0.3),
+        strength: fallbackDefender?.unit.strength ?? Math.round(cityBasePower * 0.3),
+        intel: fallbackDefender?.unit.intel ?? Math.round(cityBasePower * 0.2),
       };
 
       const attackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
@@ -451,7 +465,7 @@ export class ProcessWarService {
     city: any,
     rng: RandUtil,
     defenseState?: any
-  ): Promise<{ winner: 'attacker' | 'defender'; attackerLoss: number; defenderLoss: number }> {
+  ): Promise<{ winner: 'attacker' | 'defender'; attackerLoss: number; defenderLoss: number; turnLogs?: any[]; unitStates?: any[] }> {
     return this.executeBattleSimulation(sessionId, [attacker], [defender], city, rng, defenseState);
   }
 
@@ -465,7 +479,7 @@ export class ProcessWarService {
     city: any,
     rng: RandUtil,
     defenseState?: any
-  ): Promise<{ winner: 'attacker' | 'defender'; attackerLoss: number; defenderLoss: number }> {
+  ): Promise<{ winner: 'attacker' | 'defender'; attackerLoss: number; defenderLoss: number; turnLogs?: any[]; unitStates?: any[] }> {
     return this.executeBattleSimulation(sessionId, [attacker], defenders, city, rng, defenseState);
   }
 
@@ -476,7 +490,7 @@ export class ProcessWarService {
     city: any,
     rng: RandUtil,
     defenseState?: any
-  ): Promise<{ winner: 'attacker' | 'defender'; attackerLoss: number; defenderLoss: number }> {
+  ): Promise<{ winner: 'attacker' | 'defender'; attackerLoss: number; defenderLoss: number; turnLogs?: any[]; unitStates?: any[] }> {
     const attackerSide = {
       side: 'attackers' as const,
       nation: {

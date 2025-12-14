@@ -77,7 +77,7 @@ export enum OfficerLevel {
 export const NATION_CHIEF_LEVEL_MAP: Record<number, number> = {
   0: 11, // 두목 - 부두목만
   1: 11, // 영주 - 참모만
-  2: 9,  // 군벌 - 부참모부터
+  2: 9,  // 방백 - 부참모부터
   3: 9,  // 주자사 - 간의대부부터
   4: 7,  // 주목 - 종사중랑부터
   5: 7,  // 공 - 소부부터
@@ -285,7 +285,7 @@ export const OFFICER_TITLE_MAP: Record<number, Record<number, string>> = {
     11: '참모'
   },
   2: {
-    12: '군벌',
+    12: '방백',
     11: '참모',
     10: '비장군',
     9: '부참모'

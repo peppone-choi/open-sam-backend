@@ -13,10 +13,12 @@ import {
  * 상업 투자 커맨드 (기본 내정 클래스)
  * 
  * 농지개간, 성벽보수, 수비강화, 치안강화 등이 이 클래스를 상속합니다.
+ * 
+ * 능력치: 정치(政) - 내정 효율에 영향
  */
 export class InvestCommerceCommand extends GeneralCommand {
   protected static cityKey = 'comm';
-  protected static statKey = 'intel'; // 상업 투자는 지력 능력치 사용 (PHP 원본과 동일)
+  protected static statKey = 'politics'; // 정치 능력치 사용 (통무지정매 시스템)
   protected static actionKey = '상업';
   protected static actionName = '상업 투자';
   protected static debuffFront = 0.5;
@@ -54,10 +56,12 @@ export class InvestCommerceCommand extends GeneralCommand {
     const statTypeBase: Record<string, string> = {
       'leadership': '통솔경험',
       'strength': '무력경험',
-      'intel': '지력경험'
+      'intel': '지력경험',
+      'politics': '정치경험',
+      'charm': '매력경험'
     };
     const statKey = (this.constructor as typeof InvestCommerceCommand).statKey;
-    const statType = statTypeBase[statKey];
+    const statType = statTypeBase[statKey] || statKey;
     const [reqGold, reqRice] = this.getCost();
 
     let title = `${name}(${statType}`;
@@ -110,6 +114,10 @@ export class InvestCommerceCommand extends GeneralCommand {
       score = general.getStrength(true, true, true, false);
     } else if (statKey === 'leadership') {
       score = general.getLeadership(true, true, true, false);
+    } else if (statKey === 'politics') {
+      score = general.getPolitics(true, true, true, false);
+    } else if (statKey === 'charm') {
+      score = general.getCharm(true, true, true, false);
     } else {
       throw new Error('MustNotBeReachedException: Unknown statKey');
     }
@@ -145,14 +153,18 @@ export class InvestCommerceCommand extends GeneralCommand {
     let score = Math.max(1, this.calcBaseScore(rng));
 
     const statVal = general.getVar(statKey) || 0;
-    // TODO: Need 3 stats for CriticalRatioDomestic but we only have one key?
-    // CriticalRatioDomestic expects (leadership, strength, intel, type)
-    // We can get all 3 stats from general
+    // 통무지정매 5대 능력치 시스템
     const leadership = general.getLeadership(true, true, true, false);
     const strength = general.getStrength(true, true, true, false);
     const intel = general.getIntel(true, true, true, false);
+    const politics = general.getPolitics(true, true, true, false);
+    const charm = general.getCharm(true, true, true, false);
 
-    let { success: successRatio, fail: failRatio } = CriticalRatioDomestic(leadership, strength, intel, statKey as any);
+    let { success: successRatio, fail: failRatio } = CriticalRatioDomestic(
+      leadership, strength, intel, 
+      statKey as 'leadership' | 'strength' | 'intel' | 'politics' | 'charm',
+      politics, charm
+    );
     if (trust < 80) {
       successRatio *= trust / 80;
     }

@@ -52,7 +52,7 @@ const BattleSessionSchema = new Schema<IBattleSessionDocument>(
   { timestamps: true }
 );
 
-BattleSessionSchema.index({ sessionId: 1 });
+// sessionId index already created via schema index: true
 BattleSessionSchema.index({ status: 1 });
 BattleSessionSchema.index({ attackerNationId: 1 });
 BattleSessionSchema.index({ defenderNationId: 1 });

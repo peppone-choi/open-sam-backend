@@ -1,0 +1,410 @@
+{
+  "version": "오픈삼국",
+  "lastUpdated": "2025-12-13",
+  "description": "오픈 삼국 관직 시스템 - 국가 레벨(도시 수)에 따라 관직과 수뇌부 수가 결정됨. 삼국지13의 능력치 보너스 개념 적용.",
+  "note": "이 게임은 위/촉/오 같은 고정 세력이 아닌 플레이어가 만드는 동적 세력 시스템입니다. 수뇌부는 officerLevel 5 이상인 장수입니다.",
+  "chiefInfo": {
+    "description": "수뇌부(chief)는 officerLevel 5 이상의 장수로, 국가 레벨에 따라 최대 수뇌부 수가 결정됩니다.",
+    "minOfficerLevelForChief": 5,
+    "chiefPrivileges": [
+      "국가 명령(수뇌부 커맨드) 사용 가능",
+      "외교 명령 실행 가능",
+      "장수 발령/포상/몰수 가능",
+      "수뇌부 전용 턴 (maxChiefTurn: 12) 별도 관리"
+    ]
+  },
+  "nationLevels": {
+    "0": {
+      "level": 0, 
+      "name": "방랑군", 
+      "minCities": 0, 
+      "chiefCount": 2,
+      "chiefSlots": {
+        "description": "군주 포함 최대 2명의 수뇌부",
+        "slots": ["군주", "부두목"]
+      }
+    },
+    "1": {
+      "level": 1, 
+      "name": "호족", 
+      "minCities": 1, 
+      "chiefCount": 2,
+      "chiefSlots": {
+        "description": "군주 포함 최대 2명의 수뇌부",
+        "slots": ["호족", "참모"]
+      }
+    },
+    "2": {
+      "level": 2, 
+      "name": "방백", 
+      "minCities": 2, 
+      "chiefCount": 4,
+      "chiefSlots": {
+        "description": "군주 포함 최대 4명의 수뇌부",
+        "slots": ["방백", "주부", "교위", "군사마"]
+      }
+    },
+    "3": {
+      "level": 3, 
+      "name": "주자사", 
+      "minCities": 5, 
+      "chiefCount": 4,
+      "chiefSlots": {
+        "description": "군주 포함 최대 4명의 수뇌부",
+        "slots": ["주자사", "치중", "중랑장", "도독"]
+      }
+    },
+    "4": {
+      "level": 4, 
+      "name": "주목", 
+      "minCities": 8, 
+      "chiefCount": 6,
+      "chiefSlots": {
+        "description": "군주 포함 최대 6명의 수뇌부",
+        "slots": ["주목", "별가", "호위대장", "장사", "영군", "호군"]
+      }
+    },
+    "5": {
+      "level": 5, 
+      "name": "승상", 
+      "minCities": 12, 
+      "chiefCount": 8,
+      "chiefSlots": {
+        "description": "군주 포함 최대 8명의 수뇌부",
+        "slots": ["승상", "녹상서사", "상장군", "군사중랑장", "토역장군", "파로장군", "진서장군", "진북장군"]
+      }
+    },
+    "6": {
+      "level": 6, 
+      "name": "공", 
+      "minCities": 18, 
+      "chiefCount": 10,
+      "chiefSlots": {
+        "description": "군주 포함 최대 10명의 수뇌부",
+        "slots": ["공", "공국상", "대도독", "광록훈", "안국장군", "중서령", "우장군", "좌장군", "진남장군", "진동장군"]
+      }
+    },
+    "7": {
+      "level": 7, 
+      "name": "왕", 
+      "minCities": 26, 
+      "chiefCount": 12,
+      "chiefSlots": {
+        "description": "군주 포함 최대 12명의 수뇌부",
+        "slots": ["왕", "상국", "대장군", "어사대부", "후장군", "전장군", "상서령", "위장군", "대도독", "녹상서사", "군사중랑장", "광록훈"]
+      }
+    },
+    "8": {
+      "level": 8, 
+      "name": "황제", 
+      "minCities": 40, 
+      "chiefCount": 15,
+      "chiefSlots": {
+        "description": "군주 포함 최대 15명의 수뇌부",
+        "slots": ["황제", "승상", "대사마", "태위", "표기장군", "거기장군", "사공", "사도", "위장군", "전장군", "후장군", "좌장군", "우장군", "대도독", "어사대부"]
+      }
+    }
+  },
+  "officerTitles": {
+    "description": "officerLevel은 장수의 직위 레벨 (0~12), nationLevel은 국가 레벨 (0~8). isChief가 true인 레벨(5 이상)은 수뇌부로, 국가 레벨에 따른 chiefCount 제한을 받습니다.",
+    "levels": {
+      "0": {
+        "note": "재야",
+        "default": "재야",
+        "isChief": false,
+        "maxTroops": 1000,
+        "leadershipBonus": 0,
+        "strengthBonus": 0,
+        "intelBonus": 0,
+        "politicsBonus": 0,
+        "charmBonus": 0,
+        "availableCommands": ["이동", "하야", "임관"]
+      },
+      "1": {
+        "note": "일반",
+        "default": "일반",
+        "isChief": false,
+        "maxTroops": 5000,
+        "leadershipBonus": 0,
+        "strengthBonus": 0,
+        "intelBonus": 0,
+        "politicsBonus": 0,
+        "charmBonus": 0,
+        "availableCommands": ["내정", "군사", "계략"]
+      },
+      "2": {
+        "note": "종사",
+        "default": "종사",
+        "isChief": false,
+        "maxTroops": 8000,
+        "leadershipBonus": 1,
+        "strengthBonus": 0,
+        "intelBonus": 0,
+        "politicsBonus": 1,
+        "charmBonus": 0,
+        "availableCommands": ["내정", "군사", "계략", "등용"]
+      },
+      "3": {
+        "note": "군사",
+        "default": "군사",
+        "isChief": false,
+        "maxTroops": 12000,
+        "leadershipBonus": 1,
+        "strengthBonus": 0,
+        "intelBonus": 1,
+        "politicsBonus": 1,
+        "charmBonus": 0,
+        "availableCommands": ["내정", "군사", "계략", "등용"]
+      },
+      "4": {
+        "note": "태수급",
+        "titles": {
+          "0": "성주",
+          "1": "성주",
+          "2": "태수",
+          "3": "태수",
+          "4": "태수",
+          "5": "태수",
+          "6": "태수",
+          "7": "태수",
+          "8": "태수"
+        },
+        "default": "태수",
+        "isChief": false,
+        "maxTroops": 15000,
+        "leadershipBonus": 2,
+        "strengthBonus": 0,
+        "intelBonus": 1,
+        "politicsBonus": 2,
+        "charmBonus": 1,
+        "availableCommands": ["내정", "군사", "계략", "등용", "발령(해당도시)"]
+      },
+      "5": {
+        "note": "잡호장군급 (수뇌부 최소 등급)",
+        "titles": {
+          "0": "백장",
+          "1": "백장",
+          "2": "주부",
+          "3": "도위",
+          "4": "영군",
+          "5": "토역장군",
+          "6": "안국장군",
+          "7": "후장군",
+          "8": "표기장군"
+        },
+        "default": "편장군",
+        "isChief": true,
+        "maxTroops": 20000,
+        "leadershipBonus": 3,
+        "strengthBonus": 1,
+        "intelBonus": 1,
+        "politicsBonus": 1,
+        "charmBonus": 1,
+        "availableCommands": ["내정", "군사", "계략", "인사", "국가(일부)"]
+      },
+      "6": {
+        "note": "실무장군급 (수뇌부)",
+        "titles": {
+          "0": "정장",
+          "1": "정장",
+          "2": "군사마",
+          "3": "교위",
+          "4": "호군",
+          "5": "파로장군",
+          "6": "중서령",
+          "7": "전장군",
+          "8": "거기장군"
+        },
+        "default": "잡호장군",
+        "isChief": true,
+        "maxTroops": 25000,
+        "leadershipBonus": 4,
+        "strengthBonus": 1,
+        "intelBonus": 1,
+        "politicsBonus": 2,
+        "charmBonus": 1,
+        "availableCommands": ["내정", "군사", "계략", "인사", "국가"]
+      },
+      "7": {
+        "note": "고위장군급 (수뇌부)",
+        "titles": {
+          "0": "서좌",
+          "1": "서좌",
+          "2": "선봉장",
+          "3": "비장군",
+          "4": "진북장군",
+          "5": "진서장군",
+          "6": "우장군",
+          "7": "상서령",
+          "8": "사공"
+        },
+        "default": "상서령",
+        "isChief": true,
+        "maxTroops": 30000,
+        "leadershipBonus": 5,
+        "strengthBonus": 2,
+        "intelBonus": 2,
+        "politicsBonus": 3,
+        "charmBonus": 2,
+        "availableCommands": ["내정", "군사", "계략", "인사", "국가", "외교(일부)"]
+      },
+      "8": {
+        "note": "사방장군급 (수뇌부)",
+        "titles": {
+          "0": "현승",
+          "1": "현승",
+          "2": "아문장",
+          "3": "편장군",
+          "4": "진남장군",
+          "5": "진동장군",
+          "6": "좌장군",
+          "7": "위장군",
+          "8": "사도"
+        },
+        "default": "사방장군",
+        "isChief": true,
+        "maxTroops": 35000,
+        "leadershipBonus": 6,
+        "strengthBonus": 2,
+        "intelBonus": 2,
+        "politicsBonus": 3,
+        "charmBonus": 2,
+        "availableCommands": ["내정", "군사", "계략", "인사", "국가", "외교"]
+      },
+      "9": {
+        "note": "준최고위직 (고위 수뇌부)",
+        "titles": {
+          "0": "현위",
+          "1": "현위",
+          "2": "부장군",
+          "3": "도독",
+          "4": "장사",
+          "5": "군사중랑장",
+          "6": "광록훈",
+          "7": "어사대부",
+          "8": "태위"
+        },
+        "default": "구경",
+        "isChief": true,
+        "maxTroops": 40000,
+        "leadershipBonus": 7,
+        "strengthBonus": 3,
+        "intelBonus": 3,
+        "politicsBonus": 4,
+        "charmBonus": 3,
+        "availableCommands": ["내정", "군사", "계략", "인사", "국가", "외교", "정책(일부)"]
+      },
+      "10": {
+        "note": "무관 1위 - 대장군급 (최고 수뇌부)",
+        "titles": {
+          "0": "행동대장",
+          "1": "도위",
+          "2": "교위",
+          "3": "중랑장",
+          "4": "호위대장",
+          "5": "상장군",
+          "6": "대도독",
+          "7": "대장군",
+          "8": "대사마"
+        },
+        "default": "대장군",
+        "isChief": true,
+        "maxTroops": 50000,
+        "leadershipBonus": 8,
+        "strengthBonus": 4,
+        "intelBonus": 3,
+        "politicsBonus": 3,
+        "charmBonus": 3,
+        "availableCommands": ["내정", "군사", "계략", "인사", "국가", "외교", "정책"]
+      },
+      "11": {
+        "note": "문관 1위 - 승상급 (최고 수뇌부)",
+        "titles": {
+          "0": "부두목",
+          "1": "참모",
+          "2": "주부",
+          "3": "치중",
+          "4": "별가",
+          "5": "녹상서사",
+          "6": "공국상",
+          "7": "상국",
+          "8": "승상"
+        },
+        "default": "승상",
+        "isChief": true,
+        "maxTroops": 45000,
+        "leadershipBonus": 5,
+        "strengthBonus": 0,
+        "intelBonus": 5,
+        "politicsBonus": 8,
+        "charmBonus": 5,
+        "availableCommands": ["모든 명령 가능 (군주 대행 가능)"]
+      },
+      "12": {
+        "note": "군주",
+        "titles": {
+          "0": "두목",
+          "1": "호족",
+          "2": "방백",
+          "3": "주자사",
+          "4": "주목",
+          "5": "승상",
+          "6": "공",
+          "7": "왕",
+          "8": "황제"
+        },
+        "default": "군주",
+        "isChief": true,
+        "maxTroops": 99999,
+        "leadershipBonus": 10,
+        "strengthBonus": 5,
+        "intelBonus": 5,
+        "politicsBonus": 10,
+        "charmBonus": 10,
+        "availableCommands": ["모든 명령 가능", "선양/정책 결정권"]
+      }
+    }
+  },
+  "chiefCountSummary": {
+    "description": "국가 레벨별 수뇌부 최대 인원 요약 테이블",
+    "note": "수뇌부는 officerLevel 5 이상의 장수로, 국가 명령/외교/발령 권한을 가짐",
+    "table": [
+      {"nationLevel": 0, "nationName": "방랑군", "maxChiefs": 2,  "minCities": 0,  "chiefTitles": "군주, 부두목"},
+      {"nationLevel": 1, "nationName": "호족",   "maxChiefs": 2,  "minCities": 1,  "chiefTitles": "호족, 참모"},
+      {"nationLevel": 2, "nationName": "방백",   "maxChiefs": 4,  "minCities": 2,  "chiefTitles": "방백, 주부, 교위, 군사마"},
+      {"nationLevel": 3, "nationName": "주자사", "maxChiefs": 4,  "minCities": 5,  "chiefTitles": "주자사, 치중, 중랑장, 도독"},
+      {"nationLevel": 4, "nationName": "주목",   "maxChiefs": 6,  "minCities": 8,  "chiefTitles": "주목, 별가, 호위대장, 장사, 영군, 호군"},
+      {"nationLevel": 5, "nationName": "승상",   "maxChiefs": 8,  "minCities": 12, "chiefTitles": "승상, 녹상서사, 상장군 외 5명"},
+      {"nationLevel": 6, "nationName": "공",     "maxChiefs": 10, "minCities": 18, "chiefTitles": "공, 공국상, 대도독 외 7명"},
+      {"nationLevel": 7, "nationName": "왕",     "maxChiefs": 12, "minCities": 26, "chiefTitles": "왕, 상국, 대장군 외 9명"},
+      {"nationLevel": 8, "nationName": "황제",   "maxChiefs": 15, "minCities": 40, "chiefTitles": "황제, 승상, 대사마 외 12명"}
+    ]
+  },
+  "militaryRanks": {
+    "description": "이십등작 시스템 - 전투 공훈으로 승급, 병력 상한/훈련/사기 보너스 제공",
+    "note": "constants.json의 militaryRanks 참조",
+    "ranks": [
+      {"rank": 0, "name": "무작", "crewBonus": 0, "trainBonus": 0, "moraleBonus": 0},
+      {"rank": 1, "name": "공사", "crewBonus": 100, "trainBonus": 1, "moraleBonus": 1},
+      {"rank": 2, "name": "상조", "crewBonus": 200, "trainBonus": 1, "moraleBonus": 1},
+      {"rank": 3, "name": "잠요", "crewBonus": 300, "trainBonus": 2, "moraleBonus": 2},
+      {"rank": 4, "name": "불경", "crewBonus": 500, "trainBonus": 2, "moraleBonus": 2},
+      {"rank": 5, "name": "대부", "crewBonus": 700, "trainBonus": 3, "moraleBonus": 3},
+      {"rank": 6, "name": "관대부", "crewBonus": 1000, "trainBonus": 3, "moraleBonus": 3},
+      {"rank": 7, "name": "공대부", "crewBonus": 1500, "trainBonus": 4, "moraleBonus": 4},
+      {"rank": 8, "name": "공승", "crewBonus": 2000, "trainBonus": 4, "moraleBonus": 4},
+      {"rank": 9, "name": "오대부", "crewBonus": 3000, "trainBonus": 5, "moraleBonus": 5},
+      {"rank": 10, "name": "좌서장", "crewBonus": 4000, "trainBonus": 6, "moraleBonus": 6},
+      {"rank": 11, "name": "우서장", "crewBonus": 5000, "trainBonus": 7, "moraleBonus": 7},
+      {"rank": 12, "name": "좌경", "crewBonus": 6000, "trainBonus": 8, "moraleBonus": 8},
+      {"rank": 13, "name": "중경", "crewBonus": 7000, "trainBonus": 9, "moraleBonus": 9},
+      {"rank": 14, "name": "우경", "crewBonus": 8000, "trainBonus": 10, "moraleBonus": 10},
+      {"rank": 15, "name": "소상조", "crewBonus": 9000, "trainBonus": 12, "moraleBonus": 12},
+      {"rank": 16, "name": "대량조", "crewBonus": 10000, "trainBonus": 14, "moraleBonus": 14},
+      {"rank": 17, "name": "사거서장", "crewBonus": 12000, "trainBonus": 16, "moraleBonus": 16},
+      {"rank": 18, "name": "대서장", "crewBonus": 15000, "trainBonus": 18, "moraleBonus": 18},
+      {"rank": 19, "name": "관내후", "crewBonus": 20000, "trainBonus": 20, "moraleBonus": 20},
+      {"rank": 20, "name": "열후", "crewBonus": 30000, "trainBonus": 25, "moraleBonus": 25}
+    ]
+  }
+}

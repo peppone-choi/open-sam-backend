@@ -12,7 +12,7 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { cityRepository } from '../../repositories/city.repository';
-import { getNationLevelInfo, getOfficerTitle } from '../../utils/rank-system';
+import { getNationLevelInfo, getOfficerTitle, isChief as isChiefByLevel } from '../../utils/rank-system';
 
 /**
  * 관직 레벨 정의
@@ -239,16 +239,35 @@ export const OFFICER_PERMISSIONS = {
 
 /**
  * 국가 레벨별 수뇌부 정원
+ * constants.json의 nationLevels.chiefCount 값을 사용합니다.
+ * 
+ * nationLevel -> chiefCount:
+ * 0: 방랑군 - 2명 (군주 포함)
+ * 1: 호족   - 2명
+ * 2: 방백   - 4명
+ * 3: 주자사 - 4명
+ * 4: 주목   - 6명
+ * 5: 승상   - 8명
+ * 6: 공     - 10명
+ * 7: 왕     - 12명
+ * 8: 황제   - 15명
  */
+export function getChiefSlotsByNationLevel(nationLevel: number): number {
+  const levelInfo = getNationLevelInfo(nationLevel);
+  return levelInfo?.chiefCount || 2;  // 기본값 2명
+}
+
+// 레거시 호환용 - deprecated
 export const CHIEF_SLOTS_BY_LEVEL: Record<number, number> = {
-  0: 0,   // 재야
-  1: 2,   // 영주
-  2: 3,   // 군벌
+  0: 2,   // 방랑군
+  1: 2,   // 호족
+  2: 4,   // 방백
   3: 4,   // 주자사
-  4: 5,   // 주목
-  5: 6,   // 공
-  6: 7,   // 왕
-  7: 8,   // 황제
+  4: 6,   // 주목
+  5: 8,   // 승상
+  6: 10,  // 공
+  7: 12,  // 왕
+  8: 15,  // 황제
 };
 
 export class OfficerSystemService {
@@ -347,7 +366,7 @@ export class OfficerSystemService {
       if (newOfficerLevel >= OfficerLevel.CHIEF_5) {
         const nation = await nationRepository.findByNationNum(sessionId, nationId);
         const nationLevel = nation?.data?.level || nation?.level || 0;
-        const maxSlots = CHIEF_SLOTS_BY_LEVEL[nationLevel] || 2;
+        const maxSlots = getChiefSlotsByNationLevel(nationLevel);
 
         const currentChiefs = await generalRepository.findByFilter({
           session_id: sessionId,
@@ -357,7 +376,8 @@ export class OfficerSystemService {
 
         // 현재 대상이 이미 수뇌부가 아닌 경우에만 정원 체크
         if (targetData.officer_level < OfficerLevel.CHIEF_5 && currentChiefs.length >= maxSlots) {
-          return { success: false, message: `수뇌부 정원(${maxSlots}명)이 가득 찼습니다` };
+          const nationName = getNationLevelInfo(nationLevel)?.name || '방랑군';
+          return { success: false, message: `${nationName} 수뇌부 정원(${maxSlots}명)이 가득 찼습니다` };
         }
       }
 
@@ -645,10 +665,13 @@ export class OfficerSystemService {
     maxSlots: number;
     usedSlots: number;
     available: number;
+    nationLevel: number;
+    nationLevelName: string;
   }> {
     const nation = await nationRepository.findByNationNum(sessionId, nationId);
     const nationLevel = nation?.data?.level || nation?.level || 0;
-    const maxSlots = CHIEF_SLOTS_BY_LEVEL[nationLevel] || 2;
+    const nationLevelInfo = getNationLevelInfo(nationLevel);
+    const maxSlots = nationLevelInfo?.chiefCount || 2;
 
     const chiefs = await generalRepository.findByFilter({
       session_id: sessionId,
@@ -660,6 +683,8 @@ export class OfficerSystemService {
       maxSlots,
       usedSlots: chiefs.length,
       available: Math.max(0, maxSlots - chiefs.length),
+      nationLevel,
+      nationLevelName: nationLevelInfo?.name || '방랑군',
     };
   }
 }

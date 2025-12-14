@@ -66,8 +66,7 @@ const Gin7GameSessionSchema = new Schema<IGin7GameSession>({
   timestamps: true
 });
 
-// Indexes
-Gin7GameSessionSchema.index({ sessionId: 1 });
+// Indexes (sessionId unique index already created via schema unique: true)
 Gin7GameSessionSchema.index({ status: 1 });
 
 export const Gin7GameSession: Model<IGin7GameSession> = 

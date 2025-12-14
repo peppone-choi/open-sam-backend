@@ -12,6 +12,7 @@ import { SetGeneralPermissionService } from '../services/game/SetGeneralPermissi
 import { RaiseEventService } from '../services/game/RaiseEvent.service';
 import { GetMyBossInfoService } from '../services/game/GetMyBossInfo.service';
 import { ManageOfficerService } from '../services/game/ManageOfficer.service';
+import { KickGeneralService } from '../services/nation/KickGeneral.service';
 import { ExecuteEngineService } from '../services/global/ExecuteEngine.service';
 import { generalRecordRepository } from '../repositories/general-record.repository';
 import { worldHistoryRepository } from '../repositories/world-history.repository';
@@ -1307,6 +1308,44 @@ router.post('/my-boss-info', authenticate, async (req, res) => {
 router.post('/officer/appoint', authenticate, async (req, res) => {
   try {
     const result = await ManageOfficerService.appoint(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ result: false, reason: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/game/officer/kick:
+ *   post:
+ *     summary: 장수 추방
+ *     description: 수뇌부가 소속 장수를 추방합니다
+ *     tags: [Game]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - session_id
+ *               - destGeneralID
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               destGeneralID:
+ *                 type: number
+ *                 description: 추방할 장수 ID
+ *     responses:
+ *       200:
+ *         description: 추방 결과
+ */
+router.post('/officer/kick', authenticate, async (req, res) => {
+  try {
+    const result = await KickGeneralService.execute({
+      ...req.body,
+      targetGeneralId: req.body.destGeneralID,
+    }, req.user);
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ result: false, reason: error.message });

@@ -137,48 +137,122 @@ export class AutoBattleEngine {
     }
   }
 
+  /**
+   * PHP 방식 데미지 계산 (WarUnit.php:computeWarPower 참고)
+   * 
+   * PHP 공식:
+   * $warPower = GameConst::$armperphase + $myAtt - $opDef;  // $armperphase = 500
+   * $warPower *= $this->getComputedAtmos();  // 사기
+   * $warPower /= $oppose->getComputedTrain();  // 훈련
+   * $warPower *= getDexLog($genDexAtt, $oppDexDef);  // 숙련도
+   * $warPower *= $this->getCrewType()->getAttackCoef($oppose->getCrewType());  // 병종 상성
+   */
   private calculateDamage(attacker: BattleUnitState, defender: BattleUnitState): number {
     if (attacker.hp <= 0) return 0;
 
     const attackerStats = attacker.stats;
-    const defenderStats = defender.stats;
     const attackerUnit = attacker.unit;
     const defenderUnit = defender.unit;
 
-    const leadershipFactor = 1 + (attackerStats.leadership ?? 0) / 200;
-    const strengthFactor = 1 + (attackerStats.strength ?? 0) / 200;
-    const trainFactor = 0.5 + attacker.train / 200;
-    const atmosFactor = 0.5 + attacker.atmos / 200;
+    // PHP: GameConst::$armperphase = 500 (페이즈당 표준 감소 병사 수)
+    const ARM_PER_PHASE = 500;
 
+    // PHP: getComputedAttack() - 장수의 공격력 계산
+    // 통솔과 무력 기반으로 공격력 계산
+    const myAttack = this.computeAttackPower(attackerStats, attackerUnit);
+    
+    // PHP: getComputedDefence() - 상대의 방어력 계산
+    const opDefense = this.computeDefensePower(defender.stats, defenderUnit, defender.hp);
+
+    // PHP: $warPower = GameConst::$armperphase + $myAtt - $opDef;
+    let warPower = ARM_PER_PHASE + myAttack - opDefense;
+
+    // PHP: 최소 전투력 50 보장
+    if (warPower < 100) {
+      warPower = Math.max(0, warPower);
+      warPower = (warPower + 100) / 2;
+      warPower = this.rng.nextRangeInt(Math.floor(warPower), 100);
+    }
+
+    // PHP: $warPower *= $this->getComputedAtmos() / $oppose->getComputedTrain();
+    // 사기/훈련 - PHP에서는 100이 기준값 (maxAtmosByCommand, maxTrainByCommand)
+    const atmosMultiplier = (attacker.atmos || 70) / 100;
+    const trainDivisor = Math.max(50, defender.train || 70) / 100;
+    warPower *= atmosMultiplier;
+    warPower /= trainDivisor;
+
+    // PHP: getDexLog 숙련도 보너스
+    const dexBonus = this.getDexterityBonus(attackerStats, attackerUnit.armType);
+    const opDexDefense = this.getDexterityBonus(defender.stats, attackerUnit.armType);
+    const dexLog = this.getDexLog(dexBonus, opDexDefense);
+    warPower *= dexLog;
+
+    // PHP: 병종 상성 계수 - getAttackCoef, getDefenceCoef
     const attackerArmType = ARM_TYPE_LABEL[attackerUnit.armType] ?? 'FOOTMAN';
     const defenderArmType = ARM_TYPE_LABEL[defenderUnit.armType] ?? 'FOOTMAN';
-
     const attackAdvantage = getAttackAdvantage(attackerUnit.id, defenderArmType, this.scenarioId);
     const defenceAdvantage = getDefenseAdvantage(defenderUnit.id, attackerArmType, this.scenarioId);
+    warPower *= attackAdvantage;
+    warPower *= defenceAdvantage; // PHP: oppose->setWarPowerMultiply 대신 직접 적용
 
-    const advantage = attackAdvantage / Math.max(0.5, defenceAdvantage);
+    // PHP: 랜덤 범위 0.9 ~ 1.1
+    const randomFactor = this.rng.range(0.9, 1.1);
+    warPower *= randomFactor;
 
-    const dexBonus = this.getDexterityBonus(attackerStats, attackerUnit.armType);
+    // 부상 패널티
     const injuryPenalty = attackerStats.injury ? 1 - Math.min(attackerStats.injury, 80) / 120 : 1;
+    warPower *= injuryPenalty;
 
-    const baseAttackPower = attackerUnit.attack || 100;
-    const crewFactor = Math.sqrt(Math.max(1, attacker.hp));
-    const randomFactor = this.rng.range(0.9, 1.15);
+    // 최종 데미지
+    const damage = Math.max(1, Math.round(warPower));
+    return Math.min(damage, defender.hp);
+  }
 
-    let damage = crewFactor * (baseAttackPower / 100) * leadershipFactor * strengthFactor;
-    damage *= trainFactor * atmosFactor * advantage * dexBonus * injuryPenalty * randomFactor;
+  /**
+   * PHP: getComputedAttack() 포팅
+   * 통솔, 무력, 지력을 기반으로 공격력 계산
+   */
+  private computeAttackPower(stats: BattleGeneralInput, unit: any): number {
+    const leadership = stats.leadership ?? 50;
+    const strength = stats.strength ?? 50;
+    const intel = stats.intel ?? 50;
+    
+    // PHP: GameUnitDetail.php의 getComputedAttack 공식
+    // attack + leadership/10 + strength/10 (보병/기병)
+    // attack + leadership/10 + intel/10 (궁병/술사)
+    const baseAttack = unit.attack || 100;
+    
+    if (unit.armType === ARM_TYPE.ARCHER || unit.armType === ARM_TYPE.WIZARD) {
+      return baseAttack + leadership / 10 + intel / 10;
+    }
+    return baseAttack + leadership / 10 + strength / 10;
+  }
 
-    // defence mitigation
-    const defenceFactor = (defenderUnit.defence || 100) / 120;
-    damage /= defenceFactor;
+  /**
+   * PHP: getComputedDefence() 포팅
+   * 병사 수에 따른 방어력 계수 적용
+   */
+  private computeDefensePower(stats: BattleGeneralInput, unit: any, crew: number): number {
+    const baseDefence = unit.defence || 100;
+    
+    // PHP: 병사 수에 따른 계수 (7000명 = 100%, 0명 = 70%)
+    // $crewCoef = (crew / (7000 / 30)) + 70;
+    const crewCoef = (crew / 233.33) + 70;
+    const clampedCoef = Math.min(100, Math.max(70, crewCoef));
+    
+    return baseDefence * clampedCoef / 100;
+  }
 
-    // morale difference
-    const moraleDiff = (attacker.atmos - defender.atmos) / 200;
-    damage *= 1 + moraleDiff * 0.25;
-
-    damage = Math.max(1, Math.floor(damage));
-    damage = Math.min(damage, defender.hp);
-    return damage;
+  /**
+   * PHP: getDexLog 함수 포팅
+   * 숙련도 로그 계산
+   */
+  private getDexLog(attackerDex: number, defenderDex: number): number {
+    if (attackerDex <= 1 && defenderDex <= 1) return 1;
+    
+    // PHP getDexLog 공식
+    const ratio = Math.max(0.5, Math.min(2, attackerDex / Math.max(1, defenderDex)));
+    return 0.8 + ratio * 0.2;
   }
 
   private getDexterityBonus(stats: BattleGeneralInput, armType: number): number {

@@ -184,6 +184,26 @@ export function isChief(officerLevel: number): boolean {
 }
 
 /**
+ * 국가 레벨별 수뇌부 최대 인원 조회
+ * @param nationLevel 국가 레벨 (0~8)
+ * @returns 수뇌부 최대 인원 (군주 포함)
+ */
+export function getChiefCountByNationLevel(nationLevel: number): number {
+  const levelInfo = getNationLevelInfo(nationLevel);
+  return levelInfo?.chiefCount || 2;
+}
+
+/**
+ * 도시 수로 수뇌부 최대 인원 조회
+ * @param cityCount 보유 도시 수
+ * @returns 수뇌부 최대 인원
+ */
+export function getChiefCountByCityCount(cityCount: number): number {
+  const nationLevel = getNationLevelByCityCount(cityCount);
+  return getChiefCountByNationLevel(nationLevel);
+}
+
+/**
  * 이십등작 명칭 조회
  * @param militaryRank 이십등작 등급 (0~20)
  * @returns 이십등작 명칭

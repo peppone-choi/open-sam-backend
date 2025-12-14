@@ -800,6 +800,13 @@ GeneralSchema.methods.getBattlePhaseSkillTriggerList = function(unit: WarUnit): 
 /**
  * 능력치를 계산해서 반환하는 공통 메서드
  * PHP의 getStatValue와 동일한 로직
+ * 
+ * 통무지정매 (統武智政魅) 5대 능력치:
+ * - leadership (통솔/統): 징병, 훈련, 병력 지휘
+ * - strength (무력/武): 전투 공격력, 일기토
+ * - intel (지력/智): 계략, 정보 수집
+ * - politics (정치/政): 내정(농업/상업/치안), 외교
+ * - charm (매력/魅): 등용, 징병 효율, 민심
  */
 function getStatValue(general: any, statName: string, withInjury = true, withIActionObj = true, withStatAdjust = true, useFloor = true): number {
   let statValue = general.getVar(statName) || 0;
@@ -810,7 +817,7 @@ function getStatValue(general: any, statName: string, withInjury = true, withIAc
     statValue *= (100 - injury) / 100;
   }
   
-  // 능력치 상호 보정 (통무지정 시스템)
+  // 능력치 상호 보정 (통무지정매 시스템)
   if (withStatAdjust) {
     if (statName === 'strength') {
       // 무력 = 무력 + (지력 / 4)
@@ -820,6 +827,14 @@ function getStatValue(general: any, statName: string, withInjury = true, withIAc
       // 지력 = 지력 + (무력 / 4)
       const strength = getStatValue(general, 'strength', withInjury, withIActionObj, false, false);
       statValue += Math.round(strength / 4);
+    } else if (statName === 'politics') {
+      // 정치 = 정치 + (지력 / 4)
+      const intel = getStatValue(general, 'intel', withInjury, withIActionObj, false, false);
+      statValue += Math.round(intel / 4);
+    } else if (statName === 'charm') {
+      // 매력 = 매력 + (정치 / 4)
+      const politics = getStatValue(general, 'politics', withInjury, withIActionObj, false, false);
+      statValue += Math.round(politics / 4);
     }
   }
   
@@ -827,15 +842,15 @@ function getStatValue(general: any, statName: string, withInjury = true, withIAc
   const maxLevel = 150;
   statValue = Math.max(0, Math.min(statValue, maxLevel));
   
-  // FUTURE: withIActionObj - 아이템/특성의 영향 적용
-  // if (withIActionObj) {
-  //   const actionList = general.getActionList();
-  //   for (const actionObj of actionList) {
-  //     if (actionObj && actionObj.onCalcStat) {
-  //       statValue = actionObj.onCalcStat(general, statName, statValue);
-  //     }
-  //   }
-  // }
+  // withIActionObj - 아이템/특성의 영향 적용
+  if (withIActionObj) {
+    const actionList = general.getActionList();
+    for (const actionObj of actionList) {
+      if (actionObj && typeof actionObj.onCalcStat === 'function') {
+        statValue = actionObj.onCalcStat(general, statName, statValue);
+      }
+    }
+  }
   
   // 정수로 반올림
   if (useFloor) {
@@ -1369,19 +1384,24 @@ GeneralSchema.methods.kill = async function(options: { sendDyingMessage?: boolea
  * PHP 대응: General::rebirth()
  * 
  * 나이가 들어 은퇴하고 자손에게 능력을 물려줌
+ * 통무지정매 5대 능력치 모두 적용
  */
 GeneralSchema.methods.rebirth = async function(): Promise<void> {
   const logger = this.getLogger();
   const generalName = this.getName();
   
-  // 능력치 0.85배 (최소 10)
+  // 능력치 0.85배 (최소 10) - 통무지정매 5대 능력치
   const leadership = this.getVar('leadership') ?? 50;
   const strength = this.getVar('strength') ?? 50;
   const intel = this.getVar('intel') ?? 50;
+  const politics = this.getVar('politics') ?? 50;
+  const charm = this.getVar('charm') ?? 50;
   
   this.updateVarWithLimit('leadership', Math.floor(leadership * 0.85), 10, null);
   this.updateVarWithLimit('strength', Math.floor(strength * 0.85), 10, null);
   this.updateVarWithLimit('intel', Math.floor(intel * 0.85), 10, null);
+  this.updateVarWithLimit('politics', Math.floor(politics * 0.85), 10, null);
+  this.updateVarWithLimit('charm', Math.floor(charm * 0.85), 10, null);
   
   // 부상 초기화
   this.setVar('injury', 0);
@@ -1403,6 +1423,13 @@ GeneralSchema.methods.rebirth = async function(): Promise<void> {
   this.multiplyVar('dex3', 0.5);
   this.multiplyVar('dex4', 0.5);
   this.multiplyVar('dex5', 0.5);
+  
+  // 능력치 경험치 0.5배 (통무지정매)
+  this.multiplyVar('leadership_exp', 0.5);
+  this.multiplyVar('strength_exp', 0.5);
+  this.multiplyVar('intel_exp', 0.5);
+  this.multiplyVar('politics_exp', 0.5);
+  this.multiplyVar('charm_exp', 0.5);
   
   // 랭크 초기화
   if (this.rank) {

@@ -1,0 +1,217 @@
+{
+  "version": "삼국지13",
+  "lastUpdated": "2025-12-13",
+  "categories": {
+    "horse": "명마",
+    "sword": "검",
+    "blade": "도",
+    "greatBlade": "대도",
+    "spear": "모",
+    "halberd": "극",
+    "axe": "부",
+    "whip": "편",
+    "club": "타격",
+    "hiddenWeapon": "암기",
+    "bow": "활",
+    "militaryBook": "병서",
+    "politicalBook": "정서",
+    "historyBook": "사서",
+    "classicBook": "경서",
+    "essay": "논문",
+    "mysteryBook": "기서",
+    "map": "지도",
+    "medicalBook": "의서",
+    "accessory": "장식",
+    "treasure": "보물",
+    "medicine": "약",
+    "special": "특수"
+  },
+  "items": {
+    "horses": [
+      {"id": "horse_001", "name": "적토마", "nameKo": "赤兎馬", "category": "horse", "effect": "퇴각 확실", "skill": "신속", "value": 60, "price": 6000, "strengthBonus": 0, "leadershipBonus": 0, "intelBonus": 0, "politicsBonus": 0, "charmBonus": 0, "owner": "동탁/여포/관우"},
+      {"id": "horse_002", "name": "적로", "nameKo": "的盧", "category": "horse", "effect": "퇴각 확실", "skill": "수영", "value": 55, "price": 4500, "owner": "유비"},
+      {"id": "horse_003", "name": "조황비전", "nameKo": "爪黃飛電", "category": "horse", "effect": "퇴각 확실", "skill": "일기", "value": 50, "price": 3000, "owner": "조조"},
+      {"id": "horse_004", "name": "절영", "nameKo": "絕影", "category": "horse", "effect": "퇴각 확실", "skill": "신속", "value": 45, "price": 3000, "owner": "조조"},
+      {"id": "horse_005", "name": "백룡", "nameKo": "白龍", "category": "horse", "effect": "퇴각 확실", "skill": "신속", "value": 45, "price": 3000, "owner": "조운"},
+      {"id": "horse_006", "name": "대완마", "nameKo": "大宛馬", "category": "horse", "effect": "퇴각 확실", "skill": null, "value": 40, "price": 1900, "location": "무위"},
+      {"id": "horse_007", "name": "과하마", "nameKo": "果下馬", "category": "horse", "effect": "퇴각 확실", "skill": null, "value": 40, "price": 1900, "location": "업"},
+      {"id": "horse_008", "name": "백마", "nameKo": "白馬", "category": "horse", "effect": "퇴각 확실", "skill": null, "value": 40, "price": 1900, "location": "남피"},
+      {"id": "horse_009", "name": "양주마", "nameKo": "涼州馬", "category": "horse", "effect": "퇴각 확실", "skill": null, "value": 40, "price": 1900, "location": "금성"},
+      {"id": "horse_010", "name": "사륜차", "nameKo": "四輪車", "category": "horse", "effect": "퇴각 확실", "skill": null, "value": 55, "price": 3000, "owner": "제갈량"},
+      {"id": "horse_011", "name": "오환마", "nameKo": "烏桓馬", "category": "horse", "effect": "퇴각 확실", "skill": "신속", "value": 40, "price": 1900, "location": "북평"},
+      {"id": "horse_012", "name": "흉노마", "nameKo": "匈奴馬", "category": "horse", "effect": "퇴각 확실", "skill": "신속", "value": 40, "price": 1900, "location": "무위"},
+      {"id": "horse_013", "name": "권모적토마", "nameKo": "卷毛赤兎馬", "category": "horse", "effect": "퇴각 확실", "skill": "신속", "value": 45, "price": 3000, "owner": "축융"},
+      {"id": "horse_014", "name": "적모우", "nameKo": "赤毛牛", "category": "horse", "effect": "퇴각 확실", "skill": "공성", "value": 45, "price": 3000, "owner": "맹획"},
+      {"id": "horse_015", "name": "백상", "nameKo": "白象", "category": "horse", "effect": "퇴각 확실", "skill": "호걸", "value": 50, "price": 6000, "owner": "목록대왕"}
+    ],
+    "swords": [
+      {"id": "sword_001", "name": "참사검", "nameKo": "斬蛇劍", "category": "sword", "strengthBonus": 10, "skill": "호걸", "value": 70, "price": 6000, "location": "낙양"},
+      {"id": "sword_002", "name": "칠성보도", "nameKo": "七星寶刀", "category": "sword", "strengthBonus": 5, "skill": "일기", "value": 60, "price": 4000, "owner": "왕윤/동탁"},
+      {"id": "sword_003", "name": "의천검", "nameKo": "倚天劍", "category": "sword", "strengthBonus": 6, "skill": "위풍", "value": 55, "price": 3200, "owner": "조조"},
+      {"id": "sword_004", "name": "청강검", "nameKo": "靑釭劍", "category": "sword", "strengthBonus": 5, "skill": "일기", "value": 50, "price": 3200, "owner": "조조/하후은/조운"},
+      {"id": "sword_005", "name": "자웅일대검", "nameKo": "雌雄一對劍", "category": "sword", "strengthBonus": 3, "skill": "일기", "value": 45, "price": 3200, "owner": "유비"},
+      {"id": "sword_006", "name": "간장검", "nameKo": "干將劍", "category": "sword", "strengthBonus": 7, "skill": "일기", "value": 60, "price": 4000, "location": "회계"},
+      {"id": "sword_007", "name": "막야검", "nameKo": "莫耶劍", "category": "sword", "strengthBonus": 6, "skill": "호걸", "value": 55, "price": 3200, "location": "회계"}
+    ],
+    "blades": [
+      {"id": "blade_001", "name": "고정도", "nameKo": "古錠刀", "category": "blade", "strengthBonus": 3, "skill": "수영", "value": 40, "price": 2400, "owner": "손견/손책/손권"},
+      {"id": "blade_002", "name": "신도", "nameKo": "神刀", "category": "blade", "strengthBonus": 3, "skill": null, "value": 15, "price": 2400, "location": "성도"},
+      {"id": "blade_003", "name": "백피도", "nameKo": "白皮刀", "category": "blade", "strengthBonus": 3, "skill": null, "value": 15, "price": 2400, "location": "계"},
+      {"id": "blade_004", "name": "오구도", "nameKo": "吳鉤刀", "category": "blade", "strengthBonus": 1, "skill": null, "value": 5, "price": 1000, "location": "계양"},
+      {"id": "blade_005", "name": "거치도", "nameKo": "鋸齒刀", "category": "blade", "strengthBonus": 2, "skill": "일기", "value": 25, "price": 800, "location": "성도"},
+      {"id": "blade_006", "name": "환수도", "nameKo": "環首刀", "category": "blade", "strengthBonus": 1, "skill": null, "value": 5, "price": 800, "location": "성도"}
+    ],
+    "greatBlades": [
+      {"id": "greatBlade_001", "name": "청룡언월도", "nameKo": "靑龍偃月刀", "category": "greatBlade", "strengthBonus": 6, "skill": "위풍", "value": 55, "price": 3200, "owner": "관우"},
+      {"id": "greatBlade_002", "name": "삼첨도", "nameKo": "三尖刀", "category": "greatBlade", "strengthBonus": 3, "skill": null, "value": 15, "price": 2400, "owner": "기령"},
+      {"id": "greatBlade_003", "name": "봉취도", "nameKo": "鳳嘴刀", "category": "greatBlade", "strengthBonus": 2, "skill": null, "value": 10, "price": 1600, "location": "장안"},
+      {"id": "greatBlade_004", "name": "미첨도", "nameKo": "眉尖刀", "category": "greatBlade", "strengthBonus": 2, "skill": null, "value": 15, "price": 2400, "location": "장안"},
+      {"id": "greatBlade_005", "name": "대간도", "nameKo": "大砍刀", "category": "greatBlade", "strengthBonus": 1, "skill": null, "value": 5, "price": 800, "location": "양양"},
+      {"id": "greatBlade_006", "name": "대도", "nameKo": "大刀", "category": "greatBlade", "strengthBonus": 1, "skill": null, "value": 5, "price": 800, "location": "하비"}
+    ],
+    "spears": [
+      {"id": "spear_001", "name": "사모", "nameKo": "蛇矛", "category": "spear", "strengthBonus": 6, "skill": "위풍", "value": 55, "price": 3200, "owner": "장비"},
+      {"id": "spear_002", "name": "철척사모", "nameKo": "鐵脊蛇矛", "category": "spear", "strengthBonus": 1, "skill": "일기", "value": 15, "price": 2400, "owner": "정보"},
+      {"id": "spear_003", "name": "금마삭", "nameKo": "金馬槊", "category": "spear", "strengthBonus": 2, "skill": null, "value": 10, "price": 2400, "location": "성도"},
+      {"id": "spear_004", "name": "조목삭", "nameKo": "棗木槊", "category": "spear", "strengthBonus": 1, "skill": null, "value": 5, "price": 800, "location": "성도/진류"},
+      {"id": "spear_005", "name": "삼장모", "nameKo": "三丈矛", "category": "spear", "strengthBonus": 1, "skill": null, "value": 5, "price": 1000, "location": "업"}
+    ],
+    "halberds": [
+      {"id": "halberd_001", "name": "방천화극", "nameKo": "方天畫戟", "category": "halberd", "strengthBonus": 8, "skill": "호걸", "value": 65, "price": 4000, "owner": "여포"},
+      {"id": "halberd_002", "name": "쌍철극", "nameKo": "雙鐵戟", "category": "halberd", "strengthBonus": 1, "skill": "일기", "value": 15, "price": 1600, "owner": "전위"}
+    ],
+    "axes": [
+      {"id": "axe_001", "name": "대부", "nameKo": "大斧", "category": "axe", "strengthBonus": 2, "skill": "위풍", "value": 20, "price": 1600, "owner": "서황"},
+      {"id": "axe_002", "name": "치우부", "nameKo": "蚩尤斧", "category": "axe", "strengthBonus": 9, "skill": "호걸", "value": 60, "price": 4000, "location": "회계"}
+    ],
+    "whips": [
+      {"id": "whip_001", "name": "철편", "nameKo": "鐵鞭", "category": "whip", "strengthBonus": 1, "skill": "일기", "value": 10, "price": 1500, "owner": "황개"}
+    ],
+    "clubs": [
+      {"id": "club_001", "name": "철질려골타", "nameKo": "鐵蒺藜骨朵", "category": "club", "strengthBonus": 2, "skill": "일기", "value": 15, "price": 2400, "owner": "사마가"},
+      {"id": "club_002", "name": "철쇄", "nameKo": "鐵鎖", "category": "club", "strengthBonus": 2, "skill": "공성", "value": 15, "price": 1600, "owner": "감녕"},
+      {"id": "club_003", "name": "유성추", "nameKo": "流星錘", "category": "club", "strengthBonus": 3, "skill": null, "value": 10, "price": 1600, "owner": "왕쌍"},
+      {"id": "club_004", "name": "철과추", "nameKo": "鐵蝸錘", "category": "club", "strengthBonus": 2, "skill": null, "value": 25, "price": 800, "location": "북해"},
+      {"id": "club_005", "name": "동추", "nameKo": "銅錘", "category": "club", "strengthBonus": 1, "skill": null, "value": 5, "price": 800, "location": "남피"},
+      {"id": "club_006", "name": "질려봉", "nameKo": "蒺藜棒", "category": "club", "strengthBonus": 2, "skill": null, "value": 15, "price": 1600, "owner": "아단"},
+      {"id": "club_007", "name": "비추", "nameKo": "飛錘", "category": "club", "strengthBonus": 2, "skill": null, "value": 15, "price": 1600, "owner": "아단"},
+      {"id": "club_008", "name": "철추", "nameKo": "鐵錘", "category": "club", "strengthBonus": 2, "skill": "일기", "value": 25, "price": 2400, "owner": "월길"}
+    ],
+    "hiddenWeapons": [
+      {"id": "hidden_001", "name": "매화수전", "nameKo": "梅花手箭", "category": "hiddenWeapon", "strengthBonus": 2, "skill": null, "value": 20, "price": 3000, "location": "성도"},
+      {"id": "hidden_002", "name": "수전", "nameKo": "手箭", "category": "hiddenWeapon", "strengthBonus": 1, "skill": null, "value": 15, "price": 1600, "location": "성도"},
+      {"id": "hidden_003", "name": "비도", "nameKo": "飛刀", "category": "hiddenWeapon", "strengthBonus": 2, "skill": null, "value": 10, "price": 800, "owner": "축융"},
+      {"id": "hidden_004", "name": "단극", "nameKo": "短戟", "category": "hiddenWeapon", "strengthBonus": 2, "skill": null, "value": 10, "price": 800, "location": "복양"},
+      {"id": "hidden_005", "name": "수극", "nameKo": "手戟", "category": "hiddenWeapon", "strengthBonus": 2, "skill": null, "value": 10, "price": 800, "location": "장사"}
+    ],
+    "bows": [
+      {"id": "bow_001", "name": "양유기의 활", "nameKo": "養由基의 弓", "category": "bow", "strengthBonus": 4, "skill": "분전", "value": 40, "price": 3000, "location": "강릉"},
+      {"id": "bow_002", "name": "이광의 활", "nameKo": "李廣의 弓", "category": "bow", "strengthBonus": 4, "skill": "분전", "value": 40, "price": 3000, "location": "천수"},
+      {"id": "bow_003", "name": "동호비궁", "nameKo": "東胡飛弓", "category": "bow", "strengthBonus": 2, "skill": null, "value": 10, "price": 2000, "location": "양평"},
+      {"id": "bow_004", "name": "맥궁", "nameKo": "貊弓", "category": "bow", "strengthBonus": 1, "skill": "분전", "value": 25, "price": 2000, "location": "계/북평"},
+      {"id": "bow_005", "name": "단궁", "nameKo": "短弓", "category": "bow", "strengthBonus": 1, "skill": null, "value": 10, "price": 2000, "location": "여남"},
+      {"id": "bow_006", "name": "보조궁", "nameKo": "步弩弓", "category": "bow", "strengthBonus": 3, "skill": "분전", "value": 35, "price": 2000, "owner": "월길"}
+    ],
+    "militaryBooks": [
+      {"id": "military_001", "name": "손자병법서", "nameKo": "孫子兵法書", "category": "militaryBook", "leadershipBonus": 10, "skill": "귀모", "value": 70, "price": 4800, "location": "장사"},
+      {"id": "military_002", "name": "육도", "nameKo": "六韜", "category": "militaryBook", "leadershipBonus": 8, "skill": "연전", "value": 60, "price": 4000, "location": "천수"},
+      {"id": "military_003", "name": "삼략", "nameKo": "三略", "category": "militaryBook", "leadershipBonus": 8, "skill": "견수", "value": 55, "price": 4000, "location": "하비"},
+      {"id": "military_004", "name": "사마법", "nameKo": "司馬法", "category": "militaryBook", "leadershipBonus": 7, "skill": "견수", "value": 50, "price": 3200, "location": "북해"},
+      {"id": "military_005", "name": "오자", "nameKo": "吳子", "category": "militaryBook", "leadershipBonus": 6, "skill": "견수", "value": 45, "price": 3200, "location": "여남"},
+      {"id": "military_006", "name": "손빈병법", "nameKo": "孫臏兵法", "category": "militaryBook", "leadershipBonus": 5, "skill": "연전", "value": 45, "price": 2400, "location": "건업"},
+      {"id": "military_007", "name": "위료자", "nameKo": "尉繚子", "category": "militaryBook", "leadershipBonus": 5, "skill": "견수", "value": 40, "price": 2400, "location": "장안"},
+      {"id": "military_008", "name": "묵자", "nameKo": "墨子", "category": "militaryBook", "leadershipBonus": 4, "skill": "공성", "value": 30, "price": 1600, "location": "북해"},
+      {"id": "military_009", "name": "위공자병법", "nameKo": "魏公子兵法", "category": "militaryBook", "leadershipBonus": 3, "skill": "훈련", "value": 25, "price": 1600, "location": "업"},
+      {"id": "military_010", "name": "맹덕신서", "nameKo": "孟德新書", "category": "militaryBook", "leadershipBonus": 2, "skill": "연전", "value": 35, "price": 1600, "owner": "조조"},
+      {"id": "military_011", "name": "병법이십사편", "nameKo": "兵法二十四篇", "category": "militaryBook", "leadershipBonus": 2, "skill": "귀모", "value": 40, "price": 1600, "owner": "제갈량"}
+    ],
+    "politicalBooks": [
+      {"id": "political_001", "name": "한비자", "nameKo": "韓非子", "category": "politicalBook", "politicsBonus": 10, "skill": "순찰", "value": 50, "price": 4800, "location": "낙양"},
+      {"id": "political_002", "name": "관자", "nameKo": "管子", "category": "politicalBook", "politicsBonus": 8, "skill": "농업", "value": 45, "price": 4000, "location": "북해"},
+      {"id": "political_003", "name": "상군서", "nameKo": "商君書", "category": "politicalBook", "politicsBonus": 7, "skill": "상업", "value": 40, "price": 4000, "location": "장안"},
+      {"id": "political_004", "name": "안자춘추", "nameKo": "晏子春秋", "category": "politicalBook", "politicsBonus": 2, "skill": "인덕", "value": 40, "price": 2400, "location": "북해"},
+      {"id": "political_005", "name": "주서음부", "nameKo": "周書陰符", "category": "politicalBook", "politicsBonus": 2, "skill": "순찰", "value": 35, "price": 2400, "location": "낙양"},
+      {"id": "political_006", "name": "사민월령", "nameKo": "四民月令", "category": "politicalBook", "politicsBonus": 2, "skill": "농업", "value": 20, "price": 1600, "location": "장안"},
+      {"id": "political_007", "name": "염철론", "nameKo": "鹽鐵論", "category": "politicalBook", "politicsBonus": 1, "skill": "상업", "value": 15, "price": 800, "location": "낙양"}
+    ],
+    "historyBooks": [
+      {"id": "history_001", "name": "춘추좌씨전", "nameKo": "春秋左氏傳", "category": "historyBook", "politicsBonus": 5, "skill": "교섭", "value": 35, "price": 3200, "location": "북해"},
+      {"id": "history_002", "name": "사기", "nameKo": "史記", "category": "historyBook", "politicsBonus": 5, "skill": null, "value": 20, "price": 3200, "location": "소패"},
+      {"id": "history_003", "name": "한서", "nameKo": "漢書", "category": "historyBook", "politicsBonus": 3, "skill": null, "value": 15, "price": 2400, "location": "장안"},
+      {"id": "history_004", "name": "전국책", "nameKo": "戰國策", "category": "historyBook", "politicsBonus": 3, "skill": "견수", "value": 35, "price": 1600, "location": "낙양"},
+      {"id": "history_005", "name": "여씨춘추", "nameKo": "呂氏春秋", "category": "historyBook", "politicsBonus": 2, "skill": null, "value": 10, "price": 1600, "location": "복양"},
+      {"id": "history_006", "name": "오월춘추", "nameKo": "吳越春秋", "category": "historyBook", "politicsBonus": 2, "skill": "수영", "value": 25, "price": 800, "location": "오"},
+      {"id": "history_007", "name": "열녀전", "nameKo": "列女傳", "category": "historyBook", "politicsBonus": 1, "skill": null, "value": 5, "price": 800, "location": "한중"},
+      {"id": "history_008", "name": "회남자", "nameKo": "淮南子", "category": "historyBook", "politicsBonus": 1, "skill": "문화", "value": 15, "price": 800, "location": "수춘"}
+    ],
+    "classicBooks": [
+      {"id": "classic_001", "name": "노자", "nameKo": "老子", "category": "classicBook", "intelBonus": 10, "skill": "언변", "value": 55, "price": 4800, "location": "장안"},
+      {"id": "classic_002", "name": "장자", "nameKo": "莊子", "category": "classicBook", "intelBonus": 8, "skill": "문화", "value": 50, "price": 3200, "location": "여남"},
+      {"id": "classic_003", "name": "논어", "nameKo": "論語", "category": "classicBook", "intelBonus": 7, "skill": "인덕", "value": 50, "price": 3200, "location": "진류"},
+      {"id": "classic_004", "name": "시경", "nameKo": "詩經", "category": "classicBook", "intelBonus": 7, "skill": "문화", "value": 50, "price": 3200, "location": "평원"},
+      {"id": "classic_005", "name": "서경", "nameKo": "書經", "category": "classicBook", "intelBonus": 6, "skill": "교섭", "value": 35, "price": 1600, "location": "하비"},
+      {"id": "classic_006", "name": "역경", "nameKo": "易經", "category": "classicBook", "intelBonus": 6, "skill": "설파", "value": 55, "price": 1600, "location": "낙양"},
+      {"id": "classic_007", "name": "예기", "nameKo": "禮記", "category": "classicBook", "intelBonus": 5, "skill": "교섭", "value": 35, "price": 1600, "location": "금성"}
+    ],
+    "essays": [
+      {"id": "essay_001", "name": "논어집해", "nameKo": "論語集解", "category": "essay", "intelBonus": 4, "skill": "문화", "value": 35, "price": 2400, "owner": "하안"},
+      {"id": "essay_002", "name": "전론", "nameKo": "典論", "category": "essay", "intelBonus": 4, "skill": null, "value": 15, "price": 2400, "owner": "조비"},
+      {"id": "essay_003", "name": "박혁론", "nameKo": "博弈論", "category": "essay", "intelBonus": 3, "skill": null, "value": 10, "price": 1600, "owner": "위소"},
+      {"id": "essay_004", "name": "시요론", "nameKo": "時要論", "category": "essay", "intelBonus": 3, "skill": null, "value": 10, "price": 1600, "owner": "왕기"},
+      {"id": "essay_005", "name": "치론", "nameKo": "治論", "category": "essay", "intelBonus": 2, "skill": null, "value": 10, "price": 1600, "owner": "왕창"},
+      {"id": "essay_006", "name": "변도론", "nameKo": "辨道論", "category": "essay", "intelBonus": 2, "skill": "언변", "value": 20, "price": 800, "owner": "조식"},
+      {"id": "essay_007", "name": "건상역주", "nameKo": "乾象曆注", "category": "essay", "intelBonus": 1, "skill": null, "value": 5, "price": 800, "owner": "감택"},
+      {"id": "essay_008", "name": "효경전", "nameKo": "孝經傳", "category": "essay", "intelBonus": 1, "skill": null, "value": 5, "price": 800, "owner": "엄준"},
+      {"id": "essay_009", "name": "구국론", "nameKo": "救國論", "category": "essay", "intelBonus": 1, "skill": null, "value": 5, "price": 800, "owner": "초주"}
+    ],
+    "mysteryBooks": [
+      {"id": "mystery_001", "name": "둔갑천서", "nameKo": "遁甲天書", "category": "mysteryBook", "intelBonus": 3, "skill": "귀모", "value": 45, "price": 6000, "location": "안정"},
+      {"id": "mystery_002", "name": "태평요술서", "nameKo": "太平要術書", "category": "mysteryBook", "intelBonus": 2, "skill": "귀모", "value": 40, "price": 6000, "owner": "장각"},
+      {"id": "mystery_003", "name": "산해경", "nameKo": "山海經", "category": "mysteryBook", "intelBonus": 1, "skill": "문화", "value": 30, "price": 5000, "location": "안정"}
+    ],
+    "maps": [
+      {"id": "map_001", "name": "서촉지형도", "nameKo": "西蜀地形圖", "category": "map", "leadershipBonus": 1, "skill": "공성", "value": 20, "price": 4000, "owner": "장송"},
+      {"id": "map_002", "name": "평만지장도", "nameKo": "平蠻指掌圖", "category": "map", "leadershipBonus": 1, "skill": "공성", "value": 20, "price": 4000, "owner": "여개"}
+    ],
+    "medicalBooks": [
+      {"id": "medical_001", "name": "청낭서", "nameKo": "靑囊書", "category": "medicalBook", "lifespanBonus": 10, "skill": null, "value": 45, "price": 6000, "location": "소패"},
+      {"id": "medical_002", "name": "태평청령도", "nameKo": "太平清領道", "category": "medicalBook", "lifespanBonus": 8, "skill": null, "value": 40, "price": 6000, "location": "업"},
+      {"id": "medical_003", "name": "상한잡병론", "nameKo": "傷寒雜病論", "category": "medicalBook", "lifespanBonus": 7, "skill": null, "value": 35, "price": 7500, "location": "완"}
+    ],
+    "accessories": [
+      {"id": "accessory_001", "name": "황옥", "nameKo": "黃玉", "category": "accessory", "skill": "견수", "value": 30, "price": 3000, "location": "계"},
+      {"id": "accessory_002", "name": "벽옥", "nameKo": "碧玉", "category": "accessory", "skill": "병기", "value": 30, "price": 3000, "location": "수춘"},
+      {"id": "accessory_003", "name": "청옥", "nameKo": "靑玉", "category": "accessory", "skill": "수영", "value": 30, "price": 3000, "location": "강릉"},
+      {"id": "accessory_004", "name": "홍옥", "nameKo": "紅玉", "category": "accessory", "skill": "공성", "value": 30, "price": 3000, "location": "한중"}
+    ],
+    "treasures": [
+      {"id": "treasure_001", "name": "부도경", "nameKo": "浮屠經", "category": "treasure", "intelBonus": 4, "skill": null, "value": 25, "price": 3750, "location": "계양"},
+      {"id": "treasure_002", "name": "영보경", "nameKo": "靈寶經", "category": "treasure", "intelBonus": 3, "skill": null, "value": 20, "price": 2400, "location": "장안"},
+      {"id": "treasure_003", "name": "구정신단경", "nameKo": "九鼎神丹經", "category": "treasure", "intelBonus": 2, "skill": null, "value": 15, "price": 2400, "location": "허창"},
+      {"id": "treasure_004", "name": "황제사경", "nameKo": "黃帝四經", "category": "treasure", "intelBonus": 1, "skill": null, "value": 10, "price": 2400, "location": "성도"},
+      {"id": "treasure_005", "name": "응정김관", "nameKo": "鷹挺金冠", "category": "treasure", "skill": "위풍", "value": 50, "price": 4000, "owner": "유표"},
+      {"id": "treasure_006", "name": "금", "nameKo": "琴", "category": "treasure", "skill": "문화", "value": 20, "price": 1200, "owner": "채염"},
+      {"id": "treasure_007", "name": "백우선", "nameKo": "白羽扇", "category": "treasure", "skill": "훈련", "value": 20, "price": 2400, "owner": "제갈량"},
+      {"id": "treasure_008", "name": "태현생부", "nameKo": "太玄生符", "category": "treasure", "lifespanBonus": 5, "skill": null, "value": 30, "price": 3000, "location": "성도"},
+      {"id": "treasure_009", "name": "노군입산부", "nameKo": "老君入山符", "category": "treasure", "lifespanBonus": 5, "skill": null, "value": 25, "price": 1800, "location": "장사"},
+      {"id": "treasure_010", "name": "오악진형도", "nameKo": "五嶽眞形圖", "category": "treasure", "lifespanBonus": 5, "skill": null, "value": 25, "price": 1800, "location": "하비"},
+      {"id": "treasure_011", "name": "삼황내문", "nameKo": "三皇內文", "category": "treasure", "lifespanBonus": 5, "skill": null, "value": 25, "price": 1800, "location": "양양"},
+      {"id": "treasure_012", "name": "귀대부", "nameKo": "鬼臺符", "category": "treasure", "lifespanBonus": 5, "skill": null, "value": 30, "price": 2400, "location": "복양"}
+    ],
+    "medicines": [
+      {"id": "medicine_001", "name": "마비산", "nameKo": "麻沸散", "category": "medicine", "lifespanBonus": 10, "skill": null, "value": 50, "price": 6000, "location": "장사"},
+      {"id": "medicine_002", "name": "정력견혈산", "nameKo": "定力堅血散", "category": "medicine", "lifespanBonus": 8, "skill": null, "value": 45, "price": 4500, "location": "장안"},
+      {"id": "medicine_003", "name": "칠엽청점산", "nameKo": "七葉靑黏散", "category": "medicine", "lifespanBonus": 8, "skill": null, "value": 45, "price": 4000, "location": "복양"},
+      {"id": "medicine_004", "name": "오석산", "nameKo": "五石散", "category": "medicine", "lifespanBonus": 7, "skill": null, "value": 40, "price": 3000, "location": "계"},
+      {"id": "medicine_005", "name": "무후행군산", "nameKo": "武侯行軍散", "category": "medicine", "lifespanBonus": 7, "skill": null, "value": 40, "price": 3000, "location": "성도"},
+      {"id": "medicine_006", "name": "도소연명산", "nameKo": "屠蘇延命散", "category": "medicine", "lifespanBonus": 6, "skill": null, "value": 35, "price": 3000, "location": "계양"}
+    ],
+    "special": [
+      {"id": "special_001", "name": "옥새", "nameKo": "玉璽", "category": "special", "effect": "존재감+1000", "skill": null, "value": 100, "price": 0, "owner": "하진/손견/원술/조조"}
+    ]
+  }
+}
+
+
+
+

@@ -23,6 +23,14 @@ export class SeedRandom {
     return min + (max - min) * this.next();
   }
 
+  /**
+   * PHP RandUtil::nextRangeInt 포팅
+   * min ~ max 범위의 정수 반환 (양 끝 포함)
+   */
+  nextRangeInt(min: number, max: number): number {
+    return Math.floor(min + (max - min + 1) * this.next());
+  }
+
   pick<T>(list: T[]): T {
     return list[Math.floor(this.next() * list.length)];
   }

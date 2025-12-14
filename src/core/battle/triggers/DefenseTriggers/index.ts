@@ -28,5 +28,3 @@ export const allDefenseTriggers: ITrigger[] = [
   ...injuryImmuneTriggers,
   ...defenseBoostTriggers,
 ];
-
-

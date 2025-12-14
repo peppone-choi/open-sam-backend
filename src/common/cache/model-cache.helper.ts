@@ -235,6 +235,9 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   if (typeof data.rice === 'number') immediateUpdate.rice = data.rice;
   // 소속 국가 (점령 시)
   if (typeof data.nation === 'number') immediateUpdate.nation = data.nation;
+  // 이벤트 상태 (재해, 풍년 등 맵 아이콘 표시용)
+  if (typeof data.state === 'number') immediateUpdate.state = data.state;
+  if (typeof data.term === 'number') immediateUpdate.term = data.term;
   
   if (Object.keys(immediateUpdate).length > 0) {
     // nation 변경(점령)은 동기적으로 처리 - 캐시 미스 시 DB에서 옛날 값 읽는 것 방지

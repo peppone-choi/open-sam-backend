@@ -1594,7 +1594,7 @@ router.post('/simulate', async (req, res) => {
     }
 
     // BattleCalculator 사용
-    const { simulateBattle, UnitType, TerrainType } = await import('../core/battle-calculator');
+    const { BattleCalculator, SeededRandom, UnitType, TerrainType } = await import('../core/battle-calculator');
     
     // TerrainType 변환
     let terrainType = TerrainType.PLAINS;
@@ -1603,26 +1603,65 @@ router.post('/simulate', async (req, res) => {
     else if (terrain === 'water') terrainType = TerrainType.WATER;
     else if (terrain === 'fortress') terrainType = TerrainType.FORTRESS;
 
-    // 첫 번째 공격자와 방어자로 시뮬레이션 (간단 버전)
+    // 첫 번째 공격자와 방어자로 시뮬레이션
     const attacker = attackers[0];
     const defender = defenders[0];
 
-    // UnitType 변환
-    const attackerUnitType = mapUnitType(attacker.crewType || 'FOOTMAN');
-    const defenderUnitType = mapUnitType(defender.crewType || 'FOOTMAN');
+    // UnitType 변환 (병종 ID 지원)
+    const attackerUnitType = mapUnitType(attacker.crewType || 1100);
+    const defenderUnitType = mapUnitType(defender.crewType || 1100);
 
-    const result = simulateBattle(
-      attacker.name || '공격자',
-      attacker.crew || 1000,
-      [attacker.leadership || 50, attacker.strength || 50, attacker.intel || 50],
-      attackerUnitType,
-      defender.name || '방어자',
-      defender.crew || 1000,
-      [defender.leadership || 50, defender.strength || 50, defender.intel || 50],
-      defenderUnitType,
-      terrainType,
-      isDefenderCity
-    );
+    // 공격자 BattleUnit 생성
+    const attackerUnit = {
+      name: attacker.name || '공격자',
+      troops: attacker.crew || 1000,
+      leadership: attacker.leadership || 50,
+      strength: attacker.strength || 50,
+      intelligence: attacker.intel || 50,
+      unitType: attackerUnitType,
+      morale: attacker.atmos || 100,            // 사기
+      training: attacker.train || 100,          // 훈련도
+      techLevel: attacker.nationTech || 1,      // 기술력
+      specialSkills: attacker.specialWar && attacker.specialWar !== 'None' 
+        ? [attacker.specialWar] 
+        : [],
+    };
+
+    // 수비자 BattleUnit 생성
+    const defenderUnit = {
+      name: defender.name || '수비자',
+      troops: defender.crew || 1000,
+      leadership: defender.leadership || 50,
+      strength: defender.strength || 50,
+      intelligence: defender.intel || 50,
+      unitType: defenderUnitType,
+      morale: defender.atmos || 100,
+      training: defender.train || 100,
+      techLevel: defender.nationTech || 1,
+      specialSkills: defender.specialWar && defender.specialWar !== 'None' 
+        ? [defender.specialWar] 
+        : [],
+    };
+
+    // 전투 컨텍스트 생성
+    const battleContext = {
+      attacker: attackerUnit,
+      defender: defenderUnit,
+      terrain: terrainType,
+      isDefenderCity: isDefenderCity || defender.defenceTrain !== 999,
+      cityWall: defender.cityWall || 0,
+    };
+
+    // RNG 설정 (시드 지원)
+    const rng = seed 
+      ? new SeededRandom(typeof seed === 'string' ? parseInt(seed, 10) || Date.now() : seed)
+      : null;
+    
+    // BattleCalculator 인스턴스 생성
+    const calculator = new BattleCalculator(rng ? () => rng.next() : undefined);
+    
+    // 전투 실행
+    const result = calculator.calculateBattle(battleContext);
 
     // 반복 시뮬레이션 (repeatCount > 1인 경우)
     let aggregatedResults = null;
@@ -1631,25 +1670,34 @@ router.post('/simulate', async (req, res) => {
       let defenderWins = 0;
       let totalAttackerLoss = 0;
       let totalDefenderLoss = 0;
+      let minAttackerLoss = Infinity;
+      let maxAttackerLoss = 0;
+      let minDefenderLoss = Infinity;
+      let maxDefenderLoss = 0;
 
       for (let i = 0; i < repeatCount; i++) {
-        const simResult = simulateBattle(
-          attacker.name || '공격자',
-          attacker.crew || 1000,
-          [attacker.leadership || 50, attacker.strength || 50, attacker.intel || 50],
-          attackerUnitType,
-          defender.name || '방어자',
-          defender.crew || 1000,
-          [defender.leadership || 50, defender.strength || 50, defender.intel || 50],
-          defenderUnitType,
-          terrainType,
-          isDefenderCity
-        );
+        // 각 시뮬레이션마다 새로운 컨텍스트 (병력 초기화)
+        const simContext = {
+          attacker: { ...attackerUnit, troops: attacker.crew || 1000 },
+          defender: { ...defenderUnit, troops: defender.crew || 1000 },
+          terrain: terrainType,
+          isDefenderCity: battleContext.isDefenderCity,
+          cityWall: battleContext.cityWall,
+        };
+        
+        const simCalculator = new BattleCalculator();
+        const simResult = simCalculator.calculateBattle(simContext);
 
         if (simResult.winner === 'attacker') attackerWins++;
         else if (simResult.winner === 'defender') defenderWins++;
+        
         totalAttackerLoss += simResult.attackerCasualties;
         totalDefenderLoss += simResult.defenderCasualties;
+        
+        minAttackerLoss = Math.min(minAttackerLoss, simResult.attackerCasualties);
+        maxAttackerLoss = Math.max(maxAttackerLoss, simResult.attackerCasualties);
+        minDefenderLoss = Math.min(minDefenderLoss, simResult.defenderCasualties);
+        maxDefenderLoss = Math.max(maxDefenderLoss, simResult.defenderCasualties);
       }
 
       aggregatedResults = {
@@ -1658,6 +1706,10 @@ router.post('/simulate', async (req, res) => {
         defenderWinRate: (defenderWins / repeatCount) * 100,
         avgAttackerLoss: Math.floor(totalAttackerLoss / repeatCount),
         avgDefenderLoss: Math.floor(totalDefenderLoss / repeatCount),
+        minAttackerLoss,
+        maxAttackerLoss,
+        minDefenderLoss,
+        maxDefenderLoss,
       };
     }
 
@@ -1665,14 +1717,27 @@ router.post('/simulate', async (req, res) => {
       result: true,
       simulation: {
         winner: result.winner,
+        warcnt: 1,
+        phase: result.duration,
+        killed: result.defenderCasualties,  // 준 피해 (적 손실)
+        dead: result.attackerCasualties,    // 받은 피해 (아군 손실)
         attackerSurvivors: result.attackerSurvivors,
         defenderSurvivors: result.defenderSurvivors,
         attackerCasualties: result.attackerCasualties,
         defenderCasualties: result.defenderCasualties,
         phases: result.phases,
-        battleLog: result.battleLog,
+        battleLog: result.battleLog.join('\n'),
+        detailLog: result.battleLog.join('\n'),
         duration: result.duration,
-        aggregated: aggregatedResults
+        // 반복 시뮬레이션 결과
+        minKilled: aggregatedResults?.minDefenderLoss,
+        maxKilled: aggregatedResults?.maxDefenderLoss,
+        minDead: aggregatedResults?.minAttackerLoss,
+        maxDead: aggregatedResults?.maxAttackerLoss,
+        aggregated: aggregatedResults,
+        // 사용된 병종 정보
+        attackerUnitType: attackerUnitType,
+        defenderUnitType: defenderUnitType,
       },
     });
   } catch (error: any) {
@@ -1681,22 +1746,52 @@ router.post('/simulate', async (req, res) => {
   }
 });
 
-// UnitType 매핑 헬퍼
-function mapUnitType(crewType: string): any {
+// UnitType 매핑 헬퍼 - 병종 ID (1100, 1200, etc.)를 UnitType으로 변환
+function mapUnitType(crewType: string | number): any {
   const { UnitType } = require('../core/battle-calculator');
-  const typeMap: Record<string, any> = {
-    'FOOTMAN': UnitType.FOOTMAN,
-    'CAVALRY': UnitType.CAVALRY,
-    'ARCHER': UnitType.ARCHER,
-    'WIZARD': UnitType.WIZARD,
-    'SIEGE': UnitType.SIEGE,
-    '보병': UnitType.FOOTMAN,
-    '기병': UnitType.CAVALRY,
-    '궁병': UnitType.ARCHER,
-    '귀병': UnitType.WIZARD,
-    '차병': UnitType.SIEGE,
-  };
-  return typeMap[crewType] || UnitType.FOOTMAN;
+  
+  // 문자열 타입인 경우
+  if (typeof crewType === 'string') {
+    const typeMap: Record<string, any> = {
+      'FOOTMAN': UnitType.FOOTMAN,
+      'SPEARMAN': UnitType.SPEARMAN,
+      'HALBERD': UnitType.HALBERD,
+      'CAVALRY': UnitType.CAVALRY,
+      'ARCHER': UnitType.ARCHER,
+      'WIZARD': UnitType.WIZARD,
+      'SIEGE': UnitType.SIEGE,
+      '보병': UnitType.FOOTMAN,
+      '기병': UnitType.CAVALRY,
+      '궁병': UnitType.ARCHER,
+      '귀병': UnitType.WIZARD,
+      '차병': UnitType.SIEGE,
+    };
+    return typeMap[crewType] || UnitType.FOOTMAN;
+  }
+  
+  // 숫자 타입인 경우 - 병종 ID 범위로 판별
+  const crewId = Number(crewType);
+  if (!Number.isFinite(crewId)) return UnitType.FOOTMAN;
+  
+  // 특수 병종 처리 (창병, 극병 등)
+  // 1101: 창민병, 1103: 정규창병, 1108: 장창병 → SPEARMAN
+  const spearmanIds = [1101, 1103, 1108, 1457];
+  if (spearmanIds.includes(crewId)) return UnitType.SPEARMAN;
+  
+  // 1104: 정규극병 → HALBERD
+  const halberdIds = [1104];
+  if (halberdIds.includes(crewId)) return UnitType.HALBERD;
+  
+  // 병종 범위별 분류
+  if (crewId >= 1000 && crewId < 1100) return UnitType.FOOTMAN; // 성벽 등 특수
+  if (crewId >= 1100 && crewId < 1200) return UnitType.FOOTMAN; // 보병계
+  if (crewId >= 1200 && crewId < 1300) return UnitType.ARCHER;  // 궁병계
+  if (crewId >= 1300 && crewId < 1400) return UnitType.CAVALRY; // 기병계
+  if (crewId >= 1400 && crewId < 1500) return UnitType.WIZARD;  // 귀병계
+  if (crewId >= 1450 && crewId < 1500) return UnitType.FOOTMAN; // 남만/특수 보병
+  if (crewId >= 1500) return UnitType.SIEGE;                    // 차병계
+  
+  return UnitType.FOOTMAN;
 }
 
 /**
