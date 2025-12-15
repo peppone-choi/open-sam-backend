@@ -11,6 +11,7 @@ import { EventHandler, EventContext } from '../StaticEventHandler';
 import { generalRepository } from '../../repositories/general.repository';
 import { troopRepository } from '../../repositories/troop.repository';
 import { logger } from '../../common/logger';
+import { LogFormatType } from '../../types/log.types';
 
 export class TroopOrderImmediateGatherHandler implements EventHandler {
   async execute(context: EventContext): Promise<void> {
@@ -57,7 +58,10 @@ export class TroopOrderImmediateGatherHandler implements EventHandler {
     }
 
     // 부대 이름 조회
-    const troop = await troopRepository.findByLeader(sessionId, destGeneralNo);
+    const troop = await troopRepository.findOneByFilter({ 
+      session_id: sessionId, 
+      'data.troop_leader': destGeneralNo 
+    });
     const troopName = troop?.data?.name || troop?.name || '부대';
 
     // 도시 이름 가져오기
@@ -66,7 +70,7 @@ export class TroopOrderImmediateGatherHandler implements EventHandler {
     const cityName = cityInfo?.name || `도시 ${destCityID}`;
 
     // 부대원 목록 조회 (부대장 제외, 다른 도시에 있는 장수들)
-    const troopMembers = await generalRepository.findAll({
+    const troopMembers = await generalRepository.findByFilter({
       session_id: sessionId,
       'data.nation': destNationId,
       'data.troop': destGeneralNo,
@@ -83,14 +87,14 @@ export class TroopOrderImmediateGatherHandler implements EventHandler {
     }
 
     // 부대원 도시 일괄 변경
-    const memberIds = troopMembers.map(m => m.data?.no || m.no);
+    const memberIds = troopMembers.map((m: any) => m.data?.no || m.no);
     
-    await generalRepository.updateMany(
+    await generalRepository.updateManyByFilter(
       { 
         session_id: sessionId, 
         'data.no': { $in: memberIds } 
       },
-      { $set: { 'data.city': destCityID } }
+      { 'data.city': destCityID }
     );
 
     // 현재 장수도 같은 부대원이면 이동
@@ -123,7 +127,7 @@ export class TroopOrderImmediateGatherHandler implements EventHandler {
           sessionId,
           true // silent mode
         );
-        memberLogger.pushGeneralActionLog(logMessage, 'PLAIN');
+        memberLogger.pushGeneralActionLog(logMessage, LogFormatType.PLAIN);
         await memberLogger.flush();
       }
     } catch (error) {
@@ -142,6 +146,8 @@ export class TroopOrderImmediateGatherHandler implements EventHandler {
 
 // 싱글톤 인스턴스
 export const troopOrderImmediateGatherHandler = new TroopOrderImmediateGatherHandler();
+
+
 
 
 

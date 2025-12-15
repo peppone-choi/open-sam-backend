@@ -54,7 +54,13 @@ export class DisinformationCommand extends NationCommand {
     this.fullConditionConstraints = [
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
+      ConstraintHelper.NotNeutralDestCity(),
       ConstraintHelper.NotOccupiedDestCity(),
+      ConstraintHelper.DisallowDiplomacyBetweenStatus({
+        2: '선포, 전쟁중인 상대국에게만 가능합니다.',
+        3: '선포, 전쟁중인 상대국에게만 가능합니다.',
+        7: '선포, 전쟁중인 상대국에게만 가능합니다.'
+      }),
       ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
@@ -228,4 +234,4 @@ export class DisinformationCommand extends NationCommand {
   }
 }
 
-export const che_허보 = DisinformationCommand;
+export const che_허보 = DisinformationCommand;

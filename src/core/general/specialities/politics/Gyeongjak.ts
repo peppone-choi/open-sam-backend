@@ -47,3 +47,5 @@ export class Gyeongjak extends PoliticsSpecialityBase {
 
 
 
+
+

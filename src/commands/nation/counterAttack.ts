@@ -82,6 +82,11 @@ export class CounterAttackCommand extends NationCommand {
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.BeChief(),
       ConstraintHelper.ExistsDestNation(),
+      ConstraintHelper.DisallowDiplomacyBetweenStatus({
+        2: '선포, 전쟁중인 상대국에게만 가능합니다.',
+        3: '선포, 전쟁중인 상대국에게만 가능합니다.',
+        7: '선포, 전쟁중인 상대국에게만 가능합니다.'
+      }),
       ConstraintHelper.AvailableStrategicCommand('strategic')
     ];
   }
