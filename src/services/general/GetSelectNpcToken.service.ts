@@ -321,6 +321,8 @@ export class GetSelectNpcTokenService {
         leadership: npcData.leadership || 50,
         strength: npcData.strength || 50,
         intel: npcData.intel || 50,
+        politics: npcData.politics || 50,
+        charm: npcData.charm || 50,
         nation: npcData.nation || 0,
         imgsvr: npcData.imgsvr || 0,
         picture: npc.picture || npcData.picture || '',
