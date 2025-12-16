@@ -21,4 +21,4 @@ const DiplomacySchema: Schema = new Schema({
 
 DiplomacySchema.index({ session_id: 1, me: 1, you: 1 }, { unique: true });
 
-export const Diplomacy = mongoose.models.Diplomacy || mongoose.model<IDiplomacy>('Diplomacy', DiplomacySchema);
+export const Diplomacy: Model<any> = mongoose.models.Diplomacy || mongoose.model<IDiplomacy>('Diplomacy', DiplomacySchema);
