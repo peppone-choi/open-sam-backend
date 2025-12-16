@@ -1,7 +1,6 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -74,8 +73,6 @@ export class DesperateDefenseCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
-
     const general = this.generalObj;
     if (!general) {
       throw new Error('장수 정보가 없습니다');
@@ -144,12 +141,8 @@ export class DesperateDefenseCommand extends NationCommand {
     const globalDelay = this.generalObj?.onCalcStrategic ?
       this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9) : 9;
 
-    await db.update(
-      'nation',
-      { strategic_cmd_limit: globalDelay },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 전략 명령 제한 업데이트 (CQRS 패턴)
+    await this.updateNation(nationID, { strategic_cmd_limit: globalDelay });
 
     const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
@@ -157,7 +150,7 @@ export class DesperateDefenseCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

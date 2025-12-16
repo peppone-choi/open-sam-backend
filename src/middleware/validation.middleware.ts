@@ -253,16 +253,24 @@ export const commandPushSchema = yup.object({
 export const commandReserveSchema = yup.object({
   session_id: yup.string().default('sangokushi_default'),
   general_id: yup.number().integer().min(0).optional(),
+  // turn_idx (단일 턴) 또는 turnList (여러 턴) 지원 - 둘 중 하나는 필수
   turn_idx: yup.number()
     .integer('turn_idx must be an integer')
     .min(0, 'turn_idx must be >= 0')
     .max(29, 'turn_idx must be <= 29')
-    .required('turn_idx is required'),
+    .optional(),
+  turnList: yup.array()
+    .of(yup.number().integer().min(0).max(29))
+    .optional(),
   action: yup.string().required('action is required'),
   // arg는 명령마다 구조가 다르므로 mixed로 선언하여 stripUnknown에서 제외
   arg: yup.mixed().optional(),
   brief: yup.string().max(500, 'brief must be <= 500 characters').optional(),
-});
+}).test(
+  'turn-required',
+  'turn_idx 또는 turnList 중 하나는 필수입니다',
+  (value) => value.turn_idx !== undefined || (value.turnList && value.turnList.length > 0)
+);
 
 export const commandDeleteSchema = yup.object({
   session_id: yup.string().default('sangokushi_default'),
@@ -656,7 +664,11 @@ export const getMessageListSchema = yup.object({
 
 export const getMessagesSchema = yup.object({
   session_id: yup.string().default('sangokushi_default'),
-  type: yup.string().oneOf(['received', 'sent', 'system', 'nation', 'personal', 'diplomacy', 'all']).optional(),
+  // 프론트엔드 타입: public, national, private / 백엔드 타입: all, nation, personal
+  type: yup.string().oneOf([
+    'received', 'sent', 'system', 'nation', 'personal', 'diplomacy', 'all',
+    'public', 'national', 'private'  // 프론트엔드 호환
+  ]).optional(),
   limit: yup.number().integer().min(1).max(100).optional(),
   offset: yup.number().integer().min(0).optional(),
   general_id: yup.number().integer().min(0).optional(),

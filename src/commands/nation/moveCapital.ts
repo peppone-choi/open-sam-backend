@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -125,10 +125,11 @@ export class che_천도 extends NationCommand {
     const general = this.getGeneral();
     const nationID = general!.getNationID();
 
+    // TODO: KVStorage는 Redis 기반으로 마이그레이션 필요
     const KVStorage = global.KVStorage;
-    const nationStor = KVStorage.getStorage(DB.db(), nationID, 'nation_env');
+    const nationStor = KVStorage?.getStorage?.(null, nationID, 'nation_env');
 
-    nationStor.last천도Trial = [general.data.officer_level, general!.getTurnTime()];
+    if (nationStor) nationStor.last천도Trial = [general.data.officer_level, general!.getTurnTime()];
 
     if (lastTurn.getCommand() !== commandName || lastTurn.getArg() !== this.arg) {
       this.setResultTurn(new LastTurn(commandName, this.arg, 1, this.nation['capset']));
@@ -162,7 +163,6 @@ export class che_천도 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -191,15 +191,9 @@ export class che_천도 extends NationCommand {
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
 
-    await db.update(
-      'nation',
-      {
-        capital: destCityID,
-        capset: db.sqleval('capset + 1')
-      },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 수도 이전 (CQRS 패턴)
+    await this.updateNation(nationID, { capital: destCityID });
+    await this.incrementNation(nationID, { capset: 1 });
 
     const refreshNationStaticInfo = global.refreshNationStaticInfo;
     await refreshNationStaticInfo();
@@ -226,7 +220,7 @@ export class che_천도 extends NationCommand {
     );
 
     this.setResultTurn(new LastTurn(che_천도.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     // StaticEventHandler
     try {

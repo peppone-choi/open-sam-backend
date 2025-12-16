@@ -1,5 +1,5 @@
 import { FireAttackCommand } from './fireAttack';
-import { DB } from '../../config/db';
+
 
 /**
  * 매복 커맨드
@@ -69,10 +69,8 @@ export class AmbushCommand extends FireAttackCommand {
       );
     }
 
-    // 도시 상태 변경
-    await DB.db().update('city', {
-      state: 33, // 매복 상태
-    }, 'city=?', [destCityID]);
+    // 도시 상태 변경 (CQRS 패턴)
+    await this.updateCity(destCityID, { state: 33 });
 
     const crewLossText = totalCrewLoss.toLocaleString();
     const atmosLossText = Math.floor(totalAtmosLoss / Math.max(1, affectedCount)).toLocaleString();

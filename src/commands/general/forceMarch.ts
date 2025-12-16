@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { generalRepository } from '../../repositories/general.repository';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { ActionLogger } from '../../utils/ActionLogger';
@@ -107,7 +107,6 @@ export class ForceMarchCommand extends GeneralCommand {
       await this.setDestNation(this.destCity.nation);
     }
 
-    const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
     const date = general.getTurnTime('HM');

@@ -26,7 +26,7 @@ class GeneralRecordRepository {
     return GeneralRecord.find({ 
       session_id: sessionId, 
       ...filter 
-    }).sort({ 'data.id': -1 }).limit(30).lean();
+    }).sort({ _id: -1 }).limit(30).lean();
   }
 
   /**
@@ -38,7 +38,7 @@ class GeneralRecordRepository {
   async findByGeneral(sessionId: string, generalId: number) {
     return GeneralRecord.find({
       session_id: sessionId,
-      'data.general_id': generalId
+      general_id: generalId
     });
   }
 
@@ -98,7 +98,7 @@ class GeneralRecordRepository {
   async deleteByGeneral(sessionId: string, generalId: number): Promise<DeleteResult> {
     return GeneralRecord.deleteMany({
       session_id: sessionId,
-      'data.general_id': generalId
+      general_id: generalId
     });
   }
 

@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -113,7 +113,6 @@ export class che_물자원조 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -149,10 +148,10 @@ export class che_물자원조 extends NationCommand {
 
     const broadcastMessage = `<D><b>${destNationName}</b></>${josaRo} 금<C>${goldAmountText}</> 쌀<C>${riceAmountText}</>을 지원했습니다.`;
 
-    const chiefList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE officer_level >= 5 AND no != %i AND nation = %i',
-      [generalID, nationID]
-    );
+    // 군주급 장수 목록 조회 (MongoDB)
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const nationGenerals = await generalRepository.findByNation(sessionId, nationID);
+    const chiefList = nationGenerals.filter((g: any) => (g.officer_level ?? g.data?.officer_level ?? 0) >= 5 && (g.no ?? g.data?.no) !== generalID).map((g: any) => g.no ?? g.data?.no);
     for (const chiefID of chiefList) {
       const chiefLogger = new ActionLogger(chiefID as number, nationID, year, month);
       chiefLogger.pushGeneralActionLog(broadcastMessage, ActionLogger.PLAIN);
@@ -177,10 +176,9 @@ export class che_물자원조 extends NationCommand {
     );
 
     const destBroadcastMessage = `<D><b>${nationName}</b></>에서 금<C>${goldAmountText}</> 쌀<C>${riceAmountText}</>${josaUlRiceAmount} 원조했습니다.`;
-    const destChiefList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE officer_level >= 5 AND nation = %i',
-      [destNationID]
-    );
+    // 대상 국가 군주급 장수 목록 조회 (MongoDB)
+    const destNationGenerals = await generalRepository.findByNation(sessionId, destNationID);
+    const destChiefList = destNationGenerals.filter((g: any) => (g.officer_level ?? g.data?.officer_level ?? 0) >= 5).map((g: any) => g.no ?? g.data?.no);
     for (const destChiefID of destChiefList) {
       const destChiefLogger = new ActionLogger(destChiefID as number, nationID, year, month);
       destChiefLogger.pushGeneralActionLog(destBroadcastMessage, ActionLogger.PLAIN);
@@ -203,26 +201,18 @@ export class che_물자원조 extends NationCommand {
     ];
     destNationStor.setValue('recv_assist', destRecvAssist);
 
-    await db.update(
-      'nation',
-      {
-        gold: db.sqleval('gold - %i', [goldAmount]),
-        rice: db.sqleval('rice - %i', [riceAmount]),
-        surlimit: db.sqleval('surlimit + %i', [this.getPostReqTurn()])
-      },
-      'nation = %i',
-      [nationID]
-    );
+    // 보내는 국가 자원 감소 (CQRS 패턴)
+    await this.incrementNation(nationID, {
+      gold: -goldAmount,
+      rice: -riceAmount,
+      surlimit: this.getPostReqTurn()
+    });
 
-    await db.update(
-      'nation',
-      {
-        gold: db.sqleval('gold + %i', [goldAmount]),
-        rice: db.sqleval('rice + %i', [riceAmount])
-      },
-      'nation = %i',
-      [destNationID]
-    );
+    // 받는 국가 자원 증가 (CQRS 패턴)
+    await this.incrementNation(destNationID, {
+      gold: goldAmount,
+      rice: riceAmount
+    });
 
     general.addExperience(5);
     general.addDedication(5);
@@ -236,7 +226,7 @@ export class che_물자원조 extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(che_물자원조.getName(), this.arg));
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     return true;
   }

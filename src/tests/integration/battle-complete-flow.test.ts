@@ -10,7 +10,6 @@ import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { sessionRepository } from '../../repositories/session.repository';
-import { DB } from '../../config/db';
 
 const TEST_SESSION_ID = 'test_battle_flow_session';
 

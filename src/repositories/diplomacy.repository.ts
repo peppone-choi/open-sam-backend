@@ -67,6 +67,23 @@ class DiplomacyRepository {
   }
 
   /**
+   * 두 국가 간 외교 관계 조회 (양방향)
+   * @param sessionId - 세션 ID
+   * @param nationA - 국가 A ID
+   * @param nationB - 국가 B ID
+   * @returns 외교 관계 문서 또는 null
+   */
+  async findByNations(sessionId: string, nationA: number, nationB: number) {
+    return Diplomacy.findOne({
+      session_id: sessionId,
+      $or: [
+        { me: nationA, you: nationB },
+        { me: nationB, you: nationA }
+      ]
+    }).lean();
+  }
+
+  /**
    * 조건으로 외교 관계 한 개 조회
    * @param filter - 검색 조건
    * @returns 외교 관계 문서 또는 null

@@ -1,8 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { generalRepository } from '../../repositories/general.repository';
+import { troopRepository } from '../../repositories/troop.repository';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -111,7 +111,6 @@ export class che_발령 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -169,7 +168,7 @@ export class che_발령 extends NationCommand {
     logger.pushNationalHistoryLog(`<Y>${destGeneralName}</>${josaUl} <G><b>${destCityName}</b></>${josaRo} 발령`);
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general.applyDB(db);
+    await this.saveGeneral();
     await destGeneral!.applyDB(db);
 
     // StaticEventHandler
@@ -184,14 +183,22 @@ export class che_발령 extends NationCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
     const nationID = this.getNationID();
-    const troops = await db.query('SELECT * FROM troop WHERE nation=%i', [nationID]);
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    // MongoDB로 부대 조회
+    const troops = await troopRepository.findByNation(sessionId, nationID);
     const troopsDict = Util.convertArrayToDict(troops, 'troop_leader');
-    const destRawGenerals = await db.queryAllLists(
-      'SELECT no,name,officer_level,npc,gold,rice,leadership,strength,intel,city,crew,train,atmos,troop FROM general WHERE nation = %i ORDER BY npc,binary(name)',
-      [nationID]
-    );
+    
+    // MongoDB로 장수 조회
+    const generals = await generalRepository.findByNation(sessionId, nationID);
+    const destRawGenerals = generals.map((g: any) => [
+      g.no ?? g.data?.no, g.name ?? g.data?.name, g.officer_level ?? g.data?.officer_level ?? 0,
+      g.npc ?? g.data?.npc ?? 0, g.gold ?? g.data?.gold ?? 0, g.rice ?? g.data?.rice ?? 0,
+      g.leadership ?? g.data?.leadership ?? 0, g.strength ?? g.data?.strength ?? 0,
+      g.intel ?? g.data?.intel ?? 0, g.city ?? g.data?.city ?? 0, g.crew ?? g.data?.crew ?? 0,
+      g.train ?? g.data?.train ?? 0, g.atmos ?? g.data?.atmos ?? 0, g.troop ?? g.data?.troop ?? 0,
+    ]);
 
     return {
       procRes: {
@@ -221,4 +228,4 @@ export class che_발령 extends NationCommand {
       }
     };
   }
-}
+}

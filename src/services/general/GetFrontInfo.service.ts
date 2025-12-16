@@ -347,7 +347,7 @@ export class GetFrontInfoService {
     return undefined;
   }
 
-  static readonly ROW_LIMIT = 10;
+  static readonly ROW_LIMIT = 15; // PHP와 동일
 
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
@@ -1247,6 +1247,11 @@ export class GetFrontInfoService {
 
   /**
    * 최근 기록 생성
+   * 
+   * PHP 버전과의 매핑:
+   * - general (장수동향): general_record에서 general_id=0, log_type='history' (전역 장수동향)
+   * - history (개인기록): general_record에서 general_id=장수ID, log_type='action' (개인 행동 기록)
+   * - global (중원정세): world_history에서 nation_id=0 (전역 세계 역사)
    */
   private static async generateRecentRecord(
     sessionId: string,
@@ -1255,14 +1260,13 @@ export class GetFrontInfoService {
     lastPersonalHistoryID: number,
     lastGlobalHistoryID: number
   ) {
-    // 장수 동향 - general_id = 0인 history 타입 로그 (PHP: getGlobalRecord)
+    // 장수 동향 (general) - general_record에서 general_id=0, log_type='history' (PHP: getGlobalRecord)
     const generalFilter: any = {
       session_id: sessionId,
       general_id: 0,  // general_id = 0 (전역 장수동향)
       log_type: 'history'
     };
     if (lastGeneralRecordID > 0) {
-      // MongoDB ObjectId를 문자열로 비교
       generalFilter._id = { $gt: lastGeneralRecordID };
     }
     const generalRecord = await generalRecordRepository.findByFilter(generalFilter, {
@@ -1270,7 +1274,7 @@ export class GetFrontInfoService {
       limit: this.ROW_LIMIT + 1
     });
 
-    // 개인 기록 - 내 장수의 action 타입 로그 (PHP: getGeneralRecord)
+    // 개인 기록 (history) - general_record에서 general_id=장수ID, log_type='action' (PHP: getGeneralRecord)
     const personalHistoryFilter: any = {
       session_id: sessionId,
       general_id: generalId,
@@ -1284,14 +1288,23 @@ export class GetFrontInfoService {
       limit: this.ROW_LIMIT + 1
     });
 
-    // 중원정세 - world_history 테이블에서 nation_id = 0 (PHP: getHistory)
-    // 임시: 장수동향과 동일하게 처리 (나중에 world_history 구현 필요)
-    const globalRecord = generalRecord;
+    // 중원정세 (global) - world_history에서 nation_id=0 (PHP: getHistory)
+    const globalFilter: any = {
+      session_id: sessionId,
+      nation_id: 0  // nation_id = 0 (전역 세계 역사)
+    };
+    if (lastGlobalHistoryID > 0) {
+      globalFilter._id = { $gt: lastGlobalHistoryID };
+    }
+    const globalRecord = await worldHistoryRepository.findByFilter(globalFilter)
+      .sort({ _id: -1 })
+      .limit(this.ROW_LIMIT + 1)
+      .lean();
 
     return {
       general: generalRecord.map(g => [g._id?.toString() || g.id, g.text]), // 장수동향
       history: personalHistoryRecord.map(h => [h._id?.toString() || h.id, h.text]), // 개인기록
-      global: globalRecord.map(g => [g._id?.toString() || g.id, g.text]), // 중원정세
+      global: globalRecord.map((g: any) => [g._id?.toString(), g.text]), // 중원정세
       flushGeneral: generalRecord.length > this.ROW_LIMIT ? 1 : 0,
       flushHistory: personalHistoryRecord.length > this.ROW_LIMIT ? 1 : 0,
       flushGlobal: globalRecord.length > this.ROW_LIMIT ? 1 : 0

@@ -5,7 +5,6 @@
  */
 
 import { BaseCommand, LastTurn } from './BaseCommand';
-import { DB } from '../../config/db';
 
 export abstract class NationCommand extends BaseCommand {
   protected lastTurn: LastTurn;

@@ -1,9 +1,9 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { searchDistance } from '../../func/searchDistance';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 첩보 커맨드
@@ -113,8 +113,8 @@ export class SpyCommand extends GeneralCommand {
       await this.setDestNation(this.destCity.nation);
     }
 
-    const db = DB.db();
     const env = this.env;
+    const sessionId = env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     const nationID = general.getNationID();
     const date = general.getTurnTime('HM');
@@ -125,12 +125,12 @@ export class SpyCommand extends GeneralCommand {
     const logger = general.getLogger();
 
     // 거리 계산
-    const distanceMap = await searchDistance(general.getCityID(), 999, false, env.session_id || 'sangokushi_default');
+    const distanceMap = await searchDistance(general.getCityID(), 999, false, sessionId);
     const dist = distanceMap[destCityID] ?? 999;
 
-    const destCityGeneralList = await db.query(
-      'SELECT crew, crewtype FROM general WHERE city = ? AND nation = ?',
-      [destCityID, destNationID]
+    // MongoDB로 도시의 장수 목록 조회
+    const destCityGeneralList = await generalRepository.findByCityAndNation(
+      sessionId, destCityID, destNationID, ['crew', 'crewtype']
     );
 
     const totalCrew = destCityGeneralList.reduce((sum: number, g: any) => sum + g.crew, 0);
@@ -182,13 +182,13 @@ export class SpyCommand extends GeneralCommand {
     }
 
     try {
-      const rawSpy = await db.queryFirstField('SELECT spy FROM nation WHERE nation = ?', [nationID]);
-      const spyInfo = rawSpy ? JSON.parse(rawSpy) : {};
+      // 현재 국가의 spy 정보 사용 (이미 로드됨)
+      const rawSpy = this.nation?.spy;
+      const spyInfo = rawSpy ? (typeof rawSpy === 'string' ? JSON.parse(rawSpy) : rawSpy) : {};
       spyInfo[destCityID] = 3;
       
-      await db.update('nation', {
-        spy: JSON.stringify(spyInfo)
-      }, 'nation=?', [nationID]);
+      // MongoDB로 국가 업데이트 (BaseCommand.updateNation 사용)
+      await this.updateNation(nationID, { spy: JSON.stringify(spyInfo) });
     } catch (error) {
       console.error(`국가 ${nationID} 첩보 정보 업데이트 실패:`, error);
       // 첩보 정보 업데이트 실패해도 커맨드 자체는 성공으로 처리

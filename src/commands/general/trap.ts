@@ -1,5 +1,5 @@
 import { FireAttackCommand } from './fireAttack';
-import { DB } from '../../config/db';
+
 
 /**
  * 함정 커맨드
@@ -37,11 +37,12 @@ export class TrapCommand extends FireAttackCommand {
     const popLoss = rng.nextRangeInt(100, 500);
     destCity.pop = Math.max(0, (destCity.pop || 0) - popLoss);
 
-    await DB.db().update('city', {
+    // 도시 업데이트 (CQRS 패턴)
+    await this.updateCity(destCityID, {
       state: 34, // 함정 상태
       secu: destCity.secu,
       pop: destCity.pop,
-    }, 'city=?', [destCityID]);
+    });
 
     const secuAmountText = secuAmount.toLocaleString();
     const popLossText = popLoss.toLocaleString();

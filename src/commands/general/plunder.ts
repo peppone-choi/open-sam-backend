@@ -1,6 +1,5 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { FireAttackCommand } from './fireAttack';
-import { DB } from '../../config/db';
 
 /**
  * 탈취 커맨드
@@ -23,7 +22,6 @@ export class PlunderCommand extends FireAttackCommand {
     const destCityID = destCity.city;
     const destNationID = destCity.nation;
     const commandName = (this.constructor as typeof PlunderCommand).getName();
-    const db = DB.db();
 
     const sabotageDamageMin = 800;
     const sabotageDamageMax = 6400;
@@ -42,59 +40,57 @@ export class PlunderCommand extends FireAttackCommand {
 
     if (destCity.supply) {
       try {
-        const destNationResult = await db.queryFirstList(
-          'SELECT gold, rice FROM nation WHERE nation=?',
-          [destNationID]
-        );
-        
-        // 배열 범위 체크: 쿼리 결과가 없을 수 있음
-        if (!destNationResult || destNationResult.length < 2) {
+        // MongoDB에서 destNation 정보 사용 (이미 로드됨)
+        const destNation = this.destNation;
+        if (!destNation) {
           throw new Error(`국가 ${destNationID}의 자원 정보를 찾을 수 없습니다`);
         }
         
-        let destNationGold = destNationResult[0] ?? 0;
-        let destNationRice = destNationResult[1] ?? 0;
+        let destNationGold = destNation.gold ?? 0;
+        let destNationRice = destNation.rice ?? 0;
 
-      destNationGold -= gold;
-      destNationRice -= rice;
+        destNationGold -= gold;
+        destNationRice -= rice;
 
-      if (destNationGold < minNationalGold) {
-        gold += destNationGold - minNationalGold;
-        destNationGold = minNationalGold;
-      }
-      if (destNationRice < minNationalRice) {
-        rice += destNationRice - minNationalRice;
-        destNationRice = minNationalRice;
-      }
+        if (destNationGold < minNationalGold) {
+          gold += destNationGold - minNationalGold;
+          destNationGold = minNationalGold;
+        }
+        if (destNationRice < minNationalRice) {
+          rice += destNationRice - minNationalRice;
+          destNationRice = minNationalRice;
+        }
 
-        await db.update('nation', {
+        // MongoDB로 적 국가 자원 업데이트
+        await this.updateDestNation(destNationID, {
           gold: destNationGold,
           rice: destNationRice
-        }, 'nation=?', [destNationID]);
+        });
         
-        await db.update('city', {
-          state: 34
-        }, 'city=?', [destCityID]);
-      } catch (error) {
+        // MongoDB로 적 도시 상태 업데이트
+        await this.updateDestCity(destCityID, { state: 34 });
+      } catch (error: any) {
         console.error(`약탈 처리 중 DB 업데이트 실패:`, error);
         throw new Error(`약탈 처리 실패: ${error.message}`);
       }
     } else {
-      await db.update('city', {
+      // MongoDB로 적 도시 업데이트
+      await this.updateDestCity(destCityID, {
         comm: Math.max(0, destCity.comm - gold / 12),
         agri: Math.max(0, destCity.agri - rice / 12),
         state: 34
-      }, 'city=?', [destCityID]);
+      });
     }
 
     if (nationID !== 0) {
       const goldToNation = Math.round(gold * 0.7);
       const riceToNation = Math.round(rice * 0.7);
       
-      await db.update('nation', {
-        gold: db.sqleval('gold + ?', [goldToNation]),
-        rice: db.sqleval('rice + ?', [riceToNation])
-      }, 'nation=?', [nationID]);
+      // MongoDB로 우리 국가 자원 증가
+      await this.incrementNation(nationID, {
+        gold: goldToNation,
+        rice: riceToNation
+      });
       
       general.increaseVar('gold', gold - goldToNation);
       general.increaseVar('rice', rice - riceToNation);
@@ -103,11 +99,12 @@ export class PlunderCommand extends FireAttackCommand {
       general.increaseVar('rice', rice);
     }
 
-    await db.update('city', {
+    // MongoDB로 적 도시 상태 업데이트
+    await this.updateDestCity(destCityID, {
       state: 32,
       agri: destCity.agri,
       comm: destCity.comm
-    }, 'city=?', [destCityID]);
+    });
 
     const goldText = gold.toLocaleString();
     const riceText = rice.toLocaleString();
@@ -115,5 +112,21 @@ export class PlunderCommand extends FireAttackCommand {
     logger.pushGlobalActionLog(`<G><b>${destCityName}</b></>에서 금과 쌀을 도둑맞았습니다.`);
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>에 ${commandName}이(가) 성공했습니다. <1>${date}</>`);
     logger.pushGeneralActionLog(`금<C>${goldText}</> 쌀<C>${riceText}</>을 획득했습니다.`, 'PLAIN');
+  }
+
+  // 적 도시 업데이트 (dest city)
+  private async updateDestCity(cityId: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const { cityRepository } = await import('../../repositories/city.repository');
+    await cityRepository.updateByCityNum(sessionId, cityId, update);
+    this.markCityDirty(cityId);
+  }
+
+  // 적 국가 업데이트 (dest nation)
+  private async updateDestNation(nationId: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const { nationRepository } = await import('../../repositories/nation.repository');
+    await nationRepository.updateBySessionAndNationId(sessionId, nationId, update);
+    this.markNationDirty(nationId);
   }
 }

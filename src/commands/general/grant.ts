@@ -1,7 +1,6 @@
 // @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { generalRepository } from '../../repositories/general.repository';
-import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { GameConst } from '../../constants/GameConst';
 import { LastTurn } from '../../types/LastTurn';
@@ -144,7 +143,6 @@ export class GrantCommand extends GeneralCommand {
     }
 
 
-    const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime(general.TURNTIME_HM);
 
@@ -200,16 +198,35 @@ export class GrantCommand extends GeneralCommand {
   }
 
   public async exportJSVars(): Promise<any> {
-    const db = DB.db();
     const nationID = this.getNationID();
+    const sessionId = this.env.session_id || 'sangokushi_default';
     
-    const troops = await db.query('SELECT * FROM troop WHERE nation=?', [nationID]);
+    // MongoDB로 부대 조회
+    const { troopRepository } = await import('../../repositories/troop.repository');
+    const troops = await troopRepository.findByNation(sessionId, nationID);
     const troopsDict = Util.convertArrayToDict(troops, 'troop_leader');
     
-    const destRawGenerals = await db.queryAllLists(
-      'SELECT no,name,officer_level,npc,gold,rice,leadership,strength,intel,city,crew,train,atmos,troop FROM general WHERE nation = ? ORDER BY npc,binary(name)', 
-      [nationID]
-    );
+    // MongoDB로 장수 조회
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const generals = await generalRepository.findByNation(sessionId, nationID);
+    
+    // 필요한 필드만 추출 (MySQL 결과와 호환되도록)
+    const destRawGenerals = generals.map((g: any) => [
+      g.no ?? g.data?.no,
+      g.name ?? g.data?.name,
+      g.officer_level ?? g.data?.officer_level ?? 0,
+      g.npc ?? g.data?.npc ?? 0,
+      g.gold ?? g.data?.gold ?? 0,
+      g.rice ?? g.data?.rice ?? 0,
+      g.leadership ?? g.data?.leadership ?? 0,
+      g.strength ?? g.data?.strength ?? 0,
+      g.intel ?? g.data?.intel ?? 0,
+      g.city ?? g.data?.city ?? 0,
+      g.crew ?? g.data?.crew ?? 0,
+      g.train ?? g.data?.train ?? 0,
+      g.atmos ?? g.data?.atmos ?? 0,
+      g.troop ?? g.data?.troop ?? 0,
+    ]);
     
     return {
       procRes: {

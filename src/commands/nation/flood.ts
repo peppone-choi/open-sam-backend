@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -97,7 +97,6 @@ export class FloodCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -134,7 +133,10 @@ export class FloodCommand extends NationCommand {
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>수몰</>을 발동하였습니다.`;
 
-    const targetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
+    // 국가 장수 목록 조회 (MongoDB)
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const nationGeneralDocs = await generalRepository.findByNation(sessionId, nationID);
+    const targetGeneralList = nationGeneralDocs.filter((g: any) => (g.no ?? g.data?.no) !== generalID).map((g: any) => g.no ?? g.data?.no);
     for (const targetGeneralID of targetGeneralList) {
       const targetLogger = ActionLogger.create ?
         ActionLogger.create(targetGeneralID, nationID, year, month) :
@@ -149,7 +151,9 @@ export class FloodCommand extends NationCommand {
 
     const destBroadcastMessage = `<G><b>${destCityName}</b></>에 <M>수몰</>이 발동되었습니다.`;
 
-    const destTargetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i', [destNationID]);
+    // 적국 장수 목록 조회 (MongoDB)
+    const destNationGeneralDocs = await generalRepository.findByNation(sessionId, destNationID);
+    const destTargetGeneralList = destNationGeneralDocs.map((g: any) => g.no ?? g.data?.no);
     let destNationLogged = false;
     for (const targetGeneralID of destTargetGeneralList) {
       const targetLogger = ActionLogger.create ?
@@ -170,15 +174,11 @@ export class FloodCommand extends NationCommand {
       }
     }
 
-    await db.update(
-      'city',
-      {
-        def: db.sqleval('def * 0.2'),
-        wall: db.sqleval('wall * 0.2')
-      },
-      'city=%i',
-      [destCityID]
-    );
+    // 도시 방어/성벽 80% 감소 (CQRS 패턴)
+    await this.updateCity(destCityID, {
+      def: (destCity.def || 0) * 0.2,
+      wall: (destCity.wall || 0) * 0.2
+    });
 
     logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>수몰</>을 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>수몰</>을 발동`);
@@ -188,12 +188,8 @@ export class FloodCommand extends NationCommand {
     const globalDelay = this.generalObj?.onCalcStrategic ? 
       this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9) : 9;
 
-    await db.update(
-      'nation',
-      { strategic_cmd_limit: globalDelay },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 전략 명령 제한 업데이트 (CQRS 패턴)
+    await this.updateNation(nationID, { strategic_cmd_limit: globalDelay });
 
     const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
@@ -201,7 +197,7 @@ export class FloodCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

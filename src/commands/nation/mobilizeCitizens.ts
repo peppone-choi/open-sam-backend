@@ -1,7 +1,6 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
 import { GameConst } from '../../config/game-const';
 import { CityConst } from '../../config/city-const';
@@ -9,6 +8,7 @@ import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { ActionLogger } from '../../utils/action-logger';
+import { generalRepository } from '../../repositories/general.repository';
 
 export class che_백성동원 extends NationCommand {
   static getName(): string {
@@ -92,8 +92,7 @@ export class che_백성동원 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
-
+    const sessionId = this.env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     if (!general) {
       throw new Error('장수 정보가 없습니다');
@@ -105,7 +104,7 @@ export class che_백성동원 extends NationCommand {
     const year = this.env['year'];
     const month = this.env['month'];
 
-        if (!this.destCity) {
+    if (!this.destCity) {
       throw new Error('대상 도시 정보가 없습니다');
     }
     const destCity = this.destCity;
@@ -124,11 +123,11 @@ export class che_백성동원 extends NationCommand {
     const josaYi = JosaUtil.pick(generalName, '이');
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>백성동원</>을 하였습니다.`;
 
-    const targetGeneralList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation=%i AND no != %i',
-      nationID,
-      generalID
-    );
+    // MongoDB로 국가 소속 장수 조회
+    const nationGenerals = await generalRepository.findByNation(sessionId, nationID);
+    const targetGeneralList = nationGenerals
+      .filter((g: any) => (g.no ?? g.data?.no) !== generalID)
+      .map((g: any) => g.no ?? g.data?.no);
     
     for (const targetGeneralID of targetGeneralList) {
       const targetLogger = new ActionLogger(targetGeneralID, nationID, year, month);
@@ -136,22 +135,22 @@ export class che_백성동원 extends NationCommand {
       await targetLogger.flush();
     }
 
-    await db.update('city', {
-      def: db.sqleval('GREATEST(def_max * 0.8, def)'),
-      wall: db.sqleval('GREATEST(wall_max * 0.8, wall)'),
-    },  'city=%i', [destCityID]);
+    // MongoDB로 도시 업데이트 (CQRS 패턴)
+    const newDef = Math.max((destCity.def_max || 0) * 0.8, destCity.def || 0);
+    const newWall = Math.max((destCity.wall_max || 0) * 0.8, destCity.wall || 0);
+    await this.updateCity(destCityID, { def: newDef, wall: newWall });
 
     logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>에 <M>백성동원</>을 발동 <1>${date}</>`);
     logger.pushNationalHistoryLog(`<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>백성동원</>을 발동`);
     const josaYiNation = JosaUtil.pick(nationName, '이');
     logger.pushGlobalHistoryLog(`<Y><b>【의병】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${destCityName}</b></>에서 <M>백성동원</>을 실시했습니다.`);
 
-    await db.update('nation', {
-      strategic_cmd_limit: this.generalObj.onCalcStrategic(this.constructor.getName(),  'globalDelay', [9])
-    },  'nation=%i', [nationID]);
+    // MongoDB로 국가 업데이트 (CQRS 패턴)
+    const newLimit = this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', [9]);
+    await this.updateNation(nationID, { strategic_cmd_limit: newLimit });
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     // StaticEventHandler
     try {

@@ -1,6 +1,5 @@
 // @ts-nocheck - Type issues need investigation
 import { Types } from 'mongoose';
-import { DB } from '../../config/db';
 import { IGeneral } from '../../models/general.model';
 import { Util } from '../../utils/Util';
 import { AuctionType, ResourceType } from '../../types/auction.types';
@@ -35,7 +34,6 @@ export abstract class Auction {
    * 난독화된 이름 생성
    */
   static genObfuscatedName(id: number): string {
-    const db = DB.db();
     // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     
@@ -65,7 +63,6 @@ export abstract class Auction {
    * 최고 입찰 가져오기
    */
   public getHighestBid(): any | null {
-    const db = DB.db();
     const info = this.info;
 
     // FUTURE: 실제 구현
@@ -88,7 +85,6 @@ export abstract class Auction {
    * 내 이전 입찰 가져오기
    */
   public getMyPrevBid(): any | null {
-    const db = DB.db();
     const info = this.info;
 
     // FUTURE: 실제 구현
@@ -111,7 +107,6 @@ export abstract class Auction {
     }
 
     this.info.closeDate = date;
-    const db = DB.db();
     // FUTURE: DB 업데이트
     // await db.update('ng_auction', this.info.toArray('id'), 'id = ?', this.info.id);
 
@@ -138,7 +133,6 @@ export abstract class Auction {
    * DB에 적용
    */
   public applyDB(): void {
-    const db = DB.db();
     // FUTURE: 구현
     // await db.update('ng_auction', this.info.toArray('id'), 'id = ?', this.info.id);
   }

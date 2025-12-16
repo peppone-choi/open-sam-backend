@@ -1,7 +1,6 @@
 // @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { Util } from '../../utils/Util';
 import { GameConst } from '../../constants/GameConst';
@@ -86,7 +85,6 @@ export class TradeRiceCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     
     if (!this.city) {
@@ -154,14 +152,8 @@ export class TradeRiceCommand extends GeneralCommand {
     general.increaseVar(buyKey, buyAmount);
     general.increaseVarWithLimit(sellKey, -sellAmount, 0);
 
-    await db.update(
-      'nation',
-      {
-        gold: db.raw(`gold + ${tax}`)
-      },
-      'nation = ?',
-      general.getNationID()
-    );
+    // 국가에 세금 추가 (CQRS 패턴)
+    await this.incrementNation(general.getNationID(), { gold: tax });
 
     const exp = 30;
     const ded = 50;

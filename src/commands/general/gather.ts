@@ -1,12 +1,13 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { RandUtil } from '../../utils/RandUtil';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
 import { tryUniqueItemLottery } from '../../utils/unique-item-lottery';
+import { troopRepository } from '../../repositories/troop.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 집합 커맨드
@@ -56,8 +57,8 @@ export class GatherCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
+    const sessionId = env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
     const cityID = this.city!.city;
@@ -65,27 +66,29 @@ export class GatherCommand extends GeneralCommand {
     const josaRo = JosaUtil.pick(cityName, '로');
     const troopID = general.getID();
     
-    // 부대 이름 조회
-    const troopNameResult = await db.queryFirstField(
-      'SELECT name FROM troop WHERE troop_leader = ?',
-      [troopID]
-    );
-    const troopName = troopNameResult || '부대';
+    // 부대 이름 조회 (MongoDB)
+    const troopDoc = await troopRepository.findByLeader(sessionId, troopID);
+    const troopName = troopDoc?.name || '부대';
 
     const logger = general.getLogger();
     logger.pushGeneralActionLog(`<G><b>${cityName}</b></>에서 집합을 실시했습니다. <1>${date}</>`);
 
-    // 현재 도시가 아닌 같은 부대 소속 장수들 조회
-    const generalListResult = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation=? AND city!=? AND troop=? AND no!=?',
-      [general.getNationID(), cityID, troopID, general.getID()]
+    // 현재 도시가 아닌 같은 부대 소속 장수들 조회 (MongoDB)
+    const membersResult = await generalRepository.findTroopMembers(
+      sessionId, general.getNationID(), troopID, cityID
     );
-    const generalList = generalListResult || [];
+    const generalList = membersResult
+      .filter((g: any) => {
+        const no = g.no ?? g.data?.no;
+        return no && no !== general.getID();
+      })
+      .map((g: any) => g.no ?? g.data?.no);
 
     if (generalList.length > 0) {
-      await db.update('general', {
-        city: cityID
-      }, 'no IN (?)', [generalList]);
+      // MongoDB로 장수들 도시 업데이트
+      for (const generalNo of generalList) {
+        await this.updateGeneral(generalNo, { city: cityID });
+      }
       await this.updateOtherGeneralsCity(generalList, cityID);
     }
 

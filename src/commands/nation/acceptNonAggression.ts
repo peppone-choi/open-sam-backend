@@ -1,8 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -126,7 +126,6 @@ export class che_불가침수락 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -207,7 +206,7 @@ export class che_불가침수락 extends NationCommand {
       console.error('StaticEventHandler 실패:', error);
     }
 
-    await general.applyDB(db);
+    await this.saveGeneral();
     await destLogger.flush();
 
     return true;

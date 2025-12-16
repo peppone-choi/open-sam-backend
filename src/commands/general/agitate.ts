@@ -3,7 +3,7 @@ import { cityRepository } from '../../repositories/city.repository';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
-import { DB } from '../../config/db';
+
 
 /**
  * 선동 커맨드

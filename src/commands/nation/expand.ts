@@ -1,7 +1,6 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -121,8 +120,6 @@ export class che_증축 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
-
     const general = this.generalObj;
     const generalName = general!.getName();
     const date = general!.getTurnTime('HM');
@@ -155,32 +152,24 @@ export class che_증축 extends NationCommand {
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
 
-    await db.update(
-      'city',
-      {
-        level: db.sqleval('level+1'),
-        pop_max: db.sqleval('pop_max + %i', GameConst.expandCityPopIncreaseAmount),
-        agri_max: db.sqleval('agri_max + %i', GameConst.expandCityDevelIncreaseAmount),
-        comm_max: db.sqleval('comm_max + %i', GameConst.expandCityDevelIncreaseAmount),
-        secu_max: db.sqleval('secu_max + %i', GameConst.expandCityDevelIncreaseAmount),
-        def_max: db.sqleval('def_max + %i', GameConst.expandCityWallIncreaseAmount),
-        wall_max: db.sqleval('wall_max + %i', GameConst.expandCityWallIncreaseAmount)
-      },
-      'city=%i',
-      [destCityID]
-    );
+    // 도시 증축 (CQRS 패턴)
+    await this.incrementCity(destCityID, {
+      level: 1,
+      pop_max: GameConst.expandCityPopIncreaseAmount,
+      agri_max: GameConst.expandCityDevelIncreaseAmount,
+      comm_max: GameConst.expandCityDevelIncreaseAmount,
+      secu_max: GameConst.expandCityDevelIncreaseAmount,
+      def_max: GameConst.expandCityWallIncreaseAmount,
+      wall_max: GameConst.expandCityWallIncreaseAmount
+    });
 
     const [reqGold, reqRice] = this.getCost();
-    await db.update(
-      'nation',
-      {
-        capset: db.sqleval('capset + 1'),
-        gold: db.sqleval('gold - %i', reqGold),
-        rice: db.sqleval('rice - %i', reqRice)
-      },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 자원 소모 및 capset 증가 (CQRS 패턴)
+    await this.incrementNation(nationID, {
+      capset: 1,
+      gold: -reqGold,
+      rice: -reqRice
+    });
 
     logger.pushGeneralActionLog(`<G><b>${destCityName}</b></>${josaUl} 증축했습니다. <1>${date}</>`);
     logger.pushGeneralHistoryLog(`<G><b>${destCityName}</b></>${josaUl} <M>증축</> <1>${date}</>`);
@@ -195,7 +184,7 @@ export class che_증축 extends NationCommand {
     );
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     // StaticEventHandler
     try {

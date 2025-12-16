@@ -4,7 +4,6 @@ import { IGeneral } from '../../models/general.model';
 import { ResourceType, AuctionType } from '../../types/auction.types';
 import { GameConst } from '../../const/GameConst';
 import { Util } from '../../utils/Util';
-import { DB } from '../../config/db';
 
 /**
  * AuctionBasicResource
@@ -56,7 +55,6 @@ export abstract class AuctionBasicResource extends Auction {
       return `기본 ${hostResName} ${minimumRes}은(는) 거래할 수 없습니다.`;
     }
 
-    const db = DB.db();
     const sessionId = general.session_id;
     const generalId = general.getID();
 

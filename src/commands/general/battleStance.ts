@@ -1,6 +1,6 @@
 import { getTechCost } from '../../utils/global-funcs';
 import { GeneralCommand } from '../base/GeneralCommand';
-import { DB } from '../../config/db';
+
 import { RandUtil } from '../../utils/RandUtil';
 import { Util } from '../../utils/Util';
 import { LastTurn } from '../../types/LastTurn';

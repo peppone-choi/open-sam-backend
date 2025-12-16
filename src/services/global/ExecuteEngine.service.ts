@@ -657,10 +657,6 @@ export class ExecuteEngineService {
         generalsInBatch: batch.length 
       });
 
-      // 배치 명령 당기기용 수집
-      const batchPullCommands: Array<{ sessionId: string, generalId: number, isNPC: boolean, generalName: string, beforeLogTime: Date | null }> = [];
-      const batchPullNationCommands: Array<{ sessionId: string, nationId: number, officerLevel: number }> = [];
-
       await Promise.all(batch.map(async (general) => {
         const owner = general.owner || general.data?.owner;
         const isPlayer = (general.npc === 0 || general.data?.npc === 0) ||
@@ -695,9 +691,22 @@ export class ExecuteEngineService {
         const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10); // singleTurn이면 장수당 1턴만 처리
         const now = new Date();
 
+        // 세션의 원래 년/월을 백업 (turnDate가 gameEnv를 수정하므로)
+        const originalSessionYear = gameEnv.year;
+        const originalSessionMonth = gameEnv.month;
+
+        // 첫 번째 턴의 년/월을 기준으로 하고, 이후 턴마다 1개월씩 증가
+        // 이렇게 해야 밀린 턴 처리 시 각 턴이 서로 다른 월에 해당함
+        let actionYear = gameEnv.year || 184;
+        let actionMonth = gameEnv.month || 1;
+        let isFirstTurn = true;
+
         while (turnsExecuted < maxTurnsPerGeneral) {
           const currActionTime = new Date();
           if (currActionTime > limitActionTime) {
+            // 세션 년/월 복원
+            gameEnv.year = originalSessionYear;
+            gameEnv.month = originalSessionMonth;
             return [true, currentTurn];
           }
 
@@ -723,19 +732,30 @@ export class ExecuteEngineService {
           const generalName = generalDoc.name || generalDoc.data?.name || '';
           const beforeLogTime = !isNPC ? new Date() : null;
 
-          // 장수 턴 실행 - 개별 turntime 기준으로 게임 년/월 계산
-          const { year: actionYear, month: actionMonth } = ExecuteEngineService.turnDate(turntimeDate, gameEnv);
+          // 장수 턴 실행 - 세션의 현재 년/월 사용 (각 턴마다 1개월씩 증가하지 않음)
+          // ⚠️ 중요: 밀린 턴이 있어도 모든 턴은 현재 세션의 년/월로 처리
+          // 이렇게 해야 세션 상태가 역행하지 않음
+          if (isFirstTurn) {
+            // 세션의 현재 년/월 사용 (turnDate 호출하지 않음)
+            actionYear = originalSessionYear || 184;
+            actionMonth = originalSessionMonth || 1;
+            isFirstTurn = false;
+          }
+          // 밀린 턴도 같은 년/월로 처리 (각 턴마다 월 증가하지 않음)
+          // 턴테이블의 명령만 순차적으로 당겨짐
+          
           const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv);
 
           currentTurn = generalDoc.turntime || new Date().toISOString();
 
-          // 턴이 처리되었으면 명령 당기기 (배치에 추가)
+          // 턴이 처리되었으면 명령 즉시 당기기 (중복 실행 방지)
           if (turnExecuted) {
-            batchPullCommands.push({ sessionId, generalId: generalNo, isNPC, generalName, beforeLogTime });
+            // ⚠️ 중요: 명령 당기기를 즉시 실행해야 다음 루프에서 같은 명령이 중복 실행되지 않음
+            await this.pullGeneralCommand(sessionId, generalNo, 1, isNPC, generalName, beforeLogTime);
             const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
             const officerLevel = generalDoc.data?.officer_level || 0;
             if (nationId && officerLevel >= 5) {
-              batchPullNationCommands.push({ sessionId, nationId, officerLevel });
+              await this.pullNationCommand(sessionId, nationId, officerLevel, 1);
             }
           } else {
             // 명령이 없어도 turntime은 업데이트해야 함 (무한 루프 방지)
@@ -785,17 +805,7 @@ export class ExecuteEngineService {
         }
       }));
 
-      // 배치 명령 당기기 실행 (병렬 처리)
-      if (batchPullCommands.length > 0 || batchPullNationCommands.length > 0) {
-        await Promise.all([
-          ...batchPullCommands.map(cmd =>
-            this.pullGeneralCommand(cmd.sessionId, cmd.generalId, 1, cmd.isNPC, cmd.generalName, cmd.beforeLogTime)
-          ),
-          ...batchPullNationCommands.map(cmd =>
-            this.pullNationCommand(cmd.sessionId, cmd.nationId, cmd.officerLevel, 1)
-          )
-        ]);
-      }
+      // 명령 당기기는 이제 while 루프 안에서 즉시 실행됨 (중복 실행 방지)
     }
 
     return [false, currentTurn];

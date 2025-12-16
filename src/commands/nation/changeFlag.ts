@@ -1,7 +1,6 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -81,7 +80,6 @@ export class che_국기변경 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const actionName = this.constructor.getName();
 
     const general = this.generalObj;
@@ -106,13 +104,14 @@ export class che_국기변경 extends NationCommand {
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
 
-    const aux = this!.nation['aux'];
+    const aux = this!.nation['aux'] || {};
     aux[`can_${actionName}`] = 0;
 
-    await db.update('nation', {
+    // MongoDB로 국가 업데이트 (BaseCommand.updateNation 사용)
+    await this.updateNation(nationID, {
       color: color,
       aux: JSON.stringify(aux)
-    },  'nation=%i', [nationID]);
+    });
 
     logger.pushGeneralActionLog(`<span style='color:${color};'><b>국기</b></span>를 변경하였습니다 <1>${date}</>`);
     logger.pushGeneralHistoryLog(`<span style='color:${color};'><b>국기</b></span>를 변경 <1>${date}</>`);
@@ -130,7 +129,7 @@ export class che_국기변경 extends NationCommand {
       console.error('InheritancePoint 처리 실패:', error);
     }
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     // StaticEventHandler
     try {

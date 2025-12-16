@@ -402,6 +402,52 @@ class NationRepository {
   }
 
   /**
+   * 국가 이름으로 조회
+   * @param sessionId - 세션 ID
+   * @param name - 국가 이름
+   * @returns 국가 문서 또는 null
+   */
+  async findByName(sessionId: string, name: string) {
+    return Nation.findOne({
+      session_id: sessionId,
+      $or: [
+        { name: name },
+        { 'data.name': name }
+      ]
+    }).lean();
+  }
+
+  /**
+   * 국가 필드 증가/감소 (범용)
+   * @param sessionId - 세션 ID
+   * @param nationNum - 국가 번호
+   * @param increments - 증가할 필드들 { fieldName: amount }
+   * @returns 업데이트 결과
+   */
+  async incrementFields(sessionId: string, nationNum: number, increments: Record<string, number>) {
+    // 캐시 무효화
+    await invalidateCache('nation', sessionId, nationNum);
+    await this._invalidateListCaches(sessionId);
+    
+    // data 필드와 최상위 필드 모두 증가
+    const incObj: Record<string, number> = {};
+    for (const [key, amount] of Object.entries(increments)) {
+      incObj[key] = amount;
+      if (!key.startsWith('data.')) {
+        incObj[`data.${key}`] = amount;
+      }
+    }
+    
+    return Nation.updateOne(
+      {
+        session_id: sessionId,
+        'data.nation': nationNum
+      },
+      { $inc: incObj }
+    );
+  }
+
+  /**
    * 목록 캐시 무효화 (내부 헬퍼)
    *
    * @param sessionId - 세션 ID

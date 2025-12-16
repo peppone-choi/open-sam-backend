@@ -18,8 +18,28 @@ import { createCrewTypeTrigger } from '../game/triggers/TriggerCrewType';
 import { createInheritBuffTrigger } from '../game/triggers/TriggerInheritBuff';
 import { getScenarioEffectAction } from '../game/scenarioEffect/scenarioEffectRegistry';
 
+// PHP GeneralBase의 턴타임 상수 (PHP 호환성)
+export const TURNTIME_FULL_MS = -1;
+export const TURNTIME_FULL = 0;
+export const TURNTIME_HMS = 1;
+export const TURNTIME_HM = 2;
+
+// 문자열 형식 상수 (편의용)
+export const TURNTIME = {
+  FULL_MS: 'FULL_MS',
+  FULL: 'FULL',
+  HMS: 'HMS',
+  HM: 'HM',
+} as const;
+
 // 장수 인터페이스
 export interface IGeneral extends Document {
+  // PHP 호환 상수
+  TURNTIME_FULL_MS: number;
+  TURNTIME_FULL: number;
+  TURNTIME_HMS: number;
+  TURNTIME_HM: string;
+
   no: number;
   session_id: string;
   owner: string;
@@ -422,6 +442,12 @@ GeneralSchema.methods.getID = function(): number {
   return this.no;
 };
 
+// PHP 호환 상수 (인스턴스에서 general.TURNTIME_HM으로 접근)
+GeneralSchema.virtual('TURNTIME_FULL_MS').get(function() { return TURNTIME_FULL_MS; });
+GeneralSchema.virtual('TURNTIME_FULL').get(function() { return TURNTIME_FULL; });
+GeneralSchema.virtual('TURNTIME_HMS').get(function() { return TURNTIME_HMS; });
+GeneralSchema.virtual('TURNTIME_HM').get(function() { return 'HM'; }); // 문자열 'HM' 반환 (getTurnTime과 호환)
+
 GeneralSchema.methods.getNationID = function(): number {
   return this.data.nation || 0;
 };
@@ -488,10 +514,12 @@ GeneralSchema.methods.getStaticNation = function(): any {
 
 /**
  * 턴타임을 포맷팅해서 반환
- * @param format - 'HM': 시:분, 'TURNTIME_HM': 풀 타임스탬프 + 시:분, 없으면 기본
+ * PHP GeneralBase::getTurnTime() 대응
+ * 
+ * @param format - 'HM' 또는 this.TURNTIME_HM: 시:분만 반환 (기본값)
  * @returns 포맷팅된 시간 문자열
  */
-GeneralSchema.methods.getTurnTime = function(format?: string): string {
+GeneralSchema.methods.getTurnTime = function(format?: string | number): string {
   // turntime은 data.turntime 또는 top-level turntime에 있을 수 있음
   const turntime = this.data?.turntime || this.turntime;
   
@@ -508,15 +536,28 @@ GeneralSchema.methods.getTurnTime = function(format?: string): string {
   
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
   
-  if (format === 'HM') {
+  // PHP 상수 매핑: TURNTIME_HM = 2, TURNTIME_HMS = 1, TURNTIME_FULL = 0, TURNTIME_FULL_MS = -1
+  // 문자열 'HM', 'HMS', 'TURNTIME_HM' 등도 지원
+  if (format === 'HM' || format === 'TURNTIME_HM' || format === TURNTIME_HM || format === undefined) {
+    // PHP TURNTIME_HM: HH:MM만 반환 (기본값)
     return `${hours}:${minutes}`;
-  } else if (format === 'TURNTIME_HM') {
-    // ISO 형식 + 시:분
-    return `${date.toISOString()} (${hours}:${minutes})`;
+  } else if (format === 'HMS' || format === TURNTIME_HMS) {
+    // PHP TURNTIME_HMS: HH:MM:SS
+    return `${hours}:${minutes}:${seconds}`;
+  } else if (format === 'FULL' || format === TURNTIME_FULL) {
+    // PHP TURNTIME_FULL: YYYY-MM-DD HH:MM:SS
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } else if (format === 'FULL_MS' || format === TURNTIME_FULL_MS) {
+    // PHP TURNTIME_FULL_MS: YYYY-MM-DD HH:MM:SS.mmm
+    return date.toISOString().replace('T', ' ').replace('Z', '');
   } else {
-    // 기본: ISO 형식
-    return date.toISOString();
+    // 기본: HH:MM (PHP 동작과 일치)
+    return `${hours}:${minutes}`;
   }
 };
 

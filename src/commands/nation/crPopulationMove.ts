@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -111,7 +111,6 @@ export class PopulationMoveCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -139,30 +138,13 @@ export class PopulationMoveCommand extends NationCommand {
     general.addExperience(5);
     general.addDedication(5);
 
-    await db.update(
-      'city',
-      { pop: db.sqleval('pop + %i', amount) },
-      'city=%i',
-      [destCityID]
-    );
-
-    await db.update(
-      'city',
-      { pop: db.sqleval('pop - %i', amount) },
-      'city=%i',
-      [srcCityID]
-    );
+    // 도시 인구 이동 (CQRS 패턴)
+    await this.incrementCity(destCityID, { pop: amount });
+    await this.incrementCity(srcCityID, { pop: -amount });
 
     const [reqGold, reqRice] = this.getCost();
-    await db.update(
-      'nation',
-      {
-        gold: db.sqleval('gold - %i', reqGold),
-        rice: db.sqleval('rice - %i', reqRice)
-      },
-      'nation=%i',
-      [this.nation['nation']]
-    );
+    // 국가 자원 소모 (CQRS 패턴)
+    await this.incrementNation(this.nation['nation'], { gold: -reqGold, rice: -reqRice });
 
     logger.pushGeneralActionLog(
       `<G><b>${destCityName}</b></>${josaRo} 인구 <C>${amount}</>명을 옮겼습니다. <1>${date}</>`
@@ -179,7 +161,7 @@ export class PopulationMoveCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await general.applyDB(DB.db());
+    await this.saveGeneral();
 
     return true;
   }

@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { nationRepository } from '../../repositories/nation.repository';
 
@@ -93,7 +93,6 @@ export class TradeMilitaryCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     
     if (!this.city) {

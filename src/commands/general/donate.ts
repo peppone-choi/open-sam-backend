@@ -1,6 +1,5 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
-import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { GameConst } from '../../constants/GameConst';
 import { LastTurn } from '../../types/LastTurn';
@@ -101,7 +100,6 @@ export class DonateCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime(general.TURNTIME_HM);
 
@@ -116,9 +114,8 @@ export class DonateCommand extends GeneralCommand {
 
     const logger = general.getLogger();
 
-    await db.update('nation', {
-      [resKey]: db.sqleval(`${resKey} + ?`, [amount])
-    },  'nation=?', [general.getNationID()]);
+    // MongoDB로 국가 자원 증가 (BaseCommand.incrementNation 사용)
+    await this.incrementNation(general.getNationID(), { [resKey]: amount });
 
     general.increaseVarWithLimit(resKey, -amount, 0);
 

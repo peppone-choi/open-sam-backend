@@ -1,9 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { NationCommand } from '../base/NationCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
-
 import { JosaUtil } from '../../utils/JosaUtil';
 
 export class ReduceForceCommand extends NationCommand {
@@ -117,11 +115,10 @@ export class ReduceForceCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime();
 
-        if (!this.destCity) {
+    if (!this.destCity) {
       throw new Error('대상 도시 정보가 없습니다');
     }
     const destCity = this.destCity;
@@ -142,28 +139,30 @@ export class ReduceForceCommand extends NationCommand {
     const expandCityWallIncreaseAmount = GameConst.expandCityWallIncreaseAmount || 1000;
     const minAvailableRecruitPop = GameConst.minAvailableRecruitPop || 1000;
 
-    await db.update('city', {
-      level: db.sqleval('level-1'),
-      pop: db.sqleval('greatest(pop - %i, %i)', [expandCityPopIncreaseAmount, minAvailableRecruitPop]),
-      agri: db.sqleval('greatest(agri - %i, 0)', [expandCityDevelIncreaseAmount]),
-      comm: db.sqleval('greatest(comm - %i, 0)', [expandCityDevelIncreaseAmount]),
-      secu: db.sqleval('greatest(secu - %i, 0)', [expandCityDevelIncreaseAmount]),
-      def: db.sqleval('greatest(def - %i, 0)', [expandCityWallIncreaseAmount]),
-      wall: db.sqleval('greatest(wall - %i, 0)', [expandCityWallIncreaseAmount]),
-      pop_max: db.sqleval('pop_max - %i', [expandCityPopIncreaseAmount]),
-      agri_max: db.sqleval('agri_max - %i', [expandCityDevelIncreaseAmount]),
-      comm_max: db.sqleval('comm_max - %i', [expandCityDevelIncreaseAmount]),
-      secu_max: db.sqleval('secu_max - %i', [expandCityDevelIncreaseAmount]),
-      def_max: db.sqleval('def_max - %i', [expandCityWallIncreaseAmount]),
-      wall_max: db.sqleval('wall_max - %i', [expandCityWallIncreaseAmount]),
-    }, 'city=%i', [destCityID]);
+    // MongoDB로 도시 업데이트 (CQRS 패턴)
+    await this.updateCity(destCityID, {
+      level: Math.max(0, (destCity.level || 0) - 1),
+      pop: Math.max(minAvailableRecruitPop, (destCity.pop || 0) - expandCityPopIncreaseAmount),
+      agri: Math.max(0, (destCity.agri || 0) - expandCityDevelIncreaseAmount),
+      comm: Math.max(0, (destCity.comm || 0) - expandCityDevelIncreaseAmount),
+      secu: Math.max(0, (destCity.secu || 0) - expandCityDevelIncreaseAmount),
+      def: Math.max(0, (destCity.def || 0) - expandCityWallIncreaseAmount),
+      wall: Math.max(0, (destCity.wall || 0) - expandCityWallIncreaseAmount),
+      pop_max: Math.max(0, (destCity.pop_max || 0) - expandCityPopIncreaseAmount),
+      agri_max: Math.max(0, (destCity.agri_max || 0) - expandCityDevelIncreaseAmount),
+      comm_max: Math.max(0, (destCity.comm_max || 0) - expandCityDevelIncreaseAmount),
+      secu_max: Math.max(0, (destCity.secu_max || 0) - expandCityDevelIncreaseAmount),
+      def_max: Math.max(0, (destCity.def_max || 0) - expandCityWallIncreaseAmount),
+      wall_max: Math.max(0, (destCity.wall_max || 0) - expandCityWallIncreaseAmount),
+    });
 
     const [reqGold, reqRice] = this.getCost();
-    await db.update('nation', {
-      capset: db.sqleval('capset + 1'),
-      gold: db.sqleval('gold + %i', [reqGold]),
-      rice: db.sqleval('rice + %i', [reqRice]),
-    }, 'nation=%i', [nationID]);
+    // MongoDB로 국가 업데이트 (CQRS 패턴)
+    await this.incrementNation(nationID, {
+      capset: 1,
+      gold: reqGold,
+      rice: reqRice,
+    });
 
     const generalName = general.data.name || general.name;
     const josaUl = JosaUtil.pick(destCityName, '을');
@@ -186,7 +185,7 @@ export class ReduceForceCommand extends NationCommand {
       console.error('InheritancePoint 처리 실패:', error);
     }
     this.setResultTurn(new LastTurn(ReduceForceCommand.getName(), this.arg, 0));
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     // StaticEventHandler
     try {

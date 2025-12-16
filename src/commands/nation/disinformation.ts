@@ -1,7 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
+import { cityRepository } from '../../repositories/city.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -101,7 +102,6 @@ export class DisinformationCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -138,7 +138,10 @@ export class DisinformationCommand extends NationCommand {
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destCityName}</b></>에 <M>허보</>를 발동하였습니다.`;
 
-    const targetGeneralList = await db.queryFirstColumn('SELECT no FROM general WHERE nation=%i AND no != %i', [nationID, generalID]);
+    // 국가 장수 목록 조회 (MongoDB)
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const nationGeneralDocs = await generalRepository.findByNation(sessionId, nationID);
+    const targetGeneralList = nationGeneralDocs.filter((g: any) => (g.no ?? g.data?.no) !== generalID).map((g: any) => g.no ?? g.data?.no);
     for (const targetGeneralID of targetGeneralList) {
       const targetLogger = ActionLogger.create ?
         ActionLogger.create(targetGeneralID, nationID, year, month) :
@@ -152,10 +155,10 @@ export class DisinformationCommand extends NationCommand {
     }
 
     const destBroadcastMessage = `상대의 <M>허보</>에 당했다! <1>${date}</>`;
-    const destNationCityList = await db.queryFirstColumn('SELECT city FROM city WHERE nation = %i AND supply = 1', [destNationID]);
-
-    const { generalRepository } = await import('../../repositories/general.repository');
-    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    // 적국 보급 도시 목록 조회 (MongoDB)
+    const destNationCities = await cityRepository.findByNation(sessionId, destNationID);
+    const destNationCityList = destNationCities.filter((c: any) => (c.supply ?? c.data?.supply) === 1).map((c: any) => c.city ?? c.data?.city);
     
     const targetGeneralDocs = await generalRepository.findByFilter({
       session_id: sessionId,
@@ -181,7 +184,7 @@ export class DisinformationCommand extends NationCommand {
         }
 
         targetGeneral.data.city = moveCityID;
-        await await targetGeneral.save();
+        await targetGeneral.save();
       }
     }
 
@@ -204,12 +207,8 @@ export class DisinformationCommand extends NationCommand {
     const globalDelay = this.generalObj?.onCalcStrategic ?
       this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9) : 9;
 
-    await db.update(
-      'nation',
-      { strategic_cmd_limit: globalDelay },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 전략 명령 제한 업데이트 (CQRS 패턴)
+    await this.updateNation(nationID, { strategic_cmd_limit: globalDelay });
 
     const StaticEventHandler = global.StaticEventHandler;
     if (StaticEventHandler?.handleEvent) {
@@ -217,7 +216,7 @@ export class DisinformationCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg, 0));
-    await await this.saveGeneral();
+    await this.saveGeneral();
 
     return true;
   }

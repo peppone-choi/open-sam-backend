@@ -1,6 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { General } from '../../models/general.model';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { nationRepository } from '../../repositories/nation.repository';

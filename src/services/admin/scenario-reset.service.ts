@@ -1209,9 +1209,10 @@ export class ScenarioResetService {
   ): Promise<void> {
     const startYear = scenarioMetadata.startYear || 184;
     const startMonth = 1;
-    const serverID = scenarioId.split('/')[0] || 'sangokushi';
+    // server_id는 sessionId를 사용해야 프론트엔드에서 올바르게 조회 가능
+    const serverID = sessionId;
 
-    console.log(`[ScenarioReset] Creating initial ng_history for ${startYear}년 ${startMonth}월`);
+    console.log(`[ScenarioReset] Creating initial ng_history for ${startYear}년 ${startMonth}월 (server_id: ${serverID})`);
 
     // world_history에서 초기 기록 가져오기
     const worldHistory = await worldHistoryRepository.findByFilter({

@@ -1,5 +1,5 @@
 import { GeneralCommand } from '../base/GeneralCommand';
-import { DB } from '../../config/db';
+
 import { LastTurn } from '../../types/LastTurn';
 import { RandUtil } from '../../utils/RandUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';

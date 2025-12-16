@@ -143,6 +143,57 @@ class GeneralRepository {
   }
 
   /**
+   * 도시 및 국가별 장수 조회
+   *
+   * @param sessionId - 세션 ID
+   * @param cityId - 도시 ID
+   * @param nationId - 국가 ID
+   * @param fields - 반환할 필드 목록 (선택)
+   * @returns 장수 목록
+   */
+  async findByCityAndNation(sessionId: string, cityId: number, nationId: number, fields?: string[]) {
+    const generals = await General.find({
+      session_id: sessionId,
+      $or: [
+        { city: cityId, nation: nationId },
+        { 'data.city': cityId, 'data.nation': nationId }
+      ]
+    }).lean();
+
+    // 필드 필터링
+    if (fields && fields.length > 0) {
+      return generals.map((g: any) => {
+        const result: any = {};
+        for (const field of fields) {
+          result[field] = g[field] ?? g.data?.[field];
+        }
+        return result;
+      });
+    }
+
+    return generals;
+  }
+
+  /**
+   * 부대 멤버 조회 (현재 도시가 아닌 멤버들)
+   *
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 ID
+   * @param troopId - 부대 ID (부대장 장수 번호)
+   * @param excludeCityId - 제외할 도시 ID
+   * @returns 장수 목록
+   */
+  async findTroopMembers(sessionId: string, nationId: number, troopId: number, excludeCityId: number) {
+    return General.find({
+      session_id: sessionId,
+      $or: [
+        { nation: nationId, troop: troopId, city: { $ne: excludeCityId } },
+        { 'data.nation': nationId, 'data.troop': troopId, 'data.city': { $ne: excludeCityId } }
+      ]
+    }).lean();
+  }
+
+  /**
    * 재야 장수 조회 (캐시 기반)
    *
    * @param sessionId - 세션 ID
@@ -510,6 +561,42 @@ class GeneralRepository {
   }
 
   /**
+   * 국가 장수들의 필드를 곱셈으로 감소 (예: experience * 0.9)
+   */
+  async multiplyFieldByNation(sessionId: string, nationId: number, field: string, multiplier: number, additionalFilter: any = {}) {
+    await this._invalidateListCaches(sessionId);
+    
+    return General.updateMany(
+      {
+        session_id: sessionId,
+        nation: nationId,
+        ...additionalFilter
+      },
+      [{ $set: { [field]: { $multiply: [`$${field}`, multiplier] } } }]
+    );
+  }
+
+  /**
+   * 국가 장수들의 필드를 증가 (예: betray + 1)
+   */
+  async incrementFieldByNation(sessionId: string, nationId: number, field: string, increment: number, excludeGeneral?: number) {
+    await this._invalidateListCaches(sessionId);
+    
+    const filter: any = {
+      session_id: sessionId,
+      nation: nationId
+    };
+    if (excludeGeneral) {
+      filter.no = { $ne: excludeGeneral };
+    }
+    
+    return General.updateMany(
+      filter,
+      { $inc: { [field]: increment, [`data.${field}`]: increment } }
+    );
+  }
+
+  /**
    * 조건으로 여러 개 삭제 (DB 직접 접근 - 관리자 기능)
    *
    * @param filter - 삭제 조건
@@ -596,6 +683,35 @@ class GeneralRepository {
    */
   async countByFilter(filter: any): Promise<number> {
     return General.countDocuments(filter);
+  }
+
+  /**
+   * 국가 소속 장수들의 자원을 상한으로 제한
+   * 
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 ID
+   * @param resourceKey - 자원 키 (gold 또는 rice)
+   * @param maxValue - 최대 값
+   */
+  async capResourcesByNation(sessionId: string, nationId: number, resourceKey: string, maxValue: number) {
+    await this._invalidateListCaches(sessionId);
+    
+    // 해당 국가 소속이고 자원이 maxValue를 초과하는 장수들을 업데이트
+    return General.updateMany(
+      {
+        session_id: sessionId,
+        $or: [
+          { nation: nationId, [resourceKey]: { $gt: maxValue } },
+          { 'data.nation': nationId, [`data.${resourceKey}`]: { $gt: maxValue } }
+        ]
+      },
+      {
+        $set: {
+          [resourceKey]: maxValue,
+          [`data.${resourceKey}`]: maxValue
+        }
+      }
+    );
   }
 
   /**

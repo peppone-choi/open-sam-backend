@@ -294,7 +294,7 @@ export class WarUnitCity extends WarUnit {
     this.updatedValues = {};
   }
   
-  async applyDB(db: any): Promise<boolean> {
+  async applyDB(): Promise<boolean> {
     const updateVals = this.getUpdatedValues();
     
     // 수비 도시의 로그는 기록하지 않음

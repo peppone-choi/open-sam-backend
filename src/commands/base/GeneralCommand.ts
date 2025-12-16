@@ -5,7 +5,6 @@
  */
 
 import { BaseCommand } from './BaseCommand';
-import { DB } from '../../config/db';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 export abstract class GeneralCommand extends BaseCommand {

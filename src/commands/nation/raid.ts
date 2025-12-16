@@ -1,8 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { NationCommand } from '../base/NationCommand';
+import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
@@ -103,7 +103,6 @@ export class RaidCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
     const general = this.generalObj;
     const generalID = general.getID();
@@ -138,10 +137,10 @@ export class RaidCommand extends NationCommand {
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동하였습니다.`;
 
-    const nationGeneralList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation = ? AND no != ?',
-      [nationID, generalID]
-    );
+    // 국가 장수 목록 조회 (MongoDB)
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const nationGeneralDocs = await generalRepository.findByNation(sessionId, nationID);
+    const nationGeneralList = nationGeneralDocs.filter((g: any) => (g.no ?? g.data?.no) !== generalID).map((g: any) => g.no ?? g.data?.no);
 
     // ActionLogger는 이미 import되어 있음
     for (const nationGeneralID of nationGeneralList) {
@@ -153,10 +152,9 @@ export class RaidCommand extends NationCommand {
     const josaYiCommand = JosaUtil.pick(commandName, '이');
     const broadcastMessageDest = `아국에 <M>${commandName}</>${josaYiCommand} 발동되었습니다.`;
 
-    const destNationGeneralList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation = ?',
-      [destNationID]
-    );
+    // 적국 장수 목록 조회 (MongoDB)
+    const destNationGeneralDocs = await generalRepository.findByNation(sessionId, destNationID);
+    const destNationGeneralList = destNationGeneralDocs.map((g: any) => g.no ?? g.data?.no);
 
     for (const destNationGeneralID of destNationGeneralList) {
       const destNationGeneralLogger = new ActionLogger(destNationGeneralID as number, destNationID, year, month);

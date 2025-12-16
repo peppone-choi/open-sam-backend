@@ -1,5 +1,5 @@
 import { GeneralCommand } from '../base/GeneralCommand';
-import { DB } from '../../config/db';
+
 import { Util } from '../../utils/Util';
 import { GameUnitConst } from '../../constants/GameUnitConst';
 import { LastTurn } from '../../types/LastTurn';

@@ -1,8 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { generalRepository } from '../../repositories/general.repository';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -93,7 +93,6 @@ export class che_종전수락 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
 
     const general = this.generalObj;
     if (!general) {
@@ -151,7 +150,7 @@ export class che_종전수락 extends NationCommand {
     destLogger.pushGeneralHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전 성공`);
     destLogger.pushNationalHistoryLog(`<D><b>${nationName}</b></>${josaWa} 종전`);
 
-    await general.applyDB(db);
+    await this.saveGeneral();
     
     // PHP: StaticEventHandler
     try {

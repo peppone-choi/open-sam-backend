@@ -666,5 +666,5 @@ export abstract class WarUnit {
     return this.rng.nextRange(range[0], range[1]);
   }
   
-  abstract applyDB(db: any): Promise<boolean>;
+  abstract applyDB(): Promise<boolean>;
 }

@@ -65,10 +65,57 @@ class WorldHistoryRepository {
   /**
    * 조건으로 히스토리 조회 (alias)
    * @param filter - 검색 조건
-   * @returns 히스토리 목록
+   * @returns 히스토리 목록 (Query 반환, 체이닝 가능)
    */
   findByFilter(filter: any) {
     return WorldHistory.find(filter);
+  }
+
+  /**
+   * 최근 전역 역사 조회 (중원정세)
+   * @param sessionId - 세션 ID
+   * @param lastId - 마지막 조회 ID (이후 기록만 조회)
+   * @param limit - 조회 개수 제한
+   * @returns 히스토리 목록
+   */
+  async findRecentGlobalHistory(sessionId: string, lastId?: string, limit: number = 15) {
+    const filter: any = {
+      session_id: sessionId,
+      nation_id: 0  // 전역 세계 역사
+    };
+    
+    if (lastId) {
+      filter._id = { $gt: lastId };
+    }
+    
+    return WorldHistory.find(filter)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .lean();
+  }
+
+  /**
+   * 국가별 역사 조회
+   * @param sessionId - 세션 ID
+   * @param nationId - 국가 ID
+   * @param lastId - 마지막 조회 ID
+   * @param limit - 조회 개수 제한
+   * @returns 히스토리 목록
+   */
+  async findRecentNationHistory(sessionId: string, nationId: number, lastId?: string, limit: number = 15) {
+    const filter: any = {
+      session_id: sessionId,
+      nation_id: nationId
+    };
+    
+    if (lastId) {
+      filter._id = { $gt: lastId };
+    }
+    
+    return WorldHistory.find(filter)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .lean();
   }
 
   /**

@@ -1,7 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
+import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -82,7 +83,6 @@ export class che_불가침파기제의 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -206,7 +206,7 @@ export class che_불가침파기제의 extends NationCommand {
       console.error('StaticEventHandler 실패:', error);
     }
     
-    await general.applyDB(db);
+    await this.saveGeneral();
     await destLogger.flush();
 
     return true;
@@ -216,13 +216,15 @@ export class che_불가침파기제의 extends NationCommand {
     const generalObj = this.generalObj;
     const nationID = generalObj!.getNationID();
     const nationList = [];
-    const db = DB.db();
     const getAllNationStaticInfo = global.getAllNationStaticInfo;
 
+    // 외교 상태 조회 (MongoDB)
+    const sessionId = this.env.session_id || 'sangokushi_default';
     const diplomacyStatus: Record<number, any> = {};
-    const diplomacyRows = await db.query('SELECT * FROM diplomacy WHERE me = %i', [nationID]);
+    const diplomacyRows = await diplomacyRepository.findByNation(sessionId, nationID);
     for (const row of diplomacyRows) {
-      diplomacyStatus[row.you] = row;
+      const you = (row as any).you ?? (row as any).data?.you;
+      if (you) diplomacyStatus[you] = row;
     }
 
     for (const destNation of getAllNationStaticInfo()) {

@@ -238,6 +238,12 @@ export async function saveCity(sessionId: string, cityId: number, data: any) {
   // 이벤트 상태 (재해, 풍년 등 맵 아이콘 표시용)
   if (typeof data.state === 'number') immediateUpdate.state = data.state;
   if (typeof data.term === 'number') immediateUpdate.term = data.term;
+  // 내정 관련 필드 (농업/상업/치안/수비/성벽) - 즉시 반영 필요
+  if (typeof data.agri === 'number') immediateUpdate.agri = data.agri;
+  if (typeof data.comm === 'number') immediateUpdate.comm = data.comm;
+  if (typeof data.secu === 'number') immediateUpdate.secu = data.secu;
+  if (typeof data.def === 'number') immediateUpdate.def = data.def;
+  if (typeof data.wall === 'number') immediateUpdate.wall = data.wall;
   
   if (Object.keys(immediateUpdate).length > 0) {
     // nation 변경(점령)은 동기적으로 처리 - 캐시 미스 시 DB에서 옛날 값 읽는 것 방지
@@ -424,5 +430,131 @@ export async function invalidateCache(
   await cacheService.invalidate(keys, patterns);
 }
 
+/**
+ * Troop 저장/업데이트 (Redis → L1 → sync-queue)
+ */
+export async function saveTroop(sessionId: string, troopId: number, data: any) {
+  const key = `troop:${sessionId}:${troopId}`;
+  
+  // 1. Redis(L2)에 저장
+  await cacheManager.setL2(key, data, TTL.MEDIUM);
+  
+  // 2. L1 캐시 업데이트
+  await cacheManager.setL1(key, data);
+  
+  // 3. DB 동기화 큐에 추가
+  await addToSyncQueue('troop', `${sessionId}:${troopId}`, sanitizeForSync(data));
+  
+  // 4. 목록 캐시 무효화
+  await cacheService.invalidate(
+    [`troops:list:${sessionId}`, `troops:nation:${sessionId}:${data.nation || data.data?.nation || 0}`],
+    []
+  );
+  
+  logger.debug('Troop Redis 저장', { sessionId, troopId });
+  return data;
+}
 
+/**
+ * Diplomacy 저장/업데이트 (Redis → L1 → sync-queue)
+ */
+export async function saveDiplomacy(sessionId: string, diplomacyId: string, data: any) {
+  const key = `diplomacy:${sessionId}:${diplomacyId}`;
+  
+  // 1. Redis(L2)에 저장
+  await cacheManager.setL2(key, data, TTL.MEDIUM);
+  
+  // 2. L1 캐시 업데이트
+  await cacheManager.setL1(key, data);
+  
+  // 3. DB 동기화 큐에 추가
+  await addToSyncQueue('diplomacy', `${sessionId}:${diplomacyId}`, sanitizeForSync(data));
+  
+  logger.debug('Diplomacy Redis 저장', { sessionId, diplomacyId });
+  return data;
+}
+
+/**
+ * Command (장수 명령) 저장/업데이트 (Redis → L1 → sync-queue)
+ */
+export async function saveCommand(sessionId: string, generalId: number, turnIdx: number, data: any) {
+  const key = `command:${sessionId}:${generalId}:${turnIdx}`;
+  
+  // 1. Redis(L2)에 저장
+  await cacheManager.setL2(key, data, TTL.SHORT);
+  
+  // 2. L1 캐시 업데이트
+  await cacheManager.setL1(key, data);
+  
+  // 3. DB 동기화 큐에 추가
+  await addToSyncQueue('command', `${sessionId}:${generalId}:${turnIdx}`, sanitizeForSync(data));
+  
+  logger.debug('Command Redis 저장', { sessionId, generalId, turnIdx });
+  return data;
+}
+
+/**
+ * UnitStack 저장/업데이트 (Redis → L1 → DB 즉시)
+ * 병력 데이터는 중요하므로 DB에도 즉시 저장
+ */
+export async function saveUnitStack(sessionId: string, stackId: string, data: any) {
+  const key = `unitstack:${sessionId}:${stackId}`;
+  
+  // 1. Redis(L2)에 저장
+  await cacheManager.setL2(key, data, TTL.SHORT);
+  
+  // 2. L1 캐시 업데이트
+  await cacheManager.setL1(key, data);
+  
+  // 3. DB 즉시 저장 (병력은 중요 데이터)
+  const { UnitStack } = await import('../../models/unit-stack.model');
+  UnitStack.updateOne(
+    { _id: stackId },
+    { $set: sanitizeForSync(data) },
+    { upsert: true }
+  ).catch(err => {
+    logger.warn('UnitStack DB 즉시 업데이트 실패', { sessionId, stackId, err: err?.message });
+  });
+  
+  logger.debug('UnitStack Redis 저장', { sessionId, stackId });
+  return data;
+}
+
+/**
+ * Message 저장/업데이트 (Redis → L1 → sync-queue)
+ */
+export async function saveMessage(sessionId: string, messageId: string, data: any) {
+  const key = `message:${sessionId}:${messageId}`;
+  
+  // 1. Redis(L2)에 저장
+  await cacheManager.setL2(key, data, TTL.MEDIUM);
+  
+  // 2. L1 캐시 업데이트
+  await cacheManager.setL1(key, data);
+  
+  // 3. DB 동기화 큐에 추가
+  await addToSyncQueue('message', `${sessionId}:${messageId}`, sanitizeForSync(data));
+  
+  logger.debug('Message Redis 저장', { sessionId, messageId });
+  return data;
+}
+
+/**
+ * Auction 저장/업데이트 (Redis → L1 → sync-queue)
+ */
+export async function saveAuction(sessionId: string, auctionId: string, data: any) {
+  const key = `auction:${sessionId}:${auctionId}`;
+  
+  // 1. Redis(L2)에 저장
+  await cacheManager.setL2(key, data, TTL.MEDIUM);
+  
+  // 2. L1 캐시 업데이트
+  await cacheManager.setL1(key, data);
+  
+  // 3. DB 동기화 큐에 추가
+  await addToSyncQueue('auction', `${sessionId}:${auctionId}`, sanitizeForSync(data));
+  
+  logger.debug('Auction Redis 저장', { sessionId, auctionId });
+  return data;
+}
 

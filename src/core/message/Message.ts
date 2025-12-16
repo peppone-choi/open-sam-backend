@@ -1,4 +1,3 @@
-import { DB } from '../../config/db';
 import { MessageType } from '../../types/message.types';
 import { MessageTarget } from './MessageTarget';
 import { messageRepository } from '../../repositories/message.repository';
@@ -156,7 +155,6 @@ export class Message {
    * ID로 메시지 가져오기
    */
   public static async getMessageByID(messageID: number): Promise<Message | null> {
-    const db = DB.db();
     const now = new Date();
     // FUTURE: DB 쿼리 구현
     // const row = await db.queryFirstRow(
@@ -179,7 +177,6 @@ export class Message {
     limit: number = 30,
     fromSeq: number = 0
   ): Promise<Message[]> {
-    const db = DB.db();
     const date = new Date();
 
     // FUTURE: DB 쿼리 구현

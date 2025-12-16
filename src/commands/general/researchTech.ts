@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { InvestCommerceCommand } from './investCommerce';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+import { nationRepository } from '../../repositories/nation.repository';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { 
   CriticalRatioDomestic, 
@@ -50,7 +50,6 @@ export class ResearchTechCommand extends InvestCommerceCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     
     if (!this.city) {
@@ -123,23 +122,41 @@ export class ResearchTechCommand extends InvestCommerceCommand {
       throw new Error('국가 정보가 없습니다');
     }
     
-    if (this.techLimit(this.env.startyear, this.env.year, this.nation.tech)) {
+    const currentTech = this.nation.tech || this.nation.data?.tech || 0;
+    
+    if (this.techLimit(this.env.startyear, this.env.year, currentTech)) {
       score /= 4;
     }
 
+    // 장수 수는 nation.gennum 또는 기본값 10 사용
     const genCount = Math.max(
       10, // GameConst::$initialNationGenLimit
-      await db.queryFirstField('SELECT gennum FROM nation WHERE nation=%i', general.data.nation ?? 0)
+      this.nation.gennum || this.nation.data?.gennum || 10
     );
 
     // 0으로 나누기 방지: genCount는 최소 10
     const techIncrease = score / Math.max(1, genCount);
     
     try {
-      const nationUpdated = {
-        tech: this.nation.tech + techIncrease
-      };
-      await db.update('nation', nationUpdated, 'nation=%i', general.data.nation ?? 0);
+      const nationId = general.data.nation ?? 0;
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const newTech = currentTech + techIncrease;
+      
+      // MongoDB에 업데이트 (tech 필드 직접 업데이트)
+      await nationRepository.updateBySessionAndNationId(sessionId, nationId, {
+        tech: newTech,
+        'data.tech': newTech
+      });
+      
+      // 로컬 nation 객체도 업데이트 (다음 연산에서 사용될 수 있음)
+      if (this.nation.tech !== undefined) {
+        this.nation.tech = newTech;
+      }
+      if (this.nation.data) {
+        this.nation.data.tech = newTech;
+      }
+      
+      console.log(`[ResearchTech] 기술력 업데이트: 국가 ${nationId}, ${currentTech} → ${newTech} (+${techIncrease})`);
     } catch (error) {
       console.error('국가 기술 업데이트 실패:', error);
       throw new Error(`기술 연구 실패: ${error.message}`);

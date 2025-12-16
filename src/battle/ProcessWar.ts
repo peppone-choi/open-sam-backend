@@ -8,7 +8,6 @@ import { LiteHashDRBG } from '../utils/LiteHashDRBG';
 import { WarUnitGeneral } from './WarUnitGeneral';
 import { WarUnitCity } from './WarUnitCity';
 import { WarUnit, DamageResult } from './WarUnit';
-import { DB } from '../config/db';
 import { GameConst } from '../constants/GameConst';
 import { Util } from '../utils/Util';
 import { JosaUtil } from '../utils/JosaUtil';
@@ -28,7 +27,6 @@ export async function processWar(
   rawDefenderCity: any
 ): Promise<boolean> {
   const rng = new RandUtil(new LiteHashDRBG(warSeed));
-  const db = DB.db();
   
   const attackerNationID = attackerGeneral.getNationID();
   const defenderNationID = rawDefenderCity.nation;
@@ -139,7 +137,7 @@ export async function processWar(
   let defenderIndex = 0;
   const getNextDefender = async (prevDefender: WarUnit | null, reqNext: boolean): Promise<WarUnit | null> => {
     if (prevDefender !== null) {
-      await prevDefender.applyDB(db);
+      await prevDefender.applyDB();
     }
     
     if (!reqNext) {
@@ -162,7 +160,7 @@ export async function processWar(
   // 실제 전투 처리
   const conquerCity = await processWar_NG(warSeed, attacker, getNextDefender, city);
   
-  await attacker.applyDB(db);
+  await attacker.applyDB();
   
   // 도시 업데이트
   rawDefenderCity = city.getRaw();
@@ -377,12 +375,8 @@ async function processWar_NG(
   
   try {
     const { battleReplayRepository } = await import('../repositories/battle-replay.repository');
-    // 리포지토리가 없다면 직접 DB 저장 시도
-    if (battleReplayRepository) {
-      await battleReplayRepository.create(replayData);
-    } else {
-      await (DB as any).db().collection('battle_replay').insertOne(replayData);
-    }
+    // 리포지토리를 통해 저장
+    await battleReplayRepository.create(replayData);
     // console.log(`Battle replay saved: ${warSeed}`);
   } catch (error) {
     console.error('Failed to save battle replay:', error);

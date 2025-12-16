@@ -1,11 +1,12 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
 import { ActionLogger } from '../../models/ActionLogger';
+import { cityRepository } from '../../repositories/city.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 export class che_무작위수도이전 extends NationCommand {
   static getName(): string {
@@ -61,8 +62,7 @@ export class che_무작위수도이전 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
-
+    const sessionId = this.env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     if (!general) {
       throw new Error('장수 정보가 없습니다');
@@ -78,9 +78,15 @@ export class che_무작위수도이전 extends NationCommand {
 
     const oldCityID = this.nation['capital'];
 
-    const cities = await db.queryFirstColumn(
-      'SELECT city FROM city WHERE `level`>=5 AND `level`<=6 AND nation=0'
-    );
+    // MongoDB로 중립 도시 조회 (레벨 5-6)
+    const neutralCities = await cityRepository.findByNation(sessionId, 0);
+    const cities = neutralCities
+      .filter((c: any) => {
+        const level = c.level ?? c.data?.level ?? 0;
+        return level >= 5 && level <= 6;
+      })
+      .map((c: any) => c.city ?? c.data?.city);
+      
     if (!cities || cities.length === 0) {
       logger.pushGeneralActionLog(`이동할 수 있는 도시가 없습니다. <1>${date}</>`);
       return false;
@@ -89,7 +95,7 @@ export class che_무작위수도이전 extends NationCommand {
     const destCityID = rng.choice(cities);
     this.setDestCity(destCityID, true);
 
-        if (!this.destCity) {
+    if (!this.destCity) {
       throw new Error('대상 도시 정보가 없습니다');
     }
     const destCity = this.destCity;
@@ -106,34 +112,29 @@ export class che_무작위수도이전 extends NationCommand {
     const josaYi = JosaUtil.pick(generalName, '이');
     const josaYiNation = JosaUtil.pick(nationName, '이');
 
-    const aux = this.nation['aux'];
-    aux['can_무작위수도이전'] -= 1;
+    const aux = this.nation['aux'] || {};
+    aux['can_무작위수도이전'] = (aux['can_무작위수도이전'] || 1) - 1;
 
-    const Json = global.Json;
-    await db.update('city', { nation: nationID, conflict: '{}' }, 'city=%i', [destCityID]);
-    await db.update(
-      'nation',
-      { capital: destCityID, aux: Json.encode(aux) },
-      'nation=%i',
-      [nationID]
-    );
-    await db.update(
-      'city',
-      { nation: 0, front: 0, conflict: '{}', officer_set: 0 },
-      'city=%i',
-      [oldCityID]
-    );
+    // MongoDB로 새 수도 업데이트 (CQRS 패턴)
+    await this.updateCity(destCityID, { nation: nationID, conflict: '{}' });
+    
+    // MongoDB로 국가 업데이트 (CQRS 패턴)
+    await this.updateNation(nationID, { capital: destCityID, aux: JSON.stringify(aux) });
+    
+    // MongoDB로 구 수도 업데이트 (CQRS 패턴)
+    await this.updateCity(oldCityID, { nation: 0, front: 0, conflict: '{}', officer_set: 0 });
 
     general.data.city = destCityID;
-    const generalList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation=%i AND no!=%i',
-      [general!.getNationID(), general!.getID()]
+    
+    // MongoDB로 국가 소속 장수들의 도시 일괄 업데이트
+    const generalList = await this.updateGeneralsByFilter(
+      { nationId: nationID },
+      { city: destCityID }
     );
-    if (generalList && generalList.length > 0) {
-      await db.update('general', { city: destCityID }, 'no IN %li', [generalList]);
-    }
+    // 자신 제외
+    const otherGenerals = generalList.filter(no => no !== generalID);
 
-    for (const targetGeneralID of generalList) {
+    for (const targetGeneralID of otherGenerals) {
       const targetLogger = new ActionLogger(targetGeneralID as number, general!.getNationID(), year, month);
       targetLogger.pushGeneralActionLog(
         `국가 수도를 <G><b>${destCityName}</b></>${josaRo} 옮겼습니다.`,
@@ -142,8 +143,9 @@ export class che_무작위수도이전 extends NationCommand {
       await targetLogger.flush();
     }
 
-    const refreshNationStaticInfo = global.refreshNationStaticInfo;
-    await refreshNationStaticInfo();
+    // 국가 정적 정보 갱신 (TODO: 구현 필요)
+    // const refreshNationStaticInfo = global.refreshNationStaticInfo;
+    // await refreshNationStaticInfo();
 
     try {
       const { InheritancePointService, InheritanceKey } = await import('../../services/inheritance/InheritancePoint.service');
@@ -176,7 +178,7 @@ export class che_무작위수도이전 extends NationCommand {
       console.error('StaticEventHandler 실패:', error);
     }
     
-    await general.applyDB(db);
+    await this.saveGeneral();
     return true;
   }
 }

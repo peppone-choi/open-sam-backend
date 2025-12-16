@@ -1,6 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 
 /**
  * 휴식 커맨드 (General)
@@ -50,7 +50,7 @@ export class RestCommand extends GeneralCommand {
     // 공통 후처리 (휴식은 아이템 추첨/유산포인트 제외)
     await this.postRunHooks(rng, { skipItemLottery: true, skipInheritancePoint: true });
     
-    general.applyDB(DB.db());
+    await this.saveGeneral();
     
     return true;
   }

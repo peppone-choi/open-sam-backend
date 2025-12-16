@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -108,8 +108,7 @@ export class ScorchedEarthCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
-
+    const sessionId = this.env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     if (!general) {
       throw new Error('장수 정보가 없습니다');
@@ -118,7 +117,7 @@ export class ScorchedEarthCommand extends NationCommand {
     const generalName = general.data.name || general.name;
     const date = general.getTurnTime('HM');
 
-        if (!this.destCity) {
+    if (!this.destCity) {
       throw new Error('대상 도시 정보가 없습니다');
     }
     const destCity = this.destCity;
@@ -148,50 +147,34 @@ export class ScorchedEarthCommand extends NationCommand {
       aux[key] = (aux[key] ?? 0) + 1;
     }
 
-    await db.update(
-      'general',
-      { experience: db.sqleval('experience * 0.9') },
-      'nation = %i AND officer_level >= 5 AND no!=%i',
-      [nationID, generalID]
-    );
+    // 국가 장수들 경험치 10% 감소 (officer_level >= 5, 자신 제외) - MongoDB
+    await generalRepository.multiplyFieldByNation(sessionId, nationID, 'experience', 0.9, { officer_level: { $gte: 5 }, no: { $ne: generalID } });
 
-    await db.update(
-      'general',
-      { betray: db.sqleval('betray + 1') },
-      'nation = %i AND no!=%i',
-      [nationID, generalID]
-    );
+    // 국가 장수들 betray 1 증가 (자신 제외) - MongoDB
+    await generalRepository.incrementFieldByNation(sessionId, nationID, 'betray', 1, generalID);
     general.increaseVar('betray', 1);
 
-    await db.update(
-      'city',
-      {
-        trust: db.sqleval('greatest(50, trust)'),
-        pop: db.sqleval('greatest(pop_max*0.1, pop*0.2)'),
-        agri: db.sqleval('greatest(agri_max*0.1, agri*0.2)'),
-        comm: db.sqleval('greatest(comm_max*0.1, comm*0.2)'),
-        secu: db.sqleval('greatest(secu_max*0.1, secu*0.2)'),
-        def: db.sqleval('greatest(def_max*0.1, def*0.2)'),
-        wall: db.sqleval('greatest(wall_max*0.1, wall*0.5)'),
-        nation: 0,
-        front: 0,
-        conflict: '{}'
-      },
-      'city=%i',
-      [destCityID]
-    );
+    // 도시 초토화 - 복잡한 계산이 필요하므로 직접 계산 후 업데이트
+    await this.updateCity(destCityID, {
+      trust: Math.max(50, destCity.trust || 0),
+      pop: Math.max((destCity.pop_max || 0) * 0.1, (destCity.pop || 0) * 0.2),
+      agri: Math.max((destCity.agri_max || 0) * 0.1, (destCity.agri || 0) * 0.2),
+      comm: Math.max((destCity.comm_max || 0) * 0.1, (destCity.comm || 0) * 0.2),
+      secu: Math.max((destCity.secu_max || 0) * 0.1, (destCity.secu || 0) * 0.2),
+      def: Math.max((destCity.def_max || 0) * 0.1, (destCity.def || 0) * 0.2),
+      wall: Math.max((destCity.wall_max || 0) * 0.1, (destCity.wall || 0) * 0.5),
+      nation: 0,
+      front: 0,
+      conflict: '{}'
+    });
 
-    await db.update(
-      'nation',
-      {
-        gold: db.sqleval('gold + %i', amount),
-        rice: db.sqleval('rice + %i', amount),
-        surlimit: db.sqleval('surlimit + %i', this.getPostReqTurn()),
-        aux: JSON.stringify(aux)
-      },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 자원 증가 및 aux 업데이트 - MongoDB
+    await this.incrementNation(nationID, {
+      gold: amount,
+      rice: amount,
+      surlimit: this.getPostReqTurn()
+    });
+    await this.updateNation(nationID, { aux: JSON.stringify(aux) });
 
     const refreshNationStaticInfo = global.refreshNationStaticInfo;
     const SetNationFront = global.SetNationFront;

@@ -1,6 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { InheritanceKey } from '../../Enums/InheritanceKey';
 import { DeleteConflict } from '../../func/DeleteConflict';
 import { refreshNationStaticInfo } from '../../func/refreshNationStaticInfo';

@@ -2,7 +2,7 @@ import { GeneralCommand } from '../base/GeneralCommand';
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
@@ -118,7 +118,6 @@ export class JoinGeneralNationCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
     const sessionId = env['session_id'] || 'sangokushi_default';
 

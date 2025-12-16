@@ -4,10 +4,11 @@ import mongoose from 'mongoose';
 
 export class GetHistoryService {
   static async execute(data: any, _user?: any) {
-    const sessionId = data.session_id || 'sangokushi_default';
+    const sessionId = data.session_id || data.serverID || 'sangokushi_default';
     const year = data.year ? parseInt(data.year) : undefined;
     const month = data.month ? parseInt(data.month) : undefined;
-    const serverID = data.serverID || sessionId || 'sangokushi';
+    // serverID는 sessionId와 동일하게 사용 (ng_history.server_id = sessionId)
+    const serverID = sessionId;
     
     try {
       const session = await sessionRepository.findBySessionId(sessionId);

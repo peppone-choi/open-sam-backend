@@ -1,6 +1,5 @@
 // @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
-import { DB } from '../../config/db';
 import { GameConst } from '../../constants/GameConst';
 import { LastTurn } from '../../types/LastTurn';
 import { RandUtil } from '../../utils/RandUtil';
@@ -130,7 +129,6 @@ export class TradeEquipmentCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const date = general.getTurnTime('TURNTIME_HM');
 
@@ -190,12 +188,12 @@ export class TradeEquipmentCommand extends GeneralCommand {
 
   public async exportJSVars(): Promise<any> {
     const general = this.generalObj;
-    const db = DB.db();
+    const sessionId = this.env.session_id || 'sangokushi_default';
     
-    const citySecu = await db.queryFirstField(
-      'SELECT secu FROM city WHERE city = ?', 
-      [this.generalObj.getCityID()]
-    );
+    // 도시 치안 조회 (MongoDB)
+    const { cityRepository } = await import('../../repositories/city.repository');
+    const cityDoc = await cityRepository.findByCityNum(sessionId, this.generalObj.getCityID());
+    const citySecu = cityDoc?.secu ?? cityDoc?.data?.secu ?? 0;
     
     const itemList: any = {};
     const allItems = GameConst.allItems;

@@ -1,7 +1,8 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+import { generalRepository } from '../../repositories/general.repository';
+import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -98,7 +99,6 @@ export class DriveTigerCommand extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const env = this.env;
 
     const general = this.generalObj;
@@ -140,24 +140,23 @@ export class DriveTigerCommand extends NationCommand {
 
     const broadcastMessage = `<Y>${generalName}</>${josaYi} <G><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동하였습니다.`;
 
-    const nationGeneralList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation=%i AND no != %i',
-      [nationID, generalID]
-    );
+    // 국가 장수 목록 조회 (MongoDB)
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const nationGeneralDocs = await generalRepository.findByNation(sessionId, nationID);
+    const nationGeneralList = nationGeneralDocs.filter((g: any) => (g.no ?? g.data?.no) !== generalID).map((g: any) => g.no ?? g.data?.no);
     for (const nationGeneralID of nationGeneralList) {
       const nationGeneralLogger = ActionLogger.create ? 
         ActionLogger.create(nationGeneralID as number, nationID, year, month) :
         new ActionLogger(nationGeneralID as number, nationID, year, month);
-      nationGeneralLogger.pushGeneralActionLog(broadcastMessage, 0); // ActionLogger.PLAIN = 1? Wait, code used PLAIN
+      nationGeneralLogger.pushGeneralActionLog(broadcastMessage, 0);
       await nationGeneralLogger.flush();
     }
 
     const broadcastMessageDest = `<D><b>${nationName}</b></>${josaYiNation} 아국에 <M>${commandName}</>${josaUl} 발동하였습니다.`;
 
-    const destNationGeneralList = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE nation=%i',
-      [destNationID]
-    );
+    // 적국 장수 목록 조회 (MongoDB)
+    const destNationGeneralDocs = await generalRepository.findByNation(sessionId, destNationID);
+    const destNationGeneralList = destNationGeneralDocs.map((g: any) => g.no ?? g.data?.no);
     for (const destNationGeneralID of destNationGeneralList) {
       const destNationGeneralLogger = ActionLogger.create ? 
         ActionLogger.create(destNationGeneralID as number, destNationID, year, month) :
@@ -179,24 +178,15 @@ export class DriveTigerCommand extends NationCommand {
       `<Y>${generalName}</>${josaYi} <D><b>${destNationName}</b></>에 <M>${commandName}</>${josaUl} 발동`
     );
 
-    await db.update(
-      'nation',
-      {
-        strategic_cmd_limit: this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9)
-      },
-      'nation=%i',
-      [nationID]
-    );
+    // 국가 전략 명령 제한 업데이트 (CQRS 패턴)
+    await this.updateNation(nationID, {
+      strategic_cmd_limit: this.generalObj.onCalcStrategic(this.constructor.getName(), 'globalDelay', 9)
+    });
 
-    await db.update(
-      'diplomacy',
-      {
-        term: db.sqleval('IF(`state`=0, %i, `term`+ %i)', 3, 3),
-        state: 1
-      },
-      '(me = %i AND you = %i) OR (you = %i AND me = %i)',
-      [nationID, destNationID, nationID, destNationID]
-    );
+    // 외교 상태 업데이트 (CQRS 패턴)
+    const diplomacy = await diplomacyRepository.findByNations(sessionId, nationID, destNationID);
+    const newTerm = diplomacy && (diplomacy as any).state === 0 ? 3 : ((diplomacy as any)?.term || 0) + 3;
+    await this.updateDiplomacy(nationID, destNationID, { term: newTerm, state: 1 });
 
     const SetNationFront = global.SetNationFront;
     if (SetNationFront) {
@@ -205,7 +195,7 @@ export class DriveTigerCommand extends NationCommand {
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     // StaticEventHandler
     try {

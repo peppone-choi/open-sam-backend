@@ -26,6 +26,7 @@ export class ActionLogger {
   private globalActionLog: string[] = [];
 
   private autoFlush: boolean;
+  private isFlushing: boolean = false; // 중복 flush 방지 플래그
 
   constructor(
     private generalId: number,
@@ -288,54 +289,75 @@ export class ActionLogger {
   /**
    * 메모리의 모든 로그를 DB에 저장
    * autoFlush가 true면 자동으로 호출됨
+   * 중복 flush 방지를 위해 isFlushing 플래그 사용
    */
   async flush(): Promise<void> {
+    // 이미 flush 중이면 스킵 (중복 저장 방지)
+    if (this.isFlushing) {
+      return;
+    }
+
+    this.isFlushing = true;
+
     try {
+      // 각 로그 배열을 복사하고 원본 비우기 (저장 중 새 로그 추가 허용)
+      const historyLogs = [...this.generalHistoryLog];
+      const actionLogs = [...this.generalActionLog];
+      const battleResultLogs = [...this.generalBattleResultLog];
+      const battleDetailLogs = [...this.generalBattleDetailLog];
+      const nationalLogs = [...this.nationalHistoryLog];
+      const globalHistoryLogs = [...this.globalHistoryLog];
+      const globalActionLogs = [...this.globalActionLog];
+
+      // 원본 배열 비우기
+      this.generalHistoryLog = [];
+      this.generalActionLog = [];
+      this.generalBattleResultLog = [];
+      this.generalBattleDetailLog = [];
+      this.nationalHistoryLog = [];
+      this.globalHistoryLog = [];
+      this.globalActionLog = [];
+
       // 장수 이력 로그
-      if (this.generalHistoryLog.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.HISTORY, this.generalHistoryLog);
-        this.generalHistoryLog = [];
+      if (historyLogs.length > 0 && this.generalId) {
+        await this.saveGeneralLogs(LogType.HISTORY, historyLogs);
       }
 
       // 장수 행동 로그
-      if (this.generalActionLog.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.ACTION, this.generalActionLog);
-        this.generalActionLog = [];
+      if (actionLogs.length > 0 && this.generalId) {
+        await this.saveGeneralLogs(LogType.ACTION, actionLogs);
       }
 
       // 전투 결과 로그
-      if (this.generalBattleResultLog.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.BATTLE_RESULT, this.generalBattleResultLog);
-        this.generalBattleResultLog = [];
+      if (battleResultLogs.length > 0 && this.generalId) {
+        await this.saveGeneralLogs(LogType.BATTLE_RESULT, battleResultLogs);
       }
 
       // 전투 상세 로그
-      if (this.generalBattleDetailLog.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.BATTLE_DETAIL, this.generalBattleDetailLog);
-        this.generalBattleDetailLog = [];
+      if (battleDetailLogs.length > 0 && this.generalId) {
+        await this.saveGeneralLogs(LogType.BATTLE_DETAIL, battleDetailLogs);
       }
 
       // 국가 이력 로그 → world_history (nation_id > 0)
-      if (this.nationalHistoryLog.length > 0 && this.nationId) {
-        await this.saveNationLogs(this.nationalHistoryLog);
-        this.nationalHistoryLog = [];
+      if (nationalLogs.length > 0 && this.nationId) {
+        await this.saveNationLogs(nationalLogs);
       }
 
       // 전역 이력 로그 → world_history (nation_id = 0)
-      if (this.globalHistoryLog.length > 0) {
-        await this.saveGlobalHistoryLogs(this.globalHistoryLog);
-        this.globalHistoryLog = [];
+      if (globalHistoryLogs.length > 0) {
+        await this.saveGlobalHistoryLogs(globalHistoryLogs);
       }
 
       // 전역 행동 로그 → general_record (general_id = 0, log_type = 'history')
       // PHP: pushGlobalActionLog는 general_record에 저장
-      if (this.globalActionLog.length > 0) {
-        await this.saveGlobalActionLogs(this.globalActionLog);
-        this.globalActionLog = [];
+      if (globalActionLogs.length > 0) {
+        await this.saveGlobalActionLogs(globalActionLogs);
       }
     } catch (error: any) {
       logger.error('[ActionLogger] flush error:', error);
       throw error;
+    } finally {
+      this.isFlushing = false;
     }
   }
 

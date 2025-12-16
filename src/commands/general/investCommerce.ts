@@ -1,7 +1,6 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { 
   CriticalRatioDomestic, 
@@ -141,7 +140,6 @@ export class InvestCommerceCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const trust = Math.max(50, Math.min(this.city.trust, 100));
     const statKey = (this.constructor as typeof InvestCommerceCommand).statKey;
@@ -235,7 +233,8 @@ export class InvestCommerceCommand extends GeneralCommand {
       this.city[`${cityKey}_max`]
     ));
     
-    await db.update('city', cityUpdated, 'city=%i', general.data.city ?? 0);
+    // MongoDB로 업데이트 (BaseCommand.updateCity 사용)
+    await this.updateCity(general.data.city ?? 0, cityUpdated);
 
     general.increaseVarWithLimit('gold', -this.reqGold, 0);
     general.addExperience(exp);

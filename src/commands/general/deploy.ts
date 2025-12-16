@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { RandUtil } from '../../utils/RandUtil';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
@@ -142,7 +142,6 @@ export class DeployCommand extends GeneralCommand {
       await this.setDestNation(this.destCity.nation);
     }
 
-    const db = DB.db();
     const general = this.generalObj;
     const attackerNationID = general.getNationID();
     const date = general.getTurnTime('HM');

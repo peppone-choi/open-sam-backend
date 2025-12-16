@@ -52,3 +52,4 @@ export class Gyukno extends BattleSpecialityBase {
 
 
 
+

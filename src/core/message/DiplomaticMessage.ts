@@ -2,7 +2,6 @@ import { Message } from './Message';
 import { MessageTarget } from './MessageTarget';
 import { MessageType } from '../../types/message.types';
 import { General } from '../../models/general.model';
-import { DB } from '../../config/db';
 import { ActionLogger } from '../../types/ActionLogger';
 import { JosaUtil } from '../../utils/JosaUtil';
 
@@ -145,7 +144,6 @@ export class DiplomaticMessage extends Message {
       throw new Error('전송되지 않은 메시지에 수락 진행 중');
     }
 
-    const db = DB.db();
     // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     // const [year, month] = gameStor.getValuesAsArray(['year', 'month']);
@@ -257,7 +255,6 @@ export class DiplomaticMessage extends Message {
       throw new Error('전송되지 않은 메시지에 거절 진행 중');
     }
 
-    const db = DB.db();
     // FUTURE: KVStorage 구현
     // const gameStor = KVStorage.getStorage(db, 'game_env');
     // const [year, month] = gameStor.getValuesAsArray(['year', 'month']);

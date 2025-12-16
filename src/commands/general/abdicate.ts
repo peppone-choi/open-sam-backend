@@ -1,6 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { JosaUtil } from '../../utils/JosaUtil';
 import { General } from '../../models/general.model';
 import { generalRepository } from '../../repositories/general.repository';

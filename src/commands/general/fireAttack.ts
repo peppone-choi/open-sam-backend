@@ -1,7 +1,6 @@
 // @ts-nocheck - Legacy db usage needs migration to Mongoose
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 
 /**
@@ -218,12 +217,13 @@ export class FireAttackCommand extends GeneralCommand {
     destCity.comm -= commAmount;
 
     try {
-      await DB.db().update('city', {
+      // 도시 업데이트 (CQRS 패턴)
+      await this.updateCity(destCityID, {
         state: 32,
         agri: destCity.agri,
         comm: destCity.comm
-      }, 'city=?', [destCityID]);
-    } catch (error) {
+      });
+    } catch (error: any) {
       console.error(`도시 ${destCityID} 업데이트 실패:`, error);
       throw new Error(`도시 업데이트 실패: ${error.message}`);
     }
@@ -252,8 +252,8 @@ export class FireAttackCommand extends GeneralCommand {
       await this.setDestNation(this.destCity.nation);
     }
 
-    const db = DB.db();
     const env = this.env;
+    const sessionId = env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     const date = general.getTurnTime('HM');
     const destCity = this.destCity;
@@ -269,11 +269,10 @@ export class FireAttackCommand extends GeneralCommand {
     const distances = searchDistance(general.getCityID(), 5, false);
     const dist = distances[destCityID] ?? 99;
 
-    // 목적지 도시의 장수 목록 로드
-    const cityGeneralID = await db.queryFirstColumn(
-      'SELECT no FROM general WHERE city = ? AND nation = ?',
-      [destCityID, destNationID]
-    );
+    // 목적지 도시의 장수 목록 로드 (MongoDB)
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const destCityGenerals = await generalRepository.findByCityAndNation(sessionId, destCityID, destNationID);
+    const cityGeneralID = destCityGenerals.map((g: any) => g.no ?? g.data?.no);
 
     const { General } = await import('../../models/general.model');
     const destCityGeneralList: any[] = [];

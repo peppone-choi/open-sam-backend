@@ -9,7 +9,21 @@ import { ActionLogger } from '../../services/logger/ActionLogger';
 import { CityConst } from '../../const/CityConst';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { INation } from '../../models/nation.model';
-import { invalidateCache, saveGeneral as cacheSaveGeneral } from '../../common/cache/model-cache.helper';
+import { 
+  invalidateCache, 
+  saveGeneral as cacheSaveGeneral, 
+  saveCity as cacheSaveCity, 
+  saveNation as cacheSaveNation,
+  saveTroop as cacheSaveTroop,
+  saveDiplomacy as cacheSaveDiplomacy,
+  saveCommand as cacheSaveCommand,
+  saveUnitStack as cacheSaveUnitStack
+} from '../../common/cache/model-cache.helper';
+import { cityRepository } from '../../repositories/city.repository';
+import { nationRepository } from '../../repositories/nation.repository';
+import { troopRepository } from '../../repositories/troop.repository';
+import { diplomacyRepository } from '../../repositories/diplomacy.repository';
+import { generalRepository } from '../../repositories/general.repository';
 
 export interface ICity {
   city: number;
@@ -1011,5 +1025,361 @@ export abstract class BaseCommand {
     await this.flushDirtyCaches();
  
     console.log(`[BaseCommand.saveGeneral] 장수 저장 완료`);
+  }
+
+  /**
+   * 도시 정보를 캐시 우선으로 업데이트 (CQRS 패턴)
+   * L1 (메모리) → L2 (Redis) → sync-queue → DB
+   * 
+   * @param cityId 도시 ID
+   * @param update 업데이트할 데이터
+   */
+  protected async updateCity(cityId: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    if (!cityId) {
+      console.warn('[BaseCommand.updateCity] cityId가 없습니다');
+      return;
+    }
+
+    try {
+      // 1. 로컬 city 객체 업데이트 (가장 최신 = 메모리)
+      if (this.city && (this.city.city === cityId || this.city.data?.city === cityId)) {
+        Object.assign(this.city, update);
+        if (this.city.data) {
+          Object.assign(this.city.data, update);
+        }
+      }
+      
+      // 2. 캐시에서 현재 데이터 가져와서 병합
+      const currentCity = await cityRepository.findByCityNum(sessionId, cityId) as any;
+      if (currentCity) {
+        const mergedData = { ...currentCity, ...update };
+        if (mergedData.data) {
+          Object.assign(mergedData.data, update);
+        }
+        
+        // 3. saveCity로 L1 → L2 → sync-queue 저장
+        await cacheSaveCity(sessionId, cityId, mergedData);
+      }
+      
+      this.markCityDirty(cityId);
+      console.log(`[BaseCommand.updateCity] 도시 업데이트: city=${cityId}, fields=${Object.keys(update).join(',')}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateCity] 도시 업데이트 실패: city=${cityId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 국가 정보를 캐시 우선으로 업데이트 (CQRS 패턴)
+   * L1 (메모리) → L2 (Redis) → sync-queue → DB
+   * 
+   * @param nationId 국가 ID
+   * @param update 업데이트할 데이터
+   */
+  protected async updateNation(nationId: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    if (!nationId) {
+      console.warn('[BaseCommand.updateNation] nationId가 없습니다');
+      return;
+    }
+
+    try {
+      // 1. 로컬 nation 객체 업데이트 (가장 최신 = 메모리)
+      if (this.nation && (this.nation.nation === nationId || this.nation.data?.nation === nationId)) {
+        Object.assign(this.nation, update);
+        if (this.nation.data) {
+          Object.assign(this.nation.data, update);
+        }
+      }
+      
+      // 2. 캐시에서 현재 데이터 가져와서 병합
+      const currentNation = await nationRepository.findByNationNum(sessionId, nationId);
+      if (currentNation) {
+        const mergedData = { ...currentNation, ...update };
+        if (mergedData.data) {
+          Object.assign(mergedData.data, update);
+        }
+        
+        // 3. saveNation으로 L1 → L2 → sync-queue 저장
+        await cacheSaveNation(sessionId, nationId, mergedData);
+      }
+      
+      this.markNationDirty(nationId);
+      console.log(`[BaseCommand.updateNation] 국가 업데이트: nation=${nationId}, fields=${Object.keys(update).join(',')}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateNation] 국가 업데이트 실패: nation=${nationId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 장수 정보를 레포지토리를 통해 업데이트 (다른 장수)
+   * db.update('general', ...) 대신 사용
+   * 
+   * @param generalId 장수 ID
+   * @param update 업데이트할 데이터
+   */
+  protected async updateGeneral(generalId: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    if (!generalId) {
+      console.warn('[BaseCommand.updateGeneral] generalId가 없습니다');
+      return;
+    }
+
+    try {
+      // data 필드와 최상위 필드 모두 업데이트
+      const fullUpdate: Record<string, any> = { ...update };
+      for (const [key, value] of Object.entries(update)) {
+        if (!key.startsWith('data.')) {
+          fullUpdate[`data.${key}`] = value;
+        }
+      }
+
+      await cacheSaveGeneral(sessionId, generalId, fullUpdate);
+      this.markGeneralDirty(generalId);
+      
+      console.log(`[BaseCommand.updateGeneral] 장수 업데이트: general=${generalId}, fields=${Object.keys(update).join(',')}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateGeneral] 장수 업데이트 실패: general=${generalId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 국가 필드 증가/감소 (CQRS 패턴)
+   * L1 (메모리) → L2 (Redis) → sync-queue → DB
+   * 
+   * @param nationId 국가 ID
+   * @param increments 증가할 필드들 { fieldName: amount }
+   */
+  protected async incrementNation(nationId: number, increments: Record<string, number>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    if (!nationId) {
+      console.warn('[BaseCommand.incrementNation] nationId가 없습니다');
+      return;
+    }
+
+    try {
+      // 1. 로컬 nation 객체 증가 (가장 최신 = 메모리)
+      if (this.nation && (this.nation.nation === nationId || this.nation.data?.nation === nationId)) {
+        for (const [key, amount] of Object.entries(increments)) {
+          if (this.nation[key] !== undefined) {
+            this.nation[key] += amount;
+          }
+          if (this.nation.data?.[key] !== undefined) {
+            this.nation.data[key] += amount;
+          }
+        }
+      }
+      
+      // 2. 캐시에서 현재 데이터 가져와서 증가
+      const currentNation = await nationRepository.findByNationNum(sessionId, nationId);
+      if (currentNation) {
+        for (const [key, amount] of Object.entries(increments)) {
+          if (currentNation[key] !== undefined) {
+            currentNation[key] += amount;
+          }
+          if (currentNation.data?.[key] !== undefined) {
+            currentNation.data[key] += amount;
+          }
+        }
+        
+        // 3. saveNation으로 L1 → L2 → sync-queue 저장
+        await cacheSaveNation(sessionId, nationId, currentNation);
+      }
+      
+      this.markNationDirty(nationId);
+      console.log(`[BaseCommand.incrementNation] 국가 필드 증가: nation=${nationId}, fields=${Object.keys(increments).join(',')}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.incrementNation] 국가 필드 증가 실패: nation=${nationId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 도시 필드 증가/감소 (CQRS 패턴)
+   * L1 (메모리) → L2 (Redis) → sync-queue → DB
+   * 
+   * @param cityId 도시 ID
+   * @param increments 증가할 필드들 { fieldName: amount }
+   */
+  protected async incrementCity(cityId: number, increments: Record<string, number>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    
+    if (!cityId) {
+      console.warn('[BaseCommand.incrementCity] cityId가 없습니다');
+      return;
+    }
+
+    try {
+      // 1. 로컬 city 객체 증가 (가장 최신 = 메모리)
+      if (this.city && (this.city.city === cityId || this.city.data?.city === cityId)) {
+        for (const [key, amount] of Object.entries(increments)) {
+          if (this.city[key] !== undefined) {
+            this.city[key] += amount;
+          }
+          if (this.city.data?.[key] !== undefined) {
+            this.city.data[key] += amount;
+          }
+        }
+      }
+      
+      // 2. 캐시에서 현재 데이터 가져와서 증가
+      const currentCity = await cityRepository.findByCityNum(sessionId, cityId) as any;
+      if (currentCity) {
+        for (const [key, amount] of Object.entries(increments)) {
+          if (currentCity[key] !== undefined) {
+            currentCity[key] += amount;
+          }
+          if (currentCity.data?.[key] !== undefined) {
+            currentCity.data[key] += amount;
+          }
+        }
+        
+        // 3. saveCity로 L1 → L2 → sync-queue 저장
+        await cacheSaveCity(sessionId, cityId, currentCity);
+      }
+      
+      this.markCityDirty(cityId);
+      console.log(`[BaseCommand.incrementCity] 도시 필드 증가: city=${cityId}, fields=${Object.keys(increments).join(',')}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.incrementCity] 도시 필드 증가 실패: city=${cityId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 부대 정보를 캐시 우선으로 업데이트 (CQRS 패턴)
+   */
+  protected async updateTroop(troopId: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    if (!troopId) return;
+
+    try {
+      const currentTroop = await troopRepository.findByTroopId(sessionId, troopId) as any;
+      if (currentTroop) {
+        const mergedData = { ...currentTroop, ...update };
+        if (mergedData.data) Object.assign(mergedData.data, update);
+        await cacheSaveTroop(sessionId, troopId, mergedData);
+      }
+      console.log(`[BaseCommand.updateTroop] 부대 업데이트: troop=${troopId}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateTroop] 부대 업데이트 실패: troop=${troopId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 외교 정보를 캐시 우선으로 업데이트 (CQRS 패턴)
+   */
+  protected async updateDiplomacy(nationA: number, nationB: number, update: Record<string, any>): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const diplomacyId = `${Math.min(nationA, nationB)}_${Math.max(nationA, nationB)}`;
+
+    try {
+      const currentDiplomacy = await diplomacyRepository.findByNations(sessionId, nationA, nationB) as any;
+      if (currentDiplomacy) {
+        const mergedData = { ...currentDiplomacy, ...update };
+        if (mergedData.data) Object.assign(mergedData.data, update);
+        await cacheSaveDiplomacy(sessionId, diplomacyId, mergedData);
+      }
+      console.log(`[BaseCommand.updateDiplomacy] 외교 업데이트: ${nationA} <-> ${nationB}`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateDiplomacy] 외교 업데이트 실패`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 다른 장수들의 도시를 일괄 업데이트 (CQRS 패턴)
+   */
+  protected async updateGeneralsByFilter(
+    filter: { nationId?: number; cityId?: number; troopId?: number },
+    update: Record<string, any>
+  ): Promise<number[]> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    const updatedGenerals: number[] = [];
+
+    try {
+      let generals: any[] = [];
+      
+      if (filter.nationId !== undefined && filter.cityId !== undefined) {
+        generals = await generalRepository.findByCityAndNation(sessionId, filter.cityId, filter.nationId);
+      } else if (filter.nationId !== undefined) {
+        generals = await generalRepository.findByNation(sessionId, filter.nationId);
+      } else if (filter.cityId !== undefined) {
+        generals = await generalRepository.findByCity(sessionId, filter.cityId);
+      } else if (filter.troopId !== undefined) {
+        generals = await generalRepository.findTroopMembers(sessionId, filter.nationId || 0, filter.troopId, -1);
+      }
+
+      for (const general of generals) {
+        const generalNo = general.no ?? general.data?.no;
+        if (generalNo) {
+          const mergedData = { ...general, ...update };
+          if (mergedData.data) Object.assign(mergedData.data, update);
+          await cacheSaveGeneral(sessionId, generalNo, mergedData);
+          updatedGenerals.push(generalNo);
+          this.markGeneralDirty(generalNo);
+        }
+      }
+
+      console.log(`[BaseCommand.updateGeneralsByFilter] ${updatedGenerals.length}명 업데이트`);
+      return updatedGenerals;
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateGeneralsByFilter] 실패`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 도시들을 일괄 업데이트 (CQRS 패턴)
+   */
+  protected async updateCitiesByFilter(
+    filter: { nationId?: number; cityIds?: number[] },
+    update: Record<string, any>
+  ): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+
+    try {
+      let cities: any[] = [];
+      
+      if (filter.cityIds && filter.cityIds.length > 0) {
+        for (const cityId of filter.cityIds) {
+          const city = await cityRepository.findByCityNum(sessionId, cityId);
+          if (city) cities.push(city);
+        }
+      } else if (filter.nationId !== undefined) {
+        cities = await cityRepository.findByNation(sessionId, filter.nationId);
+      }
+
+      for (const city of cities) {
+        const cityId = (city as any).city ?? (city as any).data?.city;
+        if (cityId) {
+          const mergedData = { ...city, ...update };
+          if ((mergedData as any).data) Object.assign((mergedData as any).data, update);
+          await cacheSaveCity(sessionId, cityId, mergedData);
+          this.markCityDirty(cityId);
+        }
+      }
+
+      console.log(`[BaseCommand.updateCitiesByFilter] ${cities.length}개 도시 업데이트`);
+    } catch (error: any) {
+      console.error(`[BaseCommand.updateCitiesByFilter] 실패`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 장수 명령 저장 (CQRS 패턴)
+   */
+  protected async saveCommandSlot(generalId: number, turnIdx: number, commandData: any): Promise<void> {
+    const sessionId = this.env.session_id || 'sangokushi_default';
+    await cacheSaveCommand(sessionId, generalId, turnIdx, commandData);
   }
 }

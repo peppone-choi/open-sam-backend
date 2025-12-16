@@ -468,6 +468,36 @@ class CityRepository {
   }
 
   /**
+   * 도시 필드 증가/감소 (범용)
+   * @param sessionId - 세션 ID
+   * @param cityNum - 도시 번호
+   * @param increments - 증가할 필드들 { fieldName: amount }
+   * @returns 업데이트 결과
+   */
+  async incrementFields(sessionId: string, cityNum: number, increments: Record<string, number>) {
+    // 캐시 무효화
+    await invalidateCache('city', sessionId, cityNum);
+    await this._invalidateListCaches(sessionId);
+    
+    // data 필드와 최상위 필드 모두 증가
+    const incObj: Record<string, number> = {};
+    for (const [key, amount] of Object.entries(increments)) {
+      incObj[key] = amount;
+      if (!key.startsWith('data.')) {
+        incObj[`data.${key}`] = amount;
+      }
+    }
+    
+    return City.updateOne(
+      {
+        session_id: sessionId,
+        'data.city': cityNum
+      },
+      { $inc: incObj }
+    );
+  }
+
+  /**
    * 목록 캐시 무효화 (내부 헬퍼)
    *
    * @param sessionId - 세션 ID

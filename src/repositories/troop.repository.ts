@@ -48,6 +48,22 @@ class TroopRepository {
   }
 
   /**
+   * 부대장 ID로 부대 조회
+   * @param sessionId - 세션 ID
+   * @param leaderNo - 부대장 장수 번호
+   * @returns 부대 문서 또는 null
+   */
+  async findByLeader(sessionId: string, leaderNo: number) {
+    return Troop.findOne({
+      session_id: sessionId,
+      $or: [
+        { troop_leader: leaderNo },
+        { 'data.troop_leader': leaderNo }
+      ]
+    }).lean();
+  }
+
+  /**
    * 조건으로 부대 한 개 조회
    * @param filter - 검색 조건
    * @returns 부대 문서 또는 null

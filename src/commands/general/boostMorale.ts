@@ -1,6 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { GameConst } from '../../constants/GameConst';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';

@@ -1,6 +1,5 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
-import { DB } from '../../config/db';
 import { Util } from '../../utils/Util';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { GameConst } from '../../constants/GameConst';
@@ -9,6 +8,7 @@ import { RandUtil } from '../../utils/RandUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
 import { SearchTalentCommand } from './searchTalent';
+import { generalRepository } from '../../repositories/general.repository';
 
 /**
  * 해산 커맨드
@@ -50,7 +50,7 @@ export class DisbandCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    const sessionId = this.env.session_id || 'sangokushi_default';
     const general = this.generalObj;
     const logger = general.getLogger();
     const date = general.getTurnTime('HM');
@@ -73,13 +73,9 @@ export class DisbandCommand extends GeneralCommand {
     const nationName = nation.name;
     const josaUl = JosaUtil.pick(nationName, '을');
 
-    await db.update('general', {
-      gold: GameConst.defaultGold
-    },  'nation=? AND gold>?', [nationID, GameConst.defaultGold]);
-    
-    await db.update('general', {
-      rice: GameConst.defaultRice
-    },  'nation=? AND rice>?', [nationID, GameConst.defaultRice]);
+    // MongoDB로 국가 소속 장수들의 자금/군량 상한 설정
+    await generalRepository.capResourcesByNation(sessionId, nationID, 'gold', GameConst.defaultGold);
+    await generalRepository.capResourcesByNation(sessionId, nationID, 'rice', GameConst.defaultRice);
 
     general.increaseVarWithLimit('gold', 0, 0, GameConst.defaultGold);
     general.increaseVarWithLimit('rice', 0, 0, GameConst.defaultRice);
@@ -103,18 +99,21 @@ export class DisbandCommand extends GeneralCommand {
     
     await this.saveGeneral();
 
-    await runEventHandler(db, null, 'OccupyCity');
+    await runEventHandler('OccupyCity');
 
     return true;
   }
 }
 
 async function refreshNationStaticInfo(): Promise<void> {
+  // TODO: 국가 정적 정보 갱신 구현
 }
 
 async function deleteNation(general: any, flag: boolean): Promise<any[]> {
+  // TODO: 국가 삭제 구현
   return [];
 }
 
-async function runEventHandler(db: any, target: any, eventType: string): Promise<void> {
+async function runEventHandler(eventType: string): Promise<void> {
+  // TODO: 이벤트 핸들러 구현
 }

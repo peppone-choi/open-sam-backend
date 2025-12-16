@@ -220,7 +220,7 @@ export class SelectNpcService {
           ],
         },
         {
-          npc: 1, // 선택된 오리지널 캐릭터
+          npc: 0, // 플레이어 캐릭터 (npc >= 1은 AI가 명령 등록함)
           owner: userId.toString(),
           owner_name: ownerName,
           officer_level: officerLevel, // 최상위 필드에도 저장

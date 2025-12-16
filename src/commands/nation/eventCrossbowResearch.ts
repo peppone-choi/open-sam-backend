@@ -1,7 +1,7 @@
-// @ts-nocheck - Legacy db usage needs migration to Mongoose
+// @ts-nocheck - Type issues need review
 import '../../utils/function-extensions';
 import { NationCommand } from '../base/NationCommand';
-import { DB } from '../../config/db';
+
 import { LastTurn } from '../base/BaseCommand';
 import { JosaUtil } from '../../utils/JosaUtil';
 import { ConstraintHelper } from '../../constraints/constraint-helper';
@@ -67,7 +67,7 @@ export class event_원융노병연구 extends NationCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
+    
     const general = this.generalObj;
     if (!general) {
       throw new Error('장수 정보가 없습니다');
@@ -89,16 +89,9 @@ export class event_원융노병연구 extends NationCommand {
     const generalName = general!.getName();
     const josaYi = JosaUtil.pick(generalName, '이');
 
-    await db.update(
-      'nation',
-      {
-        gold: db.sqleval('gold - %i', reqGold),
-        rice: db.sqleval('rice - %i', reqRice),
-        aux: JSON.stringify(aux),
-      },
-      'nation=%i',
-      [nationID]
-    );
+    // MongoDB로 국가 업데이트 (CQRS 패턴)
+    await this.incrementNation(nationID, { gold: -reqGold, rice: -reqRice });
+    await this.updateNation(nationID, { aux: JSON.stringify(aux) });
 
     logger.pushGeneralActionLog(`<M>${actionName}</> 완료`);
     logger.pushGeneralHistoryLog(`<M>${actionName}</> 완료`);
@@ -125,7 +118,7 @@ export class event_원융노병연구 extends NationCommand {
       console.error('StaticEventHandler 실패:', error);
     }
     
-    await general.applyDB(db);
+    await this.saveGeneral();
 
     return true;
   }

@@ -512,8 +512,9 @@ export class WarUnitGeneral extends WarUnit {
     this.checkStatChange();
   }
   
-  async applyDB(db: any): Promise<boolean> {
-    const affected = await this.general.applyDB?.(db);
+  async applyDB(): Promise<boolean> {
+    // MongoDB/CQRS 패턴 사용 - save() 호출
+    const affected = await this.general.save?.();
     await this.getLogger()?.flush?.();
     return affected || false;
   }

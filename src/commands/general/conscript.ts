@@ -1,6 +1,6 @@
 import { GeneralCommand } from '../base/GeneralCommand';
 import { LastTurn } from '../base/BaseCommand';
-import { DB } from '../../config/db';
+
 import { GameConst } from '../../constants/GameConst';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { unitStackRepository } from '../../repositories/unit-stack.repository';
@@ -253,7 +253,6 @@ export class ConscriptCommand extends GeneralCommand {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
-    const db = DB.db();
     const general = this.generalObj;
 
     // 징병 수가 0이 되는 이상 상황을 방어하기 위해

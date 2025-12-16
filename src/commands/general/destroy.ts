@@ -1,5 +1,5 @@
 import { FireAttackCommand } from './fireAttack';
-import { DB } from '../../config/db';
+
 
 /**
  * 파괴 커맨드
@@ -33,11 +33,12 @@ export class DestroyCommand extends FireAttackCommand {
     destCity.def -= defAmount;
     destCity.wall -= wallAmount;
 
-    await DB.db().update('city', {
+    // 도시 업데이트 (CQRS 패턴)
+    await this.updateCity(destCityID, {
       state: 32,
       def: destCity.def,
       wall: destCity.wall
-    }, 'city=?', [destCityID]);
+    });
 
     const defAmountText = defAmount.toLocaleString();
     const wallAmountText = wallAmount.toLocaleString();
