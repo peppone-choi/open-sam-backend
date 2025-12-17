@@ -68,3 +68,5 @@ export class Sinsan extends BattleSpecialityBase {
 
 
 
+
+
