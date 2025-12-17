@@ -625,7 +625,9 @@ export class GetFrontInfoService {
       scenarioText,
       extendedGeneral: (data.extended_general || 0) as 0 | 1,
       isFiction: (data.is_fiction || 0) as 0 | 1,
-      npcMode: (data.npcmode || 0) as 0 | 1 | 2,
+      // npcMode: 0=불가, 1=빙의가능, 2=선택생성
+      // npcmode 필드가 있으면 우선 사용, 없으면 allow_npc_possess로 판단
+      npcMode: (data.npcmode ?? (data.allow_npc_possess ? 1 : 0)) as 0 | 1 | 2,
       joinMode: data.join_mode === 0 ? 'onlyRandom' : 'full',
       startyear: data.startyear ?? data.startYear ?? 184,
       year: turnInfo.year,
