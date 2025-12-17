@@ -6,6 +6,7 @@
 
 import { Hall } from '../models/hall.model';
 import { User } from '../models/user.model';
+import { Session } from '../models/session.model';
 import { logger } from '../common/logger';
 import { sessionRepository } from '../repositories/session.repository';
 import { generalRepository } from '../repositories/general.repository';
@@ -535,31 +536,70 @@ export class ArchiveService {
    */
   static async getGenList(sessionId: string, type?: number) {
     try {
-      const query: any = { session_id: sessionId };
+      // generalRepository를 사용하여 장수 목록 조회
+      const generals = await generalRepository.findBySession(sessionId);
       
-      // type이 있으면 필터 적용
-      if (type !== undefined) {
-        // type에 따른 필터 로직 (PHP 로직 참고 필요)
+      // type에 따른 정렬 로직
+      const sortedGenerals = [...generals];
+      switch (type) {
+        case 1: // 국가
+          sortedGenerals.sort((a, b) => ((a.data as any)?.nation || 0) - ((b.data as any)?.nation || 0));
+          break;
+        case 2: // 통솔
+          sortedGenerals.sort((a, b) => ((b.data as any)?.leadership || 0) - ((a.data as any)?.leadership || 0));
+          break;
+        case 3: // 무력
+          sortedGenerals.sort((a, b) => ((b.data as any)?.strength || 0) - ((a.data as any)?.strength || 0));
+          break;
+        case 4: // 지력
+          sortedGenerals.sort((a, b) => ((b.data as any)?.intel || 0) - ((a.data as any)?.intel || 0));
+          break;
+        case 5: // 명성
+          sortedGenerals.sort((a, b) => ((b.data as any)?.experience || 0) - ((a.data as any)?.experience || 0));
+          break;
+        case 6: // 계급
+          sortedGenerals.sort((a, b) => ((b.data as any)?.dedlevel || 0) - ((a.data as any)?.dedlevel || 0));
+          break;
+        case 7: // 관직
+          sortedGenerals.sort((a, b) => ((b.data as any)?.officer_level || 0) - ((a.data as any)?.officer_level || 0));
+          break;
+        case 8: // 삭턴
+          sortedGenerals.sort((a, b) => ((a.data as any)?.killturn || 9999) - ((b.data as any)?.killturn || 9999));
+          break;
+        case 9: // 벌점
+        default:
+          sortedGenerals.sort((a, b) => ((b.data as any)?.penalty || 0) - ((a.data as any)?.penalty || 0));
+          break;
       }
 
-      const generals = await General
-        .find(query)
-        .sort({ 'data.experience': -1 })
-        .limit(1000)
-        ;
+      // 국가 정보 조회
+      const nations = await nationRepository.findByFilter({ session_id: sessionId });
+      const nationMap = new Map(nations.map((n: any) => [n.nation, n.name]));
+      
+      // 도시 정보 조회
+      const cities = await cityRepository.findByFilter({ session_id: sessionId });
+      const cityMap = new Map(cities.map((c: any) => [c.city, c.name]));
 
-      const generalList = generals.map((g: any) => {
+      const generalList = sortedGenerals.slice(0, 1000).map((g: any) => {
         const genData = g.data || {};
         return {
           no: genData.no || g.no,
           name: genData.name || g.name,
           nation: genData.nation || 0,
+          nationName: nationMap.get(genData.nation) || '재야',
           city: genData.city || 0,
+          cityName: cityMap.get(genData.city) || '',
           experience: genData.experience || 0,
           leadership: genData.leadership || 0,
           strength: genData.strength || 0,
           intel: genData.intel || 0,
-          npc: genData.npc || 0
+          politics: genData.politics || 0,
+          charm: genData.charm || 0,
+          dedlevel: genData.dedlevel || 0,
+          officer_level: genData.officer_level || 0,
+          killturn: genData.killturn,
+          penalty: genData.penalty || 0,
+          npc: genData.npc || g.owner === 'NPC' ? 1 : 0
         };
       });
 
