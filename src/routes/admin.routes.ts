@@ -332,6 +332,7 @@ router.post('/game-info', async (req, res) => {
       serverName: session?.name || '',
       scenario: session?.scenario_name || gameEnv.scenario || '',
       scenarioText: sessionData.scenarioText || gameEnv.scenarioText || '',
+      serverDescription: sessionData.serverDescription || gameEnv.serverDescription || '', // 서버 설명 (로비 표시용)
       serverCnt: sessionData.server_cnt || gameEnv.server_cnt || 1,
       msg: sessionData.noticeMsg || '',
       turnterm: sessionData.turnterm || 0,
@@ -393,9 +394,15 @@ router.post('/update-game', async (req, res) => {
       session.data.game_env.scenario = data.scenario || '';
       session.markModified('data.game_env');
     } else if (action === 'scenarioText') {
-      // 시나리오 표시 이름 설정 (게임 화면에 표시됨)
+      // 시나리오 설명 (게임 화면에 표시됨)
       session.data.scenarioText = data.scenarioText || '';
       session.data.game_env.scenarioText = data.scenarioText || '';
+      session.markModified('data');
+      session.markModified('data.game_env');
+    } else if (action === 'serverDescription') {
+      // 서버 설명 (로비 서버 안내에 표시됨)
+      session.data.serverDescription = data.serverDescription || '';
+      session.data.game_env.serverDescription = data.serverDescription || '';
       session.markModified('data');
       session.markModified('data.game_env');
     } else if (action === 'serverCnt') {

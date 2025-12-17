@@ -184,7 +184,8 @@ router.post('/get-server-status', async (req, res) => {
         statusText: statusText,
         // 시나리오 정보
         scenarioName: session.scenario_name || gameEnv.scenario || '',
-        scenarioText: session.data?.scenarioText || gameEnv.scenarioText || '', // 서버 설명
+        // 서버 설명 (로비 표시용) - scenarioText와 별개
+        serverDescription: session.data?.serverDescription || gameEnv.serverDescription || '',
         // 게임 시간 정보
         year: gameEnv.year || gameEnv.startyear || 220,
         month: gameEnv.month || 1,
