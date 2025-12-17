@@ -12,7 +12,7 @@ const englishToKoreanCommandMap: Record<string, string> = {
   'RETURN': '귀환',
   'BORDER_RETURN': '접경귀환',
   'CULTIVATE_FARM': '농업',
-  'INVEST_COMMERCE': '상업',
+  'INVEST_COMMERCE': '상업투자',
   'RESEARCH_TECH': '기술연구',
   'REINFORCE_DEFENSE': '방어',
   'REINFORCE_SECURITY': '치안',

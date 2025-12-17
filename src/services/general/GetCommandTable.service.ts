@@ -195,12 +195,12 @@ export class GetCommandTableService {
       '접경귀환': 'BORDER_RETURN',
       '농업개발': 'CULTIVATE_FARM',
       '상업개발': 'INVEST_COMMERCE',
+      '상업투자': 'INVEST_COMMERCE',
       '기술연구': 'RESEARCH_TECH',
       '방어': 'REINFORCE_DEFENSE',
       '치안': 'REINFORCE_SECURITY',
       '성벽': 'REPAIR_WALL',
       '농업': 'CULTIVATE_FARM',
-      '상업': 'INVEST_COMMERCE',
     };
     
     if (nameMap[type]) {
@@ -232,7 +232,7 @@ export class GetCommandTableService {
       ],
       '내정': [
         '농지개간',        // CultivateLandCommand (che_농지개간)
-        '상업',            // InvestCommerceCommand (che_상업투자 → 상업)
+        '상업투자',        // InvestCommerceCommand (che_상업투자)
         '기술연구',        // ResearchTechCommand (che_기술연구)
         '수비강화',        // ReinforceDefenseExtendCommand (che_수비강화)
         '성벽보수',        // RepairWallExtendCommand (che_성벽보수)
