@@ -446,13 +446,24 @@ class GeneralRepository {
           data: { no: generalNo, ...update }
         };
         await saveGeneral(sessionId, generalNo, newGeneral);
+        
+        // DB에도 저장
+        await General.create(newGeneral);
+        
         await this._invalidateListCaches(sessionId);
         return { modifiedCount: 1, matchedCount: 1 };
       }
       
-      // DB에서 찾았으면 캐시에 저장
+      // DB에서 찾았으면 캐시에 저장 및 DB 업데이트
       const merged = { ...fromDB, ...update };
       await saveGeneral(sessionId, generalNo, merged);
+      
+      // DB에도 업데이트
+      await General.updateOne(
+        { session_id: sessionId, $or: [{ 'data.no': generalNo }, { no: generalNo }] },
+        { $set: update }
+      );
+      
       await this._invalidateListCaches(sessionId);
       return { modifiedCount: 1, matchedCount: 1 };
     }
@@ -467,6 +478,29 @@ class GeneralRepository {
       }
     };
     await saveGeneral(sessionId, generalNo, merged);
+
+    // DB에도 업데이트 (turntime 등 중요 필드 동기화)
+    const dbUpdate: any = {};
+    if (update.turntime) dbUpdate.turntime = update.turntime;
+    if (update.data?.turntime) dbUpdate['data.turntime'] = update.data.turntime;
+    if (update.crew !== undefined) dbUpdate.crew = update.crew;
+    if (update.data?.crew !== undefined) dbUpdate['data.crew'] = update.data.crew;
+    if (update.gold !== undefined) dbUpdate.gold = update.gold;
+    if (update.data?.gold !== undefined) dbUpdate['data.gold'] = update.data.gold;
+    if (update.rice !== undefined) dbUpdate.rice = update.rice;
+    if (update.data?.rice !== undefined) dbUpdate['data.rice'] = update.data.rice;
+    
+    // data 객체 전체 업데이트
+    if (update.data) {
+      dbUpdate.data = merged.data;
+    }
+    
+    if (Object.keys(dbUpdate).length > 0) {
+      await General.updateOne(
+        { session_id: sessionId, $or: [{ 'data.no': generalNo }, { no: generalNo }] },
+        { $set: dbUpdate }
+      );
+    }
 
     // 목록 캐시 무효화
     await this._invalidateListCaches(sessionId);

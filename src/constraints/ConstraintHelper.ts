@@ -317,7 +317,9 @@ export class ConstraintHelper {
   static NotOpeningPart(relYear?: number): IConstraint {
     return {
       test: (input: any, env: any) => {
-        const openingPartYear = env?.opening_part_year ?? 3;
+        // 기본 초반 제한은 1년로 설정 (env에서 명시하면 그 값을 우선)
+        // 3년 기본값은 출병/외교 등이 과도하게 늦어지는 원인이 됨
+        const openingPartYear = env?.opening_part_year ?? 1;
         const currentRelYear = relYear ?? ((env?.year ?? 0) - (env?.startyear ?? 0));
         return currentRelYear >= openingPartYear ? null : '초반 제한 중에는 불가능합니다.';
       }
@@ -581,7 +583,7 @@ export class ConstraintHelper {
           return '대상 국가가 없습니다.';
         }
 
-        const openingPartYear = env.opening_part_year || 3;
+        const openingPartYear = env.opening_part_year || 1;
         const initialNationGenLimit = env.initial_nation_gen_limit || 10;
         const gennum = this.getNationVar(destNation, 'gennum');
         const scout = this.getNationVar(destNation, 'scout');

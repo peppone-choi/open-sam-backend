@@ -814,12 +814,12 @@ export class GetFrontInfoService {
         cons: typeInfo.cons
       },
       color: colorStr,
-      level: nationData.level ?? nationData.data?.level ?? 0,
-      capital: nationData.capital ?? nationData.data?.capital ?? 0,
-      gold: nationData.gold ?? nationData.data?.gold ?? 0,
-      rice: nationData.rice ?? nationData.data?.rice ?? 0,
-      tech: nationData.tech ?? nationData.data?.tech ?? 0,
-      gennum: nationData.gennum ?? nationData.data?.gennum ?? 0,
+      level: nationData.data?.level ?? nationData.level ?? 0,
+      capital: nationData.data?.capital ?? nationData.capital ?? 0,
+      gold: nationData.data?.gold ?? nationData.gold ?? 0,  // data 내부 값 우선 (실제 변하는 값)
+      rice: nationData.data?.rice ?? nationData.rice ?? 0,  // data 내부 값 우선 (실제 변하는 값)
+      tech: nationData.data?.tech ?? nationData.tech ?? 0,
+      gennum: nationData.data?.gennum ?? nationData.gennum ?? 0,
       power: nationData.power || {},
       bill: nationData.bill || '',
       taxRate: nationData.rate || 10,

@@ -177,7 +177,33 @@ class NationRepository {
    * @returns 업데이트 결과 (Redis에만 저장, DB는 데몬이 동기화)
    */
   async updateByNationNum(sessionId: string, nationNum: number, update: any) {
-    // 기존 국가 데이터 조회
+    // MongoDB 연산자($inc, $set 등) 사용 여부 확인
+    const hasMongoOperator = Object.keys(update).some(key => key.startsWith('$'));
+    
+    if (hasMongoOperator) {
+      // MongoDB 연산자 사용 시: DB에 직접 업데이트 후 캐시 갱신
+      const result = await Nation.updateOne(
+        { session_id: sessionId, nation: nationNum },
+        update  // $inc, $set 등 연산자 그대로 전달
+      );
+      
+      // 업데이트된 데이터로 캐시 갱신
+      const updated = await Nation.findOne({ 
+        session_id: sessionId, 
+        nation: nationNum 
+      }).lean();
+      
+      if (updated) {
+        await saveNation(sessionId, nationNum, updated);
+      }
+      
+      // 목록 캐시 무효화
+      await this._invalidateListCaches(sessionId);
+      
+      return result;
+    }
+    
+    // 일반 업데이트: 기존 로직
     const existing = await Nation.findOne({ 
       session_id: sessionId, 
       nation: nationNum 
@@ -187,7 +213,7 @@ class NationRepository {
       const merged = { ...existing, ...update };
       await saveNation(sessionId, nationNum, merged);
       
-      // DB에도 즉시 업데이트 (sync-daemon 대기 없이)
+      // DB에도 즉시 업데이트
       await Nation.updateOne(
         { session_id: sessionId, nation: nationNum },
         { $set: update }

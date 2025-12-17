@@ -1369,9 +1369,11 @@ export class SimpleAI {
    */
   private extractGeneralStats(genData: any): GeneralStats {
     // 국가 자금 가져오기 (징병/훈련 등은 국가 자금 사용)
-    const nationData = this.nation?.data || this.nation;
-    const nationGold = nationData?.gold || 0;
-    const nationRice = nationData?.rice || 0;
+    // MongoDB 문서 구조: 루트에 gold/rice(초기값), data 안에 실제 변하는 gold/rice
+    // data 내부의 값을 우선 사용
+    const nationDataInner = this.nation?.data;
+    const nationGold = nationDataInner?.gold ?? this.nation?.gold ?? 0;
+    const nationRice = nationDataInner?.rice ?? this.nation?.rice ?? 0;
     
     return {
       leadership: genData.leadership || 50,
@@ -1902,14 +1904,23 @@ export class SimpleAI {
    */
   private async shouldDeclareWar(nationData: any): Promise<number | null> {
     // 방랑군이나 재야는 선전포고 불가
-    if (!nationData || nationData.level === 0) return null;
+    if (!nationData) return null;
+
+    // nation 데이터는 일부가 data 내부에 들어있을 수 있어 안전하게 접근
+    const getNationVal = <T = any>(key: string, defaultVal?: T): T => {
+      return (nationData?.[key] ?? nationData?.data?.[key] ?? defaultVal) as T;
+    };
+
+    const nationLevel = getNationVal<number>('level', 0);
+    if (nationLevel === 0) return null;
 
     // 수도가 없으면 불가
-    if (!nationData.capital) return null;
+    const nationCapital = getNationVal<number>('capital', 0);
+    if (!nationCapital) return null;
 
-    const nationGold = nationData.gold || 0;
-    const nationRice = nationData.rice || 0;
-    const nationId = nationData.nation || 0;
+    const nationGold = getNationVal<number>('gold', 0);
+    const nationRice = getNationVal<number>('rice', 0);
+    const nationId = getNationVal<number>('nation', 0);
 
     // 자원 충분 여부 (최소 5000 이상)
     if (nationGold < 5000 || nationRice < 5000) {
@@ -1917,7 +1928,12 @@ export class SimpleAI {
     }
 
     // 이미 전쟁 중이면 추가 선포 안 함
-    const warList = nationData.war_list || nationData.warList || [];
+    const warList =
+      nationData?.war_list ??
+      nationData?.warList ??
+      nationData?.data?.war_list ??
+      nationData?.data?.warList ??
+      [];
     if (Array.isArray(warList) && warList.length >= 2) {
       return null; // 이미 2개국 이상과 전쟁 중
     }
@@ -1935,24 +1951,32 @@ export class SimpleAI {
       if (!ourCities || ourCities.length === 0) return null;
 
       // 인접한 다른 국가 도시 찾기
-      const adjacentNations = new Set<number>();
-      
+      // NOTE: 인접 정보는 DB 도시 문서에 없을 수 있고, 시나리오 cities.json 기반 CityConst가 정답임
+      const neighborCityIds = new Set<number>();
       for (const city of ourCities) {
-        // neighbors 필드 또는 connect 필드에서 인접 도시 가져오기
-        const cityData = (city as any).data || city;
-        const neighbors = cityData.neighbors || (city as any).neighbors || (city as any).connect || [];
-        
+        const cityId = (city as any)?.city ?? (city as any)?.data?.city;
+        if (typeof cityId !== 'number') continue;
+        const cityConst = CityConst.byID(cityId);
+        const neighbors = cityConst?.neighbors ?? [];
         for (const neighborId of neighbors) {
-          // neighborId가 숫자가 아니면 파싱
-          const nId = typeof neighborId === 'number' ? neighborId : parseInt(String(neighborId), 10);
-          if (isNaN(nId)) continue;
-          
-          const neighborCity = await cityRepository.findByCityNum(sessionId, nId) as any;
-          const neighborNation = neighborCity?.nation ?? neighborCity?.data?.nation ?? 0;
-          
-          if (neighborNation && neighborNation !== nationId && neighborNation !== 0) {
-            adjacentNations.add(neighborNation);
+          if (typeof neighborId === 'number' && !Number.isNaN(neighborId)) {
+            neighborCityIds.add(neighborId);
           }
+        }
+      }
+
+      if (neighborCityIds.size === 0) return null;
+
+      const neighborCitiesMap = await cityRepository.findByCityNums(
+        sessionId,
+        Array.from(neighborCityIds)
+      );
+
+      const adjacentNations = new Set<number>();
+      for (const neighborCity of neighborCitiesMap.values()) {
+        const neighborNation = (neighborCity as any)?.nation ?? (neighborCity as any)?.data?.nation ?? 0;
+        if (neighborNation && neighborNation !== nationId && neighborNation !== 0) {
+          adjacentNations.add(neighborNation);
         }
       }
 
@@ -1969,15 +1993,19 @@ export class SimpleAI {
         const adjNation = await nationRepository.findByNationNum(sessionId, adjNationId);
         if (!adjNation) continue;
 
-        const genCount = adjNation.gennum || 0;
+        const genCount = (adjNation as any)?.gennum ?? (adjNation as any)?.data?.gennum ?? 0;
         if (genCount < minGenCount) {
           minGenCount = genCount;
           targetNationId = adjNationId;
         }
       }
 
+      if (targetNationId === null) {
+        return null;
+      }
+
       // 상대 국가의 장수 수가 우리의 1.5배 이상이면 선포 안 함
-      const ourGenCount = nationData.gennum || 1;
+      const ourGenCount = getNationVal<number>('gennum', 1) || 1;
       if (minGenCount > ourGenCount * 1.5) {
         return null;
       }

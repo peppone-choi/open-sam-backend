@@ -62,7 +62,9 @@ async function initSangokushiData(sessionId: string) {
         gold: 100000,
         rice: 200000,
         level: 1,
-        war: 1, // 전쟁 가능
+        // NOTE: data.war는 "선전포고 차단(전쟁 금지)" 플래그로 사용됨.
+        // 0 = 전쟁 허용, 1 = 전쟁 금지
+        war: 0,
         gennum: 0,
       });
       logger.info(`[Sangokushi] Created nation: ${nationData.name}`);

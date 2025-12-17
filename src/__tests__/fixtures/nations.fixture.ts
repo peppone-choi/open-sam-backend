@@ -52,7 +52,9 @@ export class TestNation {
     this.capital = options.capital ?? 1;
     this.gennum = options.gennum ?? 10;
     this.power = options.power ?? 1000;
-    this.war = options.war ?? 1;
+    // NOTE: war는 "선전포고 차단(전쟁 금지)" 플래그로 사용됨
+    // 0 = 전쟁 허용, 1 = 전쟁 금지
+    this.war = options.war ?? 0;
     this.type = options.type ?? 0;
     this.aux = options.aux ?? {};
     this.scout = options.scout ?? 0;
@@ -142,8 +144,8 @@ export const NationPresets = {
     tech: 100,
   }),
 
-  /** 전쟁 중 국가 */
-  atWar: () => createTestNation({
+  /** 선전포고 차단(전쟁 금지) 국가 */
+  warBlocked: () => createTestNation({
     war: 1,
     gold: 100000,
     rice: 50000,

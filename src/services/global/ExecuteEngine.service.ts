@@ -775,8 +775,14 @@ export class ExecuteEngineService {
         try {
           // 레포지토리를 통한 저장 (L1/L2 캐시 활용)
           const generalNo = generalDoc.data?.no || generalDoc.no;
-          const generalData = generalDoc.data || generalDoc;
-          await generalRepository.updateBySessionAndNo(sessionId, generalNo, generalData);
+          
+          // turntime은 루트 레벨에 있으므로, data와 함께 전달
+          const updatePayload = {
+            ...generalDoc.data,
+            turntime: generalDoc.turntime,  // 루트 레벨 turntime 포함
+          };
+          
+          await generalRepository.updateBySessionAndNo(sessionId, generalNo, updatePayload);
         } catch (error: any) {
           // save() 실패 시 (장수가 삭제됨) 건너뛰기
           if (error.name === 'DocumentNotFoundError' || error.message?.includes('No document found')) {

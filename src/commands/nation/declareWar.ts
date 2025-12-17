@@ -46,6 +46,8 @@ export class che_선전포고 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
+      // "선전포고 차단" 설정이 켜져 있으면 선전포고도 막아야 함
+      ConstraintHelper.AllowWar(),
       ConstraintHelper.ReqEnvValue('year', '>=', startYear + 1, '초반제한 해제 2년전부터 가능합니다.')
     ];
   }
@@ -60,6 +62,8 @@ export class che_선전포고 extends NationCommand {
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
+      // "선전포고 차단" 설정이 켜져 있으면 선전포고도 막아야 함
+      ConstraintHelper.AllowWar(),
       ConstraintHelper.ReqEnvValue('year', '>=', startYear + 1, '초반제한 해제 2년전부터 가능합니다.'),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.NearNation(),
