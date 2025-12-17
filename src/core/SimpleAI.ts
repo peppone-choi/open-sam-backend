@@ -1197,7 +1197,9 @@ export class SimpleAI {
       
       case '주민선정':
       case '정착장려':
-        return this.canDomestic(genData, cityData, 'pop') && (cityData?.trust || 0) >= 20;
+        // 캐시 구조 호환: trust는 최상위 또는 data 안에 있을 수 있음
+        const trustVal = this.city?.trust ?? this.city?.data?.trust ?? 50;
+        return this.canDomestic(genData, cityData, 'pop') && trustVal >= 20;
       
       case '기술연구':
         return this.canResearchTech(genData, nationData);
@@ -1246,21 +1248,26 @@ export class SimpleAI {
   /**
    * 징병 가능 여부
    */
-  private canConscript(genData: any, cityData: any): boolean {
+  private canConscript(genData: any, _cityData: any): boolean {
     // 재야가 아니어야 함
     if (genData.nation === 0) return false;
     
     // 도시를 점령하고 있어야 함
     // nation은 도시 최상위에 있음 (this.city.nation)
     const cityNation = this.city?.nation ?? (this.city?.data?.nation);
-    if (!cityData || cityNation !== genData.nation) return false;
+    if (!this.city || cityNation !== genData.nation) return false;
+    
+    // 캐시 구조 호환: 최상위와 data 양쪽에서 값을 찾아야 함
+    const getCityVal = (key: string, defaultVal: number = 0) => {
+      return this.city?.[key] ?? this.city?.data?.[key] ?? defaultVal;
+    };
     
     // 최소 인구 필요 (200 -> 100으로 완화)
-    const pop = cityData.pop ?? this.city?.pop ?? 0;
+    const pop = getCityVal('pop');
     if (pop < 100) return false;
     
     // 민심 20 이상 (20 -> 15로 완화)
-    const trust = cityData.trust ?? this.city?.trust ?? 0;
+    const trust = getCityVal('trust', 50);
     if (trust < 15) return false;
     
     // 자금/군량 필요 (병사 0명이면 조건 완화)
@@ -1418,17 +1425,22 @@ export class SimpleAI {
 
   /**
    * 도시 개발률 계산
+   * 주의: 캐시된 도시 데이터는 trust, pop 등이 최상위에 있고, data 안에는 없을 수 있음
    */
   private calculateDevelopmentRates(city: any): Record<string, number> {
-    const cityData = city?.data || city || {};
+    // 최상위와 data 양쪽에서 값을 찾아야 함 (캐시 구조 호환)
+    const getVal = (key: string, defaultVal: number = 0) => {
+      return city?.[key] ?? city?.data?.[key] ?? defaultVal;
+    };
+    
     return {
-      pop: (cityData.pop || 0) / Math.max(cityData.pop_max || 10000, 1),
-      agri: (cityData.agri || 0) / Math.max(cityData.agri_max || 10000, 1),
-      comm: (cityData.comm || 0) / Math.max(cityData.comm_max || 10000, 1),
-      secu: (cityData.secu || 0) / Math.max(cityData.secu_max || 10000, 1),
-      def: (cityData.def || 0) / Math.max(cityData.def_max || 10000, 1),
-      wall: (cityData.wall || 0) / Math.max(cityData.wall_max || 10000, 1),
-      trust: (cityData.trust || 50) / 100
+      pop: getVal('pop') / Math.max(getVal('pop_max', 10000), 1),
+      agri: getVal('agri') / Math.max(getVal('agri_max', 10000), 1),
+      comm: getVal('comm') / Math.max(getVal('comm_max', 10000), 1),
+      secu: getVal('secu') / Math.max(getVal('secu_max', 10000), 1),
+      def: getVal('def') / Math.max(getVal('def_max', 10000), 1),
+      wall: getVal('wall') / Math.max(getVal('wall_max', 10000), 1),
+      trust: getVal('trust', 50) / 100
     };
   }
 
@@ -2871,14 +2883,15 @@ export class SimpleAI {
       
       // 자원 조건 통과 시에만 징병 후보 추가
       if (requiresResources) {
-        // 징병량 계산: 통솔에 따른 최대 징병량 (통솔 * 100, 최소 1000, 최대 10000)
-        const maxRecruitByLeadership = Math.max(1000, Math.min(stats.leadership * 100, 10000));
+        // PHP와 동일: 징병량 = 통솔 * 100 (최소값 강제 없음)
+        // PHP: $crew = $this->fullLeadership * 100
+        const maxRecruitByLeadership = stats.leadership * 100;
         
-        // 자원에 따른 실제 징병량 (금과 쌀 중 적은 것 기준, 1명당 금1 쌀1 소모 가정)
+        // 자원에 따른 실제 징병량 (금과 쌀 중 적은 것 기준)
         const maxRecruitByResources = Math.min(stats.gold, stats.rice);
         
-        // 최종 징병량: 통솔 제한과 자원 제한 중 작은 값, 최소 1000
-        const recruitAmount = Math.max(1000, Math.min(maxRecruitByLeadership, maxRecruitByResources));
+        // 최종 징병량: 통솔 제한과 자원 제한 중 작은 값 (최소 100명은 징병)
+        const recruitAmount = Math.max(100, Math.min(maxRecruitByLeadership, maxRecruitByResources));
         
         commands.push({
           command: '징병',
@@ -2920,12 +2933,18 @@ export class SimpleAI {
     // === 출병 평가 (병사/훈련도/사기 충분해야 함) ===
     const deployResult = await this.shouldDeploy(genData);
     if (deployResult.canDeploy) {
-      commands.push({
-        command: '출병',
-        args: await this.selectDeployTarget(genData),
-        weight: stats.strength * 2,
-        reason: `출병 가능 (병사:${stats.crew}, 훈련:${train}, 사기:${atmos})`
-      });
+      const deployTarget = await this.selectDeployTarget(genData);
+      // 대상 도시가 유효한 경우에만 출병 명령 추가
+      if (deployTarget?.destCityID && deployTarget.destCityID > 0) {
+        commands.push({
+          command: '출병',
+          args: deployTarget,
+          weight: stats.strength * 2,
+          reason: `출병 가능 (병사:${stats.crew}, 훈련:${train}, 사기:${atmos}, 대상:${deployTarget.destCityID})`
+        });
+      } else {
+        console.log(`[SimpleAI] 출병 불가 - 유효한 대상 도시 없음`);
+      }
     } else if (deployResult.reason) {
       // 출병 불가 사유 로그
       console.log(`[SimpleAI] 출병 불가 - ${deployResult.reason}`);
@@ -3186,14 +3205,40 @@ export class SimpleAI {
     }
 
     try {
-      // 인접 도시들 조회 (거리 1인 도시들)
-      const nearbyDistances = await searchDistanceAsync(sessionId, currentCityID, 3, false);
+      // CityConst에서 직접 인접 도시 정보 가져오기 (거리 1)
+      const cityConstEntry = CityConst.byID(currentCityID);
+      const directNeighbors = cityConstEntry?.neighbors || [];
+      
+      // 거리 3까지 확장 (BFS)
+      const nearbyDistances: Record<number, number> = {};
+      const visited = new Set<number>();
+      const queue: Array<{ cityID: number; distance: number }> = [];
+      
+      queue.push({ cityID: currentCityID, distance: 0 });
+      visited.add(currentCityID);
+      
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (current.distance >= 3) continue;
+        
+        const cityEntry = CityConst.byID(current.cityID);
+        const neighbors = cityEntry?.neighbors || [];
+        
+        for (const neighborID of neighbors) {
+          if (visited.has(neighborID)) continue;
+          visited.add(neighborID);
+          const nextDistance = current.distance + 1;
+          nearbyDistances[neighborID] = nextDistance;
+          queue.push({ cityID: neighborID, distance: nextDistance });
+        }
+      }
+      
       const nearbyIDs = Object.keys(nearbyDistances)
         .map(Number)
         .sort((a, b) => nearbyDistances[a] - nearbyDistances[b]); // 가까운 순서대로
       
       if (nearbyIDs.length === 0) {
-        console.warn('[SimpleAI] selectDeployTarget: 인접 도시가 없습니다.');
+        console.warn(`[SimpleAI] selectDeployTarget: 인접 도시가 없습니다. cityID=${currentCityID}, directNeighbors=${directNeighbors.length}`);
         return { destCityID: 0 };
       }
 

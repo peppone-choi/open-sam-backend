@@ -1,5 +1,6 @@
 import { cityRepository } from '../repositories/city.repository';
 import { logger } from '../common/logger';
+import { CityConst } from '../const/CityConst';
 
 /**
  * 도시 연결 정보 캐시
@@ -14,32 +15,52 @@ let cacheInitialized = false;
 
 /**
  * 특정 세션의 도시 연결 정보를 메모리에 로드
+ * MongoDB의 neighbors 필드가 비어있을 경우 CityConst (cities.json)에서 로드
  * @param sessionId 세션 ID
  */
 export async function loadCityGraph(sessionId: string): Promise<void> {
   try {
-    const cities = await cityRepository.findByFilter({ session_id: sessionId });
+    // 먼저 CityConst (cities.json)에서 도시 연결 정보 로드
+    const cityConstList = CityConst.getCityList();
     const graph = new Map<number, number[]>();
-
-    for (const city of cities) {
-      const cityID = city.city || city.data?.city;
+    
+    // CityConst에서 neighbors 정보 로드
+    for (const cityEntry of cityConstList) {
+      const cityID = cityEntry.city;
       if (!cityID) continue;
+      
+      const neighbors = cityEntry.neighbors || [];
+      if (neighbors.length > 0) {
+        graph.set(cityID, neighbors);
+      }
+    }
+    
+    // CityConst에 neighbors가 없으면 MongoDB에서 로드 시도
+    if (graph.size === 0) {
+      const cities = await cityRepository.findByFilter({ session_id: sessionId });
 
-      const neighbors = city.neighbors || city.data?.neighbors || [];
-      const neighborIDs: number[] = [];
+      for (const city of cities) {
+        const cityID = city.city || city.data?.city;
+        if (!cityID) continue;
 
-      for (const neighbor of neighbors) {
-        const nID = typeof neighbor === 'number' ? neighbor : parseInt(String(neighbor), 10);
-        if (!isNaN(nID)) {
-          neighborIDs.push(nID);
+        const neighbors = city.neighbors || city.data?.neighbors || [];
+        const neighborIDs: number[] = [];
+
+        for (const neighbor of neighbors) {
+          const nID = typeof neighbor === 'number' ? neighbor : parseInt(String(neighbor), 10);
+          if (!isNaN(nID)) {
+            neighborIDs.push(nID);
+          }
+        }
+
+        if (neighborIDs.length > 0) {
+          graph.set(cityID, neighborIDs);
         }
       }
-
-      graph.set(cityID, neighborIDs);
     }
 
     cityGraphCache.set(sessionId, graph);
-    logger.info('Loaded city graph', { sessionId, cityCount: graph.size });
+    logger.info('Loaded city graph', { sessionId, cityCount: graph.size, source: graph.size > 0 ? 'CityConst/MongoDB' : 'empty' });
   } catch (error: any) {
     logger.error('Failed to load city graph', { 
       sessionId, 

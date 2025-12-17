@@ -121,6 +121,17 @@ export class WarUnitCity extends WarUnit {
     return this.getVar('name') || '도시';
   }
   
+  /**
+   * 성벽 병종 이름 반환
+   */
+  override getCrewTypeName(): string {
+    return '성벽';
+  }
+  
+  override getCrewTypeShortName(): string {
+    return '성벽';
+  }
+  
   getCityVar(key: string): any {
     return this.raw[key];
   }

@@ -8,6 +8,7 @@
  */
 
 import { RandUtil } from '../../utils/RandUtil';
+import { JosaUtil } from '../../utils/JosaUtil';
 import { StartBattleService } from '../battle/StartBattle.service';
 import { StartSimulationService } from '../battle/StartSimulation.service';
 import { AutoBattleService } from '../battle/AutoBattle.service';
@@ -48,7 +49,8 @@ export interface ProcessWarParams {
 const enableLegacyProcessWar = process.env.ENABLE_LEGACY_PROCESS_WAR !== 'false';
 
 // 모든 전투를 자동 전투로 처리 (전술 전투 비활성화)
-const FORCE_ALL_AUTO_BATTLE = true;
+// false로 설정하면 전술 전투(실시간 전투)가 활성화됨
+const FORCE_ALL_AUTO_BATTLE = false;
 
 export class ProcessWarService {
   /**
@@ -119,9 +121,25 @@ export class ProcessWarService {
       const cityDefenseHP = cityDef * 10; // PHP: WarUnitCity.php line 30
       
       if (!fallbackDefender && cityDefenseHP <= 0) {
+        const josaUl = JosaUtil.pick(defenderCity.name, '을');
+        const nationName = attackerNation.name || attackerNation.data?.name || '국가';
+        const attackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+        const josaYiNation = JosaUtil.pick(nationName, '이');
+        const josaYiGen = JosaUtil.pick(attackerName, '이');
+        
         logger.pushGeneralActionLog?.(
           `<G><b>${defenderCity.name}</b></>에는 저항군이 없어 무혈입성했습니다.`
         );
+        logger.pushGeneralHistoryLog?.(
+          `<G><b>${defenderCity.name}</b></>${josaUl} <S>점령</>`
+        );
+        logger.pushGlobalHistoryLog?.(
+          `<S><b>【지배】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${defenderCity.name}</b></>${josaUl} 지배했습니다.`
+        );
+        logger.pushNationalHistoryLog?.(
+          `<Y>${attackerName}</>${josaYiGen} <G><b>${defenderCity.name}</b></> ${josaUl} <S>점령</>`
+        );
+        
         await this.conquerCity(sessionId, defenderCityID, attackerNationID, attackerGeneralId);
         await this.restoreCityDefense(sessionId, defenderCityID);
         attackerGeneral.city = defenderCityID;
@@ -129,6 +147,10 @@ export class ProcessWarService {
         if (generalNo) {
           await unitStackRepository.updateOwnerCity(sessionId, 'general', generalNo, defenderCityID);
           await attackerGeneral.applyDB?.();
+        }
+        // 로그 flush
+        if (typeof logger.flush === 'function') {
+          await logger.flush();
         }
         return;
       }
@@ -190,8 +212,26 @@ export class ProcessWarService {
       });
 
       if (battleResult.winner === 'attacker') {
+        const josaUl = JosaUtil.pick(defenderCity.name, '을');
+        const josaYiNation = JosaUtil.pick(nationName, '이');
+        const josaYiGen = JosaUtil.pick(attackerName, '이');
+        
+        // 장수 행동/역사 로그
         logger.pushGeneralActionLog?.(
           `${defenderType}을(를) 격파하고 <G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [피해: ${battleResult.attackerLoss}명]`
+        );
+        logger.pushGeneralHistoryLog?.(
+          `<G><b>${defenderCity.name}</b></>${josaUl} <S>점령</>`
+        );
+        
+        // 전역 역사 로그 (중원 정세)
+        logger.pushGlobalHistoryLog?.(
+          `<S><b>【지배】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${defenderCity.name}</b></>${josaUl} 지배했습니다.`
+        );
+        
+        // 국가 역사 로그
+        logger.pushNationalHistoryLog?.(
+          `<Y>${attackerName}</>${josaYiGen} <G><b>${defenderCity.name}</b></> ${josaUl} <S>점령</>`
         );
 
         // 도시 점령
@@ -227,6 +267,10 @@ export class ProcessWarService {
 
       await this.applySiegeDamage(sessionId, defenderCity, battleResult.attackerLoss, battleResult.defenderLoss, battleResult.winner === 'attacker');
       
+      // 로그 flush
+      if (typeof logger.flush === 'function') {
+        await logger.flush();
+      }
       return;
     }
 
@@ -239,7 +283,9 @@ export class ProcessWarService {
     );
     const forceAutoBattle = FORCE_ALL_AUTO_BATTLE || process.env.FORCE_AUTO_BATTLE === 'true';
 
-    if (!forceAutoBattle && enableLegacyProcessWar && !shouldUseAutoBattle) {
+    // 레거시 전투 사용 (페이즈별 전투 로그가 보임)
+    // 자동 전투 조건에 상관없이 레거시 전투를 우선 사용
+    if (enableLegacyProcessWar && defenderGenerals.length > 0) {
       await this.executeLegacyProcessWar({
         sessionId,
         warSeed,
@@ -250,12 +296,17 @@ export class ProcessWarService {
         logger,
         initialAttackerCrew
       });
+      // 로그 flush
+      if (typeof logger.flush === 'function') {
+        await logger.flush();
+      }
       return;
     }
 
+    // 방어군이 없거나 레거시 전투 비활성화시 자동 전투
     if (forceAutoBattle && !shouldUseAutoBattle) {
       logger.pushGeneralActionLog?.(
-        `<G><b>${defenderCity.name}</b></> 공략은 임시로 자동 전투로만 처리됩니다.`
+        `<G><b>${defenderCity.name}</b></> 공략은 자동 전투로 처리됩니다.`
       );
     }
 
@@ -265,11 +316,31 @@ export class ProcessWarService {
         : defenderGenerals;
 
       if (defendersForBattle.length === 0) {
+        const josaUl = JosaUtil.pick(defenderCity.name, '을');
+        const nationName = attackerNation.name || attackerNation.data?.name || '국가';
+        const attackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+        const josaYiNation = JosaUtil.pick(nationName, '이');
+        const josaYiGen = JosaUtil.pick(attackerName, '이');
+        
         logger.pushGeneralActionLog?.(`<G><b>${defenderCity.name}</b></>에는 저항군이 없어 무혈입성했습니다.`);
+        logger.pushGeneralHistoryLog?.(
+          `<G><b>${defenderCity.name}</b></>${josaUl} <S>점령</>`
+        );
+        logger.pushGlobalHistoryLog?.(
+          `<S><b>【지배】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${defenderCity.name}</b></>${josaUl} 지배했습니다.`
+        );
+        logger.pushNationalHistoryLog?.(
+          `<Y>${attackerName}</>${josaYiGen} <G><b>${defenderCity.name}</b></> ${josaUl} <S>점령</>`
+        );
+        
         await this.conquerCity(sessionId, defenderCityID, attackerNationID, attackerGeneralId);
         await this.restoreCityDefense(sessionId, defenderCityID);
         attackerGeneral.city = defenderCityID;
         await attackerGeneral.applyDB?.();
+        // 로그 flush
+        if (typeof logger.flush === 'function') {
+          await logger.flush();
+        }
         return;
       }
 
@@ -313,11 +384,31 @@ export class ProcessWarService {
       if (battleResult.winner === 'attacker') {
         const attackerNameForLog = attackerGeneral.name || attackerGeneral.data?.name || '장수';
         const nationNameForLog = attackerNation.name || attackerNation.data?.name || '국가';
-        logger.pushGlobalActionLog?.(
-          `<D><b>${nationNameForLog}</b></>의 <Y>${attackerNameForLog}</>이(가) <G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [자동 전투]`
-        );
+        const josaUl = JosaUtil.pick(defenderCity.name, '을');
+        const josaYiNation = JosaUtil.pick(nationNameForLog, '이');
+        const josaYiGen = JosaUtil.pick(attackerNameForLog, '이');
+        
+        // 장수 행동/역사 로그
         logger.pushGeneralActionLog?.(
           `<G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [자동 전투] [손실: ${battleResult.attackerLoss}명]`
+        );
+        logger.pushGeneralHistoryLog?.(
+          `<G><b>${defenderCity.name}</b></>${josaUl} <S>점령</>`
+        );
+        
+        // 전역 행동/역사 로그 (중원 정세)
+        logger.pushGlobalActionLog?.(
+          `<Y>${attackerNameForLog}</>${josaYiGen} <G><b>${defenderCity.name}</b></> 공략에 <S>성공</>했습니다.`
+        );
+        logger.pushGlobalHistoryLog?.(
+          `<S><b>【지배】</b></><D><b>${nationNameForLog}</b></>${josaYiNation} <G><b>${defenderCity.name}</b></>${josaUl} 지배했습니다.`
+        );
+        
+        // 국가 역사 로그
+        const defenderNationName = defenderNationID > 0 ? `국가${defenderNationID}` : '';
+        const defenderNationDecoration = defenderNationName ? `<D><b>${defenderNationName}</b></>의 ` : '';
+        logger.pushNationalHistoryLog?.(
+          `<Y>${attackerNameForLog}</>${josaYiGen} ${defenderNationDecoration}<G><b>${defenderCity.name}</b></> ${josaUl} <S>점령</>`
         );
 
         // 도시 점령
@@ -351,6 +442,10 @@ export class ProcessWarService {
         await attackerGeneral.applyDB?.();
       }
 
+      // 로그 flush
+      if (typeof logger.flush === 'function') {
+        await logger.flush();
+      }
       return;
     }
 

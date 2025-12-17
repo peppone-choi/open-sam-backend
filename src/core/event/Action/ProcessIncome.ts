@@ -163,7 +163,7 @@ export class ProcessIncome extends Action {
       }
     }
 
-    const logger = new ActionLogger(0, 0, year, month);
+    const logger = new ActionLogger(0, 0, year, month, sessionId);
     logger.pushGlobalHistoryLog('<W><b>【지급】</b></>봄이 되어 봉록에 따라 자금이 지급됩니다.');
     await logger.flush();
 
@@ -312,7 +312,7 @@ export class ProcessIncome extends Action {
       }
     }
 
-    const logger = new ActionLogger(0, 0, year, month);
+    const logger = new ActionLogger(0, 0, year, month, sessionId);
     logger.pushGlobalHistoryLog('<W><b>【지급】</b></>가을이 되어 봉록에 따라 군량이 지급됩니다.');
     await logger.flush();
 

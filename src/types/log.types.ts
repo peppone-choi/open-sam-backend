@@ -25,16 +25,17 @@ export enum LogFormatType {
 
 /**
  * 로그 타입
+ * PHP func_history.php와 동일한 값 사용
  */
 export enum LogType {
   /** 장수 이력 (중요 행동 요약) */
   HISTORY = 'history',
   /** 장수 행동 (상세 행동 로그) */
   ACTION = 'action',
-  /** 전투 결과 */
-  BATTLE_RESULT = 'battle_result',
-  /** 전투 상세 */
-  BATTLE_DETAIL = 'battle_detail',
+  /** 전투 결과 (PHP: battle_brief) */
+  BATTLE_RESULT = 'battle_brief',
+  /** 전투 상세 (PHP: battle) */
+  BATTLE_DETAIL = 'battle',
   /** 국가 이력 */
   NATION_HISTORY = 'nation_history',
   /** 전역 이력 */

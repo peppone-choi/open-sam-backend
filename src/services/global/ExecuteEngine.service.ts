@@ -692,20 +692,14 @@ export class ExecuteEngineService {
         const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10);
         const now = new Date();
 
-        // 세션의 원래 년/월을 백업 (turnDate가 gameEnv를 수정하므로)
-        const originalSessionYear = gameEnv.year;
-        const originalSessionMonth = gameEnv.month;
-
-        // 장수의 turntime을 기준으로 년/월 계산 (각 턴마다 갱신됨)
-        let actionYear = gameEnv.year || 184;
-        let actionMonth = gameEnv.month || 1;
+        // PHP와 동일하게 게임의 현재 년/월 사용 (장수별 계산 X)
+        // PHP: [$startYear, $year, $month, $turnterm] = $gameStor->getValuesAsArray(...)
+        const actionYear = gameEnv.year || 184;
+        const actionMonth = gameEnv.month || 1;
 
         while (turnsExecuted < maxTurnsPerGeneral) {
           const currActionTime = new Date();
           if (currActionTime > limitActionTime) {
-            // 세션 년/월 복원
-            gameEnv.year = originalSessionYear;
-            gameEnv.month = originalSessionMonth;
             return [true, currentTurn];
           }
 
@@ -731,29 +725,7 @@ export class ExecuteEngineService {
           const generalName = generalDoc.name || generalDoc.data?.name || '';
           const beforeLogTime = !isNPC ? new Date() : null;
 
-          // 장수의 개인 turntime을 기준으로 년/월 계산
-          // 이렇게 해야 밀린 턴마다 정확한 월이 표시됨
-          const generalTurntimeForCalc = generalDoc.turntime || generalDoc.data?.turntime;
-          if (generalTurntimeForCalc) {
-            const turntimeDate = generalTurntimeForCalc instanceof Date 
-              ? generalTurntimeForCalc 
-              : new Date(generalTurntimeForCalc);
-            
-            // turnDate를 호출하지 않고 직접 계산 (gameEnv 수정 방지)
-            const turntermInMinutes = gameEnv.turnterm || 60;
-            const startyear = gameEnv.startyear || gameEnv.startYear || 184;
-            const starttime = gameEnv.starttime ? new Date(gameEnv.starttime) : turntimeDate;
-            
-            // 경과한 턴 수 계산
-            const timeDiffMinutes = (turntimeDate.getTime() - starttime.getTime()) / (1000 * 60);
-            const turnNum = Math.max(0, Math.floor(timeDiffMinutes / turntermInMinutes));
-            
-            // 년/월 계산
-            const totalMonths = startyear * 12 + turnNum;
-            actionYear = Math.floor(totalMonths / 12);
-            actionMonth = 1 + (totalMonths % 12);
-          }
-          
+          // PHP와 동일: 게임의 현재 년/월을 그대로 사용
           const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv);
 
           currentTurn = generalDoc.turntime || new Date().toISOString();

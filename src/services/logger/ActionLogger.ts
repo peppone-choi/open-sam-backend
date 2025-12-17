@@ -33,7 +33,7 @@ export class ActionLogger {
     private nationId: number,
     private year: number,
     private month: number,
-    private sessionId: string,
+    private sessionId: string = 'sangokushi_default', // 기본값 추가
     autoFlush: boolean = true
   ) {
     this.autoFlush = autoFlush;
@@ -185,6 +185,7 @@ export class ActionLogger {
    * 전투 결과 템플릿 로그
    * PHP ActionLogger.pushBattleResultTemplate() 이식
    * 전투 결과를 정형화된 형식으로 로그에 기록
+   * PHP와 동일하게 battleResult, battleDetail, action 세 곳에 기록
    * 
    * @param me - 내 전투 유닛
    * @param oppose - 상대 전투 유닛
@@ -206,10 +207,27 @@ export class ActionLogger {
       const opposeRemainCrew = oppose?.getHP?.() || 0;
       const opposeKilledCrew = -(oppose?.getDeadCurrentBattle?.() || oppose?.getDead?.() || 0);
 
-      // 전투 결과 텍스트 생성
-      const resultText = `【전투결과】 ${myName}(${myCrewType}) ${myRemainCrew}(${myKilledCrew >= 0 ? '+' : ''}${myKilledCrew}) vs ${opposeName}(${opposeCrewType}) ${opposeRemainCrew}(${opposeKilledCrew >= 0 ? '+' : ''}${opposeKilledCrew})`;
+      // 전투 유형 결정
+      let warType: string;
+      let warTypeStr: string;
+      if (!me.isAttacker?.()) {
+        warType = 'defense';
+        warTypeStr = '←';
+      } else if (oppose?.constructor?.name === 'WarUnitCity') {
+        warType = 'siege';
+        warTypeStr = '→';
+      } else {
+        warType = 'attack';
+        warTypeStr = '→';
+      }
 
-      this.pushGeneralBattleResultLog(resultText, LogFormatType.PLAIN);
+      // 전투 결과 텍스트 생성 (PHP small_war_log 템플릿 형식)
+      const resultText = `【${warType === 'defense' ? '방어' : warType === 'siege' ? '공성' : '공격'}】 ${myName}(${myCrewType}) ${myRemainCrew}(${myKilledCrew >= 0 ? '+' : ''}${myKilledCrew}) ${warTypeStr} ${opposeName}(${opposeCrewType}) ${opposeRemainCrew}(${opposeKilledCrew >= 0 ? '+' : ''}${opposeKilledCrew})`;
+
+      // PHP와 동일하게 세 곳에 기록
+      this.pushGeneralBattleResultLog(resultText, LogFormatType.EVENT_YEAR_MONTH);
+      this.pushGeneralBattleDetailLog(resultText, LogFormatType.EVENT_YEAR_MONTH);
+      this.pushGeneralActionLog(resultText, LogFormatType.EVENT_YEAR_MONTH);
     } catch (error) {
       logger.error('[ActionLogger] pushBattleResultTemplate error:', error);
     }
@@ -228,25 +246,26 @@ export class ActionLogger {
         return `<C>●</>${text}`;
 
       case LogFormatType.YEAR_MONTH:
-        return `<C>●</>${this.year}년 ${this.month}월: ${text}`;
+        // PHP와 동일: 콜론 뒤에 공백 없음
+        return `<C>●</>${this.year}년 ${this.month}월:${text}`;
 
       case LogFormatType.YEAR:
-        return `<C>●</>${this.year}년: ${text}`;
+        return `<C>●</>${this.year}년:${text}`;
 
       case LogFormatType.MONTH:
-        return `<C>●</>${this.month}월: ${text}`;
+        return `<C>●</>${this.month}월:${text}`;
 
       case LogFormatType.EVENT_PLAIN:
         return `<S>◆</>${text}`;
 
       case LogFormatType.EVENT_YEAR_MONTH:
-        return `<S>◆</>${this.year}년 ${this.month}월: ${text}`;
+        return `<S>◆</>${this.year}년 ${this.month}월:${text}`;
 
       case LogFormatType.NOTICE:
         return `<R>★</>${text}`;
 
       case LogFormatType.NOTICE_YEAR_MONTH:
-        return `<R>★</>${this.year}년 ${this.month}월: ${text}`;
+        return `<R>★</>${this.year}년 ${this.month}월:${text}`;
 
       default:
         return text;

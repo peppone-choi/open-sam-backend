@@ -27,7 +27,7 @@ export class NewYear extends Action {
     // 년도가 실제로 바뀐 경우에만 나이 증가
     const yearChanged = lastProcessedYear === null || lastProcessedYear !== year;
 
-    const logger = new ActionLogger(0, 0, year, month);
+    const logger = new ActionLogger(0, 0, year, month, sessionId);
     if (yearChanged) {
       logger.pushGlobalActionLog(`<C>${year}</>년이 되었습니다.`);
       
@@ -36,7 +36,7 @@ export class NewYear extends Action {
       // TypeScript에서는 글로벌 메시지로 처리하거나 각 장수별로 호출 필요
       const allGenerals = await General.find({ session_id: sessionId });
       for (const general of allGenerals) {
-        const generalLogger = new ActionLogger(general.data?.no || 0, general.nation || 0, year, month);
+        const generalLogger = new ActionLogger(general.data?.no || 0, general.nation || 0, year, month, sessionId);
         generalLogger.pushGeneralHistoryLog(`<S>모두들 즐거운 게임 하고 계신가요? ^^ <Y>매너 있는 플레이</> 부탁드리고, 게임보단 <L>건강이 먼저</>란점, 잊지 마세요!</>`);
         await generalLogger.flush();
       }

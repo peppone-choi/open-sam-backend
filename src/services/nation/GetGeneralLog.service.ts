@@ -78,14 +78,15 @@ export class GetGeneralLogService {
       // reqType 매핑: 프론트엔드에서 오는 값 -> 백엔드 log_type
       // 프론트엔드: 'action' | 'battle' | 'history' | 'personal'
       // 레거시: 'generalHistory' | 'generalAction' | 'battleResult' | 'battleDetail'
+      // PHP 타입명: history, action, battle_brief, battle
       if (reqType === 'history' || reqType === 'generalHistory') {
         logQuery.log_type = 'history';
       } else if (reqType === 'action' || reqType === 'generalAction') {
         logQuery.log_type = 'action';
       } else if (reqType === 'battle' || reqType === 'battleResult') {
-        logQuery.log_type = 'battle_result';
+        logQuery.log_type = 'battle_brief'; // PHP와 동일
       } else if (reqType === 'personal' || reqType === 'battleDetail') {
-        logQuery.log_type = 'battle_detail';
+        logQuery.log_type = 'battle'; // PHP와 동일
       }
 
       if (reqTo !== null) {

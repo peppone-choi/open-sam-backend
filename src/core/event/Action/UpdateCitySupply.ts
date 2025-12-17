@@ -123,7 +123,7 @@ export class UpdateCitySupply extends Action {
     });
 
     const lostCities: any[] = [];
-    const actionLogger = new ActionLogger(0, 0, year, month);
+    const actionLogger = new ActionLogger(0, 0, year, month, sessionId);
 
     for (const city of unsuppliedCities) {
       // 내정 10% 감소

@@ -1293,11 +1293,12 @@ export class GetFrontInfoService {
       limit: this.ROW_LIMIT + 1
     });
 
-    // 개인 기록 (history) - general_record에서 general_id=장수ID, log_type='action' (PHP: getGeneralRecord)
+    // 개인 기록 (history) - general_record에서 general_id=장수ID
+    // 전투 페이즈 로그(battle)와 전투 결과(battle_brief)도 포함 (PHP와 동일한 타입명)
     const personalHistoryFilter: any = {
       session_id: sessionId,
       general_id: generalId,
-      log_type: 'action'
+      log_type: { $in: ['action', 'battle', 'battle_brief'] }
     };
     if (lastPersonalHistoryID > 0) {
       personalHistoryFilter._id = { $gt: lastPersonalHistoryID };
