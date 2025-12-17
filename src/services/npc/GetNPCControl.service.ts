@@ -2,6 +2,9 @@
 import { generalRepository } from '../../repositories/general.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { sessionRepository } from '../../repositories/session.repository';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
+import { DEFAULT_GENERAL_PRIORITY } from '../../core/AutorunGeneralPolicy';
+import { DEFAULT_NATION_PRIORITY, DEFAULT_NATION_POLICY } from '../../core/AutorunNationPolicy';
 
 /**
  * GetNPCControl Service
@@ -64,22 +67,53 @@ export class GetNPCControlService {
         };
       }
       
-      const session = await sessionRepository.findBySessionId(sessionId );
-      const sessionData = session?.data || {};
-      const gameEnv = sessionData.game_env || {};
+      // 국가별 정책 조회 (kvStorage)
+      const storageKey = `nation_env:${nationId}`;
+      const storage = await kvStorageRepository.findOneByFilter({
+        session_id: sessionId,
+        key: storageKey
+      });
       
-      // NPC 정책 정보 (기본값 반환)
+      let nationPolicyData: any = { values: { ...DEFAULT_NATION_POLICY }, priority: [...DEFAULT_NATION_PRIORITY] };
+      let generalPolicyData: any = { priority: [...DEFAULT_GENERAL_PRIORITY] };
+      
+      if (storage) {
+        try {
+          const storageData = typeof storage.value === 'string' 
+            ? JSON.parse(storage.value) 
+            : storage.value || {};
+          
+          if (storageData.npc_nation_policy) {
+            nationPolicyData = {
+              values: { ...DEFAULT_NATION_POLICY, ...storageData.npc_nation_policy.values },
+              priority: storageData.npc_nation_policy.priority || [...DEFAULT_NATION_PRIORITY],
+              valueSetter: storageData.npc_nation_policy.valueSetter,
+              valueSetTime: storageData.npc_nation_policy.valueSetTime,
+              prioritySetter: storageData.npc_nation_policy.prioritySetter,
+              prioritySetTime: storageData.npc_nation_policy.prioritySetTime,
+            };
+          }
+          
+          if (storageData.npc_general_policy) {
+            generalPolicyData = {
+              priority: storageData.npc_general_policy.priority || [...DEFAULT_GENERAL_PRIORITY],
+              prioritySetter: storageData.npc_general_policy.prioritySetter,
+              prioritySetTime: storageData.npc_general_policy.prioritySetTime,
+            };
+          }
+        } catch {
+          // JSON 파싱 실패 시 기본값 사용
+        }
+      }
+      
+      // NPC 정책 정보 반환
       const control = {
-        nationPolicy: {
-          values: gameEnv.npc_nation_policy?.values || {},
-          priority: gameEnv.npc_nation_policy?.priority || []
-        },
-        generalPolicy: {
-          priority: gameEnv.npc_general_policy?.priority || []
-        },
-        defaultNationPolicy: {},
-        defaultNationPriority: [],
-        defaultGeneralActionPriority: []
+        nationPolicy: nationPolicyData,
+        generalPolicy: generalPolicyData,
+        // 기본값 참조용
+        defaultNationPolicy: DEFAULT_NATION_POLICY,
+        defaultNationPriority: DEFAULT_NATION_PRIORITY,
+        defaultGeneralPriority: DEFAULT_GENERAL_PRIORITY,
       };
       
       return {
