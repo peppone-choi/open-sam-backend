@@ -51,9 +51,11 @@ export class NPCAutoCommandService {
       return { success: false };
     }
     
-    // 유저가 소유한 NPC는 스킵 (owner가 있으면 유저가 플레이 중)
-    // NOTE: owner가 숫자 0이거나 '0' 문자열이면 무시 (실제 소유자가 없음)
-    if (owner && owner !== 0 && owner !== '0') {
+    // 유저가 소유한 NPC는 스킵 (owner가 숫자 ID이면 유저가 플레이 중)
+    // NOTE: owner가 0, '0', 'NPC', undefined, null이면 무시 (실제 소유자가 없음)
+    // owner가 숫자이고 0보다 크면 유저가 플레이 중
+    const isUserOwned = typeof owner === 'number' && owner > 0;
+    if (isUserOwned) {
       // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 유저 소유 (owner=${owner})`);
       return { success: false };
     }
