@@ -692,11 +692,6 @@ export class ExecuteEngineService {
         const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10);
         const now = new Date();
 
-        // PHP와 동일하게 게임의 현재 년/월 사용 (장수별 계산 X)
-        // PHP: [$startYear, $year, $month, $turnterm] = $gameStor->getValuesAsArray(...)
-        const actionYear = gameEnv.year || 184;
-        const actionMonth = gameEnv.month || 1;
-
         while (turnsExecuted < maxTurnsPerGeneral) {
           const currActionTime = new Date();
           if (currActionTime > limitActionTime) {
@@ -720,12 +715,19 @@ export class ExecuteEngineService {
 
           turnsExecuted++;
 
+          // ✅ 핵심 수정: 각 턴 실행 시점의 게임 년/월을 장수의 turntime 기준으로 계산
+          // PHP에서는 월이 바뀔 때마다 turnDate()가 호출되어 년/월이 업데이트됨
+          // 여기서는 장수의 turntime을 기준으로 해당 시점의 년/월을 계산
+          const turnDateInfo = ExecuteEngineService.turnDate(turntimeDate, gameEnv);
+          const actionYear = turnDateInfo.year;
+          const actionMonth = turnDateInfo.month;
+
           // 유저인 경우 턴 실행 전 로그 시간 기록
           const isNPC = (generalDoc.npc || generalDoc.data?.npc || 0) >= 2;
           const generalName = generalDoc.name || generalDoc.data?.name || '';
           const beforeLogTime = !isNPC ? new Date() : null;
 
-          // PHP와 동일: 게임의 현재 년/월을 그대로 사용
+          // 장수의 turntime 기준으로 계산된 년/월 사용
           const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv);
 
           currentTurn = generalDoc.turntime || new Date().toISOString();
