@@ -596,6 +596,32 @@ router.post('/update-game', async (req, res) => {
       // 락 해제 및 캐시 무효화
       await forceUnlockAndClearCache(sessionId);
 
+      // preparing → running 변경 시 starttime과 년월 리셋
+      const previousStatus = session.status || 'preparing';
+      if (previousStatus === 'preparing' && newStatus === 'running') {
+        const now = new Date();
+        const startyear = session.data?.game_env?.startyear || 184;
+        
+        // starttime을 현재 시간으로 리셋
+        session.data.starttime = now.toISOString();
+        session.data.game_env.starttime = now.toISOString();
+        
+        // 년월을 초기 값으로 리셋
+        session.data.year = startyear;
+        session.data.month = 1;
+        session.data.game_env.year = startyear;
+        session.data.game_env.month = 1;
+        
+        session.markModified('data');
+        session.markModified('data.game_env');
+        
+        console.log('[Admin] 🔄 Reset starttime and year/month for running state:', {
+          starttime: now.toISOString(),
+          year: startyear,
+          month: 1
+        });
+      }
+
       // 헬퍼 함수로 status와 isunited 동기화
       syncSessionStatus(session, newStatus);
       await session.save();
