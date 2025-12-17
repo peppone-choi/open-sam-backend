@@ -5,18 +5,23 @@
 # Stage 1: Builder
 FROM node:20-alpine AS builder
 
+# Install build tools
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Install dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production && \
+
+# Install ALL dependencies (including devDependencies for TypeScript)
+RUN npm ci --include=dev && \
     npm cache clean --force
 
 # Copy source code
 COPY . .
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript (use npx to ensure tsc is found)
+RUN npx tsc
 
 # ==========================================
 # Stage 2: Runtime
