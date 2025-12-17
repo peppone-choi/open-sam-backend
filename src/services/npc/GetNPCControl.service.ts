@@ -11,11 +11,14 @@ export class GetNPCControlService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const userId = user?.userId || user?.id || data.user_id;
-    const generalId = user?.generalId || data.general_id;
+    let generalId = user?.generalId || data.general_id;
     
     try {
+      let general: any = null;
+      
+      // generalId가 없으면 userId로 장수 검색
       if (!generalId) {
-        const general = await generalRepository.findBySessionAndOwner(
+        general = await generalRepository.findBySessionAndOwner(
           sessionId,
           String(userId),
           { npc: { $lt: 2 } }
@@ -27,12 +30,11 @@ export class GetNPCControlService {
             reason: '장수를 찾을 수 없습니다'
           };
         }
+        generalId = general.data?.no || general.no;
+      } else {
+        // generalId가 있으면 해당 장수 검색
+        general = await generalRepository.findBySessionAndNo(sessionId, generalId);
       }
-      
-      const general = await generalRepository.findBySessionAndNo({
-        session_id: sessionId,
-        'data.no': generalId
-      });
       
       if (!general) {
         return {
