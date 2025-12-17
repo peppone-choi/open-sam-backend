@@ -390,21 +390,45 @@ router.post('/update-game', async (req, res) => {
       session.name = data.serverName || '';
       session.data.game_env.serverName = data.serverName || '';
       session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: '서버 이름이 변경되었습니다'
+      });
     } else if (action === 'scenario') {
       session.data.game_env.scenario = data.scenario || '';
       session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: '시나리오가 변경되었습니다'
+      });
     } else if (action === 'scenarioText') {
       // 시나리오 설명 (게임 화면에 표시됨)
       session.data.scenarioText = data.scenarioText || '';
       session.data.game_env.scenarioText = data.scenarioText || '';
       session.markModified('data');
       session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: '시나리오 설명이 변경되었습니다'
+      });
     } else if (action === 'serverDescription') {
       // 서버 설명 (로비 서버 안내에 표시됨)
       session.data.serverDescription = data.serverDescription || '';
       session.data.game_env.serverDescription = data.serverDescription || '';
       session.markModified('data');
       session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: '서버 설명이 변경되었습니다'
+      });
     } else if (action === 'serverCnt') {
       // 기수 설정
       const serverCnt = parseInt(data.serverCnt) || 1;
@@ -412,6 +436,12 @@ router.post('/update-game', async (req, res) => {
       session.data.game_env.server_cnt = serverCnt;
       session.markModified('data');
       session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: '서버 기수가 변경되었습니다'
+      });
     } else if (action === 'msg') {
       // AdminGameSettings 서비스를 사용하여 관리자 메시지 설정
       const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
