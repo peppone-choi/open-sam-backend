@@ -688,7 +688,8 @@ export class ExecuteEngineService {
 
         // 밀린 턴을 모두 처리 (turntime이 현재 시각을 지날 때까지 반복)
         let turnsExecuted = 0;
-        const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10); // singleTurn이면 장수당 1턴만 처리
+        // 월 계산이 제대로 되므로 NPC도 밀린 턴 따라잡기 허용
+        const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10);
         const now = new Date();
 
         // 세션의 원래 년/월을 백업 (turnDate가 gameEnv를 수정하므로)
@@ -732,17 +733,21 @@ export class ExecuteEngineService {
           const generalName = generalDoc.name || generalDoc.data?.name || '';
           const beforeLogTime = !isNPC ? new Date() : null;
 
-          // 장수 턴 실행 - 세션의 현재 년/월 사용 (각 턴마다 1개월씩 증가하지 않음)
-          // ⚠️ 중요: 밀린 턴이 있어도 모든 턴은 현재 세션의 년/월로 처리
-          // 이렇게 해야 세션 상태가 역행하지 않음
+          // 장수 턴 실행 - 각 턴마다 1개월씩 증가
+          // 밀린 턴을 따라잡을 때 각 턴이 서로 다른 월에 해당
           if (isFirstTurn) {
-            // 세션의 현재 년/월 사용 (turnDate 호출하지 않음)
+            // 첫 턴은 세션의 현재 년/월 사용
             actionYear = originalSessionYear || 184;
             actionMonth = originalSessionMonth || 1;
             isFirstTurn = false;
+          } else {
+            // 이후 턴은 월 증가 (밀린 턴 따라잡기)
+            actionMonth++;
+            if (actionMonth > 12) {
+              actionMonth = 1;
+              actionYear++;
+            }
           }
-          // 밀린 턴도 같은 년/월로 처리 (각 턴마다 월 증가하지 않음)
-          // 턴테이블의 명령만 순차적으로 당겨짐
           
           const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv);
 
