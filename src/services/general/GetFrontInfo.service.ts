@@ -85,6 +85,8 @@ interface GlobalFrontInfo {
   isTournamentApplicationOpen: boolean;
   isBettingActive: boolean;
   isLocked: boolean;
+  /** 세션 상태: preparing, running, paused, finished, united */
+  sessionStatus: 'preparing' | 'running' | 'paused' | 'finished' | 'united';
   tournamentType: any;
   tournamentState: number;
   tournamentTime: any;
@@ -650,6 +652,8 @@ export class GetFrontInfoService {
       isTournamentApplicationOpen: data.is_tournament_application_open || false,
       isBettingActive: data.is_betting_active || false,
       isLocked: data.is_locked || false,
+      // 세션 상태: preparing, running, paused, finished, united
+      sessionStatus: session.status || 'running',
       tournamentType: data.tournament_type || null,
       tournamentState: data.tournament_state || 0,
       tournamentTime: data.tournament_time || null,
