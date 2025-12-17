@@ -730,18 +730,17 @@ export class ExecuteEngineService {
 
           currentTurn = generalDoc.turntime || new Date().toISOString();
 
-          // 턴이 처리되었으면 명령 즉시 당기기 (중복 실행 방지)
-          if (turnExecuted) {
-            // ⚠️ 중요: 명령 당기기를 즉시 실행해야 다음 루프에서 같은 명령이 중복 실행되지 않음
-            await this.pullGeneralCommand(sessionId, generalNo, 1, isNPC, generalName, beforeLogTime);
-            const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
-            const officerLevel = generalDoc.data?.officer_level || 0;
-            if (nationId && officerLevel >= 5) {
-              await this.pullNationCommand(sessionId, nationId, officerLevel, 1);
-            }
-          } else {
-            // 명령이 없어도 turntime은 업데이트해야 함 (무한 루프 방지)
-            logger.debug('No command executed, updating turntime', { generalNo });
+          // ✅ PHP와 동일: 턴 처리 여부와 관계없이 항상 명령 당기기 실행
+          // 명령이 없어도 0번 턴을 당겨야 다음 루프에서 같은 상태가 반복되지 않음
+          await this.pullGeneralCommand(sessionId, generalNo, 1, isNPC, generalName, beforeLogTime);
+          const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
+          const officerLevel = generalDoc.data?.officer_level || 0;
+          if (nationId && officerLevel >= 5) {
+            await this.pullNationCommand(sessionId, nationId, officerLevel, 1);
+          }
+
+          if (!turnExecuted) {
+            logger.debug('No command executed, but turn pulled', { generalNo });
           }
 
           // turntime 업데이트 (명령 유무와 관계없이 항상 실행)
