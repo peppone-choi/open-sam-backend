@@ -579,38 +579,51 @@ export class GetFrontInfoService {
       ? turntime.toISOString().slice(0, 19).replace('T', ' ')
       : String(turntime);
     
-    // turnDate를 호출하여 최신 년/월 계산
-    // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
-    const { ExecuteEngineService } = await import('../global/ExecuteEngine.service');
-    const gameEnvCopy = { ...gameEnv };
-    const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+    // 세션 상태 확인: preparing 상태일 때는 년월 계산/업데이트 안 함
+    const currentSessionStatus = session.status || 'running';
+    let turnInfo: { year: number; month: number; turn: number };
     
-    // 년/월 또는 starttime이 변경되었으면 DB에 저장
-    if (gameEnvCopy.year !== gameEnv.year || gameEnvCopy.month !== gameEnv.month || gameEnvCopy.starttime !== gameEnv.starttime) {
-      const starttimeChanged = gameEnvCopy.starttime !== gameEnv.starttime;
-      gameEnv.year = gameEnvCopy.year;
-      gameEnv.month = gameEnvCopy.month;
-      if (starttimeChanged) {
-        gameEnv.starttime = gameEnvCopy.starttime;
-        console.log(`[${new Date().toISOString()}] ✅ Saved corrected starttime to DB: ${gameEnv.starttime}`);
-      }
-      data.game_env = gameEnv;
-      session.data = data;
-      session.markModified('data.game_env');
+    if (currentSessionStatus === 'running') {
+      // running 상태에서만 년월 계산
+      // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
+      const { ExecuteEngineService } = await import('../global/ExecuteEngine.service');
+      const gameEnvCopy = { ...gameEnv };
+      turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+      
+      // 년/월 또는 starttime이 변경되었으면 DB에 저장
+      if (gameEnvCopy.year !== gameEnv.year || gameEnvCopy.month !== gameEnv.month || gameEnvCopy.starttime !== gameEnv.starttime) {
+        const starttimeChanged = gameEnvCopy.starttime !== gameEnv.starttime;
+        gameEnv.year = gameEnvCopy.year;
+        gameEnv.month = gameEnvCopy.month;
+        if (starttimeChanged) {
+          gameEnv.starttime = gameEnvCopy.starttime;
+          console.log(`[${new Date().toISOString()}] ✅ Saved corrected starttime to DB: ${gameEnv.starttime}`);
+        }
+        data.game_env = gameEnv;
+        session.data = data;
+        session.markModified('data.game_env');
 
-      // 세션 저장 시 VersionError(동시 업데이트) 발생 가능성이 있어
-      // sessionRepository.saveDocument를 사용해 낙관적 잠금 충돌을 흡수한다.
-      try {
-        const { sessionRepository } = await import('../../repositories/session.repository');
-        await sessionRepository.saveDocument(session);
-      } catch (err: any) {
-        const msg = err?.message || '';
-        if (err?.name === 'VersionError' || msg.includes('No matching document found for id')) {
-          console.warn('[GetFrontInfo] Ignoring VersionError while saving session turn info:', msg);
-        } else {
-          throw err;
+        // 세션 저장 시 VersionError(동시 업데이트) 발생 가능성이 있어
+        // sessionRepository.saveDocument를 사용해 낙관적 잠금 충돌을 흡수한다.
+        try {
+          const { sessionRepository } = await import('../../repositories/session.repository');
+          await sessionRepository.saveDocument(session);
+        } catch (err: any) {
+          const msg = err?.message || '';
+          if (err?.name === 'VersionError' || msg.includes('No matching document found for id')) {
+            console.warn('[GetFrontInfo] Ignoring VersionError while saving session turn info:', msg);
+          } else {
+            throw err;
+          }
         }
       }
+    } else {
+      // preparing/paused/finished 상태: 저장된 년월 그대로 사용
+      turnInfo = {
+        year: gameEnv.year || gameEnv.startyear || 184,
+        month: gameEnv.month || 1,
+        turn: 0
+      };
     }
     
     // 세션 이름이 설정되어 있고 기술적 ID와 다를 때만 반환
