@@ -18,6 +18,7 @@ export interface CommandMessage {
 export class CommandQueue {
   private streamName: string;
   private redis: RedisService | null = null;
+  private initializedGroups: Set<string> = new Set(); // Consumer Group 초기화 추적
 
   constructor(streamName = 'game:commands') {
     this.streamName = streamName;
@@ -26,6 +27,37 @@ export class CommandQueue {
   async init(): Promise<void> {
     this.redis = await RedisService.connect();
     logger.info('CommandQueue 초기화', { streamName: this.streamName });
+  }
+
+  /**
+   * Consumer Group을 한 번만 생성합니다.
+   * 이미 생성된 그룹은 다시 시도하지 않습니다.
+   */
+  private async ensureConsumerGroup(groupName: string): Promise<void> {
+    // 이미 초기화된 그룹은 건너뜀
+    if (this.initializedGroups.has(groupName)) {
+      return;
+    }
+
+    if (!this.redis) {
+      throw new Error('CommandQueue가 초기화되지 않았습니다.');
+    }
+
+    const client = this.redis.getClient();
+
+    try {
+      await client.xgroup('CREATE', this.streamName, groupName, '0', 'MKSTREAM');
+      logger.info('Consumer Group 생성 완료', { groupName, streamName: this.streamName });
+    } catch (error: any) {
+      // BUSYGROUP 오류는 Consumer Group이 이미 존재하는 경우이므로 무시
+      if (!error.message?.includes('BUSYGROUP')) {
+        throw error;
+      }
+      // 이미 존재하는 경우 로그 없이 진행 (최초 1회만 로그 출력)
+    }
+
+    // 성공/실패 여부와 관계없이 초기화 완료로 표시
+    this.initializedGroups.add(groupName);
   }
 
   async publish(command: Omit<CommandMessage, 'timestamp'>): Promise<string> {
@@ -84,18 +116,8 @@ export class CommandQueue {
 
     const client = this.redis.getClient();
 
-    try {
-      await client.xgroup('CREATE', this.streamName, groupName, '0', 'MKSTREAM');
-      logger.info('Consumer Group 생성 완료', { groupName, streamName: this.streamName });
-    } catch (error: any) {
-      // BUSYGROUP 오류는 Consumer Group이 이미 존재하는 경우이므로 무시하고 계속 진행
-      if (error.message?.includes('BUSYGROUP')) {
-        logger.debug('Consumer Group이 이미 존재함', { groupName, streamName: this.streamName });
-      } else {
-        // 기타 오류는 다시 throw
-        throw error;
-      }
-    }
+    // Consumer Group을 한 번만 생성 (이미 생성된 경우 건너뜀)
+    await this.ensureConsumerGroup(groupName);
 
     const result = await client.xreadgroup(
       'GROUP',
