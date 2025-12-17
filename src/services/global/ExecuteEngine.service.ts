@@ -696,11 +696,9 @@ export class ExecuteEngineService {
         const originalSessionYear = gameEnv.year;
         const originalSessionMonth = gameEnv.month;
 
-        // 첫 번째 턴의 년/월을 기준으로 하고, 이후 턴마다 1개월씩 증가
-        // 이렇게 해야 밀린 턴 처리 시 각 턴이 서로 다른 월에 해당함
+        // 장수의 turntime을 기준으로 년/월 계산 (각 턴마다 갱신됨)
         let actionYear = gameEnv.year || 184;
         let actionMonth = gameEnv.month || 1;
-        let isFirstTurn = true;
 
         while (turnsExecuted < maxTurnsPerGeneral) {
           const currActionTime = new Date();
@@ -733,20 +731,27 @@ export class ExecuteEngineService {
           const generalName = generalDoc.name || generalDoc.data?.name || '';
           const beforeLogTime = !isNPC ? new Date() : null;
 
-          // 장수 턴 실행 - 각 턴마다 1개월씩 증가
-          // 밀린 턴을 따라잡을 때 각 턴이 서로 다른 월에 해당
-          if (isFirstTurn) {
-            // 첫 턴은 세션의 현재 년/월 사용
-            actionYear = originalSessionYear || 184;
-            actionMonth = originalSessionMonth || 1;
-            isFirstTurn = false;
-          } else {
-            // 이후 턴은 월 증가 (밀린 턴 따라잡기)
-            actionMonth++;
-            if (actionMonth > 12) {
-              actionMonth = 1;
-              actionYear++;
-            }
+          // 장수의 개인 turntime을 기준으로 년/월 계산
+          // 이렇게 해야 밀린 턴마다 정확한 월이 표시됨
+          const generalTurntimeForCalc = generalDoc.turntime || generalDoc.data?.turntime;
+          if (generalTurntimeForCalc) {
+            const turntimeDate = generalTurntimeForCalc instanceof Date 
+              ? generalTurntimeForCalc 
+              : new Date(generalTurntimeForCalc);
+            
+            // turnDate를 호출하지 않고 직접 계산 (gameEnv 수정 방지)
+            const turntermInMinutes = gameEnv.turnterm || 60;
+            const startyear = gameEnv.startyear || gameEnv.startYear || 184;
+            const starttime = gameEnv.starttime ? new Date(gameEnv.starttime) : turntimeDate;
+            
+            // 경과한 턴 수 계산
+            const timeDiffMinutes = (turntimeDate.getTime() - starttime.getTime()) / (1000 * 60);
+            const turnNum = Math.max(0, Math.floor(timeDiffMinutes / turntermInMinutes));
+            
+            // 년/월 계산
+            const totalMonths = startyear * 12 + turnNum;
+            actionYear = Math.floor(totalMonths / 12);
+            actionMonth = 1 + (totalMonths % 12);
           }
           
           const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv);
