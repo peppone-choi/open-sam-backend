@@ -6,7 +6,7 @@ import mongoose, { Schema, Document } from 'mongoose';
  * 
  * PHP 구조:
  * - general_id: INT
- * - log_type: VARCHAR ('history', 'action', 'battle_result', 'battle_detail')
+ * - log_type: VARCHAR ('history', 'action', 'battle_brief', 'battle') - PHP와 동일
  * - year: INT
  * - month: INT  
  * - text: TEXT

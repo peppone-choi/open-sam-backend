@@ -635,6 +635,13 @@ export class GetFrontInfoService {
     // 시나리오 표시 이름: scenarioText가 있으면 우선 사용, 없으면 scenario
     const scenarioText = data.scenarioText || data.scenario || '삼국지';
 
+    // 전쟁 관련 년도 설정 (상대 년도: startyear 기준)
+    const openingPartYear = data.openingPartYear ?? gameEnv.openingPartYear ?? 3;
+    // 선전포고 가능 상대 년도 (기본값: openingPartYear - 2 = 1)
+    const warDeclareYear = data.warDeclareYear ?? gameEnv.warDeclareYear ?? (openingPartYear - 2);
+    // 출병 가능 상대 년도 (기본값: openingPartYear = 3)
+    const warDeployYear = data.warDeployYear ?? gameEnv.warDeployYear ?? openingPartYear;
+
     return {
       serverName: sessionDisplayName, // 세션 표시 이름 (없으면 null)
       scenarioText,
@@ -645,6 +652,9 @@ export class GetFrontInfoService {
       npcMode: (data.npcmode ?? (data.allow_npc_possess ? 1 : 0)) as 0 | 1 | 2,
       joinMode: data.join_mode === 0 ? 'onlyRandom' : 'full',
       startyear: data.startyear ?? data.startYear ?? 184,
+      openingPartYear, // 초반 제한 기간 (기본값 3년)
+      warDeclareYear,  // 선전포고 가능 상대 년도 (startyear + warDeclareYear 부터 가능)
+      warDeployYear,   // 출병 가능 상대 년도 (startyear + warDeployYear 부터 가능)
       year: turnInfo.year,
       month: turnInfo.month,
       autorunUser: {

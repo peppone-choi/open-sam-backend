@@ -328,6 +328,11 @@ router.post('/game-info', async (req, res) => {
       turnMonth = sessionData.month || 1;
     }
     
+    // 전쟁 관련 년도 설정
+    const openingPartYear = gameEnv.openingPartYear ?? 3;
+    const warDeclareYear = gameEnv.warDeclareYear ?? (openingPartYear - 2);
+    const warDeployYear = gameEnv.warDeployYear ?? openingPartYear;
+    
     const gameInfo = {
       serverName: session?.name || '',
       scenario: session?.scenario_name || gameEnv.scenario || '',
@@ -346,6 +351,10 @@ router.post('/game-info', async (req, res) => {
       isunited: isunited,
       status: currentStatus, // 추가!
       allowNpcPossess: gameEnv.allow_npc_possess || false,
+      // 전쟁 관련 년도 설정
+      openingPartYear,      // 초반 제한 기간 (기본값 3)
+      warDeclareYear,       // 선전포고 가능 상대 년도 (기본값: openingPartYear - 2 = 1)
+      warDeployYear,        // 출병 가능 상대 년도 (기본값: openingPartYear = 3)
     };
     
     console.log('[Admin] Returning isunited:', gameInfo.isunited);
@@ -373,6 +382,13 @@ router.post('/update-game', async (req, res) => {
   try {
     const { action, data } = req.body;
     const sessionId = req.query.session_id || req.body.session_id || data?.session_id || 'sangokushi_default';
+    
+    console.log('[Admin] update-game request:', {
+      action,
+      data,
+      sessionId,
+      body: req.body
+    });
     
     const session = await Session.findOne({ session_id: sessionId });
     if (!session) {
@@ -419,11 +435,27 @@ router.post('/update-game', async (req, res) => {
       });
     } else if (action === 'serverDescription') {
       // 서버 설명 (로비 서버 안내에 표시됨)
-      session.data.serverDescription = data.serverDescription || '';
-      session.data.game_env.serverDescription = data.serverDescription || '';
+      const newDescription = data.serverDescription || '';
+      session.data.serverDescription = newDescription;
+      session.data.game_env.serverDescription = newDescription;
       session.markModified('data');
       session.markModified('data.game_env');
+      
+      console.log('[Admin] Saving serverDescription:', {
+        sessionId,
+        newDescription,
+        dataServerDescription: session.data.serverDescription,
+        gameEnvServerDescription: session.data.game_env.serverDescription
+      });
+      
       await session.save();
+      
+      // 저장 후 확인
+      const savedSession = await Session.findOne({ session_id: sessionId }).lean();
+      console.log('[Admin] After save serverDescription:', {
+        dataServerDescription: savedSession?.data?.serverDescription,
+        gameEnvServerDescription: (savedSession?.data as any)?.game_env?.serverDescription
+      });
       
       return res.json({
         result: true,
@@ -537,6 +569,40 @@ router.post('/update-game', async (req, res) => {
       return res.json({
         result: true,
         message: result.message
+      });
+    } else if (action === 'warDeclareYear') {
+      // 선전포고 가능 상대 년도 설정
+      const warDeclareYear = parseInt(data.warDeclareYear);
+      if (isNaN(warDeclareYear) || warDeclareYear < 0) {
+        return res.status(400).json({
+          result: false,
+          reason: '유효한 선전포고 가능 년도를 입력하세요'
+        });
+      }
+      session.data.game_env.warDeclareYear = warDeclareYear;
+      session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: `선전포고 가능 년도가 시작년도 + ${warDeclareYear}년으로 변경되었습니다`
+      });
+    } else if (action === 'warDeployYear') {
+      // 출병 가능 상대 년도 설정
+      const warDeployYear = parseInt(data.warDeployYear);
+      if (isNaN(warDeployYear) || warDeployYear < 0) {
+        return res.status(400).json({
+          result: false,
+          reason: '유효한 출병 가능 년도를 입력하세요'
+        });
+      }
+      session.data.game_env.warDeployYear = warDeployYear;
+      session.markModified('data.game_env');
+      await session.save();
+      
+      return res.json({
+        result: true,
+        message: `출병 가능 년도가 시작년도 + ${warDeployYear}년으로 변경되었습니다`
       });
     } else if (action === 'allowNpcPossess') {
       // 오리지널 캐릭터 플레이 허용 설정

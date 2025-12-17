@@ -13,7 +13,7 @@ export class GetGeneralLogsService {
   static async execute(data: any, user?: any) {
     const sessionId = data.serverID || data.session_id || process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
     const generalId = data.general_id || data.generalID;
-    const logType = data.log_type || 'action'; // 'action' | 'history' | 'battle_result' | 'battle_detail' | 'battle_brief'
+    const logType = data.log_type || 'action'; // PHP와 동일: 'action' | 'history' | 'battle_brief' | 'battle'
     const limit = parseInt(data.limit) || 50;
     const year = data.year ? parseInt(data.year) : undefined;
     const month = data.month ? parseInt(data.month) : undefined;

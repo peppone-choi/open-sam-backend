@@ -223,13 +223,26 @@ async function setGeneralCommand(
   try {
     const finalBrief = brief || action;
 
+    // ✅ 예약 시 예상 년/월 계산을 위해 장수 정보와 세션 정보 조회
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+    const { sessionRepository } = await import('../../repositories/session.repository');
+    const { ExecuteEngineService } = await import('../global/ExecuteEngine.service');
+    
+    const session = await sessionRepository.findBySessionId(sessionId);
+    const gameEnv = session?.data || {};
+    const turnterm = gameEnv.turnterm || 60; // 분 단위
+    
+    // 장수의 현재 turntime
+    const baseTurntime = general?.turntime || general?.data?.turntime || new Date().toISOString();
+    const baseTurntimeDate = new Date(baseTurntime);
+
     for (const turnIdx of turnList) {
-      // 기존 데이터 확인
-      const existing = await generalTurnRepository.findOneByFilter({
-        session_id: sessionId,
-        'data.general_id': generalId,
-        'data.turn_idx': turnIdx
-      });
+      // ✅ 해당 turn_idx의 예상 실행 시간 계산
+      const expectedTurntime = new Date(baseTurntimeDate.getTime() + turnIdx * turnterm * 60 * 1000);
+      
+      // ✅ 예상 년/월 계산 (gameEnv 복사본 사용)
+      const envCopy = { ...gameEnv };
+      const turnDateInfo = ExecuteEngineService.turnDate(expectedTurntime, envCopy);
       
       const result = await generalTurnRepository.findOneAndUpdate(
         {
@@ -241,13 +254,14 @@ async function setGeneralCommand(
           $set: {
             'data.action': action,
             'data.arg': arg,
-            'data.brief': finalBrief
+            'data.brief': finalBrief,
+            'data.expected_year': turnDateInfo.year,     // ✅ 예상 년도 저장
+            'data.expected_month': turnDateInfo.month,   // ✅ 예상 월 저장
+            'data.reserved_at': new Date().toISOString() // ✅ 예약 시간 저장
           }
         },
         { upsert: true, new: true }
       );
-      
-
     }
 
     return {

@@ -45,11 +45,15 @@ export class DeployCommand extends GeneralCommand {
     this.setNation(['war', 'gennum', 'tech', 'gold', 'rice', 'color', 'type', 'level', 'capital']);
 
     const [reqGold, reqRice] = this.getCost();
-    const relYear = this.env.year - this.env.startyear;
+    const startYear = this.env.startyear ?? 184;
+    // warDeployYear: 출병 가능 상대 년도 (직접 설정 가능)
+    const openingPartYear = this.env.openingPartYear ?? this.env.opening_part_year ?? 3;
+    const warDeployYear = this.env.warDeployYear ?? this.env.war_deploy_year ?? openingPartYear;
+    const deployAbsYear = startYear + warDeployYear;
 
-    // PHP 원본과 동일: NotOpeningPart(relYear+2)
+    // 2턴 전부터 미리 표시 (relYear + 2 >= warDeployYear)
     this.minConditionConstraints = [
-      ConstraintHelper.NotOpeningPart(relYear + 2),
+      ConstraintHelper.ReqEnvValue('year', '>=', deployAbsYear - 2, `${deployAbsYear}년부터 출병이 가능합니다.`),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.ReqGeneralCrew(),
@@ -73,11 +77,14 @@ export class DeployCommand extends GeneralCommand {
 
   protected initWithArg(): void {
     const [reqGold, reqRice] = this.getCost();
-    const relYear = this.env.year - this.env.startyear;
+    const startYear = this.env.startyear ?? 184;
+    // warDeployYear: 출병 가능 상대 년도 (직접 설정 가능)
+    const openingPartYear = this.env.openingPartYear ?? this.env.opening_part_year ?? 3;
+    const warDeployYear = this.env.warDeployYear ?? this.env.war_deploy_year ?? openingPartYear;
+    const deployAbsYear = startYear + warDeployYear;
 
-    // PHP 원본과 동일: NotOpeningPart(relYear)
     this.fullConditionConstraints = [
-      ConstraintHelper.NotOpeningPart(relYear),
+      ConstraintHelper.ReqEnvValue('year', '>=', deployAbsYear, `${deployAbsYear}년부터 출병이 가능합니다.`),
       ConstraintHelper.NotSameDestCity(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),

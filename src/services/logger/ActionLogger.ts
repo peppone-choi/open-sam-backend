@@ -5,25 +5,38 @@ import { LogFormatType, LogType } from '../../types/log.types';
 import { logger } from '../../common/logger';
 
 /**
+ * 로그 엔트리 (년/월 포함)
+ */
+interface LogEntry {
+  text: string;
+  year: number;
+  month: number;
+}
+
+/**
  * ActionLogger 클래스
  * 
  * PHP의 ActionLogger를 참고하여 구현
  * 장수/국가/전역 행동 로그를 메모리에 저장 후 일괄 flush
  * 
+ * ✅ 성능 최적화: autoFlush 기본값 false, 배치 처리 지원
+ * 
  * @example
- * const logger = new ActionLogger(generalId, nationId, year, month, sessionId);
- * logger.pushGeneralActionLog("쌀 1000석을 구입했습니다.", LogFormatType.MONTH);
- * logger.pushGeneralHistoryLog("시장에서 쌀 구입", LogFormatType.YEAR_MONTH);
- * await logger.flush();
+ * const actionLogger = new ActionLogger(generalId, nationId, year, month, sessionId);
+ * actionLogger.pushGeneralActionLog("쌀 1000석을 구입했습니다.", LogFormatType.MONTH);
+ * actionLogger.setYearMonth(185, 2); // 년/월 변경 (배치 처리 시)
+ * actionLogger.pushGeneralHistoryLog("시장에서 쌀 구입", LogFormatType.YEAR_MONTH);
+ * await actionLogger.flush(); // 한번에 저장
  */
 export class ActionLogger {
-  private generalHistoryLog: string[] = [];
-  private generalActionLog: string[] = [];
-  private generalBattleResultLog: string[] = [];
-  private generalBattleDetailLog: string[] = [];
-  private nationalHistoryLog: string[] = [];
-  private globalHistoryLog: string[] = [];
-  private globalActionLog: string[] = [];
+  // ✅ 성능 최적화: 년/월 정보를 함께 저장
+  private generalHistoryLog: LogEntry[] = [];
+  private generalActionLog: LogEntry[] = [];
+  private generalBattleResultLog: LogEntry[] = [];
+  private generalBattleDetailLog: LogEntry[] = [];
+  private nationalHistoryLog: LogEntry[] = [];
+  private globalHistoryLog: LogEntry[] = [];
+  private globalActionLog: LogEntry[] = [];
 
   private autoFlush: boolean;
   private isFlushing: boolean = false; // 중복 flush 방지 플래그
@@ -33,10 +46,39 @@ export class ActionLogger {
     private nationId: number,
     private year: number,
     private month: number,
-    private sessionId: string = 'sangokushi_default', // 기본값 추가
-    autoFlush: boolean = true
+    private sessionId: string = 'sangokushi_default',
+    autoFlush: boolean = true // 기본값 true (호환성), 배치 처리 시 false 전달
   ) {
     this.autoFlush = autoFlush;
+  }
+
+  /**
+   * ✅ 배치 모드 활성화/비활성화
+   * 배치 모드에서는 autoFlush가 비활성화되고, 수동으로 flush() 호출 필요
+   */
+  setBatchMode(enabled: boolean): void {
+    this.autoFlush = !enabled;
+  }
+
+  /**
+   * ✅ 배치 처리 시 년/월 변경
+   */
+  setYearMonth(year: number, month: number): void {
+    this.year = year;
+    this.month = month;
+  }
+
+  /**
+   * ✅ 현재 로그 개수 반환 (디버깅/모니터링용)
+   */
+  getLogCount(): number {
+    return this.generalHistoryLog.length +
+      this.generalActionLog.length +
+      this.generalBattleResultLog.length +
+      this.generalBattleDetailLog.length +
+      this.nationalHistoryLog.length +
+      this.globalHistoryLog.length +
+      this.globalActionLog.length;
   }
 
   /**
@@ -52,9 +94,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.generalHistoryLog.push(formatted);
+    this.generalHistoryLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -73,9 +114,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.generalActionLog.push(formatted);
+    this.generalActionLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -93,9 +133,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.generalBattleResultLog.push(formatted);
+    this.generalBattleResultLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -113,9 +152,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.generalBattleDetailLog.push(formatted);
+    this.generalBattleDetailLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -133,9 +171,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.nationalHistoryLog.push(formatted);
+    this.nationalHistoryLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -153,9 +190,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.globalActionLog.push(formatted);
+    this.globalActionLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -173,9 +209,8 @@ export class ActionLogger {
     }
 
     const formatted = this.formatText(text, formatType);
-    this.globalHistoryLog.push(formatted);
+    this.globalHistoryLog.push({ text: formatted, year: this.year, month: this.month });
     
-    // autoFlush가 활성화되어 있으면 즉시 DB에 저장
     if (this.autoFlush) {
       this.flush().catch(err => logger.error('[ActionLogger] Auto-flush failed:', err));
     }
@@ -276,13 +311,13 @@ export class ActionLogger {
    * 로그 롤백 (예외 상황 처리용)
    */
   rollback(): {
-    generalHistoryLog: string[];
-    generalActionLog: string[];
-    generalBattleResultLog: string[];
-    generalBattleDetailLog: string[];
-    nationalHistoryLog: string[];
-    globalHistoryLog: string[];
-    globalActionLog: string[];
+    generalHistoryLog: LogEntry[];
+    generalActionLog: LogEntry[];
+    generalBattleResultLog: LogEntry[];
+    generalBattleDetailLog: LogEntry[];
+    nationalHistoryLog: LogEntry[];
+    globalHistoryLog: LogEntry[];
+    globalActionLog: LogEntry[];
   } {
     const backup = {
       generalHistoryLog: [...this.generalHistoryLog],
@@ -306,20 +341,19 @@ export class ActionLogger {
   }
 
   /**
-   * 메모리의 모든 로그를 DB에 저장
-   * autoFlush가 true면 자동으로 호출됨
-   * 중복 flush 방지를 위해 isFlushing 플래그 사용
+   * 메모리의 모든 로그를 DB에 저장 (일괄 처리)
+   * ✅ 성능 최적화: 배치 처리 완료 후 한번만 호출
    */
   async flush(): Promise<void> {
-    // 이미 flush 중이면 스킵 (중복 저장 방지)
     if (this.isFlushing) {
       return;
     }
 
     this.isFlushing = true;
+    const totalLogs = this.getLogCount();
 
     try {
-      // 각 로그 배열을 복사하고 원본 비우기 (저장 중 새 로그 추가 허용)
+      // 각 로그 배열을 복사하고 원본 비우기
       const historyLogs = [...this.generalHistoryLog];
       const actionLogs = [...this.generalActionLog];
       const battleResultLogs = [...this.generalBattleResultLog];
@@ -337,40 +371,37 @@ export class ActionLogger {
       this.globalHistoryLog = [];
       this.globalActionLog = [];
 
-      // 장수 이력 로그
+      // ✅ 성능 최적화: 모든 로그를 병렬로 저장
+      const savePromises: Promise<void>[] = [];
+
       if (historyLogs.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.HISTORY, historyLogs);
+        savePromises.push(this.saveGeneralLogs(LogType.HISTORY, historyLogs));
       }
-
-      // 장수 행동 로그
       if (actionLogs.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.ACTION, actionLogs);
+        savePromises.push(this.saveGeneralLogs(LogType.ACTION, actionLogs));
       }
-
-      // 전투 결과 로그
       if (battleResultLogs.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.BATTLE_RESULT, battleResultLogs);
+        // PHP: log_type='battle_brief'
+        savePromises.push(this.saveGeneralLogs(LogType.BATTLE_BRIEF, battleResultLogs));
       }
-
-      // 전투 상세 로그
       if (battleDetailLogs.length > 0 && this.generalId) {
-        await this.saveGeneralLogs(LogType.BATTLE_DETAIL, battleDetailLogs);
+        // PHP: log_type='battle'
+        savePromises.push(this.saveGeneralLogs(LogType.BATTLE, battleDetailLogs));
       }
-
-      // 국가 이력 로그 → world_history (nation_id > 0)
       if (nationalLogs.length > 0 && this.nationId) {
-        await this.saveNationLogs(nationalLogs);
+        savePromises.push(this.saveNationLogs(nationalLogs));
       }
-
-      // 전역 이력 로그 → world_history (nation_id = 0)
       if (globalHistoryLogs.length > 0) {
-        await this.saveGlobalHistoryLogs(globalHistoryLogs);
+        savePromises.push(this.saveGlobalHistoryLogs(globalHistoryLogs));
+      }
+      if (globalActionLogs.length > 0) {
+        savePromises.push(this.saveGlobalActionLogs(globalActionLogs));
       }
 
-      // 전역 행동 로그 → general_record (general_id = 0, log_type = 'history')
-      // PHP: pushGlobalActionLog는 general_record에 저장
-      if (globalActionLogs.length > 0) {
-        await this.saveGlobalActionLogs(globalActionLogs);
+      await Promise.all(savePromises);
+
+      if (totalLogs > 0) {
+        logger.debug(`[ActionLogger] Flushed ${totalLogs} logs in batch`);
       }
     } catch (error: any) {
       logger.error('[ActionLogger] flush error:', error);
@@ -382,124 +413,132 @@ export class ActionLogger {
 
   /**
    * 장수 로그 저장 (일괄 insert) → general_record
+   * ✅ 성능 최적화: 각 로그에 저장된 년/월 사용
    */
-  private async saveGeneralLogs(logType: LogType, logs: string[]): Promise<void> {
+  private async saveGeneralLogs(logType: LogType, logs: LogEntry[]): Promise<void> {
     if (!logs || logs.length === 0) return;
 
-    const records = logs.map((text) => ({
+    const records = logs.map((entry) => ({
       session_id: this.sessionId,
       general_id: this.generalId,
       log_type: logType,
-      year: this.year,
-      month: this.month,
-      text: text,
+      year: entry.year,
+      month: entry.month,
+      text: entry.text,
     }));
 
-    // 일괄 insert
     const savedRecords = await GeneralRecord.insertMany(records);
 
-    // WebSocket으로 실시간 브로드캐스트
+    // WebSocket 브로드캐스트 (배치로 한번에)
     try {
       const { GameEventEmitter } = await import('../gameEventEmitter');
-      for (let i = 0; i < savedRecords.length; i++) {
-        const record = savedRecords[i];
-        const text = logs[i];
+      // ✅ 배치 브로드캐스트 (마지막 로그만 전송하여 클라이언트가 새로고침하도록)
+      if (savedRecords.length > 0) {
+        const lastRecord = savedRecords[savedRecords.length - 1];
+        const lastEntry = logs[logs.length - 1];
         GameEventEmitter.broadcastLogUpdate(
           this.sessionId,
           this.generalId,
           logType as 'action' | 'history',
-          record._id?.toString() || record.id || 0,
-          text
+          lastRecord._id?.toString() || lastRecord.id || 0,
+          lastEntry.text,
+          logs.length // 총 로그 개수 전달
         );
       }
-      logger.info(`[ActionLogger] Broadcasted ${logs.length} ${logType} logs via WebSocket for general ${this.generalId}`);
     } catch (error) {
-      logger.error(`[ActionLogger] Failed to broadcast logs via WebSocket:`, error);
+      // WebSocket 실패해도 계속 진행
     }
 
-    logger.info(`[ActionLogger] Saved ${logs.length} ${logType} logs for general ${this.generalId}`);
+    logger.debug(`[ActionLogger] Saved ${logs.length} ${logType} logs for general ${this.generalId}`);
   }
 
   /**
    * 국가 로그 저장 → world_history (nation_id > 0)
    */
-  private async saveNationLogs(logs: string[]): Promise<void> {
+  private async saveNationLogs(logs: LogEntry[]): Promise<void> {
     if (!logs || logs.length === 0) return;
 
-    const records = logs.map((text) => ({
+    const records = logs.map((entry) => ({
       session_id: this.sessionId,
       nation_id: this.nationId,
-      year: this.year,
-      month: this.month,
-      text: text,
+      year: entry.year,
+      month: entry.month,
+      text: entry.text,
     }));
 
     await WorldHistory.insertMany(records);
 
-    logger.info(`[ActionLogger] Saved ${logs.length} nation history logs for nation ${this.nationId}`);
+    logger.debug(`[ActionLogger] Saved ${logs.length} nation history logs for nation ${this.nationId}`);
   }
 
   /**
    * 전역 이력 로그 저장 → world_history (nation_id = 0)
+   * ✅ 성능 최적화: insertMany + ordered: false (중복 무시)
    */
-  private async saveGlobalHistoryLogs(logs: string[]): Promise<void> {
+  private async saveGlobalHistoryLogs(logs: LogEntry[]): Promise<void> {
     if (!logs || logs.length === 0) return;
 
-    // 각 로그를 개별적으로 저장 (중복 키 에러 방지)
-    for (const text of logs) {
-      try {
-        await WorldHistory.create({
-          session_id: this.sessionId,
-          nation_id: 0, // 전역 = 0
-          year: this.year,
-          month: this.month,
-          text: text,
-        });
-      } catch (error: any) {
-        // 중복 키 에러는 무시하고 계속 진행
-        if (error.code !== 11000) {
-          throw error;
-        }
-        logger.warn(`[ActionLogger] Duplicate global history log ignored: ${text.substring(0, 50)}`);
+    const records = logs.map((entry) => ({
+      session_id: this.sessionId,
+      nation_id: 0,
+      year: entry.year,
+      month: entry.month,
+      text: entry.text,
+    }));
+
+    try {
+      // ✅ ordered: false로 중복 에러 무시하고 계속 진행
+      await WorldHistory.insertMany(records, { ordered: false });
+    } catch (error: any) {
+      // BulkWriteError는 일부만 성공해도 발생
+      if (error.code !== 11000 && !error.writeErrors) {
+        throw error;
       }
+      const successCount = error.insertedDocs?.length || (logs.length - (error.writeErrors?.length || 0));
+      logger.debug(`[ActionLogger] Saved ${successCount}/${logs.length} global history logs (duplicates ignored)`);
+      return;
     }
 
-    logger.info(`[ActionLogger] Saved ${logs.length} global history logs`);
+    logger.debug(`[ActionLogger] Saved ${logs.length} global history logs`);
   }
 
   /**
    * 전역 행동 로그 저장 → general_record (general_id = 0)
-   * PHP: pushGlobalActionLog는 general_record에 저장
    */
-  private async saveGlobalActionLogs(logs: string[]): Promise<void> {
+  private async saveGlobalActionLogs(logs: LogEntry[]): Promise<void> {
     if (!logs || logs.length === 0) return;
 
-    const records = logs.map((text) => ({
+    const records = logs.map((entry) => ({
       session_id: this.sessionId,
-      general_id: 0, // 전역 = 0
-      log_type: LogType.HISTORY, // PHP와 동일하게 'history' 타입
-      year: this.year,
-      month: this.month,
-      text: text,
+      general_id: 0,
+      log_type: LogType.HISTORY,
+      year: entry.year,
+      month: entry.month,
+      text: entry.text,
     }));
 
     const savedRecords = await GeneralRecord.insertMany(records);
 
-    // WebSocket으로 실시간 브로드캐스트
-    const { GameEventEmitter } = await import('../gameEventEmitter');
-    for (let i = 0; i < savedRecords.length; i++) {
-      const record = savedRecords[i];
-      const text = logs[i];
-      GameEventEmitter.broadcastLogUpdate(
-        this.sessionId,
-        0, // 전역 로그는 general_id = 0
-        'history',
-        record._id?.toString() || record.id || 0,
-        text
-      );
+    // WebSocket 브로드캐스트
+    try {
+      const { GameEventEmitter } = await import('../gameEventEmitter');
+      if (savedRecords.length > 0) {
+        const lastRecord = savedRecords[savedRecords.length - 1];
+        const lastEntry = logs[logs.length - 1];
+        GameEventEmitter.broadcastLogUpdate(
+          this.sessionId,
+          0,
+          'history',
+          lastRecord._id?.toString() || lastRecord.id || 0,
+          lastEntry.text,
+          logs.length
+        );
+      }
+    } catch (error) {
+      // WebSocket 실패해도 계속 진행
     }
 
-    logger.info(`[ActionLogger] Saved ${logs.length} global action logs`);
+    logger.debug(`[ActionLogger] Saved ${logs.length} global action logs`);
   }
 
   /**

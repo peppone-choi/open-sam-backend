@@ -691,10 +691,32 @@ export class ExecuteEngineService {
         // 월 계산이 제대로 되므로 NPC도 밀린 턴 따라잡기 허용
         const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10);
         const now = new Date();
+        
+        // ✅ 성능 최적화: 루프 시작 전 한번만 계산
+        const isNPC = (generalDoc.npc || generalDoc.data?.npc || 0) >= 2;
+        const generalName = generalDoc.name || generalDoc.data?.name || '';
+        const beforeLogTime = !isNPC ? new Date() : null;
+        const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
+        const officerLevel = generalDoc.data?.officer_level || 0;
+        let wasDeleted = false;
 
         while (turnsExecuted < maxTurnsPerGeneral) {
           const currActionTime = new Date();
           if (currActionTime > limitActionTime) {
+            // ✅ 시간 초과 전에 처리된 턴만큼 한번에 당기기
+            if (turnsExecuted > 0) {
+              const pullPromises: Promise<void>[] = [
+                this.pullGeneralCommand(sessionId, generalNo, turnsExecuted)
+              ];
+              if (nationId && officerLevel >= 5) {
+                pullPromises.push(this.pullNationCommand(sessionId, nationId, officerLevel, turnsExecuted));
+              }
+              await Promise.all(pullPromises);
+
+              if (!isNPC && beforeLogTime) {
+                await this.printUserLogs(sessionId, generalNo, generalName, beforeLogTime, turnsExecuted);
+              }
+            }
             return [true, currentTurn];
           }
 
@@ -713,49 +735,57 @@ export class ExecuteEngineService {
             break;
           }
 
+          // ✅ 핵심: turnsExecuted는 현재 실행할 턴의 슬롯 인덱스 (0부터 시작)
+          // 턴1: turn_idx=0, 턴2: turn_idx=1, 턴3: turn_idx=2 ...
+          const turnSlotIndex = turnsExecuted;
           turnsExecuted++;
 
-          // ✅ 핵심 수정: 각 턴 실행 시점의 게임 년/월을 장수의 turntime 기준으로 계산
-          // PHP에서는 월이 바뀔 때마다 turnDate()가 호출되어 년/월이 업데이트됨
-          // 여기서는 장수의 turntime을 기준으로 해당 시점의 년/월을 계산
+          // ✅ 각 턴 실행 시점의 게임 년/월을 장수의 turntime 기준으로 계산
           const turnDateInfo = ExecuteEngineService.turnDate(turntimeDate, gameEnv);
           const actionYear = turnDateInfo.year;
           const actionMonth = turnDateInfo.month;
 
-          // 유저인 경우 턴 실행 전 로그 시간 기록
-          const isNPC = (generalDoc.npc || generalDoc.data?.npc || 0) >= 2;
-          const generalName = generalDoc.name || generalDoc.data?.name || '';
-          const beforeLogTime = !isNPC ? new Date() : null;
-
-          // 장수의 turntime 기준으로 계산된 년/월 사용
-          const turnExecuted = await this.executeGeneralTurn(sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv);
+          // ✅ 성능 최적화: turn_idx=turnSlotIndex 슬롯의 명령 실행
+          // 당기기는 루프 끝에서 한번만!
+          const turnExecuted = await this.executeGeneralTurn(
+            sessionId, generalDoc, actionYear, actionMonth, turnterm, gameEnv, turnSlotIndex
+          );
 
           currentTurn = generalDoc.turntime || new Date().toISOString();
 
-          // ✅ PHP와 동일: 턴 처리 여부와 관계없이 항상 명령 당기기 실행
-          // 명령이 없어도 0번 턴을 당겨야 다음 루프에서 같은 상태가 반복되지 않음
-          await this.pullGeneralCommand(sessionId, generalNo, 1, isNPC, generalName, beforeLogTime);
-          const nationId = generalDoc.nation || generalDoc.data?.nation || 0;
-          const officerLevel = generalDoc.data?.officer_level || 0;
-          if (nationId && officerLevel >= 5) {
-            await this.pullNationCommand(sessionId, nationId, officerLevel, 1);
-          }
-
           if (!turnExecuted) {
-            logger.debug('No command executed, but turn pulled', { generalNo });
+            logger.debug('No command executed for turn', { generalNo, turn: turnsExecuted, slot: turnSlotIndex });
           }
 
-          // turntime 업데이트 (명령 유무와 관계없이 항상 실행)
-          const deleted = await this.updateTurnTime(sessionId, generalDoc, turnterm, gameEnv);
+          // turntime 업데이트 (메모리에서만, DB 저장은 루프 끝에서)
+          const deleted = await this.updateTurnTimeCore(sessionId, generalDoc, turnterm, gameEnv);
 
           if (deleted) {
+            wasDeleted = true;
             break; // 장수가 삭제되면 루프 종료
           }
 
-          // updateTurnTime이 generalDoc.turntime을 업데이트했으므로
-          // data.turntime도 동기화
+          // data.turntime 동기화
           if (generalDoc.data && generalDoc.turntime) {
             generalDoc.data.turntime = generalDoc.turntime;
+          }
+        }
+
+        // ✅ 성능 최적화: 루프 끝나고 한번에 명령 당기기 (DB 호출 횟수 대폭 감소)
+        // N턴 처리 → turn_idx 0~(N-1) 삭제, N→0, N+1→1...
+        if (turnsExecuted > 0 && !wasDeleted) {
+          // 장수/국가 명령 당기기 (병렬 처리)
+          const pullPromises: Promise<void>[] = [
+            this.pullGeneralCommand(sessionId, generalNo, turnsExecuted)
+          ];
+          if (nationId && officerLevel >= 5) {
+            pullPromises.push(this.pullNationCommand(sessionId, nationId, officerLevel, turnsExecuted));
+          }
+          await Promise.all(pullPromises);
+
+          // 유저인 경우 로그 출력 (NPC는 스킵)
+          if (!isNPC && beforeLogTime) {
+            await this.printUserLogs(sessionId, generalNo, generalName, beforeLogTime, turnsExecuted);
           }
         }
 
@@ -803,6 +833,7 @@ export class ExecuteEngineService {
   /**
    * 개별 장수 턴 실행
    * 모든 장수는 전역 게임 년/월을 공유하며, 개별 턴 카운터로 나이 증가를 관리
+   * @param turnSlotIndex 실행할 명령 슬롯 인덱스 (기본값 0, 배치 처리 시 증가)
    */
   private static async executeGeneralTurn(
     sessionId: string,
@@ -810,7 +841,8 @@ export class ExecuteEngineService {
     year: number,
     month: number,
     turnterm: number,
-    gameEnv: any
+    gameEnv: any,
+    turnSlotIndex: number = 0
   ): Promise<boolean> {
     const generalId = general.no;
     const cityId = general.city || general.data?.city || 0;
@@ -843,13 +875,13 @@ export class ExecuteEngineService {
     const officerLevel = general.officer_level || 0;
     const hasNationTurn = nationId && officerLevel >= 5;
     if (hasNationTurn) {
-      await this.processNationCommand(sessionId, general, generalYear, generalMonth);
+      await this.processNationCommand(sessionId, general, generalYear, generalMonth, turnSlotIndex);
     }
 
-    // 장수 커맨드 실행 (0번 턴) - 휴식 포함
+    // 장수 커맨드 실행 (turnSlotIndex번 턴) - 휴식 포함
     let commandExecuted = false;
     try {
-      commandExecuted = await this.processGeneralCommand(sessionId, general, generalYear, generalMonth, gameEnv);
+      commandExecuted = await this.processGeneralCommand(sessionId, general, generalYear, generalMonth, gameEnv, turnSlotIndex);
     } catch (error: any) {
       logger.error(`Command execution failed for general ${general.no}`, {
         error: error.message,
@@ -1134,8 +1166,9 @@ export class ExecuteEngineService {
   /**
    * 국가 커맨드 실행
    * PHP TurnExecutionHelper::processNationCommand() 완전 구현
+   * @param turnSlotIndex 실행할 명령 슬롯 인덱스 (배치 처리 시 0, 1, 2...)
    */
-  private static async processNationCommand(sessionId: string, general: any, year: number, month: number) {
+  private static async processNationCommand(sessionId: string, general: any, year: number, month: number, turnSlotIndex: number = 0) {
     const nationId = general.nation || 0;
     const officerLevel = general.officer_level || 0;
 
@@ -1143,12 +1176,12 @@ export class ExecuteEngineService {
       return;
     }
 
-    // 0번 턴 조회
+    // ✅ 성능 최적화: turnSlotIndex번 턴 조회 (배치 처리 시 0, 1, 2... 순서대로)
     const nationTurn = await nationTurnRepository.findOneByFilter({
       session_id: sessionId,
       'data.nation_id': nationId,
       'data.officer_level': officerLevel,
-      'data.turn_idx': 0
+      'data.turn_idx': turnSlotIndex
     });
 
     if (!nationTurn) {
@@ -1158,6 +1191,25 @@ export class ExecuteEngineService {
     const turnData = nationTurn.data || nationTurn;
     const action = turnData.action || '휴식';
     const arg = turnData.arg || {};
+
+    // ✅ 예약 시 저장된 년/월이 있으면 사용 (정확성 보장)
+    const expectedYear = turnData.expected_year;
+    const expectedMonth = turnData.expected_month;
+    
+    if (expectedYear !== undefined && expectedMonth !== undefined) {
+      if (expectedYear !== year || expectedMonth !== month) {
+        logger.warn('Nation command year/month mismatch', {
+          nationId,
+          officerLevel,
+          turnSlotIndex,
+          expected: `${expectedYear}년 ${expectedMonth}월`,
+          calculated: `${year}년 ${month}월`,
+          action
+        });
+      }
+      year = expectedYear;
+      month = expectedMonth;
+    }
 
     if (action === '휴식') {
       return;
@@ -1329,7 +1381,8 @@ export class ExecuteEngineService {
     general: any,
     year: number,
     month: number,
-    gameEnv: any
+    gameEnv: any,
+    turnSlotIndex: number = 0
   ): Promise<boolean> {
     // generalId는 top-level no 또는 data.no일 수 있음
     const generalId = general.no || general.data?.no;
@@ -1339,15 +1392,36 @@ export class ExecuteEngineService {
       return;
     }
 
-    // 0번 턴 조회
+    // ✅ 성능 최적화: turnSlotIndex번 턴 조회 (배치 처리 시 0, 1, 2... 순서대로)
     let generalTurn = await generalTurnRepository.findOneByFilter({
       session_id: sessionId,
       'data.general_id': generalId,
-      'data.turn_idx': 0
+      'data.turn_idx': turnSlotIndex
     });
 
     let action = '휴식';
     let arg = {};
+
+    // ✅ 예약 시 저장된 년/월이 있으면 사용 (정확성 보장)
+    // 없으면 계산된 년/월 사용 (이전 버전 호환)
+    const expectedYear = generalTurn?.data?.expected_year;
+    const expectedMonth = generalTurn?.data?.expected_month;
+    
+    if (expectedYear !== undefined && expectedMonth !== undefined) {
+      // 예약 시 저장된 년/월과 계산된 년/월 비교 (디버깅)
+      if (expectedYear !== year || expectedMonth !== month) {
+        logger.warn('Year/month mismatch detected', {
+          generalId,
+          turnSlotIndex,
+          expected: `${expectedYear}년 ${expectedMonth}월`,
+          calculated: `${year}년 ${month}월`,
+          action: generalTurn?.data?.action
+        });
+      }
+      // 예약 시 저장된 값 사용
+      year = expectedYear;
+      month = expectedMonth;
+    }
 
     // 디버그: generalTurn 구조 확인
     if (generalTurn) {
@@ -1355,6 +1429,8 @@ export class ExecuteEngineService {
         generalId,
         action: generalTurn.data?.action || generalTurn.action,
         arg: generalTurn.data?.arg || generalTurn.arg,
+        expectedYear,
+        expectedMonth,
         hasData: !!generalTurn.data
       });
     }
@@ -1781,7 +1857,17 @@ export class ExecuteEngineService {
    * 턴 시간 업데이트
    * 전역 게임 년/월을 사용하여 turntime 계산
    */
+  /**
+   * ✅ 기존 updateTurnTime 래퍼 (호환성 유지)
+   */
   private static async updateTurnTime(sessionId: string, general: any, turnterm: number, gameEnv: any): Promise<boolean> {
+    return this.updateTurnTimeCore(sessionId, general, turnterm, gameEnv);
+  }
+
+  /**
+   * turntime 업데이트 핵심 로직 (메모리 업데이트 + 삭제/은퇴 시에만 DB 호출)
+   */
+  private static async updateTurnTimeCore(sessionId: string, general: any, turnterm: number, gameEnv: any): Promise<boolean> {
     // 전역 게임 년/월 사용
     const year = gameEnv.year || 184;
     const month = gameEnv.month || 1;
@@ -1913,61 +1999,64 @@ export class ExecuteEngineService {
 
   /**
    * 턴 당기기 (장수)
-   * 유저인 경우 general_action_log의 최근 메시지들을 console.log로 출력
+   * ✅ 성능 최적화: DB 업데이트만 수행, 로그 출력은 별도 함수로 분리
    */
-  private static async pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number, isNPC: boolean = false, generalName: string = '', beforeLogTime: Date | null = null) {
+  private static async pullGeneralCommand(sessionId: string, generalId: number, turnCnt: number) {
     if (turnCnt === 0 || turnCnt >= MAX_TURN) {
       return;
     }
 
-    // 모든 턴을 turnCnt만큼 당김 (1→0, 2→1, ...)
-    await generalTurnRepository.updateMany(
+    // ✅ bulkWrite로 2개 쿼리를 1개로 통합
+    await generalTurnRepository.bulkWrite([
+      // 모든 턴을 turnCnt만큼 당김 (1→0, 2→1, ...)
       {
-        session_id: sessionId,
-        'data.general_id': generalId
+        updateMany: {
+          filter: {
+            session_id: sessionId,
+            'data.general_id': generalId
+          },
+          update: { $inc: { 'data.turn_idx': -turnCnt } }
+        }
       },
+      // 음수가 된 턴들 삭제 (원래 0~(turnCnt-1)번 턴이 음수가 됨)
       {
-        $inc: { 'data.turn_idx': -turnCnt }
-      }
-    );
-
-    // 음수가 된 턴들 삭제 (원래 0번 턴이 -1이 됨)
-    await generalTurnRepository.deleteMany({
-      session_id: sessionId,
-      'data.general_id': generalId,
-      'data.turn_idx': { $lt: 0 }
-    });
-
-    // 유저인 경우 턴 실행 후 생성된 모든 로그를 출력
-    if (!isNPC && beforeLogTime) {
-      try {
-        const { GeneralRecord } = await import('../../models/general_record.model');
-
-        // 턴 실행 후 생성된 모든 로그 가져오기 (모든 log_type)
-        const logs = await GeneralRecord.find({
-          session_id: sessionId,
-          general_id: generalId,
-          created_at: { $gte: beforeLogTime }
-        })
-          .sort({ created_at: 1 }) // 시간순 정렬
-          .limit(20) // 최대 20개
-          .lean();
-
-        const displayName = generalName ? `[${generalName}]` : `[ID:${generalId}]`;
-
-        for (const log of logs) {
-          if (log.text) {
-            logger.info('General action log', { 
-              generalId, 
-              generalName, 
-              logType: log.log_type, 
-              text: log.text 
-            });
+        deleteMany: {
+          filter: {
+            session_id: sessionId,
+            'data.general_id': generalId,
+            'data.turn_idx': { $lt: 0 }
           }
         }
-      } catch (error) {
-        // 로그 조회 실패는 무시
       }
+    ]);
+  }
+
+  /**
+   * 유저 로그 출력 (배치 처리 완료 후 한번만 호출)
+   */
+  private static async printUserLogs(sessionId: string, generalId: number, generalName: string, beforeLogTime: Date, turnCnt: number) {
+    try {
+      const { GeneralRecord } = await import('../../models/general_record.model');
+
+      // 배치 처리 동안 생성된 모든 로그 가져오기
+      const logs = await GeneralRecord.find({
+        session_id: sessionId,
+        general_id: generalId,
+        created_at: { $gte: beforeLogTime }
+      })
+        .sort({ created_at: 1 })
+        .limit(turnCnt * 5) // 턴당 최대 5개 로그
+        .lean();
+
+      if (logs.length > 0) {
+        logger.info(`[${generalName}] ${turnCnt}턴 처리 완료, ${logs.length}개 로그`, {
+          generalId,
+          turnCnt,
+          logCount: logs.length
+        });
+      }
+    } catch (error) {
+      // 로그 조회 실패는 무시
     }
   }
 
@@ -1979,25 +2068,29 @@ export class ExecuteEngineService {
       return;
     }
 
-    // 모든 턴을 turnCnt만큼 당김 (1→0, 2→1, ...)
-    await nationTurnRepository.updateMany(
+    // ✅ bulkWrite로 2개 쿼리를 1개로 통합
+    await nationTurnRepository.bulkWrite([
       {
-        session_id: sessionId,
-        'data.nation_id': nationId,
-        'data.officer_level': officerLevel
+        updateMany: {
+          filter: {
+            session_id: sessionId,
+            'data.nation_id': nationId,
+            'data.officer_level': officerLevel
+          },
+          update: { $inc: { 'data.turn_idx': -turnCnt } }
+        }
       },
       {
-        $inc: { 'data.turn_idx': -turnCnt }
+        deleteMany: {
+          filter: {
+            session_id: sessionId,
+            'data.nation_id': nationId,
+            'data.officer_level': officerLevel,
+            'data.turn_idx': { $lt: 0 }
+          }
+        }
       }
-    );
-
-    // 음수가 된 턴들 삭제 (원래 0번 턴이 -1이 됨)
-    await nationTurnRepository.deleteMany({
-      session_id: sessionId,
-      'data.nation_id': nationId,
-      'data.officer_level': officerLevel,
-      'data.turn_idx': { $lt: 0 }
-    });
+    ]);
   }
 
   /**

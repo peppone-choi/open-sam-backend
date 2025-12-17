@@ -40,7 +40,12 @@ export class che_선전포고 extends NationCommand {
     this.setCity();
     this.setNation();
 
-    const startYear = this.env['startyear'];
+    const startYear = this.env['startyear'] ?? 184;
+    // warDeclareYear: 선전포고 가능 상대 년도 (직접 설정 가능)
+    // 기본값: openingPartYear - 2 = 1
+    const openingPartYear = this.env['openingPartYear'] ?? this.env['opening_part_year'] ?? 3;
+    const warDeclareYear = this.env['warDeclareYear'] ?? this.env['war_declare_year'] ?? (openingPartYear - 2);
+    const declareWarAbsYear = startYear + warDeclareYear;
     this.minConditionConstraints = [
       ConstraintHelper.BeChief(),
       ConstraintHelper.NotBeNeutral(),
@@ -48,12 +53,16 @@ export class che_선전포고 extends NationCommand {
       ConstraintHelper.SuppliedCity(),
       // "선전포고 차단" 설정이 켜져 있으면 선전포고도 막아야 함
       ConstraintHelper.AllowWar(),
-      ConstraintHelper.ReqEnvValue('year', '>=', startYear + 1, '초반제한 해제 2년전부터 가능합니다.')
+      ConstraintHelper.ReqEnvValue('year', '>=', declareWarAbsYear, `${declareWarAbsYear}년부터 선전포고가 가능합니다.`)
     ];
   }
 
   protected async initWithArg(): Promise<void> {
-    const startYear = this.env['startyear'];
+    const startYear = this.env['startyear'] ?? 184;
+    // warDeclareYear: 선전포고 가능 상대 년도 (직접 설정 가능)
+    const openingPartYear = this.env['openingPartYear'] ?? this.env['opening_part_year'] ?? 3;
+    const warDeclareYear = this.env['warDeclareYear'] ?? this.env['war_declare_year'] ?? (openingPartYear - 2);
+    const declareWarAbsYear = startYear + warDeclareYear;
 
     this.setDestNation(this.arg['destNationID'], null);
 
@@ -64,7 +73,7 @@ export class che_선전포고 extends NationCommand {
       ConstraintHelper.SuppliedCity(),
       // "선전포고 차단" 설정이 켜져 있으면 선전포고도 막아야 함
       ConstraintHelper.AllowWar(),
-      ConstraintHelper.ReqEnvValue('year', '>=', startYear + 1, '초반제한 해제 2년전부터 가능합니다.'),
+      ConstraintHelper.ReqEnvValue('year', '>=', declareWarAbsYear, `${declareWarAbsYear}년부터 선전포고가 가능합니다.`),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.NearNation(),
       ConstraintHelper.DisallowDiplomacyBetweenStatus({

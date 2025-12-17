@@ -121,7 +121,24 @@ export class ReserveCommandService {
 
     const brief = this.generateBrief(command, arg);
 
+    // ✅ 예약 시 예상 년/월 계산
+    const { sessionRepository } = await import('../../repositories/session.repository');
+    const { ExecuteEngineService } = await import('../global/ExecuteEngine.service');
+    
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
+    const session = await sessionRepository.findBySessionId(sessionId);
+    const gameEnv = session?.data || {};
+    const turnterm = gameEnv.turnterm || 60;
+    
+    const baseTurntime = general?.turntime || general?.data?.turntime || new Date().toISOString();
+    const baseTurntimeDate = new Date(baseTurntime);
+
     for (const turnIdx of uniqueTurnList) {
+      // ✅ 예상 년/월 계산
+      const expectedTurntime = new Date(baseTurntimeDate.getTime() + turnIdx * turnterm * 60 * 1000);
+      const envCopy = { ...gameEnv };
+      const turnDateInfo = ExecuteEngineService.turnDate(expectedTurntime, envCopy);
+
       await nationTurnRepository.findOneAndUpdate(
         {
           session_id: sessionId,
@@ -137,7 +154,10 @@ export class ReserveCommandService {
             'data.turn_idx': turnIdx,
             'data.action': command,
             'data.arg': arg,
-            'data.brief': brief
+            'data.brief': brief,
+            'data.expected_year': turnDateInfo.year,     // ✅ 예상 년도
+            'data.expected_month': turnDateInfo.month,   // ✅ 예상 월
+            'data.reserved_at': new Date().toISOString()
           }
         },
         { upsert: true }

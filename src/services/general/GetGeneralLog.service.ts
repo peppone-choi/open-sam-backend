@@ -4,9 +4,12 @@ import { generalRecordRepository } from '../../repositories/general-record.repos
 
 /**
  * GetGeneralLog Service (장수 로그 조회)
- * 장수의 개인 기록을 조회 (본인 전용)
+ * 장수의 개인 기록 조회
+ * - 본인 기록: 직접 조회
+ * - 타인 기록 (열전): 감찰부에서 generalID 파라미터로 조회
  */
 export class GetGeneralLogService {
+  // PHP API와 동일한 타입 상수
   static readonly GENERAL_HISTORY = 'generalHistory';
   static readonly GENERAL_ACTION = 'generalAction';
   static readonly BATTLE_RESULT = 'battleResult';
@@ -15,7 +18,10 @@ export class GetGeneralLogService {
   static async execute(data: any, user?: any) {
     const sessionId = data.session_id || 'sangokushi_default';
     const userId = user?.userId || data.user_id;
-    const generalId = user?.generalId;
+    
+    // ✅ 감찰부에서 다른 장수 열전 조회 지원
+    // generalID 파라미터가 있으면 해당 장수, 없으면 본인
+    const targetGeneralId = data.generalID || data.general_id || user?.generalId;
 
     try {
       // 1. 입력 검증
@@ -28,7 +34,7 @@ export class GetGeneralLogService {
         };
       }
 
-
+      // PHP와 동일한 타입만 허용
       const validTypes = [
         this.GENERAL_HISTORY,
         this.GENERAL_ACTION,
@@ -39,18 +45,19 @@ export class GetGeneralLogService {
       if (!validTypes.includes(reqType)) {
         return {
           success: false,
-          message: `지원하지 않는 조회 유형입니다: ${reqType}`
+          message: `지원하지 않는 조회 유형입니다: ${reqType}. 가능한 값: ${validTypes.join(', ')}`
         };
       }
 
-
-      // 2. 장수 정보 확인 (본인만 조회 가능)
-      if (!generalId) {
+      // 2. 장수 ID 확인
+      if (!targetGeneralId) {
         return {
           success: false,
-          message: '장수 정보가 없습니다'
+          message: '장수 ID가 필요합니다'
         };
       }
+      
+      const generalId = Number(targetGeneralId);
 
       const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
@@ -83,7 +90,8 @@ export class GetGeneralLogService {
         result: true,
         reqType,
         generalID: generalId,
-        log: logs
+        log: logs,      // 기존 호환
+        logs: logs,     // ✅ 프론트엔드 호환 (감찰부 등)
       };
 
     } catch (error: any) {
@@ -158,6 +166,7 @@ export class GetGeneralLogService {
 
   /**
    * 전투 결과 로그 조회
+   * PHP: log_type='battle_brief' (getBattleResultRecent/getBattleResultMore)
    */
   private static async getBattleResultLog(
     sessionId: string,
@@ -168,7 +177,7 @@ export class GetGeneralLogService {
     let query: any = {
       session_id: sessionId,
       general_id: generalId,
-      log_type: 'battle_result'
+      log_type: 'battle_brief'  // ✅ PHP와 동일
     };
 
     if (reqTo) {
@@ -191,6 +200,7 @@ export class GetGeneralLogService {
 
   /**
    * 전투 상세 로그 조회
+   * PHP: log_type='battle' (getBattleDetailLogRecent/getBattleDetailLogMore)
    */
   private static async getBattleDetailLog(
     sessionId: string,
@@ -201,7 +211,7 @@ export class GetGeneralLogService {
     let query: any = {
       session_id: sessionId,
       general_id: generalId,
-      log_type: 'battle_detail'
+      log_type: 'battle'  // ✅ PHP와 동일
     };
 
     if (reqTo) {
