@@ -1,6 +1,6 @@
 // @ts-nocheck - Type issues need investigation
 import { generalRepository } from '../../repositories/general.repository';
-import { GeneralLog } from '../../models/general-log.model';
+import { GeneralRecord } from '../../models/general_record.model';
 
 /**
  * GetGeneralLog Service
@@ -75,31 +75,36 @@ export class GetGeneralLogService {
         general_id: targetGeneralId
       };
 
-      if (reqType === 'generalHistory') {
+      // reqType 매핑: 프론트엔드에서 오는 값 -> 백엔드 log_type
+      // 프론트엔드: 'action' | 'battle' | 'history' | 'personal'
+      // 레거시: 'generalHistory' | 'generalAction' | 'battleResult' | 'battleDetail'
+      if (reqType === 'history' || reqType === 'generalHistory') {
         logQuery.log_type = 'history';
-      } else if (reqType === 'generalAction') {
+      } else if (reqType === 'action' || reqType === 'generalAction') {
         logQuery.log_type = 'action';
-      } else if (reqType === 'battleResult') {
+      } else if (reqType === 'battle' || reqType === 'battleResult') {
         logQuery.log_type = 'battle_result';
-      } else if (reqType === 'battleDetail') {
+      } else if (reqType === 'personal' || reqType === 'battleDetail') {
         logQuery.log_type = 'battle_detail';
       }
 
       if (reqTo !== null) {
-        logQuery.id = { $lt: reqTo };
+        logQuery._id = { $lt: reqTo };
       }
 
-      const logRecords = await GeneralLog.find(logQuery)
-        .sort({ id: -1 })
-        .limit(limit);
+      const logRecords = await GeneralRecord.find(logQuery)
+        .sort({ _id: -1 })
+        .limit(limit)
+        .lean();
 
       logs = logRecords.map(log => ({
-        id: log.id,
+        id: log._id?.toString() || log.id,
+        text: log.text || '', // GeneralRecord는 'text' 필드 사용
+        date: log.created_at || '',
         general_id: log.general_id,
         log_type: log.log_type,
-        message: log.message,
-        data: log.data,
-        created_at: log.created_at
+        year: log.year,
+        month: log.month,
       }));
 
       return {
@@ -107,7 +112,7 @@ export class GetGeneralLogService {
         result: true,
         reqType,
         generalID: targetGeneralId,
-        log: logs
+        logs: logs // 'log' -> 'logs'로 변경 (프론트엔드 호환)
       };
     } catch (error: any) {
       return {
