@@ -310,11 +310,23 @@ router.post('/game-info', async (req, res) => {
     const { getCurrentStatus } = await import('../utils/session-status');
     const currentStatus = getCurrentStatus(session);
     
-    // turnDate를 호출하여 현재 년/월 계산 (GetMap과 동일한 방식)
-    const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
-    const turntime = sessionData.turntime ? new Date(sessionData.turntime) : new Date();
-    const gameEnvCopy = { ...sessionData };
-    const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+    // running 상태에서만 년/월 계산, 그 외에는 저장된 값 사용
+    let turnYear: number;
+    let turnMonth: number;
+    
+    if (currentStatus === 'running') {
+      // turnDate를 호출하여 현재 년/월 계산 (GetMap과 동일한 방식)
+      const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
+      const turntime = sessionData.turntime ? new Date(sessionData.turntime) : new Date();
+      const gameEnvCopy = { ...sessionData };
+      const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+      turnYear = turnInfo.year;
+      turnMonth = turnInfo.month;
+    } else {
+      // preparing/paused/finished 상태: 저장된 년월 그대로 사용
+      turnYear = sessionData.year || gameEnv.startyear || 184;
+      turnMonth = sessionData.month || 1;
+    }
     
     const gameInfo = {
       serverName: session?.name || '',
@@ -325,8 +337,8 @@ router.post('/game-info', async (req, res) => {
       turnterm: sessionData.turnterm || 0,
       turntime: sessionData.turntime || null,
       starttime: gameEnv.starttime || null,
-      year: turnInfo.year,
-      month: turnInfo.month,
+      year: turnYear,
+      month: turnMonth,
       startyear: gameEnv.startyear || 220,
       maxgeneral: gameEnv.maxgeneral || 300,
       maxnation: gameEnv.maxnation || 12,

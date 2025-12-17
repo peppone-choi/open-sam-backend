@@ -392,22 +392,37 @@ router.get('/turn', async (req, res) => {
       ? new Date(sessionData.turntime)
       : now;
 
-    // turnDate를 호출하여 최신 년/월 계산
-    // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
-    const gameEnvCopy = { ...sessionData };
-    const turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+    // 세션 상태 확인: preparing 상태일 때는 년월 계산/업데이트 안 함
+    const sessionStatus = session.status || 'running';
+    const isRunning = sessionStatus === 'running';
 
-    // 년/월 또는 starttime이 변경되었으면 DB에 저장
-    if (gameEnvCopy.year !== sessionData.year || gameEnvCopy.month !== sessionData.month || gameEnvCopy.starttime !== sessionData.starttime) {
-      const starttimeChanged = gameEnvCopy.starttime !== sessionData.starttime;
-      sessionData.year = gameEnvCopy.year;
-      sessionData.month = gameEnvCopy.month;
-      if (starttimeChanged) {
-        sessionData.starttime = gameEnvCopy.starttime;
-        console.log(`[${new Date().toISOString()}] ✅ Saved corrected starttime to DB: ${sessionData.starttime}`);
+    let turnInfo: { year: number; month: number; turn: number };
+
+    if (isRunning) {
+      // running 상태에서만 년월 계산
+      // turnDate는 gameEnv 객체를 직접 수정하므로 복사본을 만들어 사용
+      const gameEnvCopy = { ...sessionData };
+      turnInfo = ExecuteEngineService.turnDate(turntime, gameEnvCopy);
+
+      // 년/월 또는 starttime이 변경되었으면 DB에 저장
+      if (gameEnvCopy.year !== sessionData.year || gameEnvCopy.month !== sessionData.month || gameEnvCopy.starttime !== sessionData.starttime) {
+        const starttimeChanged = gameEnvCopy.starttime !== sessionData.starttime;
+        sessionData.year = gameEnvCopy.year;
+        sessionData.month = gameEnvCopy.month;
+        if (starttimeChanged) {
+          sessionData.starttime = gameEnvCopy.starttime;
+          console.log(`[${new Date().toISOString()}] ✅ Saved corrected starttime to DB: ${sessionData.starttime}`);
+        }
+        session.data = sessionData;
+        await session.save();
       }
-      session.data = sessionData;
-      await session.save();
+    } else {
+      // preparing/paused/finished 상태: 저장된 년월 그대로 사용
+      turnInfo = {
+        year: sessionData.year || sessionData.game_env?.startyear || 184,
+        month: sessionData.month || 1,
+        turn: 0
+      };
     }
 
     res.json({

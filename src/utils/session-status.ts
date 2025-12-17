@@ -11,8 +11,8 @@ export type SessionStatus = 'preparing' | 'running' | 'paused' | 'finished' | 'u
  */
 export function statusToIsunited(status: SessionStatus): number {
   const mapping: Record<SessionStatus, number> = {
-    'preparing': 0,  // 준비중 (테스트 플레이 가능, 턴 진행 ✅)
-    'running': 0,    // 진행중 (정상 운영)
+    'preparing': 0,  // 준비중 (테스트 플레이 가능, 턴/년월 진행 ❌)
+    'running': 0,    // 진행중 (정상 운영, 턴/년월 진행 ✅)
     'paused': 2,     // 폐쇄 (접속 불가, 턴 진행 ❌)
     'finished': 3,   // 종료 (천하통일 등)
     'united': 3      // 천하통일
