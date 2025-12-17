@@ -1776,5 +1776,58 @@ router.post('/nation/change-general', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/admin/set-global-notice:
+ *   post:
+ *     summary: 전역 공지사항 설정
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               notice:
+ *                 type: string
+ *                 description: 공지사항 내용
+ */
+router.post('/set-global-notice', authenticate, async (req, res) => {
+  try {
+    // 관리자 권한 확인
+    const user = (req as any).user;
+    if (!user || user.grade < 5) {
+      return res.status(403).json({ 
+        result: false, 
+        reason: '관리자 권한이 필요합니다' 
+      });
+    }
+
+    const { notice } = req.body;
+    const { KVStorage } = await import('../models/kv-storage.model');
+    
+    await KVStorage.findOneAndUpdate(
+      { key: 'global_notice' },
+      { 
+        key: 'global_notice',
+        value: notice || '',
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({ 
+      result: true, 
+      message: '전역 공지사항이 설정되었습니다' 
+    });
+  } catch (error: any) {
+    res.status(500).json({ 
+      result: false, 
+      reason: error.message 
+    });
+  }
+});
+
 export default router;
 
