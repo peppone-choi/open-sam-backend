@@ -3,6 +3,7 @@ import { generalTurnRepository } from '../../repositories/general-turn.repositor
 import { nationTurnRepository } from '../../repositories/nation-turn.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
+import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 import { GameConst } from '../../constants/GameConst';
 import { SimpleAI } from '../../core/SimpleAI';
 
@@ -26,6 +27,48 @@ function isPlayerActive(general: any): boolean {
   const now = Date.now();
   
   return (now - lastActiveTime) < ACTIVE_THRESHOLD_MS;
+}
+
+/**
+ * 국가별 NPC 정책을 불러오는 헬퍼 함수
+ * @param sessionId 세션 ID
+ * @param nationId 국가 ID
+ * @returns 정책 오버라이드 객체 또는 null
+ */
+async function loadNationPolicy(sessionId: string, nationId: number): Promise<any> {
+  if (!nationId || nationId === 0) {
+    return null;
+  }
+  
+  try {
+    const storageKey = `nation_env:${nationId}`;
+    const storage = await kvStorageRepository.findOneByFilter({
+      session_id: sessionId,
+      key: storageKey
+    });
+    
+    if (!storage) {
+      return null;
+    }
+    
+    let storageData: any = {};
+    try {
+      storageData = typeof storage.value === 'string' 
+        ? JSON.parse(storage.value) 
+        : storage.value || {};
+    } catch {
+      return null;
+    }
+    
+    // npc_nation_policy와 npc_general_policy를 반환
+    return {
+      nationPolicy: storageData.npc_nation_policy || null,
+      generalPolicy: storageData.npc_general_policy || null
+    };
+  } catch (error) {
+    console.error(`[NPC AI] 정책 로드 실패 (국가 ${nationId}):`, error);
+    return null;
+  }
 }
 
 /**
@@ -154,7 +197,9 @@ export class NPCAutoCommandService {
         warp: false,               // 일반 장수는 워프 불가
       };
       
-      ai.initializePolicies(aiOptions, null, null);
+      // 국가별 NPC 정책 로드
+      const policyOverride = await loadNationPolicy(sessionId, nationId);
+      ai.initializePolicies(aiOptions, policyOverride, null);
       
       const decision = await ai.decideNextCommand();
       
@@ -360,9 +405,11 @@ export class NPCAutoCommandService {
         warp: true,         // 워프 허용
       };
       
+      // 국가별 NPC 정책 로드
+      const policyOverride = await loadNationPolicy(sessionId, nationId);
       ai.initializePolicies(
         aiOptions,
-        null, // nationPolicyOverride
+        policyOverride, // nationPolicyOverride
         null  // serverPolicyOverride
       );
       

@@ -462,7 +462,7 @@ export class SimpleAI {
   /**
    * Policy 시스템 초기화
    * @param aiOptions AI 옵션 (유저장 위임 설정)
-   * @param nationPolicyOverride 국가별 정책 오버라이드
+   * @param nationPolicyOverride 국가별 정책 오버라이드 (또는 { nationPolicy, generalPolicy } 형식)
    * @param serverPolicyOverride 서버 정책 오버라이드
    */
   initializePolicies(
@@ -470,22 +470,38 @@ export class SimpleAI {
     nationPolicyOverride: any = null,
     serverPolicyOverride: any = null
   ): void {
-    // 장수 정책 초기화
+    // nationPolicyOverride가 { nationPolicy, generalPolicy } 형식인지 확인
+    let generalPolicyOverride: any = null;
+    let nationPolicyData: any = null;
+    
+    if (nationPolicyOverride) {
+      if (nationPolicyOverride.generalPolicy || nationPolicyOverride.nationPolicy) {
+        // 새로운 형식: { nationPolicy: {...}, generalPolicy: {...} }
+        generalPolicyOverride = nationPolicyOverride.generalPolicy;
+        nationPolicyData = nationPolicyOverride.nationPolicy;
+      } else {
+        // 기존 형식: 직접 PolicyOverride 객체
+        generalPolicyOverride = nationPolicyOverride;
+        nationPolicyData = nationPolicyOverride;
+      }
+    }
+    
+    // 장수 정책 초기화 (generalPolicy 사용)
     this.generalPolicy = new AutorunGeneralPolicy(
       this.general,
       aiOptions,
-      nationPolicyOverride,
+      generalPolicyOverride,
       serverPolicyOverride,
       this.nation,
       this.env
     );
 
-    // 국가 정책 초기화 (수뇌/군주만)
+    // 국가 정책 초기화 (수뇌/군주만, nationPolicy 사용)
     if (aiOptions.chief || this.general.npcType >= 2) {
       this.nationPolicy = new AutorunNationPolicy(
         this.general,
         aiOptions,
-        nationPolicyOverride,
+        nationPolicyData,
         serverPolicyOverride,
         this.nation,
         this.env
