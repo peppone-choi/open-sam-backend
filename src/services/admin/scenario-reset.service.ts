@@ -1101,14 +1101,18 @@ export class ScenarioResetService {
     
     console.log(`[ScenarioReset] Creating diplomacy for ${nationIds.length} nations`);
 
-    // 시나리오에서 정의된 외교 관계를 맵으로 변환
+    // 시나리오에서 정의된 외교 관계를 맵으로 변환 (양방향 동일 적용)
     const scenarioDiplomacy = new Map<string, { state: number; term: number }>();
     for (const diplo of diplomacyData) {
       const me = Array.isArray(diplo) ? diplo[0] : diplo.me;
       const you = Array.isArray(diplo) ? diplo[1] : diplo.you;
       const state = Array.isArray(diplo) ? diplo[2] : diplo.state;
       const term = Array.isArray(diplo) ? diplo[3] : diplo.term;
-      scenarioDiplomacy.set(`${me}-${you}`, { state: state ?? 2, term: term ?? 0 });
+      const diploValue = { state: state ?? 2, term: term ?? 0 };
+      
+      // 양방향으로 동일하게 설정 (선전포고, 전쟁, 불가침은 양측 동일)
+      scenarioDiplomacy.set(`${me}-${you}`, diploValue);
+      scenarioDiplomacy.set(`${you}-${me}`, diploValue);
     }
 
     // 모든 국가 쌍에 대해 외교 관계 생성
