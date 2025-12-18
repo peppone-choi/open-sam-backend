@@ -190,30 +190,7 @@ router.put(
 );
 
 // ==================== 게임 정보 ====================
-
-// 게임 정보 조회
-router.post(
-  '/game-info',
-  requireAdmin,
-  asyncHandler(async (req, res) => {
-    const sessionId = req.body.session_id || 'sangokushi_default';
-    const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
-    const result = await AdminGameSettingsService.getSettings(sessionId);
-    
-    if (result.success) {
-      res.json({
-        result: true,
-        gameInfo: result.settings,
-      });
-    } else {
-      res.json({
-        result: false,
-        gameInfo: null,
-        reason: result.message,
-      });
-    }
-  })
-);
+// NOTE: /game-info는 routes/admin.routes.ts에서 더 완전한 버전으로 처리됨
 
 // 게임 설정 업데이트 (고급 기능)
 // 주의: 이 라우터에서 처리하지 않는 action은 routes/admin.routes.ts로 넘어감
