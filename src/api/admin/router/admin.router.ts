@@ -233,6 +233,14 @@ router.post(
         case 'setServerStatus':
           result = await AdminGameSettingsService.setServerStatus(sessionId, data.status);
           break;
+        case 'resetScenario': {
+          const { ScenarioResetService } = await import('../../../services/admin/scenario-reset.service');
+          const scenarioId = data.scenarioId || data.scenario_id || '1010';
+          const options = { turnterm: data.turnterm };
+          await ScenarioResetService.resetScenario(sessionId, scenarioId, options);
+          result = { success: true, message: `시나리오 ${scenarioId}로 리셋 완료` };
+          break;
+        }
         default:
           res.json({ result: false, reason: `알 수 없는 액션: ${action}` });
           return;
