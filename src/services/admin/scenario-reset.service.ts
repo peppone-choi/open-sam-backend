@@ -236,7 +236,6 @@ export class ScenarioResetService {
       worldHistoryResult,
       selectNpcTokenResult,
       selectPoolResult,
-      unitStackResult,
       diplomacyResult
     ] = await Promise.all([
       commandRepository.deleteBySession(sessionId),
@@ -247,7 +246,6 @@ export class ScenarioResetService {
       worldHistoryRepository.deleteBySession(sessionId),
       selectNpcTokenRepository.deleteBySession(sessionId),
       selectPoolRepository.deleteBySession(sessionId),
-      // 스택 시스템 제거됨
       diplomacyRepository.deleteBySession(sessionId)
     ]);
  
@@ -259,7 +257,6 @@ export class ScenarioResetService {
     console.log(`[ScenarioReset] Deleted ${worldHistoryResult.deletedCount} world history records`);
     console.log(`[ScenarioReset] Deleted ${selectNpcTokenResult.deletedCount} select_npc_tokens`);
     console.log(`[ScenarioReset] Deleted ${selectPoolResult.deletedCount} select_pools`);
-    console.log(`[ScenarioReset] Deleted ${unitStackResult.deletedCount} unit stacks`);
     console.log(`[ScenarioReset] Deleted ${diplomacyResult.deletedCount} diplomacy records`);
 
     // 4. ng_history 삭제 (연감 데이터)
