@@ -2301,9 +2301,20 @@ export class ExecuteEngineService {
    * - 봄(1월): 금 지급
    * - 가을(7월): 쌀 지급
    */
+  // 중복 실행 방지용 캐시 (sessionId -> "year-month")
+  private static lastIncomeProcessed: Map<string, string> = new Map();
+
   private static async processSeasonalIncome(sessionId: string, gameEnv: any) {
     const year = gameEnv.year;
     const month = gameEnv.month;
+
+    // 중복 실행 방지: 같은 년/월에 이미 처리했으면 스킵
+    const incomeKey = `${year}-${month}`;
+    const lastProcessed = this.lastIncomeProcessed.get(sessionId);
+    if (lastProcessed === incomeKey) {
+      logger.debug('[ProcessIncome] Already processed for this month, skipping', { sessionId, year, month });
+      return;
+    }
 
     try {
       // 봄(1월): 금 지급
@@ -2312,6 +2323,7 @@ export class ExecuteEngineService {
         const { ProcessIncome } = await import('../../core/event/Action/ProcessIncome');
         const incomeProcessor = new ProcessIncome('gold');
         await incomeProcessor.run({ session_id: sessionId, year, month });
+        this.lastIncomeProcessed.set(sessionId, incomeKey);
       }
       // 가을(7월): 쌀 지급
       else if (month === 7) {
@@ -2319,6 +2331,10 @@ export class ExecuteEngineService {
         const { ProcessIncome } = await import('../../core/event/Action/ProcessIncome');
         const incomeProcessor = new ProcessIncome('rice');
         await incomeProcessor.run({ session_id: sessionId, year, month });
+        this.lastIncomeProcessed.set(sessionId, incomeKey);
+      } else {
+        // 1월, 7월이 아닌 달도 기록 (다음 1월/7월까지 방지)
+        this.lastIncomeProcessed.set(sessionId, incomeKey);
       }
     } catch (error: any) {
       logger.error('[ProcessIncome] Failed to process seasonal income', {
