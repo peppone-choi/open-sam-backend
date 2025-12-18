@@ -215,11 +215,12 @@ router.post(
   })
 );
 
-// 게임 설정 업데이트
+// 게임 설정 업데이트 (고급 기능)
+// 주의: 이 라우터에서 처리하지 않는 action은 routes/admin.routes.ts로 넘어감
 router.post(
   '/update-game',
   requirePermission(AdminPermission.MANAGE_CONFIG),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const { session_id, action, data } = req.body;
     const sessionId = session_id || 'sangokushi_default';
     const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
@@ -228,10 +229,11 @@ router.post(
       let result;
       switch (action) {
         case 'setTurnTerm':
+        case 'turnterm': // alias for frontend compatibility
           result = await AdminGameSettingsService.setTurnTerm(sessionId, data.turnterm);
           break;
         case 'setServerStatus':
-        case 'status':
+        case 'status': // alias for frontend compatibility
           result = await AdminGameSettingsService.setServerStatus(sessionId, data.status);
           break;
         case 'resetScenario': {
@@ -243,8 +245,9 @@ router.post(
           break;
         }
         default:
-          res.json({ result: false, reason: `알 수 없는 액션: ${action}` });
-          return;
+          // 이 라우터에서 처리하지 않는 action은 다음 라우터로 넘김
+          // routes/admin.routes.ts에서 더 많은 action을 처리함
+          return next();
       }
       res.json(result);
     } catch (error: any) {

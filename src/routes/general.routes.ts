@@ -1246,4 +1246,129 @@ router.post('/get-select-npc-token', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/general/set-permission:
+ *   post:
+ *     summary: 장수 특별 권한 설정 (외교권자/감찰관)
+ *     description: |
+ *       군주가 국가 장수에게 특별 권한(외교권자 또는 감찰관)을 부여합니다.
+ *       
+ *       **기능:**
+ *       - 외교권자(ambassador) 설정: 외교 문서 작성 권한, 최대 2명
+ *       - 감찰관(auditor) 설정: 장수 로그 조회 권한
+ *       - 기존 권한자 자동 해제 후 새로 설정
+ *       
+ *       **권한 요구사항:**
+ *       - officer_level === 12 (군주만 가능)
+ *       
+ *       **권한 레벨:**
+ *       - 0: 일반
+ *       - 1: 기본 정보
+ *       - 2: 수뇌부 (officer_level >= 5)
+ *       - 3: 감찰관 (auditor)
+ *       - 4: 외교권자 (ambassador)
+ *       
+ *       **대상 자격:**
+ *       - 헌신년도(dedlevel) 또는 관직에 따라 권한 부여 가능
+ *       - 군주는 권한 부여 대상에서 제외
+ *     tags: [General]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - isAmbassador
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 description: 게임 세션 ID
+ *                 example: sangokushi_default
+ *               isAmbassador:
+ *                 type: boolean
+ *                 description: true=외교권자, false=감찰관
+ *                 example: true
+ *               genlist:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 description: 권한 부여할 장수 번호 목록
+ *                 example: [1001, 1002]
+ *           examples:
+ *             set_ambassador:
+ *               summary: 외교권자 설정
+ *               value:
+ *                 isAmbassador: true
+ *                 genlist: [1001, 1002]
+ *             set_auditor:
+ *               summary: 감찰관 설정
+ *               value:
+ *                 isAmbassador: false
+ *                 genlist: [1003]
+ *             clear_permission:
+ *               summary: 권한 해제
+ *               value:
+ *                 isAmbassador: true
+ *                 genlist: []
+ *     responses:
+ *       200:
+ *         description: 권한 설정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                   example: true
+ *                 reason:
+ *                   type: string
+ *                   example: success
+ *                 updated:
+ *                   type: array
+ *                   items:
+ *                     type: number
+ *                   description: 실제 권한이 설정된 장수 목록
+ *       400:
+ *         description: 권한 부족 또는 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 result:
+ *                   type: boolean
+ *                   example: false
+ *                 reason:
+ *                   type: string
+ *             examples:
+ *               not_ruler:
+ *                 summary: 군주가 아님
+ *                 value:
+ *                   result: false
+ *                   reason: 군주가 아닙니다
+ *               too_many_ambassador:
+ *                 summary: 외교권자 초과
+ *                 value:
+ *                   result: false
+ *                   reason: 외교권자는 최대 둘까지만 설정 가능합니다.
+ *       401:
+ *         description: 인증 실패
+ *       500:
+ *         description: 서버 오류
+ */
+router.post('/set-permission', authenticate, async (req, res) => {
+  try {
+    const { SetPermissionService } = await import('../services/general/SetPermission.service');
+    const result = await SetPermissionService.execute(req.body, req.user);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ result: false, reason: error.message });
+  }
+});
+
 export default router;

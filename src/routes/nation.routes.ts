@@ -27,6 +27,8 @@ import { SetScoutMsgService } from '../services/nation/SetScoutMsg.service';
 import { SetSecretLimitService } from '../services/nation/SetSecretLimit.service';
 import { SetTroopNameService } from '../services/nation/SetTroopName.service';
 import { GetNationStratFinanService } from '../services/nation/GetNationStratFinan.service';
+import { OfficerSystemService } from '../services/nation/OfficerSystem.service';
+import { KickGeneralService } from '../services/nation/KickGeneral.service';
 import { Diplomacy } from '../models/diplomacy.model';
 import { KVStorage } from '../models/kv-storage.model';
 import GameConstants from '../utils/game-constants';
@@ -1978,6 +1980,532 @@ router.post('/set-secret-limit', authenticate, preventMongoInjection('body'), va
 router.post('/set-troop-name', authenticate, preventMongoInjection('body'), validate(nationSetTroopNameSchema), asyncHandler(async (req, res) => {
     const result = await SetTroopNameService.execute(req.body, req.user);
     res.json(result);
+  }));
+
+/**
+ * @swagger
+ * /api/nation/appoint:
+ *   post:
+ *     summary: 장수 임명 (PHP j_myBossInfo.php 대체)
+ *     description: |
+ *       장수에게 관직을 임명합니다. 수뇌부만 임명할 수 있으며, 관직 레벨에 따라 다른 검증이 적용됩니다.
+ *       
+ *       **관직 레벨:**
+ *       - 2-4: 지방관 (도시 지정 필요)
+ *       - 5-11: 수뇌부
+ *       - 12: 군주 (임명 불가)
+ *       
+ *       **권한 요구사항:**
+ *       - officer_level >= 5 (수뇌부)
+ *       - 자신보다 낮은 관직만 임명 가능
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - officerLevel
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               destGeneralID:
+ *                 type: number
+ *                 description: 임명할 장수 ID (0이면 해임)
+ *               officerLevel:
+ *                 type: number
+ *                 description: 임명할 관직 레벨 (2-11)
+ *               destCityID:
+ *                 type: number
+ *                 description: 지방관 임명 시 도시 ID (2-4 레벨일 때 필수)
+ *     responses:
+ *       200:
+ *         description: 임명 성공
+ */
+router.post('/appoint', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const destGeneralID = parseInt(req.body.destGeneralID || req.body.dest_general_id || 0);
+    const officerLevel = parseInt(req.body.officerLevel || req.body.officer_level || 0);
+    const destCityID = parseInt(req.body.destCityID || req.body.dest_city_id || 0);
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const myGeneralDoc = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const myGeneral = toPlain(myGeneralDoc);
+    if (!myGeneral) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+    }
+
+    const myOfficerLevel = myGeneral.data?.officer_level || myGeneral.officer_level || 0;
+    const myNationId = myGeneral.data?.nation || myGeneral.nation || 0;
+    const myGeneralNo = myGeneral.data?.no || myGeneral.no;
+
+    // 수뇌가 아니면 임명 불가
+    if (myOfficerLevel < 5) {
+      return res.json({ result: false, reason: '수뇌가 아닙니다.' });
+    }
+
+    // 군주 임명 불가
+    if (officerLevel === 12) {
+      return res.json({ result: false, reason: '군주를 대상으로 할 수 없습니다.' });
+    }
+
+    // 자신보다 높거나 같은 관직 임명 불가 (군주 제외)
+    if (officerLevel >= myOfficerLevel && myOfficerLevel !== 12) {
+      return res.json({ result: false, reason: '자신보다 높거나 같은 관직은 임명할 수 없습니다.' });
+    }
+
+    // 지방관 임명 (2-4)
+    if (officerLevel >= 2 && officerLevel <= 4) {
+      if (!destCityID) {
+        return res.json({ result: false, reason: '도시가 지정되지 않았습니다.' });
+      }
+
+      const result = await OfficerSystemService.appointOfficer(
+        sessionId,
+        myGeneralNo,
+        destGeneralID,
+        officerLevel,
+        destCityID
+      );
+
+      return res.json(result.success 
+        ? { result: true, reason: 'success', message: result.message }
+        : { result: false, reason: result.message }
+      );
+    }
+
+    // 수뇌부 임명 (5-11)
+    if (officerLevel >= 5 && officerLevel < 12) {
+      const result = await OfficerSystemService.appointOfficer(
+        sessionId,
+        myGeneralNo,
+        destGeneralID,
+        officerLevel
+      );
+
+      return res.json(result.success 
+        ? { result: true, reason: 'success', message: result.message }
+        : { result: false, reason: result.message }
+      );
+    }
+
+    return res.json({ result: false, reason: '올바르지 않은 지정입니다.' });
+  }));
+
+/**
+ * @swagger
+ * /api/nation/dismiss:
+ *   post:
+ *     summary: 장수 해임
+ *     description: 장수의 관직을 해임합니다 (병졸로 강등).
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - destGeneralID
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               destGeneralID:
+ *                 type: number
+ *                 description: 해임할 장수 ID
+ *     responses:
+ *       200:
+ *         description: 해임 성공
+ */
+router.post('/dismiss', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const destGeneralID = parseInt(req.body.destGeneralID || req.body.dest_general_id || 0);
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const myGeneralDoc = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const myGeneral = toPlain(myGeneralDoc);
+    if (!myGeneral) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+    }
+
+    const myGeneralNo = myGeneral.data?.no || myGeneral.no;
+
+    if (!destGeneralID) {
+      return res.json({ result: false, reason: '장수가 지정되지 않았습니다.' });
+    }
+
+    const result = await OfficerSystemService.dismissOfficer(sessionId, myGeneralNo, destGeneralID);
+
+    return res.json(result.success 
+      ? { result: true, reason: 'success', message: result.message }
+      : { result: false, reason: result.message }
+    );
+  }));
+
+/**
+ * @swagger
+ * /api/nation/kick:
+ *   post:
+ *     summary: 장수 추방 (PHP j_myBossInfo.php 추방 기능)
+ *     description: |
+ *       장수를 국가에서 추방합니다. 수뇌부만 추방할 수 있으며, 자신보다 낮은 관직만 추방 가능합니다.
+ *       
+ *       **추방 효과:**
+ *       - 재야(nation=0)로 변경
+ *       - 관직 초기화
+ *       - 부대 탈퇴
+ *       - 자원 일부 회수 (국고로)
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - destGeneralID
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               destGeneralID:
+ *                 type: number
+ *                 description: 추방할 장수 ID
+ *     responses:
+ *       200:
+ *         description: 추방 성공
+ */
+router.post('/kick', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const destGeneralID = parseInt(req.body.destGeneralID || req.body.dest_general_id || req.body.targetGeneralId || 0);
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    const generalId = req.user?.generalId;
+
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    if (!destGeneralID) {
+      return res.json({ result: false, reason: '장수가 지정되지 않았습니다.' });
+    }
+
+    // KickGeneralService 사용
+    const result = await KickGeneralService.execute({
+      session_id: sessionId,
+      general_id: generalId,
+      targetGeneralId: destGeneralID
+    }, req.user);
+
+    return res.json(result);
+  }));
+
+/**
+ * @swagger
+ * /api/nation/grant-permission:
+ *   post:
+ *     summary: 특수 권한 부여 (외교권자/감찰관)
+ *     description: 군주만 특수 권한을 부여할 수 있습니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - destGeneralID
+ *               - permission
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               destGeneralID:
+ *                 type: number
+ *               permission:
+ *                 type: string
+ *                 enum: [ambassador, auditor]
+ *     responses:
+ *       200:
+ *         description: 권한 부여 성공
+ */
+router.post('/grant-permission', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const destGeneralID = parseInt(req.body.destGeneralID || req.body.dest_general_id || 0);
+    const permission = req.body.permission;
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const myGeneralDoc = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const myGeneral = toPlain(myGeneralDoc);
+    if (!myGeneral) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+    }
+
+    const myGeneralNo = myGeneral.data?.no || myGeneral.no;
+
+    if (!destGeneralID) {
+      return res.json({ result: false, reason: '장수가 지정되지 않았습니다.' });
+    }
+
+    if (!['ambassador', 'auditor'].includes(permission)) {
+      return res.json({ result: false, reason: '올바르지 않은 권한입니다.' });
+    }
+
+    const result = await OfficerSystemService.grantSpecialPermission(
+      sessionId,
+      myGeneralNo,
+      destGeneralID,
+      permission
+    );
+
+    return res.json(result.success 
+      ? { result: true, reason: 'success', message: result.message }
+      : { result: false, reason: result.message }
+    );
+  }));
+
+/**
+ * @swagger
+ * /api/nation/revoke-permission:
+ *   post:
+ *     summary: 특수 권한 해제
+ *     description: 군주만 특수 권한을 해제할 수 있습니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - destGeneralID
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               destGeneralID:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: 권한 해제 성공
+ */
+router.post('/revoke-permission', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const destGeneralID = parseInt(req.body.destGeneralID || req.body.dest_general_id || 0);
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const myGeneralDoc = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const myGeneral = toPlain(myGeneralDoc);
+    if (!myGeneral) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+    }
+
+    const myGeneralNo = myGeneral.data?.no || myGeneral.no;
+
+    if (!destGeneralID) {
+      return res.json({ result: false, reason: '장수가 지정되지 않았습니다.' });
+    }
+
+    const result = await OfficerSystemService.revokeSpecialPermission(
+      sessionId,
+      myGeneralNo,
+      destGeneralID
+    );
+
+    return res.json(result.success 
+      ? { result: true, reason: 'success', message: result.message }
+      : { result: false, reason: result.message }
+    );
+  }));
+
+/**
+ * @swagger
+ * /api/nation/set-permission:
+ *   post:
+ *     summary: 일괄 권한 설정 (PHP j_general_set_permission.php 대체)
+ *     description: |
+ *       군주만 외교권자/감찰관을 일괄 설정할 수 있습니다.
+ *       기존 권한자를 해제하고 새로운 장수 목록으로 재설정합니다.
+ *       
+ *       **외교권자(ambassador):**
+ *       - 최대 2명까지 설정 가능
+ *       - 외교 서신 발송/수신 권한
+ *       
+ *       **감찰관(auditor):**
+ *       - 인원 제한 없음
+ *       - 기밀 열람 권한
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - isAmbassador
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *               isAmbassador:
+ *                 type: boolean
+ *                 description: true=외교권자 설정, false=감찰관 설정
+ *               genlist:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 description: 권한을 부여할 장수 ID 목록 (빈 배열=모두 해제)
+ *     responses:
+ *       200:
+ *         description: 권한 설정 성공
+ */
+router.post('/set-permission', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const isAmbassador = req.body.isAmbassador === true || req.body.isAmbassador === 'true';
+    const genlist: number[] = (req.body.genlist || []).map((id: any) => parseInt(id)).filter((id: number) => !isNaN(id) && id > 0);
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const myGeneralDoc = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const myGeneral = toPlain(myGeneralDoc);
+    if (!myGeneral) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+    }
+
+    const myOfficerLevel = myGeneral.data?.officer_level || myGeneral.officer_level || 0;
+    const nationId = myGeneral.data?.nation || myGeneral.nation || 0;
+
+    // 군주만 가능
+    if (myOfficerLevel !== 12) {
+      return res.json({ result: false, reason: '군주가 아닙니다.' });
+    }
+
+    const targetType = isAmbassador ? 'ambassador' : 'auditor';
+
+    // 외교권자는 최대 2명
+    if (isAmbassador && genlist.length > 2) {
+      return res.json({ result: false, reason: '외교권자는 최대 둘까지만 설정 가능합니다.' });
+    }
+
+    // 기존 권한자 해제
+    await generalRepository.updateManyByFilter(
+      {
+        session_id: sessionId,
+        'data.nation': nationId,
+        'data.permission': targetType
+      },
+      { 'data.permission': 'normal' }
+    );
+
+    // 빈 목록이면 해제만 하고 완료
+    if (!genlist.length) {
+      return res.json({ result: true, reason: 'success' });
+    }
+
+    // 대상 장수들 검증 및 권한 부여
+    const candidates = await generalRepository.findByFilter({
+      session_id: sessionId,
+      'data.nation': nationId,
+      'data.officer_level': { $ne: 12 },
+      'data.permission': 'normal',
+      'data.no': { $in: genlist }
+    });
+
+    const realCandidates: number[] = [];
+    for (const candidate of candidates) {
+      const genNo = candidate.data?.no || candidate.no;
+      realCandidates.push(genNo);
+    }
+
+    if (realCandidates.length > 0) {
+      await generalRepository.updateManyByFilter(
+        {
+          session_id: sessionId,
+          'data.no': { $in: realCandidates }
+        },
+        { 'data.permission': targetType }
+      );
+    }
+
+    return res.json({ result: true, reason: 'success' });
+  }));
+
+/**
+ * @swagger
+ * /api/nation/officers:
+ *   post:
+ *     summary: 국가 관직자 목록 조회
+ *     description: 국가의 군주, 수뇌부, 외교권자, 감찰관, 지방관 목록을 조회합니다.
+ *     tags: [Nation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 관직자 목록 조회 성공
+ */
+router.post('/officers', authenticate, asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+
+    const ownerId = req.user?.userId ? String(req.user.userId) : null;
+    if (!ownerId) {
+      return res.json({ result: false, reason: '로그인이 필요합니다.' });
+    }
+
+    const myGeneralDoc = await generalRepository.findBySessionAndOwner(sessionId, ownerId);
+    const myGeneral = toPlain(myGeneralDoc);
+    if (!myGeneral) {
+      return res.json({ result: false, reason: '장수를 찾을 수 없습니다.' });
+    }
+
+    const nationId = myGeneral.data?.nation || myGeneral.nation || 0;
+    if (nationId === 0) {
+      return res.json({ result: false, reason: '국가에 소속되어있지 않습니다.' });
+    }
+
+    const officers = await OfficerSystemService.getNationOfficers(sessionId, nationId);
+    const slotInfo = await OfficerSystemService.getChiefSlotInfo(sessionId, nationId);
+
+    return res.json({
+      result: true,
+      ...officers,
+      slotInfo
+    });
   }));
 
 /**

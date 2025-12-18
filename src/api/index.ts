@@ -28,6 +28,15 @@ import processingRoutes from '../routes/processing.routes';
 import systemRoutes from '../routes/system.routes';
 import adminSessionRoutes from '../routes/admin-session.routes';
 import rankingRoutes from '../routes/ranking.routes';
+import archiveRoutes from '../routes/archive.routes';
+import tournamentRoutes from '../routes/tournament.routes';
+import diplomacyRoutes from '../routes/diplomacy.routes';
+import boardRoutes from '../routes/board.routes';
+import installRoutes from '../routes/install.routes';
+import joinRoutes from '../routes/join.routes';
+import eventRoutes from '../routes/event.routes';
+import healthRoutes from '../routes/health.routes';
+import scenarioRoutes from '../routes/scenario.routes';
 
 // === Advanced Routes (src/api/) ===
 import adminRouter from './admin/router/admin.router';
@@ -108,6 +117,29 @@ export const mountRoutes = (app: Express) => {
   
   // System Management
   app.use('/api/system', systemRoutes);
+  app.use('/api/health', healthRoutes);
+  
+  // Archive & Records
+  app.use('/api/archive', archiveRoutes);
+  
+  // Tournament
+  app.use('/api/tournament', tournamentRoutes);
+  
+  // Diplomacy
+  app.use('/api/diplomacy', diplomacyRoutes);
+  
+  // Board (게시판)
+  app.use('/api/board', boardRoutes);
+  
+  // Install & Join
+  app.use('/api/install', installRoutes);
+  app.use('/api/join', joinRoutes);
+  
+  // Event
+  app.use('/api/event', eventRoutes);
+  
+  // Scenario
+  app.use('/api/scenario', scenarioRoutes);
   
   // Legacy PHP Compatibility Layer
   app.use('/api/legacy', legacyRoutes);

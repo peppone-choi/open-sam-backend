@@ -1881,6 +1881,139 @@ router.get('/user/stats', async (req, res) => {
 
 /**
  * @swagger
+ * /api/admin/user/batch-action:
+ *   post:
+ *     summary: 장수 일괄 처리 (PHP _admin2_submit.php 대응)
+ *     tags: [Admin - User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               btn:
+ *                 type: string
+ *                 description: 작업 종류 (블럭 해제, 1단계 블럭, 강제 사망 등)
+ *               genlist:
+ *                 type: array
+ *                 items:
+ *                   type: number
+ *                 description: 장수 ID 배열
+ *               msg:
+ *                 type: string
+ *                 description: 메시지 (메세지 전달 시 사용)
+ */
+router.post('/user/batch-action', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const { btn, genlist, msg } = req.body;
+    
+    if (!btn) {
+      return res.status(400).json({ success: false, message: '작업 종류(btn)가 필요합니다' });
+    }
+    
+    // genlist가 없어도 전체 접속 허용/제한은 동작해야 함
+    const generalList = Array.isArray(genlist) ? genlist.map((n: any) => parseInt(n)).filter((n: number) => !isNaN(n)) : [];
+    
+    const result = await AdminUserManagementService.executeBatchAction(sessionId, btn, generalList, msg);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/batch-block:
+ *   post:
+ *     summary: 장수 일괄 블럭 설정
+ *     tags: [Admin - User]
+ */
+router.post('/user/batch-block', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const genlist = req.body.genlist || [];
+    const penaltyLevel = parseInt(req.body.penaltyLevel || '0');
+    
+    const result = await AdminUserManagementService.batchSetBlock(sessionId, genlist, penaltyLevel);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/batch-dex:
+ *   post:
+ *     summary: 장수 일괄 숙련도 부여
+ *     tags: [Admin - User]
+ */
+router.post('/user/batch-dex', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const genlist = req.body.genlist || [];
+    const dexType = parseInt(req.body.dexType || '1');
+    const amount = parseInt(req.body.amount || '10000');
+    
+    const result = await AdminUserManagementService.batchGrantDex(sessionId, genlist, dexType, amount);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/batch-exp:
+ *   post:
+ *     summary: 장수 일괄 경험치/공헌치 부여
+ *     tags: [Admin - User]
+ */
+router.post('/user/batch-exp', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const genlist = req.body.genlist || [];
+    const type = req.body.type || 'experience'; // experience or dedication
+    const amount = parseInt(req.body.amount || '1000');
+    
+    const result = type === 'dedication' 
+      ? await AdminUserManagementService.batchGrantDedication(sessionId, genlist, amount)
+      : await AdminUserManagementService.batchGrantExperience(sessionId, genlist, amount);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin/user/batch-message:
+ *   post:
+ *     summary: 장수 일괄 메시지 전달
+ *     tags: [Admin - User]
+ */
+router.post('/user/batch-message', async (req, res) => {
+  try {
+    const { AdminUserManagementService } = await import('../services/admin/AdminUserManagement.service');
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const genlist = req.body.genlist || [];
+    const text = req.body.text || req.body.msg || '';
+    
+    const result = await AdminUserManagementService.batchSendMessage(sessionId, genlist, text);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
  * /api/admin/server/list:
  *   get:
  *     summary: 서버 목록 조회
@@ -1959,6 +2092,164 @@ router.post('/nation/change-general', async (req, res) => {
 
 /**
  * @swagger
+ * /api/admin/log/general:
+ *   post:
+ *     summary: 장수별 상세 로그 조회 (_admin7.php)
+ *     tags: [Admin - Log]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               gen:
+ *                 type: number
+ *                 description: 장수 ID
+ *               query_type:
+ *                 type: string
+ *                 enum: [turntime, recent_war, name, warnum]
+ *                 default: turntime
+ *     responses:
+ *       200:
+ *         description: 장수 로그 정보 조회 성공
+ */
+router.post('/log/general', async (req, res) => {
+  try {
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const generalNo = parseInt(req.body.gen || req.body.generalNo || '0');
+    const queryType = req.body.query_type || 'turntime';
+
+    // 장수 목록 조회 (정렬 기준에 따라)
+    let sortField = 'data.turntime';
+    let sortOrder = -1;
+
+    switch (queryType) {
+      case 'turntime':
+        sortField = 'data.turntime';
+        sortOrder = -1;
+        break;
+      case 'recent_war':
+        sortField = 'data.recent_war';
+        sortOrder = -1;
+        break;
+      case 'name':
+        sortField = 'data.name';
+        sortOrder = 1;
+        break;
+      case 'warnum':
+        // warnum은 rank_data에서 조회해야 함
+        sortField = 'data.turntime';
+        sortOrder = -1;
+        break;
+    }
+
+    const generals = await General.find({ session_id: sessionId })
+      .sort({ [sortField]: sortOrder, 'data.npc': 1 })
+      .select('data.no data.name data.nation data.npc data.turntime')
+      .lean();
+
+    const generalList = generals.map((g: any) => ({
+      no: g.data?.no || g.no,
+      name: g.data?.name || '무명',
+      nation: g.data?.nation || 0,
+      npc: g.data?.npc || 0,
+      turntime: g.data?.turntime || ''
+    }));
+
+    // 선택된 장수가 없으면 첫 번째 장수 선택
+    let selectedGeneralNo = generalNo;
+    if (!selectedGeneralNo && generalList.length > 0) {
+      selectedGeneralNo = generalList[0].no;
+    }
+
+    // 선택된 장수 상세 정보 조회
+    let generalInfo: any = null;
+    let actionLog: any[] = [];
+    let battleDetailLog: any[] = [];
+    let historyLog: any[] = [];
+    let battleResultLog: any[] = [];
+
+    if (selectedGeneralNo) {
+      const general = await General.findOne({
+        session_id: sessionId,
+        'data.no': selectedGeneralNo
+      }).lean();
+
+      if (general) {
+        generalInfo = {
+          no: general.data?.no,
+          name: general.data?.name,
+          nation: general.data?.nation,
+          npc: general.data?.npc,
+          city: general.data?.city,
+          officer_level: general.data?.officer_level,
+          leadership: general.data?.leadership,
+          strength: general.data?.strength,
+          intel: general.data?.intel,
+          experience: general.data?.experience,
+          dedication: general.data?.dedication,
+          gold: general.data?.gold,
+          rice: general.data?.rice,
+          crew: general.data?.crew,
+          crewtype: general.data?.crewtype,
+          train: general.data?.train,
+          atmos: general.data?.atmos,
+          turntime: general.data?.turntime,
+          aux: general.data?.aux || {}
+        };
+
+        // 로그 조회
+        const { GeneralRecord } = await import('../models/general_record.model');
+        
+        const [actionLogs, battleLogs, historyLogs, battleBriefLogs] = await Promise.all([
+          GeneralRecord.find({ session_id: sessionId, general_id: selectedGeneralNo, log_type: 'action' })
+            .sort({ _id: -1 }).limit(24).lean(),
+          GeneralRecord.find({ session_id: sessionId, general_id: selectedGeneralNo, log_type: 'battle' })
+            .sort({ _id: -1 }).limit(24).lean(),
+          GeneralRecord.find({ session_id: sessionId, general_id: selectedGeneralNo, log_type: 'history' })
+            .sort({ _id: -1 }).limit(50).lean(),
+          GeneralRecord.find({ session_id: sessionId, general_id: selectedGeneralNo, log_type: 'battle_brief' })
+            .sort({ _id: -1 }).limit(24).lean()
+        ]);
+
+        const formatLog = (log: any) => ({
+          id: log._id?.toString(),
+          text: log.text || '',
+          year: log.year,
+          month: log.month,
+          date: log.created_at
+        });
+
+        actionLog = actionLogs.map(formatLog);
+        battleDetailLog = battleLogs.map(formatLog);
+        historyLog = historyLogs.map(formatLog);
+        battleResultLog = battleBriefLogs.map(formatLog);
+      }
+    }
+
+    res.json({
+      result: true,
+      queryType,
+      generalList,
+      selectedGeneral: selectedGeneralNo,
+      generalInfo,
+      logs: {
+        action: actionLog,
+        battleDetail: battleDetailLog,
+        history: historyLog,
+        battleResult: battleResultLog
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * @swagger
  * /api/admin/set-global-notice:
  *   post:
  *     summary: 전역 공지사항 설정
@@ -1974,6 +2265,97 @@ router.post('/nation/change-general', async (req, res) => {
  *                 type: string
  *                 description: 공지사항 내용
  */
+/**
+ * @swagger
+ * /api/admin/raise-event:
+ *   post:
+ *     summary: 이벤트 발생 (관리자 전용, PHP: j_raise_event.php)
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               event:
+ *                 type: string
+ *                 description: 이벤트 이름
+ *               arg:
+ *                 type: string
+ *                 description: JSON 형식 인자
+ */
+router.post('/raise-event', async (req, res) => {
+  try {
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const { event: eventName, arg: eventArgsJson } = req.body;
+    
+    if (!eventName) {
+      return res.status(400).json({
+        result: false,
+        reason: 'event가 지정되지 않았습니다.'
+      });
+    }
+
+    let eventArgs: any[] = [eventName];
+    
+    if (eventArgsJson) {
+      try {
+        const parsedArgs = JSON.parse(eventArgsJson);
+        if (Array.isArray(parsedArgs)) {
+          eventArgs = [...eventArgs, ...parsedArgs];
+        } else {
+          eventArgs.push(parsedArgs);
+        }
+      } catch (e) {
+        return res.status(400).json({
+          result: false,
+          reason: 'arg가 올바른 json이 아닙니다'
+        });
+      }
+    }
+
+    // 이벤트 실행 (Event 시스템 구현에 따라 다름)
+    // 현재는 기본 이벤트만 지원
+    const supportedEvents: Record<string, (args: any[], sessionId: string) => Promise<any>> = {
+      // 기본 이벤트 핸들러들
+      'forceTurn': async (args, sid) => {
+        const { ExecuteEngineService } = await import('../services/global/ExecuteEngine.service');
+        return await ExecuteEngineService.execute({ session_id: sid, force: true });
+      },
+      'paySalary': async (args, sid) => {
+        const type = args[1] || 'gold';
+        return await AdminEconomyService.paySalary(sid, type);
+      },
+      'invalidateCache': async (args, sid) => {
+        await forceUnlockAndClearCache(sid);
+        return { message: '캐시 무효화 완료' };
+      },
+    };
+
+    const handler = supportedEvents[eventName];
+    if (!handler) {
+      return res.status(400).json({
+        result: false,
+        reason: `지원되지 않는 이벤트입니다: ${eventName}. 지원 이벤트: ${Object.keys(supportedEvents).join(', ')}`
+      });
+    }
+
+    const result = await handler(eventArgs, sessionId);
+
+    res.json({
+      result: true,
+      reason: 'success',
+      info: result
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      reason: error.message
+    });
+  }
+});
+
 router.post('/set-global-notice', authenticate, async (req, res) => {
   try {
     // 관리자 권한 확인
