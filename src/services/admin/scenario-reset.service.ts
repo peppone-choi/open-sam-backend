@@ -1276,6 +1276,7 @@ export class ScenarioResetService {
         rankRows.push({
           session_id: sessionId,
           data: {
+            id: `${general.no}_${rankColumn}`,  // 유니크 ID: general_no + type
             general_id: general.no,
             nation_id: 0,
             type: rankColumn,
