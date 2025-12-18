@@ -238,7 +238,7 @@ router.post(
           const scenarioId = data.scenarioId || data.scenario_id || '1010';
           const options = { turnterm: data.turnterm };
           await ScenarioResetService.resetScenario(sessionId, scenarioId, options);
-          result = { success: true, message: `시나리오 ${scenarioId}로 리셋 완료` };
+          result = { result: true, success: true, message: `시나리오 ${scenarioId}로 리셋 완료` };
           break;
         }
         default:
