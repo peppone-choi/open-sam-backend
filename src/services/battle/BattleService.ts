@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { battleRepository } from '../../repositories/battle.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 import { cityDefenseRepository } from '../../repositories/city-defense.repository';
 import { Battle, BattleStatus, BattlePhase, IBattleUnit } from '../../models/battle.model';
 import { StartBattleService } from './StartBattle.service';
@@ -754,9 +754,7 @@ export class BattleService {
       
       if (survivingStack) {
         const newTroops = survivingStack.survivors || 0;
-        await unitStackRepository.update(sessionId, stackInfo.stackId, {
-          hp: newTroops
-        });
+        // 스택 시스템 제거됨
         logger.info(`가리슨 스택 ${stackInfo.stackId} 병력: ${stackInfo.initialTroops} -> ${newTroops}`);
       }
     }

@@ -6,7 +6,7 @@ import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 
 // Mock Redis to avoid external dependency
 jest.mock('ioredis', () => require('ioredis-mock'));
@@ -33,7 +33,7 @@ describe('E2E: War Cycle (Declaration -> Deployment -> Combat -> Conquest)', () 
     await mongoose.connection.collection('cities').deleteMany({ session_id: sessionId });
     await mongoose.connection.collection('nations').deleteMany({ session_id: sessionId });
     await mongoose.connection.collection('general_turns').deleteMany({ session_id: sessionId });
-    await mongoose.connection.collection('unit_stacks').deleteMany({ session_id: sessionId });
+    // 스택 시스템 제거됨
     await mongoose.connection.collection('sessions').deleteMany({ session_id: sessionId });
 
     // Create Session
@@ -168,19 +168,7 @@ describe('E2E: War Cycle (Declaration -> Deployment -> Combat -> Conquest)', () 
     });
     general1Id = 1;
 
-    // Unit Stack for General 1
-    await unitStackRepository.create({
-        session_id: sessionId,
-        owner_id: general1Id,
-        owner_type: 'general',
-        crew_type_id: 110,
-        crew_type_name: 'Infantry',
-        unit_size: 5000,
-        stack_count: 1,
-        hp: 5000,
-        train: 100,
-        morale: 100
-    });
+    // 스택 시스템 제거됨 - 장수 crew 직접 사용
 
     // General 2 (Defender - NPC)
     const general2 = await generalRepository.create({
@@ -203,19 +191,7 @@ describe('E2E: War Cycle (Declaration -> Deployment -> Combat -> Conquest)', () 
     });
     general2Id = 2;
 
-    // Unit Stack for General 2
-    await unitStackRepository.create({
-        session_id: sessionId,
-        owner_id: general2Id,
-        owner_type: 'general',
-        crew_type_id: 110,
-        crew_type_name: 'Infantry',
-        unit_size: 1000,
-        stack_count: 1,
-        hp: 1000,
-        train: 50,
-        morale: 50
-    });
+    // 스택 시스템 제거됨 - 장수 crew 직접 사용
 
     // Verify Setup
     const g1 = await generalRepository.findBySessionAndNo(sessionId, 1);

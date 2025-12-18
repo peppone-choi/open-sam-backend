@@ -1,7 +1,7 @@
 // @ts-nocheck - Type issues need investigation
 import { Battle, BattleStatus, BattlePhase } from '../models/battle.model';
 import * as BattleEventHook from '../services/battle/BattleEventHook.service';
-import { unitStackRepository } from '../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 import { cityDefenseRepository } from '../repositories/city-defense.repository';
 import { generalRepository } from '../repositories/general.repository';
 import { acquireDistributedLock, releaseDistributedLock } from '../common/lock/distributed-lock.helper';
@@ -518,25 +518,7 @@ async function applyGeneralStackCasualties(
     return;
   }
 
-  // 스택별 손실 반영
-  for (const [stackId, survivorTroops] of survivorsByStack) {
-    const stackDoc = await unitStackRepository.findById(stackId);
-    if (!stackDoc) {
-      continue;
-    }
-
-    const newHp = Math.max(0, Math.round(survivorTroops));
-    
-    if (newHp <= 0) {
-      // 전멸 시 스택 삭제
-      await unitStackRepository.deleteById(stackId);
-    } else {
-      // 스택 업데이트
-      stackDoc.hp = newHp;
-      stackDoc.stack_count = Math.max(0, Math.ceil(newHp / Math.max(1, stackDoc.unit_size ?? 100)));
-      await stackDoc.save();
-    }
-  }
+  // 스택 시스템 제거됨 - 스택별 손실 반영 스킵
 
   // 지휘관(장수)의 레거시 crew 값 업데이트
   for (const [commanderId, totalCrew] of commanderCrew) {
@@ -570,28 +552,7 @@ async function applyCityGarrisonCasualties(battle: any, sessionId: string, cityI
     }
   }
 
-  for (const snapshot of garrisonSnapshot) {
-    if (!snapshot.stackId) {
-      continue;
-    }
-    const stackId = snapshot.stackId;
-    const stackDoc = await unitStackRepository.findById(stackId);
-    if (!stackDoc) {
-      continue;
-    }
-    const initialTroops = snapshot.initialTroops ?? getStackTroopCount(stackDoc);
-    const survivorTroops = Math.min(initialTroops, survivorsByStack.get(stackId) || 0);
-    const newHp = Math.max(0, Math.round(survivorTroops));
-    if (newHp <= 0) {
-      await unitStackRepository.deleteById(stackId);
-    } else {
-      stackDoc.hp = newHp;
-      stackDoc.stack_count = Math.max(0, Math.ceil(newHp / Math.max(1, stackDoc.unit_size ?? 100)));
-      stackDoc.owner_type = 'city';
-      stackDoc.owner_id = cityId;
-      await stackDoc.save();
-    }
-  }
+  // 스택 시스템 제거됨 - 도시 주둔군 손실 반영 스킵
 }
 
 async function updateCityDefenseAfterBattle(

@@ -4,8 +4,7 @@ import { City } from '../../../models/city.model';
 import { General } from '../../../models/general.model';
 import { ActionLogger } from '../../../types/ActionLogger';
 import { saveCity, saveGeneral } from '../../../common/cache/model-cache.helper';
-import { unitStackRepository } from '../../../repositories/unit-stack.repository';
-import { UnitStack } from '../../../models/unit_stack.model';
+// 스택 시스템 제거됨
 import { SabotageInjury } from '../../../utils/SabotageInjury';
 import { RandUtil } from '../../../utils/RandUtil';
 import { LiteHashDRBG } from '../../../utils/LiteHashDRBG';
@@ -178,6 +177,7 @@ export class RandomDisaster extends Action {
       // PHP와 다르게 term 기반 초기화 사용 (다음 분기까지 표시)
 
       // 역병인 경우 해당 도시 병사들에게도 피해
+      // 역병으로 인한 병력 감소 (스택 시스템 제거됨 - 장수 crew 직접 감소)
       if (selectedType === 'plague' && config.effects.troops) {
         const generals = await General.find({ 
           session_id: sessionId, 
@@ -185,23 +185,11 @@ export class RandomDisaster extends Action {
         });
         
         for (const general of generals) {
-          const generalNo = general.no || general.data?.no;
-          const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
-          for (const stack of stacks) {
-            const reduction = Math.floor((stack.hp || 0) * config.effects.troops);
-            if (reduction > 0) {
-              const newHp = Math.max(100, (stack.hp || 0) - reduction);
-              const stackId = (stack as any)._id || (stack as any).id;
-              if (stackId) {
-                await UnitStack.updateOne({ _id: stackId }, { $set: { hp: newHp } });
-              }
-            }
-          }
-          
-          // 레거시 crew 필드도 업데이트
-          if (general.data?.crew) {
-            const reduction = Math.floor(general.data.crew * config.effects.troops);
-            general.data.crew = Math.max(0, general.data.crew - reduction);
+          const currentCrew = general.data?.crew || general.crew || 0;
+          if (currentCrew > 0) {
+            const reduction = Math.floor(currentCrew * config.effects.troops);
+            const newCrew = Math.max(0, currentCrew - reduction);
+            if (general.data) general.data.crew = newCrew;
             const generalId = general.data?.no || general.no;
             const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
             await saveGeneral(sessionId, generalId, generalData);

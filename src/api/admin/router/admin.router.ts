@@ -139,6 +139,56 @@ router.put(
 );
 
 
+// ==================== 전술전투 설정 ====================
+
+// 전술전투 설정 조회
+router.get(
+  '/tactical-settings',
+  requirePermission(AdminPermission.MANAGE_CONFIG),
+  asyncHandler(async (req, res) => {
+    const sessionId = req.query.sessionId as string || 'sangokushi_default';
+    const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
+    const result = await AdminGameSettingsService.getSettings(sessionId);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        data: {
+          tacticalMaxTurns: result.settings?.tacticalMaxTurns || 15,
+          tacticalTurnTimeLimit: result.settings?.tacticalTurnTimeLimit || 20,
+          turnterm: result.settings?.turnterm || 5,
+        },
+      });
+    } else {
+      res.status(400).json(result);
+    }
+  })
+);
+
+// 전술전투 설정 변경
+router.put(
+  '/tactical-settings',
+  requirePermission(AdminPermission.MANAGE_CONFIG),
+  asyncHandler(async (req, res) => {
+    const sessionId = req.body.sessionId || req.query.sessionId || 'sangokushi_default';
+    const { maxTurns } = req.body;
+    
+    if (!maxTurns || typeof maxTurns !== 'number') {
+      res.status(400).json({ success: false, message: 'maxTurns가 필요합니다 (숫자)' });
+      return;
+    }
+    
+    const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
+    const result = await AdminGameSettingsService.setTacticalBattleSettings(sessionId, maxTurns);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  })
+);
+
 // ==================== 시스템 ====================
 
 // 시스템 상태

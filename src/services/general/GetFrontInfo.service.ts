@@ -11,10 +11,8 @@ import * as path from 'path';
 import { generalTurnRepository } from '../../repositories/general-turn.repository';
 import { getNationTypeInfo as getNationTypeInfoFromFactory } from '../../core/nation-type/NationTypeFactory';
 import { cityDefenseRepository } from '../../repositories/city-defense.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 import { getSocketManager } from '../../socket/socketManager';
-import { IUnitStack } from '../../models/unit_stack.model';
 import { GameUnitConst } from '../../const/GameUnitConst';
 import { troopRepository } from '../../repositories/troop.repository';
 
@@ -41,10 +39,8 @@ function loadConstants() {
   return cachedConstants;
 }
 
-type LeanUnitStack = Partial<IUnitStack> & {
-  _id?: { toString(): string } | string;
-  id?: string;
-};
+// 스택 시스템 제거됨
+type LeanUnitStack = any;
 
 /**
  * 전선 정보 - 전역 게임 환경 정보
@@ -929,47 +925,12 @@ export class GetFrontInfoService {
   ) {
     const data = general;
     const generalNo = data.no || general.no;
-    const generalStacks = (await unitStackRepository.findByOwner(
-      sessionId,
-      'general',
-      generalNo
-    )) as LeanUnitStack[];
-    const fallbackCrewTypeId = this.resolveFallbackCrewTypeId(data);
-    const formattedStacks = generalStacks.map(stack => {
-      let crewTypeId = stack.crew_type_id ?? 0;
-      if ((!crewTypeId || crewTypeId <= 0) && fallbackCrewTypeId) {
-        crewTypeId = fallbackCrewTypeId;
-      }
-      return {
-        id: stack._id?.toString() || stack.id,
-        crewTypeId,
-        crewTypeName: resolveCrewTypeName(crewTypeId, stack.crew_type_name),
-        unitSize: stack.unit_size ?? 100,
-        stackCount: stack.stack_count ?? 0,
-        troops: this.getStackTroopCount(stack),
-        train: stack.train ?? 0,
-        morale: stack.morale ?? 0,
-        updatedAt: stack.updated_at,
-      };
-    }).sort((a, b) => b.troops - a.troops);
-    const totalStackTroops = formattedStacks.reduce((sum, stack) => sum + stack.troops, 0);
-    const totalStackUnits = formattedStacks.reduce((sum, stack) => sum + (stack.stackCount ?? 0), 0);
-    const averageTrainFromStacks = totalStackTroops > 0
-      ? Math.round(formattedStacks.reduce((sum, stack) => sum + stack.train * stack.troops, 0) / totalStackTroops)
-      : 0;
-    const averageMoraleFromStacks = totalStackTroops > 0
-      ? Math.round(formattedStacks.reduce((sum, stack) => sum + stack.morale * stack.troops, 0) / totalStackTroops)
-      : 0;
-    const unitStackInfo = formattedStacks.length > 0 ? {
-      totalTroops: totalStackTroops,
-      stackCount: totalStackUnits || formattedStacks.length,
-      averageTrain: averageTrainFromStacks,
-      averageMorale: averageMoraleFromStacks,
-      stacks: formattedStacks,
-    } : null;
-    const derivedCrew = (typeof data.crew === 'number' && data.crew > 0) ? data.crew : totalStackTroops;
-    const derivedTrain = totalStackTroops > 0 ? averageTrainFromStacks : (data.train || 0);
-    const derivedAtmos = totalStackTroops > 0 ? averageMoraleFromStacks : (data.atmos || 50);
+    // 스택 시스템 제거됨 - 장수의 crew 직접 사용
+    const formattedStacks: any[] = [];
+    const unitStackInfo = null;
+    const derivedCrew = data.crew || 0;
+    const derivedTrain = data.train || 0;
+    const derivedAtmos = data.atmos || 50;
     
     // 능력치 범위 보정 (40-150 사이로 제한)
 
@@ -1189,11 +1150,7 @@ export class GetFrontInfoService {
       cityId,
       city.name || `도시${cityId}`
     );
-    const garrisonStacks = (await unitStackRepository.findByOwner(
-      sessionId,
-      'city',
-      cityId
-    )) as LeanUnitStack[];
+    // 스택 시스템 제거됨 - 도시 주둔군 정보 없음
 
     const pop = city.pop ?? 0;
     const popMax = city.pop_max ?? 10000;
@@ -1216,25 +1173,10 @@ export class GetFrontInfoService {
     const gateCurrent = defenseState?.gate_hp ?? defenseState?.gate_max ?? 0;
     const gateMaximum = defenseState?.gate_max ?? gateCurrent;
 
-    const garrisonStacksFormatted = garrisonStacks
-      .map((stack) => {
-        const crewTypeId = stack.crew_type_id ?? 0;
-        return {
-          id: stack._id?.toString() || stack.id,
-          crewTypeId,
-          crewTypeName: resolveCrewTypeName(crewTypeId, stack.crew_type_name),
-          troops: this.getStackTroopCount(stack),
-          train: stack.train ?? 0,
-          morale: stack.morale ?? 0,
-          updatedAt: stack.updated_at,
-        };
-      })
-      .sort((a, b) => b.troops - a.troops);
-
     const garrisonInfo = {
-      totalTroops: garrisonStacksFormatted.reduce((sum, stack) => sum + stack.troops, 0),
-      stackCount: garrisonStacksFormatted.length,
-      stacks: garrisonStacksFormatted.slice(0, 6),
+      totalTroops: 0,
+      stackCount: 0,
+      stacks: [],
     };
 
     const defenseInfo = defenseState

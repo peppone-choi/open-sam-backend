@@ -4,7 +4,7 @@ import { battleMapTemplateRepository } from '../../repositories/battle.repositor
 import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 import { nanoid } from 'nanoid';
 
 
@@ -341,34 +341,10 @@ export class BattleCreationService {
     }> = [];
 
     for (const gen of generals as any[]) {
-      const stacks = await unitStackRepository.findByOwner(sessionId, 'general', gen.no);
-      let totalTroops = 0;
-      let weightedTrain = 0;
-      let weightedMorale = 0;
-
-      for (const stack of stacks as any[]) {
-        const troops = (stack.hp ?? ((stack.unit_size ?? 100) * (stack.stack_count ?? 0))) as number;
-        if (!Number.isFinite(troops) || troops <= 0) continue;
-        totalTroops += troops;
-        const stackTrain = typeof stack.train === 'number' ? stack.train : 0;
-        const stackMorale = typeof stack.morale === 'number' ? stack.morale : 0;
-        weightedTrain += stackTrain * troops;
-        weightedMorale += stackMorale * troops;
-      }
-
-      const rawCrew = gen.crew ?? gen.data?.crew ?? 0;
-      const fallbackCrew = typeof rawCrew === 'number' && Number.isFinite(rawCrew) ? rawCrew : 0;
-      const crew = totalTroops > 0 ? totalTroops : Math.max(0, fallbackCrew);
-
-      const baseTrain = gen.train ?? gen.data?.train ?? 0;
-      const baseAtmos = gen.atmos ?? gen.data?.atmos ?? 50;
-
-      const train = totalTroops > 0
-        ? Math.round(weightedTrain / totalTroops)
-        : baseTrain;
-      const atmos = totalTroops > 0
-        ? Math.round(weightedMorale / totalTroops)
-        : baseAtmos;
+      // 스택 시스템 제거됨 - 장수의 crew/train/atmos 직접 사용
+      const crew = Math.max(0, gen.crew ?? gen.data?.crew ?? 0);
+      const train = gen.train ?? gen.data?.train ?? 0;
+      const atmos = gen.atmos ?? gen.data?.atmos ?? 50;
 
       resultGenerals.push({
         generalId: gen.no,

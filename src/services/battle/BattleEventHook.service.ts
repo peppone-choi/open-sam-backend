@@ -792,6 +792,13 @@ export async function checkNationDestroyed(sessionId: string, nationId: number):
 
 /**
  * 외교 로그 생성
+ * 
+ * 참고: CITY_OCCUPIED 이벤트의 로그는 ProcessWar.service.ts에서 이미 처리됨
+ * - pushGlobalActionLog: "장수가 도시 공략에 성공했습니다" (장수 동향)
+ * - pushNationalHistoryLog: "장수가 도시를 점령" (공격자 국가 기록)
+ * - pushNationalHistoryLog: "적에 의해 도시가 함락" (방어자 국가 기록)
+ * 
+ * 이 함수는 ProcessWar에서 처리하지 않는 추가 외교 이벤트만 처리합니다.
  */
 async function createDiplomaticLog(
   sessionId: string,
@@ -807,49 +814,19 @@ async function createDiplomaticLog(
   }
 ): Promise<void> {
   try {
-    const { ActionLogger } = await import('../logger/ActionLogger');
-    const { LogFormatType } = await import('../../types/log.types');
-
-    // 공격자 국가 로그
-    const attackerLogger = new ActionLogger(
-      0, // generalId (국가 로그이므로 0)
-      event.attackerNationId,
-      year,
-      month,
-      sessionId,
-      false
-    );
-
-    // 수비자 국가 로그
-    const defenderLogger = new ActionLogger(
-      0,
-      event.defenderNationId,
-      year,
-      month,
-      sessionId,
-      false
-    );
-
+    // CITY_OCCUPIED는 ProcessWar.service.ts에서 이미 로그를 생성하므로
+    // 여기서는 중복 로그를 생성하지 않습니다.
+    // PHP process_war.php와 동일한 동작을 유지합니다.
     if (event.type === 'CITY_OCCUPIED') {
-      const attackMsg = `<G>${event.cityName}</G> 도시를 점령하였습니다!`;
-      const defenseMsg = `<R>${event.cityName}</R> 도시를 빼앗겼습니다.`;
-
-      attackerLogger.pushGlobalActionLog(attackMsg, LogFormatType.PLAIN);
-      
-      // 공격자와 수비자가 같은 국가가 아닌 경우에만 수비자 로그 생성
-      if (event.attackerNationId !== event.defenderNationId && event.defenderNationId > 0) {
-        defenderLogger.pushGlobalActionLog(defenseMsg, LogFormatType.PLAIN);
-      }
+      logger.debug('[BattleEventHook] CITY_OCCUPIED log already handled by ProcessWar', {
+        sessionId,
+        cityName: event.cityName
+      });
+      return;
     }
 
-    await attackerLogger.flush();
-    
-    // 공격자와 수비자가 다른 경우에만 수비자 로그 flush
-    if (event.attackerNationId !== event.defenderNationId && event.defenderNationId > 0) {
-      await defenderLogger.flush();
-    }
-
-    logger.info('[BattleEventHook] Diplomatic log created', {
+    // 다른 외교 이벤트는 여기서 처리
+    logger.info('[BattleEventHook] Diplomatic event (non-CITY_OCCUPIED)', {
       sessionId,
       type: event.type,
       attackerNationId: event.attackerNationId,

@@ -27,12 +27,7 @@ jest.mock('../../../repositories/nation.repository', () => ({
   }
 }));
 
-jest.mock('../../../repositories/unit-stack.repository', () => ({
-  unitStackRepository: {
-    findByOwner: jest.fn().mockResolvedValue([]),
-    findById: jest.fn().mockResolvedValue(null)
-  }
-}));
+// 스택 시스템 제거됨
 
 describe('EncourageSettlementCommand', () => {
   describe('기본 구조 테스트', () => {

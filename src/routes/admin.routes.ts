@@ -333,6 +333,11 @@ router.post('/game-info', async (req, res) => {
     const warDeclareYear = gameEnv.warDeclareYear ?? (openingPartYear - 2);
     const warDeployYear = gameEnv.warDeployYear ?? openingPartYear;
     
+    // 전술전투 설정
+    const tacticalMaxTurns = sessionData.tacticalMaxTurns || gameEnv.tacticalMaxTurns || 15;
+    const turntermForCalc = sessionData.turnterm || 5;
+    const tacticalTurnTimeLimit = Math.max(10, Math.floor((turntermForCalc * 60) / tacticalMaxTurns));
+    
     const gameInfo = {
       serverName: session?.name || '',
       scenario: session?.scenario_name || gameEnv.scenario || '',
@@ -355,6 +360,9 @@ router.post('/game-info', async (req, res) => {
       openingPartYear,      // 초반 제한 기간 (기본값 3)
       warDeclareYear,       // 선전포고 가능 상대 년도 (기본값: openingPartYear - 2 = 1)
       warDeployYear,        // 출병 가능 상대 년도 (기본값: openingPartYear = 3)
+      // 전술전투 설정
+      tacticalMaxTurns,          // 전술전투 최대 턴 수 (기본값 15)
+      tacticalTurnTimeLimit,     // 전술턴당 시간 (초)
     };
     
     console.log('[Admin] Returning isunited:', gameInfo.isunited);
@@ -630,6 +638,23 @@ router.post('/update-game', async (req, res) => {
       return res.json({
         result: true,
         message: result.message
+      });
+    } else if (action === 'tacticalMaxTurns') {
+      // 전술전투 최대 턴 수 설정
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const result = await AdminGameSettings.setTacticalBattleSettings(sessionId, parseInt(data.tacticalMaxTurns) || 15);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message,
+        data: result.data
       });
     } else if (action === 'year') {
       // 락 해제 및 캐시 무효화

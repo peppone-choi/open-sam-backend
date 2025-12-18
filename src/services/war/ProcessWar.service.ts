@@ -15,11 +15,12 @@ import { AutoBattleService } from '../battle/AutoBattle.service';
 import type { BattleConfig, BattleGeneralInput } from '../../battle/types';
 import { GameEventEmitter } from '../gameEventEmitter';
 import { LogFormatType } from '../../types/log.types';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { cityDefenseRepository } from '../../repositories/city-defense.repository';
 import { resolveFallbackDefender } from '../helpers/garrison.helper';
 import * as BattleEventHook from '../battle/BattleEventHook.service';
 import { processWar as runWarUnitBattle } from '../../battle';
+import { ActionLogger } from '../logger/ActionLogger';
+import { conflictService } from './Conflict.service';
 
 export interface WarUnit {
   getName(): string;
@@ -49,8 +50,14 @@ export interface ProcessWarParams {
 const enableLegacyProcessWar = process.env.ENABLE_LEGACY_PROCESS_WAR !== 'false';
 
 // 모든 전투를 자동 전투로 처리 (전술 전투 비활성화)
-// false로 설정하면 전술 전투(실시간 전투)가 활성화됨
-const FORCE_ALL_AUTO_BATTLE = false;
+// true: 모든 전투가 AutoBattleEngine으로 처리되어 바로 결과/로그 표시
+// false: 40x40 전술 전투 세션 생성 (battle_xxx ID)
+const FORCE_ALL_AUTO_BATTLE = process.env.FORCE_AUTO_BATTLE !== 'false'; // 기본 true
+
+// 20x20 격자 전술전투 시스템 사용
+// true: 20x20 격자 전술전투 세션 생성
+// false: 기존 자동전투 사용 (기본)
+const ENABLE_TACTICAL_BATTLE = process.env.ENABLE_TACTICAL_BATTLE === 'true';
 
 export class ProcessWarService {
   /**
@@ -87,9 +94,24 @@ export class ProcessWarService {
 
     const warSeed = options.warSeed ?? rng.uuid();
  
-    const logger = attackerGeneral.getLogger?.() || console;
+    // ActionLogger 생성 - 중원정세 로그를 위해 필수
+    const year = attackerGeneral.env?.year || attackerGeneral.data?.aux?.year || 184;
+    const month = attackerGeneral.env?.month || attackerGeneral.data?.aux?.month || 1;
+    const logger = attackerGeneral.getLogger?.() || new ActionLogger(
+      attackerGeneralId,
+      attackerNationID,
+      year,
+      month,
+      sessionId,
+      true // autoFlush
+    );
 
-
+    // 전투 시작 중원정세 로그
+    const attackerNationName = attackerNation?.name || attackerNation?.data?.name || '공격국';
+    const josaYi = JosaUtil.pick(attackerNationName, '이');
+    logger.pushGlobalHistoryLog?.(
+      `<S><b>【교전】</b></><D><b>${attackerNationName}</b></>${josaYi} <G><b>${defenderCityName}</b></>을(를) 공격합니다.`
+    );
 
     const defenseState = await cityDefenseRepository.ensure(sessionId, defenderCityID, defenderCity.name ?? `도시${defenderCityID}`);
 
@@ -108,8 +130,8 @@ export class ProcessWarService {
     );
     await Promise.all(defenderStacksHydration);
 
-    const garrisonStacks = await unitStackRepository.findByOwner(sessionId, 'city', defenderCityID);
-    const garrisonUnits = this.buildCityGarrisonUnits(defenderCity, garrisonStacks, defenderNationID);
+    // 스택 시스템 제거됨 - 도시 수비대는 별도 처리
+    const garrisonUnits: any[] = [];
     const fallbackDefender = resolveFallbackDefender(sessionId, defenderCity);
 
     // === 2. 공백지 체크 - 한나라 잔존 세력과 자동 전투 ===
@@ -145,7 +167,6 @@ export class ProcessWarService {
         attackerGeneral.city = defenderCityID;
         const generalNo = attackerGeneral.no || attackerGeneral.getID?.();
         if (generalNo) {
-          await unitStackRepository.updateOwnerCity(sessionId, 'general', generalNo, defenderCityID);
           await attackerGeneral.applyDB?.();
         }
         // 로그 flush
@@ -242,7 +263,7 @@ export class ProcessWarService {
         attackerGeneral.city = defenderCityID;
         const generalNo = attackerGeneral.no || attackerGeneral.getID?.();
         if (generalNo) {
-          await unitStackRepository.updateOwnerCity(sessionId, 'general', generalNo, defenderCityID);
+          // 스택 시스템 제거됨
           await this.applyBattleLossToGeneral(sessionId, generalNo, battleResult.attackerLoss);
           const newCrew = await this.getGeneralTotalCrew(sessionId, generalNo);
           attackerGeneral.crew = newCrew;
@@ -253,6 +274,11 @@ export class ProcessWarService {
       } else {
         logger.pushGeneralActionLog?.(
           `${defenderType}에게 패배했습니다! [손실: ${battleResult.attackerLoss}명]`
+        );
+        
+        // 전투 패배 중원정세 로그
+        logger.pushGlobalHistoryLog?.(
+          `<R><b>【격퇴】</b></><D><b>${nationName}</b></> 군이 <G><b>${defenderCity.name}</b></> 공략에 실패했습니다.`
         );
         
         // 병력 손실만 반영 (UnitStack)
@@ -284,8 +310,8 @@ export class ProcessWarService {
     const forceAutoBattle = FORCE_ALL_AUTO_BATTLE || process.env.FORCE_AUTO_BATTLE === 'true';
 
     // 레거시 전투 사용 (페이즈별 전투 로그가 보임)
-    // 자동 전투 조건에 상관없이 레거시 전투를 우선 사용
-    if (enableLegacyProcessWar && defenderGenerals.length > 0) {
+    // FORCE_ALL_AUTO_BATTLE이 false일 때만 레거시 전투 사용
+    if (enableLegacyProcessWar && defenderGenerals.length > 0 && !forceAutoBattle) {
       await this.executeLegacyProcessWar({
         sessionId,
         warSeed,
@@ -303,24 +329,90 @@ export class ProcessWarService {
       return;
     }
 
-    // 방어군이 없거나 레거시 전투 비활성화시 자동 전투
-    if (forceAutoBattle && !shouldUseAutoBattle) {
+    // === 4. 20x20 격자 전술전투 분기 ===
+    if (ENABLE_TACTICAL_BATTLE) {
+      const { TacticalBattleSessionService } = await import('../tactical/TacticalBattleSession.service');
+      const { TacticalBattleAIService } = await import('../tactical/TacticalBattleAI.service');
+      
+      // 방어군 장수 ID 목록
+      const defenderGeneralIds = defenderGenerals.map((g: any) => g.no || g.data?.no || 0).filter((id: number) => id > 0);
+      
+      // 전술전투 세션 생성
+      const tacticalBattle = await TacticalBattleSessionService.createSession({
+        sessionId,
+        cityId: defenderCityID,
+        attackerNationId: attackerNationID,
+        attackerGenerals: [attackerGeneralId],
+        defenderNationId: defenderNationID,
+        defenderGenerals: defenderGeneralIds,
+      });
+      
+      // 장수 동향 로그
       logger.pushGeneralActionLog?.(
-        `<G><b>${defenderCity.name}</b></> 공략은 자동 전투로 처리됩니다.`
+        `<G><b>${defenderCityName}</b></> 전술전투 시작! [전투ID: ${tacticalBattle.battle_id}]`
       );
+      
+      // 유저가 참여하지 않으면 AI로 자동 시뮬레이션
+      const isAttackerUser = attackerGeneral.npc === 0 || attackerGeneral.data?.npc === 0;
+      const isDefenderUser = defenderGenerals.some((g: any) => (g.npc === 0 || g.data?.npc === 0));
+      
+      if (!isAttackerUser && !isDefenderUser) {
+        // 양측 모두 NPC면 자동 시뮬레이션
+        const result = await TacticalBattleAIService.simulateBattle(tacticalBattle.battle_id);
+        
+        // 전투 결과 적용
+        if (result.winner === 'attacker') {
+          await this.conquerCity(sessionId, defenderCityID, attackerNationID, attackerGeneralId, { logger });
+          logger.pushGeneralHistoryLog?.(
+            `<G><b>${defenderCityName}</b></>을(를) <S>점령</>`
+          );
+          logger.pushGlobalHistoryLog?.(
+            `<S><b>【지배】</b></><D><b>${attackerNationName}</b></>${josaYi} <G><b>${defenderCityName}</b></>을(를) 지배했습니다.`
+          );
+        } else {
+          logger.pushGlobalHistoryLog?.(
+            `<R><b>【격퇴】</b></><D><b>${attackerNationName}</b></> 군이 <G><b>${defenderCityName}</b></> 공략에 실패했습니다.`
+          );
+        }
+        
+        logger.pushGeneralActionLog?.(
+          `전술전투 종료 (${result.turns}턴, 승자: ${result.winner})`
+        );
+      } else {
+        // 유저 참여 가능한 전투 - 대기 상태로 유지
+        logger.pushGeneralActionLog?.(
+          `전술전투 대기 중... 참여하려면 전투 화면으로 이동하세요.`
+        );
+      }
+      
+      // 로그 flush
+      if (typeof logger.flush === 'function') {
+        await logger.flush();
+      }
+      return;
     }
 
+    // === 5. 자동 전투 분기 ===
     if (forceAutoBattle || shouldUseAutoBattle) {
       const defendersForBattle = (defenderGenerals.length || garrisonUnits.length)
         ? [...defenderGenerals, ...garrisonUnits]
         : defenderGenerals;
 
+      // 전투 시작 로그 (중원정세, 장수동향에 표시)
+      const nationName = attackerNation.name || attackerNation.data?.name || '국가';
+      const attackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
+      const josaYiGen = JosaUtil.pick(attackerName, '이');
+      
+      if (defendersForBattle.length > 0) {
+        const defenderSummary = this.summarizeDefenders(defendersForBattle);
+        logger.pushGlobalActionLog?.(
+          `<D><b>${nationName}</b></>의 <Y>${attackerName}</>${josaYiGen} <G><b>${defenderCity.name}</b></>에 진격합니다. [vs ${defenderSummary}]`
+        );
+      }
+
       if (defendersForBattle.length === 0) {
         const josaUl = JosaUtil.pick(defenderCity.name, '을');
-        const nationName = attackerNation.name || attackerNation.data?.name || '국가';
-        const attackerName = attackerGeneral.name || attackerGeneral.data?.name || '장수';
         const josaYiNation = JosaUtil.pick(nationName, '이');
-        const josaYiGen = JosaUtil.pick(attackerName, '이');
         
         logger.pushGeneralActionLog?.(`<G><b>${defenderCity.name}</b></>에는 저항군이 없어 무혈입성했습니다.`);
         logger.pushGeneralHistoryLog?.(
@@ -419,7 +511,7 @@ export class ProcessWarService {
         attackerGeneral.city = defenderCityID;
         const generalNo = attackerGeneral.no || attackerGeneral.getID?.();
         if (generalNo) {
-          await unitStackRepository.updateOwnerCity(sessionId, 'general', generalNo, defenderCityID);
+          // 스택 시스템 제거됨
           await this.applyBattleLossToGeneral(sessionId, generalNo, battleResult.attackerLoss);
           const newCrew = await this.getGeneralTotalCrew(sessionId, generalNo);
           attackerGeneral.crew = newCrew;
@@ -866,17 +958,27 @@ export class ProcessWarService {
         attackerGeneral.data.crew = normalizedCrew;
       }
 
+      const nationName = attackerNation?.name || attackerNation?.data?.name || '공격국';
+      const josaUl = JosaUtil.pick(defenderCity.name, '을');
+      const josaYiNation = JosaUtil.pick(nationName, '이');
+      
       if (conquerCity) {
         await this.restoreCityDefense(sessionId, defenderCityID);
         if (attackerGeneralId) {
-          await unitStackRepository.updateOwnerCity(sessionId, 'general', attackerGeneralId, defenderCityID);
+          // 스택 시스템 제거됨
         }
         attackerGeneral.city = defenderCityID;
         attackerGeneral.data = attackerGeneral.data || {};
         attackerGeneral.data.city = defenderCityID;
         logger.pushGeneralActionLog?.(`<G><b>${defenderCity.name}</b></>을(를) 점령했습니다! [Legacy 전투]`);
+        logger.pushGlobalHistoryLog?.(
+          `<S><b>【지배】</b></><D><b>${nationName}</b></>${josaYiNation} <G><b>${defenderCity.name}</b></>${josaUl} 지배했습니다.`
+        );
       } else {
         logger.pushGeneralActionLog?.(`<G><b>${defenderCity.name}</b></> 공략에 실패했습니다. [Legacy 전투]`);
+        logger.pushGlobalHistoryLog?.(
+          `<R><b>【격퇴】</b></><D><b>${nationName}</b></> 군이 <G><b>${defenderCity.name}</b></> 공략에 실패했습니다.`
+        );
       }
     } catch (error: any) {
       logger.pushGeneralActionLog?.(`<R>Legacy 전투 처리 중 오류 발생:</> ${error.message}`);
@@ -913,7 +1015,11 @@ export class ProcessWarService {
     sessionId: string,
     cityId: number,
     attackerNationId: number,
-    attackerGeneralId?: number
+    attackerGeneralId?: number,
+    options: {
+      damage?: number;
+      logger?: ActionLogger;
+    } = {}
   ): Promise<void> {
     try {
       const { cityRepository } = await import('../../repositories/city.repository');
@@ -927,11 +1033,53 @@ export class ProcessWarService {
 
       const oldNationId = (city as any).nation;
 
-      // 도시 국가 변경
+      // 분쟁 기여도 추가 (공격 시 피해량 기록)
+      if (options.damage && options.damage > 0) {
+        await conflictService.addConflict(
+          sessionId,
+          cityId,
+          attackerNationId,
+          options.damage,
+          { logger: options.logger }
+        );
+      }
+
+      // 분쟁 중인 도시인 경우 기여도 기반 점령자 결정
+      let actualConquerorNationId = attackerNationId;
+      const conquerNation = await conflictService.getConquerNation(sessionId, cityId);
+      if (conquerNation && conquerNation !== attackerNationId) {
+        // 기여도 1위가 다른 국가라면 해당 국가가 점령
+        actualConquerorNationId = conquerNation;
+        
+        // 분쟁 협상 로그
+        if (options.logger) {
+          await conflictService.pushNegotiationLog(
+            sessionId,
+            cityId,
+            conquerNation,
+            attackerNationId,
+            options.logger
+          );
+        }
+      }
+
+      // 분쟁 보상 분배 (경험치/명성)
+      const baseExp = Math.floor((city.level || 5) * 100);
+      const baseFame = Math.floor((city.level || 5) * 50);
+      await conflictService.distributeRewards(
+        sessionId,
+        cityId,
+        baseExp,
+        baseFame,
+        actualConquerorNationId
+      );
+
+      // 도시 국가 변경 및 분쟁 기록 초기화
       await cityRepository.updateByCityNum(sessionId, cityId, {
-        nation: attackerNationId,
+        nation: actualConquerorNationId,
         state: 0, // 일반 상태로 복구
         term: 0,
+        conflict: '{}' // 분쟁 기록 초기화
       });
 
       // 방어군 장수들을 재야로 (포로)
@@ -942,25 +1090,68 @@ export class ProcessWarService {
       });
 
       for (const general of defenderGenerals) {
-      await generalRepository.updateById(general._id.toString(), {
-        nation: 0, // 재야
-        city: cityId, // 도시는 유지
-        crew: Math.floor(((general as any).crew || 0) * 0.3), // 병사 70% 손실
-      });
-    }
+        await generalRepository.updateById(general._id.toString(), {
+          nation: 0, // 재야
+          city: cityId, // 도시는 유지
+          crew: Math.floor(((general as any).crew || 0) * 0.3), // 병사 70% 손실
+        });
+      }
 
-    console.log(`[ProcessWar] 도시 점령: ${(city as any).name} (${oldNationId} -> ${attackerNationId})`);
+      console.log(`[ProcessWar] 도시 점령: ${(city as any).name} (${oldNationId} -> ${actualConquerorNationId})`);
 
-    const resolvedGeneralId = attackerGeneralId ?? 0;
-    try {
-      // oldNationId를 전달하여 이미 소유권이 변경된 상태에서도 정상 처리되도록 함
-      await BattleEventHook.onCityOccupied(sessionId, cityId, attackerNationId, resolvedGeneralId, oldNationId);
-    } catch (hookError) {
-      console.error('[ProcessWar] BattleEventHook 처리 실패:', hookError);
-    }
+      // 방어자 국가의 "함락" 로그 생성 (PHP 호환)
+      // PHP: $defenderNationLogger->pushNationalHistoryLog("적에 의해 도시가 함락")
+      if (oldNationId > 0 && options.logger) {
+        try {
+          const { nationRepository } = await import('../../repositories/nation.repository');
+          const attackerNation = await nationRepository.findByNationNum(sessionId, attackerNationId);
+          const attackerNationName = (attackerNation as any)?.name || '적';
+          
+          // 공격자 장수 이름 조회
+          let attackerGeneralName = '적장';
+          if (attackerGeneralId) {
+            const attackerGen = await generalRepository.findBySessionAndNo(sessionId, attackerGeneralId);
+            attackerGeneralName = (attackerGen as any)?.name || '적장';
+          }
+          
+          const cityName = (city as any).name || '도시';
+          const josaYiCity = JosaUtil.pick(cityName, '이');
+          
+          // 방어자 국가용 로거 생성
+          const { ActionLogger } = await import('../logger/ActionLogger');
+          const loggerYear = typeof options.logger.getYear === 'function' 
+            ? options.logger.getYear() 
+            : new Date().getFullYear();
+          const loggerMonth = typeof options.logger.getMonth === 'function' 
+            ? options.logger.getMonth() 
+            : new Date().getMonth() + 1;
+          const defenderLogger = new ActionLogger(
+            0,
+            oldNationId,
+            loggerYear,
+            loggerMonth,
+            sessionId,
+            false
+          );
+          
+          defenderLogger.pushNationalHistoryLog?.(
+            `<D><b>${attackerNationName}</b></>의 <Y>${attackerGeneralName}</>에 의해 <G><b>${cityName}</b></>${josaYiCity} <O>함락</>`
+          );
+          await defenderLogger.flush();
+        } catch (logError) {
+          console.error('[ProcessWar] 방어자 국가 함락 로그 생성 실패:', logError);
+        }
+      }
 
-    // 수도 함락 체크
+      const resolvedGeneralId = attackerGeneralId ?? 0;
+      try {
+        // oldNationId를 전달하여 이미 소유권이 변경된 상태에서도 정상 처리되도록 함
+        await BattleEventHook.onCityOccupied(sessionId, cityId, actualConquerorNationId, resolvedGeneralId, oldNationId);
+      } catch (hookError) {
+        console.error('[ProcessWar] BattleEventHook 처리 실패:', hookError);
+      }
 
+      // 수도 함락 체크
       const { nationRepository } = await import('../../repositories/nation.repository');
       const defenderNation = await nationRepository.findByNationNum(sessionId, oldNationId);
       
@@ -975,229 +1166,89 @@ export class ProcessWarService {
   }
 
   /**
-   * 장수의 총 병력 수 계산 (UnitStack 기반)
+   * 전투 피해 기록 (분쟁 기여도)
    */
-  private static async getGeneralTotalCrew(sessionId: string, generalNo: number): Promise<number> {
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
-    return stacks.reduce((sum, stack) => {
-      const hp = (stack as any).hp;
-      if (typeof hp === 'number') {
-        return sum + hp;
-      }
-      return sum + (stack.unit_size * stack.stack_count);
-    }, 0);
-  }
-
-  private static async ensureGeneralTroopSnapshot(sessionId: string, general: any): Promise<void> {
-    if (!general) {
-      return;
-    }
-    const generalNo = general.no ?? general.getID?.();
-    if (!generalNo) {
-      return;
-    }
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
-    if (!stacks.length) {
-      return;
-    }
-    const totalTroops = stacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
-    if (totalTroops <= 0) {
-      return;
-    }
-
-    const primary = stacks[0];
-    general.crew = totalTroops;
-    general.data = general.data || {};
-    general.data.crew = totalTroops;
-
-    if (primary) {
-      const crewTypeId = primary.crew_type_id ?? general.crewtype;
-      const train = primary.train ?? general.train;
-      const atmos = primary.morale ?? general.atmos;
-
-      general.crewtype = crewTypeId;
-      general.train = train;
-      general.atmos = atmos;
-
-      general.data.crewtype = crewTypeId;
-      general.data.train = train;
-      general.data.atmos = atmos;
-    }
+  static async recordBattleDamage(
+    sessionId: string,
+    cityId: number,
+    nationId: number,
+    damage: number,
+    logger?: ActionLogger
+  ): Promise<void> {
+    await conflictService.addConflict(sessionId, cityId, nationId, damage, { logger });
   }
 
   /**
-   * 장수의 병력에 손실 적용 (UnitStack에 비례 분배)
+   * 장수의 총 병력 수 계산 (general.data.crew 사용)
+   */
+  private static async getGeneralTotalCrew(sessionId: string, generalNo: number): Promise<number> {
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalNo);
+    return general?.crew ?? general?.data?.crew ?? 0;
+  }
+
+  private static async ensureGeneralTroopSnapshot(sessionId: string, general: any): Promise<void> {
+    // 스택 시스템 제거됨 - 장수의 crew 직접 사용
+    if (!general) return;
+    const crew = general.crew ?? general.data?.crew ?? 0;
+    general.crew = crew;
+    general.data = general.data || {};
+    general.data.crew = crew;
+  }
+
+  /**
+   * 장수의 병력에 손실 적용 (general.data.crew 직접 감소)
    */
   private static async applyBattleLossToGeneral(
     sessionId: string,
     generalNo: number,
     totalLoss: number
   ): Promise<void> {
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
-    if (!stacks.length) return;
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const general = await generalRepository.findBySessionAndNo(sessionId, generalNo);
+    if (!general) return;
 
-    const totalCrew = stacks.reduce((sum, stack) => {
-      const hp = (stack as any).hp;
-      if (typeof hp === 'number') {
-        return sum + hp;
-      }
-      return sum + (stack.unit_size * stack.stack_count);
-    }, 0);
-
-    if (totalCrew === 0) return;
-
-    const lossRatio = Math.min(1, totalLoss / totalCrew);
-
-    for (const stack of stacks) {
-      const stackDoc = await unitStackRepository.findById(stack._id?.toString?.() || (stack as any)._id);
-      if (!stackDoc) continue;
-
-      const currentHp = stackDoc.hp;
-      const stackLoss = Math.floor(currentHp * lossRatio);
-      stackDoc.hp = Math.max(0, currentHp - stackLoss);
-
-      // HP가 0이 되면 스택 삭제
-      if (stackDoc.hp === 0) {
-        await unitStackRepository.deleteById(stackDoc._id?.toString?.() || (stackDoc as any)._id);
-      } else {
-        await stackDoc.save();
-      }
-    }
+    const currentCrew = general.crew ?? general.data?.crew ?? 0;
+    const newCrew = Math.max(0, currentCrew - totalLoss);
+    
+    await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+      crew: newCrew,
+      'data.crew': newCrew
+    });
   }
 
   /**
-   * 도시 방어 병력 계산 (주둔 병력 + 성벽)
+   * 도시 방어 병력 계산 (스택 시스템 제거됨 - 수비대 장수들의 crew 합산)
    */
   private static async getCityDefenseCrew(sessionId: string, cityId: number): Promise<number> {
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'city', cityId);
-    return stacks.reduce((sum, stack) => {
-      const hp = (stack as any).hp;
-      if (typeof hp === 'number') {
-        return sum + hp;
-      }
-      return sum + (stack.unit_size * stack.stack_count);
-    }, 0);
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const defenders = await generalRepository.findByCityId(sessionId, cityId);
+    return defenders.reduce((sum, d) => sum + (d.crew ?? d.data?.crew ?? 0), 0);
   }
 
   private static getUnitCrewValue(unit: any): number {
-    if (!unit) {
-      return 0;
-    }
-    if (typeof unit.crew === 'number') {
-      return unit.crew;
-    }
-    if (typeof unit.data?.crew === 'number') {
-      return unit.data.crew;
-    }
+    if (!unit) return 0;
+    if (typeof unit.crew === 'number') return unit.crew;
+    if (typeof unit.data?.crew === 'number') return unit.data.crew;
     return 0;
   }
 
   private static getStackTroopCount(stack: any): number {
-    if (!stack) {
-      return 0;
-    }
-    if (typeof stack.hp === 'number') {
-      return stack.hp;
-    }
-    const unitSize = stack.unit_size ?? 100;
-    const stackCount = stack.stack_count ?? 0;
-    return unitSize * stackCount;
+    // 스택 시스템 제거됨 - 호환성을 위해 유지
+    if (!stack) return 0;
+    if (typeof stack.hp === 'number') return stack.hp;
+    if (typeof stack.crew === 'number') return stack.crew;
+    return 0;
   }
 
   private static buildCityGarrisonUnits(city: any, stacks: any[], defenderNationID: number) {
-    if (!stacks?.length) {
-      return [] as any[];
-    }
-    return stacks
-      .map((stack) => {
-        const stackId = this.normalizeStackId(stack._id);
-        return {
-          no: `city-${stackId || 'unknown'}`,
-          name: `${city?.name || '도시'} 수비대`,
-          nation: defenderNationID,
-          crew: this.getStackTroopCount(stack),
-          crewtype: stack.crew_type_id ?? 110,
-          train: stack.train ?? 70,
-          atmos: stack.morale ?? 70,
-          leadership: 45,
-          strength: 45,
-          intel: 40,
-          npc: 9,
-          originStackId: stackId,
-        };
-      })
-      .filter((unit) => unit.crew > 0 && unit.originStackId);
+    // 스택 시스템 제거됨 - 빈 배열 반환
+    return [] as any[];
   }
 
   private static async applyBattleLossToCityGarrison(sessionId: string, cityId: number, totalLoss: number) {
-    if (!totalLoss || totalLoss <= 0) {
-      return;
-    }
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'city', cityId);
-    if (!stacks.length) {
-      return;
-    }
-    const totalCrew = stacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
-    if (totalCrew <= 0) {
-      return;
-    }
-    let remainingLoss = totalLoss;
-    for (const stack of stacks) {
-      const stackId = this.normalizeStackId(stack._id);
-      if (!stackId) {
-        continue;
-      }
-      const stackDoc = await unitStackRepository.findById(stackId);
-      if (!stackDoc) {
-        continue;
-      }
-      const hp = this.getStackTroopCount(stackDoc);
-      if (hp <= 0) {
-        continue;
-      }
-      const lossShare = Math.min(hp, Math.round((hp / totalCrew) * totalLoss));
-      stackDoc.hp = Math.max(0, hp - lossShare);
-      stackDoc.stack_count = Math.max(0, Math.ceil(stackDoc.hp / Math.max(1, stackDoc.unit_size)));
-      remainingLoss -= lossShare;
-      if (stackDoc.hp <= 0 || stackDoc.stack_count <= 0) {
-        await unitStackRepository.deleteById(stackId);
-      } else {
-        await stackDoc.save();
-      }
-    }
-    if (remainingLoss > 0) {
-      // distribute remaining loss in case of rounding
-      const survivors = await unitStackRepository.findByOwner(sessionId, 'city', cityId);
-      if (survivors.length && remainingLoss > 0) {
-        for (const stack of survivors) {
-          if (remainingLoss <= 0) {
-            break;
-          }
-          const stackId = this.normalizeStackId(stack._id);
-          if (!stackId) {
-            continue;
-          }
-          const stackDoc = await unitStackRepository.findById(stackId);
-          if (!stackDoc) {
-            continue;
-          }
-          const hp = this.getStackTroopCount(stackDoc);
-          if (hp <= 0) {
-            await unitStackRepository.deleteById(stackId);
-            continue;
-          }
-          const loss = Math.min(hp, remainingLoss);
-          stackDoc.hp = Math.max(0, hp - loss);
-          stackDoc.stack_count = Math.max(0, Math.ceil(stackDoc.hp / Math.max(1, stackDoc.unit_size)));
-          remainingLoss -= loss;
-          if (stackDoc.hp <= 0 || stackDoc.stack_count <= 0) {
-            await unitStackRepository.deleteById(stackId);
-          } else {
-            await stackDoc.save();
-          }
-        }
-      }
-    }
+    // 스택 시스템 제거됨 - 도시 수비대 손실은 장수 병력에서 처리
+    // 별도의 도시 주둔군 시스템이 필요하면 추후 구현
   }
 
   private static async applySiegeDamage(

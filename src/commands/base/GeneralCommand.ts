@@ -5,7 +5,6 @@
  */
 
 import { BaseCommand } from './BaseCommand';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 export abstract class GeneralCommand extends BaseCommand {
   
@@ -159,40 +158,17 @@ export abstract class GeneralCommand extends BaseCommand {
   }
 
   protected async syncGeneralUnitStackCity(cityId: number | null): Promise<void> {
-    const general = this.generalObj;
-    if (!general) return;
-    const sessionId = general.getSessionID?.() ?? this.env?.session_id;
-    const generalNo = general.getID?.() ?? general.no ?? general.data?.no;
-    if (!sessionId || !generalNo) {
-      return;
-    }
-    try {
-      await unitStackRepository.updateOwnerCity(sessionId, 'general', generalNo, cityId);
-    } catch (error) {
-      console.error('syncGeneralUnitStackCity 실패:', error);
-    }
+    // 스택 시스템 제거됨
   }
 
   protected async updateGeneralCity(cityId: number): Promise<void> {
     const general = this.generalObj;
     if (!general) return;
     general.data.city = cityId;
-    await this.syncGeneralUnitStackCity(cityId);
   }
 
   protected async updateOtherGeneralsCity(generalIds: Array<number | string>, cityId: number): Promise<void> {
-    if (!generalIds || generalIds.length === 0) return;
-    const sessionId = this.env?.session_id || this.generalObj?.getSessionID?.();
-    if (!sessionId) return;
-    const normalized = generalIds
-      .map((id) => typeof id === 'number' ? id : Number(id))
-      .filter((id) => Number.isFinite(id));
-    if (!normalized.length) return;
-    try {
-      await unitStackRepository.updateOwnersCity(sessionId, normalized, cityId);
-    } catch (error) {
-      console.error('updateOtherGeneralsCity 실패:', error);
-    }
+    // 스택 시스템 제거됨
   }
 }
 

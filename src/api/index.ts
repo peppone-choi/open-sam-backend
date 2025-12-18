@@ -35,6 +35,7 @@ import adminRouter from './admin/router/admin.router';
 import commandRouter from './command/router/command.router'; // ✅ CQRS Command Router
 import gameSessionRouter from './game-session/router/game-session.router';
 import entityUnifiedRouter from './unified/router/entity-unified.router';
+import tacticalRouter from './tactical/router/tactical.router'; // ✅ 전술전투 시스템
 // import entityV2Router from './v2/router/entity.router';
 
 /**
@@ -138,4 +139,7 @@ export const mountRoutes = (app: Express) => {
   // Entity System (v2)
   // app.use('/api/v2/entities', entityV2Router);
   app.use('/api/entities', entityUnifiedRouter);
+  
+  // Tactical Battle System (20x20 격자 전술전투)
+  app.use('/api/tactical', tacticalRouter);
 };

@@ -6,7 +6,7 @@ import { battleRepository } from '../../repositories/battle.repository';
 import { generalRepository } from '../../repositories/general.repository';
 import { cityRepository } from '../../repositories/city.repository';
 import { cityDefenseRepository } from '../../repositories/city-defense.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 
 export class StartBattleService {
   /**
@@ -162,8 +162,8 @@ export class StartBattleService {
       // 맵 정보 생성
       const mapInfo = this.createMapInfo(terrain, entryDirection, city, defenseState);
       
-      const garrisonStacks = await unitStackRepository.findByOwner(sessionId, 'city', targetCityId);
-      const garrisonUnits = this.buildCityGarrisonUnits(city, defenseState, garrisonStacks, defenderNationId, mapInfo);
+      // 스택 시스템 제거됨 - 도시 주둔군 없음
+      const garrisonUnits: any[] = [];
       if (garrisonUnits.length) {
         defenderUnits.push(...garrisonUnits);
       }
@@ -360,46 +360,22 @@ export class StartBattleService {
     sessionId: string,
     general: any,
   ): Promise<{ troops: number; maxTroops: number; training: number; morale: number }> {
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', general.no);
-    let totalTroops = 0;
-    let weightedTrain = 0;
-    let weightedMorale = 0;
-
-    for (const stack of stacks as any[]) {
-      const troops = this.getStackTroopCount(stack);
-      if (troops <= 0) continue;
-      totalTroops += troops;
-      const stackTrain = typeof stack.train === 'number' ? stack.train : 0;
-      const stackMorale = typeof stack.morale === 'number' ? stack.morale : 0;
-      weightedTrain += stackTrain * troops;
-      weightedMorale += stackMorale * troops;
-    }
-
-    const rawCrew = (general as any).crew ?? (general as any).data?.crew ?? 0;
-    const fallbackCrew = typeof rawCrew === 'number' && Number.isFinite(rawCrew) ? rawCrew : 0;
-    const troops = totalTroops > 0 ? totalTroops : Math.max(0, fallbackCrew);
-
-    const baseTrain = (general as any).train ?? (general as any).data?.train ?? 0;
-    const baseAtmos = (general as any).atmos ?? (general as any).data?.atmos ?? 50;
-
-    const training = totalTroops > 0
-      ? Math.round(weightedTrain / totalTroops)
-      : baseTrain;
-    const morale = totalTroops > 0
-      ? Math.round(weightedMorale / totalTroops)
-      : baseAtmos;
+    // 스택 시스템 제거됨 - 장수의 crew/train/atmos 직접 사용
+    const troops = (general as any).crew ?? (general as any).data?.crew ?? 0;
+    const training = (general as any).train ?? (general as any).data?.train ?? 0;
+    const morale = (general as any).atmos ?? (general as any).data?.atmos ?? 50;
 
     return {
-      troops,
-      maxTroops: troops,
+      troops: Math.max(0, troops),
+      maxTroops: Math.max(0, troops),
       training,
       morale,
     };
   }
 
   /**
-   * 멀티 스택 전투: 장수의 각 스택을 개별 전투 유닛으로 변환
-   * 토탈 워 스타일 - 장수 1명이 여러 병종 스택을 독립 제어
+   * 멀티 스택 전투 - 스택 시스템 제거됨
+   * 장수 1명 = 1개 유닛으로 단순화
    */
   private static async buildGeneralMultiStackUnits(
     sessionId: string,
@@ -408,7 +384,7 @@ export class StartBattleService {
     stance: 'aggressive' | 'defensive' = 'aggressive',
     isAIControlled: boolean = false
   ): Promise<IBattleUnit[]> {
-    const stacks = await unitStackRepository.findByOwner(sessionId, 'general', general.no);
+    // 스택 시스템 제거됨 - 장수당 단일 유닛 생성
     const units: IBattleUnit[] = [];
     
     const generalLeadership = general.leadership || 50;

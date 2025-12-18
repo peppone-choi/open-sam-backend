@@ -351,6 +351,55 @@ export class AdminGameSettingsService {
   }
 
   /**
+   * 전술전투 설정 변경
+   * @param sessionId 세션 ID
+   * @param maxTurns 최대 전술턴 수 (기본 15)
+   */
+  static async setTacticalBattleSettings(sessionId: string, maxTurns: number) {
+    try {
+      const session = await sessionRepository.findBySessionId(sessionId);
+      if (!session) {
+        return { success: false, message: '세션을 찾을 수 없습니다' };
+      }
+
+      // 유효성 검사 (5~50턴)
+      if (maxTurns < 5 || maxTurns > 50) {
+        return {
+          success: false,
+          message: '전술전투 최대 턴 수는 5~50 사이여야 합니다',
+        };
+      }
+
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      
+      session.data.tacticalMaxTurns = maxTurns;
+      session.data.game_env.tacticalMaxTurns = maxTurns;
+      
+      // 턴 시간 계산 (전략턴 / 전술턴수)
+      const turnterm = session.data.game_env.turnterm || session.turnterm || 5;
+      const turnTimeLimit = Math.max(10, Math.floor((turnterm * 60) / maxTurns));
+      
+      session.markModified('data');
+      session.markModified('data.game_env');
+      
+      await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
+
+      return {
+        success: true,
+        message: `전술전투 설정 변경: 최대 ${maxTurns}턴, 턴당 ${turnTimeLimit}초`,
+        data: {
+          maxTurns,
+          turnTimeLimit,
+        },
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
    * 게임 설정 조회
    */
   static async getSettings(sessionId: string) {
@@ -361,6 +410,11 @@ export class AdminGameSettingsService {
       }
 
       const gameEnv = session.data?.game_env || {};
+
+      // 전술전투 설정
+      const tacticalMaxTurns = session.data?.tacticalMaxTurns || gameEnv.tacticalMaxTurns || 15;
+      const turnterm = gameEnv.turnterm || session.turnterm || 5;
+      const tacticalTurnTimeLimit = Math.max(10, Math.floor((turnterm * 60) / tacticalMaxTurns));
 
       return {
         success: true,
@@ -374,6 +428,9 @@ export class AdminGameSettingsService {
           turntime: gameEnv.turntime || new Date(),
           year: gameEnv.year || 220,
           month: gameEnv.month || 1,
+          // 전술전투 설정
+          tacticalMaxTurns,
+          tacticalTurnTimeLimit,
         },
       };
     } catch (error: any) {

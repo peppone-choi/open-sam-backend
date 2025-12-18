@@ -5,13 +5,7 @@ import {
   CommandTestHelper,
 } from './test-helpers';
 
-jest.mock('../../repositories/unit-stack.repository', () => ({
-  unitStackRepository: {
-    updateOwnerCity: jest.fn().mockResolvedValue(undefined),
-    updateOwnersCity: jest.fn().mockResolvedValue(undefined),
-    findByOwner: jest.fn().mockResolvedValue([]),
-  },
-}));
+// 스택 시스템 제거됨
 
 jest.mock('../../events/StaticEventHandler', () => ({
   StaticEventHandler: {

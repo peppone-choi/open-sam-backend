@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { BattleService } from '../../../services/battle/BattleService';
 import { HttpException } from '../../../common/errors/HttpException';
+import { conflictService } from '../../../services/war/Conflict.service';
 
 /**
  * 전투 컨트롤러
@@ -455,6 +456,96 @@ export class BattleController {
         data: {
           battleId,
           deleted: true
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // ============================================
+  // 분쟁/공략 진행 상황 (전투 Bar)
+  // ============================================
+
+  /**
+   * 도시 공략 진행 상황 조회 (전투 Bar)
+   */
+  getCityProgress = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { sessionId, cityId } = req.params;
+      const cityIdNum = Number(cityId);
+
+      if (!sessionId) {
+        throw new HttpException(400, '세션 ID가 필요합니다.');
+      }
+      if (isNaN(cityIdNum)) {
+        throw new HttpException(400, '유효한 도시 ID가 필요합니다.');
+      }
+
+      const progress = await conflictService.getBattleProgress(sessionId, cityIdNum);
+      
+      if (!progress) {
+        throw new HttpException(404, '도시를 찾을 수 없습니다.');
+      }
+
+      res.json({
+        success: true,
+        data: progress
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 모든 분쟁 중인 도시 조회
+   */
+  getAllConflicts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const sessionId = req.query.sessionId as string;
+
+      if (!sessionId) {
+        throw new HttpException(400, '세션 ID가 필요합니다.');
+      }
+
+      const conflicts = await conflictService.getAllConflictCities(sessionId);
+
+      res.json({
+        success: true,
+        data: conflicts,
+        meta: {
+          count: conflicts.length,
+          sessionId
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * 도시 분쟁 참가자 조회
+   */
+  getConflictParticipants = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { sessionId, cityId } = req.params;
+      const cityIdNum = Number(cityId);
+
+      if (!sessionId) {
+        throw new HttpException(400, '세션 ID가 필요합니다.');
+      }
+      if (isNaN(cityIdNum)) {
+        throw new HttpException(400, '유효한 도시 ID가 필요합니다.');
+      }
+
+      const participants = await conflictService.getConflictParticipants(sessionId, cityIdNum);
+
+      res.json({
+        success: true,
+        data: participants,
+        meta: {
+          cityId: cityIdNum,
+          participantCount: participants.length
         }
       });
     } catch (error) {

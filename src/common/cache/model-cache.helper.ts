@@ -494,29 +494,11 @@ export async function saveCommand(sessionId: string, generalId: number, turnIdx:
 }
 
 /**
- * UnitStack 저장/업데이트 (Redis → L1 → DB 즉시)
- * 병력 데이터는 중요하므로 DB에도 즉시 저장
+ * UnitStack 저장/업데이트 - 스택 시스템 제거됨
+ * @deprecated 스택 시스템이 제거되어 이 함수는 더 이상 사용되지 않습니다.
  */
 export async function saveUnitStack(sessionId: string, stackId: string, data: any) {
-  const key = `unitstack:${sessionId}:${stackId}`;
-  
-  // 1. Redis(L2)에 저장
-  await cacheManager.setL2(key, data, TTL.SHORT);
-  
-  // 2. L1 캐시 업데이트
-  await cacheManager.setL1(key, data);
-  
-  // 3. DB 즉시 저장 (병력은 중요 데이터)
-  const { UnitStack } = await import('../../models/unit-stack.model');
-  UnitStack.updateOne(
-    { _id: stackId },
-    { $set: sanitizeForSync(data) },
-    { upsert: true }
-  ).catch(err => {
-    logger.warn('UnitStack DB 즉시 업데이트 실패', { sessionId, stackId, err: err?.message });
-  });
-  
-  logger.debug('UnitStack Redis 저장', { sessionId, stackId });
+  // 스택 시스템 제거됨
   return data;
 }
 

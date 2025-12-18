@@ -27,12 +27,7 @@ jest.mock('../../../repositories/nation.repository', () => ({
   }
 }));
 
-jest.mock('../../../repositories/unit-stack.repository', () => ({
-  unitStackRepository: {
-    findByOwner: jest.fn().mockResolvedValue([]),
-    findById: jest.fn().mockResolvedValue(null)
-  }
-}));
+// 스택 시스템 제거됨
 
 describe('BoostMoraleCommand', () => {
   describe('기본 구조 테스트', () => {
@@ -192,16 +187,8 @@ describe('BoostMoraleCommand', () => {
         { /* arg */ }
       );
 
-      // Mock setup
+      // Mock setup - 스택 시스템 제거됨
       command['hasFullConditionMet'] = jest.fn().mockReturnValue(true);
-      command['getUnitStacks'] = jest.fn().mockReturnValue([{
-        _id: 'stack1',
-        morale: 50,
-        train: 50,
-        unit_size: 1000,
-        stack_count: 1
-      }]);
-      command['applyMoraleToStacks'] = jest.fn().mockResolvedValue(undefined);
       command['saveGeneral'] = jest.fn().mockResolvedValue(undefined);
 
       // Mock RNG

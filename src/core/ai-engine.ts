@@ -1,8 +1,7 @@
 import { IGeneral } from '../models/general.model';
 import { ICity } from '../models/city.model';
 import { INation } from '../models/nation.model';
-import { unitStackRepository } from '../repositories/unit-stack.repository';
-import { IUnitStack } from '../models/unit_stack.model';
+// 스택 시스템 제거됨
 import {
   DiplomacyEngine,
   DIP_STATE,
@@ -213,31 +212,13 @@ export class AIEngine {
     return unitSize * stackCount;
   }
   
-  private async getGeneralUnitStacks(general: any, env: any): Promise<IUnitStack[]> {
-    const sessionId = env?.session_id;
-    const generalNo = general?.data?.no ?? general?.no;
-    if (!sessionId || !generalNo) {
-      return [];
-    }
-    try {
-      return await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
-    } catch (error) {
-      console.error('[AI] Failed to load unit stacks:', error);
-      return [];
-    }
+  // 스택 시스템 제거됨 - 빈 배열 반환
+  private async getGeneralUnitStacks(general: any, env: any): Promise<any[]> {
+    return [];
   }
   
-  private async getCityUnitStacks(cityId: number, env: any): Promise<IUnitStack[]> {
-    const sessionId = env?.session_id;
-    if (!sessionId || !cityId) {
-      return [];
-    }
-    try {
-      return await unitStackRepository.findByOwner(sessionId, 'city', cityId);
-    } catch (error) {
-      console.error('[AI] Failed to load city unit stacks:', error);
-      return [];
-    }
+  private async getCityUnitStacks(cityId: number, env: any): Promise<any[]> {
+    return [];
   }
   
   private refreshGeneralStackStats(general: any): void {

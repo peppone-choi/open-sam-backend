@@ -174,6 +174,49 @@ export class ExecuteEngineService {
         };
       }
 
+      // === 전술전투 처리 ===
+      try {
+        const { TacticalBattle, BattleStatus } = await import('../../models/tactical_battle.model');
+        const { TacticalBattleAIService } = await import('../tactical/TacticalBattleAI.service');
+        const { TacticalBattleEngineService } = await import('../tactical/TacticalBattleEngine.service');
+        
+        const now = new Date();
+        
+        // 1. 대기 시간 초과 전투 자동 시뮬레이션
+        const waitingBattles = await TacticalBattle.find({
+          session_id: sessionId,
+          status: BattleStatus.WAITING,
+        });
+        
+        for (const battle of waitingBattles) {
+          const waitTime = (now.getTime() - battle.createdAt.getTime()) / 1000;
+          
+          if (waitTime >= battle.maxWaitTime) {
+            logger.info('[ExecuteEngine] 전술전투 대기 시간 초과, 자동 시뮬레이션', {
+              battleId: battle.battle_id,
+              waitTime: Math.round(waitTime),
+              maxWaitTime: battle.maxWaitTime,
+            });
+            
+            // 자동 시뮬레이션 실행
+            await TacticalBattleAIService.simulateBattle(battle.battle_id);
+          }
+        }
+        
+        // 2. 진행 중 전투의 턴 시간 초과 처리
+        const processedTurns = await TacticalBattleEngineService.processTimeoutTurns(sessionId);
+        if (processedTurns.length > 0) {
+          logger.info('[ExecuteEngine] 전술전투 턴 시간 초과 처리', {
+            count: processedTurns.length,
+            battleIds: processedTurns,
+          });
+        }
+      } catch (tacticalError: any) {
+        logger.warn('[ExecuteEngine] 전술전투 처리 실패 (계속 진행)', {
+          error: tacticalError?.message,
+        });
+      }
+
       // game_env의 데이터를 sessionData 최상위로 플랫화 (호환성)
       // 기존 코드는 sessionData.turnterm 직접 접근, 신규는 sessionData.game_env.turnterm
       if (sessionData.game_env.turnterm !== undefined) sessionData.turnterm = sessionData.game_env.turnterm;

@@ -20,7 +20,7 @@ import { invalidateCache } from '../../common/cache/model-cache.helper';
 import { scanSyncQueue, getSyncQueueItem, removeFromSyncQueue } from '../../common/cache/sync-queue.helper';
 import { selectNpcTokenRepository } from '../../repositories/select-npc-token.repository';
 import { selectPoolRepository } from '../../repositories/select-pool.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 import { generateInitialGarrisonsForCities } from '../helpers/garrison.helper';
 import { NgHistory } from '../../models/ng_history.model';
@@ -247,7 +247,7 @@ export class ScenarioResetService {
       worldHistoryRepository.deleteBySession(sessionId),
       selectNpcTokenRepository.deleteBySession(sessionId),
       selectPoolRepository.deleteBySession(sessionId),
-      unitStackRepository.deleteBySession(sessionId),
+      // 스택 시스템 제거됨
       diplomacyRepository.deleteBySession(sessionId)
     ]);
  
@@ -570,19 +570,8 @@ export class ScenarioResetService {
     scenarioId: string,
     cities: any[]
   ): Promise<void> {
-    const entries = generateInitialGarrisonsForCities(scenarioId, cities);
-    if (!entries.length) {
-      console.log('[ScenarioReset] Garrison data is empty, skipping');
-      return;
-    }
-
-    let totalStacks = 0;
-    for (const entry of entries) {
-      await unitStackRepository.bulkCreate(sessionId, 'city', entry.cityId, entry.stacks);
-      totalStacks += entry.stacks.length;
-    }
-
-    console.log(`[ScenarioReset] Created ${totalStacks} garrison stacks across ${entries.length} cities`);
+    // 스택 시스템 제거됨 - 주둔병 초기화 스킵
+    console.log('[ScenarioReset] Stack system removed, skipping garrison initialization');
   }
 
   /**

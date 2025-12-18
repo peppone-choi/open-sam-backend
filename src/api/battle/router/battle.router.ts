@@ -139,6 +139,33 @@ router.post('/:battleId/surrender', authMiddleware, controller.surrender);
 router.post('/:battleId/cancel', authMiddleware, controller.cancelBattle);
 
 // ============================================
+// 분쟁/공략 진행 상황 (전투 Bar)
+// ============================================
+
+/**
+ * GET /api/battle/conflict
+ * 모든 분쟁 중인 도시 조회
+ * @query sessionId - 세션 ID (필수)
+ */
+router.get('/conflict', authMiddleware, controller.getAllConflicts);
+
+/**
+ * GET /api/battle/conflict/:sessionId/:cityId
+ * 도시 공략 진행 상황 조회 (전투 Bar)
+ * @param sessionId - 세션 ID
+ * @param cityId - 도시 ID
+ */
+router.get('/conflict/:sessionId/:cityId', authMiddleware, controller.getCityProgress);
+
+/**
+ * GET /api/battle/conflict/:sessionId/:cityId/participants
+ * 도시 분쟁 참가자 조회
+ * @param sessionId - 세션 ID
+ * @param cityId - 도시 ID
+ */
+router.get('/conflict/:sessionId/:cityId/participants', authMiddleware, controller.getConflictParticipants);
+
+// ============================================
 // 관리자 전용
 // ============================================
 

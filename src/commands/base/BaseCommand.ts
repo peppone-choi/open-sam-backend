@@ -7,7 +7,6 @@
 import { LastTurn as ExternalLastTurn } from '../../types/LastTurn';
 import { ActionLogger } from '../../services/logger/ActionLogger';
 import { CityConst } from '../../const/CityConst';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { INation } from '../../models/nation.model';
 import { 
   invalidateCache, 
@@ -16,8 +15,7 @@ import {
   saveNation as cacheSaveNation,
   saveTroop as cacheSaveTroop,
   saveDiplomacy as cacheSaveDiplomacy,
-  saveCommand as cacheSaveCommand,
-  saveUnitStack as cacheSaveUnitStack
+  saveCommand as cacheSaveCommand
 } from '../../common/cache/model-cache.helper';
 import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
@@ -114,6 +112,7 @@ export abstract class BaseCommand {
   protected generalObj: any;
   protected city: ICity | null = null;
   protected nation: INation | null = null;
+  // 스택 시스템 제거됨
   protected cachedUnitStacks: Record<string, any[]> = {};
   protected unitStacksDirty: boolean = false;
   protected dirtyGenerals = new Set<number>();
@@ -269,19 +268,11 @@ export abstract class BaseCommand {
       }
     }
 
-    await this.ensureUnitStacksCache();
+    // 스택 시스템 제거됨
   }
 
   protected async ensureUnitStacksCache(): Promise<void> {
-    const sessionId = this.env?.session_id;
-    if (!sessionId) return;
-    const generalNo = this.generalObj?.getID?.() ?? this.generalObj?.no ?? this.generalObj?.data?.no;
-    if (!generalNo) return;
-    const cacheKey = `${sessionId}:${generalNo}`;
-    if (this.cachedUnitStacks[cacheKey]) {
-      return;
-    }
-    this.cachedUnitStacks[cacheKey] = await unitStackRepository.findByOwner(sessionId, 'general', generalNo);
+    // 스택 시스템 제거됨
   }
 
   protected getCachedUnitStacks(): any[] {
@@ -403,29 +394,8 @@ export abstract class BaseCommand {
   }
  
   protected async syncGeneralTroopData(sessionId?: string, generalNo?: number): Promise<void> {
-    const effectiveSessionId = sessionId || this.env?.session_id || this.generalObj?.getSessionID?.() || 'sangokushi_default';
-    const effectiveGeneralNo = generalNo || this.generalObj?.getID?.() || this.generalObj?.no || this.generalObj?.data?.no;
-    if (!effectiveGeneralNo) {
-      return;
-    }
- 
-    const stacks = await unitStackRepository.findByOwner(effectiveSessionId, 'general', effectiveGeneralNo);
-    const totalTroops = stacks.reduce((sum, stack) => sum + (stack.hp ?? (stack.unit_size ?? 100) * (stack.stack_count ?? 0)), 0);
-    this.generalObj.data.crew = totalTroops;
-    if (stacks.length > 0) {
-      const primary = stacks[0];
-      this.generalObj.data.crewtype = primary.crew_type_id ?? 0;
-      this.generalObj.data.train = primary.train ?? 0;
-      this.generalObj.data.atmos = primary.morale ?? 0;
-    } else {
-      this.generalObj.data.crewtype = 0;
-      this.generalObj.data.train = 0;
-      this.generalObj.data.atmos = 0;
-    }
- 
-    if (typeof this.generalObj.markModified === 'function') {
-      this.generalObj.markModified('data');
-    }
+    // 스택 시스템 제거됨 - 장수의 crew 직접 사용
+    // 이 함수는 호환성을 위해 유지
   }
  
   protected async setNation(args: string[] | null = null): Promise<void> {

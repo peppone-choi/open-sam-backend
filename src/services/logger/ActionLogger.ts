@@ -69,6 +69,20 @@ export class ActionLogger {
   }
 
   /**
+   * ✅ 현재 년도 반환
+   */
+  getYear(): number {
+    return this.year;
+  }
+
+  /**
+   * ✅ 현재 월 반환
+   */
+  getMonth(): number {
+    return this.month;
+  }
+
+  /**
    * ✅ 현재 로그 개수 반환 (디버깅/모니터링용)
    */
   getLogCount(): number {

@@ -3,7 +3,6 @@ import { cityRepository } from '../../repositories/city.repository';
 import { nationRepository } from '../../repositories/nation.repository';
 import { sessionRepository } from '../../repositories/session.repository';
 import { troopRepository } from '../../repositories/troop.repository';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { CommandFactory } from '../../core/command/CommandFactory';
 import { logger } from '../../common/logger';
 import { GameConst } from '../../constants/GameConst';
@@ -14,12 +13,9 @@ import { calculateDistanceList } from '../../utils/cityDistance';
 import { GetConstService } from '../global/GetConst.service';
 import { diplomacyRepository } from '../../repositories/diplomacy.repository';
 import type { ICity } from '../../models/city.model';
-import type { IUnitStack } from '../../models/unit_stack.model';
 
-type UnitStackDoc = Partial<IUnitStack> & {
-  _id?: { toString(): string } | string;
-  id?: string;
-};
+// 스택 시스템 제거됨
+type UnitStackDoc = any;
 
 
 /**
@@ -424,15 +420,9 @@ export class GetProcessingCommandService {
       ? ((await cityRepository.findByCityNum(sessionId, currentCityId)) as Partial<ICity> | null)
       : null;
 
-    const generalStacksRaw = (await unitStackRepository.findByOwner(
-      sessionId,
-      'general',
-      general.no
-    )) as UnitStackDoc[];
-
-    const cityStacksRaw = currentCityId
-      ? ((await unitStackRepository.findByOwner(sessionId, 'city', currentCityId)) as UnitStackDoc[])
-      : [];
+    // 스택 시스템 제거됨
+    const generalStacksRaw: UnitStackDoc[] = [];
+    const cityStacksRaw: UnitStackDoc[] = [];
 
     const formatStack = (stack: UnitStackDoc) => ({
       id: stack._id ? stack._id.toString() : stack.id,
@@ -877,15 +867,9 @@ export class GetProcessingCommandService {
         (general as any).crewtype // fallback for legacy fields
       ) || 1100;
 
-    const generalStacksRaw = (await unitStackRepository.findByOwner(
-      sessionId,
-      'general',
-      generalId
-    )) as UnitStackDoc[];
-
-    const cityStacksRaw = generalCityId
-      ? ((await unitStackRepository.findByOwner(sessionId, 'city', generalCityId)) as UnitStackDoc[])
-      : [];
+    // 스택 시스템 제거됨
+    const generalStacksRaw: UnitStackDoc[] = [];
+    const cityStacksRaw: UnitStackDoc[] = [];
 
     const formatStack = (stack: UnitStackDoc) => ({
       id: stack._id ? stack._id.toString() : stack.id,

@@ -37,13 +37,22 @@ export class GetNationListService {
           ...nationData,
           nation: nation.nation,
           name: nation.name,
-          type: {
-            raw: nationType,
+          color: nation.color || nationData.color || '#666666',
+          level: nationData.level ?? 0,
+          power: nationData.power ?? 0,
+          capital: nationData.capital ?? 0,
+          gold: nationData.gold ?? 0,
+          rice: nationData.rice ?? 0,
+          tech: nationData.tech ?? 0,
+          gennum: nationData.gennum ?? 0,
+          type: nationType, // raw type string for frontend
+          typeInfo: {
             name: typeInfo.name,
             pros: typeInfo.pros,
             cons: typeInfo.cons
           },
-          topChiefs: {} // 지도자 정보는 나중에 추가
+          generals: [],
+          cities: {}
         };
       }
 
@@ -57,26 +66,23 @@ export class GetNationListService {
         sortedNations[nation.nation] = nation;
       }
 
-      // Get nation 0 (neutral) if exists
-      const neutralNation = await nationRepository.findByNationNum(sessionId, 0 );
-      if (neutralNation) {
-        const neutralData = neutralNation.data || {};
-        const neutralType = neutralData.type || null;
-        const neutralTypeInfo = getNationTypeInfo(neutralType);
-        
-        sortedNations[0] = {
-          ...neutralData,
-          nation: 0,
-          name: neutralNation.name,
-          type: {
-            raw: neutralType,
-            name: neutralTypeInfo.name,
-            pros: neutralTypeInfo.pros,
-            cons: neutralTypeInfo.cons
-          },
-          topChiefs: {} // 지도자 정보 초기화
-        };
-      }
+      // Get nation 0 (neutral/wandering) - always exists
+      sortedNations[0] = {
+        nation: 0,
+        name: '재야',
+        color: '#666666',
+        level: 0,
+        power: 0,
+        capital: 0,
+        gold: 0,
+        rice: 0,
+        tech: 0,
+        gennum: 0,
+        type: 'neutral',
+        typeInfo: { name: '중립', pros: '', cons: '' },
+        generals: [],
+        cities: {}
+      };
 
       // Get all generals ordered by dedication DESC
       const generals = (await generalRepository.findBySession(sessionId))
@@ -85,16 +91,19 @@ export class GetNationListService {
       // Add generals to their nations
       for (const general of generals) {
         const genData = general.data as any || {};
-        const nationID = genData.nation || 0;
-        const officerLevel = genData.officer_level || 1;
+        const nationID = genData.nation ?? 0;
+        const officerLevel = genData.officer_level ?? 1;
+        const npc = genData.npc ?? (general.owner === 'NPC' ? 2 : 0);
         
         // Extract general info
         const generalInfo: any = {
-          npc: general.owner === 'NPC' ? 1 : 0,
           no: general.no,
           name: general.name,
+          npc: npc,
           nation: nationID,
+          city: genData.city ?? 0,
           officer_level: officerLevel,
+          dedication: genData.dedication ?? 0,
         };
 
         // Add permission if auditor or ambassador
@@ -103,25 +112,16 @@ export class GetNationListService {
           generalInfo.permission = permission;
         }
 
-        // 지도자 정보 추가 (군주=12, 부군주=11 등)
-        if (officerLevel >= 11 && sortedNations[nationID]) {
-          if (!sortedNations[nationID].topChiefs) {
-            sortedNations[nationID].topChiefs = {};
-          }
-          sortedNations[nationID].topChiefs[officerLevel] = generalInfo;
-        }
-
-        // Simplify officer_level (< 5 becomes 1)
-        if (generalInfo.officer_level < 5) {
-          generalInfo.officer_level = 1;
-        }
-
-        // Initialize generals array if needed
+        // Initialize nation if needed
         if (!sortedNations[nationID]) {
-          sortedNations[nationID] = { nation: nationID, generals: [] };
-        }
-        if (!sortedNations[nationID].generals) {
-          sortedNations[nationID].generals = [];
+          sortedNations[nationID] = { 
+            nation: nationID, 
+            name: `국가${nationID}`,
+            color: '#666666',
+            level: 0,
+            generals: [],
+            cities: {}
+          };
         }
 
         sortedNations[nationID].generals.push(generalInfo);

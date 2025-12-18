@@ -8,7 +8,7 @@ import { nationRepository } from '../repositories/nation.repository';
 import { sessionRepository } from '../repositories/session.repository';
 import { generalRepository } from '../repositories/general.repository';
 import { SessionSync } from '../utils/session-sync';
-import { unitStackRepository } from '../repositories/unit-stack.repository';
+// 스택 시스템 제거됨
 import { generateInitialGarrisonsForCities } from './helpers/garrison.helper';
 import { saveCity, saveNation, saveSession } from '../common/cache/model-cache.helper';
 
@@ -138,8 +138,8 @@ export class InitService {
     ]);
     console.log(`   ✓ 도시, 국가, 장수 삭제 완료`);
 
-    const unitStackDeleteResult = await unitStackRepository.deleteBySession(sessionId);
-    console.log(`   ✓ 주둔/부대 정보 삭제 완료 (${unitStackDeleteResult.deletedCount} stacks)`);
+    // 스택 시스템 제거됨
+    console.log(`   ✓ 주둔/부대 정보 (스택 시스템 제거됨)`);
     
     // 3-2. 관련 데이터 삭제 (에러가 나도 계속 진행)
     try {
@@ -464,19 +464,8 @@ export class InitService {
   }
 
   private static async initializeGarrisons(sessionId: string, scenarioId: string, cities: any[]): Promise<void> {
-    const entries = generateInitialGarrisonsForCities(scenarioId, cities);
-    if (!entries.length) {
-      console.log('   ⚠️  주둔병 데이터가 비어있어 스킵합니다');
-      return;
-    }
-
-    let totalStacks = 0;
-    for (const entry of entries) {
-      await unitStackRepository.bulkCreate(sessionId, 'city', entry.cityId, entry.stacks);
-      totalStacks += entry.stacks.length;
-    }
-
-    console.log(`   ✅ 초기 주둔병 ${totalStacks}개 스택 배치 (도시 ${entries.length}곳)`);
+    // 스택 시스템 제거됨 - 주둔병은 장수 병력으로 대체
+    console.log(`   ⚠️  스택 시스템 제거됨 - 주둔병 초기화 스킵`);
   }
   
   // initializeFromTemplate는 제거됨

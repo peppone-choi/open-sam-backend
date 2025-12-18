@@ -1,17 +1,13 @@
-// @ts-nocheck - Type issues need review
 import { GeneralCommand } from '../base/GeneralCommand';
-import { RandUtil } from '../../utils/RandUtil';
-import { LastTurn } from '../../types/LastTurn';
+import { LastTurn } from '../base/BaseCommand';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
-import { StaticEventHandler } from '../../events/StaticEventHandler';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 import { cityRepository } from '../../repositories/city.repository';
-import type { ICity } from '../../models/city.model';
 
 /**
  * 소집해제 커맨드
  * 
  * 병사들을 전원 해산하고 도시 인구로 되돌립니다.
+ * 스택 시스템 제거됨 - 장수의 crew만 사용
  */
 export class DismissCommand extends GeneralCommand {
   protected static actionName = '소집해제';
@@ -22,8 +18,6 @@ export class DismissCommand extends GeneralCommand {
   }
 
   protected init(): void {
-    const general = this.generalObj;
-
     this.setCity();
     this.setNation();
 
@@ -32,92 +26,59 @@ export class DismissCommand extends GeneralCommand {
     ];
   }
 
-  private getUnitStacks(): any[] {
-    return this.getCachedUnitStacks();
-  }
-
-  private getStackTroopCount(stack: any): number {
-    const hp = stack?.hp;
-    if (typeof hp === 'number') {
-      return hp;
-    }
-    const unitSize = stack?.unit_size ?? 100;
-    const stackCount = stack?.stack_count ?? 0;
-    return unitSize * stackCount;
-  }
-
   public getCommandDetailTitle(): string {
-    const name = (this.constructor as typeof DismissCommand).getName();
-    return `${name}(병사↓, 인구↑)`;
+    return `${(this.constructor as typeof GeneralCommand).getName()}`;
   }
 
   public getCost(): [number, number] {
     return [0, 0];
   }
 
-  public getPreReqTurn(): number {
-    return 0;
-  }
+  public getPreReqTurn(): number { return 0; }
+  public getPostReqTurn(): number { return 0; }
 
-  public getPostReqTurn(): number {
-    return 0;
-  }
-
-  public async run(rng: RandUtil): Promise<boolean> {
+  public async run(rng: any): Promise<boolean> {
     if (!this.hasFullConditionMet()) {
       throw new Error('불가능한 커맨드를 강제로 실행 시도');
     }
 
     const general = this.generalObj;
-    const date = general.getTurnTime('HM');
     const logger = general.getLogger();
+    const date = `${this.env.year}년 ${this.env.month}월`;
 
-    logger.pushGeneralActionLog(`병사들을 <R>소집해제</>하였습니다. <1>${date}</>`);
- 
-    const exp = 70;
-    const ded = 100;
- 
-    // UnitStack에서 총 병력 수 계산
-    await this.ensureUnitStacksCache();
-    const unitStacks = this.getUnitStacks();
-    const totalCrew = unitStacks.reduce((sum, stack) => sum + this.getStackTroopCount(stack), 0);
+    const crew = general.data.crew ?? 0;
     
-    // 레거시 crew 값과 비교하여 최대값 사용 (안전장치)
-    const actualCrew = Math.max(totalCrew, general.data.crew || 0);
-
-
-    const crewUp = general.onCalcDomestic('징집인구', 'score', actualCrew);
-
-    // 도시 인구 증가 (MongoDB - BaseCommand.incrementCity 사용)
-    const sessionId = this.env.session_id || general.getSessionID() || 'sangokushi_default';
-    const cityId = general.getCityID();
-    
-    await this.incrementCity(cityId, { pop: crewUp });
-
-    // UnitStack 전체 삭제
-    for (const stack of unitStacks) {
-      try {
-        await unitStackRepository.deleteById(stack._id?.toString?.() || stack._id);
-      } catch (error) {
-        console.error('UnitStack 삭제 실패:', error);
-      }
+    if (crew <= 0) {
+      logger.pushGeneralActionLog(`해산할 병사가 없습니다. <1>${date}</>`);
+      return false;
     }
-    this.markUnitStacksDirty();
-    await this.syncGeneralTroopData(sessionId, general.getID?.() ?? general.no ?? general.data?.no);
- 
-    // 레거시 crew 값도 0으로 설정
-    general.data.crew = 0;
- 
-    general.data.train = 0;
-    general.data.atmos = 0;
 
+    // 도시 인구로 복귀
+    if (this.city?.city) {
+      const sessionId = this.env.session_id || 'sangokushi_default';
+      const newPop = (this.city.pop ?? 0) + crew;
+      
+      await cityRepository.updateByCityNum(sessionId, this.city.city, {
+        pop: newPop
+      });
+      
+      this.city.pop = newPop;
+    }
 
-    general.addExperience(exp);
-    general.addDedication(ded);
-    this.setResultTurn(new LastTurn((this.constructor as typeof DismissCommand).getName(), this.arg));
+    // 장수 병력 초기화
+    general.setVar('crew', 0);
+    general.setVar('train', 0);
+    general.setVar('atmos', 0);
+
+    logger.pushGeneralActionLog(`병사 <C>${crew.toLocaleString()}</>명을 해산했습니다. <1>${date}</>`);
+
+    general.addExperience(1);
+    general.addDedication(1);
+
+    this.setResultTurn(new LastTurn((this.constructor as typeof GeneralCommand).getName(), this.arg));
     general.checkStatChange();
-    // 공통 후처리 (해산은 아이템 추첨 제외)
-    await this.postRunHooks(rng, { skipItemLottery: true });
+
+    await this.postRunHooks(rng);
     await this.saveGeneral();
 
     return true;

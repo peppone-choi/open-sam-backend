@@ -5,7 +5,6 @@ import { JosaUtil } from '../../utils/JosaUtil';
 import { generalRepository } from '../../repositories/general.repository';
 import { General } from '../../models/general.model';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
-import { unitStackRepository } from '../../repositories/unit-stack.repository';
 
 /**
  * 등용 커맨드
@@ -189,7 +188,7 @@ export class RecruitCommand extends GeneralCommand {
       destGeneral.data.city = targetCityId;
       destGeneral.data.belongs = general.getNationID();
       
-      await unitStackRepository.updateOwnerCity(general.getSessionID(), 'general', destGeneralID, targetCityId);
+      // 스택 시스템 제거됨
       await destGeneral.save();
     } else {
       // 등용 실패

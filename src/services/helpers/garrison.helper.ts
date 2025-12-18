@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { GameUnitConst } from '../../const/GameUnitConst';
-import type { IUnitStack } from '../../models/unit_stack.model';
+
+// 스택 시스템 제거됨
+type IUnitStack = any;
 
 export interface ParsedGarrisonEntry {
   cityId: number;
