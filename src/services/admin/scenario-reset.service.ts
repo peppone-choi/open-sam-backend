@@ -1095,56 +1095,47 @@ export class ScenarioResetService {
   ): Promise<void> {
     const diplomacyData = scenarioMetadata.diplomacy || [];
     
-    if (diplomacyData.length === 0) {
-      console.log('[ScenarioReset] No diplomacy data in scenario');
-      return;
-    }
+    // 모든 국가 목록 가져오기 (국가 0 제외)
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    const nationIds = nations.map(n => n.nation).filter(id => id > 0);
+    
+    console.log(`[ScenarioReset] Creating diplomacy for ${nationIds.length} nations`);
 
-    console.log(`[ScenarioReset] Creating ${diplomacyData.length} diplomacy relations`);
-
-    // 중복 제거 (같은 me-you 쌍이 여러 번 나오는 경우 방지)
-    const seen = new Set<string>();
-    const uniqueDiplomacyData = [];
+    // 시나리오에서 정의된 외교 관계를 맵으로 변환
+    const scenarioDiplomacy = new Map<string, { state: number; term: number }>();
     for (const diplo of diplomacyData) {
       const me = Array.isArray(diplo) ? diplo[0] : diplo.me;
       const you = Array.isArray(diplo) ? diplo[1] : diplo.you;
-      const key = `${me}-${you}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniqueDiplomacyData.push(diplo);
-      } else {
-        console.warn(`[ScenarioReset] Skipping duplicate diplomacy: ${key}`);
-      }
+      const state = Array.isArray(diplo) ? diplo[2] : diplo.state;
+      const term = Array.isArray(diplo) ? diplo[3] : diplo.term;
+      scenarioDiplomacy.set(`${me}-${you}`, { state: state ?? 2, term: term ?? 0 });
     }
 
-    const diplomacyEntries = uniqueDiplomacyData.map((diplo: any) => {
-      // 배열 형식: [me, you, state, term]
-      if (Array.isArray(diplo)) {
-        const [me, you, state, term] = diplo;
-        return {
+    // 모든 국가 쌍에 대해 외교 관계 생성
+    const diplomacyEntries: any[] = [];
+    for (const me of nationIds) {
+      for (const you of nationIds) {
+        if (me === you) continue; // 자기 자신과의 외교 제외
+        
+        const key = `${me}-${you}`;
+        const existing = scenarioDiplomacy.get(key);
+        
+        diplomacyEntries.push({
           session_id: sessionId,
           me: me,
           you: you,
-          state: state ?? 2,  // 기본값 2 = 중립
-          term: term ?? 0
-        };
+          state: existing?.state ?? 2,  // 기본값 2 = 중립/평화
+          term: existing?.term ?? 0
+        });
       }
-      // 객체 형식도 지원
-      return {
-        session_id: sessionId,
-        me: diplo.me,
-        you: diplo.you,
-        state: diplo.state ?? 2,
-        term: diplo.term ?? 0
-      };
-    });
+    }
 
     // 일괄 삽입
     if (diplomacyEntries.length > 0) {
       await diplomacyRepository.insertMany(diplomacyEntries);
     }
 
-    console.log(`[ScenarioReset] Created ${diplomacyEntries.length} diplomacy relations`);
+    console.log(`[ScenarioReset] Created ${diplomacyEntries.length} diplomacy relations for ${nationIds.length} nations`);
   }
 
   /**

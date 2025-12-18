@@ -489,6 +489,9 @@ export class ExecuteEngineService {
 
       // 봉록 지급 처리 (봄 1월: 금, 가을 7월: 쌀)
       await this.processSeasonalIncome(sessionId, sessionData);
+      
+      // 외교 term 감소 및 상태 전환 처리 (매월)
+      await this.processDiplomacyTerm(sessionId, sessionData);
     }
 
     // scenario_id를 sessionData에 추가 (징병 등에서 병종 정보 로드 시 필요)
@@ -2384,6 +2387,122 @@ export class ExecuteEngineService {
 
     // 도시 이벤트 상태 감소 및 초기화 (매월)
     await this.processCityEventStates(sessionId);
+  }
+
+  /**
+   * 외교 term 감소 및 상태 전환 처리 (PHP func_gamerule.php 393-406번줄)
+   * - term을 1씩 감소
+   * - 불가침(state=7) term=0 → 통상(state=2)으로
+   * - 선전포고(state=1) term=0 → 전쟁(state=0, term=6)으로
+   */
+  private static async processDiplomacyTerm(sessionId: string, gameEnv: any) {
+    const year = gameEnv.year;
+    const month = gameEnv.month;
+    
+    try {
+      const Diplomacy = (await import('../../models/diplomacy.model')).Diplomacy;
+      const { ActionLogger } = await import('../../services/logger/ActionLogger');
+      const globalLogger = new ActionLogger(0, 0, year, month, sessionId);
+      
+      // 1. 모든 외교 관계의 term을 1씩 감소 (0 미만으로는 안 내려감)
+      await Diplomacy.updateMany(
+        { session_id: sessionId, term: { $gt: 0 } },
+        { $inc: { term: -1 } }
+      );
+      
+      // 2. 선전포고(state=1) term=0인 것들 찾기 → 전쟁 시작 로그 및 상태 전환
+      const warStartRelations = await Diplomacy.find({
+        session_id: sessionId,
+        state: 1,
+        term: 0
+      });
+      
+      // 개전 로그 (중복 방지: me < you인 쌍만)
+      const processedPairs = new Set<string>();
+      for (const rel of warStartRelations) {
+        const key = rel.me < rel.you ? `${rel.me}-${rel.you}` : `${rel.you}-${rel.me}`;
+        if (!processedPairs.has(key)) {
+          processedPairs.add(key);
+          
+          // 국가 이름 가져오기
+          const nationRepo = (await import('../../repositories/nation.repository')).nationRepository;
+          const nation1 = await nationRepo.findByNationNum(sessionId, rel.me);
+          const nation2 = await nationRepo.findByNationNum(sessionId, rel.you);
+          const name1 = nation1?.name || `국가${rel.me}`;
+          const name2 = nation2?.name || `국가${rel.you}`;
+          
+          globalLogger.pushGlobalHistoryLog(
+            `<R><b>【개전】</b></><D><b>${name1}</b></>(와)과 <D><b>${name2}</b></>(이)가 <R>전쟁</>을 시작합니다.`
+          );
+        }
+      }
+      
+      // 선전포고 → 전쟁으로 상태 전환
+      await Diplomacy.updateMany(
+        { session_id: sessionId, state: 1, term: 0 },
+        { $set: { state: 0, term: 6 } }
+      );
+      
+      // 3. 불가침(state=7) term=0 → 통상(state=2)으로
+      await Diplomacy.updateMany(
+        { session_id: sessionId, state: 7, term: 0 },
+        { $set: { state: 2 } }
+      );
+      
+      // 4. 전쟁(state=0) term=0인 것들 찾기 → 종전 로그 (양측 모두 term=0일 때만)
+      const potentialCeasefire = await Diplomacy.find({
+        session_id: sessionId,
+        state: 0,
+        term: 0
+      });
+      
+      // 양측 모두 term=0인 경우만 종전
+      const ceasefireProcessed = new Set<string>();
+      for (const rel of potentialCeasefire) {
+        const key = rel.me < rel.you ? `${rel.me}-${rel.you}` : `${rel.you}-${rel.me}`;
+        if (ceasefireProcessed.has(key)) {
+          // 이미 처리된 쌍 = 양측 모두 term=0
+          const nationRepo = (await import('../../repositories/nation.repository')).nationRepository;
+          const nation1 = await nationRepo.findByNationNum(sessionId, rel.me < rel.you ? rel.me : rel.you);
+          const nation2 = await nationRepo.findByNationNum(sessionId, rel.me < rel.you ? rel.you : rel.me);
+          const name1 = nation1?.name || `국가${rel.me}`;
+          const name2 = nation2?.name || `국가${rel.you}`;
+          
+          globalLogger.pushGlobalHistoryLog(
+            `<R><b>【종전】</b></><D><b>${name1}</b></>(와)과 <D><b>${name2}</b></>(이)가 <S>종전</>합니다.`
+          );
+          
+          // 종전 처리: 양측 모두 state=2로
+          await Diplomacy.updateMany(
+            { 
+              session_id: sessionId, 
+              $or: [
+                { me: rel.me, you: rel.you },
+                { me: rel.you, you: rel.me }
+              ]
+            },
+            { $set: { state: 2, term: 0 } }
+          );
+        } else {
+          ceasefireProcessed.add(key);
+        }
+      }
+      
+      await globalLogger.flush();
+      
+      if (warStartRelations.length > 0) {
+        logger.info('[DiplomacyTerm] War started', { 
+          sessionId, 
+          count: warStartRelations.length 
+        });
+      }
+    } catch (error: any) {
+      logger.error('[DiplomacyTerm] Failed to process diplomacy term', {
+        sessionId,
+        error: error.message,
+        stack: error.stack
+      });
+    }
   }
 
   /**
