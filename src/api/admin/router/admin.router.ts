@@ -231,6 +231,7 @@ router.post(
           result = await AdminGameSettingsService.setTurnTerm(sessionId, data.turnterm);
           break;
         case 'setServerStatus':
+        case 'status':
           result = await AdminGameSettingsService.setServerStatus(sessionId, data.status);
           break;
         case 'resetScenario': {
