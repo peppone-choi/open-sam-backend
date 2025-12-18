@@ -1,9 +1,27 @@
-import completeCommandTable from '../../../config/scenarios/legend-of-galactic-heroes/data/complete-commands-table.json';
-import tacticalCommandTable from '../../../config/scenarios/legend-of-galactic-heroes/data/tactical-commands.json';
-import empireOrganizations from '../../../config/scenarios/legend-of-galactic-heroes/data/organizations-empire.json';
-import allianceOrganizations from '../../../config/scenarios/legend-of-galactic-heroes/data/organizations-alliance.json';
 import { AuthorityCardCategory, CommandPointType, Gin7AuthorityCardTemplate, Gin7CommandCatalog, Gin7CommandGroup, Gin7CommandMeta, Gin7CommandShortcut } from './types';
 import { GalaxyFactionCode } from '../../models/logh/GalaxySession.model';
+
+// Optional imports - gin7 시나리오가 없으면 빈 객체 사용
+let completeCommandTable: any = { commandCategories: {}, source: '' };
+let tacticalCommandTable: any = { tacticalCommands: [] };
+let empireOrganizations: any = { organizations: {} };
+let allianceOrganizations: any = { organizations: {} };
+
+try {
+  completeCommandTable = require('../../../config/scenarios/legend-of-galactic-heroes/data/complete-commands-table.json');
+} catch { /* gin7 시나리오 없음 */ }
+
+try {
+  tacticalCommandTable = require('../../../config/scenarios/legend-of-galactic-heroes/data/tactical-commands.json');
+} catch { /* gin7 시나리오 없음 */ }
+
+try {
+  empireOrganizations = require('../../../config/scenarios/legend-of-galactic-heroes/data/organizations-empire.json');
+} catch { /* gin7 시나리오 없음 */ }
+
+try {
+  allianceOrganizations = require('../../../config/scenarios/legend-of-galactic-heroes/data/organizations-alliance.json');
+} catch { /* gin7 시나리오 없음 */ }
 
 const GENERATED_AT = new Date().toISOString();
 const MANUAL_REF = `${completeCommandTable.source} · Chapter3-4`;
