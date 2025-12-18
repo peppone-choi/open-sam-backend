@@ -9,7 +9,7 @@ export { ProcureSupplyCommand } from './procureSupply';
 export { TradeMilitaryCommand } from './tradeMilitary';
 export { BoostMoraleCommand } from './boostMorale';
 export { TrainCommand } from './train';
-export { TrainTroopsCommand } from './trainTroops';
+// TrainTroopsCommand 삭제됨 (스택 시스템 제거)
 export { IntensiveTrainingCommand } from './intensiveTraining';
 export { HealCommand } from './heal';
 export { RecruitCommand } from './recruit';
@@ -25,7 +25,7 @@ export { RecruitSoldiersCommand } from './recruitSoldiers';
 export { ConscriptCommand } from './conscript';
 export { DismissCommand } from './dismiss';
 export { DisbandCommand } from './disband';
-export { BattleStanceCommand } from './battleStance';
+// BattleStanceCommand 삭제됨 (스택 시스템 제거)
 export { DeployCommand } from './deploy';
 export { GatherCommand } from './gather';
 export { RaiseArmyCommand } from './raiseArmy';
@@ -51,7 +51,7 @@ export { InvestCommerceCommand } from './investCommerce';
 export { CultivateFarmCommand } from './cultivateFarm';
 export { ReinforceDefenseCommand } from './reinforceDefense';
 export { ReinforceSecurityCommand } from './reinforceSecurity';
-export { ReassignUnitCommand } from './reassignUnit';
+// ReassignUnitCommand 삭제됨 (스택 시스템 제거)
 export { ResetAdminSkillCommand } from './resetAdminSkill';
 
 export { ResetBattleSkillCommand } from './resetBattleSkill';
@@ -64,7 +64,7 @@ export { AbdicateToCommand } from './abdicateTo';
 export { RestCureCommand } from './restCure';
 export { AgitateCommand } from './agitate';
 export { RepairWallExtendCommand } from './repairWallExtend';
-export { DismissTroopsCommand } from './dismissTroops';
+// DismissTroopsCommand 삭제됨 (스택 시스템 제거)
 export { ReinforceDefenseExtendCommand } from './reinforceDefenseExtend';
 export { JoinGeneralNationCommand } from './joinGeneralNation';
 export { EncourageSettlementCommand } from './encourageSettlement';
