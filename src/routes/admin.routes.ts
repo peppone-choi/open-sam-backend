@@ -299,6 +299,7 @@ router.post('/game-info', async (req, res) => {
     
     console.log('[Admin] Get game-info:', {
       sessionId,
+      sessionStatus: session?.status,  // 최상위 status 필드
       hasGameEnv: !!sessionData.game_env,
       gameEnvIsunited: gameEnv.isunited,
       dataIsunited: sessionData.isunited,
