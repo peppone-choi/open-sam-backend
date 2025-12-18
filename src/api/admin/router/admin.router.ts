@@ -189,6 +189,61 @@ router.put(
   })
 );
 
+// ==================== 게임 정보 ====================
+
+// 게임 정보 조회
+router.post(
+  '/game-info',
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const sessionId = req.body.session_id || 'sangokushi_default';
+    const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
+    const result = await AdminGameSettingsService.getSettings(sessionId);
+    
+    if (result.success) {
+      res.json({
+        result: true,
+        gameInfo: result.settings,
+      });
+    } else {
+      res.json({
+        result: false,
+        gameInfo: null,
+        reason: result.message,
+      });
+    }
+  })
+);
+
+// 게임 설정 업데이트
+router.post(
+  '/update-game',
+  requirePermission(AdminPermission.MANAGE_CONFIG),
+  asyncHandler(async (req, res) => {
+    const { session_id, action, data } = req.body;
+    const sessionId = session_id || 'sangokushi_default';
+    const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
+    
+    try {
+      let result;
+      switch (action) {
+        case 'setTurnTerm':
+          result = await AdminGameSettingsService.setTurnTerm(sessionId, data.turnterm);
+          break;
+        case 'setServerStatus':
+          result = await AdminGameSettingsService.setServerStatus(sessionId, data.status);
+          break;
+        default:
+          res.json({ result: false, reason: `알 수 없는 액션: ${action}` });
+          return;
+      }
+      res.json(result);
+    } catch (error: any) {
+      res.json({ result: false, reason: error.message });
+    }
+  })
+);
+
 // ==================== 시스템 ====================
 
 // 시스템 상태
