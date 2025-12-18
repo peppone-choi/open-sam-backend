@@ -35,28 +35,62 @@ router.get('/list', authenticate, requireAdmin, async (req: Request, res: Respon
   try {
     const sessions = await Session.find({}, {
       session_id: 1,
+      name: 1,
+      status: 1,
       'data.scenario': 1,
       'data.year': 1,
       'data.month': 1,
       'data.turnterm': 1,
       'data.turntime': 1,
       'data.isunited': 1,
+      'data.game_env': 1,
       created_at: 1,
       updated_at: 1,
     }).lean();
     
-    const sessionList = sessions.map((s: any) => ({
-      sessionId: s.session_id,
-      scenario: s.data?.scenario || '시나리오 없음',
-      year: s.data?.year,
-      month: s.data?.month,
-      turnterm: s.data?.turnterm,
-      turntime: s.data?.turntime,
-      status: s.data?.isunited === 2 ? 'closed' : s.data?.isunited === 3 ? 'united' : 'running',
-      statusText: s.data?.isunited === 2 ? '폐쇄' : s.data?.isunited === 3 ? '천통' : '운영중',
-      createdAt: s.created_at,
-      updatedAt: s.updated_at,
-    }));
+    // 상태 결정 함수
+    const getStatusInfo = (s: any): { status: string; statusText: string } => {
+      // 1. session.status 필드 우선 확인
+      if (s.status) {
+        const statusMap: Record<string, { status: string; statusText: string }> = {
+          'preparing': { status: 'preparing', statusText: '준비중' },
+          'running': { status: 'running', statusText: '운영중' },
+          'paused': { status: 'paused', statusText: '일시정지' },
+          'closed': { status: 'closed', statusText: '폐쇄' },
+          'finished': { status: 'closed', statusText: '종료' },
+          'united': { status: 'united', statusText: '천통' },
+        };
+        if (statusMap[s.status]) {
+          return statusMap[s.status];
+        }
+      }
+      
+      // 2. isunited 값으로 fallback
+      const isunited = s.data?.isunited ?? s.data?.game_env?.isunited;
+      if (isunited === 2) return { status: 'closed', statusText: '폐쇄' };
+      if (isunited === 3) return { status: 'united', statusText: '천통' };
+      if (isunited === 1) return { status: 'paused', statusText: '일시정지' };
+      if (isunited === 0) return { status: 'running', statusText: '운영중' };
+      
+      // 3. 기본값
+      return { status: 'preparing', statusText: '준비중' };
+    };
+    
+    const sessionList = sessions.map((s: any) => {
+      const statusInfo = getStatusInfo(s);
+      return {
+        sessionId: s.session_id,
+        scenario: s.data?.scenario || s.name || '시나리오 없음',
+        year: s.data?.year ?? s.data?.game_env?.year,
+        month: s.data?.month ?? s.data?.game_env?.month,
+        turnterm: s.data?.turnterm ?? s.data?.game_env?.turnterm,
+        turntime: s.data?.turntime ?? s.data?.game_env?.turntime,
+        status: statusInfo.status,
+        statusText: statusInfo.statusText,
+        createdAt: s.created_at,
+        updatedAt: s.updated_at,
+      };
+    });
     
     res.json({
       success: true,
