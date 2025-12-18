@@ -263,6 +263,11 @@ export class ScenarioResetService {
     // @ts-ignore - Mongoose model type issue
     const ngHistoryResult = await NgHistory.deleteMany({ session_id: sessionId });
     console.log(`[ScenarioReset] Deleted ${ngHistoryResult.deletedCount} ng_history records`);
+
+    // 5. rank_data 삭제
+    const { RankData } = await import('../../models/rank_data.model');
+    const rankDataResult = await RankData.deleteMany({ session_id: sessionId });
+    console.log(`[ScenarioReset] Deleted ${rankDataResult.deletedCount} rank_data records`);
    }
  
    /**
