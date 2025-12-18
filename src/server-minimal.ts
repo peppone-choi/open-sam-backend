@@ -17,9 +17,9 @@ import { requestLogger } from './common/middleware/request-logger.middleware';
 import { errorMiddleware } from './common/middleware/error.middleware';
 import { globalLimiter } from './middleware/rate-limit.middleware';
 import gatewayRoutes from './routes/gateway.routes';
-import authRoutes from './routes/auth.routes';
 import gin7TacticalRoutes from './routes/gin7/tactical.routes';
 import { SocketManager, setSocketManager } from './socket/socketManager';
+import { mountRoutes } from './api';
 
 dotenv.config();
 
@@ -104,8 +104,10 @@ async function start() {
       });
     });
     
-    // 인증 및 게이트웨이 라우트 추가
-    app.use('/api/auth', authRoutes);
+    // 전체 API 라우트 마운트
+    mountRoutes(app);
+    
+    // 게이트웨이 라우트 추가 (추가적인 라우트)
     app.use('/api/gateway', gatewayRoutes);
     
     // GIN7 Tactical routes (for demo/testing)
