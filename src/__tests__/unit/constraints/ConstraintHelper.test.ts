@@ -128,9 +128,8 @@ describe('ConstraintHelper', () => {
   });
 
   describe('OccupiedCity (점령 도시 검증)', () => {
-    const constraint = ConstraintHelper.OccupiedCity();
-
     it('아국 도시면 통과', () => {
+      const constraint = ConstraintHelper.OccupiedCity();
       const general = createTestGeneral({ nation: 1 });
       const city = createTestCity({ nation: 1 });
       const result = constraint.test({ general, city }, {});
@@ -138,17 +137,27 @@ describe('ConstraintHelper', () => {
     });
 
     it('다른 국가 도시면 실패', () => {
+      const constraint = ConstraintHelper.OccupiedCity();
       const general = createTestGeneral({ nation: 1 });
       const city = createTestCity({ nation: 2 });
       const result = constraint.test({ general, city }, {});
-      expect(result).toBe('아국 도시가 아닙니다.');
+      expect(result).toBe('아국이 아닙니다.');
     });
 
     it('중립 도시면 실패', () => {
+      const constraint = ConstraintHelper.OccupiedCity();
       const general = createTestGeneral({ nation: 1 });
       const city = CityPresets.neutral();
       const result = constraint.test({ general, city }, {});
-      expect(result).toBe('아국 도시가 아닙니다.');
+      expect(result).toBe('아국이 아닙니다.');
+    });
+
+    it('allowNeutral=true이면 재야도 허용', () => {
+      const constraint = ConstraintHelper.OccupiedCity(true);
+      const general = createTestGeneral({ nation: 0 }); // 재야
+      const city = createTestCity({ nation: 0 });
+      const result = constraint.test({ general, city }, {});
+      expect(result).toBeNull();
     });
   });
 
@@ -305,35 +314,35 @@ describe('ConstraintHelper', () => {
     });
   });
 
-  describe('WanderingNation (유랑 세력 검증)', () => {
-    it('유랑 세력(type=1)이면 통과', () => {
+  describe('WanderingNation (방랑군 검증)', () => {
+    it('방랑군(level=0)이면 통과', () => {
       const constraint = ConstraintHelper.WanderingNation();
-      const nation = createTestNation({ type: 1 });
+      const nation = createTestNation({ level: 0 });
       const result = constraint.test({ nation }, {});
       expect(result).toBeNull();
     });
 
-    it('일반 국가면 실패', () => {
+    it('일반 국가(level>0)면 실패', () => {
       const constraint = ConstraintHelper.WanderingNation();
-      const nation = createTestNation({ type: 0 });
+      const nation = createTestNation({ level: 1 });
       const result = constraint.test({ nation }, {});
-      expect(result).toBe('유랑 세력만 가능합니다.');
+      expect(result).toBe('방랑군이어야 합니다');
     });
   });
 
-  describe('NotWanderingNation (유랑 세력 아님 검증)', () => {
-    it('일반 국가면 통과', () => {
+  describe('NotWanderingNation (방랑군 아님 검증)', () => {
+    it('일반 국가(level>0)면 통과', () => {
       const constraint = ConstraintHelper.NotWanderingNation();
-      const nation = createTestNation({ type: 0 });
+      const nation = createTestNation({ level: 1 });
       const result = constraint.test({ nation }, {});
       expect(result).toBeNull();
     });
 
-    it('유랑 세력이면 실패', () => {
+    it('방랑군(level=0)이면 실패', () => {
       const constraint = ConstraintHelper.NotWanderingNation();
-      const nation = createTestNation({ type: 1 });
+      const nation = createTestNation({ level: 0 });
       const result = constraint.test({ nation }, {});
-      expect(result).toBe('유랑 세력은 불가능합니다.');
+      expect(result).toBe('방랑군은 불가능합니다.');
     });
   });
 

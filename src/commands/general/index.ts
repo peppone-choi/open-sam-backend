@@ -74,6 +74,14 @@ export { RecruitGeneralCommand } from './recruitGeneral';
 export { ConvertExpCommand } from './convertExp';
 export { JoinNationCommand } from './joinNation';
 
+// 누락되었던 커맨드 추가
+export { ConvertDexCommand } from './convertDex';
+export { ScoutCommand } from './scout';
+export { DissolveCommand } from './dissolve';
+export { StepDownCommand } from './stepDown';
+export { AppointCommand } from './appoint';
+export { AppointGeneralCommand } from './appointGeneral';
+
 // 포로 시스템 커맨드
 export { RecruitPrisonerCommand } from './recruitPrisoner';
 export { ReleasePrisonerCommand } from './releasePrisoner';

@@ -586,11 +586,11 @@ export class TacticalBattleEngineService {
     
     // === 무승부(시간/턴 초과) 처리 ===
     // 무승부 = 공격 실패, 방어 승리로 처리
-    let actualWinner = winner;
+    let actualWinner: 'attacker' | 'defender' = winner === 'draw' ? 'defender' : winner;
     let additionalAttackerPenalty = 0;
     
     if (winner === 'draw') {
-      actualWinner = 'defender'; // 공성전에서 시간 초과 = 공격 실패
+      // 공성전에서 시간 초과 = 공격 실패
       additionalAttackerPenalty = 0.2; // 공격측 추가 20% 병력 손실
       
       console.log(`[TacticalBattle] 무승부 → 공격 실패 처리 (${reason || '시간/턴 초과'})`);
@@ -598,7 +598,7 @@ export class TacticalBattleEngineService {
     
     battle.status = BattleStatus.FINISHED;
     battle.winner = actualWinner;
-    battle.result = {
+    (battle as any).result = {
       attackerCasualties,
       defenderCasualties,
       cityOccupied: actualWinner === 'attacker',
@@ -612,11 +612,11 @@ export class TacticalBattleEngineService {
     
     // === 분쟁 기여도 누적 (양측 모두) ===
     try {
-      const { ConflictService } = await import('../war/Conflict.service');
+      const { conflictService } = await import('../war/Conflict.service');
       
       // 공격측 기여도: 준 피해량 기반
       if (defenderCasualties > 0) {
-        await ConflictService.addConflict(
+        await conflictService.addConflict(
           battle.session_id,
           battle.cityId,
           battle.attacker.nationId,
@@ -627,7 +627,7 @@ export class TacticalBattleEngineService {
       
       // 방어측 기여도: 준 피해량 기반
       if (attackerCasualties > 0) {
-        await ConflictService.addConflict(
+        await conflictService.addConflict(
           battle.session_id,
           battle.cityId,
           battle.defender.nationId,
@@ -664,7 +664,7 @@ export class TacticalBattleEngineService {
     // 공격측 군량 체크 (리더 기준)
     const attackerLeaderId = battle.attacker.generals[0];
     if (attackerLeaderId > 0) {
-      const attackerLeader = await generalRepository.findByID(battle.session_id, attackerLeaderId);
+      const attackerLeader = await generalRepository.findBySessionAndNo(battle.session_id, attackerLeaderId);
       
       if (attackerLeader && (attackerLeader.rice ?? 0) <= 0) {
         console.log(`[TacticalBattle] 공격측 군량 고갈 - 강제 후퇴`);
@@ -679,7 +679,7 @@ export class TacticalBattleEngineService {
     // 방어측 군량 체크 (방어측 유닛 전체에 페널티)
     const defenderLeaderId = battle.defender.generals[0];
     if (defenderLeaderId > 0) {
-      const defenderLeader = await generalRepository.findByID(battle.session_id, defenderLeaderId);
+      const defenderLeader = await generalRepository.findBySessionAndNo(battle.session_id, defenderLeaderId);
       
       if (defenderLeader && (defenderLeader.rice ?? 0) <= 0) {
         console.log(`[TacticalBattle] 방어측 군량 고갈 - 페널티 적용`);
@@ -752,7 +752,7 @@ export class TacticalBattleEngineService {
     // 공격측 승리 시 도시 점령
     if (winner === 'attacker') {
       const attackerLeaderId = battle.attacker.generals[0];
-      const attackerLeader = await generalRepository.findByID(battle.session_id, attackerLeaderId);
+      const attackerLeader = await generalRepository.findBySessionAndNo(battle.session_id, attackerLeaderId);
       
       if (attackerLeader) {
         // 년/월 정보 가져오기
@@ -785,10 +785,10 @@ export class TacticalBattleEngineService {
       // 방어측 승리 시 공격측 사기 감소 (-30)
       for (const unit of battle.units) {
         if (unit.side === 'attacker' && unit.generalId > 0) {
-          const general = await generalRepository.findByID(battle.session_id, unit.generalId);
+          const general = await generalRepository.findBySessionAndNo(battle.session_id, unit.generalId);
           if (general) {
             general.morale = Math.max(0, (general.morale || 100) - 30);
-            await generalRepository.save(battle.session_id, general);
+            await generalRepository.save(general);
           }
         }
       }

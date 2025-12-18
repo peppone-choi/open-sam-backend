@@ -431,7 +431,156 @@ export class AdminGameSettingsService {
           // 전술전투 설정
           tacticalMaxTurns,
           tacticalTurnTimeLimit,
+          // PHP game_env 호환 필드
+          npcmode: gameEnv.npcmode ?? 0,
+          extended_general: gameEnv.extended_general ?? 0,
+          fiction: gameEnv.fiction ?? 0,
+          show_img_level: gameEnv.show_img_level ?? 3,
+          genius: gameEnv.genius ?? 100,
+          block_general_create: gameEnv.block_general_create ?? 0,
+          killturn: gameEnv.killturn ?? Math.floor(4800 / (turnterm || 60)),
+          develcost: gameEnv.develcost ?? 20,
+          init_year: gameEnv.init_year ?? gameEnv.startyear ?? 220,
+          init_month: gameEnv.init_month ?? 1,
         },
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * PHP game_env 호환 설정 변경
+   * @param sessionId 세션 ID
+   * @param field 필드 이름
+   * @param value 값
+   */
+  static async setGameEnvField(sessionId: string, field: string, value: any) {
+    try {
+      const session = await sessionRepository.findBySessionId(sessionId);
+      if (!session) {
+        return { success: false, message: '세션을 찾을 수 없습니다' };
+      }
+
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+
+      // 허용된 필드만 변경
+      const allowedFields = [
+        'npcmode',
+        'extended_general',
+        'fiction',
+        'show_img_level',
+        'genius',
+        'block_general_create',
+        'develcost',
+      ];
+
+      if (!allowedFields.includes(field)) {
+        return { success: false, message: `허용되지 않는 필드입니다: ${field}` };
+      }
+
+      // 값 유효성 검사
+      let parsedValue = value;
+      switch (field) {
+        case 'npcmode':
+          parsedValue = [0, 1].includes(Number(value)) ? Number(value) : 0;
+          break;
+        case 'extended_general':
+        case 'fiction':
+        case 'block_general_create':
+          parsedValue = [0, 1].includes(Number(value)) ? Number(value) : 0;
+          break;
+        case 'show_img_level':
+          parsedValue = Math.min(3, Math.max(0, Number(value)));
+          break;
+        case 'genius':
+          parsedValue = Math.max(0, Number(value));
+          break;
+        case 'develcost':
+          parsedValue = Math.max(1, Number(value));
+          break;
+        default:
+          parsedValue = value;
+      }
+
+      session.data.game_env[field] = parsedValue;
+      
+      // npcmode 변경 시 killturn 재계산
+      if (field === 'npcmode') {
+        const turnterm = session.data.game_env.turnterm || 60;
+        let killturn = Math.floor(4800 / turnterm);
+        if (parsedValue === 1) {
+          killturn = Math.floor(killturn / 3); // 빠른 삭턴 모드
+        }
+        session.data.game_env.killturn = killturn;
+      }
+
+      session.markModified('data');
+      session.markModified('data.game_env');
+
+      await sessionRepository.saveDocument(session);
+      await this.invalidateSessionCache(sessionId);
+
+      const fieldNames: Record<string, string> = {
+        npcmode: 'NPC 모드',
+        extended_general: '확장 장수',
+        fiction: '픽션 모드',
+        show_img_level: '이미지 표시',
+        genius: '천재 제한',
+        block_general_create: '장수 생성 제한',
+        develcost: '내정 비용',
+      };
+
+      return {
+        success: true,
+        message: `${fieldNames[field] || field}이(가) ${parsedValue}로 변경되었습니다`,
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * 서버 상태 설정
+   * @param sessionId 세션 ID
+   * @param status 서버 상태 ('preparing' | 'running' | 'paused' | 'finished' | 'united')
+   */
+  static async setServerStatus(sessionId: string, status: string) {
+    try {
+      const session = await sessionRepository.findBySessionId(sessionId);
+      if (!session) {
+        return { success: false, message: '세션을 찾을 수 없습니다' };
+      }
+
+      const validStatuses = ['preparing', 'running', 'paused', 'finished', 'united'];
+      if (!validStatuses.includes(status)) {
+        return {
+          success: false,
+          message: `허용되지 않는 상태입니다 (${validStatuses.join('/')}만 가능)`,
+        };
+      }
+
+      if (!session.data) session.data = {};
+      if (!session.data.game_env) session.data.game_env = {};
+      
+      session.data.game_env.serverStatus = status;
+      session.data.game_env.isRunning = status === 'running';
+      
+      await session.save();
+      await this.invalidateSessionCache(sessionId);
+
+      const statusNames: Record<string, string> = {
+        preparing: '준비 중',
+        running: '게임 진행 중',
+        paused: '일시 정지',
+        finished: '게임 종료',
+        united: '천하통일',
+      };
+
+      return {
+        success: true,
+        message: `서버 상태가 '${statusNames[status] || status}'(으)로 변경되었습니다`,
       };
     } catch (error: any) {
       return { success: false, message: error.message };

@@ -4,6 +4,7 @@ import { LastTurn } from '../../types/LastTurn';
 import { RandUtil } from '../../utils/RandUtil';
 import { ConstraintHelper } from '../../constraints/ConstraintHelper';
 import { StaticEventHandler } from '../../events/StaticEventHandler';
+import { JosaUtil } from '../../utils/JosaUtil';
 
 export class RetireCommand extends GeneralCommand {
   protected static actionName = '은퇴';
@@ -64,10 +65,15 @@ export class RetireCommand extends GeneralCommand {
       }
     }
 
-    await general.rebirth();
-    logger.pushGeneralActionLog(`은퇴하였습니다. <1>${date}</>`);
+    const generalName = general.getName();
+    const josaYi = JosaUtil.pick(generalName, '이');
 
-    logger.pushGeneralHistoryLog('은퇴');
+    await general.rebirth();
+    
+    // PHP 호환 로그 (core/hwe/sammo/General.php의 rebirth 로그)
+    logger.pushGlobalActionLog(`<Y>${generalName}</>${josaYi} <R>은퇴</>하고 그 자손이 유지를 이어받았습니다.`);
+    logger.pushGeneralActionLog(`나이가 들어 <R>은퇴</>하고 자손에게 자리를 물려줍니다. <1>${date}</>`);
+    logger.pushGeneralHistoryLog('나이가 들어 은퇴하고, 자손에게 관직을 물려줌');
 
     this.setResultTurn(new LastTurn(RetireCommand.getName(), this.arg));
     

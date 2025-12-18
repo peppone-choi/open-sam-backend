@@ -473,10 +473,16 @@ export class ExecuteEngineService {
 
     // 년/월이 변경되었으면 저장 및 월별 이벤트 처리
     if (sessionData.year !== beforeYear || sessionData.month !== beforeMonth) {
+      logger.info('Game date updated', { year: sessionData.year, month: sessionData.month });
+
+      // ========================================
+      // 월 전처리 (PHP preUpdateMonthly 호출)
+      // ========================================
+      await this.preUpdateMonthly(sessionId, sessionData);
+
       session.data = sessionData;
       session.markModified('data');
       await sessionRepository.saveDocument(session);
-      logger.info('Game date updated', { year: sessionData.year, month: sessionData.month });
 
       // 월 변경 이벤트 브로드캐스트
       GameEventEmitter.broadcastMonthChanged(
@@ -492,6 +498,11 @@ export class ExecuteEngineService {
       
       // 외교 term 감소 및 상태 전환 처리 (매월)
       await this.processDiplomacyTerm(sessionId, sessionData);
+
+      // ========================================
+      // 월 후처리 (PHP postUpdateMonthly 호출)
+      // ========================================
+      await this.postUpdateMonthly(sessionId, sessionData);
     }
 
     // scenario_id를 sessionData에 추가 (징병 등에서 병종 정보 로드 시 필요)
@@ -1533,7 +1544,10 @@ export class ExecuteEngineService {
     }
 
     // killturn 처리 (PHP 로직과 동일)
-    const killturn = gameEnv.killturn || 30;
+    // ✅ npcmode 반영: npcmode=1이면 삭턴이 1/3 (빠른 삭턴 모드)
+    const npcmode = gameEnv.npcmode ?? 0;
+    const baseKillturn = gameEnv.killturn || 30;
+    const killturn = npcmode === 1 ? Math.floor(baseKillturn / 3) : baseKillturn;
     const npcType = general.npc || 0;
     const currentKillturn = general.killturn ?? killturn;
     const autorunMode = gameEnv.autorunMode || false; // AI 자동 실행 모드
@@ -2195,59 +2209,226 @@ export class ExecuteEngineService {
   }
 
   /**
-   * 월 전처리
+   * 월 전처리 (PHP preUpdateMonthly 완전 구현)
+   * - 벌점 감소, 건국제한-1, 전략제한-1, 외교제한-1
+   * - 세율 동기화, 도시 상태 변화, 첩보 정보 감소
    */
   private static async preUpdateMonthly(sessionId: string, gameEnv: any) {
-    // penalty 감소 (세션 월 기준)
+    const year = gameEnv.year || 184;
+    const month = gameEnv.month || 1;
+    const startyear = gameEnv.startyear || gameEnv.startYear || 184;
+    
+    logger.info('[preUpdateMonthly] Starting monthly pre-processing', { sessionId, year, month });
+
+    // ========================================
+    // 1. 장수 관련 처리
+    // ========================================
+    
+    // penalty 감소 (벌점-1)
     await generalRepository.updateManyByFilter(
-      { session_id: sessionId },
-      {
-        $inc: {
-          'data.penalty': -1
-        }
-      }
+      { session_id: sessionId, 'data.penalty': { $gt: 0 } },
+      { $inc: { 'data.penalty': -1 } }
     );
 
+    // 건국제한-1 (makelimit)
     await generalRepository.updateManyByFilter(
-      { session_id: sessionId, 'data.penalty': { $lt: 0 } },
-      { $set: { 'data.penalty': 0 } }
+      { session_id: sessionId, 'data.makelimit': { $gt: 0 } },
+      { $inc: { 'data.makelimit': -1 } }
     );
 
-    // 나이 증가는 각 장수의 개별 년도가 넘어갈 때 executeGeneralTurn에서 처리
-    // (각 장수는 개별적인 게임 내 년/월을 가지므로)
+    // 접속률 감소 (refresh_score_total * 0.99) - 선택적 구현
+    // await generalRepository.updateManyByFilter(
+    //   { session_id: sessionId },
+    //   { $mul: { 'data.refresh_score_total': 0.99 } }
+    // );
 
+    // ========================================
+    // 2. 국가 관련 처리
+    // ========================================
+    
+    // 전략제한-1 (strategic_cmd_limit)
     await nationRepository.updateManyByFilter(
-      { session_id: sessionId },
-      {
-        $inc: {
-          'data.consecu_turn_count': -1,
-          'data.last_war_month': -1
-        }
-      }
+      { session_id: sessionId, 'data.strategic_cmd_limit': { $gt: 0 } },
+      { $inc: { 'data.strategic_cmd_limit': -1 } }
     );
 
+    // 외교제한-1 (surlimit)
     await nationRepository.updateManyByFilter(
-      { session_id: sessionId, 'data.consecu_turn_count': { $lt: 0 } },
-      { $set: { 'data.consecu_turn_count': 0 } }
+      { session_id: sessionId, 'data.surlimit': { $gt: 0 } },
+      { $inc: { 'data.surlimit': -1 } }
     );
+
+    // 세율 동기화 (rate_tmp = rate)
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    for (const nation of nations) {
+      const nationId = nation.nation || nation.data?.nation;
+      if (!nationId) continue;
+      
+      const rate = nation.data?.rate ?? nation.rate ?? 20;
+      await nationRepository.updateByNationNum(sessionId, nationId, {
+        rate_tmp: rate
+      });
+    }
+
+    // consecu_turn_count, last_war_month 감소
+    await nationRepository.updateManyByFilter(
+      { session_id: sessionId, 'data.consecu_turn_count': { $gt: 0 } },
+      { $inc: { 'data.consecu_turn_count': -1 } }
+    );
+    await nationRepository.updateManyByFilter(
+      { session_id: sessionId, 'data.last_war_month': { $gt: 0 } },
+      { $inc: { 'data.last_war_month': -1 } }
+    );
+
+    // ========================================
+    // 3. 개발비용 계산 (develcost)
+    // ========================================
+    // PHP: $develcost = ($admin['year'] - $admin['startyear'] + 10) * 2;
+    const develcost = (year - startyear + 10) * 2;
+    gameEnv.develcost = develcost;
+
+    // ========================================
+    // 4. 도시 상태 처리
+    // ========================================
+    await this.processCityStateTransitions(sessionId);
+
+    // ========================================
+    // 5. 첩보 정보 감소 (spy-1)
+    // ========================================
+    await this.processSpyInfoDecay(sessionId);
+
+    logger.info('[preUpdateMonthly] Monthly pre-processing completed', { sessionId, develcost });
   }
 
   /**
-   * 월 후처리
+   * 도시 상태 전환 처리 (PHP preUpdateMonthly 224-237줄)
+   * 계략/전쟁 상태 자연 해소:
+   * - 31→0, 32→31, 33→0, 34→33
+   * - 41→0, 42→41, 43→42
+   */
+  private static async processCityStateTransitions(sessionId: string) {
+    const { City } = await import('../../models/city.model');
+
+    // state 전환 처리 (PHP CASE문과 동일)
+    const stateTransitions: Record<number, number> = {
+      31: 0,   // 계략 상태 해제
+      32: 31,  // 계략 상태 감소
+      33: 0,   // 계략 상태 해제
+      34: 33,  // 계략 상태 감소
+      41: 0,   // 전쟁 상태 해제
+      42: 41,  // 전쟁 상태 감소
+      43: 42   // 전쟁 상태 감소
+    };
+
+    for (const [fromState, toState] of Object.entries(stateTransitions)) {
+      await City.updateMany(
+        { session_id: sessionId, state: parseInt(fromState) },
+        { $set: { state: toState } }
+      );
+    }
+
+    // term 감소 (0 미만으로 안 내려감)
+    await City.updateMany(
+      { session_id: sessionId, term: { $gt: 0 } },
+      { $inc: { term: -1 } }
+    );
+
+    // term이 0이 되면 conflict 초기화
+    await City.updateMany(
+      { session_id: sessionId, term: 0 },
+      { $set: { conflict: '{}' } }
+    );
+
+    logger.debug('[processCityStateTransitions] City state transitions processed', { sessionId });
+  }
+
+  /**
+   * 첩보 정보 감소 처리 (PHP preUpdateMonthly 240-254줄)
+   * spy 객체의 각 도시별 첩보 기간을 1씩 감소
+   */
+  private static async processSpyInfoDecay(sessionId: string) {
+    const { Nation } = await import('../../models/nation.model');
+
+    const nations = await Nation.find({
+      session_id: sessionId,
+      $or: [
+        { spy: { $ne: '' } },
+        { spy: { $ne: '{}' } },
+        { 'data.spy': { $ne: '' } },
+        { 'data.spy': { $ne: '{}' } }
+      ]
+    });
+
+    for (const nation of nations) {
+      const nationId = nation.nation || nation.data?.nation;
+      const rawSpy = nation.data?.spy || nation.spy || '{}';
+      
+      let spyInfo: Record<string, number>;
+      try {
+        spyInfo = typeof rawSpy === 'string' ? JSON.parse(rawSpy) : rawSpy;
+      } catch {
+        spyInfo = {};
+      }
+
+      if (Object.keys(spyInfo).length === 0) continue;
+
+      // 각 도시의 첩보 기간 감소
+      const updatedSpyInfo: Record<string, number> = {};
+      for (const [cityNo, remainMonth] of Object.entries(spyInfo)) {
+        const newRemain = (remainMonth as number) - 1;
+        if (newRemain > 0) {
+          updatedSpyInfo[cityNo] = newRemain;
+        }
+        // 0 이하면 삭제 (첩보 만료)
+      }
+
+      await Nation.updateOne(
+        { session_id: sessionId, nation: nationId },
+        { 
+          $set: { 
+            spy: JSON.stringify(updatedSpyInfo),
+            'data.spy': JSON.stringify(updatedSpyInfo)
+          } 
+        }
+      );
+    }
+
+    logger.debug('[processSpyInfoDecay] Spy info decay processed', { sessionId });
+  }
+
+  /**
+   * 월 후처리 (PHP postUpdateMonthly 완전 구현)
+   * - 국력 계산, 전쟁기한 세팅, 방랑군 해체
+   * - 장수 수 업데이트, 전방 설정
    */
   private static async postUpdateMonthly(sessionId: string, gameEnv: any) {
-    const year = gameEnv.year;
-    const month = gameEnv.month;
+    const year = gameEnv.year || 184;
+    const month = gameEnv.month || 1;
+    const startyear = gameEnv.startyear || gameEnv.startYear || 184;
 
+    logger.info('[postUpdateMonthly] Starting monthly post-processing', { sessionId, year, month });
+
+    // ========================================
+    // 1. 도시 자연 성장/감소
+    // ========================================
     const cities = await cityRepository.findByFilter({ session_id: sessionId });
 
     for (const city of cities) {
       const cityNum = city.city || city.data?.city;
-      const newPop = Math.min(city.pop + Math.floor(city.agri / 10), city.pop_max);
-      const newAgri = Math.min(city.agri + Math.floor(city.agri / 100), city.agri_max);
-      const newComm = Math.min(city.comm + Math.floor(city.comm / 100), city.comm_max);
-      const newSecu = Math.max(city.secu - 5, 0);
-      const newDef = Math.max(city.def - 3, 0);
+      const pop = city.pop || city.data?.pop || 0;
+      const agri = city.agri || city.data?.agri || 0;
+      const comm = city.comm || city.data?.comm || 0;
+      const secu = city.secu || city.data?.secu || 0;
+      const def = city.def || city.data?.def || 0;
+      const pop_max = city.pop_max || city.data?.pop_max || 10000;
+      const agri_max = city.agri_max || city.data?.agri_max || 10000;
+      const comm_max = city.comm_max || city.data?.comm_max || 10000;
+
+      const newPop = Math.min(pop + Math.floor(agri / 10), pop_max);
+      const newAgri = Math.min(agri + Math.floor(agri / 100), agri_max);
+      const newComm = Math.min(comm + Math.floor(comm / 100), comm_max);
+      const newSecu = Math.max(secu - 5, 0);
+      const newDef = Math.max(def - 3, 0);
 
       await cityRepository.updateByCityNum(sessionId, cityNum, {
         pop: newPop,
@@ -2258,6 +2439,44 @@ export class ExecuteEngineService {
       });
     }
 
+    // ========================================
+    // 2. 국력(power) 계산 및 저장
+    // ========================================
+    await this.calculateNationPower(sessionId, gameEnv);
+
+    // ========================================
+    // 3. 전쟁기한 세팅 (dead 기반)
+    // ========================================
+    await this.processWarTermSetting(sessionId, gameEnv);
+
+    // ========================================
+    // 4. available_war_setting_cnt 증가
+    // ========================================
+    await this.processWarSettingCntIncrease(sessionId);
+
+    // ========================================
+    // 5. 방랑군 자동 해체 (초반 2년 이후)
+    // ========================================
+    if (year >= startyear + 2) {
+      await this.checkWander(sessionId, gameEnv);
+    }
+
+    // ========================================
+    // 6. 장수 수 업데이트
+    // ========================================
+    try {
+      const { updateGeneralNumber } = await import('../../utils/supply-line');
+      await updateGeneralNumber(sessionId);
+    } catch (error: any) {
+      logger.error('[postUpdateMonthly] Failed to update general numbers', {
+        sessionId,
+        error: error.message
+      });
+    }
+
+    // ========================================
+    // 7. 국가 재정 처리
+    // ========================================
     const nations = await nationRepository.findByFilter({ session_id: sessionId });
     for (const nation of nations) {
       const nationId = nation.nation || nation.data?.nation;
@@ -2274,7 +2493,22 @@ export class ExecuteEngineService {
       }
     }
 
-    // 경매 처리 (마감된 경매 낙찰 처리)
+    // ========================================
+    // 8. 천통 체크 (통일 여부)
+    // ========================================
+    try {
+      const { NationDestructionService } = await import('../nation/NationDestruction.service');
+      await NationDestructionService.checkUnification(sessionId);
+    } catch (error: any) {
+      logger.warn('[postUpdateMonthly] Unification check failed', {
+        sessionId,
+        error: error.message
+      });
+    }
+
+    // ========================================
+    // 9. 경매 처리
+    // ========================================
     try {
       const { processAuction } = await import('../auction/AuctionEngine.service');
       await processAuction(sessionId);
@@ -2286,7 +2520,6 @@ export class ExecuteEngineService {
       });
     }
 
-    // 중립 경매 자동 등록 (시장 안정화)
     try {
       const { registerAuction } = await import('../auction/AuctionEngine.service');
       await registerAuction(sessionId);
@@ -2297,6 +2530,418 @@ export class ExecuteEngineService {
         stack: error.stack
       });
     }
+
+    // ========================================
+    // 10. 전방 설정 (모든 국가)
+    // ========================================
+    try {
+      const { SetNationFront } = await import('../../utils/supply-line');
+      for (const nation of nations) {
+        const nationId = nation.nation || nation.data?.nation;
+        const level = nation.level || nation.data?.level || 0;
+        if (nationId && level > 0) {
+          await SetNationFront(sessionId, nationId);
+        }
+      }
+    } catch (error: any) {
+      logger.error('[postUpdateMonthly] Failed to set nation fronts', {
+        sessionId,
+        error: error.message
+      });
+    }
+
+    logger.info('[postUpdateMonthly] Monthly post-processing completed', { sessionId });
+  }
+
+  /**
+   * 국력(power) 계산 (PHP postUpdateMonthly 288-334줄)
+   * 국력 = (금+쌀)/100 + 기술력 + 인구*내정% + 장수능력 + 숙련도 + 명성공헌
+   */
+  private static async calculateNationPower(sessionId: string, gameEnv: any) {
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    const rng = this.createRNG(sessionId, gameEnv.year || 184, gameEnv.month || 1, 0, 'power_calc');
+
+    for (const nation of nations) {
+      const nationId = nation.nation || nation.data?.nation;
+      if (!nationId || nationId === 0) continue;
+
+      const level = nation.level || nation.data?.level || 0;
+      if (level === 0) continue; // 방랑군 제외
+
+      try {
+        // 국가 자원
+        const nationGold = nation.data?.gold || nation.gold || 0;
+        const nationRice = nation.data?.rice || nation.rice || 0;
+        const tech = nation.data?.tech || nation.tech || 0;
+
+        // 장수 정보 집계
+        const generals = await generalRepository.findByFilter({
+          session_id: sessionId,
+          'data.nation': nationId
+        });
+
+        let generalGoldRice = 0;
+        let generalAbility = 0;
+        let generalDex = 0;
+        let generalExpDed = 0;
+
+        for (const gen of generals) {
+          const gData = gen.data || gen;
+          generalGoldRice += (gData.gold || 0) + (gData.rice || 0);
+          
+          // 능력치: sqrt(intel * strength) * 2 + leadership / 2
+          const intel = gData.intel || gData.intellect || 0;
+          const strength = gData.strength || 0;
+          const leadership = gData.leadership || 0;
+          generalAbility += Math.sqrt(intel * strength) * 2 + leadership / 2;
+          
+          // leadership >= 40이면 추가 보너스
+          if (leadership >= 40) {
+            generalAbility += leadership * 2;
+          }
+          
+          // 숙련도
+          generalDex += (gData.dex1 || 0) + (gData.dex2 || 0) + (gData.dex3 || 0) + 
+                       (gData.dex4 || 0) + (gData.dex5 || 0);
+          
+          // 경험/공헌
+          generalExpDed += (gData.experience || 0) + (gData.dedication || 0);
+        }
+
+        // 도시 정보 집계 (보급 연결된 도시만)
+        const nationCities = await cityRepository.findByFilter({
+          session_id: sessionId,
+          'data.nation': nationId,
+          'data.supply': 1
+        });
+
+        let cityPower = 0;
+        if (nationCities.length > 0) {
+          let popSum = 0;
+          let devSum = 0;
+          let devMaxSum = 0;
+
+          for (const city of nationCities) {
+            const cData = city.data || city;
+            popSum += cData.pop || 0;
+            devSum += (cData.pop || 0) + (cData.agri || 0) + (cData.comm || 0) + 
+                     (cData.secu || 0) + (cData.wall || 0) + (cData.def || 0);
+            devMaxSum += (cData.pop_max || 1) + (cData.agri_max || 1) + (cData.comm_max || 1) + 
+                        (cData.secu_max || 1) + (cData.wall_max || 1) + (cData.def_max || 1);
+          }
+
+          if (devMaxSum > 0) {
+            cityPower = Math.round(popSum * devSum / devMaxSum / 100);
+          }
+        }
+
+        // 국력 계산
+        let power = Math.round(
+          (Math.round((nationGold + nationRice + generalGoldRice) / 100) +
+           tech +
+           cityPower +
+           generalAbility +
+           Math.round(generalDex / 1000) +
+           Math.round(generalExpDed / 100)) / 10
+        );
+
+        // 약간의 랜덤치 부여 (95% ~ 105%)
+        const randomFactor = 0.95 + rng.nextFloat() * 0.1;
+        power = Math.round(power * randomFactor);
+
+        // 총 병력 계산
+        let totalCrew = 0;
+        for (const gen of generals) {
+          const gData = gen.data || gen;
+          totalCrew += gData.crew || 0;
+        }
+
+        // 국력 저장
+        await nationRepository.updateByNationNum(sessionId, nationId, {
+          power: power
+        });
+
+        // maxPower, maxCrew, maxCities 기록 (PHP와 동일)
+        const currentAux = nation.data?.aux || {};
+        const currentMaxPower = currentAux.maxPower || 0;
+        const currentMaxCrew = currentAux.maxCrew || 0;
+        const currentMaxCities = currentAux.maxCities || [];
+
+        const updateAux: Record<string, any> = {};
+        
+        // maxPower 갱신
+        if (power > currentMaxPower) {
+          updateAux['aux.maxPower'] = power;
+        }
+        
+        // maxCrew 갱신
+        if (totalCrew > currentMaxCrew) {
+          updateAux['aux.maxCrew'] = totalCrew;
+        }
+        
+        // maxCities 갱신 (도시 수가 더 많으면)
+        const nationCityNames = nationCities.map(c => c.data?.name || c.name || `도시${c.city}`);
+        if (nationCityNames.length > currentMaxCities.length) {
+          updateAux['aux.maxCities'] = nationCityNames;
+        }
+
+        if (Object.keys(updateAux).length > 0) {
+          await nationRepository.updateByNationNum(sessionId, nationId, updateAux);
+        }
+
+      } catch (error: any) {
+        logger.error('[calculateNationPower] Failed for nation', {
+          nationId,
+          error: error.message
+        });
+      }
+    }
+
+    logger.debug('[calculateNationPower] Nation power calculated', { sessionId });
+  }
+
+  /**
+   * 전쟁기한 세팅 (PHP postUpdateMonthly 337-349줄)
+   * dead(사상자) 기반으로 전쟁 지속 기간(term) 계산
+   */
+  private static async processWarTermSetting(sessionId: string, gameEnv: any) {
+    const { Diplomacy } = await import('../../models/diplomacy.model');
+    const { Nation } = await import('../../models/nation.model');
+
+    // 교전 중인 외교 관계 조회 (state = 0)
+    const warRelations = await Diplomacy.find({
+      session_id: sessionId,
+      state: 0  // 교전 중
+    });
+
+    // 국가별 장수 수 캐시
+    const genNumCache: Record<number, number> = {};
+    const nations = await Nation.find({ session_id: sessionId });
+    for (const nation of nations) {
+      const nationId = nation.nation || nation.data?.nation;
+      if (nationId) {
+        genNumCache[nationId] = nation.data?.gennum || nation.gennum || 1;
+      }
+    }
+
+    for (const dip of warRelations) {
+      const meNation = dip.me;
+      const genCount = genNumCache[meNation] || 1;
+      const dead = dip.dead || 0;
+      let term = dip.term || 0;
+
+      // PHP: $term = floor($dip['dead'] / 100 / $genCount);
+      // 25% 참여율일때 두당 10턴에 4000명 소모 = 100명/턴/장수
+      const addTerm = Math.floor(dead / 100 / genCount);
+      const newDead = dead - (addTerm * 100 * genCount);
+      
+      // term은 0~13 사이로 제한
+      const newTerm = Math.min(Math.max(term + addTerm, 0), 13);
+
+      await Diplomacy.updateOne(
+        { _id: dip._id },
+        { 
+          $set: { 
+            term: newTerm,
+            dead: Math.max(newDead, 0)
+          } 
+        }
+      );
+    }
+
+    logger.debug('[processWarTermSetting] War term setting processed', { 
+      sessionId, 
+      relationsProcessed: warRelations.length 
+    });
+  }
+
+  /**
+   * available_war_setting_cnt 증가 (PHP postUpdateMonthly 408-421줄)
+   * PHP에서는 KVStorage.nation_env에 저장됨
+   */
+  private static async processWarSettingCntIncrease(sessionId: string) {
+    const { Nation } = await import('../../models/nation.model');
+    const { KVStorage } = await import('../../models/kv-storage.model');
+    
+    // GameConst에서 값 가져오기 (기본값 설정)
+    const maxAvailableWarSettingCnt = 3;  // GameConst.$maxAvailableWarSettingCnt
+    const incAvailableWarSettingCnt = 1;  // GameConst.$incAvailableWarSettingCnt
+
+    const nations = await Nation.find({ session_id: sessionId });
+
+    for (const nation of nations) {
+      const nationId = nation.nation || nation.data?.nation;
+      if (!nationId || nationId === 0) continue;
+
+      // PHP와 동일하게 KVStorage에서 현재 값 가져오기
+      const nationStorage = await KVStorage.findOne({
+        session_id: sessionId,
+        storage_id: `nation_${nationId}`
+      });
+      
+      const currentCnt = nationStorage?.data?.available_war_setting_cnt ?? 0;
+      
+      if (currentCnt >= maxAvailableWarSettingCnt) {
+        continue;  // 이미 최대치
+      }
+
+      const newCnt = Math.min(currentCnt + incAvailableWarSettingCnt, maxAvailableWarSettingCnt);
+
+      // KVStorage에 저장 (PHP와 동일)
+      await KVStorage.updateOne(
+        { session_id: sessionId, storage_id: `nation_${nationId}` },
+        { $set: { 'data.available_war_setting_cnt': newCnt } },
+        { upsert: true }
+      );
+    }
+
+    logger.debug('[processWarSettingCntIncrease] War setting count increased', { sessionId });
+  }
+
+  /**
+   * 방랑군 자동 해체 (PHP checkWander 445-467줄)
+   * 초반 2년 이후 방랑군(level=0)의 대장(officer_level=12)들을 자동 해산
+   */
+  private static async checkWander(sessionId: string, gameEnv: any) {
+    const { General } = await import('../../models/general.model');
+    const { Nation } = await import('../../models/nation.model');
+    const year = gameEnv.year || 184;
+    const month = gameEnv.month || 1;
+
+    logger.info('[checkWander] Checking wandering nations for auto-dissolution', { sessionId, year, month });
+
+    // 방랑군 (level = 0) 국가의 대장 (officer_level = 12) 찾기
+    // PHP: SELECT general.`no` FROM general LEFT JOIN nation ON general.nation = nation.nation 
+    //      WHERE nation.`level` = 0 AND general.`officer_level` = 12
+    const wanderingNations = await Nation.find({
+      session_id: sessionId,
+      $or: [
+        { level: 0 },
+        { 'data.level': 0 }
+      ]
+    });
+
+    const wanderingNationIds = wanderingNations.map(n => n.nation || n.data?.nation).filter(Boolean);
+
+    if (wanderingNationIds.length === 0) {
+      logger.debug('[checkWander] No wandering nations found', { sessionId });
+      return;
+    }
+
+    // 방랑군 대장들 찾기
+    const wanderers = await General.find({
+      session_id: sessionId,
+      $or: [
+        { 'data.nation': { $in: wanderingNationIds }, 'data.officer_level': 12 },
+        { nation: { $in: wanderingNationIds }, officer_level: 12 }
+      ]
+    });
+
+    logger.info('[checkWander] Found wandering lords', { 
+      sessionId, 
+      count: wanderers.length,
+      nationIds: wanderingNationIds 
+    });
+
+    for (const wanderer of wanderers) {
+      const generalNo = wanderer.no || wanderer.data?.no;
+      const generalName = wanderer.name || wanderer.data?.name || `장수${generalNo}`;
+      const nationId = wanderer.nation || wanderer.data?.nation;
+
+      try {
+        // 해산 명령 실행
+        logger.info('[checkWander] Auto-dissolving wandering nation', { 
+          generalNo, 
+          generalName,
+          nationId 
+        });
+
+        // 해산 로그 기록
+        await this.pushGeneralActionLog(
+          sessionId,
+          generalNo,
+          '초반 제한후 방랑군은 자동 해산됩니다.',
+          year,
+          month
+        );
+
+        // 방랑군 해산 처리 (국가 삭제 + 장수들 재야로)
+        await this.dissolveWanderingNation(sessionId, nationId, generalNo, year, month);
+
+      } catch (error: any) {
+        logger.error('[checkWander] Failed to dissolve wandering nation', {
+          generalNo,
+          nationId,
+          error: error.message
+        });
+      }
+    }
+  }
+
+  /**
+   * 방랑군 해산 처리
+   */
+  private static async dissolveWanderingNation(
+    sessionId: string, 
+    nationId: number, 
+    lordGeneralNo: number,
+    year: number,
+    month: number
+  ) {
+    const { General } = await import('../../models/general.model');
+    const { Nation } = await import('../../models/nation.model');
+
+    // 해당 국가의 모든 장수를 재야로 변경
+    const nationGenerals = await General.find({
+      session_id: sessionId,
+      $or: [
+        { 'data.nation': nationId },
+        { nation: nationId }
+      ]
+    });
+
+    for (const gen of nationGenerals) {
+      const genNo = gen.no || gen.data?.no;
+      const genName = gen.name || gen.data?.name || `장수${genNo}`;
+
+      // 재야로 변경
+      await General.updateOne(
+        { _id: gen._id },
+        {
+          $set: {
+            nation: 0,
+            'data.nation': 0,
+            officer_level: 1,
+            'data.officer_level': 1,
+            officer_city: 0,
+            'data.officer_city': 0
+          }
+        }
+      );
+
+      // 로그 기록 (대장 제외)
+      if (genNo !== lordGeneralNo) {
+        await this.pushGeneralActionLog(
+          sessionId,
+          genNo,
+          `소속 세력이 해산되어 <C>재야</>가 되었습니다.`,
+          year,
+          month
+        );
+      }
+    }
+
+    // 국가 삭제 또는 비활성화
+    await Nation.deleteOne({
+      session_id: sessionId,
+      nation: nationId
+    });
+
+    logger.info('[dissolveWanderingNation] Wandering nation dissolved', {
+      sessionId,
+      nationId,
+      generalsAffected: nationGenerals.length
+    });
   }
 
   /**
@@ -2557,32 +3202,49 @@ export class ExecuteEngineService {
 
   /**
    * 랜덤 이벤트 처리
-   * - 재해 (가뭄, 홍수, 역병, 메뚜기떼)
-   * - 풍년
-   * - 도적 출현
+   * PHP RaiseDisaster와 동일한 로직:
+   * - 분기별(1,4,7,10월)에만 재해/호황 이벤트 발생
+   * - 4월, 7월: 25% 확률로 호황/풍작, 75% 확률로 재해
+   * - 1월, 10월: 100% 재해 (호황 없음)
+   * - 도시별 치안(secu) 기반 확률로 대상 선택
    */
   private static async processRandomEvents(sessionId: string, gameEnv: any) {
     const year = gameEnv.year;
     const month = gameEnv.month;
+    const startYear = gameEnv.startyear || 184;
 
     try {
-      // 재해 이벤트 (5% 확률)
+      // PHP RaiseDisaster와 동일: 재해/호황 통합 처리
+      // 분기별(1,4,7,10월)에만 실행, 내부에서 호황/재해 여부 결정
       const { RandomDisaster } = await import('../../core/event/Action/RandomDisaster');
-      const disasterEvent = new RandomDisaster(0.05);
-      const disasterResult = await disasterEvent.run({ session_id: sessionId, year, month });
+      const disasterEvent = new RandomDisaster();
+      const disasterResult = await disasterEvent.run({ 
+        session_id: sessionId, 
+        year, 
+        month,
+        startyear: startYear
+      });
+      
       if (disasterResult.count > 0) {
-        logger.info('[RandomEvent] Disaster occurred', { sessionId, year, month, cities: disasterResult.affectedCities });
+        const eventType = disasterResult.eventType === 'booming' ? '호황/풍작' : '재해';
+        logger.info(`[RandomEvent] ${eventType} occurred`, { 
+          sessionId, 
+          year, 
+          month, 
+          eventType: disasterResult.eventType,
+          cities: disasterResult.affectedCities 
+        });
+      } else if (disasterResult.skipped) {
+        logger.debug('[RandomEvent] Skipped', { 
+          sessionId, 
+          year, 
+          month, 
+          reason: disasterResult.skipped 
+        });
       }
 
-      // 풍년 이벤트 (8% 확률, 가을에는 더 높음)
-      const { BountifulHarvest } = await import('../../core/event/Action/BountifulHarvest');
-      const harvestEvent = new BountifulHarvest(0.08);
-      const harvestResult = await harvestEvent.run({ session_id: sessionId, year, month });
-      if (harvestResult.count > 0) {
-        logger.info('[RandomEvent] Bountiful harvest', { sessionId, year, month, cities: harvestResult.affectedCities });
-      }
-
-      // 도적 출현 이벤트 (3% 확률, 치안 낮으면 더 높음)
+      // 도적 출현 이벤트 (분기별 재해/호황과 별개로 매월 실행 가능)
+      // PHP에서는 황건적이 재해 목록에 포함되어 있으므로 별도 호출은 선택적
       const { BanditRaid } = await import('../../core/event/Action/BanditRaid');
       const banditEvent = new BanditRaid(0.03);
       const banditResult = await banditEvent.run({ session_id: sessionId, year, month });

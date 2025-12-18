@@ -338,6 +338,11 @@ router.post('/game-info', async (req, res) => {
     const turntermForCalc = sessionData.turnterm || 5;
     const tacticalTurnTimeLimit = Math.max(10, Math.floor((turntermForCalc * 60) / tacticalMaxTurns));
     
+    // PHP game_env 호환 필드
+    const turnterm = sessionData.turnterm || 60;
+    const npcmode = gameEnv.npcmode ?? 0;
+    const killturn = gameEnv.killturn ?? Math.floor(4800 / turnterm);
+    
     const gameInfo = {
       serverName: session?.name || '',
       scenario: session?.scenario_name || gameEnv.scenario || '',
@@ -345,7 +350,7 @@ router.post('/game-info', async (req, res) => {
       serverDescription: sessionData.serverDescription || gameEnv.serverDescription || '', // 서버 설명 (로비 표시용)
       serverCnt: sessionData.server_cnt || gameEnv.server_cnt || 1,
       msg: sessionData.noticeMsg || '',
-      turnterm: sessionData.turnterm || 0,
+      turnterm: turnterm,
       turntime: sessionData.turntime || null,
       starttime: gameEnv.starttime || null,
       year: turnYear,
@@ -363,6 +368,17 @@ router.post('/game-info', async (req, res) => {
       // 전술전투 설정
       tacticalMaxTurns,          // 전술전투 최대 턴 수 (기본값 15)
       tacticalTurnTimeLimit,     // 전술턴당 시간 (초)
+      // PHP game_env 호환 필드
+      npcmode: npcmode,                                    // NPC 모드 (0=일반, 1=빠른삭턴)
+      extended_general: gameEnv.extended_general ?? 0,     // 확장 장수 (0=비활성, 1=활성)
+      fiction: gameEnv.fiction ?? 0,                       // 픽션 모드 (0=정사, 1=픽션)
+      show_img_level: gameEnv.show_img_level ?? 3,         // 이미지 레벨 (0~3)
+      genius: gameEnv.genius ?? 100,                       // 천재 제한
+      block_general_create: gameEnv.block_general_create ?? 0, // 장수 생성 제한 (0=허용, 1=제한)
+      killturn: killturn,                                  // 삭턴 (자동 계산)
+      develcost: gameEnv.develcost ?? 20,                  // 내정 비용
+      init_year: gameEnv.init_year ?? gameEnv.startyear ?? 220, // 초기 년도
+      init_month: gameEnv.init_month ?? 1,                 // 초기 월
     };
     
     console.log('[Admin] Returning isunited:', gameInfo.isunited);
@@ -856,6 +872,24 @@ router.post('/update-game', async (req, res) => {
       return res.json({
         result: true,
         reason: `서버 상태가 변경되었습니다 (isunited=${isunited})${isunited === 0 ? ' (턴 처리 즉시 시작됨)' : ''}`
+      });
+    } else if (['npcmode', 'extended_general', 'fiction', 'show_img_level', 'genius', 'block_general_create', 'develcost'].includes(action)) {
+      // PHP game_env 호환 필드 변경
+      const { AdminGameSettingsService: AdminGameSettings } = await import('../services/admin/AdminGameSettings.service');
+      const value = data[action] !== undefined ? data[action] : req.body[action];
+      
+      const result = await AdminGameSettings.setGameEnvField(sessionId, action, value);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          result: false,
+          reason: result.message
+        });
+      }
+      
+      return res.json({
+        result: true,
+        message: result.message
       });
     } else if (action === 'resetScenario') {
       // 시나리오 초기화 - 모든 장수/국가 데이터 삭제 후 시나리오 로드

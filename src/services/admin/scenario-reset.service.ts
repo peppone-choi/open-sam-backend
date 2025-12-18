@@ -328,16 +328,50 @@ export class ScenarioResetService {
     session.data.game_env.join_mode = scenarioMetadata.gameSettings?.join_mode || 'full';
     console.log(`[ScenarioReset] Set join_mode to ${session.data.game_env.join_mode}`);
 
-    // 게임 기본 설정 (PHP game_env와 동일)
-    session.data.game_env.develcost = scenarioMetadata.gameSettings?.develcost || 100;  // 내정/이동 비용
-    session.data.game_env.killturn = scenarioMetadata.gameSettings?.killturn || 30;     // 삭턴
-    session.data.game_env.scenario = scenarioMetadata.gameSettings?.scenario || 0;      // 시나리오 번호
+    // ✅ PHP ResetHelper.php와 동일한 game_env 설정
+    const killturn = Math.floor(4800 / turnterm); // PHP: $killturn = 4800 / $turnterm
+    const develcost = 20; // PHP: ($year - $startyear + 10) * 2, 초기값은 20
+    
+    // PHP $env 배열과 동일한 모든 값 설정
+    session.data.game_env.scenario = scenarioMetadata.gameSettings?.scenario || 0;           // 시나리오 번호
+    session.data.game_env.scenario_text = scenarioName;                                       // 시나리오 텍스트
+    session.data.game_env.icon_path = scenarioMetadata.iconPath || '.';                       // 아이콘 경로
+    session.data.game_env.init_year = startYear;                                              // ✅ 초기 년도
+    session.data.game_env.init_month = 1;                                                     // ✅ 초기 월
+    session.data.game_env.map_theme = scenarioMetadata.gameConf?.mapName || 'che';            // ✅ 맵 테마
+    session.data.game_env.season = 1;                                                         // ✅ 시즌 인덱스
+    session.data.game_env.msg = '공지사항';                                                    // ✅ 공지사항
+    session.data.game_env.maxnation = scenarioMetadata.const?.defaultMaxNation || 12;         // ✅ 최대 국가 수
+    session.data.game_env.refreshLimit = 30000;                                               // ✅ 새로고침 제한
+    session.data.game_env.develcost = scenarioMetadata.gameSettings?.develcost || develcost;  // 내정/이동 비용
+    session.data.game_env.opentime = now.toISOString();                                       // ✅ 오픈 시간
+    session.data.game_env.killturn = scenarioMetadata.gameSettings?.killturn || killturn;     // 삭턴
+    session.data.game_env.genius = scenarioMetadata.const?.defaultMaxGenius || 100;           // ✅ 천재 제한
+    session.data.game_env.show_img_level = scenarioMetadata.gameSettings?.show_img_level ?? 3; // ✅ 이미지 레벨
+    session.data.game_env.join_mode = scenarioMetadata.gameSettings?.join_mode || 'full';      // 임관 모드
+    session.data.game_env.block_general_create = scenarioMetadata.gameSettings?.block_general_create ?? 0; // ✅ 장수 생성 제한
+    session.data.game_env.npcmode = scenarioMetadata.gameSettings?.npcmode ?? 0;              // ✅ NPC 모드
+    session.data.game_env.extended_general = scenarioMetadata.gameSettings?.extended_general ?? 0; // ✅ 확장 장수
+    session.data.game_env.fiction = scenarioMetadata.gameSettings?.fiction ?? 0;              // ✅ 픽션 모드
+    session.data.game_env.tnmt_trig = scenarioMetadata.gameSettings?.tnmt_trig ?? false;      // ✅ 토너먼트 트리거
+    session.data.game_env.prev_winner = null;                                                 // ✅ 이전 승자
+    session.data.game_env.autorun_user = null;                                                // ✅ 자동 실행 유저
+    session.data.game_env.tournament = 0;                                                     // ✅ 토너먼트 상태
+    session.data.game_env.server_cnt = 1;                                                     // ✅ 서버 카운트
     session.data.game_env.allow_rebellion = scenarioMetadata.gameSettings?.allow_rebellion ?? true; // 모반 허용
     
     // NPC AI 기본값 설정 (full = 모든 NPC에 AI 활성화)
     session.data.game_env.npc_ai_mode = scenarioMetadata.gameSettings?.npc_ai_mode || 'full';
     
-    console.log(`[ScenarioReset] Set game_env: develcost=${session.data.game_env.develcost}, killturn=${session.data.game_env.killturn}, npc_ai_mode=${session.data.game_env.npc_ai_mode}`);
+    console.log(`[ScenarioReset] Set game_env (PHP compatible):`);
+    console.log(`   - develcost: ${session.data.game_env.develcost}`);
+    console.log(`   - killturn: ${session.data.game_env.killturn}`);
+    console.log(`   - npcmode: ${session.data.game_env.npcmode}`);
+    console.log(`   - maxnation: ${session.data.game_env.maxnation}`);
+    console.log(`   - genius: ${session.data.game_env.genius}`);
+    console.log(`   - show_img_level: ${session.data.game_env.show_img_level}`);
+    console.log(`   - extended_general: ${session.data.game_env.extended_general}`);
+    console.log(`   - fiction: ${session.data.game_env.fiction}`);
 
     // 서버 상태를 폐쇄(준비중)로 설정
     // 시나리오 리셋 후에는 관리자가 수동으로 서버를 오픈해야 함
@@ -633,6 +667,12 @@ export class ScenarioResetService {
         }
       }
 
+      // PHP Nation.php와 동일한 초기화
+      const aux = {
+        'can_국기변경': 1,
+        ...(nationLevel === 7 ? { 'can_국호변경': 1 } : {})
+      };
+
       const nationData = {
         session_id: sessionId,
         nation: nationId,
@@ -642,6 +682,15 @@ export class ScenarioResetService {
         gold: gold || 10000,
         rice: rice || 10000,
         level: nationLevel || 2, // 국가 크기 (1=소형, 2=일반, 3=대형, 4=제국 등)
+        // PHP와 동일한 필드 추가
+        bill: 100,                    // 세율 (PHP 기본값)
+        rate: 15,                     // 징병율 (PHP 기본값)
+        scout: 0,                     // 정찰 레벨
+        war: 0,                       // 전쟁 플래그 (숫자 0, PHP와 동일)
+        strategic_cmd_limit: 24,      // 전략명령 제한
+        surlimit: 72,                 // 항복 조건
+        gennum: 0,                    // 장수 수 (나중에 업데이트)
+        aux: aux,                     // 보조 데이터
         data: {
           nation: nationId,
           name: nationName,
@@ -655,6 +704,12 @@ export class ScenarioResetService {
           chief: {},
           bills: [],
           gennum: 0,
+          bill: 100,
+          rate: 15,
+          scout: 0,
+          war: 0,
+          strategic_cmd_limit: 24,
+          surlimit: 72,
           bill_history: [],
           diplomacy: {},
           environment: {},
@@ -663,9 +718,9 @@ export class ScenarioResetService {
           gold: gold,
           rice: rice,
           trust: 50,
+          aux: aux,
           aux_valid_until: null,
           regions: cityNames,
-          war: {},
           stat: {
             gen: 0,
             strength: 0,
@@ -960,53 +1015,116 @@ export class ScenarioResetService {
         officerLevel = nationNo > 0 ? 1 : 0;
       }
       
+      // PHP GeneralBuilder.php와 동일한 초기화
+      // 경험치/헌신도 계산 (PHP: $experience = $this->experience ?: $age * 100)
+      const experience = age * 100;
+      const dedication = age * 100;
+      
+      // 친밀도 계산 (PHP: 1-150 랜덤)
+      const affinity = Math.floor(Math.random() * 150) + 1;
+      
+      // 삭턴 계산 (PHP: killturn = (death - year) * 12 + random(0,11) + month - 1)
+      const killturn = deathYear 
+        ? (deathYear - startYear) * 12 + Math.floor(Math.random() * 12) + 1 - 1
+        : 9999;
+      
+      // specAge 계산 (PHP 로직)
+      // specAge = max(3, round((retirementYear - age) / 12 - relYear / 2)) + age
+      const retirementYear = 70; // GameConst::$retirementYear 기본값
+      const relYear = 0; // 시작 시점이므로 0
+      const specAge = Math.max(3, Math.round((retirementYear - age) / 12 - relYear / 2)) + age;
+      const specAge2 = Math.max(3, Math.round((retirementYear - age) / 6 - relYear / 2)) + age;
+      
+      // 기본 특기 (PHP: GameConst::$defaultSpecialDomestic, $defaultSpecialWar)
+      const specialDomestic = special || 'None';
+      const specialWar = 'None';
+      
+      // 기본 병종 (PHP: GameUnitConst::DEFAULT_CREWTYPE)
+      const defaultCrewType = 0;
+      
       const generalData = {
         session_id: sessionId,
         no: id,
         name: name,
-        owner: 'NPC',
+        owner: 0,           // PHP: owner는 0 (NPC)
+        owner_name: null,
         npc: npc || 2,
+        npc_org: npc || 2,  // PHP: npc_org (원본 NPC 타입)
+        affinity: affinity, // PHP: 친밀도
         nation: nationNo,
         city: assignedCityId,
-        belong: nationNo,
+        belong: 0,          // PHP: belong 초기값은 0
         turntime: npcTurntime,
-        owner_name: null,
         gold: 1000,
         rice: 1000,
-        crew: 0,  // 초기 병사 0
+        crew: 0,            // 초기 병사 0
+        crewtype: defaultCrewType, // PHP: 기본 병종
         train: 0,
-        atmos: 50,
+        atmos: 0,           // PHP: atmos 초기값은 0
         turnidx: 0,
         belong_history: [],
-        officer_level: officerLevel,  // ✅ 최상위 필드에도 저장
+        officer_level: officerLevel,
         permission: 0,
+        // PHP GeneralBuilder.php 추가 필드
+        leadership: leadership,
+        strength: strength,
+        intel: intel,
+        experience: experience,
+        dedication: dedication,
+        dedlevel: 1,        // PHP: dedlevel 초기값 1
+        killturn: killturn,
+        age: age,
+        personal: personality || 'Normal', // PHP: personal (성격)
+        special: specialDomestic,  // PHP: 내정특기
+        specage: specAge,
+        special2: specialWar,      // PHP: 전투특기
+        specage2: specAge2,
+        npcmsg: text || null,
+        makelimit: 0,       // PHP: 제작 제한
+        bornyear: birthYear,
+        deadyear: deathYear,
+        // 병종 숙련도 (PHP: dex1~dex5)
+        dex1: 0,
+        dex2: 0,
+        dex3: 0,
+        dex4: 0,
+        dex5: 0,
+        aux: {},            // PHP: aux
+        imgsvr: 0,
+        picture: 'default.jpg',
         data: {
           no: id,
           name: name,
           nation: nationNo,
           city: assignedCityId,
-          belong: nationNo,
+          belong: 0,
           leadership: leadership,
           strength: strength,
           intel: intel,
           politics: politics,
           charm: charm,
-          experience: 0,
-          dedication: 50,
+          experience: experience,
+          dedication: dedication,
+          dedlevel: 1,
           age: age,
           birth_year: birthYear,
           death_year: deathYear,
-          special: special,
-          personality: personality,
+          special: specialDomestic,
+          special2: specialWar,
+          specage: specAge,
+          specage2: specAge2,
+          personality: personality || 'Normal',
+          personal: personality || 'Normal',
           gold: 1000,
           rice: 1000,
-          crew: 0,  // 초기 병사 수 0 (징병/모병 필요)
+          crew: 0,
+          crewtype: defaultCrewType,
           crew_leadership: 0,
           crew_strength: 0,
           crew_intel: 0,
           horse: 0,
           horse_type: 0,
-          atmos: 50,
+          atmos: 0,
           train: 0,
           injury: 0,
           general_type: nationNo === 0 ? 0 : 5,
@@ -1017,7 +1135,18 @@ export class ScenarioResetService {
           charm_exp: 0,
           officer_level: officerLevel,
           permission: 0,
-          turntime: npcTurntime.toISOString()
+          turntime: npcTurntime.toISOString(),
+          killturn: killturn,
+          affinity: affinity,
+          npc: npc || 2,
+          npc_org: npc || 2,
+          dex1: 0,
+          dex2: 0,
+          dex3: 0,
+          dex4: 0,
+          dex5: 0,
+          makelimit: 0,
+          aux: {}
         }
       };
 
@@ -1076,6 +1205,86 @@ export class ScenarioResetService {
         { 'data.leader': generalNo, leader: generalNo }
       );
       console.log(`[ScenarioReset] Set nation ${nationId} leader to general ${generalNo}`);
+    }
+
+    // ✅ PHP GeneralBuilder.php와 동일: general_turn 초기화
+    // PHP: GameConst::$maxTurn (기본값 12)
+    const maxTurn = 12;
+    await this.initializeGeneralTurns(sessionId, generalsToCreate, maxTurn);
+    
+    // ✅ PHP GeneralBuilder.php와 동일: rank_data 초기화
+    await this.initializeRankData(sessionId, generalsToCreate);
+  }
+  
+  /**
+   * 장수별 턴 데이터 초기화 (PHP GeneralBuilder.php 대응)
+   * PHP: general_turn 테이블에 각 장수별로 maxTurn개의 '휴식' 턴 생성
+   */
+  private static async initializeGeneralTurns(
+    sessionId: string,
+    generals: any[],
+    maxTurn: number
+  ): Promise<void> {
+    console.log(`[ScenarioReset] Initializing general_turn for ${generals.length} generals (maxTurn=${maxTurn})`);
+    
+    const turnRows: any[] = [];
+    for (const general of generals) {
+      for (let turnIdx = 0; turnIdx < maxTurn; turnIdx++) {
+        turnRows.push({
+          session_id: sessionId,
+          data: {
+            general_id: general.no,
+            turn_idx: turnIdx,
+            action: '휴식',
+            arg: null,
+            brief: '휴식'
+          }
+        });
+      }
+    }
+    
+    // 벌크 삽입
+    if (turnRows.length > 0) {
+      const { GeneralTurn } = await import('../../models/general_turn.model');
+      await GeneralTurn.insertMany(turnRows);
+      console.log(`[ScenarioReset] Created ${turnRows.length} general_turn entries`);
+    }
+  }
+  
+  /**
+   * 장수별 랭킹 데이터 초기화 (PHP GeneralBuilder.php 대응)
+   * PHP: rank_data 테이블에 각 장수별로 모든 RankColumn 타입의 초기 데이터 생성
+   */
+  private static async initializeRankData(
+    sessionId: string,
+    generals: any[]
+  ): Promise<void> {
+    console.log(`[ScenarioReset] Initializing rank_data for ${generals.length} generals`);
+    
+    // RankColumn enum 가져오기
+    const { getRankColumnCases } = await import('../../Enums/RankColumn');
+    const rankColumns = getRankColumnCases();
+    
+    const rankRows: any[] = [];
+    for (const general of generals) {
+      for (const rankColumn of rankColumns) {
+        rankRows.push({
+          session_id: sessionId,
+          data: {
+            general_id: general.no,
+            nation_id: 0,
+            type: rankColumn,
+            value: 0
+          }
+        });
+      }
+    }
+    
+    // 벌크 삽입
+    if (rankRows.length > 0) {
+      const { RankData } = await import('../../models/rank_data.model');
+      await RankData.insertMany(rankRows);
+      console.log(`[ScenarioReset] Created ${rankRows.length} rank_data entries (${rankColumns.length} types per general)`);
     }
   }
 

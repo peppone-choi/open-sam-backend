@@ -115,6 +115,49 @@ export class RandUtil {
     return keys[keys.length - 1];
   }
 
+  /**
+   * PHP RandUtil::choiceUsingWeightPair와 동일
+   * [value, weight] 쌍의 배열에서 가중치 기반으로 선택
+   * 
+   * @param weightPairs - [[value1, weight1], [value2, weight2], ...] 또는 Map<any, [value, weight]>
+   * @returns 선택된 값
+   * 
+   * @example
+   * ```ts
+   * const result = rng.choiceUsingWeightPair([
+   *   ['apple', 10],
+   *   ['banana', 5],
+   *   ['orange', 3]
+   * ]);
+   * ```
+   */
+  choiceUsingWeightPair<T>(weightPairs: [T, number][] | Map<any, [T, number]>): T {
+    // Map을 배열로 변환
+    const pairs: [T, number][] = weightPairs instanceof Map 
+      ? Array.from(weightPairs.values()) 
+      : weightPairs;
+    
+    if (pairs.length === 0) {
+      throw new Error('Cannot choose from empty weight pairs');
+    }
+
+    const totalWeight = pairs.reduce((sum, [, weight]) => sum + weight, 0);
+    if (totalWeight <= 0) {
+      throw new Error('Total weight must be positive');
+    }
+
+    let random = this.next() * totalWeight;
+    
+    for (const [value, weight] of pairs) {
+      random -= weight;
+      if (random <= 0) {
+        return value;
+      }
+    }
+    
+    return pairs[pairs.length - 1][0];
+  }
+
   shuffle<T>(arr: T[]): T[] {
     const result = [...arr];
     for (let i = result.length - 1; i > 0; i--) {

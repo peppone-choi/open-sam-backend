@@ -1064,8 +1064,8 @@ export class ProcessWarService {
       }
 
       // 분쟁 보상 분배 (경험치/명성)
-      const baseExp = Math.floor((city.level || 5) * 100);
-      const baseFame = Math.floor((city.level || 5) * 50);
+      const baseExp = Math.floor(((city as any).level || 5) * 100);
+      const baseFame = Math.floor(((city as any).level || 5) * 50);
       await conflictService.distributeRewards(
         sessionId,
         cityId,
@@ -1199,7 +1199,7 @@ export class ProcessWarService {
   /**
    * 장수의 병력에 손실 적용 (general.data.crew 직접 감소)
    */
-  private static async applyBattleLossToGeneral(
+  static async applyBattleLossToGeneral(
     sessionId: string,
     generalNo: number,
     totalLoss: number
@@ -1222,8 +1222,8 @@ export class ProcessWarService {
    */
   private static async getCityDefenseCrew(sessionId: string, cityId: number): Promise<number> {
     const { generalRepository } = await import('../../repositories/general.repository');
-    const defenders = await generalRepository.findByCityId(sessionId, cityId);
-    return defenders.reduce((sum, d) => sum + (d.crew ?? d.data?.crew ?? 0), 0);
+    const defenders = await generalRepository.findByCity(sessionId, cityId);
+    return defenders.reduce((sum, d) => sum + ((d as any).crew ?? (d as any).data?.crew ?? 0), 0);
   }
 
   private static getUnitCrewValue(unit: any): number {

@@ -58,6 +58,39 @@ export abstract class Action {
           ActionModule = require('./Action/RandomizeCityTradeRate');
           ActionClass = ActionModule.RandomizeCityTradeRate;
           break;
+        case 'CreateAdminNPC':
+          ActionModule = require('./Action/CreateAdminNPC');
+          ActionClass = ActionModule.CreateAdminNPC;
+          break;
+        case 'RandomDisaster':
+        case 'RaiseDisaster':  // PHP 이름 호환
+          ActionModule = require('./Action/RandomDisaster');
+          ActionClass = ActionModule.RandomDisaster;
+          break;
+        case 'BountifulHarvest':
+          ActionModule = require('./Action/BountifulHarvest');
+          ActionClass = ActionModule.BountifulHarvest;
+          break;
+        case 'UpdateNationLevel':
+          ActionModule = require('./Action/UpdateNationLevel');
+          ActionClass = ActionModule.UpdateNationLevel;
+          break;
+        case 'UpdateCitySupply':
+          ActionModule = require('./Action/UpdateCitySupply');
+          ActionClass = ActionModule.UpdateCitySupply;
+          break;
+        case 'CreateManyNPC':
+          ActionModule = require('./Action/CreateManyNPC');
+          ActionClass = ActionModule.CreateManyNPC;
+          break;
+        case 'RegNPC':
+          ActionModule = require('./Action/RegNPC');
+          ActionClass = ActionModule.RegNPC;
+          break;
+        case 'RegNeutralNPC':
+          ActionModule = require('./Action/RegNeutralNPC');
+          ActionClass = ActionModule.RegNeutralNPC;
+          break;
         default:
           ActionModule = require(`./Action/${className}`);
           ActionClass = ActionModule[className] || ActionModule.default;

@@ -121,27 +121,55 @@ export class ConstraintHelper {
     };
   }
 
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/WanderingNation.php
+   * 방랑군(유랑 세력)인지 확인
+   * - PHP: nation['level'] == 0
+   */
   static WanderingNation(): IConstraint {
     return {
       test: (input: any, env: any) => {
-        return this.getNationVar(input.nation, 'type', 0) === 1 ? null : '유랑 세력만 가능합니다.';
+        return this.getNationVar(input.nation, 'level', -1) === 0 ? null : '방랑군이어야 합니다';
       }
     };
   }
 
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NotWanderingNation.php
+   * 방랑군(유랑 세력)이 아닌지 확인
+   * - PHP: nation['level'] != 0
+   */
   static NotWanderingNation(): IConstraint {
     return {
       test: (input: any, env: any) => {
-        return this.getNationVar(input.nation, 'type', 0) !== 1 ? null : '유랑 세력은 불가능합니다.';
+        return this.getNationVar(input.nation, 'level', -1) !== 0 ? null : '방랑군은 불가능합니다.';
       }
     };
   }
 
-  static OccupiedCity(): IConstraint {
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/OccupiedCity.php
+   * 아국 도시인지 확인
+   * 
+   * @param allowNeutral - true이면 재야(nation=0)도 허용
+   */
+  static OccupiedCity(allowNeutral: boolean = false): IConstraint {
     return {
       test: (input: any, env: any) => {
         const city = input.city;
-        return this.getCityVar(city, 'nation') === input.general?.getNationID() ? null : '아국 도시가 아닙니다.';
+        const generalNation = input.general?.getNationID?.() ?? this.getGenVar(input.general, 'nation');
+        const cityNation = this.getCityVar(city, 'nation');
+
+        // 재야여도 허용하는 경우
+        if (allowNeutral && generalNation === 0) {
+          return null;
+        }
+
+        if (cityNation === generalNation) {
+          return null;
+        }
+
+        return '아국이 아닙니다.';
       }
     };
   }
@@ -226,6 +254,20 @@ export class ConstraintHelper {
   }
 
   /**
+   * PHP 대응: core/hwe/sammo/Constraint/AllowStrategicCommand.php
+   * 전략 명령 허용 여부 확인 (전쟁 금지 상태 확인)
+   * - AllowWar와 동일한 로직이지만 별도 메서드로 분리
+   */
+  static AllowStrategicCommand(): IConstraint {
+    return {
+      test: (input: any, env: any) => {
+        const warFlag = this.getNationVar(input.nation, 'war', 0);
+        return warFlag === 0 ? null : '현재 전쟁 금지입니다.';
+      }
+    };
+  }
+
+  /**
    * PHP 대응: core/hwe/sammo/Constraint/HasRoute.php
    * 목적 도시까지 경로가 있는지 확인 (자국 영토 통과)
    */
@@ -265,6 +307,12 @@ export class ConstraintHelper {
   /**
    * PHP 대응: core/hwe/sammo/Constraint/HasRouteWithEnemy.php
    * 적국 영토를 통과하여 목적 도시까지 경로가 있는지 확인
+   * 
+   * 필수 input 데이터:
+   * - input.general: 장수 정보
+   * - input.destCity: 목적 도시 정보
+   * - input.warNations: 교전 중인 국가 ID 배열 (PHP는 DB 쿼리로 조회)
+   *   예: SELECT you FROM diplomacy WHERE state = 0 AND me = {nationId}
    */
   static HasRouteWithEnemy(): IConstraint {
     return {
@@ -571,8 +619,26 @@ export class ConstraintHelper {
     };
   }
 
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/AllowJoinAction.php
+   * 재야가 된 후 일정 턴이 지나야 임관/건국 가능
+   * - makelimit이 0이면 허용
+   * - makelimit > 0이면 아직 제한 기간
+   */
   static AllowJoinAction(): IConstraint {
-    return { test: () => null };
+    return {
+      test: (input: any, env: any) => {
+        const makelimit = this.getGenVar(input.general, 'makelimit', 0);
+        
+        if (makelimit === 0) {
+          return null;
+        }
+
+        // PHP GameConst::$joinActionLimit = 12 (기본값)
+        const joinActionLimit = env?.join_action_limit ?? env?.joinActionLimit ?? 12;
+        return `재야가 된지 ${joinActionLimit}턴이 지나야 합니다.`;
+      }
+    };
   }
 
   static AllowJoinDestNation(relYear: number): IConstraint {
@@ -676,20 +742,51 @@ export class ConstraintHelper {
     };
   }
 
-  static ReqNationAuxValue(key: string, operator: string, value: any, message: string): IConstraint {
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ReqNationAuxValue.php
+   * 국가 보조 데이터(aux) 값 확인
+   * 
+   * @param key - aux 내 확인할 키
+   * @param defaultValue - 키가 없을 때 사용할 기본값
+   * @param operator - 비교 연산자
+   * @param reqVal - 비교할 값
+   * @param errMsg - 에러 메시지
+   */
+  static ReqNationAuxValue(
+    key: string,
+    defaultValue: any,
+    operator: string,
+    reqVal: any,
+    errMsg: string
+  ): IConstraint {
     return {
       test: (input: any, env: any) => {
-        const auxValue = input.nation?.aux?.[key];
+        // aux 데이터 파싱
+        let auxData = input.nation?.aux;
+        if (typeof auxData === 'string') {
+          try {
+            auxData = JSON.parse(auxData);
+          } catch {
+            auxData = {};
+          }
+        }
+        auxData = auxData ?? {};
+
+        // 키 값 가져오기 (없으면 defaultValue 사용)
+        const auxValue = auxData[key] ?? defaultValue;
+
         let result = false;
         switch (operator) {
-          case '>=': result = auxValue >= value; break;
-          case '>': result = auxValue > value; break;
-          case '<=': result = auxValue <= value; break;
-          case '<': result = auxValue < value; break;
-          case '===': result = auxValue === value; break;
-          case '!==': result = auxValue !== value; break;
+          case '>=': result = auxValue >= reqVal; break;
+          case '>': result = auxValue > reqVal; break;
+          case '<=': result = auxValue <= reqVal; break;
+          case '<': result = auxValue < reqVal; break;
+          case '===': result = auxValue === reqVal; break;
+          case '!==': result = auxValue !== reqVal; break;
+          case '==': result = auxValue == reqVal; break;
+          case '!=': result = auxValue != reqVal; break;
         }
-        return result ? null : message;
+        return result ? null : errMsg;
       }
     };
   }
@@ -730,12 +827,30 @@ export class ConstraintHelper {
     };
   }
 
-  static AvailableStrategicCommand(commandKey: string, message?: string): IConstraint {
-    const actualMessage = message || '사용할 수 없는 전략 명령입니다.';
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/AvailableStrategicCommand.php
+   * 전략 명령 사용 가능 여부 확인 (턴 카운트 기반)
+   * 
+   * 사용법:
+   * - AvailableStrategicCommand() - 기본값 0, strategic_cmd_limit이 0이면 사용 가능
+   * - AvailableStrategicCommand(3) - strategic_cmd_limit이 3 이하면 사용 가능
+   * - AvailableStrategicCommand('strategic') - 레거시 호환 (allowTurnCnt=0으로 처리)
+   * 
+   * @param allowTurnCntOrLegacy - 허용되는 최소 턴 수 또는 레거시 문자열
+   */
+  static AvailableStrategicCommand(allowTurnCntOrLegacy?: number | string): IConstraint {
+    // 레거시 호출 호환성: 문자열이 전달되면 0으로 처리
+    const allowTurnCnt = typeof allowTurnCntOrLegacy === 'number' ? allowTurnCntOrLegacy : 0;
+    
     return {
       test: (input: any, env: any) => {
-        const available = input.availableCommandTypeList?.[commandKey];
-        return available ? null : actualMessage;
+        const strategicCmdLimit = this.getNationVar(input.nation, 'strategic_cmd_limit', 0);
+        
+        if (strategicCmdLimit <= allowTurnCnt) {
+          return null;
+        }
+
+        return '전략기한이 남았습니다.';
       }
     };
   }
@@ -926,16 +1041,29 @@ export class ConstraintHelper {
     };
   }
 
-  static RemainCityTrust(actionName: string, minRemainTrust: number = 20, message?: string): IConstraint {
-    const actualMessage = message || `${actionName} 후 도시 신뢰도가 ${minRemainTrust} 미만으로 떨어집니다.`;
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/RemainCityTrust.php
+   * 도시 신뢰도가 아직 최대치(100)가 아닌지 확인
+   * - 신뢰도가 100 미만이면 통과 (더 올릴 수 있음)
+   * - 신뢰도가 100 이상이면 실패 ("신뢰는 충분합니다")
+   * 
+   * @param actionName - 행동 이름 (선정 등)
+   */
+  static RemainCityTrust(actionName: string): IConstraint {
     return {
       test: (input: any, env: any) => {
-        // 선정 등 행동 후 신뢰도가 일정 수준 이상 남아야 함
         const city = input.city;
         const currentTrust = this.getCityVar(city, 'trust') || 0;
-        
-        // 선정의 경우 신뢰도 감소량 계산 (간단 버전)
-        return currentTrust >= minRemainTrust + 10 ? null : actualMessage;
+        const maxTrust = 100;
+
+        if (currentTrust < maxTrust) {
+          return null;
+        }
+
+        // 조사 처리 (은/는)
+        const lastChar = actionName.charAt(actionName.length - 1);
+        const josa = hasKoreanBatchim(lastChar) ? '은' : '는';
+        return `${actionName}${josa} 충분합니다.`;
       }
     };
   }
@@ -1241,14 +1369,25 @@ export class ConstraintHelper {
     };
   }
 
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/ExistsAllowJoinNation.php
+   * 임관 가능한 국가가 존재하는지 확인
+   * 
+   * @param relYear - 상대 년도 (현재년도 - 시작년도)
+   * @param excludeNationList - 제외할 국가 ID 목록
+   * 
+   * 주의: input.nationList에 국가 목록이 전달되어야 합니다.
+   * PHP는 DB에서 직접 조회하지만, Node.js는 input으로 전달받습니다.
+   */
   static ExistsAllowJoinNation(relYear: number, excludeNationList: number[]): IConstraint {
     return {
       test: (input: any, env: any) => {
         const nationList = input.nationList ?? [];
-        const initialNationGenLimit = env?.initial_nation_gen_limit ?? 10;
-        const defaultMaxGeneral = env?.default_max_general ?? 50;
+        const openingPartYear = env?.opening_part_year ?? env?.openingPartYear ?? 3;
+        const initialNationGenLimit = env?.initial_nation_gen_limit ?? env?.initialNationGenLimit ?? 10;
+        const defaultMaxGeneral = env?.default_max_general ?? env?.defaultMaxGeneral ?? 50;
 
-        const maxGen = relYear < 3 ? initialNationGenLimit : defaultMaxGeneral;
+        const maxGen = relYear < openingPartYear ? initialNationGenLimit : defaultMaxGeneral;
 
         const availableNations = nationList.filter((nation: any) => {
           const nationNo = this.getNationVar(nation, 'nation', this.getNationVar(nation, 'no'));
@@ -1311,10 +1450,21 @@ export class ConstraintHelper {
     };
   }
 
-  static NoPenalty(penaltyKey: string): IConstraint {
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NoPenalty.php
+   * 특정 징계가 없는지 확인
+   * 
+   * @param penaltyKey - 확인할 징계 키 (string 또는 { value: string } 형태의 BackedEnum)
+   * - PHP에서는 PenaltyKey Enum을 사용
+   * - Node.js에서는 string 또는 BackedEnum-like 객체 지원
+   */
+  static NoPenalty(penaltyKey: string | { value: string }): IConstraint {
     return {
       test: (input: any, env: any) => {
         const penalty = this.getGenVar(input.general, 'penalty', '{}');
+        
+        // 키 값 추출 (BackedEnum-like 객체 또는 string)
+        const keyValue = typeof penaltyKey === 'string' ? penaltyKey : penaltyKey.value;
         
         let penaltyObj: Record<string, string> = {};
         if (typeof penalty === 'string') {
@@ -1323,12 +1473,12 @@ export class ConstraintHelper {
           } catch {
             penaltyObj = {};
           }
-        } else if (typeof penalty === 'object') {
+        } else if (typeof penalty === 'object' && penalty !== null) {
           penaltyObj = penalty;
         }
 
-        if (penaltyKey in penaltyObj) {
-          return `징계 사유: ${penaltyObj[penaltyKey]}`;
+        if (keyValue in penaltyObj) {
+          return `징계 사유: ${penaltyObj[keyValue]}`;
         }
 
         return null;
@@ -1336,6 +1486,15 @@ export class ConstraintHelper {
     };
   }
 
+  /**
+   * PHP 대응: core/hwe/sammo/Constraint/NearNation.php
+   * 인접 국가인지 확인
+   * 
+   * 필수 input 데이터:
+   * - input.destNation: 대상 국가 정보
+   * - input.neighborNations: 인접 국가 ID 배열 (PHP는 isNeighbor() 함수로 계산)
+   *   호출부에서 미리 계산해서 전달해야 합니다.
+   */
   static NearNation(): IConstraint {
     return {
       test: (input: any, env: any) => {

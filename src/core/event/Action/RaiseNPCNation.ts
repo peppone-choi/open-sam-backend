@@ -2,6 +2,7 @@
 import { Action } from '../Action';
 import { City } from '../../../models/city.model';
 import { Nation } from '../../../models/nation.model';
+import { ActionLogger } from '../../../services/logger/ActionLogger';
 
 /**
  * NPC 국가 생성 액션
@@ -35,14 +36,14 @@ export class RaiseNPCNation extends Action {
     // - 거리 측정
     // - NPC 국가 생성
 
-    const createdCount = 0; // 임시
+    const createdCount = 0; // 임시 - TODO: 실제 NPC 국가 생성 로직 구현 필요
 
-    // FUTURE: 로그 처리
-    // if (createdCount > 0) {
-    //   const logger = new ActionLogger(0, 0, year, month);
-    //   logger.pushGlobalHistoryLog(`<L><b>【공지】</b></>공백지에 임의의 국가가 생성되었습니다.`);
-    //   logger.flush();
-    // }
+    // PHP 호환 로그 (core/hwe/sammo/Event/Action/RaiseNPCNation.php)
+    if (createdCount > 0) {
+      const logger = new ActionLogger(0, 0, year, month, sessionId);
+      logger.pushGlobalHistoryLog(`<L><b>【공지】</b></>공백지에 임의의 국가가 생성되었습니다.`);
+      await logger.flush();
+    }
 
     return [RaiseNPCNation.name, createdCount];
   }

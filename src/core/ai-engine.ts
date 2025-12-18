@@ -191,8 +191,8 @@ export class AIEngine {
   private generalType: number = 0;
   private diplomacyState: DiplomacyState = DiplomacyState.PEACE;
   private cityEvaluations: Map<number, CityEvaluation> = new Map();
-  private cachedGeneralStacks: IUnitStack[] = [];
-  private cachedCityStacks: IUnitStack[] = [];
+  private cachedGeneralStacks: any[] = [];
+  private cachedCityStacks: any[] = [];
   private cachedGeneralCrew = 0;
   private cachedAverageTrain = 0;
   private cachedAverageMorale = 0;
@@ -200,7 +200,7 @@ export class AIEngine {
   private static readonly DIPLOMACY_CACHE_TTL_MS = 60_000;
   private static diplomacyCache: Map<string, { state: DiplomacyState; expiresAt: number }> = new Map();
   
-  private getStackTroopCount(stack: Partial<IUnitStack>): number {
+  private getStackTroopCount(stack: any): number {
     if (!stack) {
       return 0;
     }

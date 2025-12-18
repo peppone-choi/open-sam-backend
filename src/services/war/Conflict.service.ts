@@ -87,7 +87,7 @@ class ConflictService {
       throw new Error(`도시를 찾을 수 없습니다: ${cityId}`);
     }
 
-    let conflict: ConflictData = this.parseConflict(city.conflict);
+    let conflict: ConflictData = this.parseConflict((city as any).conflict);
     let isNewConflict = false;
     let bonusDamage = damage;
 
@@ -132,19 +132,20 @@ class ConflictService {
     const cities = await cityRepository.findBySession(sessionId);
     
     for (const city of cities) {
-      const conflict = this.parseConflict(city.conflict);
+      const cityAny = city as any;
+      const conflict = this.parseConflict(cityAny.conflict);
       
       if (conflict[nationId]) {
         delete conflict[nationId];
         
-        await cityRepository.updateByCityNum(sessionId, city.city, {
+        await cityRepository.updateByCityNum(sessionId, cityAny.city, {
           conflict: Object.keys(conflict).length > 0 ? JSON.stringify(conflict) : '{}'
         });
         
         logger.info('[ConflictService] 분쟁 기록 삭제', {
           sessionId,
-          cityId: city.city,
-          cityName: city.name,
+          cityId: cityAny.city,
+          cityName: cityAny.name,
           nationId
         });
       }
@@ -175,7 +176,7 @@ class ConflictService {
     const city = await cityRepository.findByCityNum(sessionId, cityId);
     if (!city) return null;
 
-    const conflict = this.parseConflict(city.conflict);
+    const conflict = this.parseConflict((city as any).conflict);
     const nationIds = Object.keys(conflict);
     
     if (nationIds.length === 0) return null;
@@ -198,7 +199,7 @@ class ConflictService {
     const city = await cityRepository.findByCityNum(sessionId, cityId);
     if (!city) return [];
 
-    const conflict = this.parseConflict(city.conflict);
+    const conflict = this.parseConflict((city as any).conflict);
     const totalDamage = Object.values(conflict).reduce((sum, d) => sum + d, 0);
     
     if (totalDamage === 0) return [];
@@ -211,10 +212,10 @@ class ConflictService {
       
       participants.push({
         nationId,
-        nationName: nation?.name || `국가${nationId}`,
+        nationName: (nation as any)?.name || `국가${nationId}`,
         damage,
         percentage: Math.round((damage / totalDamage) * 1000) / 10,
-        color: nation?.color || this.getNationColor(nationId)
+        color: (nation as any)?.color || this.getNationColor(nationId)
       });
     }
 
@@ -235,8 +236,8 @@ class ConflictService {
     
     if (!city || !nation) return;
 
-    const cityName = city.name || `도시${cityId}`;
-    const nationName = nation.name || `국가${newNationId}`;
+    const cityName = (city as any).name || `도시${cityId}`;
+    const nationName = (nation as any).name || `국가${newNationId}`;
     const josaYi = JosaUtil.pick(nationName, '이');
 
     actionLogger.pushGlobalHistoryLog(
@@ -261,9 +262,9 @@ class ConflictService {
     
     if (!city || !winner || !loser) return;
 
-    const cityName = city.name || `도시${cityId}`;
-    const winnerName = winner.name || `국가${winnerNationId}`;
-    const loserName = loser.name || `국가${loserNationId}`;
+    const cityName = (city as any).name || `도시${cityId}`;
+    const winnerName = (winner as any).name || `국가${winnerNationId}`;
+    const loserName = (loser as any).name || `국가${loserNationId}`;
 
     actionLogger.pushGlobalHistoryLog(
       `<C><b>【분쟁협상】</b></><G><b>${cityName}</b></>의 분쟁에서 <D><b>${loserName}</b></>이(가) <D><b>${winnerName}</b></>에게 양보했습니다.`
@@ -323,9 +324,9 @@ class ConflictService {
         rewards.push(generalReward);
 
         // 장수 경험치/명성 증가
-        await generalRepository.updateById(general._id.toString(), {
-          experience: (general.experience || 0) + generalReward.expGain,
-          fame: (general.fame || 0) + generalReward.fameGain
+        await generalRepository.updateById((general as any)._id.toString(), {
+          experience: ((general as any).experience || 0) + generalReward.expGain,
+          fame: ((general as any).fame || 0) + generalReward.fameGain
         });
       }
     }
@@ -347,7 +348,7 @@ class ConflictService {
    * @param cityId - 도시 ID
    */
   async getBattleProgress(sessionId: string, cityId: number): Promise<BattleProgress | null> {
-    const city = await cityRepository.findByCityNum(sessionId, cityId);
+    const city = await cityRepository.findByCityNum(sessionId, cityId) as any;
     if (!city) return null;
 
     const conflict = this.parseConflict(city.conflict);
@@ -355,7 +356,7 @@ class ConflictService {
     const totalDamage = Object.values(conflict).reduce((sum, d) => sum + d, 0);
     
     const defenderNation = city.nation 
-      ? await nationRepository.findByNationNum(sessionId, city.nation)
+      ? await nationRepository.findByNationNum(sessionId, city.nation) as any
       : null;
 
     // 도시 HP 계산 (PHP: def * 10)
@@ -399,10 +400,11 @@ class ConflictService {
     const results: BattleProgress[] = [];
 
     for (const city of cities) {
-      const conflict = this.parseConflict(city.conflict);
+      const cityAny = city as any;
+      const conflict = this.parseConflict(cityAny.conflict);
       
       if (Object.keys(conflict).length > 0) {
-        const progress = await this.getBattleProgress(sessionId, city.city);
+        const progress = await this.getBattleProgress(sessionId, cityAny.city);
         if (progress) {
           results.push(progress);
         }
@@ -420,13 +422,14 @@ class ConflictService {
     const cities = await cityRepository.findBySession(sessionId);
     
     for (const city of cities) {
-      if (city.term === 0 && city.conflict && city.conflict !== '{}') {
-        await this.clearConflict(sessionId, city.city);
+      const cityAny = city as any;
+      if (cityAny.term === 0 && cityAny.conflict && cityAny.conflict !== '{}') {
+        await this.clearConflict(sessionId, cityAny.city);
         
         logger.info('[ConflictService] 분쟁 자동 해제', {
           sessionId,
-          cityId: city.city,
-          cityName: city.name
+          cityId: cityAny.city,
+          cityName: cityAny.name
         });
       }
     }

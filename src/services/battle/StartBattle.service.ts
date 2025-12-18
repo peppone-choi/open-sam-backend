@@ -391,67 +391,8 @@ export class StartBattleService {
     const generalStrength = general.strength || 50;
     const generalIntel = general.intel || 50;
     
-    for (let i = 0; i < stacks.length; i++) {
-      const stack = stacks[i] as any;
-      const troops = this.getStackTroopCount(stack);
-      if (troops <= 0) continue;
-      
-      const unitType = this.getUnitType(stack.crew_type_id ?? 0);
-      const unitProps = this.getUnitProperties(unitType, troops);
-      const stackMorale = typeof stack.morale === 'number' ? stack.morale : 70;
-      const stackTrain = typeof stack.train === 'number' ? stack.train : 70;
-      
-      // 스택 타입에 따른 스탯 보정
-      const statModifier = this.getStackStatModifier(unitType);
-      
-      units.push({
-        // 유닛 식별: generalId는 스택 인덱스로 구분 (장수no * 100 + 인덱스)
-        generalId: general.no * 100 + i,
-        generalName: `${general.name || '무명'} ${stack.crew_type_name || this.getUnitTypeName(unitType)}`,
-        troops,
-        maxTroops: troops,
-        
-        // 장수 스탯 + 병종 보정
-        leadership: Math.round(generalLeadership * statModifier.leadership),
-        strength: Math.round(generalStrength * statModifier.strength),
-        intelligence: Math.round(generalIntel * statModifier.intelligence),
-        
-        unitType,
-        morale: stackMorale,
-        training: stackTrain,
-        techLevel: 50,
-        nationId,
-        
-        // 지휘관 연결 (같은 장수의 유닛들을 그룹화)
-        commanderId: general.no,
-        originType: 'generalStack',
-        originStackId: stack._id?.toString?.() || stack.id,
-        
-        // 좌표 (배치 단계에서 설정)
-        position: { x: 0, y: 0 },
-        velocity: { x: 0, y: 0 },
-        facing: 0,
-        
-        // 물리 속성
-        collisionRadius: unitProps.collisionRadius,
-        moveSpeed: unitProps.moveSpeed,
-        attackRange: unitProps.attackRange,
-        attackCooldown: unitProps.attackCooldown,
-        lastAttackTime: 0,
-        
-        // 전술 (병종에 맞는 기본 진형)
-        formation: unitProps.formation,
-        stance,
-        
-        isCharging: false,
-        isAIControlled,
-        
-        specialSkills: this.getStackSpecialSkills(unitType)
-      });
-    }
-    
-    // 스택이 없으면 레거시 crew 값으로 단일 유닛 생성
-    if (units.length === 0) {
+    // 레거시 crew 값으로 단일 유닛 생성
+    {
       const legacyCrew = (general as any).crew ?? (general as any).data?.crew ?? 0;
       if (legacyCrew > 0) {
         const unitType = this.getUnitType((general as any).crewtype ?? 0);

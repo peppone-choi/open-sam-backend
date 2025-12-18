@@ -139,11 +139,12 @@ export class AcceptRecruitCommand extends GeneralCommand {
       }
     );
 
-    // 스카웃 국가의 장수 수 증가
+    // 스카웃 국가(등용 대상 국가)의 장수 수 증가
+    // PHP: $db->update('nation', $setScoutNationValues, 'nation=%i', $destNationID);
     await nationRepository.updateOneByFilter(
       {
         session_id: general.getSessionID(),
-        nation: destGeneral.getNationID()
+        nation: destNationID
       },
       {
         $inc: { gennum: 1 }

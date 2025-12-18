@@ -4,95 +4,71 @@ import { City } from '../../../models/city.model';
 import { General } from '../../../models/general.model';
 import { ActionLogger } from '../../../types/ActionLogger';
 import { saveCity, saveGeneral } from '../../../common/cache/model-cache.helper';
-// 스택 시스템 제거됨
 import { SabotageInjury } from '../../../utils/SabotageInjury';
 import { RandUtil } from '../../../utils/RandUtil';
 import { LiteHashDRBG } from '../../../utils/LiteHashDRBG';
 
-// PHP 버전과 동일한 재해 타입
-type DisasterType = 'plague' | 'earthquake' | 'typhoon' | 'flood' | 'locust' | 'cold' | 'bandit';
+/**
+ * RandomDisaster (PHP RaiseDisaster.php와 동일)
+ * 분기별 재해 또는 호황 이벤트 처리
+ * 
+ * PHP 참조: core/hwe/sammo/Event/Action/RaiseDisaster.php
+ */
 
-interface DisasterConfig {
-  name: string;
-  icon: string;
-  effects: {
-    pop?: number;      // 인구 감소율 (0.1 = 10%)
-    agri?: number;     // 농업 감소율
-    comm?: number;     // 상업 감소율
-    trust?: number;    // 민심 감소
-    troops?: number;   // 병사 감소율 (역병)
-    wall?: number;     // 성벽 피해율 (지진)
-    gold?: number;     // 금 약탈율 (황건적)
-    rice?: number;     // 군량 약탈율 (황건적)
-  };
-  message: string;
-  stateCode: number;   // 도시 상태 코드 (이벤트 아이콘)
-}
+// PHP와 동일한 재해/호황 텍스트 목록
+// [로그 타이틀, state 코드, 로그 메시지]
+const DISASTER_TEXT_LIST: Record<number, [string, number, string][]> = {
+  1: [
+    ['<M><b>【재난】</b></>', 4, '역병이 발생하여 도시가 황폐해지고 있습니다.'],
+    ['<M><b>【재난】</b></>', 5, '지진으로 피해가 속출하고 있습니다.'],
+    ['<M><b>【재난】</b></>', 3, '추위가 풀리지 않아 얼어죽는 백성들이 늘어나고 있습니다.'],
+    ['<M><b>【재난】</b></>', 9, '황건적이 출현해 도시를 습격하고 있습니다.'],
+  ],
+  4: [
+    ['<M><b>【재난】</b></>', 7, '홍수로 인해 피해가 급증하고 있습니다.'],
+    ['<M><b>【재난】</b></>', 5, '지진으로 피해가 속출하고 있습니다.'],
+    ['<M><b>【재난】</b></>', 6, '태풍으로 인해 피해가 속출하고 있습니다.'],
+  ],
+  7: [
+    ['<M><b>【재난】</b></>', 8, '메뚜기 떼가 발생하여 도시가 황폐해지고 있습니다.'],
+    ['<M><b>【재난】</b></>', 5, '지진으로 피해가 속출하고 있습니다.'],
+    ['<M><b>【재난】</b></>', 8, '흉년이 들어 굶어죽는 백성들이 늘어나고 있습니다.'],
+  ],
+  10: [
+    ['<M><b>【재난】</b></>', 3, '혹한으로 도시가 황폐해지고 있습니다.'],
+    ['<M><b>【재난】</b></>', 5, '지진으로 피해가 속출하고 있습니다.'],
+    ['<M><b>【재난】</b></>', 3, '눈이 많이 쌓여 도시가 황폐해지고 있습니다.'],
+    ['<M><b>【재난】</b></>', 9, '황건적이 출현해 도시를 습격하고 있습니다.'],
+  ]
+};
 
-// PHP 버전과 동일한 state 코드 사용
-// 1: 풍작, 2: 호황, 3: 혹한/눈, 4: 역병, 5: 지진, 6: 태풍, 7: 홍수, 8: 메뚜기/흉년, 9: 황건적
-const DISASTER_CONFIGS: Record<DisasterType, DisasterConfig> = {
-  plague: {
-    name: '역병',
-    icon: '🦠',
-    effects: { pop: 0.15, troops: 0.10, trust: 10 },
-    message: '역병이 창궐하여 백성들이 쓰러지고 있습니다.',
-    stateCode: 4 // event4.gif (PHP와 동일)
-  },
-  earthquake: {
-    name: '지진',
-    icon: '🏚️',
-    effects: { pop: 0.08, agri: 0.10, comm: 0.15, trust: 8, wall: 0.20 },
-    message: '지진으로 피해가 속출하고 있습니다.',
-    stateCode: 5 // event5.gif (PHP와 동일)
-  },
-  typhoon: {
-    name: '태풍',
-    icon: '🌪️',
-    effects: { pop: 0.06, agri: 0.15, comm: 0.10, trust: 6 },
-    message: '태풍으로 인해 피해가 속출하고 있습니다.',
-    stateCode: 6 // event6.gif (PHP와 동일)
-  },
-  flood: {
-    name: '홍수',
-    icon: '🌊',
-    effects: { pop: 0.08, agri: 0.20, comm: 0.10, trust: 8 },
-    message: '홍수로 인해 피해가 급증하고 있습니다.',
-    stateCode: 7 // event7.gif (PHP와 동일)
-  },
-  locust: {
-    name: '메뚜기떼',
-    icon: '🦗',
-    effects: { agri: 0.25, trust: 3 },
-    message: '메뚜기떼가 농작물을 모두 먹어치웠습니다.',
-    stateCode: 8 // event8.gif (PHP와 동일)
-  },
-  cold: {
-    name: '혹한',
-    icon: '❄️',
-    effects: { pop: 0.05, agri: 0.10, trust: 5 },
-    message: '추위가 풀리지 않아 얼어죽는 백성들이 늘어나고 있습니다.',
-    stateCode: 3 // event3.gif (PHP와 동일)
-  },
-  bandit: {
-    name: '황건적',
-    icon: '⚔️',
-    effects: { pop: 0.10, trust: 15, gold: 0.20, rice: 0.20 },
-    message: '황건적이 출현해 도시를 습격하고 있습니다.',
-    stateCode: 9 // event9.gif (PHP와 동일)
-  }
+// PHP와 동일한 호황/풍작 텍스트 목록
+const BOOMING_TEXT_LIST: Record<number, [string, number, string][] | null> = {
+  1: null,  // 1월은 호황 없음
+  4: [
+    ['<C><b>【호황】</b></>', 2, '호황으로 도시가 번창하고 있습니다.'],
+  ],
+  7: [
+    ['<C><b>【풍작】</b></>', 1, '풍작으로 도시가 번창하고 있습니다.'],
+  ],
+  10: null  // 10월은 호황 없음
+};
+
+// PHP와 동일한 호황 발생 확률 (분기별)
+const BOOMING_RATE: Record<number, number> = {
+  1: 0,
+  4: 0.25,
+  7: 0.25,
+  10: 0
 };
 
 /**
- * 랜덤 재해 이벤트
- * 특정 확률로 도시에 재해 발생
+ * 랜덤 재해/호황 이벤트
+ * PHP RaiseDisaster.php와 완전히 동일한 로직
  */
 export class RandomDisaster extends Action {
-  private chance: number;
-
-  constructor(chance: number = 0.05) { // 기본 5% 확률
+  constructor() {
     super();
-    this.chance = chance;
   }
 
   async run(env: any): Promise<any> {
@@ -101,147 +77,170 @@ export class RandomDisaster extends Action {
     const year = env['year'] || 184;
     const month = env['month'] || 1;
 
-    // PHP와 동일: 분기별(1, 4, 7, 10월)에만 재해 발생
+    // PHP와 동일: 분기별(1, 4, 7, 10월)에만 실행
     if (![1, 4, 7, 10].includes(month)) {
       return { action: 'RandomDisaster', affectedCities: [], count: 0, skipped: 'not_quarter' };
     }
+
+    // 시드 기반 RNG 생성 (PHP와 동일)
+    const rng = new RandUtil(new LiteHashDRBG(`${sessionId}_disaster_${year}_${month}`));
+
+    // 재난표시 초기화 (state <= 10인 도시들)
+    await City.updateMany(
+      { session_id: sessionId, state: { $lte: 10 } },
+      { $set: { state: 0 } }
+    );
 
     // PHP와 동일: 초반 3년은 스킵
     if (startYear + 3 > year) {
       return { action: 'RandomDisaster', affectedCities: [], count: 0, skipped: 'early_years' };
     }
 
-    const cities = await City.find({ session_id: sessionId }).exec();
-    const affectedCities: string[] = [];
+    // PHP와 동일: 호황 여부 결정
+    const boomingRate = BOOMING_RATE[month] || 0;
+    const isGood = rng.nextBool(boomingRate);
 
-    // PHP와 동일: 분기별 재해 타입 목록
-    const disastersByQuarter: Record<number, DisasterType[]> = {
-      1: ['plague', 'earthquake', 'cold', 'bandit'],      // 겨울/봄: 역병, 지진, 혹한, 황건적
-      4: ['flood', 'earthquake', 'typhoon'],               // 봄/여름: 홍수, 지진, 태풍
-      7: ['locust', 'earthquake', 'locust'],               // 여름/가을: 메뚜기, 지진, 흉년
-      10: ['cold', 'earthquake', 'cold', 'bandit'],        // 가을/겨울: 혹한, 지진, 눈, 황건적
-    };
+    // 도시 목록 조회
+    const cities = await City.find({ session_id: sessionId });
+    const targetCityList: any[] = [];
 
-    const availableDisasters = disastersByQuarter[month] || ['earthquake'];
-    const selectedType = availableDisasters[Math.floor(Math.random() * availableDisasters.length)];
-
+    // PHP와 동일: 도시별 이벤트 발생 확률 계산
     for (const city of cities) {
-      // PHP와 동일: secu(치안) 기반 확률 계산
       const secuMax = city.secu_max || 1000;
       const secu = city.secu || 0;
       const secuRatio = secuMax > 0 ? secu / secuMax : 0;
-      
-      // 재해 발생 확률: 기본 6% - 치안 보너스 (1~6%)
-      const raiseProp = 0.06 - secuRatio * 0.05;
-      
-      if (Math.random() > raiseProp) continue;
 
-      const config = DISASTER_CONFIGS[selectedType];
-      const cityName = city.name || `도시 ${city.city}`;
-      const nationId = city.nation || 0;
-
-      // PHP와 동일: secu 기반 피해 비율 계산 (치안 높으면 피해 감소)
-      const affectSecuRatio = secuMax > 0 ? Math.min(secu / secuMax / 0.8, 1) : 0;
-      const affectRatio = 0.8 + affectSecuRatio * 0.15; // 80% ~ 95%
-
-      // 효과 적용
-      if (config.effects.pop) {
-        city.pop = Math.max(1000, Math.floor((city.pop || 0) * affectRatio));
-      }
-      if (config.effects.agri) {
-        city.agri = Math.max(0, Math.floor((city.agri || 0) * affectRatio));
-      }
-      if (config.effects.comm) {
-        city.comm = Math.max(0, Math.floor((city.comm || 0) * affectRatio));
-      }
-      if (config.effects.trust) {
-        city.trust = Math.max(0, Math.floor((city.trust || 50) * affectRatio));
-      }
-      // 치안도 감소 (PHP와 동일)
-      city.secu = Math.max(0, Math.floor((city.secu || 0) * affectRatio));
-      // 방어/성벽 피해 (지진 등)
-      if (config.effects.wall) {
-        city.def = Math.max(0, Math.floor((city.def || 0) * affectRatio));
-        city.wall = Math.max(0, Math.floor((city.wall || 0) * affectRatio));
-      }
-      // 자금/군량 약탈 (황건적)
-      if (config.effects.gold) {
-        city.gold = Math.max(0, Math.floor((city.gold || 0) * (1 - config.effects.gold)));
-      }
-      if (config.effects.rice) {
-        city.rice = Math.max(0, Math.floor((city.rice || 0) * (1 - config.effects.rice)));
+      let raiseProp: number;
+      if (isGood) {
+        // 호황 발생 확률: 2% + 치안 보너스 (2~7%)
+        raiseProp = 0.02 + secuRatio * 0.05;
+      } else {
+        // 재해 발생 확률: 6% - 치안 보너스 (1~6%)
+        raiseProp = 0.06 - secuRatio * 0.05;
       }
 
-      // 도시 상태 설정 (이벤트 아이콘 표시용)
-      city.state = config.stateCode;
-      // PHP와 다르게 term 기반 초기화 사용 (다음 분기까지 표시)
-
-      // 역병인 경우 해당 도시 병사들에게도 피해
-      // 역병으로 인한 병력 감소 (스택 시스템 제거됨 - 장수 crew 직접 감소)
-      if (selectedType === 'plague' && config.effects.troops) {
-        const generals = await General.find({ 
-          session_id: sessionId, 
-          $or: [{ city: city.city }, { 'data.city': city.city }]
-        });
-        
-        for (const general of generals) {
-          const currentCrew = general.data?.crew || general.crew || 0;
-          if (currentCrew > 0) {
-            const reduction = Math.floor(currentCrew * config.effects.troops);
-            const newCrew = Math.max(0, currentCrew - reduction);
-            if (general.data) general.data.crew = newCrew;
-            const generalId = general.data?.no || general.no;
-            const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
-            await saveGeneral(sessionId, generalId, generalData);
-          }
-        }
+      if (rng.nextBool(raiseProp)) {
+        targetCityList.push(city);
       }
-
-      // 도시 저장
-      const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
-      await saveCity(sessionId, city.city, cityData);
-
-      affectedCities.push(cityName);
-
-      // 로그 기록
-      const logger = new ActionLogger(0, nationId, year, month, sessionId);
-      logger.pushGlobalHistoryLog(
-        `<R><b>【${config.icon} ${config.name}】</b></><Y>${cityName}</>에 ${config.message}`
-      );
-      await logger.flush();
-
-      // 해당 도시 장수들에게도 알림 및 부상 처리
-      const cityGenerals = await General.find({
-        session_id: sessionId,
-        $or: [{ city: city.city }, { 'data.city': city.city }]
-      });
-      
-      for (const general of cityGenerals) {
-        const generalLogger = new ActionLogger(general.no || general.data?.no || 0, nationId, year, month, sessionId);
-        generalLogger.pushGeneralActionLog(
-          `<R>${config.icon} ${config.name}</> - ${config.message}`,
-          ActionLogger.PLAIN
-        );
-        await generalLogger.flush();
-      }
-
-      // PHP와 동일: SabotageInjury로 장수 부상 처리
-      // PHP RaiseDisaster.php line 144: SabotageInjury($rng, $generalList, '재난');
-      const rng = new RandUtil(new LiteHashDRBG(`disaster_injury_${year}_${month}_${city.city}`));
-      await SabotageInjury(rng, cityGenerals, '재난', async (general) => {
-        const generalId = general.data?.no || general.no;
-        if (generalId) {
-          const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
-          await saveGeneral(sessionId, generalId, generalData);
-        }
-      });
     }
 
-    return { 
-      action: 'RandomDisaster', 
+    // 대상 도시가 없으면 종료
+    if (targetCityList.length === 0) {
+      return { action: 'RandomDisaster', affectedCities: [], count: 0, skipped: 'no_target' };
+    }
+
+    // PHP와 동일: 이벤트 텍스트 선택
+    const textList = isGood ? BOOMING_TEXT_LIST[month] : DISASTER_TEXT_LIST[month];
+    if (!textList || textList.length === 0) {
+      return { action: 'RandomDisaster', affectedCities: [], count: 0, skipped: 'no_text_list' };
+    }
+
+    const selectedText = textList[rng.nextRangeInt(0, textList.length - 1)];
+    const [logTitle, stateCode, logBody] = selectedText;
+
+    // 대상 도시 이름 목록
+    const targetCityNames = '<G><b>' + targetCityList.map(c => c.name || `도시 ${c.city}`).join(' ') + '</b></>';
+
+    // 글로벌 히스토리 로그
+    const logger = new ActionLogger(0, 0, year, month, sessionId);
+    logger.pushGlobalHistoryLog(`${logTitle}${targetCityNames}에 ${logBody}`);
+    await logger.flush();
+
+    const affectedCities: string[] = [];
+
+    if (!isGood) {
+      // ===== 재해 처리 =====
+      // 대상 도시의 장수 목록 조회
+      const cityIds = targetCityList.map(c => c.city);
+      const cityGenerals = await General.find({
+        session_id: sessionId,
+        $or: [
+          { city: { $in: cityIds } },
+          { 'data.city': { $in: cityIds } }
+        ]
+      });
+
+      // 도시별로 장수 그룹화
+      const generalListByCity: Record<number, any[]> = {};
+      for (const general of cityGenerals) {
+        const cityId = general.city || general.data?.city || 0;
+        if (!generalListByCity[cityId]) {
+          generalListByCity[cityId] = [];
+        }
+        generalListByCity[cityId].push(general);
+      }
+
+      for (const city of targetCityList) {
+        const secuMax = city.secu_max || 1000;
+        const secu = city.secu || 0;
+        const secuRatio = secuMax > 0 ? secu / secuMax : 0;
+
+        // PHP와 동일: 피해 비율 계산 (치안 높으면 피해 감소)
+        let affectRatio = Math.min(secuRatio / 0.8, 1);
+        affectRatio = 0.8 + affectRatio * 0.15; // 80% ~ 95%
+
+        // 도시 내정 감소
+        city.state = stateCode;
+        city.pop = Math.floor((city.pop || 0) * affectRatio);
+        city.trust = Math.floor((city.trust || 50) * affectRatio);
+        city.agri = Math.floor((city.agri || 0) * affectRatio);
+        city.comm = Math.floor((city.comm || 0) * affectRatio);
+        city.secu = Math.floor((city.secu || 0) * affectRatio);
+        city.def = Math.floor((city.def || 0) * affectRatio);
+        city.wall = Math.floor((city.wall || 0) * affectRatio);
+
+        // 도시 저장
+        await saveCity(sessionId, city.city, city.toObject ? city.toObject() : city);
+
+        // PHP와 동일: 장수 부상 처리 (SabotageInjury)
+        const generalList = generalListByCity[city.city] || [];
+        if (generalList.length > 0) {
+          const injuryRng = new RandUtil(new LiteHashDRBG(`disaster_injury_${year}_${month}_${city.city}`));
+          await SabotageInjury(injuryRng, generalList, '재난', async (general) => {
+            const generalId = general.data?.no || general.no;
+            if (generalId) {
+              const generalData = general.toObject ? general.toObject() : { ...general.data, session_id: sessionId, no: generalId };
+              await saveGeneral(sessionId, generalId, generalData);
+            }
+          });
+        }
+
+        affectedCities.push(city.name || `도시 ${city.city}`);
+      }
+    } else {
+      // ===== 호황/풍작 처리 =====
+      for (const city of targetCityList) {
+        const secuMax = city.secu_max || 1000;
+        const secu = city.secu || 0;
+        const secuRatio = secuMax > 0 ? secu / secuMax : 0;
+
+        // PHP와 동일: 보너스 비율 계산 (치안 높으면 보너스 증가)
+        let affectRatio = Math.min(secuRatio / 0.8, 1);
+        affectRatio = 1.01 + affectRatio * 0.04; // 101% ~ 105%
+
+        // 도시 내정 증가 (최대값 제한)
+        city.state = stateCode;
+        city.pop = Math.min(city.pop_max || 100000, Math.floor((city.pop || 0) * affectRatio));
+        city.trust = Math.min(100, Math.floor((city.trust || 50) * affectRatio));
+        city.agri = Math.min(city.agri_max || 999, Math.floor((city.agri || 0) * affectRatio));
+        city.comm = Math.min(city.comm_max || 999, Math.floor((city.comm || 0) * affectRatio));
+        city.secu = Math.min(city.secu_max || 1000, Math.floor((city.secu || 0) * affectRatio));
+        city.def = Math.min(city.def_max || 999, Math.floor((city.def || 0) * affectRatio));
+        city.wall = Math.min(city.wall_max || 999, Math.floor((city.wall || 0) * affectRatio));
+
+        // 도시 저장
+        await saveCity(sessionId, city.city, city.toObject ? city.toObject() : city);
+
+        affectedCities.push(city.name || `도시 ${city.city}`);
+      }
+    }
+
+    return {
+      action: 'RandomDisaster',
       affectedCities,
-      count: affectedCities.length 
+      count: affectedCities.length,
+      eventType: isGood ? 'booming' : 'disaster',
+      stateCode
     };
   }
 }
-
