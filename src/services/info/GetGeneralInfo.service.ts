@@ -113,7 +113,7 @@ export class GetGeneralInfoService {
       }
       
       const officerLevel = generalData.officer_level || 0;
-      const officerLevelText = this.getOfficerLevelText(officerLevel);
+      const officerLevelText = this.getOfficerLevelText(officerLevel, nationInfo?.level || 0);
       
       // 장수 정보 구성
       const generalInfo = {
@@ -178,23 +178,9 @@ export class GetGeneralInfoService {
     }
   }
 
-  private static getOfficerLevelText(level: number): string {
-    const levels: Record<number, string> = {
-      12: '군주',
-      11: '태사',
-      10: '대도독',
-      9: '도독',
-      8: '대장군',
-      7: '장군',
-      6: '집금오',
-      5: '장수',
-      4: '태수',
-      3: '도위',
-      2: '현령',
-      1: '일반',
-      0: '재야',
-    };
-    return levels[level] || '일반';
+  private static getOfficerLevelText(officerLevel: number, nationLevel: number = 0): string {
+    const { getOfficerTitle } = require('../../utils/rank-system');
+    return getOfficerTitle(officerLevel, nationLevel);
   }
 }
 

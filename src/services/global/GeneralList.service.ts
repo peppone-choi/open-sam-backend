@@ -198,22 +198,7 @@ export class GeneralListService {
 
   // Helper function: Get officer level text
   private static getOfficerLevelText(officerLevel: number, nationLevel: number): string {
-    if (officerLevel < 5) return '평민';
-    if (officerLevel < 10) return '하급관리';
-    if (officerLevel < 15) return '중급관리';
-    if (officerLevel < 20) return '상급관리';
-    if (officerLevel < 25) return '부장';
-    if (officerLevel < 30) return '장군';
-    if (officerLevel < 35) return '대장군';
-    if (officerLevel < 40) return '장상';
-    if (officerLevel < 45) return '원로';
-    
-    // Special titles for high level officers
-    if (nationLevel >= 5) {
-      if (officerLevel >= 50) return '재상';
-      if (officerLevel >= 45) return '삼공';
-    }
-    
-    return '중신';
+    const { getOfficerTitle } = require('../../utils/rank-system');
+    return getOfficerTitle(officerLevel, nationLevel);
   }
 }

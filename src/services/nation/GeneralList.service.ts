@@ -52,6 +52,8 @@ export class GeneralListService {
         return { success: false, message: '국가를 찾을 수 없습니다' };
       }
 
+      const nationLevel = nation.level ?? nation.data?.level ?? 0;
+
       const generalList = await generalRepository.findByNation(sessionId, nationId);
       
       console.log(`[GeneralList] Found ${generalList.length} generals for nation ${nationId}`);
@@ -146,7 +148,7 @@ export class GeneralListService {
           crewtype,
           officer_level: visibleOfficerLevel,
           officerLevel: visibleOfficerLevel,
-          officerLevelText: this.getOfficerLevelText(visibleOfficerLevel),
+          officerLevelText: this.getOfficerLevelText(visibleOfficerLevel, nationLevel),
           killturn: genData.killturn ?? raw.killturn ?? 0,
           turntime: genData.turntime ?? raw.turntime,
           crew: genData.crew ?? raw.crew ?? 0,
@@ -181,13 +183,9 @@ export class GeneralListService {
     }
   }
 
-  private static getOfficerLevelText(level: number): string {
-    const levels: Record<number, string> = {
-      12: '군주', 11: '태사', 10: '대도독', 9: '도독',
-      8: '대장군', 7: '장군', 6: '집금오', 5: '장수',
-      4: '태수', 3: '도위', 2: '현령', 1: '일반', 0: '재야'
-    };
-    return levels[level] || '일반';
+  private static getOfficerLevelText(officerLevel: number, nationLevel: number = 0): string {
+    const { getOfficerTitle } = require('../../utils/rank-system');
+    return getOfficerTitle(officerLevel, nationLevel);
   }
 
   private static sortGenerals(generals: any[], type: number): any[] {
