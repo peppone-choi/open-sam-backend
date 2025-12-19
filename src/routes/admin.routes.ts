@@ -428,10 +428,18 @@ router.post('/update-game', async (req, res) => {
     if (!session.data.game_env) session.data.game_env = {};
     
     if (action === 'serverName') {
-      session.name = data.serverName || '';
-      session.data.game_env.serverName = data.serverName || '';
+      const newName = data.serverName || '';
+      console.log('[Admin] serverName 변경 시도:', { sessionId, oldName: session.name, newName });
+      
+      session.name = newName;
+      session.data.game_env.serverName = newName;
+      session.markModified('name');
       session.markModified('data.game_env');
       await session.save();
+      
+      // 저장 확인
+      const saved = await Session.findOne({ session_id: sessionId }).lean();
+      console.log('[Admin] serverName 저장 후:', { savedName: saved?.name });
       
       return res.json({
         result: true,
