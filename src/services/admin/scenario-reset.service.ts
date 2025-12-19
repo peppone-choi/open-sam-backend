@@ -131,6 +131,9 @@ export class ScenarioResetService {
     // 10. 초기 ng_history 생성 (연감 시스템용)
     await this.createInitialNgHistory(sessionId, scenarioId, scenarioMetadata);
 
+    // 11. 초기 국력 계산
+    await this.initializeNationPower(sessionId);
+
     console.log(`[ScenarioReset] Successfully reset session ${sessionId}`);
 
     // 초기화 이후 해당 세션 관련 캐시 무효화 (세션/도시/국가/장수 목록 등)
@@ -1480,5 +1483,94 @@ export class ScenarioResetService {
     await NgHistory.create(ngHistoryDoc);
 
     console.log(`[ScenarioReset] Created ng_history with ${globalHistoryArray.length} global history entries`);
+  }
+
+  /**
+   * 초기 국력 계산
+   * 시나리오 리셋 후 모든 국가의 국력을 계산하여 저장
+   */
+  private static async initializeNationPower(sessionId: string): Promise<void> {
+    console.log(`[ScenarioReset] Initializing nation power for session ${sessionId}`);
+    
+    const nations = await nationRepository.findByFilter({ session_id: sessionId });
+    
+    for (const nation of nations) {
+      const nationId = nation.nation || nation.data?.nation;
+      if (!nationId || nationId === 0) continue;
+      
+      try {
+        // 국가 자원
+        const nationGold = nation.data?.gold || nation.gold || 0;
+        const nationRice = nation.data?.rice || nation.rice || 0;
+        const tech = nation.data?.tech || nation.tech || 0;
+        
+        // 장수 정보 집계
+        const generals = await generalRepository.findByFilter({
+          session_id: sessionId,
+          nation: nationId
+        });
+        
+        let generalGoldRice = 0;
+        let generalAbility = 0;
+        let generalDex = 0;
+        let generalExpDed = 0;
+        let totalCrew = 0;
+        
+        for (const gen of generals) {
+          const gData = gen.data || gen;
+          generalGoldRice += (gData.gold || 0) + (gData.rice || 0);
+          generalAbility += (gData.leadership || 0) + (gData.strength || 0) + 
+                          (gData.intel || 0) + (gData.dex || 0) + 
+                          Math.round(gData.exp || 0) + Math.round(gData.ded || 0);
+          totalCrew += gData.crew || 0;
+        }
+        
+        // 도시 정보 집계
+        const nationCities = await cityRepository.findByFilter({
+          session_id: sessionId,
+          nation: nationId
+        });
+        
+        let cityPower = 0;
+        if (nationCities.length > 0) {
+          let popSum = 0;
+          let devSum = 0;
+          let devMaxSum = 0;
+          
+          for (const city of nationCities) {
+            const cData = city.data || city;
+            popSum += cData.pop || 0;
+            devSum += (cData.pop || 0) + (cData.agri || 0) + (cData.comm || 0) + 
+                     (cData.secu || 0) + (cData.wall || 0) + (cData.def || 0);
+            devMaxSum += (cData.pop_max || 1) + (cData.agri_max || 1) + (cData.comm_max || 1) + 
+                        (cData.secu_max || 1) + (cData.wall_max || 1) + (cData.def_max || 1);
+          }
+          
+          if (devMaxSum > 0) {
+            cityPower = Math.round(popSum * devSum / devMaxSum / 100);
+          }
+        }
+        
+        // 국력 계산
+        const power = Math.round(
+          (Math.round((nationGold + nationRice + generalGoldRice) / 100) +
+           tech +
+           cityPower +
+           generalAbility +
+           Math.round(generalDex / 1000) +
+           Math.round(generalExpDed / 100)) / 10
+        );
+        
+        // 국력 저장
+        await nationRepository.updateByNationNum(sessionId, nationId, {
+          power: power
+        });
+        
+      } catch (error: any) {
+        console.error(`[ScenarioReset] Failed to calculate power for nation ${nationId}:`, error.message);
+      }
+    }
+    
+    console.log(`[ScenarioReset] Nation power initialized for ${nations.length} nations`);
   }
 }
