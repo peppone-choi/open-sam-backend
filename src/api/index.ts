@@ -70,7 +70,7 @@ export const mountRoutes = (app: Express) => {
   
   // Nation System (국가 관리)
   app.use('/api/nation', nationRoutes);
-  app.use('/api/nation-command', nationcommandRoutes);
+  app.use('/api/nationcommand', nationcommandRoutes);
   
   // ============================================
   // P1: High Priority Routes (주요 기능)
