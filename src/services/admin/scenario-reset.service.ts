@@ -1322,8 +1322,15 @@ export class ScenarioResetService {
       const me = Array.isArray(diplo) ? diplo[0] : diplo.me;
       const you = Array.isArray(diplo) ? diplo[1] : diplo.you;
       const state = Array.isArray(diplo) ? diplo[2] : diplo.state;
-      const term = Array.isArray(diplo) ? diplo[3] : diplo.term;
-      const diploValue = { state: state ?? 2, term: term ?? 0 };
+      const rawTerm = Array.isArray(diplo) ? diplo[3] : diplo.term;
+      
+      // 전쟁 상태(state=0)인데 term이 없으면 기본값 999 사용 (즉시 종전 방지)
+      // 선전포고(state=1)인데 term이 없으면 기본값 24 사용
+      let term = rawTerm ?? 0;
+      if ((state === 0 || state === 1) && (rawTerm === undefined || rawTerm === null || rawTerm === 0)) {
+        term = state === 0 ? 999 : 24;  // 전쟁: 999턴, 선전포고: 24턴
+      }
+      const diploValue = { state: state ?? 2, term };
       
       // 양방향으로 동일하게 설정 (선전포고, 전쟁, 불가침은 양측 동일)
       scenarioDiplomacy.set(`${me}-${you}`, diploValue);
