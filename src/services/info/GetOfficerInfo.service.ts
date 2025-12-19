@@ -365,10 +365,14 @@ export class GetOfficerInfoService {
   }
 
   static getNationChiefLevel(nationLevel: number): number {
-    if (nationLevel >= 7) return 2;
-    if (nationLevel >= 6) return 4;
-    if (nationLevel >= 5) return 6;
-    if (nationLevel >= 4) return 8;
-    return 10;
+    // PHP: sammo\getNationChiefLevel 함수와 동일
+    // 작위가 높을수록 더 많은 관직 슬롯 사용 가능
+    if (nationLevel >= 7) return 5;   // 황제: 5~12
+    if (nationLevel >= 6) return 6;   // 왕: 6~12
+    if (nationLevel >= 5) return 7;   // 공: 7~12
+    if (nationLevel >= 4) return 8;   // 주목: 8~12
+    if (nationLevel >= 3) return 9;   // 주자사: 9~12
+    if (nationLevel >= 2) return 10;  // 군벌: 10~12
+    return 11; // 호족: 11~12
   }
 }
