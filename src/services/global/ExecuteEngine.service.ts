@@ -2649,7 +2649,7 @@ export class ExecuteEngineService {
         );
 
         // 약간의 랜덤치 부여 (95% ~ 105%)
-        const randomFactor = 0.95 + rng.nextFloat() * 0.1;
+        const randomFactor = 0.95 + rng.next() * 0.1;
         power = Math.round(power * randomFactor);
 
         // 총 병력 계산
