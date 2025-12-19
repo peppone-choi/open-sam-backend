@@ -2270,7 +2270,7 @@ router.post('/log/general', async (req, res) => {
  * @swagger
  * /api/admin/raise-event:
  *   post:
- *     summary: 이벤트 발생 (관리자 전용, PHP: j_raise_event.php)
+ *     summary: "이벤트 발생 (관리자 전용, PHP: j_raise_event.php)"
  *     tags: [Admin]
  *     requestBody:
  *       required: true
