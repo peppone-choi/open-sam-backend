@@ -6,6 +6,7 @@ import { sessionRepository } from '../../repositories/session.repository';
 import { NationFinanceService } from '../nation/NationFinance.service';
 import GameConstants from '../../utils/game-constants';
 import { buildChiefPolicyPayload } from '../nation/helpers/policy.helper';
+import { getNationLevelInfo, getOfficerTitle } from '../../utils/rank-system';
 
 /**
  * GetChiefCenter Service
@@ -100,11 +101,16 @@ export class GetChiefCenterService {
       const policyPayload =
         (await buildChiefPolicyPayload(sessionId, nationId, { nationDoc: nation })) || undefined;
 
+      const nationLevel = nationData.level || nation.level || 0;
+      const nationLevelInfo = getNationLevelInfo(nationLevel);
+      const officerTitle = getOfficerTitle(officerLevel, nationLevel);
+
       const center = {
         nation: {
           id: nationId,
           name: nationData.name || nation.name || '무명',
-          level: nationData.level || nation.level || 0,
+          level: nationLevel,
+          levelName: nationLevelInfo?.name || '방랑군',
           color: nationData.color || nation.color || '#ffffff',
           capital: nationData.capital || nation.capital || 0,
           type: nationData.type || nation.type || 'none',
@@ -115,6 +121,7 @@ export class GetChiefCenterService {
           generalId: actualGeneralId,
           name: generalData.name || '무명',
           officerLevel: officerLevel,
+          officerTitle: officerTitle || '제왕',
         },
         powers: {
           gold: nationData.gold || nation.gold || 0,
