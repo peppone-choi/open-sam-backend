@@ -69,10 +69,8 @@ async function demoteExistingChiefs(sessionId: string, nationId: number, officer
     await generalRepository.updateBySessionAndNo(sessionId, chiefNo, {
       officer_level: 1,
       officer_city: 0,
-      data: {
-        officer_level: 1,
-        officer_city: 0,
-      },
+      'data.officer_level': 1,
+      'data.officer_city': 0,
     });
   }
 }
@@ -96,10 +94,8 @@ async function demoteExistingCityOfficers(sessionId: string, officerLevel: numbe
     await generalRepository.updateBySessionAndNo(sessionId, officerNo, {
       officer_level: 1,
       officer_city: 0,
-      data: {
-        officer_level: 1,
-        officer_city: 0,
-      },
+      'data.officer_level': 1,
+      'data.officer_city': 0,
     });
   }
 }
@@ -208,10 +204,8 @@ export class ManageOfficerService {
       await generalRepository.updateBySessionAndNo(sessionId, destGeneral.no, {
         officer_level: officerLevel,
         officer_city: 0,
-        data: {
-          officer_level: officerLevel,
-          officer_city: 0,
-        },
+        'data.officer_level': officerLevel,
+        'data.officer_city': 0,
       });
     }
 
@@ -269,10 +263,8 @@ export class ManageOfficerService {
       await generalRepository.updateBySessionAndNo(sessionId, destGeneral.no, {
         officer_level: officerLevel,
         officer_city: destCityID,
-        data: {
-          officer_level: officerLevel,
-          officer_city: destCityID,
-        },
+        'data.officer_level': officerLevel,
+        'data.officer_city': destCityID,
       });
     }
 
