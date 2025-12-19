@@ -297,12 +297,16 @@ export class AdminGameSettingsService {
       // ⚠️ CRITICAL: 모든 장수의 turntime 재계산 (PHP ServerTool::changeServerTerm 구현)
       if (oldTurnTerm !== turnTerm) {
         const { generalRepository } = await import('../../repositories/general.repository');
+        const { General } = await import('../../models/general.model');
         const servTurnTime = turntime;
         const unitDiff = turnTerm / oldTurnTerm; // 새 턴타임 / 기존 턴타임
         
         console.log(`[AdminGameSettings] Recalculating all generals' turntime (${oldTurnTerm}m → ${turnTerm}m, ratio: ${unitDiff})`);
         
         const generals = await generalRepository.findByFilter({ session_id: sessionId });
+        
+        // 일괄 업데이트를 위한 배열
+        const bulkOps: any[] = [];
         
         for (const general of generals) {
           const genTurnTime = general.turntime ? new Date(general.turntime) : servTurnTime;
@@ -315,15 +319,34 @@ export class AdminGameSettingsService {
           
           // 새로운 turntime 계산
           const newGenTurnTime = new Date(servTurnTime.getTime() + newTimeDiff * 1000);
+          const newTurntimeStr = newGenTurnTime.toISOString();
           
-          general.turntime = newGenTurnTime.toISOString();
-          // CQRS: 캐시에 저장
+          general.turntime = newTurntimeStr;
+          
+          // DB 일괄 업데이트 준비
           const generalNo = general.no || general.data?.no;
+          bulkOps.push({
+            updateOne: {
+              filter: { session_id: sessionId, no: generalNo },
+              update: { $set: { turntime: newTurntimeStr } }
+            }
+          });
+          
+          // 캐시에도 저장
           await saveGeneral(sessionId, generalNo, general.toObject());
           updatedCount++;
         }
         
-        console.log(`[AdminGameSettings] Updated ${updatedCount} generals' turntime`);
+        // DB에 일괄 저장 (중요: 즉시 반영)
+        if (bulkOps.length > 0) {
+          const result = await General.bulkWrite(bulkOps);
+          console.log(`[AdminGameSettings] DB bulk update: ${result.modifiedCount} generals`);
+        }
+        
+        // 캐시 무효화
+        await invalidateCache('general', sessionId, undefined, { targets: ['lists'] });
+        
+        console.log(`[AdminGameSettings] Updated ${updatedCount} generals' turntime (cache + DB)`);
       }
       
       // Mongoose nested object 변경 감지를 위해 markModified 호출
