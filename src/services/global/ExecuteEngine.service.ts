@@ -2555,6 +2555,33 @@ export class ExecuteEngineService {
       });
     }
 
+    // ========================================
+    // 11. 관직 임명 제한 초기화 (매월)
+    // ========================================
+    try {
+      const { Nation } = await import('../../models/nation.model');
+      const { City } = await import('../../models/city.model');
+      
+      // 국가 chief_set 초기화 (수뇌 임명 잠금 해제)
+      await Nation.updateMany(
+        { session_id: sessionId },
+        { $set: { chief_set: 0, 'data.chief_set': 0 } }
+      );
+      
+      // 도시 officer_set 초기화 (도시 관직 임명 잠금 해제)
+      await City.updateMany(
+        { session_id: sessionId },
+        { $set: { officer_set: 0, 'data.officer_set': 0 } }
+      );
+      
+      logger.info('[postUpdateMonthly] Officer lock reset completed', { sessionId });
+    } catch (error: any) {
+      logger.error('[postUpdateMonthly] Failed to reset officer lock', {
+        sessionId,
+        error: error.message
+      });
+    }
+
     logger.info('[postUpdateMonthly] Monthly post-processing completed', { sessionId });
   }
 
