@@ -217,7 +217,9 @@ export class AdminGameSettingsService {
    */
   static async setTurnTerm(sessionId: string, turnTerm: number) {
     try {
-      const session = await sessionRepository.findBySessionId(sessionId);
+      // ⚠️ 중요: 캐시 대신 DB에서 직접 조회 (캐시된 객체는 save()가 제대로 안됨)
+      const { Session } = await import('../../models/session.model');
+      const session = await Session.findOne({ session_id: sessionId });
       if (!session) {
         return { success: false, message: '세션을 찾을 수 없습니다' };
       }
@@ -355,8 +357,13 @@ export class AdminGameSettingsService {
       
       console.log(`[AdminGameSettings] turnterm changed to ${turnTerm}m, starttime recalculated based on ${year}년 ${month}월`);
 
-      await sessionRepository.saveDocument(session);
+      // DB에 직접 저장
+      await session.save();
+      
+      // 캐시 무효화 (중요: 캐시된 값과 DB 값을 동기화)
       await this.invalidateSessionCache(sessionId);
+      const { saveSession } = await import('../../common/cache/model-cache.helper');
+      await saveSession(sessionId, session.toObject());
       
       // 전역 로그 추가
       const ActionLogger = (await import('../logger/ActionLogger')).ActionLogger;
