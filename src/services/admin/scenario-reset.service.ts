@@ -1061,7 +1061,7 @@ export class ScenarioResetService {
         affinity: affinity, // PHP: 친밀도
         nation: nationNo,
         city: assignedCityId,
-        belong: 0,          // PHP: belong 초기값은 0
+        belong: nationNo ? 1 : 0,  // 국가 소속이면 1, 재야면 0
         turntime: npcTurntime,
         gold: 1000,
         rice: 1000,
@@ -1105,7 +1105,7 @@ export class ScenarioResetService {
           name: name,
           nation: nationNo,
           city: assignedCityId,
-          belong: 0,
+          belong: nationNo ? 1 : 0,
           leadership: leadership,
           strength: strength,
           intel: intel,
