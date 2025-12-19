@@ -455,10 +455,33 @@ class GeneralRepository {
       }
       
       // DB에서 찾았으면 캐시에 저장 및 DB 업데이트
-      const merged = { ...fromDB, ...update };
+      // 점 표기법 키 처리
+      const dotKeys = Object.keys(update).filter(k => k.includes('.'));
+      const merged: any = { ...fromDB, data: { ...(fromDB as any).data } };
+      
+      // 일반 키 적용
+      for (const key of Object.keys(update).filter(k => !k.includes('.'))) {
+        if (key === 'data' && typeof update.data === 'object') {
+          Object.assign(merged.data, update.data);
+        } else {
+          merged[key] = update[key];
+        }
+      }
+      
+      // 점 표기법 키 적용 (캐시용)
+      for (const dotKey of dotKeys) {
+        const parts = dotKey.split('.');
+        let target = merged;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!target[parts[i]]) target[parts[i]] = {};
+          target = target[parts[i]];
+        }
+        target[parts[parts.length - 1]] = update[dotKey];
+      }
+      
       await saveGeneral(sessionId, generalNo, merged);
       
-      // DB에도 업데이트
+      // DB에도 업데이트 (점 표기법은 MongoDB가 직접 처리)
       await General.updateOne(
         { session_id: sessionId, $or: [{ 'data.no': generalNo }, { no: generalNo }] },
         { $set: update }
@@ -468,19 +491,47 @@ class GeneralRepository {
       return { modifiedCount: 1, matchedCount: 1 };
     }
 
-    // 캐시 업데이트 (data 필드는 deep merge)
-    const merged = { 
-      ...existing, 
-      ...update,
-      data: {
-        ...existing.data,
-        ...update.data
-      }
+    // 점 표기법 키(예: 'data.officer_level')를 중첩 객체로 변환
+    const dotNotationKeys = Object.keys(update).filter(k => k.includes('.'));
+    const regularKeys = Object.keys(update).filter(k => !k.includes('.'));
+    
+    // 일반 키로 기본 merge
+    const merged: any = { 
+      ...existing,
+      data: { ...existing.data }
     };
+    
+    // 일반 키 적용
+    for (const key of regularKeys) {
+      if (key === 'data' && typeof update.data === 'object') {
+        Object.assign(merged.data, update.data);
+      } else {
+        merged[key] = update[key];
+      }
+    }
+    
+    // 점 표기법 키 적용 (캐시용)
+    for (const dotKey of dotNotationKeys) {
+      const parts = dotKey.split('.');
+      let target = merged;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!target[parts[i]]) target[parts[i]] = {};
+        target = target[parts[i]];
+      }
+      target[parts[parts.length - 1]] = update[dotKey];
+    }
+    
     await saveGeneral(sessionId, generalNo, merged);
 
-    // DB에도 업데이트 (turntime 등 중요 필드 동기화)
+    // DB 업데이트 - 점 표기법은 MongoDB에서 직접 처리
     const dbUpdate: any = {};
+    
+    // 점 표기법 키는 그대로 전달 (MongoDB가 처리)
+    for (const dotKey of dotNotationKeys) {
+      dbUpdate[dotKey] = update[dotKey];
+    }
+    
+    // 일반 키도 처리
     if (update.turntime) dbUpdate.turntime = update.turntime;
     if (update.data?.turntime) dbUpdate['data.turntime'] = update.data.turntime;
     if (update.crew !== undefined) dbUpdate.crew = update.crew;
@@ -489,9 +540,11 @@ class GeneralRepository {
     if (update.data?.gold !== undefined) dbUpdate['data.gold'] = update.data.gold;
     if (update.rice !== undefined) dbUpdate.rice = update.rice;
     if (update.data?.rice !== undefined) dbUpdate['data.rice'] = update.data.rice;
+    if (update.officer_level !== undefined) dbUpdate.officer_level = update.officer_level;
+    if (update.officer_city !== undefined) dbUpdate.officer_city = update.officer_city;
     
-    // data 객체 전체 업데이트
-    if (update.data) {
+    // data 객체 전체 업데이트 (점 표기법이 아닌 경우만)
+    if (update.data && dotNotationKeys.length === 0) {
       dbUpdate.data = merged.data;
     }
     

@@ -740,11 +740,15 @@ export class GetFrontInfoService {
     };
 
     // 고위 관직자 조회 (군주=12, 부군주=11)
-    // nation과 officer_level로 필터링
+    // nation과 officer_level로 필터링 (최상위 및 data 내부 모두 검색)
     const topChiefs = await generalRepository.findByFilter({
       session_id: sessionId,
-      nation: nationId,
-      'data.officer_level': { $in: [11, 12] }
+      $or: [
+        { nation: nationId, officer_level: { $in: [11, 12] } },
+        { nation: nationId, 'data.officer_level': { $in: [11, 12] } },
+        { 'data.nation': nationId, officer_level: { $in: [11, 12] } },
+        { 'data.nation': nationId, 'data.officer_level': { $in: [11, 12] } }
+      ]
     });
 
     console.log('[GetFrontInfo] TopChiefs query result:', {
@@ -1126,16 +1130,21 @@ export class GetFrontInfoService {
       }
     }
 
-    // 도시 관리 (태수, 도독 등)
+    // 도시 관리 (태수, 군사, 종사)
+    // 최상위 및 data 내부 모두 검색
     const officers = await generalRepository.findByFilter({
       session_id: sessionId,
-      officer_city: cityId,
-      officer_level: { $in: [2, 3, 4] }
+      $or: [
+        { officer_city: cityId, officer_level: { $in: [2, 3, 4] } },
+        { officer_city: cityId, 'data.officer_level': { $in: [2, 3, 4] } },
+        { 'data.officer_city': cityId, officer_level: { $in: [2, 3, 4] } },
+        { 'data.officer_city': cityId, 'data.officer_level': { $in: [2, 3, 4] } }
+      ]
     });
 
     const officerList: any = { 4: null, 3: null, 2: null };
     officers.forEach(officer => {
-      const level = officer.officer_level;
+      const level = officer.officer_level ?? officer.data?.officer_level;
       if (level && (level === 2 || level === 3 || level === 4)) {
         officerList[level] = {
           officer_level: level,
