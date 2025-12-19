@@ -15,6 +15,7 @@ import { kvStorageRepository } from '../../repositories/kvstorage.repository';
 import { getSocketManager } from '../../socket/socketManager';
 import { GameUnitConst } from '../../const/GameUnitConst';
 import { troopRepository } from '../../repositories/troop.repository';
+import { getOfficerTitle } from '../../utils/rank-system';
 
 // Constants 로드
 let cachedConstants: any = null;
@@ -1000,7 +1001,7 @@ export class GetFrontInfoService {
       belong: data.belong || 0,
       refreshScoreTotal: 0,
       officerLevel: officerLevel,
-      officerLevelText: this.getOfficerLevelText(officerLevel),
+      officerLevelText: getOfficerTitle(officerLevel, nationInfo?.level ?? 0) || this.getOfficerLevelText(officerLevel),
       lbonus: this.calculateStatBonus(data, 'leadership'),
       sbonus: this.calculateStatBonus(data, 'strength'),
       ibonus: this.calculateStatBonus(data, 'intel'),
