@@ -1173,15 +1173,22 @@ export class ScenarioResetService {
       });
     }
     
-    // 국가별 gennum 업데이트 & 첫 번째 장수를 군주로 설정
+    // 국가별 gennum 업데이트 & 군주 설정
     const nationGenCount = new Map<number, number>();
-    const nationFirstGeneral = new Map<number, number>(); // 국가별 첫 번째 장수 ID
+    const nationFirstGeneral = new Map<number, number>(); // 국가별 첫 번째 장수 ID (군주 후보)
+    const nationHasRuler = new Map<number, number>(); // 이미 군주가 있는 국가 (시나리오에서 지정)
     
     for (const general of generalsToCreate) {
       const nationId = general.nation;
       if (nationId > 0) {
         nationGenCount.set(nationId, (nationGenCount.get(nationId) || 0) + 1);
-        // 첫 번째 장수 기록
+        
+        // 이미 군주(officer_level=12)로 지정된 장수 확인
+        if (general.officer_level === 12) {
+          nationHasRuler.set(nationId, general.no);
+        }
+        
+        // 첫 번째 장수 기록 (군주 후보)
         if (!nationFirstGeneral.has(nationId)) {
           nationFirstGeneral.set(nationId, general.no);
         }
@@ -1197,22 +1204,36 @@ export class ScenarioResetService {
       console.log(`[ScenarioReset] Updated nation ${nationId} gennum to ${count}`);
     }
     
-    // 각 국가의 첫 번째 장수를 군주로 설정 (officer_level = 12) + 국가의 leader 설정
-    for (const [nationId, generalNo] of nationFirstGeneral.entries()) {
-      await generalRepository.updateBySessionAndNo(sessionId, generalNo, {
+    // 군주 설정 (시나리오에서 지정되지 않은 국가만)
+    for (const [nationId, firstGeneralNo] of nationFirstGeneral.entries()) {
+      // 이미 시나리오에서 군주가 지정된 경우
+      if (nationHasRuler.has(nationId)) {
+        const rulerNo = nationHasRuler.get(nationId)!;
+        console.log(`[ScenarioReset] Nation ${nationId} already has ruler: general ${rulerNo} (from scenario)`);
+        
+        // 국가의 leader 필드만 업데이트
+        await nationRepository.updateOneByFilter(
+          { session_id: sessionId, 'data.nation': nationId },
+          { 'data.leader': rulerNo, leader: rulerNo }
+        );
+        continue;
+      }
+      
+      // 군주가 없는 국가: 첫 번째 장수를 군주로 설정
+      await generalRepository.updateBySessionAndNo(sessionId, firstGeneralNo, {
         'data.officer_level': 12,
         'data.npc': 1, // 군주는 NPC 타입 1
         officer_level: 12,
         npc: 1
       });
-      console.log(`[ScenarioReset] Set general ${generalNo} as ruler of nation ${nationId}`);
+      console.log(`[ScenarioReset] Set general ${firstGeneralNo} as ruler of nation ${nationId}`);
       
       // 국가의 leader 필드 업데이트
       await nationRepository.updateOneByFilter(
         { session_id: sessionId, 'data.nation': nationId },
-        { 'data.leader': generalNo, leader: generalNo }
+        { 'data.leader': firstGeneralNo, leader: firstGeneralNo }
       );
-      console.log(`[ScenarioReset] Set nation ${nationId} leader to general ${generalNo}`);
+      console.log(`[ScenarioReset] Set nation ${nationId} leader to general ${firstGeneralNo}`);
     }
 
     // ✅ PHP GeneralBuilder.php와 동일: general_turn 초기화
