@@ -206,13 +206,9 @@ router.post(
       let result;
       switch (action) {
         case 'setTurnTerm':
-        case 'turnterm': // alias for frontend compatibility
           result = await AdminGameSettingsService.setTurnTerm(sessionId, data.turnterm);
           break;
-        case 'setServerStatus':
-        case 'status': // alias for frontend compatibility
-          result = await AdminGameSettingsService.setServerStatus(sessionId, data.status);
-          break;
+        // NOTE: status 액션은 routes/admin.routes.ts에서 더 완전한 버전으로 처리됨 (result 형식 호환)
         case 'resetScenario': {
           const { ScenarioResetService } = await import('../../../services/admin/scenario-reset.service');
           const scenarioId = data.scenarioId || data.scenario_id || '1010';
