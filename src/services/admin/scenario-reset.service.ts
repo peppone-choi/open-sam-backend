@@ -1318,6 +1318,8 @@ export class ScenarioResetService {
     const nationIds = nations.map(n => n.nation).filter(id => id > 0);
     
     console.log(`[ScenarioReset] Creating diplomacy for ${nationIds.length} nations`);
+    console.log(`[ScenarioReset] Scenario diplomacy data count: ${diplomacyData.length}`);
+    console.log(`[ScenarioReset] Scenario diplomacy first 5:`, JSON.stringify(diplomacyData.slice(0, 5)));
 
     // 시나리오에서 정의된 외교 관계를 맵으로 변환 (양방향 동일 적용)
     const scenarioDiplomacy = new Map<string, { state: number; term: number }>();
@@ -1334,6 +1336,8 @@ export class ScenarioResetService {
         term = state === 0 ? 999 : 24;  // 전쟁: 999턴, 선전포고: 24턴
       }
       const diploValue = { state: state ?? 2, term };
+      
+      console.log(`[ScenarioReset] Diplomacy: ${me}-${you} state=${state} term=${rawTerm} -> ${term}`);
       
       // 양방향으로 동일하게 설정 (선전포고, 전쟁, 불가침은 양측 동일)
       scenarioDiplomacy.set(`${me}-${you}`, diploValue);
