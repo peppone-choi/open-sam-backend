@@ -557,9 +557,11 @@ export class ExecuteEngineService {
       currentTurn = lastTurn;
     }
 
-    // 세션 turntime을 현재 시각으로 업데이트 (다음 실행 기준점)
-    sessionData.turntime = now.toISOString();
-    sessionData.game_env.turntime = now.toISOString();
+    // 세션 turntime을 다음 턴 시간으로 업데이트 (현재 시각 + turnterm분)
+    const nextTurntime = new Date(now.getTime() + turntermInMinutes * 60 * 1000);
+    sessionData.turntime = nextTurntime.toISOString();
+    sessionData.game_env.turntime = nextTurntime.toISOString();
+    logger.info('Next turntime set', { sessionId, nextTurntime: nextTurntime.toISOString(), turntermInMinutes });
 
     session.data = sessionData;
     session.markModified('data');
@@ -617,7 +619,7 @@ export class ExecuteEngineService {
       }
     }
 
-    return { executed, turntime: now.toISOString() };
+    return { executed, turntime: nextTurntime.toISOString() };
   }
 
   /**
