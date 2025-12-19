@@ -192,42 +192,8 @@ router.put(
 // ==================== 게임 정보 ====================
 // NOTE: /game-info는 routes/admin.routes.ts에서 더 완전한 버전으로 처리됨
 
-// 게임 설정 업데이트 (고급 기능)
-// 주의: 이 라우터에서 처리하지 않는 action은 routes/admin.routes.ts로 넘어감
-router.post(
-  '/update-game',
-  requirePermission(AdminPermission.MANAGE_CONFIG),
-  asyncHandler(async (req, res, next) => {
-    const { session_id, action, data } = req.body;
-    const sessionId = session_id || 'sangokushi_default';
-    const { AdminGameSettingsService } = await import('../../../services/admin/AdminGameSettings.service');
-    
-    try {
-      let result;
-      switch (action) {
-        case 'setTurnTerm':
-          result = await AdminGameSettingsService.setTurnTerm(sessionId, data.turnterm);
-          break;
-        // NOTE: status 액션은 routes/admin.routes.ts에서 더 완전한 버전으로 처리됨 (result 형식 호환)
-        case 'resetScenario': {
-          const { ScenarioResetService } = await import('../../../services/admin/scenario-reset.service');
-          const scenarioId = data.scenarioId || data.scenario_id || '1010';
-          const options = { turnterm: data.turnterm };
-          await ScenarioResetService.resetScenario(sessionId, scenarioId, options);
-          result = { result: true, success: true, message: `시나리오 ${scenarioId}로 리셋 완료` };
-          break;
-        }
-        default:
-          // 이 라우터에서 처리하지 않는 action은 다음 라우터로 넘김
-          // routes/admin.routes.ts에서 더 많은 action을 처리함
-          return next();
-      }
-      res.json(result);
-    } catch (error: any) {
-      res.json({ result: false, reason: error.message });
-    }
-  })
-);
+// NOTE: /update-game은 routes/admin.routes.ts에서 처리됨
+// (result 형식 호환성 및 모든 action 지원)
 
 // ==================== 시스템 ====================
 
