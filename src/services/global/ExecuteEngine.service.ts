@@ -134,7 +134,10 @@ export class ExecuteEngineService {
       }
       lockAcquired = true;
       logger.info('Lock acquired', { lockKey, ttl: LOCK_TTL });
-      const session = await sessionRepository.findBySessionId(sessionId);
+      
+      // ⚠️ 중요: 캐시 대신 DB에서 직접 조회 (turnterm 등 설정 변경 즉시 반영)
+      const { Session } = await import('../../models/session.model');
+      const session = await Session.findOne({ session_id: sessionId });
       if (!session) {
         // 락을 해제하고 반환
         if (lockAcquired) {
