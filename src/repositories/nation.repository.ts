@@ -210,7 +210,8 @@ class NationRepository {
     }).lean();
     
     if (existing) {
-      const merged = { ...existing, ...update };
+      // dot notation (예: 'data.gold') 처리를 위한 깊은 머지
+      const merged = this._deepMergeWithDotNotation(existing, update);
       await saveNation(sessionId, nationNum, merged);
       
       // DB에도 즉시 업데이트
@@ -233,6 +234,34 @@ class NationRepository {
     await this._invalidateListCaches(sessionId);
     
     return { modifiedCount: 1, matchedCount: 0, upsertedCount: 1 };
+  }
+
+  /**
+   * dot notation 키를 포함한 객체를 깊은 머지
+   * 예: { 'data.gold': 100, gold: 100 } -> existing.data.gold = 100, existing.gold = 100
+   */
+  private _deepMergeWithDotNotation(existing: any, update: any): any {
+    const merged = { ...existing };
+    
+    for (const [key, value] of Object.entries(update)) {
+      if (key.includes('.')) {
+        // dot notation 처리: 'data.gold' -> merged.data.gold = value
+        const parts = key.split('.');
+        let target = merged;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!target[parts[i]]) {
+            target[parts[i]] = {};
+          }
+          target = target[parts[i]];
+        }
+        target[parts[parts.length - 1]] = value;
+      } else {
+        // 일반 키
+        merged[key] = value;
+      }
+    }
+    
+    return merged;
   }
 
   /**

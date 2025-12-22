@@ -310,10 +310,17 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
   await addToSyncQueue('nation', `${sessionId}:${nationId}`, sanitizeForSync(data));
   
   // 5. 자금 관련 필드는 DB에 비동기 즉시 저장 (중복 사용 방지)
+  // root level과 data 모두에 저장하여 데이터 일관성 유지
   const nData = data.data || data;
   const immediateUpdate: any = {};
-  if (typeof nData.gold === 'number') immediateUpdate['data.gold'] = nData.gold;
-  if (typeof nData.rice === 'number') immediateUpdate['data.rice'] = nData.rice;
+  if (typeof nData.gold === 'number') {
+    immediateUpdate['data.gold'] = nData.gold;
+    immediateUpdate['gold'] = nData.gold;  // root level도 업데이트
+  }
+  if (typeof nData.rice === 'number') {
+    immediateUpdate['data.rice'] = nData.rice;
+    immediateUpdate['rice'] = nData.rice;  // root level도 업데이트
+  }
   
   if (Object.keys(immediateUpdate).length > 0) {
     Nation.updateOne(

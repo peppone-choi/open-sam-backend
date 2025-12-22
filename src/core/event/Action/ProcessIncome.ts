@@ -101,22 +101,26 @@ export class ProcessIncome extends Action {
       let ratio = 0;
       
       const newGold = currentGold + income;
+      let finalGold = 0;
       
       if (newGold < baseGold) {
         realOutcome = 0;
         ratio = 0;
-        nation.data.gold = newGold;
+        finalGold = newGold;
       } else if (newGold - baseGold < outcome) {
         realOutcome = newGold - baseGold;
-        nation.data.gold = baseGold;
+        finalGold = baseGold;
         ratio = originOutcome > 0 ? realOutcome / originOutcome : 0;
       } else {
         realOutcome = outcome;
-        nation.data.gold = newGold - realOutcome;
+        finalGold = newGold - realOutcome;
         ratio = originOutcome > 0 ? realOutcome / originOutcome : 1;
       }
 
-        nation.data.gold = Math.max(nation.data.gold, baseGold);
+      finalGold = Math.max(finalGold, baseGold);
+      // root level과 data 모두 업데이트하여 데이터 일관성 유지
+      nation.data.gold = finalGold;
+      nation.gold = finalGold;
         
         // CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
         const nationData = nation.toObject ? nation.toObject() : { ...nation.data, session_id: sessionId, nation: nationId };
@@ -250,22 +254,26 @@ export class ProcessIncome extends Action {
       let ratio = 0;
       
       const newRice = currentRice + totalIncome;
+      let finalRice = 0;
       
       if (newRice < baseRice) {
         realOutcome = 0;
         ratio = 0;
-        nation.data.rice = newRice;
+        finalRice = newRice;
       } else if (newRice - baseRice < outcome) {
         realOutcome = newRice - baseRice;
-        nation.data.rice = baseRice;
+        finalRice = baseRice;
         ratio = originOutcome > 0 ? realOutcome / originOutcome : 0;
       } else {
         realOutcome = outcome;
-        nation.data.rice = newRice - realOutcome;
+        finalRice = newRice - realOutcome;
         ratio = originOutcome > 0 ? realOutcome / originOutcome : 1;
       }
 
-      nation.data.rice = Math.max(nation.data.rice, baseRice);
+      finalRice = Math.max(finalRice, baseRice);
+      // root level과 data 모두 업데이트하여 데이터 일관성 유지
+      nation.data.rice = finalRice;
+      nation.rice = finalRice;
       
       // CQRS 패턴: 캐시에 쓰기 → 데몬이 DB 동기화
       const nationData = nation.toObject ? nation.toObject() : { ...nation.data, session_id: sessionId, nation: nationId };

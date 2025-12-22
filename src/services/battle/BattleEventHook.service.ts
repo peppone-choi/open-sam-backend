@@ -611,10 +611,15 @@ async function transferCityResources(
 
     const currentGold = nation.data?.gold || nation.gold || 0;
     const currentRice = nation.data?.rice || nation.rice || 0;
+    const newGold = currentGold + gold;
+    const newRice = currentRice + rice;
 
+    // root level과 data 모두 업데이트하여 데이터 일관성 유지
     await nationRepository.updateByNationNum(sessionId, nationId, {
-      'data.gold': currentGold + gold,
-      'data.rice': currentRice + rice
+      'data.gold': newGold,
+      'data.rice': newRice,
+      gold: newGold,
+      rice: newRice
     });
 
     logger.info('[BattleEventHook] City resources transferred', {
