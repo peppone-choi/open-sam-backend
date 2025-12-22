@@ -240,7 +240,7 @@ export async function refreshAllNationPower(sessionId: string): Promise<void> {
       
       await (Nation as Model<INation>).updateOne(
         { session_id: sessionId, nation: nationNum },
-        { $set: { 'data.power': power } }
+        { $set: { power: power, 'data.power': power } }
       );
     }
     

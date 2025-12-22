@@ -1586,9 +1586,10 @@ export class ScenarioResetService {
            Math.round(generalExpDed / 100)) / 10
         );
         
-        // 국력 저장
+        // 국력 저장 (root level과 data 모두에 저장)
         await nationRepository.updateByNationNum(sessionId, nationId, {
-          power: power
+          power: power,
+          'data.power': power
         });
         
       } catch (error: any) {
