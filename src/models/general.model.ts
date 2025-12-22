@@ -505,7 +505,7 @@ GeneralSchema.methods.getStaticNation = function(): any {
   return this.data._cached_nation || {
     nation: 0,
     name: '재야',
-    color: '#000000',
+    color: '#CCCCCC',
     type: 0,
     level: 0,
     capital: 0

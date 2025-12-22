@@ -44,7 +44,7 @@ export class SendSystemNoticeService {
         name: '',
         nation_id: 0,
         nation: 'System',
-        color: '#000000',
+        color: '#CCCCCC',
         icon: '',
       };
 
@@ -83,7 +83,7 @@ export class SendSystemNoticeService {
           name: general.name,
           nation_id: general.nation || 0,
           nation: general.nation ? `국가 ${general.nation}` : '재야',
-          color: '#000000',
+          color: '#CCCCCC',
           icon: general.picture || '',
         };
 

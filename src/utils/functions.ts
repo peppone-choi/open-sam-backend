@@ -147,7 +147,7 @@ export async function getNationStaticInfo(
     return {
       nation: 0,
       name: '재야',
-      color: '#000000',
+      color: '#CCCCCC',
       type: 'None',
       level: 0,
       capital: 0,  // 재야는 수도 없음

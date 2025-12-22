@@ -275,7 +275,7 @@ export class GeneralAdapter {
     return this.raw.data?._cached_nation || this.raw._cached_nation || {
       nation: 0,
       name: '재야',
-      color: '#000000',
+      color: '#CCCCCC',
       type: 0,
       level: 0,
       capital: 0

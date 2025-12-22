@@ -1112,7 +1112,7 @@ export class GetFrontInfoService {
 
     // 도시 소속 국가 정보
     let nationName = '재야';
-    let nationColor = '#000000';
+    let nationColor = '#CCCCCC';
 
     if (cityNationId !== 0) {
       const nationDoc = await nationRepository.findByNationNum(sessionId, cityNationId);
