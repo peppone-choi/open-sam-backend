@@ -347,11 +347,11 @@ export class NPCAutoCommandService {
       return { success: false };
     }
     
-    // 이 수뇌의 국가턴 확인 (general_id 기준으로 조회)
+    // 이 수뇌의 국가턴 확인 (officer_level 기준으로 조회 - ExecuteEngine과 동일)
     const existingTurns = await nationTurnRepository.findByFilter({
       session_id: sessionId,
       'data.nation_id': nationId,
-      'data.general_id': generalId // 수뇌별로 별도 턴 테이블
+      'data.officer_level': officerLevel // officer_level별로 별도 턴 테이블
     });
     
     // 비어있는 턴 찾기
@@ -421,17 +421,18 @@ export class NPCAutoCommandService {
         return { success: false };
       }
       
-      console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}) - 국가 명령 선택: ${decision.command}`);
+      console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}, 관직 ${officerLevel}) - 국가 명령 선택: ${decision.command}`);
 
-      // 결정된 명령 등록 (general_id 포함)
-      // id는 고유해야 함: nation_general_turn 형식
-      const turnId = `${nationId}_${generalId}_${emptyTurnIdx}`;
+      // 결정된 명령 등록 (officer_level 포함 - ExecuteEngine에서 조회 시 필요)
+      // id는 고유해야 함: nation_officer_turn 형식
+      const turnId = `${nationId}_${officerLevel}_${emptyTurnIdx}`;
       await nationTurnRepository.create({
         session_id: sessionId,
         data: {
           id: turnId,
           nation_id: nationId,
-          general_id: generalId, // 수뇌별 턴 테이블 구분
+          general_id: generalId,
+          officer_level: officerLevel, // ExecuteEngine에서 조회 시 필요!
           turn_idx: emptyTurnIdx,
           action: decision.command,
           arg: decision.args,
