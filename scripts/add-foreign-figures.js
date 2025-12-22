@@ -339,9 +339,8 @@ const RULERS_BY_ERA = {
 // ========================================
 
 const ADDITIONAL_FIGURES = {
-  // 부여 인물
+  // 부여 인물 (간위거는 RULERS_BY_ERA에서 군주로 추가됨)
   buyeo: [
-    { name: '간위거', birth: 160, death: 220, leadership: 70, strength: 75, intel: 65, politics: 70, charm: 65, special: '돌격' },
     { name: '마여', birth: 195, death: 250, leadership: 65, strength: 70, intel: 60, politics: 65, charm: 60, special: '수비' },
     { name: '의라', birth: 200, death: 260, leadership: 60, strength: 65, intel: 55, politics: 60, charm: 55, special: '돌격' },
   ],
