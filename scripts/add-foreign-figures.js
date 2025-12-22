@@ -376,10 +376,9 @@ const ADDITIONAL_FIGURES = {
   
   // 가야 인물
   gaya: [
-    { name: '김탈해', birth: 140, death: 200, leadership: 72, strength: 75, intel: 70, politics: 68, charm: 70, special: '수비' },
-    { name: '김각간', birth: 170, death: 230, leadership: 68, strength: 72, intel: 65, politics: 70, charm: 65, special: '돌격' },
-    { name: '김허황', birth: 150, death: 210, leadership: 55, strength: 50, intel: 78, politics: 82, charm: 85, special: '은둔' },
-    { name: '수클옹', birth: 180, death: 240, leadership: 70, strength: 73, intel: 62, politics: 65, charm: 62, special: '돌격' },
+    { name: '허황옥', birth: 32, death: 189, leadership: 55, strength: 45, intel: 80, politics: 85, charm: 90, special: '은둔' }, // 김수로왕비, 아유타국 공주
+    { name: '김거등', birth: 70, death: 150, leadership: 65, strength: 68, intel: 62, politics: 65, charm: 65, special: '돌격' }, // 수로왕 장남
+    { name: '신귀간', birth: 60, death: 130, leadership: 60, strength: 55, intel: 70, politics: 72, charm: 68, special: '수비' }, // 9간 중 하나
   ],
   
   // 왜 인물 (재야로 배치)
