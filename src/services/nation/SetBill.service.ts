@@ -28,13 +28,6 @@ export class SetBillService {
         };
       }
 
-      if (!generalId) {
-        return {
-          success: false,
-          message: '장수 정보가 필요합니다'
-        };
-      }
-
       if (!userId) {
         return {
           success: false,
@@ -42,16 +35,26 @@ export class SetBillService {
         };
       }
 
-      const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(generalId), String(userId));
-      if (!ownershipCheck.valid) {
-        return {
-          success: false,
-          message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
-        };
+      // generalId가 없으면 userId로 장수 조회 (SetRateService와 동일한 방식)
+      let resolvedGeneralId = generalId;
+      let general;
+      
+      if (resolvedGeneralId) {
+        const ownershipCheck = await verifyGeneralOwnership(sessionId, Number(resolvedGeneralId), String(userId));
+        if (!ownershipCheck.valid) {
+          return {
+            success: false,
+            message: ownershipCheck.error || '해당 장수에 대한 권한이 없습니다.'
+          };
+        }
+        general = await generalRepository.findBySessionAndNo(sessionId, resolvedGeneralId);
+      } else {
+        // userId로 장수 찾기
+        general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
+        if (general) {
+          resolvedGeneralId = general.no || general.data?.no;
+        }
       }
- 
-      // 장수 정보 조회
-      const general = await generalRepository.findBySessionAndNo(sessionId, generalId);
 
 
       if (!general) {
