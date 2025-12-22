@@ -636,11 +636,11 @@ export class ScenarioResetService {
     let nationIdCounter = 1;
 
     for (const nationTemplate of nationsData) {
-      // PHP JSON 포맷: [name, color, gold, rice, description, tech, policy, nationLevel, cities]
+      // PHP JSON 포맷: [name, color, gold, rice, scoutMsg, tech, policy, nationLevel, cities]
       let nationId, nationName, nationColor, gold, rice, description, tech, policy, nationLevel, cityNames;
       
       if (Array.isArray(nationTemplate)) {
-        // PHP 배열 포맷
+        // PHP 배열 포맷 (index 4는 임관 권유문)
         [nationName, nationColor, gold, rice, description, tech, policy, nationLevel, cityNames] = nationTemplate;
         nationId = nationIdCounter++;
         cityNames = cityNames || [];
