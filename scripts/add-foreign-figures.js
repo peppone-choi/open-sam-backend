@@ -158,7 +158,7 @@ const SHANYUE_NATION = {
   color: '#708090',
   gold: 2500,
   rice: 2500,
-  rulerName: '산월추장',
+  rulerName: '황란', // 산월 반란 지도자
   tech: 150,
   nationType: '도적',
   level: 1, // 정급
@@ -191,7 +191,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '화련', birth: 155, death: 210 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 반동탁연합 결성 정사 (187년)
   '1021': {
@@ -203,7 +203,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '화련', birth: 155, death: 210 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 군웅할거 (191년)
   '1030': {
@@ -215,7 +215,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '기비능', birth: 170, death: 235 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 군웅축록 (192년)
   '1031': {
@@ -227,7 +227,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '기비능', birth: 170, death: 235 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 황제는 허도로 (193년)
   '1040': {
@@ -239,7 +239,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '기비능', birth: 170, death: 235 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 황제 원술 (194년)
   '1041': {
@@ -251,7 +251,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '기비능', birth: 170, death: 235 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 관도대전 (197년)
   '1050': {
@@ -263,7 +263,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '기비능', birth: 170, death: 235 },
     xiongnu: { name: '어부라', birth: 150, death: 195 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 원가의 분열 (199년)
   '1060': {
@@ -275,7 +275,7 @@ const RULERS_BY_ERA = {
     wuhuan: { name: '답돈', birth: 160, death: 207 },
     xianbei: { name: '기비능', birth: 170, death: 235 },
     xiongnu: { name: '호주천', birth: 170, death: 220 },
-    shanyue: { name: '엄백호', birth: 150, death: 200 },
+    shanyue: { name: '황란', birth: 150, death: 210 },
   },
   // 적벽대전 (204년)
   '1070': {
@@ -446,11 +446,11 @@ const ADDITIONAL_FIGURES = {
     { name: '주포', birth: 172, death: 225, leadership: 68, strength: 70, intel: 58, politics: 55, charm: 60, special: '수비' },
   ],
   
-  // 산월 인물
+  // 산월 인물 (엄백호는 기존 시나리오에 군웅으로 존재하므로 제외)
   shanyue: [
-    { name: '엄백호', birth: 150, death: 200, leadership: 75, strength: 78, intel: 55, politics: 50, charm: 70, special: '돌격' },
-    { name: '엄여', birth: 155, death: 197, leadership: 68, strength: 72, intel: 50, politics: 45, charm: 62, special: '돌격' },
-    { name: '비잔', birth: 170, death: 230, leadership: 72, strength: 75, intel: 52, politics: 48, charm: 65, special: '수비' },
+    { name: '황란', birth: 150, death: 210, leadership: 73, strength: 75, intel: 52, politics: 48, charm: 68, special: '돌격' }, // 산월 반란 지도자
+    { name: '비잔', birth: 170, death: 230, leadership: 72, strength: 75, intel: 52, politics: 48, charm: 65, special: '수비' }, // 산월 출신 장수
+    { name: '상승', birth: 165, death: 220, leadership: 70, strength: 72, intel: 50, politics: 45, charm: 60, special: '수비' }, // 산월 추장
   ],
 };
 
@@ -564,9 +564,9 @@ function updateScenario(filename) {
     const content = fs.readFileSync(filepath, 'utf8');
     const scenario = JSON.parse(content);
     
-    // 현재 nation 개수 확인
+    // 현재 nation 개수 확인 (nation index는 0-based)
     const existingNationCount = scenario.nation ? scenario.nation.length : 0;
-    let nextNationId = existingNationCount + 1;
+    let nextNationId = existingNationCount; // 0-based index
     
     const rulers = RULERS_BY_ERA[scenarioId];
     if (!rulers) {
