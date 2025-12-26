@@ -1,10 +1,10 @@
-import dotenv from 'dotenv';
 import { mongoConnection } from './db/connection';
 import { logger } from './common/logger';
 import { CommandRegistry } from './core/command';
 import { CommandExecutor } from './core/command/CommandExecutor';
+import { configManager } from './config/ConfigManager';
 
-dotenv.config();
+const { system } = configManager.get();
 
 /**
  * Game Daemon
@@ -18,13 +18,12 @@ let isShuttingDown = false;
 async function start() {
   try {
     logger.info('Game Daemon 시작 중...', {
-      nodeEnv: process.env.NODE_ENV || 'development',
+      nodeEnv: system.nodeEnv,
       nodeVersion: process.version,
-      hostname: process.env.HOSTNAME || 'daemon-1'
     });
 
     // MongoDB 연결
-    await mongoConnection.connect(process.env.MONGODB_URI);
+    await mongoConnection.connect();
     logger.info('MongoDB 연결 성공');
 
     // Redis 연결
@@ -50,7 +49,7 @@ async function start() {
     });
 
     // 커맨드 소비 시작
-    const consumerName = process.env.HOSTNAME || 'daemon-1';
+    const consumerName = system.serverId || 'daemon-1';
     
     while (!isShuttingDown) {
       try {
@@ -107,19 +106,14 @@ async function start() {
   }
 }
 
-/**
- * Graceful shutdown
- */
 async function shutdown(signal: string) {
   logger.info('Shutdown 신호 수신', { signal });
   isShuttingDown = true;
 
   try {
-    // MongoDB 연결 종료
     await mongoConnection.disconnect();
     logger.info('MongoDB 연결 종료');
 
-    // Redis 연결 종료
     const { RedisService } = await import('./infrastructure/queue/redis.service');
     await RedisService.disconnect();
     logger.info('Redis 연결 종료');
@@ -134,7 +128,6 @@ async function shutdown(signal: string) {
   }
 }
 
-// 프로세스 에러 핸들링
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 

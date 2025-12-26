@@ -483,6 +483,17 @@ export async function giveRandomUniqueItem(
     actionLogger.pushGlobalHistoryLog(`<C><b>【${acquireType}】</b></><D><b>${nationName}</b></>의 <Y>${generalName}</>${josaYi} <C>${itemName}</>${josaUl} 습득했습니다!`);
     await actionLogger.flush();
 
+    // 업적 지급
+    const ownerId = getOwnerId(general);
+    if (ownerId && acquireType === '인재탐색') {
+      try {
+        const { AchievementService } = await import('../services/achievement.service');
+        await AchievementService.award(ownerId, 'TREASURE_HUNT', { itemCode, itemName });
+      } catch (achError) {
+        logger.warn('[unique-item-lottery] Failed to award achievement', achError);
+      }
+    }
+
     return true;
   } catch (error: any) {
     logger.error(`[giveRandomUniqueItem] Error: ${error.message}`, { stack: error.stack });

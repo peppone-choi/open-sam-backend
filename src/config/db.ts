@@ -8,13 +8,16 @@ import { Troop } from '../models/troop.model';
 import { Diplomacy } from '../models/diplomacy.model';
 import { NgHistory } from '../models/ng_history.model';
 import { Auction } from '../models/auction.model';
+import { configManager } from './ConfigManager';
+import { logger } from '../common/logger';
 
 export async function connectDB() {
   try {
-    const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/opensam';
-    await mongoose.connect(uri);
+    const { mongodbUri } = configManager.get().system;
+    await mongoose.connect(mongodbUri);
+    logger.info('✅ MongoDB 연결 성공');
   } catch (error) {
-    console.error('❌ MongoDB 연결 실패:', error);
+    logger.error('❌ MongoDB 연결 실패:', error);
     throw error;
   }
 }
@@ -158,14 +161,6 @@ export class DB {
         if (match && params.length > 0) {
           filter[match[1]] = params[0];
         }
-      } else {
-        // 파라미터가 없는 경우 whereClause를 그대로 사용 (단순 필드명만)
-        const match = whereClause.match(/(\w+)\s*=\s*\?/);
-        if (match) {
-          // 필드명만 추출하여 필터 생성
-          const fieldName = match[1];
-          // 필터는 빈 객체로 두고, 호출자가 직접 설정하도록
-        }
       }
     }
     
@@ -175,11 +170,8 @@ export class DB {
     
     for (const [key, value] of Object.entries(updates)) {
       if (value && typeof value === 'object' && '$expr' in value) {
-        // db.raw() 사용한 경우 - $inc로 처리
-        // raw는 { $expr: sql, _params: params } 형태
         const rawValue = value as any;
         const sql = rawValue.$expr || '';
-        // 간단한 증감 연산 처리
         if (sql.includes('-')) {
           const match = sql.match(/(\w+)\s*-\s*(\d+)/);
           if (match) {
@@ -240,9 +232,6 @@ export class DB {
   }
 
   raw(sql: string, ...params: any[]): any {
-    // MongoDB에서는 raw SQL을 지원하지 않으므로,
-    // Mongoose의 $expr나 다른 방법을 사용해야 합니다.
-    // 일단 placeholder로 객체를 반환합니다.
     return {
       $expr: sql,
       _params: params

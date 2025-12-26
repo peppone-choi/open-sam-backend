@@ -21,7 +21,12 @@ export enum Formation {
   // 범용
   LINE = 'LINE',                 // 횡대: 전방 화력
   COLUMN = 'COLUMN',             // 종대: 돌파력
-  SQUARE = 'SQUARE'              // 방진: 균형
+  SQUARE = 'SQUARE',             // 방진: 균형
+  
+  // 삼국지 전통 진법
+  CRANE_WING = 'CRANE_WING',     // 학익진: 포위 특화
+  ARROW = 'ARROW',               // 어린진: 돌파 극대화
+  SNAKE = 'SNAKE'                // 사진: 기동력 특화
 }
 
 export enum AttackDirection {
@@ -102,6 +107,24 @@ export const FORMATION_BASE_BONUS: Record<Formation, FormationBonus> = {
     attackMultiplier: 1.0,
     speedMultiplier: 0.9,
     avoidMultiplier: 1.0
+  },
+  [Formation.CRANE_WING]: {
+    defenseMultiplier: 1.1,
+    attackMultiplier: 1.3,
+    speedMultiplier: 0.9,
+    avoidMultiplier: 1.1
+  },
+  [Formation.ARROW]: {
+    defenseMultiplier: 0.8,
+    attackMultiplier: 1.6,
+    speedMultiplier: 1.1,
+    avoidMultiplier: 0.7
+  },
+  [Formation.SNAKE]: {
+    defenseMultiplier: 1.0,
+    attackMultiplier: 1.0,
+    speedMultiplier: 1.4,
+    avoidMultiplier: 1.2
   }
 };
 
@@ -179,6 +202,27 @@ export const DIRECTION_MODIFIER: Record<Formation, Record<AttackDirection, { def
     [AttackDirection.SIDE_LEFT]: { defense: 1.0, attack: 1.0 },
     [AttackDirection.SIDE_RIGHT]: { defense: 1.0, attack: 1.0 },
     [AttackDirection.REAR]: { defense: 0.9, attack: 0.9 }
+  },
+  
+  [Formation.CRANE_WING]: {
+    [AttackDirection.FRONT]: { defense: 1.2, attack: 1.2 },
+    [AttackDirection.SIDE_LEFT]: { defense: 1.2, attack: 1.4 },
+    [AttackDirection.SIDE_RIGHT]: { defense: 1.2, attack: 1.4 },
+    [AttackDirection.REAR]: { defense: 0.6, attack: 0.8 }
+  },
+  
+  [Formation.ARROW]: {
+    [AttackDirection.FRONT]: { defense: 0.9, attack: 1.8 },
+    [AttackDirection.SIDE_LEFT]: { defense: 0.6, attack: 0.8 },
+    [AttackDirection.SIDE_RIGHT]: { defense: 0.6, attack: 0.8 },
+    [AttackDirection.REAR]: { defense: 0.5, attack: 0.5 }
+  },
+  
+  [Formation.SNAKE]: {
+    [AttackDirection.FRONT]: { defense: 1.0, attack: 1.2 },
+    [AttackDirection.SIDE_LEFT]: { defense: 1.0, attack: 1.0 },
+    [AttackDirection.SIDE_RIGHT]: { defense: 1.0, attack: 1.0 },
+    [AttackDirection.REAR]: { defense: 0.8, attack: 1.0 }
   }
 };
 

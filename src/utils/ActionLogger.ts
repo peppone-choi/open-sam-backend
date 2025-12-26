@@ -1,4 +1,7 @@
 import { logger } from '../common/logger';
+import { configManager } from '../config/ConfigManager';
+
+const { system } = configManager.get();
 
 interface LogEntry {
   timestamp: Date;
@@ -26,32 +29,31 @@ export class ActionLogger {
   private year?: number;
   private month?: number;
 
-  constructor(generalNo?: number, nationId?: number, year?: number, month?: number, sessionId: string = 'sangokushi_default', _autoFlush: boolean = true) {
+  constructor(generalNo?: number, nationId?: number, year?: number, month?: number, sessionId: string = system.sessionId, _autoFlush: boolean = true) {
     this.sessionId = sessionId;
     this.generalNo = generalNo;
     this.nationId = nationId;
     this.year = year;
     this.month = month;
-    // _autoFlush is accepted for compatibility but not used in this implementation
   }
 
   pushGeneralActionLog(message: string, type: string = ActionLogger.PLAIN): void {
-    ActionLogger.log(this.generalNo, 'general_action', message, type);
+    ActionLogger.log(this.generalNo, 'general_action', message, type, this.sessionId);
   }
 
   pushGeneralHistoryLog(message: string, type: string = ActionLogger.PLAIN): void {
-    ActionLogger.log(this.generalNo, 'general_history', message, type);
+    ActionLogger.log(this.generalNo, 'general_history', message, type, this.sessionId);
   }
 
   pushGlobalActionLog(message: string, type: string = ActionLogger.PLAIN): void {
     if (this.nationId) {
-      ActionLogger.pushNationalHistoryLog(this.nationId, 'global_action', message, type);
+      ActionLogger.pushNationalHistoryLog(this.nationId, 'global_action', message, type, this.sessionId);
     }
   }
 
   pushGlobalHistoryLog(message: string, type: string = ActionLogger.PLAIN): void {
     if (this.nationId) {
-      ActionLogger.pushNationalHistoryLog(this.nationId, 'global_history', message, type);
+      ActionLogger.pushNationalHistoryLog(this.nationId, 'global_history', message, type, this.sessionId);
     }
   }
 
@@ -59,7 +61,6 @@ export class ActionLogger {
     return ActionLogger.flush();
   }
 
-  // Logger method aliases for compatibility
   static warn(message: string, ...args: any[]): void {
     logger.warn(message, ...args);
   }
@@ -71,7 +72,7 @@ export class ActionLogger {
   /**
    * 일반 액션 로그 기록
    */
-  static log(generalId: number | undefined, action: string, message: string, type: string = ActionLogger.PLAIN, sessionId: string = 'sangokushi_default'): void {
+  static log(generalId: number | undefined, action: string, message: string, type: string = ActionLogger.PLAIN, sessionId: string = system.sessionId): void {
     const entry: LogEntry = {
       timestamp: new Date(),
       sessionId,
@@ -84,13 +85,13 @@ export class ActionLogger {
     this.logs.push(entry);
     
     // 콘솔에도 출력 (개발 환경)
-    if (process.env.NODE_ENV === 'development') {
+    if (system.nodeEnv === 'development') {
       logger.debug(`[ActionLog] General ${generalId}: ${action} - ${message}`);
     }
     
     // 로그가 너무 많이 쌓이면 자동으로 flush
     if (this.logs.length > 1000) {
-      this.flush();
+      void this.flush();
     }
   }
 
@@ -102,7 +103,7 @@ export class ActionLogger {
     action: string,
     message: string,
     type: string = ActionLogger.PLAIN,
-    sessionId: string = 'sangokushi_default'
+    sessionId: string = system.sessionId
   ): void {
     const entry: LogEntry = {
       timestamp: new Date(),
@@ -115,34 +116,31 @@ export class ActionLogger {
     
     this.nationalHistoryLogs.push(entry);
     
-    // 개발 환경에서 콘솔 출력
-    if (process.env.NODE_ENV === 'development') {
+    if (system.nodeEnv === 'development') {
       logger.debug(`[NationalHistoryLog] Nation ${nationId}: ${action} - ${message}`);
     }
     
-    // 로그가 너무 많이 쌓이면 자동으로 flush
     if (this.nationalHistoryLogs.length > 500) {
-      this.flushNationalHistory();
+      void this.flushNationalHistory();
     }
   }
 
   /**
-   * 일반 로그를 DB에 저장하고 메모리에서 제거
+   * 일반 로그를 DB에 저장
    */
   static async flush(): Promise<void> {
-    if (this.logs.length === 0) {
-      return;
-    }
+    if (this.logs.length === 0) return;
     
     try {
       const { generalRecordRepository } = await import('../repositories/general-record.repository');
       const { GameEventEmitter } = await import('../services/gameEventEmitter');
       
-      // DB에 로그 저장 및 WebSocket 브로드캐스트
-      for (const log of this.logs) {
+      const currentLogs = [...this.logs];
+      this.logs = [];
+
+      for (const log of currentLogs) {
         if (!log.generalId) continue;
         
-        // action type에 따라 log_type 결정
         const logType = log.action.includes('history') ? 'history' : 'action';
         
         const savedLog = await generalRecordRepository.create({
@@ -153,7 +151,6 @@ export class ActionLogger {
           date: log.timestamp
         });
         
-        // WebSocket으로 실시간 브로드캐스트
         if (savedLog) {
           const logId = savedLog._id?.toString() || savedLog.id || 0;
           GameEventEmitter.broadcastLogUpdate(
@@ -165,31 +162,28 @@ export class ActionLogger {
           );
         }
       }
-      
-      // 로그 초기화
-      this.logs = [];
     } catch (error) {
       logger.error('Failed to flush action logs:', error);
     }
   }
 
   /**
-   * 국가 역사 로그를 DB에 저장하고 메모리에서 제거
+   * 국가 역사 로그를 DB에 저장
    */
   static async flushNationalHistory(): Promise<void> {
-    if (this.nationalHistoryLogs.length === 0) {
-      return;
-    }
+    if (this.nationalHistoryLogs.length === 0) return;
     
     try {
       const { NgHistory } = await import('../models/ng_history.model');
       const { sessionRepository } = await import('../repositories/session.repository');
       
-      // 세션별로 로그 그룹화
+      const currentLogs = [...this.nationalHistoryLogs];
+      this.nationalHistoryLogs = [];
+
       const logsBySession = new Map<string, { global_history: string[], global_action: string[] }>();
       
-      for (const log of this.nationalHistoryLogs) {
-        const sessionId = log.sessionId || 'sangokushi_default';
+      for (const log of currentLogs) {
+        const sessionId = log.sessionId || system.sessionId;
         if (!logsBySession.has(sessionId)) {
           logsBySession.set(sessionId, { global_history: [], global_action: [] });
         }
@@ -202,17 +196,14 @@ export class ActionLogger {
         }
       }
       
-      // 각 세션별로 현재 년/월 히스토리에 추가
       for (const [sessionId, logs] of logsBySession) {
         const session = await sessionRepository.findBySessionId(sessionId);
         if (!session) continue;
         
         const sessionData = session.data || {};
-        const gameEnv = sessionData.game_env || {};
-        const year = gameEnv.year || sessionData.year || 1;
-        const month = gameEnv.month || sessionData.month || 1;
+        const year = sessionData.game_env?.year || sessionData.year || 1;
+        const month = sessionData.game_env?.month || sessionData.month || 1;
         
-        // 기존 히스토리 찾기 또는 새로 생성
         let history = await (NgHistory as any).findOne({
           server_id: sessionId,
           year: year,
@@ -231,28 +222,16 @@ export class ActionLogger {
           });
         }
         
-        // 기존 배열에 새 로그 추가
-        const existingHistory = Array.isArray(history.global_history) ? history.global_history : [];
-        const existingAction = Array.isArray(history.global_action) ? history.global_action : [];
-        
-        history.global_history = [...existingHistory, ...logs.global_history];
-        history.global_action = [...existingAction, ...logs.global_action];
+        history.global_history = [...(history.global_history || []), ...logs.global_history];
+        history.global_action = [...(history.global_action || []), ...logs.global_action];
         
         await history.save();
-        
-        logger.debug(`[ActionLogger] Flushed ${logs.global_history.length} global_history, ${logs.global_action.length} global_action logs for ${sessionId} ${year}/${month}`);
       }
-      
-      // 로그 초기화
-      this.nationalHistoryLogs = [];
     } catch (error) {
       logger.error('Failed to flush national history logs:', error);
     }
   }
 
-  /**
-   * 모든 로그 flush
-   */
   static async flushAll(): Promise<void> {
     await Promise.all([
       this.flush(),
@@ -260,9 +239,6 @@ export class ActionLogger {
     ]);
   }
 
-  /**
-   * 로그 통계 조회
-   */
   static getStats(): { generalLogs: number; nationalLogs: number } {
     return {
       generalLogs: this.logs.length,

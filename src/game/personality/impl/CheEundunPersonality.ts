@@ -17,7 +17,32 @@ export class CheEundunPersonality extends BasePersonality {
   }
   
   getInfo(): string {
-    return '숨어 지내는 것을 선호. 재야 생활에 유리';
+    return '명성 -10%, 계급 -10%, 사기 -5, 훈련 -5, 단련 성공률 +10%';
+  }
+
+  override onCalcDomestic(turnType: string, varType: string, value: number, _aux?: any): number {
+    if (turnType === '단련') {
+      if (varType === 'success') {
+        return value + 0.1;
+      }
+    }
+    return value;
+  }
+
+  override onCalcStat(_general: any, statName: string, value: any, _aux?: any): any {
+    if (statName === 'bonusAtmos') {
+      return value - 5;
+    }
+    if (statName === 'bonusTrain') {
+      return value - 5;
+    }
+    if (statName === 'experience') {
+      return value * 0.9;
+    }
+    if (statName === 'dedication') {
+      return value * 0.9;
+    }
+    return value;
   }
 }
 

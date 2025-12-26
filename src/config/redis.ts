@@ -1,7 +1,11 @@
 import { createClient, RedisClientType } from 'redis';
+import { configManager } from './ConfigManager';
+import { logger } from '../common/logger';
+
+const { redisUrl } = configManager.get().system;
 
 export const redis: RedisClientType = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+  url: redisUrl || 'redis://localhost:6379'
 }) as RedisClientType;
 
 // Alias for convenience
@@ -9,9 +13,13 @@ export const redisClient: RedisClientType = redis;
 
 export async function connectRedis() {
   try {
-    await redis.connect();
+    if (!redis.isOpen) {
+      await redis.connect();
+      logger.info('✅ Redis 연결 성공');
+    }
   } catch (error) {
-    console.error('❌ Redis 연결 실패:', error);
+    logger.error('❌ Redis 연결 실패:', error);
     throw error;
   }
 }
+

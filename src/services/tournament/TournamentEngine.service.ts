@@ -1477,6 +1477,24 @@ async function setGift(sessionId: string, tnmtType: number, tnmt: number, phase:
       return;
     }
 
+    // 토너먼트 히스토리 기록
+    try {
+      const { TournamentHistory } = await import('../../models/tournament-history.model');
+      await TournamentHistory.create({
+        session_id: sessionId,
+        year,
+        month,
+        tnmt_type: tnmtType,
+        tnmt_type_name: tp,
+        winner_id: winner.no,
+        winner_name: winner.name,
+        runner_up_id: runnerUp.no,
+        runner_up_name: runnerUp.name
+      });
+    } catch (historyError: any) {
+      logger.error('[TournamentEngine] Failed to save tournament history', { error: historyError.message });
+    }
+
     // 자동진행 끝
     await gameStor.setValue('tnmt_auto', false);
 

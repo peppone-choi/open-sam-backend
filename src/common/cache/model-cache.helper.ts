@@ -321,6 +321,14 @@ export async function saveNation(sessionId: string, nationId: number, data: any)
     immediateUpdate['data.rice'] = nData.rice;
     immediateUpdate['rice'] = nData.rice;  // root level도 업데이트
   }
+  if (typeof nData.level === 'number') {
+    immediateUpdate['data.level'] = nData.level;
+    immediateUpdate['level'] = nData.level;
+  }
+  if (nData.leader !== undefined) {
+    immediateUpdate['data.leader'] = nData.leader;
+    immediateUpdate['leader'] = nData.leader;
+  }
   
   if (Object.keys(immediateUpdate).length > 0) {
     Nation.updateOne(

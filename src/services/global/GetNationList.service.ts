@@ -30,7 +30,7 @@ export class GetNationListService {
       const nations: Record<number, any> = {};
       for (const nation of nationsData) {
         const nationData = nation.data || {};
-        const nationType = nationData.type || null;
+        const nationType = nation.type || nationData.type || null;
         const typeInfo = getNationTypeInfo(nationType);
         
         nations[nation.nation] = {
@@ -38,13 +38,13 @@ export class GetNationListService {
           nation: nation.nation,
           name: nation.name,
           color: nation.color || nationData.color || '#666666',
-          level: nationData.level ?? 0,
-          power: nationData.power ?? 0,
-          capital: nationData.capital ?? 0,
-          gold: nationData.gold ?? 0,
-          rice: nationData.rice ?? 0,
-          tech: nationData.tech ?? 0,
-          gennum: nationData.gennum ?? 0,
+          level: nation.level ?? nationData.level ?? 0,
+          power: nation.power ?? nationData.power ?? 0,
+          capital: nation.capital ?? nationData.capital ?? 0,
+          gold: nation.gold ?? nationData.gold ?? 0,
+          rice: nation.rice ?? nationData.rice ?? 0,
+          tech: nation.tech ?? nationData.tech ?? 0,
+          gennum: nation.gennum ?? nationData.gennum ?? 0,
           type: nationType, // raw type string for frontend
           typeInfo: {
             name: typeInfo.name,
@@ -91,9 +91,9 @@ export class GetNationListService {
       // Add generals to their nations
       for (const general of generals) {
         const genData = general.data as any || {};
-        const nationID = genData.nation ?? 0;
-        const officerLevel = genData.officer_level ?? 1;
-        const npc = genData.npc ?? (general.owner === 'NPC' ? 2 : 0);
+        const nationID = general.nation ?? genData.nation ?? 0;
+        const officerLevel = general.officer_level ?? genData.officer_level ?? 1;
+        const npc = general.npc ?? genData.npc ?? (general.owner === 'NPC' ? 2 : 0);
         
         // Extract general info
         const generalInfo: any = {
@@ -101,7 +101,7 @@ export class GetNationListService {
           name: general.name,
           npc: npc,
           nation: nationID,
-          city: genData.city ?? 0,
+          city: general.city ?? genData.city ?? 0,
           officer_level: officerLevel,
           dedication: genData.dedication ?? 0,
         };

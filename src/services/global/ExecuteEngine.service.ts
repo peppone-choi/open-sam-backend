@@ -15,6 +15,8 @@ import { invalidateCache } from '../../common/cache/model-cache.helper';
 import { SessionStateService } from '../sessionState.service';
 import { getCommand, getNationCommand } from '../../commands';
 import { GeneralLog } from '../../models/general-log.model';
+import { JosaUtil } from '../../utils/JosaUtil';
+import { nationRepository } from '../../repositories/nation.repository';
 
 const MAX_TURN = 50;
 const MAX_CHIEF_TURN = 12;
@@ -81,11 +83,11 @@ export class ExecuteEngineService {
           if (ttl < LOCK_TTL / 2) {
             const ttlMinutes = Math.floor(ttl / 60);
             const ttlSeconds = ttl % 60;
-            logger.warn('Lock exists but heartbeat may be dead, forcing release', { 
-              lockKey, 
-              ttl, 
-              ttlMinutes, 
-              ttlSeconds 
+            logger.warn('Lock exists but heartbeat may be dead, forcing release', {
+              lockKey,
+              ttl,
+              ttlMinutes,
+              ttlSeconds
             });
             await redis.del(lockKey);
             // 계속 진행하여 락 획득 시도
@@ -94,11 +96,11 @@ export class ExecuteEngineService {
             // 하지만 TTL이 계속 유지되면 턴 처리가 너무 오래 걸리는 것일 수 있음
             const ttlMinutes = Math.floor(ttl / 60);
             const ttlSeconds = ttl % 60;
-            logger.info('Lock already exists - Another instance is processing turns', { 
-              lockKey, 
-              ttl, 
-              ttlMinutes, 
-              ttlSeconds 
+            logger.info('Lock already exists - Another instance is processing turns', {
+              lockKey,
+              ttl,
+              ttlMinutes,
+              ttlSeconds
             });
             return {
               success: true,
@@ -117,12 +119,12 @@ export class ExecuteEngineService {
         const ttl = await redis.ttl(lockKey);
         const ttlMinutes = Math.floor(ttl / 60);
         const ttlSeconds = ttl % 60;
-        logger.warn('Failed to acquire lock', { 
-          lockKey, 
-          currentValue, 
-          ttl, 
-          ttlMinutes, 
-          ttlSeconds 
+        logger.warn('Failed to acquire lock', {
+          lockKey,
+          currentValue,
+          ttl,
+          ttlMinutes,
+          ttlSeconds
         });
         return {
           success: true,
@@ -134,7 +136,7 @@ export class ExecuteEngineService {
       }
       lockAcquired = true;
       logger.info('Lock acquired', { lockKey, ttl: LOCK_TTL });
-      
+
       // ⚠️ 중요: 캐시 대신 DB에서 직접 조회 (turnterm 등 설정 변경 즉시 반영)
       const { Session } = await import('../../models/session.model');
       const session = await Session.findOne({ session_id: sessionId });
@@ -182,30 +184,30 @@ export class ExecuteEngineService {
         const { TacticalBattle, BattleStatus } = await import('../../models/tactical_battle.model');
         const { TacticalBattleAIService } = await import('../tactical/TacticalBattleAI.service');
         const { TacticalBattleEngineService } = await import('../tactical/TacticalBattleEngine.service');
-        
+
         const now = new Date();
-        
+
         // 1. 대기 시간 초과 전투 자동 시뮬레이션
         const waitingBattles = await TacticalBattle.find({
           session_id: sessionId,
           status: BattleStatus.WAITING,
         });
-        
+
         for (const battle of waitingBattles) {
           const waitTime = (now.getTime() - battle.createdAt.getTime()) / 1000;
-          
+
           if (waitTime >= battle.maxWaitTime) {
             logger.info('[ExecuteEngine] 전술전투 대기 시간 초과, 자동 시뮬레이션', {
               battleId: battle.battle_id,
               waitTime: Math.round(waitTime),
               maxWaitTime: battle.maxWaitTime,
             });
-            
+
             // 자동 시뮬레이션 실행
             await TacticalBattleAIService.simulateBattle(battle.battle_id);
           }
         }
-        
+
         // 2. 진행 중 전투의 턴 시간 초과 처리
         const processedTurns = await TacticalBattleEngineService.processTimeoutTurns(sessionId);
         if (processedTurns.length > 0) {
@@ -273,8 +275,8 @@ export class ExecuteEngineService {
 
       // 디버그: turntime 상태 로그
       if (timeDiffInMinutes < -60) {
-        logger.warn('Turntime is in the past, processing overdue turns', { 
-          minutesPast: Math.abs(timeDiffInMinutes).toFixed(1) 
+        logger.warn('Turntime is in the past, processing overdue turns', {
+          minutesPast: Math.abs(timeDiffInMinutes).toFixed(1)
         });
       }
 
@@ -283,10 +285,10 @@ export class ExecuteEngineService {
         // 체크 기준: turnterm * 3 (최소 10분, 최대 180분)
         const maxAllowedMinutes = Math.min(Math.max(turntermInMinutes * 3, 10), 180);
         if (timeDiffInMinutes > maxAllowedMinutes) {
-          logger.warn('Turntime is too far in future, resetting', { 
-            timeDiffInMinutes: timeDiffInMinutes.toFixed(1), 
-            maxAllowedMinutes, 
-            turntermInMinutes 
+          logger.warn('Turntime is too far in future, resetting', {
+            timeDiffInMinutes: timeDiffInMinutes.toFixed(1),
+            maxAllowedMinutes,
+            turntermInMinutes
           });
           const correctedTurntime = new Date(now.getTime() + turntermInSeconds * 1000);
           sessionData.turntime = correctedTurntime.toISOString();
@@ -343,8 +345,8 @@ export class ExecuteEngineService {
       }
 
       // turntime이 과거이면 턴 실행 시작
-      logger.info('Turntime passed, executing turns', { 
-        minutesAgo: timeDiffInMinutes.toFixed(1) 
+      logger.info('Turntime passed, executing turns', {
+        minutesAgo: timeDiffInMinutes.toFixed(1)
       });
 
       // 락 갱신을 위한 heartbeat 시작
@@ -425,9 +427,9 @@ export class ExecuteEngineService {
           lockAcquired = false;
           logger.info('Lock released in finally block', { lockKey });
         } catch (error: any) {
-          logger.error('Failed to release lock in finally block', { 
-            lockKey, 
-            error: error.message 
+          logger.error('Failed to release lock in finally block', {
+            lockKey,
+            error: error.message
           });
         }
       }
@@ -481,7 +483,11 @@ export class ExecuteEngineService {
       // ========================================
       // 월 전처리 (PHP preUpdateMonthly 호출)
       // ========================================
-      await this.preUpdateMonthly(sessionId, sessionData);
+      const preUpdateResult = await this.preUpdateMonthly(sessionId, sessionData);
+      if (preUpdateResult === false) {
+        logger.error('preUpdateMonthly failed, stopping turn processing');
+        return;
+      }
 
       session.data = sessionData;
       session.markModified('data');
@@ -498,7 +504,7 @@ export class ExecuteEngineService {
 
       // 봉록 지급 처리 (봄 1월: 금, 가을 7월: 쌀)
       await this.processSeasonalIncome(sessionId, sessionData);
-      
+
       // 외교 term 감소 및 상태 전환 처리 (매월)
       await this.processDiplomacyTerm(sessionId, sessionData);
 
@@ -506,6 +512,11 @@ export class ExecuteEngineService {
       // 월 후처리 (PHP postUpdateMonthly 호출)
       // ========================================
       await this.postUpdateMonthly(sessionId, sessionData);
+
+      // 연 통계 엔진 (Step 3) - 1월에 실행
+      if (sessionData.month === 1) {
+        await this.checkStatistic(sessionId, sessionData);
+      }
     }
 
     // scenario_id를 sessionData에 추가 (징병 등에서 병종 정보 로드 시 필요)
@@ -585,10 +596,10 @@ export class ExecuteEngineService {
         await checkSupply(sessionId);
         logger.info('Supply lines updated', { sessionId });
       } catch (error: any) {
-        logger.error('Failed to update supply lines', { 
-          sessionId, 
-          error: error.message, 
-          stack: error.stack 
+        logger.error('Failed to update supply lines', {
+          sessionId,
+          error: error.message,
+          stack: error.stack
         });
         // 보급선 업데이트 실패해도 계속 진행
       }
@@ -702,9 +713,9 @@ export class ExecuteEngineService {
     // 배치 크기 설정: 동시에 처리할 장수 수 (최대값)
     const BATCH_SIZE = 50; // DB 부하 최소화 (1000명 장수 대응) - 병렬 처리 증가
 
-    logger.debug('Processing generals in batches', { 
-      totalGenerals: eligibleGenerals.length, 
-      batchSize: BATCH_SIZE 
+    logger.debug('Processing generals in batches', {
+      totalGenerals: eligibleGenerals.length,
+      batchSize: BATCH_SIZE
     });
 
     // 배치 단위로 병렬 처리
@@ -713,10 +724,10 @@ export class ExecuteEngineService {
       const batchNum = Math.floor(i / BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(eligibleGenerals.length / BATCH_SIZE);
 
-      logger.debug('Processing batch', { 
-        batchNum, 
-        totalBatches, 
-        generalsInBatch: batch.length 
+      logger.debug('Processing batch', {
+        batchNum,
+        totalBatches,
+        generalsInBatch: batch.length
       });
 
       await Promise.all(batch.map(async (general) => {
@@ -753,7 +764,7 @@ export class ExecuteEngineService {
         // 월 계산이 제대로 되므로 NPC도 밀린 턴 따라잡기 허용
         const maxTurnsPerGeneral = singleTurn ? 1 : (isPlayerGeneral ? 50 : 10);
         const now = new Date();
-        
+
         // ✅ 성능 최적화: 루프 시작 전 한번만 계산
         const isNPC = (generalDoc.npc || generalDoc.data?.npc || 0) >= 2;
         const generalName = generalDoc.name || generalDoc.data?.name || '';
@@ -868,13 +879,13 @@ export class ExecuteEngineService {
         try {
           // 레포지토리를 통한 저장 (L1/L2 캐시 활용)
           const generalNo = generalDoc.data?.no || generalDoc.no;
-          
+
           // turntime은 루트 레벨에 있으므로, data와 함께 전달
           const updatePayload = {
             ...generalDoc.data,
             turntime: generalDoc.turntime,  // 루트 레벨 turntime 포함
           };
-          
+
           await generalRepository.updateBySessionAndNo(sessionId, generalNo, updatePayload);
         } catch (error: any) {
           // save() 실패 시 (장수가 삭제됨) 건너뛰기
@@ -1082,9 +1093,9 @@ export class ExecuteEngineService {
         const rng = this.createRNG(sessionId, year, month, generalId, 'escape');
         await PrisonerService.attemptEscape(sessionId, generalId, rng);
       } catch (error: any) {
-        logger.warn('[preprocessCommand] Prisoner escape attempt failed', { 
-          generalId: general.no, 
-          error: error.message 
+        logger.warn('[preprocessCommand] Prisoner escape attempt failed', {
+          generalId: general.no,
+          error: error.message
         });
       }
     }
@@ -1094,7 +1105,7 @@ export class ExecuteEngineService {
       const { InjuryService } = await import('../general/Injury.service');
       const generalId = general.no || general.data?.no;
       const rng = this.createRNG(sessionId, year, month, generalId, 'death_check');
-      
+
       // 부상으로 인한 사망 체크 (위독 상태만)
       const injury = general.injury || general.data?.injury || 0;
       if (injury >= 61) {
@@ -1112,7 +1123,7 @@ export class ExecuteEngineService {
           general.killturn = 0;
         }
       }
-      
+
       // 노환 사망 체크 (60세 이상)
       const age = general.age || general.data?.age || 20;
       if (age >= 60) {
@@ -1257,7 +1268,7 @@ export class ExecuteEngineService {
     // ✅ 예약 시 저장된 년/월이 있으면 사용 (정확성 보장)
     const expectedYear = turnData.expected_year;
     const expectedMonth = turnData.expected_month;
-    
+
     if (expectedYear !== undefined && expectedMonth !== undefined) {
       if (expectedYear !== year || expectedMonth !== month) {
         logger.warn('Nation command year/month mismatch', {
@@ -1333,7 +1344,7 @@ export class ExecuteEngineService {
 
         // RNG 생성 (PHP와 동일한 시드 사용)
         const rng = this.createRNG(sessionId, year, month, general.no, action);
-        
+
         let result = false;
         try {
           const generalName = general.name || general.data?.name || `장수${general.no}`;
@@ -1345,11 +1356,11 @@ export class ExecuteEngineService {
           console.error(`[ExecuteEngine] 국가 커맨드 실행 에러: ${action}, 장수: ${generalName}(${general.no}), 국가: ${nationId}`);
           console.error(`[ExecuteEngine] 에러 메시지:`, cmdError?.message || cmdError);
           console.error(`[ExecuteEngine] 스택:`, cmdError?.stack);
-          
+
           // 에러 로그 기록
           const errorText = `<R>커맨드 실행 중 오류 발생:</> ${cmdError?.message || '알 수 없는 오류'}`;
           await this.pushGeneralActionLog(sessionId, general.no, errorText, year, month);
-          
+
           // WebSocket으로 에러 브로드캐스트 (프론트엔드에 실시간 알림)
           try {
             const { GameEventEmitter } = await import('../gameEventEmitter');
@@ -1418,11 +1429,11 @@ export class ExecuteEngineService {
         command = alt;
       }
     } catch (error: any) {
-      logger.error('Nation command execution failed', { 
-        action, 
-        nationId, 
-        error: error.message, 
-        stack: error.stack 
+      logger.error('Nation command execution failed', {
+        action,
+        nationId,
+        error: error.message,
+        stack: error.stack
       });
       await this.pushGeneralActionLog(
         sessionId,
@@ -1468,7 +1479,7 @@ export class ExecuteEngineService {
     // 없으면 계산된 년/월 사용 (이전 버전 호환)
     const expectedYear = generalTurn?.data?.expected_year;
     const expectedMonth = generalTurn?.data?.expected_month;
-    
+
     if (expectedYear !== undefined && expectedMonth !== undefined) {
       // 예약 시 저장된 년/월과 계산된 년/월 비교 (디버깅)
       if (expectedYear !== year || expectedMonth !== month) {
@@ -1510,8 +1521,8 @@ export class ExecuteEngineService {
 
       if (hasUserOwner) {
         // 유저가 빙의했는데 명령이 없으면 휴식으로 처리 (PHP와 동일)
-        logger.debug('Player-controlled general has no command, resting', { 
-          generalName 
+        logger.debug('Player-controlled general has no command, resting', {
+          generalName
         });
         const date = `${year}년 ${month}월`;
         await this.pushGeneralActionLog(
@@ -1525,9 +1536,9 @@ export class ExecuteEngineService {
       }
 
       // 유저가 빙의하지 않은 NPC는 명령이 없으면 AI가 결정
-      logger.debug('NPC has no command, will try AI decision', { 
-        generalName, 
-        npcType 
+      logger.debug('NPC has no command, will try AI decision', {
+        generalName,
+        npcType
       });
       action = '휴식';
       arg = {};
@@ -1536,7 +1547,7 @@ export class ExecuteEngineService {
       arg = generalTurn.data?.arg || generalTurn.arg || {};
 
       logger.debug('General command loaded from DB', { generalId, action, arg });
-      
+
       // 디버깅: 징병 명령의 인자 확인
       if (action === '징병') {
         console.log(`[ExecuteEngine] 징병 명령 로드 - 장수 ${generalId}, arg:`, JSON.stringify(arg));
@@ -1585,9 +1596,9 @@ export class ExecuteEngineService {
     // - 'partial': npc >= 3 (명장급)만 AI 사용
     // - 'full' 또는 true: 모든 NPC에 AI 사용
     const npcAiMode = gameEnv.npc_ai_mode || 'full'; // 기본값을 'full'로 변경하여 AI 활성화
-    const aiEnabled = npcAiMode === 'full' || npcAiMode === true || 
-                      npcAiMode === 'partial' || npcAiMode === 'shadow';
-    
+    const aiEnabled = npcAiMode === 'full' || npcAiMode === true ||
+      npcAiMode === 'partial' || npcAiMode === 'shadow';
+
     // npc_ai_mode가 'partial'인 경우 npc >= 3 (명장급)만 AI 사용
     const shouldUseAI = aiEnabled && (
       npcAiMode === 'full' || npcAiMode === true || npcAiMode === 'shadow' ||
@@ -1627,7 +1638,7 @@ export class ExecuteEngineService {
         const generalName = general.name || general.data?.name || `General ${generalId}`;
         const cityName = city?.name || city?.data?.name || `City ${general.city}`;
         const nationName = nation?.name || nation?.data?.name || `Nation ${general.nation}`;
-        
+
         logger.info('[NPC-AI] Decision', {
           mode: npcAiMode,
           generalId,
@@ -1673,21 +1684,21 @@ export class ExecuteEngineService {
           // action과 arg 직접 설정 (DB 재조회 불필요)
           action = decision.command;
           arg = decision.args || {};
-          logger.info('[NPC-AI] Command set', { 
-            generalId, 
-            generalName, 
-            action, 
+          logger.info('[NPC-AI] Command set', {
+            generalId,
+            generalName,
+            action,
             arg,
-            reason: decision.reason 
+            reason: decision.reason
           });
         }
       } catch (error: any) {
         // AI 실패 시 휴식 (에러는 로깅)
-        logger.error('[NPC-AI] Error', { 
-          generalId, 
+        logger.error('[NPC-AI] Error', {
+          generalId,
           generalName: general.name || general.data?.name,
           error: error.message,
-          stack: error.stack 
+          stack: error.stack
         });
         return;
       }
@@ -1695,9 +1706,9 @@ export class ExecuteEngineService {
 
     // 휴식인 경우 로그만 남기고 턴 소비
     if (action === '휴식') {
-      logger.debug('General is resting', { 
-        generalId, 
-        name: general.name || general.data?.name 
+      logger.debug('General is resting', {
+        generalId,
+        name: general.name || general.data?.name
       });
 
       // PHP와 동일하게 날짜 포함 (년 월 형식)
@@ -1725,11 +1736,11 @@ export class ExecuteEngineService {
       return true; // 에러도 턴 소모
     }
 
-    logger.debug('Executing command for general', { 
-      generalId, 
-      name: general.name || general.data?.name, 
-      action, 
-      arg 
+    logger.debug('Executing command for general', {
+      generalId,
+      name: general.name || general.data?.name,
+      action,
+      arg
     });
 
     let command: any = null; // catch 블록에서도 접근 가능하도록 선언
@@ -1794,7 +1805,7 @@ export class ExecuteEngineService {
 
         // RNG 생성 (PHP와 동일한 시드 사용)
         const rng = this.createRNG(sessionId, year, month, generalId, action);
-        
+
         let result = false;
         try {
           const generalName = general.name || general.data?.name || `장수${generalId}`;
@@ -1806,11 +1817,11 @@ export class ExecuteEngineService {
           console.error(`[ExecuteEngine] 장수 커맨드 실행 에러: ${action}, 장수: ${generalName}(${generalId})`);
           console.error(`[ExecuteEngine] 에러 메시지:`, cmdError?.message || cmdError);
           console.error(`[ExecuteEngine] 스택:`, cmdError?.stack);
-          
+
           // 에러 로그 기록
           const errorText = `<R>커맨드 실행 중 오류 발생:</> ${cmdError?.message || '알 수 없는 오류'}`;
           await this.pushGeneralActionLog(sessionId, generalId, errorText, year, month);
-          
+
           // WebSocket으로 에러 브로드캐스트 (프론트엔드에 실시간 알림)
           try {
             const { GameEventEmitter } = await import('../gameEventEmitter');
@@ -1858,11 +1869,11 @@ export class ExecuteEngineService {
       return true; // 명령 실행 완료
 
     } catch (error: any) {
-      logger.error('Command execution failed', { 
-        action, 
-        generalId: general.no, 
-        error: error.message, 
-        stack: error.stack 
+      logger.error('Command execution failed', {
+        action,
+        generalId: general.no,
+        error: error.message,
+        stack: error.stack
       });
       await this.pushGeneralActionLog(
         sessionId,
@@ -1986,9 +1997,9 @@ export class ExecuteEngineService {
             const { CheckHallService } = await import('../admin/CheckHall.service');
             await CheckHallService.execute(generalNo, sessionId);
           } catch (error: any) {
-            logger.warn('CheckHall execution failed', { 
-              generalNo, 
-              error: error?.message || error 
+            logger.warn('CheckHall execution failed', {
+              generalNo,
+              error: error?.message || error
             });
           }
         }
@@ -1997,9 +2008,9 @@ export class ExecuteEngineService {
       try {
         await general.rebirth();
       } catch (error: any) {
-        logger.error('Failed to process general rebirth', { 
-          generalNo: general.no, 
-          error: error?.message || error 
+        logger.error('Failed to process general rebirth', {
+          generalNo: general.no,
+          error: error?.message || error
         });
       }
     }
@@ -2202,10 +2213,10 @@ export class ExecuteEngineService {
       try {
         await event.tryRunEvent(e_env);
       } catch (error: any) {
-        logger.error('Event execution failed', { 
-          eventID, 
-          error: error.message, 
-          stack: error.stack 
+        logger.error('Event execution failed', {
+          eventID,
+          error: error.message,
+          stack: error.stack
         });
       }
     }
@@ -2218,64 +2229,73 @@ export class ExecuteEngineService {
    * - 벌점 감소, 건국제한-1, 전략제한-1, 외교제한-1
    * - 세율 동기화, 도시 상태 변화, 첩보 정보 감소
    */
-  private static async preUpdateMonthly(sessionId: string, gameEnv: any) {
+  private static async preUpdateMonthly(sessionId: string, gameEnv: any): Promise<boolean> {
     const year = gameEnv.year || 184;
     const month = gameEnv.month || 1;
     const startyear = gameEnv.startyear || gameEnv.startYear || 184;
-    
+
     logger.info('[preUpdateMonthly] Starting monthly pre-processing', { sessionId, year, month });
 
     // ========================================
-    // 1. 장수 관련 처리
+    // 1. 연감(History) 아카이빙 (Step 1.1) (PHP 195줄)
     // ========================================
-    
-    // penalty 감소 (벌점-1)
+    const historyResult = await this.logHistory(sessionId);
+    if (historyResult === false) {
+      return false;
+    }
+
+    // ========================================
+    // 2. 장수 관련 처리
+    // ========================================
+
+    // penalty 감소 (벌점-1) - Node.js 확장이거나 PHP 다른 곳에 있을 수 있음
     await generalRepository.updateManyByFilter(
       { session_id: sessionId, 'data.penalty': { $gt: 0 } },
       { $inc: { 'data.penalty': -1 } }
     );
 
-    // 건국제한-1 (makelimit)
+    // 건국제한-1 (makelimit) (Step 1.3) (PHP 209줄)
     await generalRepository.updateManyByFilter(
       { session_id: sessionId, 'data.makelimit': { $gt: 0 } },
-      { $inc: { 'data.makelimit': -1 } }
+      { $set: { 'data.makelimit': { $max: [0, { $subtract: ['$data.makelimit', 1] }] } } }
     );
 
-    // 접속률 감소 (refresh_score_total * 0.99) - 선택적 구현
-    // await generalRepository.updateManyByFilter(
-    //   { session_id: sessionId },
-    //   { $mul: { 'data.refresh_score_total': 0.99 } }
-    // );
+    // 접속률 감소 (refresh_score_total * 0.99) (Step 1.2) (PHP 206줄)
+    const { GeneralAccessLog } = await import('../../models/general_access_log.model');
+    await GeneralAccessLog.updateMany(
+      { session_id: sessionId, 'data.refresh_score_total': { $gt: 0 } },
+      { $set: { 'data.refresh_score_total': { $floor: { $multiply: ['$data.refresh_score_total', 0.99] } } } }
+    );
 
     // ========================================
-    // 2. 국가 관련 처리
+    // 3. 국가 관련 처리
     // ========================================
-    
-    // 전략제한-1 (strategic_cmd_limit)
+
+    // 전략제한-1 (strategic_cmd_limit) (Step 1.4) (PHP 213줄)
     await nationRepository.updateManyByFilter(
       { session_id: sessionId, 'data.strategic_cmd_limit': { $gt: 0 } },
-      { $inc: { 'data.strategic_cmd_limit': -1 } }
+      { $set: { 'data.strategic_cmd_limit': { $max: [0, { $subtract: ['$data.strategic_cmd_limit', 1] }] } } }
     );
 
-    // 외교제한-1 (surlimit)
+    // 외교제한-1 (surlimit) (Step 1.4) (PHP 214줄)
     await nationRepository.updateManyByFilter(
       { session_id: sessionId, 'data.surlimit': { $gt: 0 } },
-      { $inc: { 'data.surlimit': -1 } }
+      { $set: { 'data.surlimit': { $max: [0, { $subtract: ['$data.surlimit', 1] }] } } }
     );
 
-    // 세율 동기화 (rate_tmp = rate)
+    // 세율 동기화 (rate_tmp = rate) (Step 1.5) (PHP 215줄)
     const nations = await nationRepository.findByFilter({ session_id: sessionId });
     for (const nation of nations) {
       const nationId = nation.nation || nation.data?.nation;
       if (!nationId) continue;
-      
+
       const rate = nation.data?.rate ?? nation.rate ?? 20;
       await nationRepository.updateByNationNum(sessionId, nationId, {
         rate_tmp: rate
       });
     }
 
-    // consecu_turn_count, last_war_month 감소
+    // consecu_turn_count, last_war_month 감소 (Node.js 확장 또는 룰에 따라)
     await nationRepository.updateManyByFilter(
       { session_id: sessionId, 'data.consecu_turn_count': { $gt: 0 } },
       { $inc: { 'data.consecu_turn_count': -1 } }
@@ -2286,23 +2306,61 @@ export class ExecuteEngineService {
     );
 
     // ========================================
-    // 3. 개발비용 계산 (develcost)
+    // 4. 개발비용 계산 (develcost) (Step 1.6) (PHP 219줄)
     // ========================================
-    // PHP: $develcost = ($admin['year'] - $admin['startyear'] + 10) * 2;
     const develcost = (year - startyear + 10) * 2;
     gameEnv.develcost = develcost;
 
     // ========================================
-    // 4. 도시 상태 처리
+    // 5. 도시 상태 처리 (Step 1.7-1.15)
     // ========================================
     await this.processCityStateTransitions(sessionId);
 
     // ========================================
-    // 5. 첩보 정보 감소 (spy-1)
+    // 6. 첩보 정보 감소 (spy-1) (Step 1.16) (PHP 240-254줄)
     // ========================================
     await this.processSpyInfoDecay(sessionId);
 
     logger.info('[preUpdateMonthly] Monthly pre-processing completed', { sessionId, develcost });
+    return true;
+  }
+
+  /**
+   * 연감(History) 아카이빙 (Step 1.1)
+   */
+  private static async logHistory(sessionId: string): Promise<boolean> {
+    try {
+      const { GetCurrentHistoryService } = await import('../global/GetCurrentHistory.service');
+      const { NgHistory } = await import('../../models/ng_history.model');
+
+      const historyRes = await GetCurrentHistoryService.execute({ session_id: sessionId });
+      if (historyRes.success && historyRes.data) {
+        const historyData = historyRes.data;
+
+        await NgHistory.updateOne(
+          {
+            server_id: historyData.server_id || 'sangokushi',
+            year: historyData.year,
+            month: historyData.month
+          },
+          {
+            $set: {
+              global_history: historyData.global_history,
+              global_action: historyData.global_action,
+              nations: historyData.nations,
+              map: historyData.map
+            }
+          },
+          { upsert: true }
+        );
+        logger.info('[logHistory] History archived', { year: historyData.year, month: historyData.month });
+        return true;
+      }
+      return false;
+    } catch (error: any) {
+      logger.error('[logHistory] Failed to archive history', { error: error.message });
+      return false;
+    }
   }
 
   /**
@@ -2367,7 +2425,7 @@ export class ExecuteEngineService {
     for (const nation of nations) {
       const nationId = nation.nation || nation.data?.nation;
       const rawSpy = nation.data?.spy || nation.spy || '{}';
-      
+
       let spyInfo: Record<string, number>;
       try {
         spyInfo = typeof rawSpy === 'string' ? JSON.parse(rawSpy) : rawSpy;
@@ -2389,11 +2447,11 @@ export class ExecuteEngineService {
 
       await Nation.updateOne(
         { session_id: sessionId, nation: nationId },
-        { 
-          $set: { 
+        {
+          $set: {
             spy: JSON.stringify(updatedSpyInfo),
             'data.spy': JSON.stringify(updatedSpyInfo)
-          } 
+          }
         }
       );
     }
@@ -2490,9 +2548,9 @@ export class ExecuteEngineService {
           const { NationFinanceService } = await import('../nation/NationFinance.service');
           await NationFinanceService.applyFinanceUpdate(sessionId, nationId, year, month);
         } catch (error: any) {
-          logger.error('Failed to apply finance update for nation', { 
-            nationId, 
-            error: error.message 
+          logger.error('Failed to apply finance update for nation', {
+            nationId,
+            error: error.message
           });
         }
       }
@@ -2561,19 +2619,19 @@ export class ExecuteEngineService {
     try {
       const { Nation } = await import('../../models/nation.model');
       const { City } = await import('../../models/city.model');
-      
+
       // 국가 chief_set 초기화 (수뇌 임명 잠금 해제)
       await Nation.updateMany(
         { session_id: sessionId },
         { $set: { chief_set: 0, 'data.chief_set': 0 } }
       );
-      
+
       // 도시 officer_set 초기화 (도시 관직 임명 잠금 해제)
       await City.updateMany(
         { session_id: sessionId },
         { $set: { officer_set: 0, 'data.officer_set': 0 } }
       );
-      
+
       logger.info('[postUpdateMonthly] Officer lock reset completed', { sessionId });
     } catch (error: any) {
       logger.error('[postUpdateMonthly] Failed to reset officer lock', {
@@ -2581,6 +2639,9 @@ export class ExecuteEngineService {
         error: error.message
       });
     }
+
+    // 6. 천물(통일) 여부 검사 (Step 4.4)
+    await this.checkEmperior(sessionId, sessionData, gameEnv);
 
     logger.info('[postUpdateMonthly] Monthly post-processing completed', { sessionId });
   }
@@ -2613,29 +2674,58 @@ export class ExecuteEngineService {
         });
 
         let generalGoldRice = 0;
+        // RankData 조회 (장수들의 Kill/Death 기록)
+        const { RankData } = await import('../../models/rank_data.model');
+        const generalNos = generals.map(g => g.no || g.data?.no);
+        const rankDatas = await RankData.find({
+          session_id: sessionId,
+          'data.id': { $in: generalNos },
+          'data.type': { $in: ['killcrew_person', 'deathcrew_person'] }
+        });
+
+        // 장수번호별 rankData 맵핑
+        const rankMap: Record<number, Record<string, number>> = {};
+        for (const rd of rankDatas) {
+          const genNo = rd.data.id;
+          const type = rd.data.type;
+          const value = rd.data.value || 0;
+          if (!rankMap[genNo]) rankMap[genNo] = {};
+          rankMap[genNo][type] = value;
+        }
+
         let generalAbility = 0;
         let generalDex = 0;
         let generalExpDed = 0;
 
         for (const gen of generals) {
           const gData = gen.data || gen;
+          const genNo = gen.no || gen.data?.no;
           generalGoldRice += (gData.gold || 0) + (gData.rice || 0);
-          
-          // 능력치: sqrt(intel * strength) * 2 + leadership / 2
+
+          // 능력치: (ra.value + 1000)/(rb.value + 1000)*(CASE WHEN g.npc < 2 THEN 1.2 ELSE 1 END)*(CASE WHEN g.leadership >= 40 THEN g.leadership ELSE 0 END)*2 + (sqrt(intel * strength) * 2 + leadership / 2)/2
           const intel = gData.intel || gData.intellect || 0;
           const strength = gData.strength || 0;
           const leadership = gData.leadership || 0;
-          generalAbility += Math.sqrt(intel * strength) * 2 + leadership / 2;
-          
-          // leadership >= 40이면 추가 보너스
-          if (leadership >= 40) {
-            generalAbility += leadership * 2;
-          }
-          
+          const npc = gen.npc || gData.npc || 0;
+
+          const killCrew = rankMap[genNo]?.killcrew_person || 0;
+          const deathCrew = rankMap[genNo]?.deathcrew_person || 0;
+
+          let ability = (Math.sqrt(intel * strength) * 2 + leadership / 2) / 2;
+
+          // K/D 가중치 및 리더십 가중치
+          const kdFactor = (killCrew + 1000) / (deathCrew + 1000);
+          const npcFactor = npc < 2 ? 1.2 : 1.0;
+          const leadershipFactor = leadership >= 40 ? leadership : 0;
+
+          ability += kdFactor * npcFactor * leadershipFactor * 2;
+
+          generalAbility += ability;
+
           // 숙련도
-          generalDex += (gData.dex1 || 0) + (gData.dex2 || 0) + (gData.dex3 || 0) + 
-                       (gData.dex4 || 0) + (gData.dex5 || 0);
-          
+          generalDex += (gData.dex1 || 0) + (gData.dex2 || 0) + (gData.dex3 || 0) +
+            (gData.dex4 || 0) + (gData.dex5 || 0);
+
           // 경험/공헌
           generalExpDed += (gData.experience || 0) + (gData.dedication || 0);
         }
@@ -2656,10 +2746,10 @@ export class ExecuteEngineService {
           for (const city of nationCities) {
             const cData = city.data || city;
             popSum += cData.pop || 0;
-            devSum += (cData.pop || 0) + (cData.agri || 0) + (cData.comm || 0) + 
-                     (cData.secu || 0) + (cData.wall || 0) + (cData.def || 0);
-            devMaxSum += (cData.pop_max || 1) + (cData.agri_max || 1) + (cData.comm_max || 1) + 
-                        (cData.secu_max || 1) + (cData.wall_max || 1) + (cData.def_max || 1);
+            devSum += (cData.pop || 0) + (cData.agri || 0) + (cData.comm || 0) +
+              (cData.secu || 0) + (cData.wall || 0) + (cData.def || 0);
+            devMaxSum += (cData.pop_max || 1) + (cData.agri_max || 1) + (cData.comm_max || 1) +
+              (cData.secu_max || 1) + (cData.wall_max || 1) + (cData.def_max || 1);
           }
 
           if (devMaxSum > 0) {
@@ -2670,11 +2760,11 @@ export class ExecuteEngineService {
         // 국력 계산
         let power = Math.round(
           (Math.round((nationGold + nationRice + generalGoldRice) / 100) +
-           tech +
-           cityPower +
-           generalAbility +
-           Math.round(generalDex / 1000) +
-           Math.round(generalExpDed / 100)) / 10
+            tech +
+            cityPower +
+            generalAbility +
+            Math.round(generalDex / 1000) +
+            Math.round(generalExpDed / 100)) / 10
         );
 
         // 약간의 랜덤치 부여 (95% ~ 105%)
@@ -2700,17 +2790,17 @@ export class ExecuteEngineService {
         const currentMaxCities = currentAux.maxCities || [];
 
         const updateAux: Record<string, any> = {};
-        
+
         // maxPower 갱신
         if (power > currentMaxPower) {
           updateAux['aux.maxPower'] = power;
         }
-        
+
         // maxCrew 갱신
         if (totalCrew > currentMaxCrew) {
           updateAux['aux.maxCrew'] = totalCrew;
         }
-        
+
         // maxCities 갱신 (도시 수가 더 많으면)
         const nationCityNames = nationCities.map(c => c.data?.name || c.name || `도시${c.city}`);
         if (nationCityNames.length > currentMaxCities.length) {
@@ -2766,24 +2856,24 @@ export class ExecuteEngineService {
       // 25% 참여율일때 두당 10턴에 4000명 소모 = 100명/턴/장수
       const addTerm = Math.floor(dead / 100 / genCount);
       const newDead = dead - (addTerm * 100 * genCount);
-      
+
       // term은 0~13 사이로 제한
       const newTerm = Math.min(Math.max(term + addTerm, 0), 13);
 
       await Diplomacy.updateOne(
         { _id: dip._id },
-        { 
-          $set: { 
+        {
+          $set: {
             term: newTerm,
             dead: Math.max(newDead, 0)
-          } 
+          }
         }
       );
     }
 
-    logger.debug('[processWarTermSetting] War term setting processed', { 
-      sessionId, 
-      relationsProcessed: warRelations.length 
+    logger.debug('[processWarTermSetting] War term setting processed', {
+      sessionId,
+      relationsProcessed: warRelations.length
     });
   }
 
@@ -2794,7 +2884,7 @@ export class ExecuteEngineService {
   private static async processWarSettingCntIncrease(sessionId: string) {
     const { Nation } = await import('../../models/nation.model');
     const { KVStorage } = await import('../../models/kv-storage.model');
-    
+
     // GameConst에서 값 가져오기 (기본값 설정)
     const maxAvailableWarSettingCnt = 3;  // GameConst.$maxAvailableWarSettingCnt
     const incAvailableWarSettingCnt = 1;  // GameConst.$incAvailableWarSettingCnt
@@ -2810,9 +2900,9 @@ export class ExecuteEngineService {
         session_id: sessionId,
         storage_id: `nation_${nationId}`
       });
-      
+
       const currentCnt = nationStorage?.data?.available_war_setting_cnt ?? 0;
-      
+
       if (currentCnt >= maxAvailableWarSettingCnt) {
         continue;  // 이미 최대치
       }
@@ -2869,10 +2959,10 @@ export class ExecuteEngineService {
       ]
     });
 
-    logger.info('[checkWander] Found wandering lords', { 
-      sessionId, 
+    logger.info('[checkWander] Found wandering lords', {
+      sessionId,
       count: wanderers.length,
-      nationIds: wanderingNationIds 
+      nationIds: wanderingNationIds
     });
 
     for (const wanderer of wanderers) {
@@ -2882,10 +2972,10 @@ export class ExecuteEngineService {
 
       try {
         // 해산 명령 실행
-        logger.info('[checkWander] Auto-dissolving wandering nation', { 
-          generalNo, 
+        logger.info('[checkWander] Auto-dissolving wandering nation', {
+          generalNo,
           generalName,
-          nationId 
+          nationId
         });
 
         // 해산 로그 기록
@@ -2914,8 +3004,8 @@ export class ExecuteEngineService {
    * 방랑군 해산 처리
    */
   private static async dissolveWanderingNation(
-    sessionId: string, 
-    nationId: number, 
+    sessionId: string,
+    nationId: number,
     lordGeneralNo: number,
     year: number,
     month: number
@@ -3075,64 +3165,67 @@ export class ExecuteEngineService {
   private static async processDiplomacyTerm(sessionId: string, gameEnv: any) {
     const year = gameEnv.year;
     const month = gameEnv.month;
-    
+
     try {
       const Diplomacy = (await import('../../models/diplomacy.model')).Diplomacy;
       const { ActionLogger } = await import('../../services/logger/ActionLogger');
       const globalLogger = new ActionLogger(0, 0, year, month, sessionId);
-      
+
       // 1. 모든 외교 관계의 term을 1씩 감소 (0 미만으로는 안 내려감)
       await Diplomacy.updateMany(
         { session_id: sessionId, term: { $gt: 0 } },
         { $inc: { term: -1 } }
       );
-      
+
       // 2. 선전포고(state=1) term=0인 것들 찾기 → 전쟁 시작 로그 및 상태 전환
       const warStartRelations = await Diplomacy.find({
         session_id: sessionId,
         state: 1,
         term: 0
       });
-      
+
       // 개전 로그 (중복 방지: me < you인 쌍만)
       const processedPairs = new Set<string>();
       for (const rel of warStartRelations) {
         const key = rel.me < rel.you ? `${rel.me}-${rel.you}` : `${rel.you}-${rel.me}`;
         if (!processedPairs.has(key)) {
           processedPairs.add(key);
-          
+
           // 국가 이름 가져오기
           const nationRepo = (await import('../../repositories/nation.repository')).nationRepository;
           const nation1 = await nationRepo.findByNationNum(sessionId, rel.me);
           const nation2 = await nationRepo.findByNationNum(sessionId, rel.you);
           const name1 = nation1?.name || `국가${rel.me}`;
           const name2 = nation2?.name || `국가${rel.you}`;
-          
+
+          const josaYi = JosaUtil.pick(name2, '이');
+          const josaWa = JosaUtil.pick(name1, '와');
+
           globalLogger.pushGlobalHistoryLog(
-            `<R><b>【개전】</b></><D><b>${name1}</b></>(와)과 <D><b>${name2}</b></>(이)가 <R>전쟁</>을 시작합니다.`
+            `<R><b>【개전】</b></><D><b>${name1}</b></>${josaWa} <D><b>${name2}</b></>${josaYi} <R>전쟁</>을 시작합니다.`
           );
         }
       }
-      
+
       // 선전포고 → 전쟁으로 상태 전환
       await Diplomacy.updateMany(
         { session_id: sessionId, state: 1, term: 0 },
         { $set: { state: 0, term: 6 } }
       );
-      
+
       // 3. 불가침(state=7) term=0 → 통상(state=2)으로
       await Diplomacy.updateMany(
         { session_id: sessionId, state: 7, term: 0 },
         { $set: { state: 2 } }
       );
-      
+
       // 4. 전쟁(state=0) term=0인 것들 찾기 → 종전 로그 (양측 모두 term=0일 때만)
       const potentialCeasefire = await Diplomacy.find({
         session_id: sessionId,
         state: 0,
         term: 0
       });
-      
+
       // 양측 모두 term=0인 경우만 종전
       const ceasefireProcessed = new Set<string>();
       for (const rel of potentialCeasefire) {
@@ -3144,15 +3237,18 @@ export class ExecuteEngineService {
           const nation2 = await nationRepo.findByNationNum(sessionId, rel.me < rel.you ? rel.you : rel.me);
           const name1 = nation1?.name || `국가${rel.me}`;
           const name2 = nation2?.name || `국가${rel.you}`;
-          
+
+          const josaWa = JosaUtil.pick(name1, '와');
+          const josaYi = JosaUtil.pick(name2, '이');
+
           globalLogger.pushGlobalHistoryLog(
-            `<R><b>【종전】</b></><D><b>${name1}</b></>(와)과 <D><b>${name2}</b></>(이)가 <S>종전</>합니다.`
+            `<R><b>【종전】</b></><D><b>${name1}</b></>${josaWa} <D><b>${name2}</b></>${josaYi} <S>종전</>합니다.`
           );
-          
+
           // 종전 처리: 양측 모두 state=2로
           await Diplomacy.updateMany(
-            { 
-              session_id: sessionId, 
+            {
+              session_id: sessionId,
               $or: [
                 { me: rel.me, you: rel.you },
                 { me: rel.you, you: rel.me }
@@ -3164,13 +3260,13 @@ export class ExecuteEngineService {
           ceasefireProcessed.add(key);
         }
       }
-      
+
       await globalLogger.flush();
-      
+
       if (warStartRelations.length > 0) {
-        logger.info('[DiplomacyTerm] War started', { 
-          sessionId, 
-          count: warStartRelations.length 
+        logger.info('[DiplomacyTerm] War started', {
+          sessionId,
+          count: warStartRelations.length
         });
       }
     } catch (error: any) {
@@ -3190,16 +3286,16 @@ export class ExecuteEngineService {
   private static async processCityEventStates(sessionId: string) {
     try {
       const { saveCity } = await import('../../common/cache/model-cache.helper');
-      
+
       // 캐시에서 모든 도시 조회
       const cities = await cityRepository.findByFilter({ session_id: sessionId });
-      
+
       let resetCount = 0;
-      
+
       for (const city of cities) {
         const cityNum = city.city || city.data?.city;
         const state = city.state ?? city.data?.state ?? 0;
-        
+
         // PHP와 동일: state가 10 이하인 경우에만 초기화 (43 전쟁은 유지)
         if (state > 0 && state <= 10) {
           city.state = 0;
@@ -3208,21 +3304,21 @@ export class ExecuteEngineService {
             city.data.state = 0;
             city.data.term = 0;
           }
-          
+
           // 캐시를 통해 저장
           const cityData = city.toObject ? city.toObject() : { ...city, session_id: sessionId };
           await saveCity(sessionId, cityNum, cityData);
           resetCount++;
         }
       }
-      
+
       if (resetCount > 0) {
-        logger.info('[processCityEventStates] Reset state for cities (state <= 10)', { 
-          sessionId, 
-          count: resetCount 
+        logger.info('[processCityEventStates] Reset state for cities (state <= 10)', {
+          sessionId,
+          count: resetCount
         });
       }
-      
+
       logger.debug('[processCityEventStates] City event states processed', { sessionId });
     } catch (error: any) {
       logger.error('[processCityEventStates] Failed to process city event states', {
@@ -3250,28 +3346,28 @@ export class ExecuteEngineService {
       // 분기별(1,4,7,10월)에만 실행, 내부에서 호황/재해 여부 결정
       const { RandomDisaster } = await import('../../core/event/Action/RandomDisaster');
       const disasterEvent = new RandomDisaster();
-      const disasterResult = await disasterEvent.run({ 
-        session_id: sessionId, 
-        year, 
+      const disasterResult = await disasterEvent.run({
+        session_id: sessionId,
+        year,
         month,
         startyear: startYear
       });
-      
+
       if (disasterResult.count > 0) {
         const eventType = disasterResult.eventType === 'booming' ? '호황/풍작' : '재해';
-        logger.info(`[RandomEvent] ${eventType} occurred`, { 
-          sessionId, 
-          year, 
-          month, 
+        logger.info(`[RandomEvent] ${eventType} occurred`, {
+          sessionId,
+          year,
+          month,
           eventType: disasterResult.eventType,
-          cities: disasterResult.affectedCities 
+          cities: disasterResult.affectedCities
         });
       } else if (disasterResult.skipped) {
-        logger.debug('[RandomEvent] Skipped', { 
-          sessionId, 
-          year, 
-          month, 
-          reason: disasterResult.skipped 
+        logger.debug('[RandomEvent] Skipped', {
+          sessionId,
+          year,
+          month,
+          reason: disasterResult.skipped
         });
       }
 
@@ -3307,93 +3403,154 @@ export class ExecuteEngineService {
     const year = gameEnv.year;
     const month = gameEnv.month;
 
-    // 분기 시작월(1, 4, 7, 10)이 아니면 스킵
-    if ((month - 1) % 3 !== 0) {
+    // 1월에만 실행 (PHP와 동일)
+    if (month !== 1) {
       return;
     }
 
-    const quarter = Math.floor((month - 1) / 3) + 1;
-    logger.info('Generating statistics', { year, quarter });
+    logger.info('[checkStatistic] Starting yearly statistics engine', { sessionId, year });
 
     try {
       const { Statistic } = await import('../../models/statistic.model');
+      const { General } = await import('../../models/general.model');
+      const { Nation } = await import('../../models/nation.model');
+      const { City } = await import('../../models/city.model');
 
-      // 1. 국가 통계
-      const nations = await nationRepository.findByFilter({ session_id: sessionId });
-      const nationStats = [];
+      // 1. 장수 통계 산출 (평균 및 최고치)
+      const generals = await General.find({ session_id: sessionId });
+      const genCount = generals.length;
 
+      let totalGold = 0;
+      let totalRice = 0;
+      let totalDex = 0;
+      let totalExpDed = 0;
+      let maxDex = 0;
+      let maxExpDed = 0;
+      let userCount = 0;
+      let npcCount = 0;
+
+      const personalHists: Record<string, number> = {};
+      const specialHists: Record<string, number> = {};
+      const special2Hists: Record<string, number> = {};
+      const crewtypeHists: Record<string, number> = {};
+
+      for (const gen of generals) {
+        const gData = gen.data || gen;
+        totalGold += gData.gold || 0;
+        totalRice += gData.rice || 0;
+
+        const dex = (gData.dex1 || 0) + (gData.dex2 || 0) + (gData.dex3 || 0) + (gData.dex4 || 0) + (gData.dex5 || 0);
+        const expDed = (gData.experience || 0) + (gData.dedication || 0);
+
+        totalDex += dex;
+        totalExpDed += expDed;
+        maxDex = Math.max(maxDex, dex);
+        maxExpDed = Math.max(maxExpDed, expDed);
+
+        if ((gen.npc || 0) < 2) userCount++; else npcCount++;
+
+        // 성격/특기 분포
+        const personal = gData.personal || '평범';
+        personalHists[personal] = (personalHists[personal] || 0) + 1;
+
+        const special = gData.special || '없음';
+        specialHists[special] = (specialHists[special] || 0) + 1;
+
+        const special2 = gData.special2 || '없음';
+        special2Hists[special2] = (special2Hists[special2] || 0) + 1;
+
+        // 최근 전투 병종 분석
+        if (gData.crewtype) {
+          crewtypeHists[gData.crewtype] = (crewtypeHists[gData.crewtype] || 0) + 1;
+        }
+      }
+
+      const avgGold = Math.round(totalGold / (genCount || 1));
+      const avgRice = Math.round(totalRice / (genCount || 1));
+      const avgDex = Math.round(totalDex / (genCount || 1));
+      const avgExpDed = Math.round(totalExpDed / (genCount || 1));
+
+      // 2. 국가 통계
+      const nations = await Nation.find({ session_id: sessionId, level: { $gt: 0 } });
+      let minTech = Infinity, maxTech = -Infinity, totalTech = 0;
+      let minPower = Infinity, maxPower = -Infinity, totalPower = 0;
+
+      const nationDetails: any[] = [];
       for (const nation of nations) {
-        const nationId = nation.nation || nation.data?.nation;
-        if (!nationId) continue;
+        const nData = nation.data || nation;
+        const tech = nData.tech || 0;
+        const power = nData.power || 0;
 
-        // 도시 수, 인구 수 계산
-        const cities = await cityRepository.findByFilter({
-          session_id: sessionId,
-          'data.nation': nationId
-        });
+        minTech = Math.min(minTech, tech);
+        maxTech = Math.max(maxTech, tech);
+        totalTech += tech;
 
-        const cityCount = cities.length;
-        const population = cities.reduce((sum: number, city: any) => sum + (city.data?.pop || 0), 0);
+        minPower = Math.min(minPower, power);
+        maxPower = Math.max(maxPower, power);
+        totalPower += power;
 
-        // 장수 수 계산
-        const generals = await generalRepository.findByFilter({
-          session_id: sessionId,
-          'data.nation': nationId
-        });
-        const generalCount = generals.length;
+        // 국가별 상세 정보
+        const nationId = nation.nation;
+        const nCities = await City.find({ session_id: sessionId, nation: nationId });
+        const nGenerals = await General.find({ session_id: sessionId, nation: nationId });
 
-        nationStats.push({
+        let popSum = 0, popMaxSum = 0;
+        for (const c of nCities) {
+          popSum += (c.data?.pop || c.pop || 0);
+          popMaxSum += (c.data?.pop_max || c.pop_max || 1);
+        }
+
+        nationDetails.push({
           nationId,
-          name: nation.data?.name,
-          color: nation.data?.color,
-          gold: nation.data?.gold || 0,
-          rice: nation.data?.rice || 0,
-          cityCount,
-          generalCount,
-          population
+          name: nation.name,
+          power,
+          gennum: nGenerals.length,
+          cityCount: nCities.length,
+          pop: popSum,
+          popMax: popMaxSum,
+          gold: nData.gold || 0,
+          rice: nData.rice || 0,
         });
       }
 
-      // 2. 장수 랭킹 (Top 10)
-      const allGenerals = await generalRepository.findByFilter({ session_id: sessionId });
+      const avgTech = Math.round(totalTech / (nations.length || 1));
+      const avgPower = Math.round(totalPower / (nations.length || 1));
 
-      const getTopGenerals = (key: string) => {
-        return [...allGenerals]
-          .sort((a: any, b: any) => (b.data?.[key] || 0) - (a.data?.[key] || 0))
-          .slice(0, 10)
-          .map((g: any) => ({
-            id: g.no,
-            name: g.name,
-            nationId: g.nation,
-            value: g.data?.[key] || 0
-          }));
+      // 3. 기록 및 저장
+      const etc = `평균 금/쌀 (${avgGold}/${avgRice}), 평균/최고 숙련(${avgDex}/${maxDex}), 평균/최고 경험공헌(${avgExpDed}/${maxExpDed}), ` +
+        `최저/평균/최고 기술(${minTech === Infinity ? 0 : minTech}/${avgTech}/${maxTech === -Infinity ? 0 : maxTech}), ` +
+        `최저/평균/최고 국력(${minPower === Infinity ? 0 : minPower}/${avgPower}/${maxPower === -Infinity ? 0 : maxPower})`;
+
+      const auxData = {
+        generals: {
+          avg: { avggold: avgGold, avgrice: avgRice, avgdex: avgDex, maxdex: maxDex, avgexpded: avgExpDed, maxexpded: maxExpDed },
+          hists: { personal: personalHists, special: specialHists, special2: special2Hists, crewtype: crewtypeHists, userCnt: userCount, npcCnt: npcCount }
+        },
+        nations: {
+          avg: { mintech: minTech, maxtech: maxTech, avgtech: avgTech, minpower: minPower, maxpower: maxPower, avgpower: avgPower },
+          all: nationDetails
+        }
       };
 
-      const generalStats = {
-        leadership: getTopGenerals('leadership'),
-        strength: getTopGenerals('strength'),
-        intellect: getTopGenerals('intellect'),
-        experience: getTopGenerals('experience'),
-        dedication: getTopGenerals('dedication')
-      };
-
-      // 3. 통계 저장
       await Statistic.create({
         session_id: sessionId,
-        data: {
-          year,
-          month,
-          quarter,
-          date: new Date(),
-          nations: nationStats,
-          generals: generalStats
-        }
+        year,
+        month,
+        nation_count: nations.length,
+        nation_name: nations.map(n => n.name).join(', '),
+        gen_count: `${genCount}(${userCount}+${npcCount})`,
+        personal_hist: Object.entries(personalHists).map(([k, v]) => `${k}(${v})`).join(', '),
+        special_hist: Object.entries(specialHists).map(([k, v]) => `${k}(${v})`).join(', ') + ' // ' + Object.entries(special2Hists).map(([k, v]) => `${k}(${v})`).join(', '),
+        power_hist: nationDetails.map(n => `${n.name}(${n.power}/${n.gennum}/${n.cityCount}/${n.pop}/${n.popMax}/${n.gold + n.rice})`).join(', '),
+        crewtype: Object.entries(crewtypeHists).map(([k, v]) => `${k}(${v})`).join(', '),
+        etc,
+        aux: JSON.stringify(auxData)
       });
 
-      logger.info('Statistics saved', { year, quarter });
+      logger.info('[checkStatistic] Statistics saved successfully', { year });
 
     } catch (error: any) {
-      logger.error('Failed to generate statistics', { error: error.message, stack: error.stack });
+      logger.error('[checkStatistic] Failed to generate statistics', { error: error.message, stack: error.stack });
     }
   }
 
@@ -3448,11 +3605,11 @@ export class ExecuteEngineService {
       gameEnv.year = startyear;
       gameEnv.month = 1;
 
-      logger.warn('starttime reset to current time', { 
-        reason, 
-        newStarttime: curturn.toISOString(), 
-        year: startyear, 
-        month: 1 
+      logger.warn('starttime reset to current time', {
+        reason,
+        newStarttime: curturn.toISOString(),
+        year: startyear,
+        month: 1
       });
     }
 
@@ -3468,11 +3625,11 @@ export class ExecuteEngineService {
     // 일반적으로 starttime이 게임 년도(예: 0187-01-01)로 잘못 설정된 경우 발생
     const MAX_REASONABLE_TURNS = 50 * 365 * 24 * 60 / turntermInMinutes; // 50년치 턴으로 완화
     if (num > MAX_REASONABLE_TURNS) {
-      logger.error('CRITICAL: starttime corruption detected', { 
-        calculatedTurns: num, 
-        maxReasonableTurns: MAX_REASONABLE_TURNS, 
-        starttime: starttime.toISOString(), 
-        curturn: curturn.toISOString() 
+      logger.error('CRITICAL: starttime corruption detected', {
+        calculatedTurns: num,
+        maxReasonableTurns: MAX_REASONABLE_TURNS,
+        starttime: starttime.toISOString(),
+        curturn: curturn.toISOString()
       });
 
       // starttime을 현재 시간으로 강제 리셋하고 년/월을 startyear로 초기화
@@ -3481,10 +3638,10 @@ export class ExecuteEngineService {
       gameEnv.year = startyear;
       gameEnv.month = 1;
 
-      logger.info('Fixed starttime corruption', { 
-        newStarttime: correctedStarttime.toISOString(), 
-        year: startyear, 
-        month: 1 
+      logger.info('Fixed starttime corruption', {
+        newStarttime: correctedStarttime.toISOString(),
+        year: startyear,
+        month: 1
       });
 
       // 수정된 값 반환 (호출한 쪽에서 DB 저장)
@@ -3512,10 +3669,10 @@ export class ExecuteEngineService {
         throw new Error(`Calculated year ${year} is out of reasonable range`);
       }
     } catch (error: any) {
-      logger.error('CRITICAL: Year calculation overflow detected', { 
-        error: error.message, 
-        startyear, 
-        num 
+      logger.error('CRITICAL: Year calculation overflow detected', {
+        error: error.message,
+        startyear,
+        num
       });
 
       // 안전한 기본값으로 리셋
@@ -3612,6 +3769,92 @@ export class ExecuteEngineService {
   }
 
   /**
+   * 천하 통일 여부 검사 및 처리 (PHP checkEmperior() 이식) (Step 4.3, 4.4)
+   */
+  private static async checkEmperior(sessionId: string, gameEnv: any, originalGameEnv: any) {
+    const isUnited = gameEnv.isunited || originalGameEnv.isunited || 0;
+    if (isUnited !== 0) return;
+
+    try {
+      const { Nation } = await import('../../models/nation.model');
+      const { City } = await import('../../models/city.model');
+
+      // 1. 남은 국가 확인 (level > 0 인 국가가 1개여야 함)
+      const aliveNations = await Nation.find({ session_id: sessionId, level: { $gt: 0 } });
+      if (aliveNations.length !== 1) return;
+
+      const unifierNation = aliveNations[0];
+      const nationId = unifierNation.nation;
+
+      // 2. 모든 도시 점령 확인
+      const totalCitiesCount = await City.countDocuments({ session_id: sessionId });
+      const nationCitiesCount = await City.countDocuments({ session_id: sessionId, nation: nationId });
+
+      if (totalCitiesCount === 0 || totalCitiesCount !== nationCitiesCount) return;
+
+      logger.info('[checkEmperior] UNIFICATION DETECTED!', { sessionId, nationId, nationName: unifierNation.name });
+
+      // 3. 통계 생성 (최종)
+      await this.checkStatistic(sessionId, originalGameEnv);
+
+      // 4. 통일 축하 로그 (전역/국가/장수)
+      const { ActionLogger } = await import('../../services/logger/ActionLogger');
+      const globalLogger = new ActionLogger(0, 0, originalGameEnv.year, originalGameEnv.month, sessionId);
+      const josaYi = JosaUtil.pick(unifierNation.name, '이');
+      globalLogger.pushGlobalHistoryLog(`<R><b>【통일】</b></><D><b>${unifierNation.name}</b></>${josaYi} 천하를 통일했습니다!`);
+      await globalLogger.flush();
+
+      // 5. 계승 포인트 지급 및 명예의 전당 등록
+      const { General } = await import('../../models/general.model');
+      const { CheckHallService } = await import('../../services/admin/CheckHall.service');
+
+      // 유저 장수들만 대상
+      const userGenerals = await General.find({ session_id: sessionId, npc: { $lt: 2 } });
+
+      for (const gen of userGenerals) {
+        const gData = gen.data || gen;
+        const userId = gen.owner;
+        if (!userId) continue;
+
+        // 통일국 소속 수뇌부(근무 레벨 5 이상) 포인트 지급 (PHP 749-751줄)
+        const officerLevel = gData.officer_level || 1;
+        if (gData.nation === nationId && officerLevel >= 5) {
+          try {
+            const inheritKey = `inheritance_${userId}`;
+            const inheritStor = await kvStorageRepository.findOneByFilter({ session_id: sessionId, key: inheritKey });
+            if (inheritStor) {
+              const currentPoints = inheritStor.value?.unifier || 0;
+              const updatedValue = { ...inheritStor.value, unifier: currentPoints + 2000 };
+              await kvStorageRepository.updateOneByFilter({ session_id: sessionId, key: inheritKey }, { value: updatedValue });
+              logger.info('[checkEmperior] Unifier points granted', { userId, points: 2000 });
+            }
+          } catch (e: any) {
+            logger.error('Failed to grant inheritance point', { userId, error: e.message });
+          }
+        }
+
+        // 명예의 전당 등록 (PHP 766줄)
+        await CheckHallService.execute(gData.no || gData.data?.no, sessionId);
+      }
+
+      // 6. 세션 상태 업데이트 (통일됨)
+      originalGameEnv.isunited = 1; // 1: 통일됨
+      gameEnv.isunited = 1;
+
+      // 상위 세션 오브젝트 업데이트 (필요 시)
+      const { Session } = await import('../../models/session.model');
+      await Session.updateOne(
+        { session_id: sessionId },
+        { $set: { isunited: 1, status: 'finished', finished_at: new Date() } }
+      );
+
+      logger.info('[checkEmperior] Unification processing completed', { sessionId });
+    } catch (error: any) {
+      logger.error('[checkEmperior] Error during unification processing', { sessionId, error: error.message });
+    }
+  }
+
+  /**
    * 장수 액션 로그 추가
    * PHP의 general_record 테이블과 호환되도록 GeneralRecord 모델 사용
    */
@@ -3644,10 +3887,10 @@ export class ExecuteEngineService {
         message
       );
     } catch (error: any) {
-      logger.error('pushGeneralActionLog error', { 
-        sessionId, 
-        generalId, 
-        error: error.message 
+      logger.error('pushGeneralActionLog error', {
+        sessionId,
+        generalId,
+        error: error.message
       });
     }
   }

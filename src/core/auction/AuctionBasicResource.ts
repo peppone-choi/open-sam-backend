@@ -134,15 +134,56 @@ export abstract class AuctionBasicResource extends Auction {
   /**
    * 경매 롤백
    */
-  protected rollbackAuction(): void {
-    // FUTURE: 구현
+  protected async rollbackAuction(): Promise<void> {
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const host = await generalRepository.findOneByFilter({
+      session_id: this.info.session_id,
+      'no': this.info.hostGeneralId
+    });
+
+    if (!host) {
+      console.error(`Rollback failed: Host General ${this.info.hostGeneralId} not found.`);
+      return;
+    }
+
+    const hostRes = (this.constructor as any).hostRes;
+    host.increaseVar(hostRes.value, this.info.amount);
+    
+    const logger = host.getLogger();
+    logger.pushGeneralActionLog(`<C>${this.info.title}</C>이(가) 유찰/취소되어 매물 <C>${this.info.amount}</C> ${hostRes.value === 'rice' ? '군량' : '금'}이 반환되었습니다.`);
+    
+    await host.applyDB();
   }
 
   /**
    * 경매 완료 처리
    */
-  protected finishAuction(highestBid: any, bidder: IGeneral): string | null {
-    // FUTURE: 구현
+  protected async finishAuction(highestBid: any, bidder: IGeneral): Promise<string | null> {
+    const { generalRepository } = await import('../../repositories/general.repository');
+    const host = await generalRepository.findOneByFilter({
+      session_id: this.info.session_id,
+      'no': this.info.hostGeneralId
+    });
+
+    if (!host) {
+      return '호스트를 찾을 수 없습니다.';
+    }
+
+    const hostRes = (this.constructor as any).hostRes;
+    const bidderRes = (this.constructor as any).bidderRes;
+
+    // 호스트에게 입찰금 지급
+    host.increaseVar(bidderRes.value, highestBid.amount);
+    const hostLogger = host.getLogger();
+    hostLogger.pushGeneralActionLog(`<C>${this.info.title}</C>이(가) 낙찰되어 <C>${highestBid.amount}</C> ${bidderRes.value === 'rice' ? '군량' : '금'}을 받았습니다.`);
+    await host.applyDB();
+
+    // 입찰자에게 매물 지급
+    bidder.increaseVar(hostRes.value, this.info.amount);
+    const bidderLogger = bidder.getLogger();
+    bidderLogger.pushGeneralActionLog(`<C>${this.info.title}</C>에 낙찰되어 매물 <C>${this.info.amount}</C> ${hostRes.value === 'rice' ? '군량' : '금'}을 받았습니다.`);
+    await bidder.applyDB();
+
     return null;
   }
 }

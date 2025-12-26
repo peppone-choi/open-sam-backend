@@ -12,17 +12,13 @@
     "sourceType": "module"
   },
   "rules": {
-    "no-console": ["warn", {
-      "allow": []
-    }]
+    "no-console": "warn"
   },
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
       "rules": {
-        "no-console": ["error", {
-          "allow": []
-        }]
+        "no-console": "error"
       }
     }
   ]

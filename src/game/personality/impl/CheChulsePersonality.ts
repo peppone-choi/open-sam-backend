@@ -17,12 +17,20 @@ export class CheChulsePersonality extends BasePersonality {
   }
   
   getInfo(): string {
-    return '관직 승진 추구. 공헌도 획득 +10%';
+    return '명성 +10%, 징·모병 비용 +20%';
   }
   
-  onCalcDomestic(turnType: string, varType: string, value: number, aux?: any): number {
-    // 공헌도 획득 보너스
-    if (varType === 'dedication') {
+  override onCalcDomestic(turnType: string, varType: string, value: number, _aux?: any): number {
+    if (['징병', '모병'].includes(turnType)) {
+      if (varType === 'cost') {
+        return value * 1.2;
+      }
+    }
+    return value;
+  }
+
+  override onCalcStat(_general: any, statName: string, value: any, _aux?: any): any {
+    if (statName === 'experience') {
       return value * 1.1;
     }
     return value;

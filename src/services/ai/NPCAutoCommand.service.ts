@@ -18,14 +18,14 @@ const ACTIVE_THRESHOLD_MS = 10 * 60 * 1000;
 function isPlayerActive(general: any): boolean {
   const generalData = general.data || general;
   const lastActiveAt = generalData.lastActiveAt;
-  
+
   if (!lastActiveAt) {
     return false; // 활동 기록 없음 = 미접속
   }
-  
+
   const lastActiveTime = new Date(lastActiveAt).getTime();
   const now = Date.now();
-  
+
   return (now - lastActiveTime) < ACTIVE_THRESHOLD_MS;
 }
 
@@ -39,27 +39,27 @@ async function loadNationPolicy(sessionId: string, nationId: number): Promise<an
   if (!nationId || nationId === 0) {
     return null;
   }
-  
+
   try {
     const storageKey = `nation_env:${nationId}`;
     const storage = await kvStorageRepository.findOneByFilter({
       session_id: sessionId,
       key: storageKey
     });
-    
+
     if (!storage) {
       return null;
     }
-    
+
     let storageData: any = {};
     try {
-      storageData = typeof storage.value === 'string' 
-        ? JSON.parse(storage.value) 
+      storageData = typeof storage.value === 'string'
+        ? JSON.parse(storage.value)
         : storage.value || {};
     } catch {
       return null;
     }
-    
+
     // npc_nation_policy와 npc_general_policy를 반환
     return {
       nationPolicy: storageData.npc_nation_policy || null,
@@ -87,13 +87,16 @@ export class NPCAutoCommandService {
     const generalData = general.data || general;
     const owner = generalData.owner || general.owner;
     const generalName = generalData.name || general.name || `General ${general.no}`;
-    
+
+    // 메시지 처리 (등용 제안 등)
+    await this.processNPCOutstandingMessages(sessionId, general, gameEnv);
+
     // 플레이어(npc=0)는 스킵
     if (npcType < 1) {
       // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 플레이어 (npc=${npcType})`);
       return { success: false };
     }
-    
+
     // 유저가 소유한 NPC는 스킵 (owner가 숫자 ID이면 유저가 플레이 중)
     // NOTE: owner가 0, '0', 'NPC', undefined, null이면 무시 (실제 소유자가 없음)
     // owner가 숫자이고 0보다 크면 유저가 플레이 중
@@ -102,7 +105,7 @@ export class NPCAutoCommandService {
       // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 유저 소유 (owner=${owner})`);
       return { success: false };
     }
-    
+
     // 반자동 NPC(npc=1)는 플레이어 접속 중이면 스킵
     if (npcType === 1 && isPlayerActive(general)) {
       // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 반자동 NPC 접속 중`);
@@ -113,12 +116,12 @@ export class NPCAutoCommandService {
     const cityId = generalData.city;
     const nationId = generalData.nation || 0;
     const officerLevel = generalData.officer_level || 0;
-    
+
     // 방랑군 대장(nation > 0이고 officer_level >= 12)이면 city=0이어도 처리
     // 재야 NPC(nation=0, npc >= 2)도 거병을 위해 처리
     const isWanderingLord = nationId > 0 && officerLevel >= 12;
     const isIndependentNPC = nationId === 0 && npcType >= 2;
-    
+
     if ((!cityId || cityId === 0) && !isWanderingLord && !isIndependentNPC) {
       // console.log(`[NPC AI] 장수 ${general.no} (${generalName}) - 스킵: 도시 없음 (city=${cityId})`);
       return { success: false };
@@ -129,13 +132,13 @@ export class NPCAutoCommandService {
       sessionId,
       general.no || general.data?.no
     );
-    
+
     // 비어있는 턴 찾기
     const maxTurn = 30; // 기본 턴 수
     const occupiedTurns = new Set(
       existingTurns.map(t => t.data?.turn_idx).filter(idx => idx !== undefined && idx >= 0)
     );
-    
+
     let emptyTurnIdx = -1;
     for (let i = 0; i < maxTurn; i++) {
       if (!occupiedTurns.has(i)) {
@@ -143,13 +146,13 @@ export class NPCAutoCommandService {
         break;
       }
     }
-    
+
     // 빈 턴이 없으면 스킵
     if (emptyTurnIdx === -1) {
       console.log(`[NPC AI] 장수 ${general.no} (${general.data?.name || general.name}) - 빈 턴 없음 (턴 수: ${existingTurns.length})`);
       return { success: false };
     }
-    
+
     console.log(`[NPC AI] 장수 ${general.no} (${general.data?.name || general.name}) - 턴 ${emptyTurnIdx}에 명령 등록 시도`);
 
     try {
@@ -182,11 +185,11 @@ export class NPCAutoCommandService {
 
       // SimpleAI를 사용하여 명령 결정
       const ai = new SimpleAI(general, city, nation, gameEnv);
-      
+
       // NPC 유형에 따른 AI 옵션 설정
       const npcType = generalData.npc || 0;
       const officerLevel = generalData.officer_level || 0;
-      
+
       // 모든 NPC에게 기본 AI 옵션 제공 (징병/내정/훈련/전투 허용)
       const aiOptions = {
         chief: officerLevel >= 5,  // 수뇌 권한 (officer_level >= 5)
@@ -196,13 +199,13 @@ export class NPCAutoCommandService {
         battle: true,              // 전투 허용
         warp: false,               // 일반 장수는 워프 불가
       };
-      
+
       // 국가별 NPC 정책 로드
       const policyOverride = await loadNationPolicy(sessionId, nationId);
       ai.initializePolicies(aiOptions, policyOverride, null);
-      
+
       const decision = await ai.decideNextCommand();
-      
+
       if (!decision) {
         // AI가 결정하지 못하면 기본 명령 (휴식)
         await this.registerCommand(sessionId, general, emptyTurnIdx, '휴식', {});
@@ -217,9 +220,9 @@ export class NPCAutoCommandService {
         decision.command,
         decision.args
       );
-      
+
       console.log(`[NPC AI] ✅ 장수 ${general.no} (${general.data?.name || general.name}) - 명령 등록: ${decision.command}, args:`, JSON.stringify(decision.args));
-      
+
       return {
         success: true,
         command: decision.command,
@@ -227,10 +230,72 @@ export class NPCAutoCommandService {
       };
     } catch (error: any) {
       console.error(`NPC AI 명령 생성 실패 (장수 ${general.no}):`, error.message);
-      
+
       // 에러 발생 시 기본 명령
       await this.registerCommand(sessionId, general, emptyTurnIdx, '휴식', {});
       return { success: true, command: '휴식', args: {} };
+    }
+  }
+
+  /**
+   * NPC에게 온 대기 중인 메시지 처리 (등용 제안 등)
+   */
+  private static async processNPCOutstandingMessages(
+    sessionId: string,
+    general: any,
+    gameEnv: any
+  ): Promise<void> {
+    const generalId = general.no || general.data?.no;
+    const npcType = general.npc || general.data?.npc || 0;
+
+    // 플레이어는 제외
+    if (npcType === 0) return;
+
+    try {
+      const { messageRepository } = await import('../../repositories/message.repository');
+      const { DecideMessageResponseService } = await import('../message/DecideMessageResponse.service');
+
+      // 대기 중인 스카우트 메시지 조회
+      const messages = await messageRepository.findByFilter({
+        session_id: sessionId,
+        mailbox: generalId,
+        'data.option.action': 'scout',
+        'data.option.used': { $ne: true }
+      });
+
+      if (messages.length === 0) return;
+
+      console.log(`[NPC AI] 장수 ${generalId} - 대기 중인 등용 메시지 ${messages.length}개 발견`);
+
+      // SimpleAI 인스턴스 생성 (성격/상성 계산용)
+      // 국가/도시 정보 로드 (필요한 경우)
+      const ai = new SimpleAI(general, null, null, gameEnv);
+
+      for (const msg of messages) {
+        const recruiterId = msg.data?.from_general || msg.data?.src?.generalID;
+        if (!recruiterId) continue;
+
+        const recruiter = await generalRepository.findBySessionAndNo(sessionId, recruiterId);
+        if (!recruiter) continue;
+
+        const accept = await ai.decideRecruitmentResponse(recruiter);
+
+        // 응답 실행
+        await DecideMessageResponseService.execute({
+          session_id: sessionId,
+          general_id: generalId,
+          msgID: msg.data?.id || msg.id,
+          response: accept
+        }, { generalId });
+
+        // 수락했다면 한 번에 하나의 국가만 이동하므로 중단
+        if (accept) {
+          console.log(`[NPC AI] 장수 ${generalId} - 등용 수락함 (모집자: ${recruiterId})`);
+          break;
+        }
+      }
+    } catch (error) {
+      console.error(`[NPC AI] 메시지 처리 실패 (장수 ${generalId}):`, error);
     }
   }
 
@@ -245,7 +310,7 @@ export class NPCAutoCommandService {
     args: any
   ): Promise<void> {
     const generalId = general.no || general.data?.no;
-    
+
     try {
       // upsert로 중복 키 에러 방지
       await generalTurnRepository.upsert(
@@ -272,11 +337,11 @@ export class NPCAutoCommandService {
    * 명령 간략 설명 생성
    */
   private static getBrief(action: string, args: any): string {
-    
+
     if (action === '휴식') {
       return '휴식';
     }
-    
+
     return action;
   }
 
@@ -341,25 +406,25 @@ export class NPCAutoCommandService {
     const generalId = general.no || general.data?.no;
     const generalData = general.data || general;
     const officerLevel = generalData.officer_level || 0;
-    
+
     // 수뇌가 아니면 스킵 (officer_level >= 5)
     if (officerLevel < 5) {
       return { success: false };
     }
-    
+
     // 이 수뇌의 국가턴 확인 (officer_level 기준으로 조회 - ExecuteEngine과 동일)
     const existingTurns = await nationTurnRepository.findByFilter({
       session_id: sessionId,
       'data.nation_id': nationId,
       'data.officer_level': officerLevel // officer_level별로 별도 턴 테이블
     });
-    
+
     // 비어있는 턴 찾기
     const maxTurn = 30; // 기본 턴 수
     const occupiedTurns = new Set(
       existingTurns.map(t => t.data?.turn_idx).filter(idx => idx !== undefined && idx >= 0)
     );
-    
+
     let emptyTurnIdx = -1;
     for (let i = 0; i < maxTurn; i++) {
       if (!occupiedTurns.has(i)) {
@@ -367,20 +432,20 @@ export class NPCAutoCommandService {
         break;
       }
     }
-    
+
     // 빈 턴이 없으면 스킵
     if (emptyTurnIdx === -1) {
       console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}) - 빈 턴 없음 (턴 수: ${existingTurns.length})`);
       return { success: false };
     }
-    
+
     console.log(`[NPC AI] 수뇌 ${generalId} (${generalData.name || ''}, 국가 ${nationId}) - 턴 ${emptyTurnIdx}에 명령 등록 시도`);
 
     try {
       // 수도 정보 가져오기
       const nationData = nation.data || nation;
       const capitalCityId = nationData.capital;
-      
+
       let city = null;
       if (capitalCityId) {
         // Use findByCityNum instead of findOneByFilter for proper cache lookup
@@ -389,10 +454,10 @@ export class NPCAutoCommandService {
 
       // SimpleAI를 사용하여 국가 명령 결정
       const ai = new SimpleAI(general, city, nation, gameEnv);
-      
+
       // 국가 정책 초기화 (수뇌: officer_level >= 5)
       const npcType = generalData.npc || 0;
-      
+
       // NPC 유형에 따른 AI 옵션 설정
       // npc >= 2: 완전 자동 NPC (AutorunGeneralPolicy에서 기본값 사용)
       // npc < 2: 유저장/반자동 (aiOptions에 따라 활성화)
@@ -404,7 +469,7 @@ export class NPCAutoCommandService {
         battle: true,       // 전투 허용
         warp: true,         // 워프 허용
       };
-      
+
       // 국가별 NPC 정책 로드
       const policyOverride = await loadNationPolicy(sessionId, nationId);
       ai.initializePolicies(
@@ -412,15 +477,15 @@ export class NPCAutoCommandService {
         policyOverride, // nationPolicyOverride
         null  // serverPolicyOverride
       );
-      
+
       // 국가 명령만 결정 (장수 명령 제외)
       const decision = await ai.decideNationCommandOnly();
-      
+
       if (!decision) {
         console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}) - 국가 명령 결정 실패`);
         return { success: false };
       }
-      
+
       console.log(`[NPC AI] 수뇌 ${generalId} (국가 ${nationId}, 관직 ${officerLevel}) - 국가 명령 선택: ${decision.command}`);
 
       // 결정된 명령 등록 (officer_level 포함 - ExecuteEngine에서 조회 시 필요)
@@ -439,9 +504,9 @@ export class NPCAutoCommandService {
           brief: this.getBrief(decision.command, decision.args)
         }
       });
-      
+
       console.log(`[NPC AI] ✅ 수뇌 ${generalId} (국가 ${nationId}) - 명령 등록: ${decision.command}`);
-      
+
       return {
         success: true,
         command: decision.command,
@@ -480,12 +545,12 @@ export class NPCAutoCommandService {
       try {
         const chiefData = chief.data || chief;
         const nationId = chiefData.nation;
-        
+
         if (!nationId || nationId === 0) {
           skippedCount++;
           continue;
         }
-        
+
         // 국가 정보 가져오기
         const nation = await nationRepository.findOneByFilter({
           session_id: sessionId,
@@ -494,12 +559,12 @@ export class NPCAutoCommandService {
             { 'data.nation': nationId }
           ]
         });
-        
+
         if (!nation) {
           skippedCount++;
           continue;
         }
-        
+
         const result = await this.assignNationTurn(sessionId, nation, chief, gameEnv);
         if (result.success) {
           successCount++;

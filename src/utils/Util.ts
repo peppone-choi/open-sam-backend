@@ -1,19 +1,17 @@
+import { configManager } from '../config/ConfigManager';
+
 export class Util {
   /**
-   * 년월을 정수로 결합 (PHP 호환) - 오버플로우 방지 추가
+   * CDN 연동을 지원하는 리소스 URL 반환
    */
-  static joinYearMonth(year: number, month: number): number {
-    // 유효성 검증
-    if (month < 1 || month > 12) {
-      throw new Error(`Invalid month: ${month}. Must be between 1 and 12.`);
-    }
+  static getAssetUrl(path: string): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
     
-    const MAX_SAFE_YEAR = Math.floor((Number.MAX_SAFE_INTEGER + 1) / 12);
-    if (year > MAX_SAFE_YEAR || year < -MAX_SAFE_YEAR) {
-      throw new Error(`Year ${year} is out of safe range for month calculation`);
-    }
+    const { cdnUrl } = configManager.get().features;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     
-    return year * 12 + month - 1;
+    return `${cdnUrl}${normalizedPath}`;
   }
 
   /**
@@ -23,6 +21,14 @@ export class Util {
     const year = Math.floor(yearMonth / 12);
     const month = (yearMonth % 12) + 1;
     return [year, month];
+  }
+
+  static joinYearMonth(year: number, month: number): number {
+    const MAX_SAFE_YEAR = Math.floor((Number.MAX_SAFE_INTEGER + 1) / 12);
+    if (year > MAX_SAFE_YEAR || year < -MAX_SAFE_YEAR) {
+      throw new Error(`Year ${year} is out of safe range for month calculation`);
+    }
+    return year * 12 + month - 1;
   }
 
   static clamp(value: number, min: number, max?: number): number {
@@ -139,7 +145,6 @@ export class Util {
     return JSON.parse(JSON.stringify(obj));
   }
 
-
   static numberFormat(num: number, decimals: number = 0): string {
     return num.toLocaleString('ko-KR', {
       minimumFractionDigits: decimals,
@@ -147,19 +152,11 @@ export class Util {
     });
   }
 
-  /**
-   * 배열에서 랜덤 선택
-   */
   static choiceRandom<T>(array: T[]): T | undefined {
     if (array.length === 0) return undefined;
     return array[Math.floor(Math.random() * array.length)];
   }
 
-  /**
-   * 가중치를 사용한 랜덤 선택
-   * @param items [value, weight][] 형태의 배열
-   * @returns [selectedValue, remainingItems]
-   */
   static choiceRandomUsingWeightPair<T>(items: [T, number][]): [T, T[]] {
     if (items.length === 0) {
       throw new Error('배열이 비어있습니다');
@@ -177,23 +174,16 @@ export class Util {
       }
     }
 
-    // Fallback (should not happen)
     const [value] = items[items.length - 1];
     const remaining = items.slice(0, -1).map(([v]) => v);
     return [value, remaining];
   }
 
-  /**
-   * 비밀번호 해시 생성 (PHP Util::hashPassword와 동일)
-   */
   static hashPassword(salt: string, password: string): string {
     const crypto = require('crypto');
     return crypto.createHash('sha512').update(salt + password + salt).digest('hex');
   }
 
-  /**
-   * 랜덤 문자열 생성
-   */
   static randomStr(length: number, keyspace: string = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'): string {
     const crypto = require('crypto');
     let str = '';
@@ -204,9 +194,6 @@ export class Util {
     return str;
   }
 
-  /**
-   * 딕셔너리 맵핑 (key와 value를 모두 사용)
-   */
   static mapWithKey<K extends string | number, V, R>(
     callback: (key: K, value: V) => R,
     dict: Record<K, V>
@@ -218,9 +205,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 배열을 Set-like 객체로 변환
-   */
   static convertArrayToSetLike<T extends string | number>(
     arr: T[],
     valueIsKey: boolean = true
@@ -232,9 +216,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * null 값 제거 (재귀적으로)
-   */
   static eraseNullValue(value: any): any {
     if (value === null || value === undefined) {
       return undefined;
@@ -255,9 +236,6 @@ export class Util {
     return value;
   }
 
-  /**
-   * 안전한 int 변환 (PHP Util::toInt와 유사)
-   */
   static toIntSafe(val: any, silent: boolean = false): number | null {
     if (val === null || val === undefined) {
       return null;
@@ -290,9 +268,6 @@ export class Util {
     throw new Error(`올바르지 않은 타입형: ${val}`);
   }
 
-  /**
-   * 페어 배열을 딕셔너리로 변환
-   */
   static convertPairArrayToDict<T>(arr: [string | number, T][]): Record<string, T> {
     const result: Record<string, T> = {};
     for (const [key, val] of arr) {
@@ -301,9 +276,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 튜플 배열을 딕셔너리로 변환
-   */
   static convertTupleArrayToDict<T>(arr: T[][]): Record<string, T[]> {
     const result: Record<string, T[]> = {};
     for (const val of arr) {
@@ -315,9 +287,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 딕셔너리를 배열로 변환
-   */
   static convertDictToArray<T>(dict: Record<string, T>, withKey: boolean = true): [string, T][] | T[] {
     const result: any[] = [];
     for (const [key, value] of Object.entries(dict)) {
@@ -330,9 +299,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 배열에서 특정 키 추출
-   */
   static squeezeFromArray<T>(dict: Record<string, T>, key: string): Record<string, any> {
     const result: Record<string, any> = {};
     for (const [dictKey, value] of Object.entries(dict)) {
@@ -343,9 +309,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 딕셔너리인지 확인
-   */
   static isDict(array: any): boolean {
     if (array === null || array === undefined) {
       return false;
@@ -370,13 +333,9 @@ export class Util {
       }
       return false;
     }
-    // 객체인 경우
     return true;
   }
 
-  /**
-   * 키-값 쌍을 보존한 섞기
-   */
   static shuffleAssoc<T>(array: Record<string, T>): Record<string, T> {
     const keys = Object.keys(array);
     const shuffledKeys = this.shuffle(keys);
@@ -387,9 +346,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 퍼센트 문자열을 float으로 변환
-   */
   static convPercentStrToFloat(text: string): number | null {
     const match = text.match(/^(\d+(\.\d+)?)%$/);
     if (!match) {
@@ -398,9 +354,6 @@ export class Util {
     return parseFloat(match[1]) / 100;
   }
 
-  /**
-   * 가중치를 사용한 랜덤 선택 (키 반환)
-   */
   static choiceRandomUsingWeight<T extends string | number>(
     items: Record<T, number>
   ): T {
@@ -423,13 +376,9 @@ export class Util {
       rd -= value;
     }
 
-    // Fallback
     return keys[keys.length - 1];
   }
 
-  /**
-   * 최대값을 가진 키 반환
-   */
   static getKeyOfMaxValue<T extends string | number>(array: Record<T, number>): T | null {
     let max: number | null = null;
     let result: T | null = null;
@@ -444,9 +393,6 @@ export class Util {
     return result;
   }
 
-  /**
-   * 클래스 경로에서 클래스 이름 추출
-   */
   static getClassName(classpath: string): string {
     const pos = classpath.lastIndexOf('\\');
     if (pos !== -1) {
@@ -459,9 +405,6 @@ export class Util {
     return classpath;
   }
 
-  /**
-   * 객체에서 클래스 이름 추출
-   */
   static getClassNameFromObj(obj: any): string {
     if (obj && obj.constructor) {
       return obj.constructor.name;
@@ -469,9 +412,6 @@ export class Util {
     return 'Unknown';
   }
 
-  /**
-   * 배열의 모든 원소가 조건을 만족하는지 확인
-   */
   static testArrayValues<T>(
     array: T[],
     callback: ((value: T) => boolean) | null = null
@@ -482,9 +422,6 @@ export class Util {
     return array.every(callback);
   }
 
-  /**
-   * 백틱 리스트 포맷팅
-   */
   static formatListOfBackticks(array: (string | number)[]): string {
     if (array.length === 0) {
       throw new Error('backtick 목록에 없음');
@@ -500,9 +437,6 @@ export class Util {
     }).join(',');
   }
 
-  /**
-   * 배열 비교
-   */
   static arrayCompare<T>(
     lhs: T[],
     rhs: T[],
@@ -525,7 +459,6 @@ export class Util {
       }
     }
 
-    // 길이 차이
     if (lhs.length < rhs.length) {
       return -1;
     } else if (lhs.length > rhs.length) {
@@ -535,9 +468,6 @@ export class Util {
     return 0;
   }
 
-  /**
-   * 2의 거듭제곱인지 확인
-   */
   static isPowerOfTwo(number: number): boolean {
     if (number <= 0) {
       return false;
@@ -545,9 +475,6 @@ export class Util {
     return (number & (number - 1)) === 0;
   }
 
-  /**
-   * Enum 값 추출
-   */
   static valueFromEnum(value: string | number | { value: string | number }): string | number {
     if (typeof value === 'object' && value !== null && 'value' in value) {
       return (value as { value: string | number }).value;
@@ -555,18 +482,12 @@ export class Util {
     return value as string | number;
   }
 
-  /**
-   * Enum 배열에서 값 추출
-   */
   static valuesFromEnumArray(
     values: (string | number | { value: string | number })[]
   ): (string | number)[] {
     return values.map(v => this.valueFromEnum(v));
   }
 
-  /**
-   * 간단한 직렬화
-   */
   static simpleSerialize(...values: (string | number)[]): string {
     const result: string[] = [];
     for (const value of values) {
@@ -585,9 +506,6 @@ export class Util {
     return result.join('|');
   }
 
-  /**
-   * 배열에서 특정 키의 합계
-   */
   static arraySumWithKey<T extends Record<string, any>>(
     array: T[],
     key: keyof T
@@ -598,9 +516,6 @@ export class Util {
     }, 0);
   }
 
-  /**
-   * 배열 그룹화 (키 보존 옵션 포함)
-   */
   static arrayGroupByPreserveKey<T extends Record<string, any>>(
     array: T[],
     key: keyof T,
@@ -630,31 +545,20 @@ export class Util {
     return result;
   }
 
-  /**
-   * 년월 정수를 파싱 (parseYearMonth 별칭)
-   */
   static parseYearMonth(yearMonth: number): [number, number] {
     return this.splitYearMonth(yearMonth);
   }
 
-  /**
-   * 배열 합계 (키 지정 가능)
-   */
   static arraySum<T extends Record<string, any>>(
     array: T[] | number[],
     key?: keyof T
   ): number {
     if (key === undefined) {
-      // 숫자 배열인 경우
       return (array as number[]).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
     }
-    // 객체 배열인 경우
     return this.arraySumWithKey(array as T[], key);
   }
 
-  /**
-   * 배열 그룹화 (간단한 버전)
-   */
   static arrayGroupBy<T extends Record<string, any>>(
     array: T[],
     key: keyof T,
@@ -662,8 +566,4 @@ export class Util {
   ): Record<string, T[] | Record<string, T>> {
     return this.arrayGroupByPreserveKey(array, key, preserveRowKey);
   }
-
 }
-
-
-

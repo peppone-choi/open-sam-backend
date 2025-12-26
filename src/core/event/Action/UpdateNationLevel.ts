@@ -16,43 +16,43 @@ import { createLogger } from '../../../utils/logger';
 const logger = createLogger('UpdateNationLevel');
 
 /**
- * PHP와 동일한 국가 레벨(작위) 테이블
+ * backend constants.json과 동일한 국가 레벨(작위) 테이블
  * 인덱스 = 레벨, 값 = 필요 도시 수
- * 0: 방랑군, 1: 호족, 2: 군벌, 3: 주자사, 4: 주목, 5: 공, 6: 왕, 7: 황제
+ * 0: 유랑, 1: 정, 2: 현, 3: 군, 4: 주, 5: 주, 6: 공국, 7: 왕국, 8: 제국
  */
 const NATION_LEVEL_BY_CITY_COUNT = [
-  0,  // 방랑군 (0개 도시)
-  1,  // 호족 (1개 도시)
-  2,  // 군벌 (2개 도시)
-  5,  // 주자사 (5개 도시)
-  8,  // 주목 (8개 도시)
-  11, // 공 (11개 도시)
-  16, // 왕 (16개 도시)
-  21, // 황제 (21개 도시)
+  0,  // 유랑 (0개 도시)
+  1,  // 정 (1개 도시)
+  3,  // 현 (3개 도시)
+  6,  // 군 (6개 도시)
+  10, // 주 (10개 도시)
+  15, // 주 (15개 도시)
+  22, // 공국 (22개 도시)
+  32, // 왕국 (32개 도시)
+  45, // 제국 (45개 도시)
 ];
 
 /**
- * PHP와 동일한 국가 레벨 텍스트 반환
+ * backend constants.json과 동일한 국가 레벨 텍스트 반환
  */
 function getNationLevel(level: number): string {
-  const levels = ['방랑군', '호족', '군벌', '주자사', '주목', '공', '왕', '황제'];
-  return levels[level] || '방랑군';
+  const levels = ['유랑', '정', '현', '군', '주', '주', '공국', '왕국', '제국'];
+  return levels[level] || '유랑';
 }
 
 /**
- * PHP와 동일한 국가 수석 레벨 반환 (최소 관직 레벨)
+ * backend constants.json과 동일한 국가 수석 레벨 반환 (최소 관직 레벨)
  * getNationChiefLevel 함수와 동일
  */
 function getNationChiefLevel(nationLevel: number): number {
-  // PHP: sammo\getNationChiefLevel 함수와 동일
-  // 작위가 높을수록 더 많은 관직 슬롯 사용 가능
-  if (nationLevel >= 7) return 5;   // 황제: 5~12
-  if (nationLevel >= 6) return 6;   // 왕: 6~12
-  if (nationLevel >= 5) return 7;   // 공: 7~12
-  if (nationLevel >= 4) return 8;   // 주목: 8~12
-  if (nationLevel >= 3) return 9;   // 주자사: 9~12
-  if (nationLevel >= 2) return 10;  // 군벌: 10~12
-  return 11; // 호족: 11~12
+  if (nationLevel >= 8) return 5;   // 제국: 5~12
+  if (nationLevel >= 7) return 5;   // 왕국: 5~12
+  if (nationLevel >= 6) return 6;   // 공국: 6~12
+  if (nationLevel >= 5) return 7;   // 주(대): 7~12
+  if (nationLevel >= 4) return 8;   // 주(소): 8~12
+  if (nationLevel >= 3) return 9;   // 군: 9~12
+  if (nationLevel >= 2) return 10;  // 현: 10~12
+  return 11; // 정: 11~12
 }
 
 // PHP GameConst와 동일한 상수
@@ -132,8 +132,11 @@ export class UpdateNationLevel extends Action {
 
         nation.data = nation.data || {};
         nation.data.level = newLevel;
+        nation.level = newLevel; // 최상위 필드도 업데이트
         nation.data.gold = (nation.data.gold || 0) + goldBonus;
         nation.data.rice = (nation.data.rice || 0) + riceBonus;
+        nation.gold = nation.data.gold; // 최상위 필드 동기화
+        nation.rice = nation.data.rice;
 
         // 군주 조회
         const lord = await General.findOne({
@@ -155,7 +158,7 @@ export class UpdateNationLevel extends Action {
           case 7: // 황제
             const josaRo7 = JosaUtil.pick(nationLevelText, '로');
             actionLogger.pushGlobalHistoryLog(
-              `<Y><b>【작위】</b></><D><b>${nationName}</b></> ${oldNationLevelText} <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo7} 옹립되었습니다.`
+              `<Y><b>【위상】</b></><D><b>${nationName}</b></> ${oldNationLevelText} <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo7} 옹립되었습니다.`
             );
             actionLogger.pushNationalHistoryLog(
               `<D><b>${nationName}</b></> ${oldNationLevelText} <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo7} 옹립`
@@ -169,7 +172,7 @@ export class UpdateNationLevel extends Action {
           case 6: // 왕
             const josaRo6 = JosaUtil.pick(nationLevelText, '로');
             actionLogger.pushGlobalHistoryLog(
-              `<Y><b>【작위】</b></><D><b>${nationName}</b></>의 <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo6} 책봉되었습니다.`
+              `<Y><b>【위상】</b></><D><b>${nationName}</b></>의 <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo6} 책봉되었습니다.`
             );
             actionLogger.pushNationalHistoryLog(
               `<D><b>${nationName}</b></>의 <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo6} 책봉`
@@ -181,7 +184,7 @@ export class UpdateNationLevel extends Action {
           case 3: // 주자사
             const josaRo345 = JosaUtil.pick(nationLevelText, '로');
             actionLogger.pushGlobalHistoryLog(
-              `<Y><b>【작위】</b></><D><b>${nationName}</b></>의 <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo345} 임명되었습니다.`
+              `<Y><b>【위상】</b></><D><b>${nationName}</b></>의 <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo345} 임명되었습니다.`
             );
             actionLogger.pushNationalHistoryLog(
               `<D><b>${nationName}</b></>의 <Y>${lordName}</>${josaYi} <C>${nationLevelText}</>${josaRo345} 임명됨`
@@ -192,7 +195,7 @@ export class UpdateNationLevel extends Action {
             const josaRa = JosaUtil.pick(nationName, '라');
             const josaRo2 = JosaUtil.pick(nationLevelText, '로');
             actionLogger.pushGlobalHistoryLog(
-              `<Y><b>【작위】</b></><Y>${lordName}</>${josaYi} 독립하여 <D><b>${nationName}</b></>${josaRa}는 <C>${nationLevelText}</>${josaRo2} 나섰습니다.`
+              `<Y><b>【위상】</b></><Y>${lordName}</>${josaYi} 독립하여 <D><b>${nationName}</b></>${josaRa}는 <C>${nationLevelText}</>${josaRo2} 나섰습니다.`
             );
             actionLogger.pushNationalHistoryLog(
               `<Y>${lordName}</>${josaYi} 독립하여 <D><b>${nationName}</b></>${josaRa}는 <C>${nationLevelText}</>${josaRo2} 나서다`

@@ -34,4 +34,12 @@ export class SeedRandom {
   pick<T>(list: T[]): T {
     return list[Math.floor(this.next() * list.length)];
   }
+
+  /**
+   * 주어진 확률로 true 반환
+   * @param chance 0-1 사이의 확률
+   */
+  nextBool(chance: number = 0.5): boolean {
+    return this.next() < chance;
+  }
 }

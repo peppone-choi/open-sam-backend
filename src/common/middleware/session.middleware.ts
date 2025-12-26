@@ -9,29 +9,23 @@ import { createClient, RedisClientType } from 'redis';
 import { RedisStore } from 'connect-redis';
 import { logger } from '../logger';
 import { Session } from '../../utils/Session';
+import { configManager } from '../../config/ConfigManager';
 
-const DEFAULT_COOKIE_MAX_AGE_MS = Number(process.env.SESSION_COOKIE_MAX_AGE_MS ?? 24 * 60 * 60 * 1000);
-const DEFAULT_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS ?? 24 * 60 * 60);
-const COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'opensam.sid';
-const REDIS_PREFIX = process.env.SESSION_REDIS_PREFIX || 'opensam:sess:';
+const { session: sess, system } = configManager.get();
 
 let cachedSessionHandler: RequestHandler | null = null;
 let redisClient: RedisClientType | null = null;
 let redisStore: session.Store | null = null;
 let mongoStore: session.Store | null = null;
 
-function shouldUseMemoryStore(): boolean {
-  return process.env.SESSION_DISABLE_PERSISTENCE === 'true' || process.env.NODE_ENV === 'test';
-}
-
 function createRedisStore(): session.Store | null {
-  if (redisStore || shouldUseMemoryStore()) {
+  if (redisStore || sess.disablePersistence) {
     return redisStore;
   }
 
-  const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL;
+  const { redisUrl } = system;
   if (!redisUrl) {
-    logger.warn('[세션] REDIS_URL이 없어 Redis 스토어를 건너뜁니다.');
+    logger.warn('[세션] redisUrl이 없어 Redis 스토어를 건너뜁니다.');
     return null;
   }
 
@@ -49,15 +43,13 @@ function createRedisStore(): session.Store | null {
 
     redisStore = new RedisStore({
       client: redisClient,
-      prefix: REDIS_PREFIX,
+      prefix: sess.redisPrefix,
       disableTouch: false,
     });
 
     return redisStore;
   } catch (error) {
-    logger.error('[세션] Redis 세션 스토어 초기화 중 오류 발생, MongoDB로 폴백합니다.', {
-      error: error instanceof Error ? error.message : error,
-    });
+    logger.error('[세션] Redis 세션 스토어 초기화 중 오류 발생', error);
     redisClient = null;
     redisStore = null;
     return null;
@@ -65,105 +57,72 @@ function createRedisStore(): session.Store | null {
 }
 
 function createMongoStore(): session.Store | undefined {
-  if (mongoStore || shouldUseMemoryStore()) {
+  if (mongoStore || sess.disablePersistence) {
     return mongoStore ?? undefined;
   }
 
-  const mongoUrl = process.env.SESSION_MONGO_URI || process.env.MONGODB_URI;
-  if (!mongoUrl) {
-    logger.error('[세션] MONGODB_URI가 설정되지 않아 MemoryStore로 폴백됩니다.');
+  const { mongodbUri } = system;
+  if (!mongodbUri) {
+    logger.error('[세션] mongodbUri가 설정되지 않아 MemoryStore로 폴백됩니다.');
     return undefined;
   }
 
   try {
     mongoStore = MongoStore.create({
-      mongoUrl,
-      collectionName: process.env.SESSION_COLLECTION || 'app_sessions',
-      ttl: DEFAULT_TTL_SECONDS,
+      mongoUrl: mongodbUri,
+      collectionName: sess.collectionName,
+      ttl: sess.ttlSeconds,
       autoRemove: 'interval',
-      autoRemoveInterval: Number(process.env.SESSION_AUTOREMOVE_INTERVAL ?? 10),
       stringify: false,
     });
     return mongoStore;
   } catch (error) {
-    logger.error('[세션] Mongo 세션 스토어 초기화 실패, MemoryStore 사용', {
-      error: error instanceof Error ? error.message : error,
-    });
+    logger.error('[세션] Mongo 세션 스토어 초기화 실패', error);
     mongoStore = null;
     return undefined;
   }
 }
 
 function resolveSessionStore(): session.Store | undefined {
-  if (shouldUseMemoryStore()) {
+  if (sess.disablePersistence) {
     logger.warn('[세션] 지속형 세션이 비활성화되어 MemoryStore를 사용합니다.');
     return undefined;
   }
 
-  const preference = (process.env.SESSION_STORE || 'redis').toLowerCase();
-  if (preference === 'redis') {
-    const store = createRedisStore() || createMongoStore();
-    if (store) {
-      logger.info('[세션] Redis 세션 스토어를 우선 사용합니다.');
-      return store;
-    }
-  } else if (preference === 'mongo') {
-    const store = createMongoStore() || createRedisStore() || undefined;
-    if (store) {
-      logger.info('[세션] MongoDB 세션 스토어를 우선 사용합니다.');
-      return store;
-    }
+  if (sess.storeType === 'redis') {
+    return createRedisStore() || createMongoStore();
+  } else if (sess.storeType === 'mongo') {
+    return createMongoStore() || createRedisStore() || undefined;
   }
 
-  const fallback = createRedisStore() || createMongoStore() || undefined;
-  if (fallback) {
-    logger.warn('[세션] 선호 스토어 사용에 실패하여 다른 세션 스토어로 폴백합니다.');
-  } else {
-    logger.warn('[세션] 세션 저장소를 찾지 못해 MemoryStore를 사용합니다. (개발/테스트 전용)');
-  }
-  return fallback;
+  return undefined;
 }
 
-/**
- * Session 미들웨어 설정 (싱글톤)
- */
 export function setupSessionMiddleware(): RequestHandler {
   if (cachedSessionHandler) {
     return cachedSessionHandler;
   }
 
-  const sessionSecret = process.env.SESSION_SECRET || 'change-session-secret';
   const store = resolveSessionStore();
 
   cachedSessionHandler = session({
-    secret: sessionSecret,
+    secret: sess.secret,
     resave: false,
     saveUninitialized: false,
     rolling: true,
-    name: COOKIE_NAME,
+    name: sess.cookieName,
     store,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: system.cookieSecure || system.nodeEnv === 'production',
       httpOnly: true,
-      sameSite: 'lax',
-      maxAge: DEFAULT_COOKIE_MAX_AGE_MS,
+      sameSite: (system.cookieSameSite as any) || 'lax',
+      maxAge: sess.cookieMaxAgeMs,
     },
   });
-
-  if (store instanceof RedisStore) {
-    logger.info('[세션] Redis 기반 세션 스토어가 활성화되었습니다.');
-  } else if (store) {
-    logger.info('[세션] MongoDB 기반 세션 스토어가 활성화되었습니다.');
-  } else {
-    logger.warn('[세션] MemoryStore 사용 중입니다. (개발/테스트 전용)');
-  }
 
   return cachedSessionHandler;
 }
 
-/**
- * Session 인스턴스를 Request에 추가하는 미들웨어
- */
 export function sessionMiddleware(req: Request, _res: Response, next: NextFunction) {
   req.sessionInstance = Session.getInstance(req);
   next();

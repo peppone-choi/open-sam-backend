@@ -10,6 +10,12 @@ import { CheJeongbokPersonality } from './impl/CheJeongbokPersonality';
 import { ChePaegwonPersonality } from './impl/ChePaegwonPersonality';
 import { CheChulsePersonality } from './impl/CheChulsePersonality';
 import { CheEundunPersonality } from './impl/CheEundunPersonality';
+import { CheAnjeonPersonality } from './impl/CheAnjeonPersonality';
+import { CheWangjwaPersonality } from './impl/CheWangjwaPersonality';
+import { CheYujiPersonality } from './impl/CheYujiPersonality';
+import { CheUihyeopPersonality } from './impl/CheUihyeopPersonality';
+import { CheJaeganPersonality } from './impl/CheJaeganPersonality';
+import { CheHalgeoPersonality } from './impl/CheHalgeoPersonality';
 
 const registry: Record<string, () => BasePersonality> = {
   None: () => new NonePersonality(),
@@ -19,13 +25,12 @@ const registry: Record<string, () => BasePersonality> = {
   'che_패권': () => new ChePaegwonPersonality(),
   'che_출세': () => new CheChulsePersonality(),
   'che_은둔': () => new CheEundunPersonality(),
-  // 추가 성격은 여기에 등록
-  // 'che_안전': () => new CheAnJeonPersonality(),
-  // 'che_왕좌': () => new CheWangJwaPersonality(),
-  // 'che_유지': () => new CheYuJiPersonality(),
-  // 'che_의협': () => new CheUiHyeopPersonality(),
-  // 'che_재간': () => new CheJaeGanPersonality(),
-  // 'che_할거': () => new CheHalGeoPersonality(),
+  'che_안전': () => new CheAnjeonPersonality(),
+  'che_왕좌': () => new CheWangjwaPersonality(),
+  'che_유지': () => new CheYujiPersonality(),
+  'che_의협': () => new CheUihyeopPersonality(),
+  'che_재간': () => new CheJaeganPersonality(),
+  'che_할거': () => new CheHalgeoPersonality(),
 };
 
 const cache = new Map<string, BasePersonality>();

@@ -163,6 +163,13 @@ export class GetMapService {
         const x = city.x ?? d.x ?? 0;
         const y = city.y ?? d.y ?? 0;
         
+        // 추가 스탯 (Heatmap용)
+        const pop = city.pop ?? d.pop ?? 0;
+        const agri = city.agri ?? d.agri ?? 0;
+        const comm = city.comm ?? d.comm ?? 0;
+        const def = city.def ?? d.def ?? 0;
+        const wall = city.wall ?? d.wall ?? 0;
+        
         cityList.push([
           city.city,
           level,
@@ -172,7 +179,12 @@ export class GetMapService {
           supply,
           name,
           x,
-          y
+          y,
+          pop,
+          agri,
+          comm,
+          def,
+          wall
         ]);
         
         cityPositionMap.set(city.city, { x, y });

@@ -2,10 +2,12 @@ import NodeCache from 'node-cache';
 import { createClient, RedisClientType } from 'redis';
 import { logger } from '../common/logger';
 import { redisHealthMonitor } from '../services/monitoring/RedisHealthMonitor';
+import { configManager } from '../config/ConfigManager';
 
+const { system, features } = configManager.get();
 
-const isTestEnv = process.env.NODE_ENV === 'test';
-const shouldUseRedisL2 = process.env.CACHE_ENABLE_REDIS !== 'false' && !isTestEnv;
+const isTestEnv = system.nodeEnv === 'test';
+const shouldUseRedisL2 = features.enableRedisAdapter && !isTestEnv;
 
 type L2BatchEntry = {
   key: string;
@@ -15,22 +17,8 @@ type L2BatchEntry = {
 
 /**
  * 3단계 캐싱 시스템
-
- * 
- * L1: 메모리 (NodeCache) - TTL 3초 (초고속, 최신 데이터)
- * L2: Redis - TTL 360초 (고속, 안정적 데이터)
- * L3: MongoDB - 영구 저장
- * 
- * 읽기 순서: L1 → L2 → L3
- * 쓰기 순서: L3 → L2 → L1
- * 
- * @example
- * const cache = CacheManager.getInstance();
- * await cache.set('user:123', userData, 60);
- * const data = await cache.get('user:123');
  */
 export class CacheManager {
-
   private static instance: CacheManager;
   private l1Cache: NodeCache;
   private l2Cache: RedisClientType | null = null;
@@ -40,73 +28,49 @@ export class CacheManager {
   private readonly useRedis: boolean;
 
   private constructor() {
-    // L1: 메모리 캐시 (3초 TTL - 빠른 갱신)
     this.l1Cache = new NodeCache({
       stdTTL: 3,
-      checkperiod: 1, // 1초마다 만료 체크
-      useClones: false // 성능 최적화
+      checkperiod: 1,
+      useClones: false
     });
 
     this.useRedis = shouldUseRedisL2;
-    // L2: Redis 연결 (비동기 시작)
     if (this.useRedis) {
       this.redisInitPromise = this.initRedis();
     } else if (!isTestEnv) {
-      logger.info('Redis L2 캐시 비활성화: 테스트 모드 또는 CACHE_ENABLE_REDIS=false');
+      logger.info('Redis L2 캐시 비활성화');
     }
   }
 
-  /**
-   * Redis 초기화
-   * 
-   * 연결 실패 시 L1 캐시만 사용합니다.
-   */
   private async initRedis(): Promise<void> {
-    if (!this.useRedis) {
-      return;
-    }
-
-    if (this.l2Connecting) {
-      return this.redisInitPromise || Promise.resolve();
-    }
+    if (!this.useRedis) return;
+    if (this.l2Connecting) return this.redisInitPromise || Promise.resolve();
     
     this.l2Connecting = true;
     
     try {
-      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+      const { redisUrl } = system;
       logger.info(`Redis 연결 시도: ${redisUrl}`);
       
       this.l2Cache = createClient({ 
         url: redisUrl,
         socket: {
-          connectTimeout: 10000,  // 10초로 증가 (Redis 서버 준비 대기)
+          connectTimeout: 10000,
           reconnectStrategy: (retries) => {
-            // 처음 5번은 빠르게 재시도 (50ms, 100ms, 200ms, 400ms, 800ms)
-            if (retries <= 5) {
-              return Math.min(retries * 50, 1000);
-            }
-            // 이후에는 느리게 재시도 (2초 간격)
-            if (retries <= 10) {
-              return 2000;
-            }
-            // 10번 초과 시 포기
-            logger.warn(`Redis 재연결 시도 ${retries}번 실패 (메모리 캐시만 사용)`);
+            if (retries <= 5) return Math.min(retries * 50, 1000);
+            if (retries <= 10) return 2000;
             return false;
           }
         }
       }) as RedisClientType;
       
       this.l2Cache.on('error', (err) => {
-        logger.error('Redis 연결 에러', { 
-          error: err.message,
-          stack: err.stack 
-        });
+        logger.error('Redis 연결 에러', { error: err.message });
         this.l2Connected = false;
         redisHealthMonitor.recordDisconnected('cache-manager:error', err instanceof Error ? err.message : undefined);
       });
 
       this.l2Cache.on('connect', () => {
-        logger.info('Redis L2 캐시 연결 성공');
         this.l2Connected = true;
         redisHealthMonitor.recordConnected('cache-manager:connect');
       });
@@ -117,19 +81,9 @@ export class CacheManager {
         redisHealthMonitor.recordConnected('cache-manager:ready');
       });
 
-      this.l2Cache.on('reconnecting', () => {
-        logger.info('Redis 재연결 중...');
-        this.l2Connected = false;
-        redisHealthMonitor.recordReconnecting('cache-manager:reconnecting');
-      });
-
       await this.l2Cache.connect();
-      logger.info('✅ Redis 연결 완료');
     } catch (error: any) {
-      logger.warn('Redis L2 캐시 비활성화 (메모리 캐시만 사용)', { 
-        error: error.message,
-        stack: error.stack 
-      });
+      logger.warn('Redis L2 캐시 비활성화 (메모리 캐시만 사용)', { error: error.message });
       this.l2Connected = false;
       redisHealthMonitor.recordDisconnected('cache-manager:init', error?.message);
     } finally {
@@ -137,44 +91,23 @@ export class CacheManager {
     }
   }
   
-  /**
-   * Redis 연결이 준비될 때까지 대기
-   */
   public async waitForRedis(timeoutMs: number = 5000): Promise<boolean> {
-    if (!this.useRedis) {
-      return false;
-    }
-
+    if (!this.useRedis) return false;
     const startTime = Date.now();
-    
-    // Redis 초기화가 진행 중이면 대기
     if (this.redisInitPromise) {
       try {
         await Promise.race([
           this.redisInitPromise,
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Redis init timeout')), timeoutMs)
-          )
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Redis init timeout')), timeoutMs))
         ]);
       } catch (error: any) {
-        logger.warn('Redis 대기 타임아웃', { error: error.message });
-        redisHealthMonitor.recordDelay(Date.now() - startTime, 'waitForRedis:init-timeout');
         return false;
       }
     }
-    
-    // 연결 상태 확인
     while (Date.now() - startTime < timeoutMs) {
-      if (this.l2Connected) {
-        return true;
-      }
+      if (this.l2Connected) return true;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
-    if (!this.l2Connected) {
-      redisHealthMonitor.recordDelay(Date.now() - startTime, 'waitForRedis:unavailable');
-    }
-    
     return this.l2Connected;
   }
 
@@ -185,189 +118,93 @@ export class CacheManager {
     return CacheManager.instance;
   }
 
-  /**
-   * L1 캐시만 조회 (메모리)
-   */
   async getL1<T>(key: string): Promise<T | null> {
     const data = this.l1Cache.get<T>(key);
     return data !== undefined ? data : null;
   }
 
-  /**
-   * L2 캐시만 조회 (Redis)
-   */
   async getL2<T>(key: string): Promise<T | null> {
-    if (!this.useRedis || !this.l2Connected || !this.l2Cache) {
-      return null;
-    }
-
-
+    if (!this.useRedis || !this.l2Connected || !this.l2Cache) return null;
     try {
       const l2Data = await this.l2Cache.get(key);
-      if (l2Data && typeof l2Data === 'string') {
-        return JSON.parse(l2Data) as T;
-      }
+      if (l2Data && typeof l2Data === 'string') return JSON.parse(l2Data) as T;
     } catch (error) {
-      logger.error('Redis getL2 에러', { 
-        key, 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+      logger.error('Redis getL2 에러', { key });
     }
-
     return null;
   }
 
-  /**
-   * L1 캐시에 저장
-   */
   async setL1<T>(key: string, value: T, ttl: number = 3): Promise<void> {
     this.l1Cache.set(key, value, ttl);
   }
 
-  /**
-   * L2 캐시에 저장
-   */
   async setL2<T>(key: string, value: T, ttl: number = 360): Promise<void> {
-    if (!this.useRedis || !this.l2Connected || !this.l2Cache) {
-      return;
-    }
-
-
+    if (!this.useRedis || !this.l2Connected || !this.l2Cache) return;
     try {
       await this.l2Cache.setEx(key, ttl, JSON.stringify(value));
     } catch (error) {
-      logger.error('Redis setL2 에러', { 
-        key, 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+      logger.error('Redis setL2 에러', { key });
     }
   }
 
   async setL2Batch(entries: L2BatchEntry[]): Promise<void> {
-    if (!this.useRedis || !this.l2Connected || !this.l2Cache || entries.length === 0) {
-      return;
-    }
-
+    if (!this.useRedis || !this.l2Connected || !this.l2Cache || entries.length === 0) return;
     const pipeline = this.l2Cache.multi();
     entries.forEach(({ key, value, ttl }) => {
       pipeline.setEx(key, ttl ?? 360, JSON.stringify(value));
     });
-
     try {
       await pipeline.exec();
     } catch (error) {
-      logger.error('Redis setL2Batch 에러', {
-        keys: entries.map((entry) => entry.key),
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.error('Redis setL2Batch 에러');
     }
   }
 
-  /**
-   * 캐시에서 데이터 조회
-
-   * 
-   * L1 → L2 순서로 확인합니다.
-   * L2 히트 시 자동으로 L1에도 저장합니다.
-   * 
-   * @param key - 캐시 키
-   * @returns 캐시된 데이터 또는 null
-   */
   async get<T>(key: string): Promise<T | null> {
-    // L1: 메모리 캐시
     const l1Data = await this.getL1<T>(key);
-    if (l1Data !== null) {
-      return l1Data;
-    }
-
-    // L2: Redis 캐시
+    if (l1Data !== null) return l1Data;
     const l2Data = await this.getL2<T>(key);
     if (l2Data !== null) {
-      // L1에 다시 저장 (다음 요청을 위해)
       await this.setL1(key, l2Data);
       return l2Data;
     }
-
     return null;
   }
 
-  /**
-   * 캐시에 데이터 저장
-   * 
-   * L1, L2에 모두 저장합니다.
-   * 
-   * @param key - 캐시 키
-   * @param value - 저장할 데이터
-   * @param ttl - L2 캐시 TTL (초 단위, 기본값: 60초). L1은 항상 10초
-   */
   async set<T>(key: string, value: T, ttl: number = 360): Promise<void> {
-    // L1과 L2 모두 저장
     await Promise.all([
-      this.setL1(key, value, 3),   // L1은 항상 3초 (빠른 갱신)
-      this.setL2(key, value, ttl)  // L2는 지정된 TTL (기본 360초)
+      this.setL1(key, value, 3),
+      this.setL2(key, value, ttl)
     ]);
   }
 
-  /**
-   * 캐시 무효화 (모든 레벨에서 삭제)
-   * 
-   * @param key - 삭제할 캐시 키
-   */
   async delete(key: string): Promise<void> {
-    // L1
     this.l1Cache.del(key);
-
-    // L2
     if (this.useRedis && this.l2Connected && this.l2Cache) {
       try {
         await this.l2Cache.del(key);
       } catch (error) {
-        logger.error('Redis delete 에러', { 
-          key, 
-          error: error instanceof Error ? error.message : String(error) 
-        });
+        logger.error('Redis delete 에러', { key });
       }
     }
-
   }
 
-  /**
-   * 패턴 매칭으로 캐시 무효화
-   * 
-   * @param pattern - 패턴 (예: 'session:*')
-   * @example
-   * await cache.deletePattern('user:*'); // user:로 시작하는 모든 키 삭제
-   */
   async deletePattern(pattern: string): Promise<void> {
-    // L1: NodeCache는 패턴 매칭 없으므로 전체 키 확인
     const keys = this.l1Cache.keys();
     const regex = new RegExp(pattern.replace('*', '.*'));
     keys.forEach(key => {
-      if (regex.test(key)) {
-        this.l1Cache.del(key);
-      }
+      if (regex.test(key)) this.l1Cache.del(key);
     });
-
-    // L2: Redis SCAN
     if (this.useRedis && this.l2Connected && this.l2Cache) {
       try {
         const keys = await this.l2Cache.keys(pattern);
-        if (keys.length > 0) {
-          await this.l2Cache.del(keys);
-        }
+        if (keys.length > 0) await this.l2Cache.del(keys);
       } catch (error) {
-        logger.error('Redis deletePattern 에러', { 
-          pattern, 
-          error: error instanceof Error ? error.message : String(error) 
-        });
+        logger.error('Redis deletePattern 에러', { pattern });
       }
     }
-
   }
 
-  /**
-   * 캐시 통계
-   */
   getStats() {
     return {
       l1: this.l1Cache.getStats(),
@@ -375,60 +212,31 @@ export class CacheManager {
     };
   }
 
-  /**
-   * Redis 연결 종료
-   */
   async close() {
-    if (this.l2Cache) {
-      await this.l2Cache.quit();
-    }
+    if (this.l2Cache) await this.l2Cache.quit();
   }
 
-  /**
-   * Redis 클라이언트 접근 (데몬용 SCAN 등)
-   */
   getRedisClient(): RedisClientType | null {
-    if (!this.useRedis) {
-      return null;
-    }
-    return this.l2Connected && this.l2Cache ? this.l2Cache : null;
+    return this.useRedis && this.l2Connected && this.l2Cache ? this.l2Cache : null;
   }
 
-
-  /**
-   * Redis SCAN 실행 (패턴 매칭)
-   */
   async scan(pattern: string, count: number = 100): Promise<string[]> {
     const redis = this.getRedisClient();
-    if (!redis) {
-      return [];
-    }
-
+    if (!redis) return [];
     try {
       const keys: string[] = [];
       let cursor = '0';
-      
       do {
-        const result = await redis.scan(cursor, {
-          MATCH: pattern,
-          COUNT: count
-        });
-        
+        const result = await redis.scan(cursor, { MATCH: pattern, COUNT: count });
         cursor = result.cursor;
         keys.push(...result.keys);
       } while (cursor !== '0');
-      
       return keys;
     } catch (error) {
-      logger.error('Redis SCAN 에러', { 
-        pattern, 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+      logger.error('Redis SCAN 에러', { pattern });
       return [];
     }
   }
 }
 
-// 싱글톤 인스턴스 export
 export const cacheManager = CacheManager.getInstance();
-

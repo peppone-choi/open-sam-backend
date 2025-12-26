@@ -975,6 +975,69 @@ router.post('/update-game', async (req, res) => {
 
 /**
  * @swagger
+ * /api/admin/nation-stats:
+ *   post:
+ *     summary: 국가 통계 정보 조회
+ *     tags: [Admin]
+ */
+router.post('/nation-stats', async (req, res) => {
+  try {
+    const sessionId = req.query.session_id || req.body.session_id || 'sangokushi_default';
+    const sortType = Number(req.body.sortType) || 0;
+    
+    // 국가 목록 조회
+    const nations = await nationRepository.findBySession(sessionId);
+    
+    // 도시 정보 집계 (국가별 도시 수)
+    const cities = await cityRepository.findBySession(sessionId);
+    const nationCityCountMap = new Map<number, number>();
+    for (const city of cities) {
+      const nationId = city.nation || city.data?.nation || 0;
+      if (nationId > 0) {
+        nationCityCountMap.set(nationId, (nationCityCountMap.get(nationId) || 0) + 1);
+      }
+    }
+    
+    // 통계 데이터 구성
+    const stats = nations.map((n: any) => {
+      const nationId = n.nation || n.data?.nation || 0;
+      return {
+        nation: nationId,
+        name: n.name || n.data?.name || '',
+        color: n.color || n.data?.color || '#666',
+        power: n.power || n.data?.power || 0,
+        gennum: n.gennum || n.data?.gennum || 0,
+        city_count: nationCityCountMap.get(nationId) || 0,
+        gold: n.gold || n.data?.gold || 0,
+        rice: n.rice || n.data?.rice || 0
+      };
+    });
+    
+    // 정렬 (0: 국력순, 1: 도시순, 2: 장수순)
+    if (sortType === 0) {
+      stats.sort((a, b) => b.power - a.power);
+    } else if (sortType === 1) {
+      stats.sort((a, b) => b.city_count - a.city_count);
+    } else if (sortType === 2) {
+      stats.sort((a, b) => b.gennum - a.gennum);
+    }
+    
+    res.json({
+      result: true,
+      success: true,
+      stats
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      result: false,
+      success: false,
+      reason: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
  * /api/admin/info:
  *   post:
  *     summary: 관리 정보 조회

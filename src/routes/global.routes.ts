@@ -234,4 +234,30 @@ router.post('/diplomacy', async (req: Request, res: Response, next: NextFunction
   }
 });
 
+/**
+ * @swagger
+ * /api/global/get-cached-map:
+ *   get:
+ *     summary: 캐시된 맵 정보 및 히스토리 조회
+ *     tags: [Global]
+ */
+router.get('/get-cached-map', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionId = (req.query.session_id || req.query.serverID || 'sangokushi_default') as string;
+    
+    const { GetCurrentHistoryService } = await import('../services/global/GetCurrentHistory.service');
+    const result = await GetCurrentHistoryService.execute({ session_id: sessionId });
+    
+    if (result.success) {
+      // 캐시 헤더 추가 (1분간 브라우저 캐싱, 5분간 서버 공유 캐싱)
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+      res.json(result.data);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

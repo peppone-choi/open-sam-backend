@@ -1,9 +1,6 @@
 import mongoose from 'mongoose';
 import { logger } from '../common/logger';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+import { configManager } from '../config/ConfigManager';
 
 export class MongoConnection {
   private static instance: MongoConnection;
@@ -24,9 +21,9 @@ export class MongoConnection {
       return;
     }
 
-    const mongoUri = uri || process.env.MONGODB_URI || 'mongodb://localhost:27017/sangokushi';
-    console.log('🔌 MongoDB URI:', mongoUri);
-
+    const { mongodbUri } = configManager.get().system;
+    const mongoUri = uri || mongodbUri || 'mongodb://localhost:27017/sangokushi';
+    
     try {
       await mongoose.connect(mongoUri, {
         // 연결 풀링 최적화

@@ -17,7 +17,17 @@ export class CheDaeuiPersonality extends BasePersonality {
   }
   
   getInfo(): string {
-    return '국가를 위해 헌신. 충성도 관련 보너스';
+    return '명성 +10%, 훈련 -5';
+  }
+
+  onCalcStat(general: any, statName: string, value: any, aux?: any): any {
+    if (statName === 'experience') {
+      return value * 1.1;
+    }
+    if (statName === 'bonusTrain') {
+      return value - 5;
+    }
+    return value;
   }
 }
 

@@ -31,19 +31,19 @@ function mapAICommandToGameCommand(aiCommand: string): string {
     'settlement': 'ENCOURAGE_SETTLEMENT',   // 정착장려 (인구)
     'trust': 'SELECT_CITIZEN',              // 선정 (민심)
     'tech': 'RESEARCH_TECH',                // 기술연구
-    
+
     // 군사 (Military)
     'recruit': 'CONSCRIPT',                 // 징병
     'train': 'TRAIN',                       // 훈련
     'morale': 'BOOST_MORALE',               // 사기진작
-    
+
     // 특수 (Special)
     'cure': 'REST_CURE',                    // 요양
     'raise_army': 'RAISE_ARMY',             // 거병
     'found_nation': 'FOUND_NATION',         // 건국
     'move': 'MOVE'                          // 이동
   };
-  
+
   return commandMap[aiCommand] || aiCommand;
 }
 
@@ -84,7 +84,7 @@ export interface CommandPriority {
 // AI 정책 설정
 export interface AIPolicyConfig {
   difficulty: AIDifficulty;
-  
+
   // 자원 임계값
   minNationGold: number;
   minNationRice: number;
@@ -92,20 +92,20 @@ export interface AIPolicyConfig {
   minWarRice: number;
   minDevelopGold: number;
   minDevelopRice: number;
-  
+
   // 군사 설정
   minWarLeadership: number;
   minWarCrew: number;
   properWarTrainAtmos: number;
   safeRecruitPopRatio: number;
-  
+
   // 내정 설정
   targetDevelopmentRate: number;
   minCityPopulation: number;
-  
+
   // 행동 우선순위
   actionPriorities: string[];
-  
+
   // 자원 행동 설정
   minResourceActionAmount: number;
   maxResourceActionAmount: number;
@@ -186,7 +186,7 @@ const DEFAULT_POLICIES: Record<AIDifficulty, Partial<AIPolicyConfig>> = {
 export class AIEngine {
   private policy: AIPolicyConfig;
   private rng: () => number;
-  
+
   // 캐시된 데이터
   private generalType: number = 0;
   private diplomacyState: DiplomacyState = DiplomacyState.PEACE;
@@ -196,10 +196,46 @@ export class AIEngine {
   private cachedGeneralCrew = 0;
   private cachedAverageTrain = 0;
   private cachedAverageMorale = 0;
-  
+
+  /**
+   * 등용 제안에 대한 응답 결정 (AIEngine 버전)
+   */
+  public async decideRecruitmentResponse(recruiter: any, general: any): Promise<boolean> {
+    // SimpleAI와 유사한 로직 사용
+    const genData = general.data || general;
+    const recruiterData = recruiter.data || recruiter;
+
+    const myAffinity = genData.affinity ?? 0;
+    const recruiterAffinity = recruiterData.affinity ?? 0;
+
+    if (myAffinity === 999) return false;
+
+    const diff = Math.abs(myAffinity - recruiterAffinity);
+    const distance = diff > 75 ? 150 - diff : diff;
+
+    let baseProb = 0.9 - (distance / 75.0) * 0.8;
+
+    // AIEngine은 HistoricalArchetype 대신 GeneralType 사용
+    const myType = this.generalType || this.calculateGeneralType(general);
+
+    // 무장/지장 등에 따른 보정 (예시)
+    if (myType & GeneralType.CHARMER) baseProb *= 1.2;
+
+    const myNationId = genData.nation || 0;
+    if (myNationId !== 0) {
+      baseProb *= 0.15;
+      if ((genData.officer_level || 0) === 12) return false;
+    } else {
+      baseProb *= 1.8;
+    }
+
+    const finalProb = Math.min(Math.max(baseProb, 0.05), 0.95);
+    return this.rng() < finalProb;
+  }
+
   private static readonly DIPLOMACY_CACHE_TTL_MS = 60_000;
   private static diplomacyCache: Map<string, { state: DiplomacyState; expiresAt: number }> = new Map();
-  
+
   private getStackTroopCount(stack: any): number {
     if (!stack) {
       return 0;
@@ -211,16 +247,16 @@ export class AIEngine {
     const stackCount = stack.stack_count ?? 0;
     return unitSize * stackCount;
   }
-  
+
   // 스택 시스템 제거됨 - 빈 배열 반환
   private async getGeneralUnitStacks(general: any, env: any): Promise<any[]> {
     return [];
   }
-  
+
   private async getCityUnitStacks(cityId: number, env: any): Promise<any[]> {
     return [];
   }
-  
+
   private refreshGeneralStackStats(general: any): void {
     const fallbackCrew = general.data?.crew || general.crew || 0;
     const fallbackTrain = general.data?.train || general.train || 0;
@@ -254,7 +290,7 @@ export class AIEngine {
       this.cachedAverageMorale = fallbackMorale;
     }
   }
-  
+
   constructor(
     difficulty: AIDifficulty = AIDifficulty.NORMAL,
     customPolicy?: Partial<AIPolicyConfig>,
@@ -288,7 +324,7 @@ export class AIEngine {
       ...DEFAULT_POLICIES[difficulty],
       ...customPolicy
     } as AIPolicyConfig;
-    
+
     // 간단한 PRNG (시드 기반)
     let s = seed ?? Math.floor(Math.random() * 1000000);
     this.rng = () => {
@@ -296,7 +332,7 @@ export class AIEngine {
       return s - Math.floor(s);
     };
   }
-  
+
   /**
    * 장수의 다음 커맨드를 결정
    */
@@ -309,10 +345,10 @@ export class AIEngine {
   ): Promise<CommandDecision | null> {
     // 장수 타입 계산
     this.generalType = this.calculateGeneralType(general);
-    
+
     // 외교 상태 계산
     this.diplomacyState = await this.calculateDiplomacyState(nation, env);
-    
+
     // 도시 상태가 주어진 경우 평가
     if (cities) {
       await this.evaluateCities(cities, nation);
@@ -321,7 +357,7 @@ export class AIEngine {
     this.cachedGeneralStacks = await this.getGeneralUnitStacks(general, env);
     this.cachedCityStacks = city?.city ? await this.getCityUnitStacks(city.city, env) : [];
     this.refreshGeneralStackStats(general);
-    
+
     // 1. 요양 (부상이 심한 경우 최우선)
     const injury = general.data?.injury || 0;
     const cureThreshold = this.policy.minWarLeadership || 60; // 임시 threshold
@@ -333,7 +369,7 @@ export class AIEngine {
         priority: 100
       };
     }
-    
+
     // 2. 거병/건국 (재야 장수일 때)
     const npcType = general.npc || general.data?.npc || 0;
     const nationId = general.nation || general.data?.nation || 0;
@@ -342,7 +378,7 @@ export class AIEngine {
     const rice = general.data?.rice || general.rice || 0;
     const leadership = general.data?.leadership || general.leadership || 50;
     const charm = general.data?.charm || general.charm || 50;
-    
+
     // 재야 상태 (nation = 0)
     if (nationId === 0) {
       // 도시에 있고, 충분한 자원과 능력치가 있으면 거병
@@ -354,7 +390,7 @@ export class AIEngine {
           priority: 95
         };
       }
-      
+
       // 군주급 NPC면 건국 (도시 소유 등 조건 완화)
       if (npcType >= 2 && officerLevel === 12 && leadership >= 70) {
         return {
@@ -369,7 +405,7 @@ export class AIEngine {
         };
       }
     }
-    
+
     // 3. 군주인 경우 국가 커맨드 우선 검토
     if (officerLevel === 12 || officerLevel === '군주') {
       const nationCommand = await this.decideNationCommand(general, nation, env);
@@ -377,7 +413,7 @@ export class AIEngine {
         return nationCommand;
       }
     }
-    
+
     // 4. 우선순위에 따라 행동 결정
     for (const actionName of this.policy.actionPriorities) {
       const decision = await this.evaluateAction(
@@ -387,12 +423,12 @@ export class AIEngine {
         nation,
         env
       );
-      
+
       if (decision) {
         return decision;
       }
     }
-    
+
     // 기본 행동: 중립
     return {
       command: 'neutral',
@@ -401,7 +437,7 @@ export class AIEngine {
       priority: 0
     };
   }
-  
+
   /**
    * 장수 타입 계산 (무장/지장/통솔장)
    */
@@ -418,9 +454,9 @@ export class AIEngine {
     const intel = Math.max(1, general.data?.intel || general.intel || 50);
     const politics = general.data?.politics || general.politics || 50;
     const charm = general.data?.charm || general.charm || 50;
-    
+
     let genType = 0;
-    
+
     // 1. 무장 vs 지장 (기본 분류)
     if (strength >= intel) {
       genType = GeneralType.WARRIOR;
@@ -435,25 +471,25 @@ export class AIEngine {
         genType |= GeneralType.WARRIOR;
       }
     }
-    
+
     // 2. 통솔장 (군사 지휘관)
     if (leadership >= this.policy.minWarLeadership) {
       genType |= GeneralType.COMMANDER;
     }
-    
+
     // 3. 정치가 (민심/외교 전문)
     if (politics >= 70) {
       genType |= GeneralType.POLITICIAN;
     }
-    
+
     // 4. 매력가 (인구/등용 전문)
     if (charm >= 70) {
       genType |= GeneralType.CHARMER;
     }
-    
+
     return genType;
   }
-  
+
   /**
    * 외교 상태 계산 (DiplomacyEngine 사용)
    *
@@ -587,7 +623,7 @@ export class AIEngine {
       expiresAt: Date.now() + AIEngine.DIPLOMACY_CACHE_TTL_MS,
     });
   }
-  
+
   /**
    * 도시 평가
    */
@@ -610,37 +646,37 @@ export class AIEngine {
         priority: 0
       };
     }
-    
+
     // 캐시 확인
     if (this.cityEvaluations.has(city.city)) {
       return this.cityEvaluations.get(city.city)!;
     }
-    
+
     // 개발도 계산
     const rates = this.calculateCityDevelopmentRates(city);
-    
+
     // 종합 점수 계산
     const avgDevelopmentRate = (
       rates.pop + rates.agri + rates.comm +
       rates.secu + rates.def + rates.wall
     ) / 6;
-    
+
     // 전략적 중요도
     const isFront = city.front > 0;
     const isSupply = city.supply > 0;
-    
+
     let priority = avgDevelopmentRate * 100;
-    
+
     // 전방 도시는 우선순위 증가
     if (isFront) {
       priority += 50;
     }
-    
+
     // 보급 도시는 우선순위 증가
     if (isSupply) {
       priority += 30;
     }
-    
+
     const evaluation: CityEvaluation = {
       cityId: city.city,
       score: priority,
@@ -656,11 +692,11 @@ export class AIEngine {
       isSupply,
       priority
     };
-    
+
     this.cityEvaluations.set(city.city, evaluation);
     return evaluation;
   }
-  
+
   /**
    * 도시 개발도 계산
    */
@@ -675,7 +711,7 @@ export class AIEngine {
       wall: city.wall / Math.max(1, city.wall_max)
     };
   }
-  
+
   /**
    * 여러 도시 평가
    */
@@ -686,7 +722,7 @@ export class AIEngine {
       }
     }
   }
-  
+
   /**
    * 공격 여부 판단
    */
@@ -700,32 +736,32 @@ export class AIEngine {
     if (this.diplomacyState < DiplomacyState.WAR_IMMINENT) {
       return false;
     }
-    
+
     // 통솔장이 아니면 공격 불가
     if (!(this.generalType & GeneralType.COMMANDER)) {
       return false;
     }
-    
+
     // 병력 확인
     const crew = this.cachedGeneralCrew || general.data?.crew || 0;
     if (crew < (this.policy.minWarCrew || 1000)) {
       return false;
     }
-    
+
     // 훈련도/사기 확인
     const train = this.cachedAverageTrain || general.data?.train || 0;
     const atmos = this.cachedAverageMorale || general.data?.atmos || 0;
     if (Math.max(train, atmos) < (this.policy.properWarTrainAtmos || 70)) {
       return false;
     }
-    
+
     // 자원 확인
     const gold = general.data?.gold || 0;
     const rice = general.data?.rice || 0;
     if (gold < this.policy.minWarGold || rice < this.policy.minWarRice) {
       return false;
     }
-    
+
     // 난이도별 공격 확률
     const attackProb = {
       [AIDifficulty.EASY]: 0.3,
@@ -733,10 +769,10 @@ export class AIEngine {
       [AIDifficulty.HARD]: 0.7,
       [AIDifficulty.EXPERT]: 0.9
     }[this.policy.difficulty];
-    
+
     return this.rng() < attackProb;
   }
-  
+
   /**
    * 최적의 내정 커맨드 선택
    */
@@ -748,22 +784,22 @@ export class AIEngine {
   ): CommandDecision | null {
     const evaluation = this.evaluateCity(city);
     const rates = this.calculateCityDevelopmentRates(city);
-    
+
     // 장수 타입에 따른 능력치
     const isCommander = this.generalType & GeneralType.COMMANDER;
     const isWarrior = this.generalType & GeneralType.WARRIOR;
     const isStrategist = this.generalType & GeneralType.STRATEGIST;
     const isPolitician = this.generalType & GeneralType.POLITICIAN;
     const isCharmer = this.generalType & GeneralType.CHARMER;
-    
+
     // 자원 확인
     const gold = general.data?.gold || general.gold || 0;
     const rice = general.data?.rice || general.rice || 0;
     const develCost = env.develcost || 24;
-    
+
     // 개발이 필요한 항목 찾기
     const developmentNeeds: Array<{ command: string; rate: number; priority: number }> = [];
-    
+
     // 민심 개발 (모든 타입 가능, 통솔장/정치가는 우선순위 높음) - 주민선정
     if (rates.trust < 0.98 && gold >= develCost * 3) {
       const priorityBonus = (isCommander || isPolitician) ? 1.5 : 1.0;
@@ -773,7 +809,7 @@ export class AIEngine {
         priority: Math.max(0, (1 - rates.trust / 2 - 0.2)) * 100 * priorityBonus
       });
     }
-    
+
     // 인구 개발 (모든 타입 가능, 통솔장/매력가는 우선순위 높음) - 정착장려
     if (rates.pop < this.policy.targetDevelopmentRate && rice >= develCost * 2) {
       const priorityBonus = (isCommander || isCharmer) ? 1.5 : 1.0;
@@ -783,7 +819,7 @@ export class AIEngine {
         priority: (1 - rates.pop) * 90 * priorityBonus
       });
     }
-    
+
     // 기술 연구 (모든 타입 가능, 지장은 우선순위 높음) - 국가 기술력이 뒤처져 있을 때
     if (nation && env) {
       const tech = nation.tech || nation.data?.tech || 0;
@@ -791,7 +827,7 @@ export class AIEngine {
       const currentYear = env.year || startYear;
       const relYear = currentYear - startYear;
       const techLimit = relYear * 50;
-      
+
       // 기술이 연도 대비 뒤처져 있으면 연구
       if (tech < techLimit) {
         const priorityBonus = isStrategist ? 1.5 : 1.0;
@@ -802,7 +838,7 @@ export class AIEngine {
         });
       }
     }
-    
+
     // 농업/상업 (모든 타입 가능, 지장은 우선순위 높음)
     if (rates.agri < this.policy.targetDevelopmentRate && gold >= develCost) {
       const priorityBonus = isStrategist ? 1.5 : 1.0;
@@ -820,7 +856,7 @@ export class AIEngine {
         priority: (1 - rates.comm) * 80 * priorityBonus
       });
     }
-    
+
     // 치안/방어/성벽 (모든 타입 가능, 무장은 우선순위 높음)
     if (rates.secu < this.policy.targetDevelopmentRate && gold >= develCost) {
       const priorityBonus = isPolitician ? 1.5 : 1.0;
@@ -846,18 +882,18 @@ export class AIEngine {
         priority: (1 - rates.wall) * 70 * priorityBonus
       });
     }
-    
+
     if (developmentNeeds.length === 0) {
       return null;
     }
-    
+
     // 우선순위 정렬
     developmentNeeds.sort((a, b) => b.priority - a.priority);
-    
+
     // 가장 필요한 것 선택 (확률적)
     const totalPriority = developmentNeeds.reduce((sum, item) => sum + item.priority, 0);
     let rand = this.rng() * totalPriority;
-    
+
     for (const need of developmentNeeds) {
       rand -= need.priority;
       if (rand <= 0) {
@@ -870,7 +906,7 @@ export class AIEngine {
         };
       }
     }
-    
+
     const gameCommand = mapAICommandToGameCommand(developmentNeeds[0].command);
     return {
       command: gameCommand,
@@ -879,7 +915,7 @@ export class AIEngine {
       priority: developmentNeeds[0].priority
     };
   }
-  
+
   /**
    * 최적의 군사 커맨드 선택
    */
@@ -895,18 +931,18 @@ export class AIEngine {
     const leadership = general.data?.leadership || general.leadership || 50;
     const gold = general.data?.gold || general.gold || 0;
     const rice = general.data?.rice || general.rice || 0;
-    
+
     // 통솔이 매우 낮으면 (30 미만) 군사 행동 불가
     if (leadership < 30) {
       return null;
     }
-    
+
     // 병력이 부족하면 징병 (통솔 40 이상, 자원 충분)
     if (crew < (this.policy.minWarCrew || 1000) && leadership >= 40) {
       const cityData = city.data || city;
       const popRatio = (cityData.pop || 0) / Math.max(cityData.pop_max || 1, 1);
       const recruitCost = 1000; // 대략적 비용
-      
+
       if (popRatio >= this.policy.safeRecruitPopRatio && gold >= recruitCost && rice >= 10) {
         // crewType: 1100 = 도민병 (기본 병종, units.json 기준)
         return {
@@ -917,7 +953,7 @@ export class AIEngine {
         };
       }
     }
-    
+
     // 병사가 있으면 훈련도/사기 체크
     if (crew > 0) {
       // 훈련도가 부족하면 훈련 (통솔 40 이상, 자원 충분)
@@ -929,7 +965,7 @@ export class AIEngine {
           priority: 85
         };
       }
-      
+
       // 사기가 부족하면 사기진작 (통솔 40 이상, 자원 충분)
       if (atmos < this.policy.properWarTrainAtmos && leadership >= 40 && gold >= 50 && rice >= 50) {
         return {
@@ -940,13 +976,13 @@ export class AIEngine {
         };
       }
     }
-    
+
     // 전쟁 상태이고 조건이 충족되면 공격 (통솔장만 가능)
     if ((this.generalType & GeneralType.COMMANDER) && this.diplomacyState >= DiplomacyState.WAR) {
       // 실제로는 인접 적 도시 찾기 필요
       // 여기서는 간단히 공격 가능 여부만 반환
-        if (crew >= (this.policy.minWarCrew || 1000) &&
-            Math.max(train, atmos) >= (this.policy.properWarTrainAtmos || 70)) {
+      if (crew >= (this.policy.minWarCrew || 1000) &&
+        Math.max(train, atmos) >= (this.policy.properWarTrainAtmos || 70)) {
 
         return {
           command: 'attack',
@@ -956,10 +992,10 @@ export class AIEngine {
         };
       }
     }
-    
+
     return null;
   }
-  
+
   /**
    * 개별 행동 평가
    */
@@ -973,15 +1009,15 @@ export class AIEngine {
     switch (actionName) {
       case 'found_nation':
         return this.evaluateFoundNation(general, city, nation, env);
-      
+
       case 'raise_army':
         return this.evaluateRaiseArmy(general, city, nation, env);
-      
+
       case 'recruit':
       case 'train':
       case 'morale':
         return this.selectBestMilitaryCommand(general, city, nation, env);
-      
+
       case 'agriculture':
       case 'commerce':
       case 'security':
@@ -991,21 +1027,21 @@ export class AIEngine {
       case 'settlement':
       case 'tech':
         return this.selectBestDomesticCommand(general, city, nation, env);
-      
+
       case 'attack':
         if (this.shouldAttack(general, null, city, nation)) {
           return this.selectBestMilitaryCommand(general, city, nation, env);
         }
         return null;
-      
+
       case 'garrison':
         return this.evaluateGarrisonAction(general, city, nation, env);
-      
+
       default:
         return null;
     }
   }
-  
+
   private async evaluateGarrisonAction(
     general: any,
     city: any,
@@ -1084,7 +1120,7 @@ export class AIEngine {
 
     return null;
   }
-  
+
   /**
    * 거병 평가
    */
@@ -1099,7 +1135,7 @@ export class AIEngine {
     const rice = general.data?.rice || general.rice || 0;
     const leadership = general.data?.leadership || general.leadership || 50;
     const charm = general.data?.charm || general.charm || 50;
-    
+
     // 재야이고, 무주 도시에 있고, 자원과 능력치가 충분하면 거병
     if (nationId === 0 && city && city.nation === 0) {
       if (leadership >= 60 && charm >= 50 && gold >= 5000 && rice >= 5000) {
@@ -1111,10 +1147,10 @@ export class AIEngine {
         };
       }
     }
-    
+
     return null;
   }
-  
+
   /**
    * 건국 평가
    */
@@ -1129,7 +1165,7 @@ export class AIEngine {
     const officerLevel = general.data?.officer_level || 0;
     const leadership = general.data?.leadership || general.leadership || 50;
     const gold = general.data?.gold || general.gold || 0;
-    
+
     // 재야이고, 군주급이고, 높은 능력치
     if (nationId === 0 && (officerLevel === 12 || npcType >= 2) && leadership >= 70 && gold >= 10000) {
       return {
@@ -1143,10 +1179,10 @@ export class AIEngine {
         priority: 98
       };
     }
-    
+
     return null;
   }
-  
+
   /**
    * 국가 커맨드 결정 (군주 전용)
    */
@@ -1165,105 +1201,207 @@ export class AIEngine {
     //     priority: 50
     //   };
     // }
-    
+
     // 선전포고 검토
     if (this.diplomacyState === DiplomacyState.PEACE) {
-      const shouldDeclareWar = await this.shouldDeclareWar(nation, env);
-      if (shouldDeclareWar) {
+      const targetNationId = await this.shouldDeclareWar(nation, env);
+      if (targetNationId) {
         return {
-          command: 'declare_war',
-          args: { targetNationId: shouldDeclareWar },
-          reason: 'ready_for_war',
+          command: 'DECLARE_WAR',
+          args: { destNationID: targetNationId },
+          reason: 'expansion_declare_war',
           priority: 70
         };
       }
+
+      const naTargetId = await this.shouldProposeNonAggression(nation, env);
+      if (naTargetId) {
+        return {
+          command: 'PROPOSE_NON_AGGRESSION',
+          args: { 
+            destNationID: naTargetId,
+            year: env.year + 2,
+            month: 1
+          },
+          reason: 'safety_propose_na',
+          priority: 65
+        };
+      }
     }
-    
+
+    // 종전 검토
+    if (this.diplomacyState >= DiplomacyState.WAR_IMMINENT) {
+      const peaceTargetId = await this.shouldProposePeace(nation, env);
+      if (peaceTargetId) {
+        return {
+          command: 'PROPOSE_PEACE',
+          args: { destNationID: peaceTargetId },
+          reason: 'emergency_propose_peace',
+          priority: 80
+        };
+      }
+    }
+
     return null;
   }
-  
+
   /**
-   * 세율 결정
+   * 불가침 제의 여부 결정
    */
-  private decideTaxRate(nation: any, env: any): number {
-    // 개발도에 따라 세율 조정
-    const avgDevRate = this.getAverageNationDevelopmentRate();
-    
-    if (avgDevRate > 0.95) return 25;
-    if (avgDevRate > 0.70) return 20;
-    if (avgDevRate > 0.50) return 15;
-    return 10;
+  private async shouldProposeNonAggression(nation: any, env: any): Promise<number | null> {
+    const sessionId = env?.session_id || env?.sessionId;
+    const nationId = nation?.nation ?? nation?.data?.nation;
+    if (!sessionId || !nationId) return null;
+
+    try {
+      const { DiplomacyEngine } = await import('./DiplomacyEngine');
+      const categorized = await DiplomacyEngine.categorizeNationCities(sessionId, nationId);
+      
+      // 전방 도시가 많고 국력이 약하면 불가침 시도
+      if (categorized.frontCities.size >= 3) {
+        const neighbors = await this.getNeighborNations(sessionId, Array.from(categorized.frontCities.keys()));
+        
+        for (const neighborId of neighbors) {
+          if (neighborId === 0 || neighborId === nationId) continue;
+          
+          const relation = await DiplomacyEngine.calcDiplomacyState({ nation: nationId }, { ...env, session_id: sessionId });
+          if (relation.dipState === DIP_STATE.PEACE) {
+            const neighborNation = await nationRepository.findByNationNum(sessionId, neighborId);
+            if (neighborNation && (neighborNation.power || 0) > (nation.power || 0) * 1.2) {
+              return neighborId;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('[AIEngine] shouldProposeNonAggression failed', error);
+    }
+    return null;
   }
-  
+
   /**
-   * 국가 평균 개발도
+   * 종전 제의 여부 결정
    */
-  private getAverageNationDevelopmentRate(): number {
-    if (this.cityEvaluations.size === 0) {
-      return 0.5;
+  private async shouldProposePeace(nation: any, env: any): Promise<number | null> {
+    const sessionId = env?.session_id || env?.sessionId;
+    const nationId = nation?.nation ?? nation?.data?.nation;
+    if (!sessionId || !nationId) return null;
+
+    try {
+      const { DiplomacyEngine, DIP_STATE } = await import('./DiplomacyEngine');
+      const relationInfo = await DiplomacyEngine.calcDiplomacyState({ nation: nationId }, { ...env, session_id: sessionId });
+      
+      if (relationInfo.dipState === DIP_STATE.WAR) {
+        // 전방 도시를 모두 잃었거나 국력이 50% 이하로 떨어지면 종전 구걸
+        const categorized = await DiplomacyEngine.categorizeNationCities(sessionId, nationId);
+        if (categorized.frontCities.size === 0 || (nation.power || 0) < (nation.data?.aux?.maxPower || 1000) * 0.5) {
+          // 전쟁 중인 국가 중 하나 선택
+          for (const [targetId, priority] of relationInfo.warTargetNation.entries()) {
+            if (targetId !== 0 && priority === 2) return targetId;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('[AIEngine] shouldProposePeace failed', error);
     }
-    
-    let totalRate = 0;
-    for (const evaluation of this.cityEvaluations.values()) {
-      totalRate += evaluation.developmentRate;
-    }
-    
-    return totalRate / this.cityEvaluations.size;
+    return null;
   }
-  
+
+  /**
+   * 인접 국가 목록 조회
+   */
+  private async getNeighborNations(sessionId: string, cityIds: number[]): Promise<number[]> {
+    const neighbors = new Set<number>();
+    try {
+      const { searchDistanceAsync } = await import('../func/searchDistance');
+      const { cityRepository } = await import('../repositories/city.repository');
+      
+      for (const cityId of cityIds) {
+        const distanceMap = await searchDistanceAsync(sessionId, cityId, 1);
+        for (const neighborCityId of Object.keys(distanceMap).map(Number)) {
+          const neighborCity = await cityRepository.findByCityNum(sessionId, neighborCityId);
+          if (neighborCity && neighborCity.nation !== 0) {
+            neighbors.add(neighborCity.nation);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('[AIEngine] getNeighborNations failed', error);
+    }
+    return Array.from(neighbors);
+  }
+
   /**
    * 선전포고 여부 결정
    */
   private async shouldDeclareWar(nation: any, env: any): Promise<number | null> {
     // 게임 초기에는 선포 안함
-    const gameYear = env.year - env.startyear;
+    const gameYear = (env.year || 184) - (env.startyear || 184);
     if (gameYear < 2) {
       return null;
     }
-    
+
     // 개발도 확인
     const avgDevRate = this.getAverageNationDevelopmentRate();
-    if (avgDevRate < 0.7) {
+    if (avgDevRate < 0.6) { // 0.7 -> 0.6으로 하향
       return null;
     }
-    
+
     // 자원 확인
-    if (nation.gold < this.policy.minNationGold * 2 ||
-        nation.rice < this.policy.minNationRice * 2) {
+    const gold = nation.gold || nation.data?.gold || 0;
+    const rice = nation.rice || nation.data?.rice || 0;
+    if (gold < this.policy.minNationGold || rice < this.policy.minNationRice) {
       return null;
     }
-    
+
     // 난이도별 선포 확률
     const declareProb = {
       [AIDifficulty.EASY]: 0.1,
       [AIDifficulty.NORMAL]: 0.2,
-      [AIDifficulty.HARD]: 0.3,
-      [AIDifficulty.EXPERT]: 0.5
+      [AIDifficulty.HARD]: 0.4, // 0.3 -> 0.4
+      [AIDifficulty.EXPERT]: 0.6  // 0.5 -> 0.6
     }[this.policy.difficulty];
-    
+
     if (this.rng() < declareProb) {
-      // 실제로는 인접 국가 목록에서 선택
-      // 여기서는 임시로 null 반환
-      return null;
+      const sessionId = env?.session_id || env?.sessionId;
+      const nationId = nation?.nation ?? nation?.data?.nation;
+      
+      try {
+        const { DiplomacyEngine } = await import('./DiplomacyEngine');
+        const categorized = await DiplomacyEngine.categorizeNationCities(sessionId, nationId);
+        const neighbors = await this.getNeighborNations(sessionId, Array.from(categorized.frontCities.keys()));
+        
+        // 국력이 80% 이하인 약한 이웃 검색
+        for (const neighborId of neighbors) {
+          if (neighborId === 0 || neighborId === nationId) continue;
+          
+          const neighborNation = await nationRepository.findByNationNum(sessionId, neighborId);
+          if (neighborNation && (neighborNation.power || 0) < (nation.power || 0) * 0.8) {
+            return neighborId;
+          }
+        }
+      } catch (error) {
+        console.warn('[AIEngine] shouldDeclareWar detailed check failed', error);
+      }
     }
-    
+
     return null;
   }
-  
+
   /**
    * 정책 업데이트
    */
   updatePolicy(updates: Partial<AIPolicyConfig>): void {
     this.policy = { ...this.policy, ...updates };
   }
-  
+
   /**
    * 현재 정책 조회
    */
   getPolicy(): Readonly<AIPolicyConfig> {
     return Object.freeze({ ...this.policy });
   }
-  
+
   /**
    * 캐시 초기화
    */
@@ -1281,23 +1419,23 @@ export class AIEngineFactory {
   static create(difficulty: AIDifficulty, seed?: number): AIEngine {
     return new AIEngine(difficulty, {}, seed);
   }
-  
+
   static createEasy(seed?: number): AIEngine {
     return new AIEngine(AIDifficulty.EASY, {}, seed);
   }
-  
+
   static createNormal(seed?: number): AIEngine {
     return new AIEngine(AIDifficulty.NORMAL, {}, seed);
   }
-  
+
   static createHard(seed?: number): AIEngine {
     return new AIEngine(AIDifficulty.HARD, {}, seed);
   }
-  
+
   static createExpert(seed?: number): AIEngine {
     return new AIEngine(AIDifficulty.EXPERT, {}, seed);
   }
-  
+
   static createCustom(
     difficulty: AIDifficulty,
     customPolicy: Partial<AIPolicyConfig>,

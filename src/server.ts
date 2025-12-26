@@ -53,11 +53,10 @@ import loghCommanderRoutes from './routes/logh/commander.route';
 import loghFleetRoutes from './routes/logh/fleet.route';
 import loghCommandRoutes from './routes/logh/command.route';
 import gin7Routes from './routes/gin7';
-import { UniqueConst } from './const/UniqueConst';
+import { configManager } from './config/ConfigManager';
 import { getCommandMetrics } from './common/metrics/command-metrics';
  
- dotenv.config();
-
+const masterConfig = configManager.get();
 
 // 테스트용 앱 생성 함수
 export async function createApp(): Promise<Express> {
@@ -81,6 +80,7 @@ export async function createApp(): Promise<Express> {
         'http://127.0.0.1:3000',
         'http://127.0.0.1:3001',
         'http://127.0.0.1:3003',
+        masterConfig.system.corsOrigin
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -178,7 +178,7 @@ export async function createApp(): Promise<Express> {
 }
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = masterConfig.system.port;
 
 // 프록시 신뢰 설정 (reverse proxy 환경 대응)
 app.set('trust proxy', 1);
@@ -195,15 +195,15 @@ app.use(cors({
     // 서버 to 서버 요청 (origin이 없는 경우) 허용
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3003',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'http://127.0.0.1:3003',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3003',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'http://127.0.0.1:3003',
+        masterConfig.system.corsOrigin
+      ].filter(Boolean);
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -355,9 +355,9 @@ async function ensureDefaultSession() {
       return;
     }
 
-    const defaultSessionId = process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
-    const defaultStartYear = parseInt(process.env.DEFAULT_SESSION_START_YEAR || '180', 10);
-    const turnterm = parseInt(process.env.DEFAULT_TURNTERM_MINUTES || '60', 10); // 분 단위
+    const defaultSessionId = masterConfig.system.sessionId;
+    const defaultStartYear = masterConfig.system.defaultSessionStartYear;
+    const turnterm = masterConfig.game.turnTerm; // 분 단위
 
     const now = new Date();
     const turntime = new Date(now.getTime() + turnterm * 60 * 1000).toISOString();
@@ -437,17 +437,18 @@ async function start() {
       process.exit(1);
     }
     
-    // Check for default/insecure JWT secrets
+    // JWT_SECRET 보안 검증
+    const { jwtSecret, nodeEnv, timezone } = masterConfig.system;
     const insecureSecrets = [
-      'secret',
-      'your-secret-key-change-this-in-production',
-      'your-secret-key-change-in-production',
-      'change-this',
+      'your-secret-key-please-change',
+      'your-refresh-secret-please-change',
       'changeme',
+      'dev_secret',
+      'secret',
       'default'
     ];
     
-    if (insecureSecrets.includes(process.env.JWT_SECRET)) {
+    if (insecureSecrets.includes(jwtSecret)) {
       logger.error('❌ CRITICAL SECURITY ERROR: JWT_SECRET is using a default/insecure value');
       console.error('\n========================================');
       console.error('❌ CRITICAL SECURITY ERROR');
@@ -466,18 +467,12 @@ async function start() {
     
     logger.info('✅ JWT_SECRET validation passed');
     
-    // 한국 시간대(Asia/Seoul, UTC+9) 설정
-    if (!process.env.TZ) {
-      process.env.TZ = 'Asia/Seoul';
-    }
-    
-    console.log('[DEBUG] Logging server start...');
     logger.info('🚀 API 서버 시작 중...', {
-      nodeEnv: process.env.NODE_ENV || 'development',
+      nodeEnv: nodeEnv,
       port: PORT,
       nodeVersion: process.version,
-      timezone: process.env.TZ,
-      currentTime: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+      timezone: timezone,
+      currentTime: new Date().toLocaleString('ko-KR', { timeZone: timezone })
     });
 
     // ========================================
@@ -486,10 +481,10 @@ async function start() {
     
     console.log('[DEBUG] Connecting to MongoDB...');
     // MongoDB 연결
-    await mongoConnection.connect(process.env.MONGODB_URI);
+    await mongoConnection.connect(masterConfig.system.mongodbUri);
     console.log('[DEBUG] MongoDB connected!');
     logger.info('✅ MongoDB 연결 성공', { 
-      uri: process.env.MONGODB_URI?.replace(/\/\/.*:.*@/, '//***:***@') 
+      uri: masterConfig.system.mongodbUri.replace(/\/\/.*:.*@/, '//***:***@') 
     });
 
     // sessions 컬렉션에 세션이 하나도 없으면 기본 세션 자동 생성

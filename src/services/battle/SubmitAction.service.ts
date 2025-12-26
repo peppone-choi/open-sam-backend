@@ -95,9 +95,9 @@ export class SubmitActionService {
           // 다른 유닛이 있는지 확인
           const hasOtherUnit = allUnits.some(
             u => u.position &&
-            u.position.x === target.x &&
-            u.position.y === target.y &&
-            u.generalId !== generalId
+              u.position.x === target.x &&
+              u.position.y === target.y &&
+              u.generalId !== generalId
           );
 
           if (hasOtherUnit) {
@@ -117,9 +117,9 @@ export class SubmitActionService {
           // 타겟 유닛 확인
           const targetUnit = allUnits.find(
             u => u.position &&
-            u.position.x === target.x &&
-            u.position.y === target.y &&
-            u.generalId !== generalId
+              u.position.x === target.x &&
+              u.position.y === target.y &&
+              u.generalId !== generalId
           );
 
           if (!targetUnit) {
@@ -129,10 +129,26 @@ export class SubmitActionService {
           // 아군 체크
           const isAttacker = battle.attackerUnits.some(u => u.generalId === generalId);
           const isTargetAttacker = battle.attackerUnits.some(u => u.generalId === targetUnit.generalId);
-          
+
           if (isAttacker === isTargetAttacker) {
             return { success: false, message: '아군을 공격할 수 없습니다' };
           }
+        }
+      }
+
+      // 신규 전술 액션 검증 (Sammo 스타일)
+      const tacticalActions = ['fire', 'ambush', 'duel', 'stone', 'misinform', 'discord', 'confuse'];
+      if (tacticalActions.includes(action)) {
+        // 공통: 대상 장수가 필요한 액션들
+        const needsTargetGeneral = ['duel', 'stone', 'misinform', 'discord', 'confuse'];
+        if (needsTargetGeneral.includes(action) && !targetGeneralId) {
+          return { success: false, message: '대상 장수가 지정되지 않았습니다' };
+        }
+
+        // 공통: 대상 위치가 필요한 액션들
+        const needsTargetPos = ['fire'];
+        if (needsTargetPos.includes(action) && (!target || target.x === undefined || target.y === undefined)) {
+          return { success: false, message: '목표 위치가 필요합니다' };
         }
       }
 
@@ -145,7 +161,7 @@ export class SubmitActionService {
       };
 
       const existingIndex = battle.currentTurnActions.findIndex(
-        a => a.generalId === generalId
+        (a: any) => a.generalId === generalId
       );
 
       if (existingIndex >= 0) {

@@ -1,54 +1,63 @@
 import { getScenarioConstants } from '../utils/scenario-data';
+import { configManager } from '../config/ConfigManager';
 
 const scenarioConstants = getScenarioConstants();
 const gameBalance = scenarioConstants?.gameBalance ?? {};
 const factionTypes = scenarioConstants?.factionTypes ?? {};
+const master = configManager.get().game;
+const balance = master.balance;
+const npc = master.npc;
+const cityCfg = master.city;
+const unitCfg = master.unit;
+const battleCfg = configManager.get().battle;
 
 export class GameConst {
-  static readonly defaultGold = 1000;
-  static readonly defaultRice = 1000;
-  static readonly defaultCrew = 1000;
+  static readonly defaultGold = balance.defaultGold;
+  static readonly defaultRice = balance.defaultRice;
+  static readonly defaultCrew = balance.defaultCrew;
   
-  static readonly maxGold = 1000000;
-  static readonly maxRice = 1000000;
-  static readonly maxCrew = 50000;
+  static readonly maxGold = balance.maxGold;
+  static readonly maxRice = balance.maxRice;
+  static readonly maxCrew = balance.maxCrew;
   
   static readonly minGold = 0;
   static readonly minRice = 0;
   static readonly minCrew = 0;
 
-  static readonly maxLeadership = 150;
-  static readonly maxStrength = 150;
-  static readonly maxIntel = 150;
+  static readonly maxLeadership = balance.maxLeadership;
+  static readonly maxStrength = balance.maxStrength;
+  static readonly maxIntel = balance.maxIntel;
+  static readonly maxPolitics = balance.maxPolitics;
+  static readonly maxCharm = balance.maxCharm;
 
   static readonly minStat = 1;
   static readonly defaultStat = 50;
 
-  static readonly maxExperience = 999999;
-  static readonly maxDedication = 999999;
+  static readonly maxExperience = balance.maxExperience;
+  static readonly maxDedication = balance.maxDedication;
 
-  static readonly turnsPerMonth = 12;
-  static readonly monthsPerYear = 12;
+  static readonly turnsPerMonth = master.calendar.turnsPerMonth;
+  static readonly monthsPerYear = master.calendar.monthsPerYear;
 
-  static readonly maxCityFarm = 100000;
-  static readonly maxCityComm = 100000;
-  static readonly maxCitySec = 100000;
-  static readonly maxCityDef = 100000;
-  static readonly maxCityWall = 100000;
+  static readonly maxCityFarm = balance.maxCityFarm;
+  static readonly maxCityComm = balance.maxCityComm;
+  static readonly maxCitySec = balance.maxCitySec;
+  static readonly maxCityDef = balance.maxCityDef;
+  static readonly maxCityWall = balance.maxCityWall;
 
-  static readonly minCityValue = 0;
+  static readonly minCityValue = cityCfg.minValue;
 
-  static readonly maxCityTrust = 100;
+  static readonly maxCityTrust = cityCfg.maxTrust;
   static readonly minCityTrust = 0;
-  static readonly defaultCityTrust = 50;
+  static readonly defaultCityTrust = cityCfg.defaultTrust;
   
-  // 징병 허용 최소 인구 (기본 3만 → 2만으로 완화)
-  static readonly minAvailableRecruitPop = 20000;
-  static readonly expandCityPopIncreaseAmount = 100000;
+  // 징병 허용 최소 인구
+  static readonly minAvailableRecruitPop = balance.minAvailableRecruitPop;
+  static readonly expandCityPopIncreaseAmount = balance.expandCityPopIncrease;
 
-  static readonly maxTrain = 100;
+  static readonly maxTrain = unitCfg.maxTrain;
   static readonly minTrain = 0;
-  static readonly defaultTrain = 50;
+  static readonly defaultTrain = unitCfg.defaultTrain;
   static readonly defaultTrainLow = 40;
   static readonly defaultTrainHigh = 70;
   
@@ -60,13 +69,13 @@ export class GameConst {
   static readonly maxTrainByWar = gameBalance?.maxTrainByWar ?? 110;
   static readonly maxAtmosByWar = gameBalance?.maxAtmosByWar ?? 150;
 
-  static readonly maxAtmos = 100;
+  static readonly maxAtmos = unitCfg.maxAtmos;
   static readonly minAtmos = 0;
-  static readonly defaultAtmos = 50;
+  static readonly defaultAtmos = unitCfg.defaultAtmos;
   static readonly defaultAtmosLow = 40;
   static readonly defaultAtmosHigh = 70;
 
-  static readonly maxDex = 100;
+  static readonly maxDex = unitCfg.maxDex;
   static readonly minDex = 0;
 
   static readonly neutralNationID = 0;
@@ -96,29 +105,29 @@ export class GameConst {
 
   static readonly commandCostMultiplier = 1.0;
 
-  static readonly experienceMultiplier = 1.0;
-  static readonly dedicationMultiplier = 1.0;
+  static readonly experienceMultiplier = balance.experienceMultiplier;
+  static readonly dedicationMultiplier = balance.dedicationMultiplier;
 
-  static readonly criticalSuccessRate = 0.1;
-  static readonly criticalFailRate = 0.1;
+  static readonly criticalSuccessRate = balance.criticalSuccessRate;
+  static readonly criticalFailRate = balance.criticalFailRate;
 
-  static readonly criticalSuccessMultiplier = 1.5;
-  static readonly criticalFailMultiplier = 0.5;
+  static readonly criticalSuccessMultiplier = balance.criticalSuccessMultiplier;
+  static readonly criticalFailMultiplier = balance.criticalFailMultiplier;
 
   static readonly domesticScoreBase = 100;
   static readonly militaryScoreBase = 100;
 
-  static readonly recruitCostGold = 100;
-  static readonly recruitCostRice = 50;
+  static readonly recruitCostGold = balance.recruitCostGold;
+  static readonly recruitCostRice = balance.recruitCostRice;
 
-  static readonly trainCostGold = 50;
-  static readonly trainCostRice = 50;
+  static readonly trainCostGold = balance.trainCostGold;
+  static readonly trainCostRice = balance.trainCostRice;
 
-  static readonly researchCostGold = 1000;
-  static readonly researchCostRice = 500;
+  static readonly researchCostGold = balance.researchCostGold;
+  static readonly researchCostRice = balance.researchCostRice;
 
-  static readonly buildCostGold = 500;
-  static readonly buildCostRice = 300;
+  static readonly buildCostGold = balance.buildCostGold;
+  static readonly buildCostRice = balance.buildCostRice;
 
   static readonly maxTechLevel = 10;
   static readonly minTechLevel = 0;
@@ -132,45 +141,45 @@ export class GameConst {
 
   static readonly maxMessageLength = 500;
 
-  static readonly sessionTimeout = 3600000;
+  static readonly sessionTimeout = configManager.get().timeouts.session;
 
-  static readonly autoSaveInterval = 300000;
+  static readonly autoSaveInterval = configManager.get().timeouts.autoSave;
 
   static readonly maxPlayersPerSession = 100;
 
-  static readonly turnProcessingTimeout = 60000;
+  static readonly turnProcessingTimeout = configManager.get().timeouts.turnProcessing;
 
-  static readonly battleTimeout = 1800000;
+  static readonly battleTimeout = battleCfg.timeoutMs;
 
   static readonly maxBattleUnitsPerSide = 10;
 
   static readonly armperphase = gameBalance?.armperphase ?? 100;
-  static readonly battleMapWidth = 800;
-  static readonly battleMapHeight = 600;
+  static readonly battleMapWidth = battleCfg.mapWidth;
+  static readonly battleMapHeight = battleCfg.mapHeight;
 
-  static readonly tileSize = 40;
+  static readonly tileSize = battleCfg.tileSize;
 
-  static readonly maxBattleTurns = 100;
+  static readonly maxBattleTurns = battleCfg.maxTurns;
 
-  static readonly unitMovementCost = 1;
-  static readonly unitAttackCost = 1;
+  static readonly unitMovementCost = battleCfg.movementCost;
+  static readonly unitAttackCost = battleCfg.attackCost;
 
   static readonly defaultUnitHP = 100;
   static readonly defaultUnitAttack = 10;
   static readonly defaultUnitDefense = 10;
 
-  static readonly terrainBonusPlains = 1.0;
-  static readonly terrainBonusForest = 1.1;
-  static readonly terrainBonusMountain = 1.2;
-  static readonly terrainBonusWater = 0.8;
+  static readonly terrainBonusPlains = battleCfg.terrainBonus.plains;
+  static readonly terrainBonusForest = battleCfg.terrainBonus.forest;
+  static readonly terrainBonusMountain = battleCfg.terrainBonus.mountain;
+  static readonly terrainBonusWater = battleCfg.terrainBonus.water;
 
-  static readonly weatherBonusNormal = 1.0;
-  static readonly weatherBonusRain = 0.9;
-  static readonly weatherBonusSnow = 0.8;
+  static readonly weatherBonusNormal = battleCfg.weatherBonus.normal;
+  static readonly weatherBonusRain = battleCfg.weatherBonus.rain;
+  static readonly weatherBonusSnow = battleCfg.weatherBonus.snow;
 
-  static readonly moraleBonusHigh = 1.2;
-  static readonly moraleBonusNormal = 1.0;
-  static readonly moraleBonusLow = 0.8;
+  static readonly moraleBonusHigh = battleCfg.moraleBonus.high;
+  static readonly moraleBonusNormal = battleCfg.moraleBonus.normal;
+  static readonly moraleBonusLow = battleCfg.moraleBonus.low;
 
   static readonly sabotageDamageMin = 100;
   static readonly sabotageDamageMax = 1000;
@@ -179,7 +188,7 @@ export class GameConst {
 
   static readonly allItems: Record<string, Record<string, number>> = loadAllItemsFromScenario();
 
-  static readonly exchangeFee = 0.05; // 5% 수수료
+  static readonly exchangeFee = balance.exchangeFee;
   static readonly basegold = 1000;
   static readonly baserice = 2000;
 
@@ -217,15 +226,11 @@ export class GameConst {
   static readonly minGoldRequiredWhenBetting = 1000;
 
   // NPC AI constants (PHP GeneralAI constants)
-  static readonly defaultStatNPCMax = 80;      // NPC 최대 능력치 기본값
-  static readonly chiefStatMin = 60;           // 수뇌 최소 능력치
+  static readonly defaultStatNPCMax = npc.stat_max;
+  static readonly chiefStatMin = npc.chief_stat_min;
   static readonly availableNationType = ['왕', '공', '후', '백', '군', '상', '무', '령'];  // 국가 타입
 
   // NPC AI Mode constants (점진적 롤아웃용)
-  // - 'disabled': AI 비활성화 (기본값)
-  // - 'shadow': AI 결정만 로깅, 실제 적용 안함 (테스트용)
-  // - 'partial': npc >= 3 (명장급)만 AI 사용
-  // - 'full': 모든 NPC에 AI 사용
   static readonly NPC_AI_MODE = {
     DISABLED: 'disabled',
     SHADOW: 'shadow',      // 로깅만 (PHP와 비교용)
@@ -251,6 +256,15 @@ export class GameConst {
     EXPERT: 'expert'
   } as const;
 }
+
+function loadAllItemsFromScenario(): Record<string, Record<string, number>> {
+  const constants = getScenarioConstants();
+  if (constants && typeof constants.allItems === 'object') {
+    return constants.allItems as Record<string, Record<string, number>>;
+  }
+  return {};
+}
+
 
 function loadAllItemsFromScenario(): Record<string, Record<string, number>> {
   const constants = getScenarioConstants();

@@ -8,6 +8,7 @@ import * as jwt from 'jsonwebtoken';
 import { AccountSecurityService } from '../services/gateway/AccountSecurity.service';
 import { ApiError } from '../errors/ApiError';
 import { authLimiter } from '../middleware/rate-limit.middleware';
+import { configManager } from '../config/ConfigManager';
 
 const router = Router();
 
@@ -623,9 +624,10 @@ router.post('/expand-login-token', authenticate, async (req, res) => {
     await user.save();
 
     // 새 토큰 발급
+    const { jwtSecret } = configManager.get().system;
     const newToken = jwt.sign(
-      { userId: user._id.toString(), username: user.username },
-      process.env.JWT_SECRET || 'fallback-secret',
+      { userId: user._id.toString(), username: user.username, grade: user.grade || 1 },
+      jwtSecret,
       { expiresIn: '30d' }
     );
 

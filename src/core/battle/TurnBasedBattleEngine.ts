@@ -107,7 +107,7 @@ function getCompatibilityModifier(attacker: UnitType, defender: UnitType): numbe
 /**
  * 삼국지 진형 타입 (간소화)
  */
-export type SangokuFormation = 
+export type SangokuFormation =
   | 'fishScale'   // 어린진 - 공격 +20%, 방어 -10%
   | 'craneWing'   // 학익진 - 균형
   | 'circular'    // 방원진 - 방어 +30%, 공격 -10%
@@ -120,7 +120,7 @@ export type SangokuFormation =
 const FORMATION_BONUS: Record<SangokuFormation, { attack: number; defense: number; speed: number }> = {
   fishScale: { attack: 1.2, defense: 0.9, speed: 1.0 },
   craneWing: { attack: 1.1, defense: 1.0, speed: 0.9 },
-  circular:  { attack: 0.9, defense: 1.3, speed: 0.8 },
+  circular: { attack: 0.9, defense: 1.3, speed: 0.8 },
   arrowhead: { attack: 1.3, defense: 0.8, speed: 1.2 },
   longSnake: { attack: 1.0, defense: 1.0, speed: 1.3 },
 };
@@ -167,16 +167,18 @@ export interface TurnBasedBattleState {
   currentTurn: number;
   maxTurns: number;
   phase: 'waiting' | 'active' | 'finished';
-  
+  weather: 'clear' | 'rain' | 'wind' | 'snow' | 'heat';
+  tileEffects: Map<string, { type: 'fire' | 'pit' | 'rubble'; duration: number; value: number }>;
+
   map: BattleTile3D[][];
   units: Map<string, TurnBasedBattleUnit>;
-  
+
   attackerPlayerId: number;
   defenderPlayerId: number;
-  
+
   actionOrder: string[];
   activeUnitIndex: number;
-  
+
   winner?: 'attacker' | 'defender' | 'draw';
   battleLog: string[];
   turnHistory: TurnResult[];
@@ -227,6 +229,8 @@ export class TurnBasedBattleEngine {
       currentTurn: 0,
       maxTurns: this.config.maxTurns,
       phase: 'waiting',
+      weather: 'clear',
+      tileEffects: new Map(),
       map,
       units,
       attackerPlayerId,
@@ -242,7 +246,7 @@ export class TurnBasedBattleEngine {
    * 유닛을 턴제 유닛으로 변환
    */
   private convertToTurnBasedUnit(
-    unit: BattleUnit3D, 
+    unit: BattleUnit3D,
     formation: SangokuFormation
   ): TurnBasedBattleUnit {
     return {
@@ -321,7 +325,7 @@ export class TurnBasedBattleEngine {
    */
   nextUnit(state: TurnBasedBattleState): TurnBasedBattleUnit | null {
     state.activeUnitIndex++;
-    
+
     while (state.activeUnitIndex < state.actionOrder.length) {
       const unit = this.getCurrentUnit(state);
       if (unit && unit.hp > 0 && !unit.isRouting) {
@@ -329,7 +333,7 @@ export class TurnBasedBattleEngine {
       }
       state.activeUnitIndex++;
     }
-    
+
     return null;
   }
 
@@ -397,11 +401,11 @@ export class TurnBasedBattleEngine {
 
     // 데미지 계산
     const damageResult = this.calculateDamage(attacker, defender, false);
-    
+
     // 피해 적용
     defender.hp -= damageResult.damage;
     defender.troops = Math.max(0, defender.troops - damageResult.casualties);
-    
+
     // 사기 감소
     const moraleLoss = Math.floor(damageResult.casualties / 10);
     defender.morale = Math.max(0, defender.morale - moraleLoss);
@@ -422,10 +426,10 @@ export class TurnBasedBattleEngine {
       if (distance <= defender.attackRange) {
         const counterResult = this.calculateDamage(defender, attacker, true);
         counterDamage = counterResult.damage;
-        
+
         attacker.hp -= counterResult.damage;
         attacker.troops = Math.max(0, attacker.troops - counterResult.casualties);
-        
+
         const attackerMoraleLoss = Math.floor(counterResult.casualties / 15);
         attacker.morale = Math.max(0, attacker.morale - attackerMoraleLoss);
 
@@ -461,7 +465,7 @@ export class TurnBasedBattleEngine {
   ): { damage: number; casualties: number; description: string } {
     // 기본 공격력
     let attackPower = attacker.strength;
-    
+
     // 반격 시 감소
     if (isCounter) {
       attackPower *= 0.6;
@@ -515,198 +519,304 @@ export class TurnBasedBattleEngine {
   executeDefend(state: TurnBasedBattleState, unitId: string): ActionResult {
     const unit = state.units.get(unitId);
     if (!unit) {
-      return { unitId, actionType: 'defend', success: false, effects: ['Unit not found'] };
+      return { unitId, actionType: 'defend', success: false, effects: ['부대를 찾을 수 없습니다.'] };
     }
 
     unit.hasActed = true;
-    
-    // 방어 버프 (간단히 구현)
+
     unit.buffs = unit.buffs ?? [];
     unit.buffs.push({ type: 'defense', value: 30, duration: 1 });
 
-    const effect = `${unit.name} takes defensive stance (Defense +30% for 1 turn)`;
+    const effect = `${unit.name} 부대가 방어 태세를 갖췄습니다. (1턴 간 방어력 +30%)`;
     state.battleLog.push(effect);
 
     return { unitId, actionType: 'defend', success: true, effects: [effect] };
   }
 
   /**
+   * 화공 실행
+   */
+  executeFire(state: TurnBasedBattleState, unitId: string, targetPos: Position3D): ActionResult {
+    const unit = state.units.get(unitId);
+    if (!unit) return { unitId, actionType: 'fire', success: false, effects: ['부대 없음'] };
+
+    const successProb = 30 + (unit.intelligence - 50); // 간단한 확률 공식
+    const isSuccess = Math.random() * 100 < successProb;
+
+    if (isSuccess) {
+      const key = `${targetPos.x},${targetPos.y}`;
+      state.tileEffects.set(key, { type: 'fire', duration: 3, value: 50 });
+      const effect = `${unit.name} 부대가 (${targetPos.x}, ${targetPos.y})에 불을 질렀습니다!`;
+      state.battleLog.push(effect);
+      unit.hasActed = true;
+      return { unitId, actionType: 'fire', success: true, effects: [effect] };
+    } else {
+      const effect = `${unit.name} 부대의 화공이 실패했습니다.`;
+      state.battleLog.push(effect);
+      unit.hasActed = true;
+      return { unitId, actionType: 'fire', success: false, effects: [effect] };
+    }
+  }
+
+  /**
+   * 매복 실행
+   */
+  executeAmbush(state: TurnBasedBattleState, unitId: string): ActionResult {
+    const unit = state.units.get(unitId);
+    if (!unit) return { unitId, actionType: 'ambush', success: false, effects: ['부대 없음'] };
+
+    unit.buffs = unit.buffs ?? [];
+    unit.buffs.push({ type: 'hidden', value: 1, duration: 99 }); // 공격하거나 발견될 때까지 유지
+
+    const effect = `${unit.name} 부대가 매복 상태에 들어갔습니다.`;
+    state.battleLog.push(effect);
+    unit.hasActed = true;
+    return { unitId, actionType: 'ambush', success: true, effects: [effect] };
+  }
+
+  /**
+   * 일기토 실행
+   */
+  executeDuel(state: TurnBasedBattleState, attackerId: string, defenderId: string): ActionResult {
+    const attacker = state.units.get(attackerId);
+    const defender = state.units.get(defenderId);
+    if (!attacker || !defender) return { unitId: attackerId, actionType: 'duel', success: false, effects: ['대상 없음'] };
+
+    const effect = `${attacker.name}가 ${defender.name}에게 일기토를 신청했습니다!`;
+    state.battleLog.push(effect);
+
+    // 단순 무력 비교 승률 (70% 기본 + 무력 차이)
+    const winProb = 50 + (attacker.strength - defender.strength);
+    const roll = Math.random() * 100;
+
+    attacker.hasActed = true;
+
+    if (roll < winProb) {
+      const damage = Math.floor(defender.hp * 0.3);
+      defender.hp -= damage;
+      defender.morale = Math.max(0, defender.morale - 30);
+      const res = `${attacker.name}가 일기토에서 승리했습니다! ${defender.name} 사취 저하 및 피해 발생.`;
+      state.battleLog.push(res);
+      return { unitId: attackerId, actionType: 'duel', success: true, effects: [effect, res] };
+    } else {
+      attacker.morale = Math.max(0, attacker.morale - 20);
+      const res = `${attacker.name}가 일기토에서 패배하거나 거절당했습니다. 사기가 저하됩니다.`;
+      state.battleLog.push(res);
+      return { unitId: attackerId, actionType: 'duel', success: false, effects: [effect, res] };
+    }
+  }
+
+  /**
+   * 계략 실행 (위보, 반목, 혼란 공통)
+   */
+  executeTactic(state: TurnBasedBattleState, unitId: string, targetId: string, type: string): ActionResult {
+    const unit = state.units.get(unitId);
+    const target = state.units.get(targetId);
+    if (!unit || !target) return { unitId, actionType: type, success: false, effects: ['대상 없음'] };
+
+    const successProb = 40 + (unit.intelligence - target.intelligence);
+    const isSuccess = Math.random() * 100 < successProb;
+
+    unit.hasActed = true;
+
+    if (isSuccess) {
+      target.debuffs = target.debuffs ?? [];
+      target.debuffs.push({ type: 'confused', value: 1, duration: 2 });
+      const effect = `${unit.name}의 ${type} 계략이 적축! ${target.name} 부대가 혼란에 빠졌습니다.`;
+      state.battleLog.push(effect);
+      return { unitId: unit.id, actionType: type, success: true, effects: [effect] };
+    } else {
+      const effect = `${unit.name}의 ${type} 계략이 실패했습니다.`;
+      state.battleLog.push(effect);
+      return { unitId: unit.id, actionType: type, success: false, effects: [effect] };
+    }
+  }
+
+  /**
    * 턴 종료
    */
-  endTurn(state: TurnBasedBattleState, turnResult: TurnResult): VictoryCondition | null {
-    state.battleLog.push(`=== Turn ${state.currentTurn} End ===`);
-
-    // 사기 체크 및 패주 처리
-    for (const [unitId, unit] of state.units) {
-      if (unit.hp <= 0 || unit.troops <= 0) {
-        turnResult.eliminatedUnits.push(unitId);
-        continue;
-      }
-
-      // 사기가 임계값 이하면 패주
-      if (unit.morale <= this.config.moraleRouteThreshold && !unit.isRouting) {
-        unit.isRouting = true;
-        turnResult.routingUnits.push(unitId);
-        state.battleLog.push(`${unit.name} is routing due to low morale!`);
-      }
-    }
-
-    // 승리 조건 체크
-    const victory = this.checkVictory(state);
-    if (victory) {
-      state.phase = 'finished';
-      state.winner = victory.winner;
-      turnResult.winner = victory.winner;
-      state.battleLog.push(`Battle ended: ${victory.reason}`);
-    }
-
     state.turnHistory.push(turnResult);
-    return victory;
+
+  // 타일 효과 처리 (화재 등)
+  for(const [key, effect] of state.tileEffects) {
+    const [tx, ty] = key.split(',').map(Number);
+    // 해당 타일에 있는 부대 피해
+    const occupant = Array.from(state.units.values()).find(u => u.position.x === tx && u.position.y === ty);
+    if (occupant && effect.type === 'fire') {
+      const damage = Math.floor(occupant.hp * 0.05) + 10;
+      occupant.hp -= damage;
+      state.battleLog.push(`화염 피해! ${occupant.name} 부대가 ${damage}의 피해를 입었습니다.`);
+    }
+
+    effect.duration--;
+    if (effect.duration <= 0) {
+      state.tileEffects.delete(key);
+      state.battleLog.push(`(${tx}, ${ty})의 ${effect.type} 효과가 소멸했습니다.`);
+    }
+  }
+
+  // 부대 버프/디버프 갱신
+  for(const unit of state.units.values()) {
+  if (unit.buffs) {
+    unit.buffs = unit.buffs.filter(b => {
+      b.duration--;
+      return b.duration > 0 || b.duration === 99; // 99는 무한(매복 등)
+    });
+  }
+  if (unit.debuffs) {
+    unit.debuffs = unit.debuffs.filter(d => {
+      d.duration--;
+      return d.duration > 0;
+    });
+  }
+}
+
+return victory;
   }
 
   /**
    * 승리 조건 체크
    */
   private checkVictory(state: TurnBasedBattleState): VictoryCondition | null {
-    const attackers = Array.from(state.units.values())
-      .filter(u => u.side === 'attacker' && u.hp > 0 && !u.isRouting);
-    const defenders = Array.from(state.units.values())
-      .filter(u => u.side === 'defender' && u.hp > 0 && !u.isRouting);
+  const attackers = Array.from(state.units.values())
+    .filter(u => u.side === 'attacker' && u.hp > 0 && !u.isRouting);
+  const defenders = Array.from(state.units.values())
+    .filter(u => u.side === 'defender' && u.hp > 0 && !u.isRouting);
 
-    if (attackers.length === 0) {
-      return { type: 'elimination', winner: 'defender', reason: 'All attackers eliminated' };
-    }
-
-    if (defenders.length === 0) {
-      return { type: 'elimination', winner: 'attacker', reason: 'All defenders eliminated' };
-    }
-
-    if (state.currentTurn >= state.maxTurns) {
-      const attackerTroops = attackers.reduce((sum, u) => sum + u.troops, 0);
-      const defenderTroops = defenders.reduce((sum, u) => sum + u.troops, 0);
-
-      if (attackerTroops > defenderTroops * 1.5) {
-        return { type: 'time_limit', winner: 'attacker', reason: 'Turn limit (attacker advantage)' };
-      }
-      return { type: 'time_limit', winner: 'defender', reason: 'Turn limit (defense success)' };
-    }
-
-    return null;
+  if (attackers.length === 0) {
+    return { type: 'elimination', winner: 'defender', reason: 'All attackers eliminated' };
   }
 
-  // ==========================================================================
-  // 자동 전투
-  // ==========================================================================
+  if (defenders.length === 0) {
+    return { type: 'elimination', winner: 'attacker', reason: 'All defenders eliminated' };
+  }
 
-  /**
-   * 자동 전투 시뮬레이션
-   */
-  simulateBattle(state: TurnBasedBattleState): TurnBasedBattleState {
-    while (state.phase !== 'finished' && state.currentTurn < state.maxTurns) {
-      const turnResult = this.startTurn(state);
+  if (state.currentTurn >= state.maxTurns) {
+    const attackerTroops = attackers.reduce((sum, u) => sum + u.troops, 0);
+    const defenderTroops = defenders.reduce((sum, u) => sum + u.troops, 0);
 
-      let currentUnit = this.getCurrentUnit(state);
-      while (currentUnit) {
-        const action = this.decideAIAction(state, currentUnit);
-        turnResult.actions.push(action);
-        currentUnit = this.nextUnit(state);
-      }
+    if (attackerTroops > defenderTroops * 1.5) {
+      return { type: 'time_limit', winner: 'attacker', reason: 'Turn limit (attacker advantage)' };
+    }
+    return { type: 'time_limit', winner: 'defender', reason: 'Turn limit (defense success)' };
+  }
 
-      const victory = this.endTurn(state, turnResult);
-      if (victory) break;
+  return null;
+}
+
+// ==========================================================================
+// 자동 전투
+// ==========================================================================
+
+/**
+ * 자동 전투 시뮬레이션
+ */
+simulateBattle(state: TurnBasedBattleState): TurnBasedBattleState {
+  while (state.phase !== 'finished' && state.currentTurn < state.maxTurns) {
+    const turnResult = this.startTurn(state);
+
+    let currentUnit = this.getCurrentUnit(state);
+    while (currentUnit) {
+      const action = this.decideAIAction(state, currentUnit);
+      turnResult.actions.push(action);
+      currentUnit = this.nextUnit(state);
     }
 
-    return state;
+    const victory = this.endTurn(state, turnResult);
+    if (victory) break;
   }
+
+  return state;
+}
 
   /**
    * AI 행동 결정
    */
   private decideAIAction(
-    state: TurnBasedBattleState,
-    unit: TurnBasedBattleUnit
-  ): ActionResult {
-    // 공격 가능한 적 찾기
-    const enemies = Array.from(state.units.values())
-      .filter(u => u.side !== unit.side && u.hp > 0 && !u.isRouting);
+  state: TurnBasedBattleState,
+  unit: TurnBasedBattleUnit
+): ActionResult {
+  // 공격 가능한 적 찾기
+  const enemies = Array.from(state.units.values())
+    .filter(u => u.side !== unit.side && u.hp > 0 && !u.isRouting);
 
-    for (const enemy of enemies) {
-      const distance = this.validator.getDistance3D(unit.position, enemy.position);
-      if (distance <= unit.attackRange) {
-        return this.executeAttack(state, unit.id, enemy.id);
-      }
+  for (const enemy of enemies) {
+    const distance = this.validator.getDistance3D(unit.position, enemy.position);
+    if (distance <= unit.attackRange) {
+      return this.executeAttack(state, unit.id, enemy.id);
     }
+  }
 
-    // 이동 가능하면 가장 가까운 적에게 이동
-    if (!unit.hasMoved && enemies.length > 0) {
-      const closest = enemies.reduce((a, b) => 
-        this.validator.getDistance3D(unit.position, a.position) <
+  // 이동 가능하면 가장 가까운 적에게 이동
+  if (!unit.hasMoved && enemies.length > 0) {
+    const closest = enemies.reduce((a, b) =>
+      this.validator.getDistance3D(unit.position, a.position) <
         this.validator.getDistance3D(unit.position, b.position) ? a : b
-      );
+    );
 
-      // 적을 향해 이동
-      const dx = Math.sign(closest.position.x - unit.position.x);
-      const dy = Math.sign(closest.position.y - unit.position.y);
-      const newPos: Position3D = {
-        x: unit.position.x + dx * Math.min(unit.speed, 3),
-        y: unit.position.y + dy * Math.min(unit.speed, 3),
-        z: unit.position.z,
-      };
-
-      return this.executeMove(state, unit.id, newPos);
-    }
-
-    // 방어
-    return this.executeDefend(state, unit.id);
-  }
-
-  // ==========================================================================
-  // 유틸리티
-  // ==========================================================================
-
-  /**
-   * 전투 상태 조회
-   */
-  getState(state: TurnBasedBattleState): TurnBasedBattleState {
-    return state;
-  }
-
-  /**
-   * 전투 로그 조회
-   */
-  getBattleLog(state: TurnBasedBattleState): string[] {
-    return state.battleLog;
-  }
-
-  /**
-   * 진형 변경
-   */
-  changeFormation(
-    state: TurnBasedBattleState,
-    unitId: string,
-    newFormation: SangokuFormation
-  ): boolean {
-    const unit = state.units.get(unitId);
-    if (!unit) return false;
-
-    // 진형 변경에 필요한 최소 사기
-    const requiredMorale: Record<SangokuFormation, number> = {
-      fishScale: 30,
-      craneWing: 40,
-      circular: 20,
-      arrowhead: 35,
-      longSnake: 25,
+    // 적을 향해 이동
+    const dx = Math.sign(closest.position.x - unit.position.x);
+    const dy = Math.sign(closest.position.y - unit.position.y);
+    const newPos: Position3D = {
+      x: unit.position.x + dx * Math.min(unit.speed, 3),
+      y: unit.position.y + dy * Math.min(unit.speed, 3),
+      z: unit.position.z,
     };
 
-    if (unit.morale < requiredMorale[newFormation]) {
-      state.battleLog.push(`${unit.name} cannot change formation (low morale)`);
-      return false;
-    }
-
-    unit.formation = newFormation;
-    state.battleLog.push(`${unit.name} changed formation to ${newFormation}`);
-    return true;
+    return this.executeMove(state, unit.id, newPos);
   }
+
+  // 방어
+  return this.executeDefend(state, unit.id);
+}
+
+// ==========================================================================
+// 유틸리티
+// ==========================================================================
+
+/**
+ * 전투 상태 조회
+ */
+getState(state: TurnBasedBattleState): TurnBasedBattleState {
+  return state;
+}
+
+/**
+ * 전투 로그 조회
+ */
+getBattleLog(state: TurnBasedBattleState): string[] {
+  return state.battleLog;
+}
+
+/**
+ * 진형 변경
+ */
+changeFormation(
+  state: TurnBasedBattleState,
+  unitId: string,
+  newFormation: SangokuFormation
+): boolean {
+  const unit = state.units.get(unitId);
+  if (!unit) return false;
+
+  // 진형 변경에 필요한 최소 사기
+  const requiredMorale: Record<SangokuFormation, number> = {
+    fishScale: 30,
+    craneWing: 40,
+    circular: 20,
+    arrowhead: 35,
+    longSnake: 25,
+  };
+
+  if (unit.morale < requiredMorale[newFormation]) {
+    state.battleLog.push(`${unit.name} cannot change formation (low morale)`);
+    return false;
+  }
+
+  unit.formation = newFormation;
+  state.battleLog.push(`${unit.name} changed formation to ${newFormation}`);
+  return true;
+}
 }
 
 

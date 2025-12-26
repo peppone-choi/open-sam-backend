@@ -20,7 +20,11 @@ export class FoundNationCommand extends GeneralCommand {
       return false;
     }
 
-    if (typeof nationName !== 'string' || typeof nationType !== 'string' || typeof colorType !== 'number') {
+    if (typeof nationName !== 'string' || typeof nationType !== 'string') {
+      return false;
+    }
+
+    if (typeof colorType !== 'number' && typeof colorType !== 'string') {
       return false;
     }
 
@@ -28,8 +32,9 @@ export class FoundNationCommand extends GeneralCommand {
       return false;
     }
 
-    // GetNationColors validation - colorType은 숫자로 검증됨
-    // buildNationTypeClass validation - nationType은 string으로 검증됨
+    if (typeof colorType === 'string' && !/^#[0-9A-Fa-f]{6}$/.test(colorType)) {
+      return false;
+    }
 
     this.arg = {
       nationName,
@@ -110,7 +115,12 @@ export class FoundNationCommand extends GeneralCommand {
 
     const nationName = this.arg.nationName;
     const nationType = this.arg.nationType;
-    const colorType = this.arg.colorType;
+    let colorType = this.arg.colorType;
+
+    if (typeof colorType === 'number') {
+        const { getNationColor } = await import('../../utils/functions');
+        colorType = getNationColor(colorType);
+    }
 
     const cityName = this.city?.name || '';
 

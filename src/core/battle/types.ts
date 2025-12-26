@@ -70,33 +70,33 @@ export interface BattleUnit3D {
   playerId: number;
   side: 'attacker' | 'defender';
   position: Position3D;
-  
+
   troops: number;
   maxTroops: number;
   hp: number;
   maxHp: number;
-  
+
   unitType: UnitType;
   leadership: number;
   strength: number;
   intelligence: number;
-  
+
   morale: number;
   training: number;
-  
+
   canFly?: boolean;
   maxAltitude?: number;
   canClimb?: boolean;
   maxClimbHeight?: number;
-  
+
   speed: number;
   attackRange: number;
   visionRange: number;
-  
+
   skills?: string[];
   buffs?: Buff[];
   debuffs?: Debuff[];
-  
+
   hasActed: boolean;
   afkTurns: number;
 }
@@ -126,28 +126,45 @@ export type Action =
   | { type: 'defend'; unitId: string }
   | { type: 'skill'; unitId: string; skillId: string; target: Position3D }
   | { type: 'wait'; unitId: string }
-  | { type: 'retreat'; unitId: string };
+  | { type: 'retreat'; unitId: string }
+  | { type: 'fire'; unitId: string; target: Position3D }
+  | { type: 'ambush'; unitId: string }
+  | { type: 'duel'; unitId: string; targetId: string }
+  | { type: 'stone'; unitId: string; targetId: string }
+  | { type: 'misinform'; unitId: string; targetId: string }
+  | { type: 'discord'; unitId: string; targetId: string }
+  | { type: 'confuse'; unitId: string; targetId: string };
+
+export type WeatherType = 'clear' | 'rain' | 'wind' | 'snow' | 'heat';
+
+export interface TileEffect {
+  type: 'fire' | 'pit' | 'rubble';
+  duration: number;
+  value: number;
+}
 
 export interface BattleState {
   battleId: string;
   currentTurn: number;
   phase: 'preparing' | 'deployment' | 'planning' | 'resolution' | 'finished';
-  
+  weather: WeatherType;
+  tileEffects: Map<string, TileEffect>; // key: "x,y"
+
   map: BattleTile3D[][];
   units: Map<string, BattleUnit3D>;
   buildings: Building[];
-  
+
   attackerPlayerId: number;
   defenderPlayerId: number;
-  
+
   planningDeadline?: Date;
   turnSeconds: number;
   resolutionSeconds: number;
-  
+
   actions: Map<string, Action>;
   readyPlayers: Set<number>;
   aiControlled: Set<string>;
-  
+
   winner?: 'attacker' | 'defender' | 'draw';
   battleLog: string[];
 }

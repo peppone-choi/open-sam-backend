@@ -1,6 +1,9 @@
 import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { logger } from '../logger';
+import { configManager } from '../../config/ConfigManager';
+
+const { redisUrl } = configManager.get().system;
 
 interface LockOptions {
   ttl?: number;
@@ -17,25 +20,11 @@ let redisClient: Redis | null = null;
 const lockTokens = new Map<string, string>();
 
 function getRedisClient(): Redis | null {
-  if (redisClient) {
-    return redisClient;
-  }
+  if (redisClient) return redisClient;
 
   try {
-    const url = process.env.REDIS_URL;
-    if (url) {
-      redisClient = new Redis(url, {
-        connectTimeout: 5000,
-        enableOfflineQueue: true,
-        maxRetriesPerRequest: 3,
-        retryStrategy: (times) => Math.min(times * 200, 2000),
-      });
-    } else {
-      redisClient = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        password: process.env.REDIS_PASSWORD,
-        db: parseInt(process.env.REDIS_DB || '0', 10),
+    if (redisUrl) {
+      redisClient = new Redis(redisUrl, {
         connectTimeout: 5000,
         enableOfflineQueue: true,
         maxRetriesPerRequest: 3,
@@ -84,20 +73,15 @@ export async function acquireDistributedLock(lockKey: string, options: LockOptio
       break;
     }
 
-    if (attempt < retries) {
-      await delay(retryDelayMs);
-    }
+    if (attempt < retries) await delay(retryDelayMs);
   }
 
-  logger.warn('[Lock] failed to acquire distributed lock', { lockKey, context, ttl });
   return false;
 }
 
 export async function releaseDistributedLock(lockKey: string, context?: string): Promise<void> {
   const redis = getRedisClient();
-  if (!redis) {
-    return;
-  }
+  if (!redis) return;
 
   const token = lockTokens.get(lockKey);
   const releaseScript = `
@@ -133,9 +117,7 @@ export async function runWithDistributedLock<T>(
 ): Promise<T | null> {
   const acquired = await acquireDistributedLock(lockKey, options);
   if (!acquired) {
-    if (options.throwOnFail) {
-      throw new Error(`Failed to acquire lock: ${lockKey}`);
-    }
+    if (options.throwOnFail) throw new Error(`Failed to acquire lock: ${lockKey}`);
     return null;
   }
 

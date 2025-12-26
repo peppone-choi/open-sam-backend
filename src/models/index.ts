@@ -4,6 +4,7 @@
 
 // 핵심 엔티티
 export * from './user.model';
+export * from './banned-email.model';
 export * from './session.model';
 export * from './general.model';
 export * from './city.model';
@@ -25,6 +26,7 @@ export * from './ng_diplomacy.model';
 export * from './battle-map-template.model';
 export * from './battle-instance.model';
 export * from './battle-action.model';
+export * from './mud-battle-log.model';
 
 // 통계/랭킹
 export * from './rank_data.model';

@@ -35,18 +35,19 @@ export class che_종전제의 extends NationCommand {
 
   protected init(): void {
     this.setCity();
-    this.setNation();
+    this.setNation(['surlimit']);
 
     this.minConditionConstraints = [
       ConstraintHelper.BeChief(),
       ConstraintHelper.NotBeNeutral(),
       ConstraintHelper.OccupiedCity(),
       ConstraintHelper.SuppliedCity(),
+      ConstraintHelper.ReqNationValue('surlimit', '외교제한', '==', 0, '외교제한중입니다.')
     ];
   }
 
   protected async initWithArg(): Promise<void> {
-    this.setDestNation(this.arg['destNationID'], null);
+    this.setDestNation(this.arg['destNationID'], ['surlimit']);
 
     this.fullConditionConstraints = [
       ConstraintHelper.BeChief(),
@@ -55,6 +56,8 @@ export class che_종전제의 extends NationCommand {
       ConstraintHelper.SuppliedCity(),
       ConstraintHelper.ExistsDestNation(),
       ConstraintHelper.AllowDiplomacyBetweenStatus([0, 1], '선포, 전쟁중인 상대국에게만 가능합니다.'),
+      ConstraintHelper.ReqNationValue('surlimit', '외교제한', '==', 0, '외교제한중입니다.'),
+      ConstraintHelper.ReqDestNationValue('surlimit', '외교제한', '==', 0, '상대국이 외교제한중입니다.')
     ];
   }
 
@@ -153,7 +156,7 @@ export class che_종전제의 extends NationCommand {
     });
 
     if (!proposalResult.success) {
-      console.error('종전 제의 실패:', proposalResult.reason);
+      logger.error('종전 제의 실패:', proposalResult.reason);
     }
 
     // 레거시 DiplomaticMessage도 함께 전송 (호환성)
@@ -192,7 +195,7 @@ export class che_종전제의 extends NationCommand {
       );
       await msg.send();
     } catch (error) {
-      console.error('DiplomaticMessage 전송 실패:', error);
+      logger.error('DiplomaticMessage 전송 실패:', error);
     }
 
     this.setResultTurn(new LastTurn(this.constructor.getName(), this.arg));
@@ -202,7 +205,7 @@ export class che_종전제의 extends NationCommand {
       const { StaticEventHandler } = await import('../../events/StaticEventHandler');
       await StaticEventHandler.handleEvent(general, this.destGeneralObj, this, this.env, this.arg);
     } catch (error) {
-      console.error('StaticEventHandler 실패:', error);
+      logger.error('StaticEventHandler 실패:', error);
     }
     
     await this.saveGeneral();

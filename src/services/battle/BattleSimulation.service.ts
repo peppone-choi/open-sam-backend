@@ -1,9 +1,10 @@
-import { IBattle, IBattleUnit, BattleStatus } from '../../models/battle.model';
+import { IBattle, IBattleUnit, BattleStatus, WeatherType } from '../../models/battle.model';
 import { battleRepository } from '../../repositories/battle.repository';
 import { BattlePhysics } from './BattlePhysics';
 import { SimpleBattleAI, AIDecision } from './BattleAI';
 import { getSocketManager } from '../../socket/socketManager';
 import { AttackDirection, calculateAttackDirection } from './FormationSystem';
+import { RandUtil } from '../../utils/RandUtil';
 
 /**
  * 실시간 전투 시뮬레이션
@@ -17,6 +18,8 @@ export class BattleSimulationService {
   private ai: SimpleBattleAI;
   private tickInterval: NodeJS.Timeout | null = null;
   private currentTime: number = 0;
+  private tickCount: number = 0;
+  private rng: RandUtil;
 
   constructor(battleId: string) {
     this.battleId = battleId;
@@ -26,6 +29,7 @@ export class BattleSimulationService {
       mapHeight: 600
     });
     this.ai = new SimpleBattleAI(this.physics);
+    this.rng = new RandUtil(Date.now());
   }
 
   /**
@@ -47,6 +51,7 @@ export class BattleSimulationService {
 
     this.isRunning = true;
     this.currentTime = Date.now();
+    this.tickCount = battle.tickCount || 0;
 
     console.log(`[BattleSimulation] Started: ${this.battleId}`);
 
@@ -81,6 +86,11 @@ export class BattleSimulationService {
       return;
     }
 
+    this.tickCount += 1;
+
+    // 0. 날씨 업데이트
+    this.updateWeather(battle);
+
     // 1. AI 명령 생성 (AI 제어 유닛만)
     this.generateAICommands(battle);
 
@@ -107,12 +117,45 @@ export class BattleSimulationService {
 
     // 6. 상태 저장
     battle.lastTickTime = new Date();
+    battle.tickCount = this.tickCount;
     await battle.save();
 
     // 7. WebSocket으로 상태 브로드캐스트 (매 틱마다)
     this.broadcastState(battle);
 
     this.currentTime += 50;
+  }
+
+  /**
+   * 날씨 업데이트 로직
+   */
+  private updateWeather(battle: IBattle): void {
+    if (this.tickCount < (battle.weatherNextChangeTick || 0)) {
+      return;
+    }
+
+    // 다음 날씨 변경 시점 설정 (30초 ~ 2분)
+    const nextChange = this.tickCount + this.rng.nextRangeInt(30 * 20, 120 * 20);
+    battle.weatherNextChangeTick = nextChange;
+
+    const weathers = Object.values(WeatherType);
+    const newWeather = weathers[this.rng.nextRangeInt(0, weathers.length - 1)];
+    
+    if (battle.weather !== newWeather) {
+      battle.weather = newWeather;
+      console.log(`[BattleSimulation] Weather changed to: ${newWeather}`);
+      this.broadcastWeatherChange(battle);
+    }
+  }
+
+  private broadcastWeatherChange(battle: IBattle): void {
+    const socketManager = getSocketManager();
+    if (socketManager) {
+      socketManager.getIO().to(`battle:${battle.battleId}`).emit('battle:weather_change', {
+        weather: battle.weather,
+        timestamp: new Date()
+      });
+    }
   }
 
   /**
@@ -179,7 +222,7 @@ export class BattleSimulationService {
 
     for (const unit of allUnits) {
       if (unit.troops <= 0) continue;
-      this.physics.updateMovement(unit, battle.map);
+      this.physics.updateMovement(unit, battle.map, this.currentTime);
     }
   }
 
@@ -215,10 +258,15 @@ export class BattleSimulationService {
       for (const defender of defenders) {
         const damage = this.physics.processAttack(attacker, defender, this.currentTime);
         if (damage !== null) {
-          defender.troops = Math.max(0, defender.troops - damage);
+          // 날씨 보정 적용
+          let finalDamage = damage;
+          if (battle.weather === WeatherType.FOG) finalDamage *= 0.8;
+          if (battle.weather === WeatherType.RAIN) finalDamage *= 0.9;
+
+          defender.troops = Math.max(0, defender.troops - finalDamage);
           
           // 사기 하락 (피해 비율 + 공격 방향에 따라)
-          const damageRatio = damage / defender.maxTroops;
+          const damageRatio = finalDamage / defender.maxTroops;
           let moralePenalty = damageRatio * 10;
 
           const direction = calculateAttackDirection(
@@ -242,20 +290,24 @@ export class BattleSimulationService {
             defender.stance = 'retreat';
             defender.isAIControlled = true;
           }
- 
-          console.log(`[Attack] ${attacker.generalName} → ${defender.generalName}: ${damage} 데미지 (남은 병력: ${defender.troops})`);
+  
+          console.log(`[Attack] ${attacker.generalName} → ${defender.generalName}: ${finalDamage} 데미지 (남은 병력: ${defender.troops})`);
         }
       }
     }
- 
+  
     // 방어자 → 공격자
     for (const defender of defenders) {
       for (const attacker of attackers) {
         const damage = this.physics.processAttack(defender, attacker, this.currentTime);
         if (damage !== null) {
-          attacker.troops = Math.max(0, attacker.troops - damage);
+          let finalDamage = damage;
+          if (battle.weather === WeatherType.FOG) finalDamage *= 0.8;
+          if (battle.weather === WeatherType.RAIN) finalDamage *= 0.9;
+
+          attacker.troops = Math.max(0, attacker.troops - finalDamage);
           
-          const damageRatio = damage / attacker.maxTroops;
+          const damageRatio = finalDamage / attacker.maxTroops;
           let moralePenalty = damageRatio * 10;
 
           const direction = calculateAttackDirection(
@@ -278,8 +330,8 @@ export class BattleSimulationService {
             attacker.stance = 'retreat';
             attacker.isAIControlled = true;
           }
- 
-          console.log(`[Attack] ${defender.generalName} → ${attacker.generalName}: ${damage} 데미지 (남은 병력: ${attacker.troops})`);
+  
+          console.log(`[Attack] ${defender.generalName} → ${attacker.generalName}: ${finalDamage} 데미지 (남은 병력: ${attacker.troops})`);
         }
       }
     }
@@ -316,7 +368,7 @@ export class BattleSimulationService {
 
     // 최대 턴 도달 (15턴 = 15분 = 18000 tick)
     const maxTicks = battle.maxTurns * 60 * 20; // 15턴 * 60초 * 20tick/s
-    if (this.currentTime / 50 >= maxTicks) {
+    if (this.tickCount >= maxTicks) {
       // 남은 병력 비교
       const attackerTroops = battle.attackerUnits.reduce((sum, u) => sum + u.troops, 0);
       const defenderTroops = battle.defenderUnits.reduce((sum, u) => sum + u.troops, 0);
@@ -350,9 +402,10 @@ export class BattleSimulationService {
     const state = {
        battleId: battle.battleId,
        currentTurn: battle.currentTurn,
+       tickCount: this.tickCount,
+       weather: battle.weather,
        participants: battle.participants,
        attackerUnits: battle.attackerUnits.map(u => ({
-
         generalId: u.generalId,
         generalName: u.generalName,
         position: u.position,
@@ -366,7 +419,8 @@ export class BattleSimulationService {
         lastAttackTime: u.lastAttackTime,
         unitType: u.unitType,
         collisionRadius: u.collisionRadius,
-        attackRange: u.attackRange
+        attackRange: u.attackRange,
+        path: u.path
       })),
       defenderUnits: battle.defenderUnits.map(u => ({
         generalId: u.generalId,
@@ -382,7 +436,8 @@ export class BattleSimulationService {
         lastAttackTime: u.lastAttackTime,
         unitType: u.unitType,
         collisionRadius: u.collisionRadius,
-        attackRange: u.attackRange
+        attackRange: u.attackRange,
+        path: u.path
       })),
       map: {
         width: battle.map.width,

@@ -1,6 +1,8 @@
 // @ts-nocheck - Type issues need investigation
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { redisClient } from '../config/redis';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../middleware/auth';
 import { tokenBlacklist } from '../utils/tokenBlacklist';
@@ -13,133 +15,101 @@ import { WebSocketHandler } from '../services/logh/WebSocketHandler.service';
 import { TacticalSocketHandler, initTacticalSocket } from './tactical.socket';
 import { MessengerSocketHandler } from './messenger.socket';
 import { logger } from '../common/logger';
+import { configManager } from '../config/ConfigManager';
 
 /**
  * Socket.IO 서버 관리자
  * 게임의 모든 실시간 통신을 관리합니다.
  */
 export class SocketManager {
+  private static instance: SocketManager;
   private io: SocketIOServer;
+  private isInitialized = false;
   private battleHandler: BattleSocketHandler;
-  private realtimeBattleHandler: RealtimeBattleSocketHandler | null = null;
   private gameHandler: GameSocketHandler;
   private generalHandler: GeneralSocketHandler;
   private nationHandler: NationSocketHandler;
-  private loghHandler: WebSocketHandler | null = null;
-  private tacticalHandler: TacticalSocketHandler | null = null;
-  private messengerHandler: MessengerSocketHandler | null = null;
+  private loghHandler?: WebSocketHandler;
+  private tacticalHandler?: TacticalSocketHandler;
+  private messengerHandler?: MessengerSocketHandler;
+  private realtimeBattleHandler?: RealtimeBattleSocketHandler;
 
-  constructor(httpServer: HTTPServer) {
-    // Socket.IO 서버 초기화
-    this.io = new SocketIOServer(httpServer, {
+  private constructor(server: any) {
+    const { jwtSecret } = configManager.get().system;
+    
+    this.io = new SocketIOServer(server, {
       cors: {
-        origin: [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'http://localhost:3003',
-          'http://127.0.0.1:3000',
-          'http://127.0.0.1:3001',
-          'http://127.0.0.1:3003',
-          process.env.FRONTEND_URL || 'http://localhost:3000'
-        ],
-        credentials: true,
+        origin: '*',
         methods: ['GET', 'POST']
       },
-      path: '/socket.io',
-      transports: ['websocket', 'polling'],
-      pingTimeout: 60000, // 60초
-      pingInterval: 25000, // 25초
-      allowEIO3: true, // Engine.IO v3 호환성
-      upgradeTimeout: 30000, // 30초
-      maxHttpBufferSize: 1e6 // 1MB
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      upgradeTimeout: 30000,
+      maxHttpBufferSize: 1e6
     });
 
-    // 핸들러 초기화
+    if (process.env.REDIS_URL || process.env.ENABLE_REDIS_ADAPTER === 'true') {
+      const pubClient = redisClient.duplicate();
+      const subClient = redisClient.duplicate();
+      
+      Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+        this.io.adapter(createAdapter(pubClient, subClient));
+        logger.info('Socket.IO Redis 어댑터 적용 완료');
+      }).catch(err => {
+        logger.error('Socket.IO Redis 어댑터 적용 실패:', err);
+      });
+    }
+
+    this.initializeHandlers(jwtSecret);
+  }
+
+  private initializeHandlers(jwtSecret: string | null) {
+    this.io.use(async (socket, next) => {
+      const token = (socket.handshake.auth?.token as string) || (socket.handshake.headers['x-auth-token'] as string);
+      
+      if (!token) {
+        return next(new Error('Authentication error: Token missing'));
+      }
+
+      try {
+        if (!jwtSecret) {
+          return next(new Error('Authentication error: Server configuration error'));
+        }
+        const decoded = jwt.verify(token, jwtSecret) as unknown as JwtPayload;
+        (socket as any).user = decoded;
+        next();
+      } catch (err) {
+        next(new Error('Authentication error: Invalid token'));
+      }
+    });
+
     this.battleHandler = new BattleSocketHandler(this.io);
     this.gameHandler = new GameSocketHandler(this.io);
     this.generalHandler = new GeneralSocketHandler(this.io);
     this.nationHandler = new NationSocketHandler(this.io);
 
-    // LOGH 핸들러 초기화 (환경 변수로 제어)
     if (process.env.ENABLE_LOGH_WEBSOCKET !== 'false') {
       this.loghHandler = new WebSocketHandler(this.io);
-      logger.info('LOGH WebSocket 핸들러 초기화 완료');
     }
 
-    // GIN7 Tactical 핸들러 초기화 (/tactical 네임스페이스)
     if (process.env.ENABLE_GIN7_TACTICAL !== 'false') {
       this.tacticalHandler = initTacticalSocket(this.io);
-      logger.info('GIN7 Tactical WebSocket 핸들러 초기화 완료 (/tactical 네임스페이스)');
     }
 
-    // GIN7 Messenger 핸들러 초기화
     if (process.env.ENABLE_GIN7_MESSENGER !== 'false') {
       this.messengerHandler = new MessengerSocketHandler(this.io);
-      logger.info('GIN7 Messenger WebSocket 핸들러 초기화 완료');
     }
 
-    // GIN7 Realtime Battle 핸들러 초기화 (/rtbattle 네임스페이스)
     if (process.env.ENABLE_GIN7_RTBATTLE !== 'false') {
       this.realtimeBattleHandler = new RealtimeBattleSocketHandler(this.io);
-      logger.info('GIN7 Realtime Battle WebSocket 핸들러 초기화 완료 (/rtbattle 네임스페이스)');
     }
 
-    // 연결 처리
-    this.io.use(this.authenticateSocket.bind(this));
     this.io.on('connection', this.handleConnection.bind(this));
-
     logger.info('Socket.IO 서버 초기화 완료');
   }
 
-  /**
-   * Socket.IO 인증 미들웨어
-   */
-  private async authenticateSocket(socket: Socket, next: Function) {
-    try {
-      // LOGH 세션 기반 인증 (sessionId만으로 접속 가능)
-      const sessionId = socket.handshake.query?.sessionId as string;
-      if (sessionId && sessionId.startsWith('logh_')) {
-        // LOGH 게임은 sessionId만으로 인증 허용 (오픈 액세스)
-        socket.user = { sessionId } as any;
-        return next();
-      }
-
-      const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
-
-      if (!token) {
-        return next(new Error('인증 토큰이 필요합니다'));
-      }
-
-      // 토큰 블랙리스트 체크
-      if (tokenBlacklist.has(token)) {
-        return next(new Error('로그아웃된 토큰입니다'));
-      }
-
-      // JWT 검증
-      if (!process.env.JWT_SECRET) {
-        return next(new Error('JWT_SECRET is not configured'));
-      }
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as unknown as JwtPayload;
-
-      // 소켓에 사용자 정보 저장
-      socket.user = decoded;
-      next();
-    } catch (error: any) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        return next(new Error('유효하지 않은 토큰입니다'));
-      }
-      if (error instanceof jwt.TokenExpiredError) {
-        return next(new Error('토큰이 만료되었습니다'));
-      }
-      next(new Error('인증 오류가 발생했습니다'));
-    }
-  }
-
-  /**
-   * 소켓 연결 처리
-   */
   private handleConnection(socket: Socket) {
-    const user = socket.user as JwtPayload;
+    const user = (socket as any).user as JwtPayload;
     const userId = user?.userId;
     const sessionId = socket.handshake.query?.sessionId as string;
 
@@ -149,61 +119,44 @@ export class SocketManager {
       sessionId: sessionId || 'N/A' 
     });
 
-    // 사용자별 룸에 조인
     if (userId) {
       socket.join(`user:${userId}`);
     }
 
-    // 세션 룸에 자동 조인 (실시간 로그 수신을 위해 필수)
     if (sessionId) {
       socket.join(`session:${sessionId}`);
-      logger.debug('Socket joined session room', { socketId: socket.id, sessionId });
     }
 
-    // LOGH 세션인 경우 LOGH 핸들러로 처리
     if (sessionId && sessionId.startsWith('logh_') && this.loghHandler) {
       this.loghHandler.handleConnection(socket);
-      // GIN7 메신저 핸들러도 연결 (LOGH 세션에서도 메신저 사용 가능)
       if (this.messengerHandler) {
         this.messengerHandler.handleConnection(socket);
       }
-      return; // LOGH는 별도 처리
+      return;
     }
 
-    // 핸들러에 연결 전달 (Sangokushi 전용)
     this.battleHandler.handleConnection(socket);
     this.gameHandler.handleConnection(socket);
     this.generalHandler.handleConnection(socket);
     this.nationHandler.handleConnection(socket);
     
-    // GIN7 메신저 핸들러 연결 (모든 세션에서 사용 가능)
     if (this.messengerHandler) {
       this.messengerHandler.handleConnection(socket);
     }
 
-    // 연결 해제 처리
     socket.on('disconnect', (reason: string) => {
-      // HMR이나 클라이언트 disconnect는 로그만 (정상 동작)
-      if (reason === 'io client disconnect' || reason === 'transport close') {
-        logger.debug('Socket disconnected (normal)', { socketId: socket.id, reason });
-      } else {
-        logger.info('Socket disconnected', { socketId: socket.id, reason });
-      }
       if (userId) {
         socket.leave(`user:${userId}`);
       }
     });
 
-    // 에러 처리
     socket.on('error', (error: any) => {
       logger.error('Socket error', { 
         socketId: socket.id, 
-        error: error.message, 
-        stack: error.stack 
+        error: error.message
       });
     });
 
-    // 연결 성공 메시지
     socket.emit('connected', {
       socketId: socket.id,
       userId,
@@ -211,9 +164,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 게임 이벤트 브로드캐스트
-   */
   broadcastGameEvent(sessionId: string, event: string, data: any) {
     this.io.to(`session:${sessionId}`).emit(`game:${event}`, {
       sessionId,
@@ -222,9 +172,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 특정 사용자에게 이벤트 전송
-   */
   sendToUser(userId: string, event: string, data: any) {
     this.io.to(`user:${userId}`).emit(event, {
       ...data,
@@ -232,9 +179,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 턴 완료 브로드캐스트
-   */
   broadcastTurnComplete(sessionId: string, turnNumber: number, nextTurnAt: Date) {
     this.broadcastGameEvent(sessionId, 'turn:complete', {
       turnNumber,
@@ -242,9 +186,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 장수 정보 업데이트 브로드캐스트
-   */
   broadcastGeneralUpdate(sessionId: string, generalId: number, updates: any) {
     this.io.to(`session:${sessionId}`).emit('general:updated', {
       sessionId,
@@ -254,9 +195,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 국가 정보 업데이트 브로드캐스트
-   */
   broadcastNationUpdate(sessionId: string, nationId: number, updates: any) {
     this.io.to(`session:${sessionId}`).emit('nation:updated', {
       sessionId,
@@ -266,9 +204,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 도시 정보 업데이트 브로드캐스트
-   */
   broadcastCityUpdate(sessionId: string, cityId: number, updates: any) {
     this.io.to(`session:${sessionId}`).emit('city:updated', {
       sessionId,
@@ -278,9 +213,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 메시지 알림 브로드캐스트
-   */
   broadcastMessage(sessionId: string, message: any) {
     this.io.to(`session:${sessionId}`).emit('message:new', {
       sessionId,
@@ -289,9 +221,6 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 전투 시작 알림
-   */
   broadcastBattleStart(sessionId: string, battleId: string, participants: number[]) {
     this.io.to(`session:${sessionId}`).emit('battle:started', {
       sessionId,
@@ -301,15 +230,7 @@ export class SocketManager {
     });
   }
 
-  /**
-   * 로그 업데이트 브로드캐스트
-   * @param sessionId 세션 ID
-   * @param generalId 장수 ID (장수동향/개인기록용, 중원정세는 0)
-   * @param logType 'action' | 'history'
-   * @param logId 로그 ID
-   * @param logText 로그 텍스트
-   */
-  broadcastLogUpdate(sessionId: string, generalId: number, logType: 'action' | 'history', logId: number, logText: string) {
+  broadcastLogUpdate(sessionId: string, generalId: number, logType: 'action' | 'history', logId: string | number, logText: string) {
     this.io.to(`session:${sessionId}`).emit('log:updated', {
       sessionId,
       generalId,
@@ -320,93 +241,62 @@ export class SocketManager {
     });
   }
 
-  /**
-   * Socket.IO 서버 인스턴스 반환
-   */
   getIO(): SocketIOServer {
     return this.io;
   }
 
-  /**
-   * GIN7 Tactical 핸들러 반환
-   */
-  getTacticalHandler(): TacticalSocketHandler | null {
+  getTacticalHandler(): TacticalSocketHandler | undefined {
     return this.tacticalHandler;
   }
 
-  /**
-   * GIN7 Messenger 핸들러 반환
-   */
-  getMessengerHandler(): MessengerSocketHandler | null {
+  getMessengerHandler(): MessengerSocketHandler | undefined {
     return this.messengerHandler;
   }
 
-  /**
-   * GIN7 Realtime Battle 핸들러 반환
-   */
-  getRealtimeBattleHandler(): RealtimeBattleSocketHandler | null {
+  getRealtimeBattleHandler(): RealtimeBattleSocketHandler | undefined {
     return this.realtimeBattleHandler;
   }
 
-  /**
-   * 접속 중인 사용자 수 조회
-   */
   getOnlineUserCount(sessionId?: string): number {
     if (sessionId) {
       const room = this.io.sockets.adapter.rooms.get(`session:${sessionId}`);
       return room ? room.size : 0;
     }
-    // 전체 접속자 수
     return this.io.sockets.sockets.size;
   }
 
-  /**
-   * 접속 중인 국가 목록 조회
-   */
   async getOnlineNations(sessionId: string): Promise<number[]> {
     const sessionRoom = this.io.sockets.adapter.rooms.get(`session:${sessionId}`);
-    if (!sessionRoom) {
-      return [];
-    }
+    if (!sessionRoom) return [];
 
     const { General } = await import('../models/general.model');
     const nationIds = new Set<number>();
 
-    // 세션 룸에 있는 모든 소켓 확인
     for (const socketId of sessionRoom) {
       const socket = this.io.sockets.sockets.get(socketId);
       if (socket) {
-        const user = socket.user as JwtPayload;
+        const user = (socket as any).user as JwtPayload;
         const userId = user?.userId;
         if (userId) {
-          // 해당 사용자의 장수 찾기
           const general = await General.findOne({
             session_id: sessionId,
             owner: String(userId),
-            $or: [
-              { 'data.npc': { $lt: 2 } },
-              { npc: { $lt: 2 } }
-            ]
+            $or: [{ 'data.npc': { $lt: 2 } }, { npc: { $lt: 2 } }]
           }).lean();
           
           if (general) {
             const nationId = general.data?.nation ?? general.nation ?? 0;
-            if (nationId > 0) {
-              nationIds.add(nationId);
-            }
+            if (nationId > 0) nationIds.add(nationId);
           }
         }
       }
     }
-
     return Array.from(nationIds);
   }
 
   async getOnlineGenerals(sessionId: string): Promise<Array<{ nationId: number; generalId: number; name: string }>> {
     const sessionRoom = this.io.sockets.adapter.rooms.get(`session:${sessionId}`);
-    if (!sessionRoom) {
-      return [];
-    }
+    if (!sessionRoom) return [];
 
     const { General } = await import('../models/general.model');
     const results: Array<{ nationId: number; generalId: number; name: string }> = [];
@@ -414,46 +304,32 @@ export class SocketManager {
 
     for (const socketId of sessionRoom) {
       const socket = this.io.sockets.sockets.get(socketId);
-      if (!socket) {
-        continue;
-      }
-      const user = socket.user as JwtPayload;
+      if (!socket) continue;
+      
+      const user = (socket as any).user as JwtPayload;
       const userId = user?.userId;
-      if (!userId || processedOwners.has(userId)) {
-        continue;
-      }
+      if (!userId || processedOwners.has(userId)) continue;
       processedOwners.add(userId);
 
       const general = await General.findOne({
         session_id: sessionId,
         owner: String(userId),
-        $or: [
-          { 'data.npc': { $lt: 2 } },
-          { npc: { $lt: 2 } },
-          { npc: { $exists: false } }
-        ]
+        $or: [{ 'data.npc': { $lt: 2 } }, { npc: { $lt: 2 } }, { npc: { $exists: false } }]
       }).lean();
 
-      if (!general) {
-        continue;
-      }
+      if (!general) continue;
 
       const nationId = general.data?.nation ?? general.nation ?? 0;
-      if (nationId <= 0) {
-        continue;
-      }
+      if (nationId <= 0) continue;
 
       const name = general.name || general.data?.name || '무명';
       const generalId = general.no ?? general.data?.no ?? 0;
       results.push({ nationId, generalId, name });
     }
-
     return results;
   }
 }
 
-
-// 싱글톤 인스턴스
 let socketManagerInstance: SocketManager | null = null;
 
 export function initializeSocket(httpServer: HTTPServer): SocketManager {
@@ -470,5 +346,3 @@ export function getSocketManager(): SocketManager | null {
 export function setSocketManager(manager: SocketManager): void {
   socketManagerInstance = manager;
 }
-
-

@@ -848,6 +848,7 @@ export class ScenarioResetService {
 
     const generalsToCreate = [];
     let generalIdCounter = 1; // 장수 ID 자동 생성용
+    const usedGeneralNos = new Set<number>();
     
     for (const genEntry of allGeneralsData) {
       const genTemplate = genEntry.data;
@@ -856,6 +857,7 @@ export class ScenarioResetService {
       let name, nationNo, id, npc;
       let leadership, strength, intel, politics, charm;
       let officerLevel, birthYear, deathYear, personality, special, text;
+      let picturePath;
       
       if (Array.isArray(genTemplate)) {
         // PHP 배열 포맷 - 정치/매력 유무 체크 (14개 vs 16개 요소)
@@ -865,7 +867,7 @@ export class ScenarioResetService {
         
         // 기본 정보
         name = genTemplate[1];
-        const picturePath = genTemplate[2];
+        picturePath = genTemplate[2];
         const nationName = genTemplate[3];
         
         // 국가 ID 처리
@@ -878,7 +880,16 @@ export class ScenarioResetService {
         }
         if (nationNo === 999) nationNo = 0;
         
-        id = picturePath || generalIdCounter;
+        // picturePath가 숫자면 ID로 시도, 아니면 counter 사용
+        const suggestedId = parseInt(picturePath);
+        if (!isNaN(suggestedId) && suggestedId > 0 && !usedGeneralNos.has(suggestedId)) {
+          id = suggestedId;
+        } else {
+          id = generalIdCounter++;
+          while (usedGeneralNos.has(id)) {
+            id = generalIdCounter++;
+          }
+        }
 
         // 능력치 파싱
         leadership = genTemplate[5] || 50;
@@ -914,7 +925,16 @@ export class ScenarioResetService {
         // 객체 포맷 (기존 호환)
         nationNo = genTemplate.nation || 0;
         name = genTemplate.name || '무명';
-        id = genTemplate.no || genTemplate.id;
+        const suggestedId = genTemplate.no || genTemplate.id;
+        if (suggestedId && !usedGeneralNos.has(suggestedId)) {
+           id = suggestedId;
+        } else {
+           id = generalIdCounter++;
+           while (usedGeneralNos.has(id)) {
+             id = generalIdCounter++;
+           }
+        }
+        picturePath = genTemplate.picture || genTemplate.pic;
         npc = genTemplate.npc || 2;
         leadership = genTemplate.stats?.leadership || genTemplate.leadership || 50;
         strength = genTemplate.stats?.strength || genTemplate.strength || 50;
@@ -929,46 +949,40 @@ export class ScenarioResetService {
         special = genTemplate.special || null;
       }
       
+      usedGeneralNos.add(id);
+      if (id >= generalIdCounter) generalIdCounter = id + 1;
+
       // birthYear에서 age 계산
-      const startYear = scenarioMetadata.startYear || 181;
+      const startYear = scenarioMetadata.startYear || 184;
       const age = startYear - birthYear;
-      
+
       // ✅ 시나리오 시작 년도에 아직 태어나지 않은 장수는 스킵
       if (birthYear > startYear) {
         console.log(`[ScenarioReset] Skipping ${name} - not born yet (birth: ${birthYear}, scenario: ${startYear})`);
         continue;
       }
-      
+
       // ✅ 시나리오 시작 년도에 이미 죽은 장수는 스킵
       if (deathYear && deathYear < startYear) {
         console.log(`[ScenarioReset] Skipping ${name} - already dead (death: ${deathYear}, scenario: ${startYear})`);
         continue;
       }
-      
+
       // ✅ 나이가 음수이거나 너무 많으면 스킵 (데이터 오류)
       if (age < 0 || age > 100) {
         console.log(`[ScenarioReset] Skipping ${name} - invalid age ${age} (birth: ${birthYear}, scenario: ${startYear})`);
         continue;
       }
       
-      // NPC 타입은 general/general_ex/general_neutral 구분으로 결정
-      npc = npcTypeFromCategory;
-      
-      // ✅ officer_level 처리: 재야는 0, 국가 소속은 최소 1
-      if (nationNo === 0 || nationNo === 999) {
-        // 재야는 무조건 0
-        officerLevel = 0;
-      } else {
-        // 국가 소속: 시나리오 값이 있으면 사용, 없거나 0이면 1로 설정
-        if (officerLevel === undefined || officerLevel === null || officerLevel === 0) {
-          officerLevel = 1; // 기본 관직
-        }
-        // 시나리오에 명시적으로 관직이 있으면 그대로 사용
+      // ✅ PHP와 동일한 최종 검증: DB 삽입 직전 officer_level 재확인
+      // PHP: if(!$officerLevel || $isNewGeneral) { $officerLevel = $nationID?1:0; }
+      if (!officerLevel) {
+        officerLevel = nationNo > 0 ? 1 : 0;
       }
-      
+
       // 배치 도시 결정 (우선순위: generalCities 오버라이드 > 장수 배열의 city > 국가 수도)
       let assignedCityId = 0;
-      
+
       // 1. 시나리오 generalCities 오버라이드 확인
       if (generalCitiesOverride[name]) {
         const overrideCity = generalCitiesOverride[name];
@@ -981,7 +995,7 @@ export class ScenarioResetService {
           }
         }
       }
-      
+
       // 2. 장수 배열의 city 필드 확인 (인덱스 4)
       if (assignedCityId === 0 && Array.isArray(genTemplate)) {
         const templateCity = genTemplate[4];
@@ -993,34 +1007,17 @@ export class ScenarioResetService {
           }
         }
       }
-      
+
       // 3. 국가 수도로 fallback
       if (assignedCityId === 0 && nationNo > 0) {
         const capital = nationCapitalMap.get(nationNo);
         assignedCityId = capital?.city || 0;
       }
-      
+
       // 국가 소속인데 도시가 없으면 이 장수는 스킵 (시나리오에 등장하지 않음)
       if (nationNo > 0 && assignedCityId === 0) {
         console.log(`[ScenarioReset] Skipping general ${name} (nation ${nationNo}) - no city assigned`);
         continue;
-      }
-      
-      // NPC마다 다른 turntime 부여 (turnterm 내에서 랜덤 분산)
-      const rng = Math.abs((id || 0) * 1103515245 + 12345);
-      const randomOffsetSeconds = rng % (turnterm * 60);
-      const npcTurntime = new Date(now.getTime() + randomOffsetSeconds * 1000);
-      
-      // ID 검증 및 자동 증가
-      if (!id || id === null || id === undefined) {
-        id = generalIdCounter;
-      }
-      generalIdCounter = Math.max(generalIdCounter, id) + 1; // 다음 ID는 현재 최대값 + 1
-      
-      // ✅ PHP와 동일한 최종 검증: DB 삽입 직전 officer_level 재확인
-      // PHP: if(!$officerLevel || $isNewGeneral) { $officerLevel = $nationID?1:0; }
-      if (!officerLevel) {
-        officerLevel = nationNo > 0 ? 1 : 0;
       }
       
       // PHP GeneralBuilder.php와 동일한 초기화
@@ -1049,6 +1046,14 @@ export class ScenarioResetService {
       
       // 기본 병종 (PHP: GameUnitConst::DEFAULT_CREWTYPE)
       const defaultCrewType = 0;
+      
+      // NPC 타입은 general/general_ex/general_neutral 구분으로 결정
+      npc = npcTypeFromCategory;
+
+      // NPC마다 다른 turntime 부여 (turnterm 내에서 랜덤 분산)
+      const rng = Math.abs((id || 0) * 1103515245 + 12345);
+      const randomOffsetSeconds = rng % (turnterm * 60);
+      const npcTurntime = new Date(now.getTime() + randomOffsetSeconds * 1000);
       
       const generalData = {
         session_id: sessionId,

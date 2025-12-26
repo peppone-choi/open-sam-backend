@@ -20,7 +20,27 @@ export class AccountSecurityService {
       throw new ApiError(404, '사용자를 찾을 수 없습니다');
     }
 
-    const valid = await bcrypt.compare(currentPassword, user.password);
+    let valid = false;
+    if (user.password.startsWith('$2')) {
+      valid = await bcrypt.compare(currentPassword, user.password);
+    } else {
+      // Legacy SHA-512 Support
+      const { configManager } = await import('../../config/ConfigManager');
+      const { Util } = await import('../../utils/Util');
+      const globalSalt = configManager.get().system.hiddenSeed;
+      const userSalt = user.global_salt || '';
+      
+      const tmpPassword = Util.hashPassword(globalSalt, currentPassword);
+      const legacyHash = Util.hashPassword(userSalt, tmpPassword);
+      valid = (legacyHash === user.password);
+
+      // SHA-512로 이미 해싱되어 넘어온 경우 체크
+      if (!valid && currentPassword.length === 128) {
+          const legacyHash2 = Util.hashPassword(userSalt, currentPassword);
+          valid = (legacyHash2 === user.password);
+      }
+    }
+
     if (!valid) {
       throw new ApiError(401, '현재 비밀번호가 올바르지 않습니다');
     }

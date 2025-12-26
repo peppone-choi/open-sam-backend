@@ -17,13 +17,15 @@ export class CheJeongbokPersonality extends BasePersonality {
   }
   
   getInfo(): string {
-    return '전쟁을 통한 영토 확장 추구. 공격 시 사기 보너스';
+    return '명성 -10%, 사기 +5';
   }
   
-  onCalcDomestic(turnType: string, varType: string, value: number, aux?: any): number {
-    // 전투 시 사기 보너스
-    if (turnType === '전투' && varType === 'atmos') {
-      return value * 1.1;
+  override onCalcStat(_general: any, statName: string, value: any, _aux?: any): any {
+    if (statName === 'experience') {
+      return value * 0.9;
+    }
+    if (statName === 'bonusAtmos') {
+      return value + 5;
     }
     return value;
   }

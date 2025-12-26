@@ -262,31 +262,70 @@ export class TournamentService {
   static async getTournamentBracket(sessionId: string) {
     try {
       const participants = await Tournament
-        .find({ session_id: sessionId })
+        .find({ session_id: sessionId, grp: { $gte: 20 } })
         .sort({ grp: 1, grp_no: 1 })
-        ;
+        .lean();
 
       // 그룹별로 정리
-      const bracket: any = {};
+      const roundsMap: Record<number, any[]> = {
+        0: [], // 16강 (grp 20-27)
+        1: [], // 8강 (grp 30-33)
+        2: [], // 4강 (grp 40-41)
+        3: []  // 결승 (grp 50)
+      };
+
+      const grpToRound: Record<number, number> = {};
+      for (let i = 20; i <= 27; i++) grpToRound[i] = 0;
+      for (let i = 30; i <= 33; i++) grpToRound[i] = 1;
+      for (let i = 40; i <= 41; i++) grpToRound[i] = 2;
+      grpToRound[50] = 3;
+
+      const matchesInGrp: Record<number, any> = {};
+
       for (const p of participants) {
-        if (!bracket[p.grp]) {
-          bracket[p.grp] = [];
+        const roundIdx = grpToRound[p.grp];
+        if (roundIdx === undefined) continue;
+
+        if (!matchesInGrp[p.grp]) {
+          matchesInGrp[p.grp] = {
+            id: p.grp,
+            round: roundIdx,
+            matchNo: p.grp % 10,
+            player1: undefined,
+            player2: undefined
+          };
+          roundsMap[roundIdx].push(matchesInGrp[p.grp]);
         }
-        bracket[p.grp].push({
-          seq: p.seq,
-          no: p.no,
+
+        const player = {
           name: p.name,
-          win: p.win,
-          draw: p.draw,
-          lose: p.lose,
-          gl: p.gl,
-          prmt: p.prmt
-        });
+          score: (p.win || 0) * 3 + (p.draw || 0), // 임시 스코어
+          winner: p.win > 0
+        };
+
+        if (p.grp_no === 0) {
+          matchesInGrp[p.grp].player1 = player;
+        } else {
+          matchesInGrp[p.grp].player2 = player;
+        }
+      }
+
+      const rounds = Object.values(roundsMap).filter(r => r.length > 0);
+      
+      // 우승자 찾기
+      let champion: string | undefined = undefined;
+      const finalMatch = matchesInGrp[50];
+      if (finalMatch) {
+        if (finalMatch.player1?.winner) champion = finalMatch.player1.name;
+        else if (finalMatch.player2?.winner) champion = finalMatch.player2.name;
       }
 
       return {
         result: true,
-        bracket
+        bracket: {
+          rounds,
+          champion
+        }
       };
     } catch (error: any) {
       logger.error('토너먼트 대진표 조회 실패', { error: error.message });

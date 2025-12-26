@@ -3,6 +3,9 @@ import { Model } from 'mongoose';
 import { cacheService } from './cache.service';
 import { Session, ISession } from '../../models/session.model';
 import { logger } from '../logger';
+import { configManager } from '../../config/ConfigManager';
+
+const { system } = configManager.get();
 
 export interface ServerIdentityPayload {
   sessionId: string;
@@ -15,16 +18,15 @@ export interface ServerIdentityPayload {
 
 const SessionModel = Session as Model<ISession>;
 const CACHE_KEY = (sessionId: string) => `session:identity:${sessionId}`;
-const CACHE_TTL = Number(process.env.SESSION_IDENTITY_CACHE_TTL || 600);
+const CACHE_TTL = 600; // 10분 고정
 
 const buildFallbackIdentity = (sessionId: string): ServerIdentityPayload => {
-  const defaultServerId = process.env.SERVER_ID || sessionId;
   return {
     sessionId,
-    serverId: defaultServerId,
-    serverName: process.env.SERVER_NAME || 'OpenSAM',
-    hiddenSeed: process.env.SERVER_HIDDEN_SEED || randomUUID(),
-    season: Number(process.env.SERVER_SEASON_INDEX ?? 0),
+    serverId: system.serverId,
+    serverName: system.serverName,
+    hiddenSeed: system.hiddenSeed,
+    season: system.seasonIndex,
     updatedAt: new Date().toISOString(),
   };
 };
@@ -34,18 +36,14 @@ const normalizeIdentity = (
   sessionName?: string,
   source?: Partial<ServerIdentityPayload> | null
 ): ServerIdentityPayload => {
-  const normalized: ServerIdentityPayload = {
+  return {
     sessionId,
-    serverId: source?.serverId || source?.sessionId || process.env.SERVER_ID || sessionId,
-    serverName: source?.serverName || sessionName || process.env.SERVER_NAME || 'OpenSAM',
-    hiddenSeed: source?.hiddenSeed || process.env.SERVER_HIDDEN_SEED || randomUUID(),
-    season:
-      typeof source?.season === 'number'
-        ? source.season
-        : Number(process.env.SERVER_SEASON_INDEX ?? 0),
+    serverId: source?.serverId || source?.sessionId || system.serverId,
+    serverName: source?.serverName || sessionName || system.serverName,
+    hiddenSeed: source?.hiddenSeed || system.hiddenSeed,
+    season: typeof source?.season === 'number' ? source.season : system.seasonIndex,
     updatedAt: new Date().toISOString(),
   };
-  return normalized;
 };
 
 const persistServerIdentity = async (sessionId: string, identity: ServerIdentityPayload) => {
@@ -69,7 +67,6 @@ export async function getServerIdentity(sessionId: string): Promise<ServerIdenti
     async () => {
       const doc = await SessionModel.findOne({ session_id: sessionId }).lean();
       if (!doc) {
-        logger.warn('[세션] 세션 문서를 찾을 수 없어 기본값을 사용합니다.', { sessionId });
         return buildFallbackIdentity(sessionId);
       }
 
@@ -77,7 +74,7 @@ export async function getServerIdentity(sessionId: string): Promise<ServerIdenti
         (doc.data?.server_identity as Partial<ServerIdentityPayload> | undefined) ||
         (doc.data?.serverIdentity as Partial<ServerIdentityPayload> | undefined) ||
         null;
-      const normalized = normalizeIdentity(sessionId, doc.name, identitySource);
+      const normalized = normalizeIdentity(sessionId, (doc as any).name, identitySource);
 
       if (!identitySource) {
         await persistServerIdentity(sessionId, normalized);
@@ -87,12 +84,7 @@ export async function getServerIdentity(sessionId: string): Promise<ServerIdenti
     CACHE_TTL
   );
 
-  if (cached) {
-    return cached;
-  }
-
-  logger.warn('[세션] 캐시에서 서버 식별자를 가져오지 못해 기본값을 사용합니다.', { sessionId });
-  return buildFallbackIdentity(sessionId);
+  return cached || buildFallbackIdentity(sessionId);
 }
 
 export async function updateServerIdentity(

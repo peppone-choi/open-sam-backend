@@ -112,4 +112,6 @@ export interface BattleSimulationResult {
   summary: BattleSummary;
   turnLogs: BattleTurnLog[];
   unitStates: BattleUnitState[];
+  battleLog?: string[];
+  battleDetailLog?: string[];
 }

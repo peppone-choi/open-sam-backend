@@ -202,11 +202,21 @@ router.get(
   '/system/status',
   requireAdmin,
   asyncHandler(async (req, res) => {
+    const os = await import('os');
     res.json({
       status: 'running',
       uptime: process.uptime(),
       memory: process.memoryUsage(),
+      system: {
+        cpuLoad: os.loadavg(),
+        freeMem: os.freemem(),
+        totalMem: os.totalmem(),
+        platform: os.platform(),
+        arch: os.arch(),
+        cpus: os.cpus().length,
+      },
       version: '1.0.0',
+      timestamp: new Date().toISOString(),
     });
   })
 );

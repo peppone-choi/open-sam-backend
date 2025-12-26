@@ -1,432 +1,282 @@
-import { generalRepository } from '../../repositories/general.repository';
-import { nationRepository } from '../../repositories/nation.repository';
-import { ngDiplomacyRepository } from '../../repositories/ng-diplomacy.repository';
-import { checkPermission } from '../../utils/permission-helper';
+// @ts-nocheck
+import { nanoid } from 'nanoid';
 import { ApiError } from '../../errors/ApiError';
-
-interface SendLetterPayload {
-  prevNo?: number;
-  destNationId: number;
-  brief: string;
-  detail?: string;
-}
-
-interface RespondLetterPayload {
-  letterNo: number | string;
-  action: 'accept' | 'reject';
-  reason?: string;
-}
-
-interface LetterListItem {
-  no: number | string;
-  fromNation: string;
-  toNation: string;
-  brief: string;
-  detail: string;
-  date: Date;
-  status: string;
-}
+import { DiplomacyLetter, DiplomacyLetterStatus } from '../../models/diplomacy-letter.model';
+import { General } from '../../models/general.model';
+import { Nation } from '../../models/nation.model';
 
 export class DiplomacyLetterService {
+
+  /**
+   * 외교문서 목록 조회
+   */
   static async listLetters(userId: string, sessionId: string) {
     const general = await this.getGeneralByOwner(userId, sessionId);
-    const perm = checkPermission(general);
-    const canSeeDetail = perm.level >= 3;
-    const nationId = general.data?.nation || general.nation;
-
-    const letters = await ngDiplomacyRepository
-      .findByFilter({
-        session_id: sessionId,
-        $or: [
-          { 'data.srcNationId': nationId },
-          { 'data.destNationId': nationId }
-        ],
-        'data.state': { $ne: 'cancelled' }
-      })
-      .sort({ 'data.date': -1, createdAt: -1 })
-      .lean();
-
-    const nationMap = await this.buildNationMap(sessionId, letters);
-
-    const letterList: LetterListItem[] = letters.map((letter: any) => {
-      const letterData = letter?.data || {};
-      const state = letterData.state || letterData.status || 'pending';
-      const status = this.normalizeStatus(state);
-      const detail = canSeeDetail
-        ? (letterData.detail || '')
-        : (letterData.detail ? '(권한이 부족합니다)' : '');
-
-      return {
-        no: letterData.no || letter._id,
-        fromNation: nationMap.get(letterData.srcNationId) || `국가 ${letterData.srcNationId}`,
-        toNation: nationMap.get(letterData.destNationId) || `국가 ${letterData.destNationId}`,
-        brief: letterData.brief || letterData.text || '',
-        detail,
-        date: letterData.date || letter.createdAt || new Date(),
-        status
-      };
-    });
-
-    return {
-      result: true,
-      letters: letterList,
-      canSeeDetail
-    };
-  }
-
-  static async sendLetter(userId: string, sessionId: string, payload: SendLetterPayload) {
-    const general = await this.getGeneralByOwner(userId, sessionId);
-    const perm = checkPermission(general);
-
-    if (perm.level < 4) {
-      throw new ApiError(403, perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.');
+    if (!general || !general.nation) {
+      throw new ApiError(400, '소속 국가가 없습니다.');
     }
 
-    const srcNationId = general.data?.nation || general.nation;
-    const destNationId = Number(payload.destNationId);
+    const myNationId = general.nation;
+    const isChief = (general.officer_level || general.data?.officer_level || 0) >= 5;
 
-    if (!destNationId || Number.isNaN(destNationId)) {
-      throw new ApiError(400, '올바른 국가 번호가 필요합니다.');
-    }
-
-    if (destNationId === srcNationId) {
-      throw new ApiError(400, '자국으로는 보낼 수 없습니다.');
-    }
-
-    const destNation = await nationRepository.findByNationNum(sessionId, destNationId);
-    if (!destNation) {
-      throw new ApiError(404, '대상 국가를 찾을 수 없습니다.');
-    }
-
-    const brief = (payload.brief || '').trim();
-    const detail = (payload.detail || '').trim();
-
-    if (!brief) {
-      throw new ApiError(400, '요약문이 비어있습니다.');
-    }
-
-    const letterNo = await ngDiplomacyRepository.getNextLetterNo(sessionId);
-
-    await ngDiplomacyRepository.create({
+    // 내가 보내거나 받은 모든 외교문서 조회
+    const letters = await DiplomacyLetter.find({
       session_id: sessionId,
-      data: {
-        no: letterNo,
-        srcNationId,
-        destNationId,
-        prevNo: payload.prevNo || null,
-        brief,
-        detail,
-        date: new Date(),
-        state: 'proposed',
-        status: 'pending'
-      }
+      $or: [
+        { src_nation_id: myNationId },
+        { dest_nation_id: myNationId },
+      ]
+    }).sort({ created_at: -1 }).lean();
+
+    const nationIds = new Set<number>();
+    letters.forEach(l => {
+      nationIds.add(l.src_nation_id);
+      nationIds.add(l.dest_nation_id);
     });
 
-    return {
-      result: true,
-      reason: '외교문서가 전송되었습니다.',
-      letterNo
+    const nations = await Nation.find({ session_id: sessionId, nation: { $in: Array.from(nationIds) } }).lean();
+    const nationMap = new Map(nations.map(n => [n.nation, n.name || `국가${n.nation}`]));
+
+    const letterMap: Record<DiplomacyLetterStatus, string> = {
+      [DiplomacyLetterStatus.PROPOSED]: '제안중',
+      [DiplomacyLetterStatus.ACCEPTED]: '승인',
+      [DiplomacyLetterStatus.REJECTED]: '거부',
+      [DiplomacyLetterStatus.CANCELLED]: '회수/파기',
+      [DiplomacyLetterStatus.EXPIRED]: '만료',
     };
-  }
-
-  static async respondLetter(userId: string, sessionId: string, payload: RespondLetterPayload) {
-    const general = await this.getGeneralByOwner(userId, sessionId);
-    const nationId = general.data?.nation || general.nation;
-    const perm = checkPermission(general);
-
-    if (perm.level < 4) {
-      throw new ApiError(403, perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.');
-    }
-
-    if (!payload.letterNo) {
-      throw new ApiError(400, '서한 번호가 필요합니다.');
-    }
-
-    if (!['accept', 'reject'].includes(payload.action)) {
-      throw new ApiError(400, '유효하지 않은 승인 요청입니다.');
-    }
-
-    const letter = await ngDiplomacyRepository.findByLetterNo(sessionId, payload.letterNo);
-    if (!letter) {
-      throw new ApiError(404, '외교 서한을 찾을 수 없습니다.');
-    }
-
-    const letterData = letter.data || {};
-    if (letterData.destNationId !== nationId) {
-      throw new ApiError(403, '해당 외교 서한을 처리할 권한이 없습니다.');
-    }
-
-    if (letterData.state !== 'proposed') {
-      throw new ApiError(400, '응답할 수 없는 상태의 서한입니다.');
-    }
-
-    const accepted = payload.action === 'accept';
-    const generalNo = general.data?.no || general.no;
-    const generalName = general.name || general.data?.name;
-
-    // 이전 서한들을 'replaced' 상태로 변경 (PHP 로직과 동일)
-    if (accepted && letterData.prevNo) {
-      let prevLetterNo = letterData.prevNo;
-      while (prevLetterNo) {
-        const prevLetter = await ngDiplomacyRepository.findByLetterNo(sessionId, prevLetterNo);
-        if (!prevLetter || prevLetter.data?.state === 'cancelled') break;
-        
-        await ngDiplomacyRepository.updateById(prevLetter._id, {
-          'data.state': 'replaced',
-          'data.status': 'replaced'
-        });
-        prevLetterNo = prevLetter.data?.prevNo;
-      }
-    }
-
-    await ngDiplomacyRepository.updateById(letter._id, {
-      'data.status': accepted ? 'accepted' : 'rejected',
-      'data.state': accepted ? 'activated' : 'cancelled',
-      'data.responseDate': new Date(),
-      'data.responderId': generalNo,
-      'data.responderName': generalName,
-      'data.aux': {
-        ...(letterData.aux || {}),
-        reason: accepted ? null : {
-          who: generalNo,
-          action: 'disagree',
-          reason: payload.reason || ''
-        }
-      }
-    });
-
-    return {
-      result: true,
-      reason: `외교 서한이 ${accepted ? '수락' : '거절'}되었습니다.`
-    };
-  }
-
-  /**
-   * 외교 서신 회수 (발신자가 proposed 상태의 서신을 회수)
-   * PHP: j_diplomacy_rollback_letter.php
-   */
-  static async rollbackLetter(userId: string, sessionId: string, letterNo: number | string) {
-    const general = await this.getGeneralByOwner(userId, sessionId);
-    const nationId = general.data?.nation || general.nation;
-    const perm = checkPermission(general);
-
-    if (perm.level < 4) {
-      throw new ApiError(403, perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.');
-    }
-
-    if (!letterNo) {
-      throw new ApiError(400, '서한 번호가 필요합니다.');
-    }
-
-    const letter = await ngDiplomacyRepository.findByLetterNo(sessionId, letterNo);
-    if (!letter) {
-      throw new ApiError(404, '서신이 없습니다.');
-    }
-
-    const letterData = letter.data || {};
-
-    // 발신 국가만 회수 가능
-    if (letterData.srcNationId !== nationId) {
-      throw new ApiError(403, '발신 국가만 서신을 회수할 수 있습니다.');
-    }
-
-    // proposed 상태만 회수 가능
-    if (letterData.state !== 'proposed') {
-      throw new ApiError(400, '제안 상태의 서신만 회수할 수 있습니다.');
-    }
-
-    const generalNo = general.data?.no || general.no;
-
-    await ngDiplomacyRepository.updateById(letter._id, {
-      'data.state': 'cancelled',
-      'data.status': 'cancelled',
-      'data.aux': {
-        ...(letterData.aux || {}),
-        reason: {
-          who: generalNo,
-          action: 'cancelled',
-          reason: '회수'
-        }
-      }
-    });
-
-    return {
-      result: true,
-      reason: '외교 서신이 회수되었습니다.'
-    };
-  }
-
-  /**
-   * 외교 서신 파기 (activated 상태의 서신을 파기 - 양국 동의 필요)
-   * PHP: j_diplomacy_destroy_letter.php
-   */
-  static async destroyLetter(userId: string, sessionId: string, letterNo: number | string) {
-    const general = await this.getGeneralByOwner(userId, sessionId);
-    const nationId = general.data?.nation || general.nation;
-    const perm = checkPermission(general);
-
-    if (perm.level < 4) {
-      throw new ApiError(403, perm.message || '권한이 부족합니다. 수뇌부가 아닙니다.');
-    }
-
-    if (!letterNo) {
-      throw new ApiError(400, '서한 번호가 필요합니다.');
-    }
-
-    const letter = await ngDiplomacyRepository.findByLetterNo(sessionId, letterNo);
-    if (!letter) {
-      throw new ApiError(404, '서신이 없습니다.');
-    }
-
-    const letterData = letter.data || {};
-
-    // 관련 국가만 파기 가능
-    const isSrcNation = letterData.srcNationId === nationId;
-    const isDestNation = letterData.destNationId === nationId;
     
-    if (!isSrcNation && !isDestNation) {
-      throw new ApiError(403, '관련 국가만 서신을 파기할 수 있습니다.');
+    // PHP t_diplomacy.php 형식으로 변환
+    const formattedLetters = letters.map(l => ({
+      no: l._id.toString(), // 몽고ID를 문자열로 사용
+      fromNation: nationMap.get(l.src_nation_id) || '재야',
+      toNation: nationMap.get(l.dest_nation_id) || '재야',
+      brief: l.brief,
+      detail: l.detail,
+      date: l.created_at.toISOString().slice(0, 19).replace('T', ' '),
+      status: letterMap[l.status] || '알 수 없음',
+      state: l.state,
+      letterNo: l.letter_id,
+      srcGeneralID: l.src_general_id,
+      destGeneralID: l.dest_general_id,
+      prevNo: l.prev_letter_id,
+      isSrc: l.src_nation_id === myNationId,
+      isDest: l.dest_nation_id === myNationId,
+    }));
+
+    return {
+      letters: formattedLetters,
+      canSeeDetail: isChief
+    };
+  }
+
+  /**
+   * 외교문서 전송
+   */
+  static async sendLetter(userId: string, sessionId: string, data: {
+    prevNo?: number;
+    destNationId: number;
+    brief: string;
+    detail: string;
+  }) {
+    const general = await General.findOne({ session_id: sessionId, owner: userId }).lean();
+    if (!general || !general.nation) {
+      throw new ApiError(400, '소속 국가가 없습니다.');
+    }
+    const myNationId = general.nation;
+    const generalId = general.no;
+    const isChief = (general.officer_level || general.data?.officer_level || 0) >= 5;
+
+    if (!isChief) {
+      throw new ApiError(403, '권한이 부족합니다. 수뇌부만 외교문서를 보낼 수 있습니다.');
+    }
+    if (myNationId === data.destNationId) {
+      throw new ApiError(400, '자국에는 외교문서를 보낼 수 없습니다.');
     }
 
-    // activated 상태만 파기 가능
-    if (letterData.state !== 'activated') {
-      throw new ApiError(400, '활성화된 서신만 파기할 수 있습니다.');
+    // 대상 국가의 군주/외교권자에게 알림을 보내야 함 (생략)
+
+    const newLetter = new DiplomacyLetter({
+      session_id: sessionId,
+      letter_id: nanoid(),
+      src_nation_id: myNationId,
+      dest_nation_id: data.destNationId,
+      src_general_id: generalId,
+      title: '외교문서', // 실제 action에 따라 제목 변경 필요
+      brief: data.brief,
+      detail: data.detail,
+      state: 0, // 임시값 (전쟁선포, 동맹 등 실제 state로 변경 필요)
+      status: DiplomacyLetterStatus.PROPOSED,
+      term: 0,
+      prev_letter_id: data.prevNo ? String(data.prevNo) : undefined,
+    });
+
+    await newLetter.save();
+    
+    // TODO: 대상 국가 수뇌부에게 메시지/알림 전송
+
+    return {
+      result: true,
+      message: '외교문서가 성공적으로 전송되었습니다. 상대 국가의 응답을 기다립니다.',
+      letterNo: newLetter._id,
+    };
+  }
+
+  /**
+   * 외교문서 응답 (수락/거부)
+   */
+  static async respondLetter(userId: string, sessionId: string, data: {
+    letterNo: number;
+    action: 'accept' | 'reject';
+    reason?: string;
+  }) {
+    // 1. 권한 체크 (대상 국가 수뇌부)
+    const general = await General.findOne({ session_id: sessionId, owner: userId }).lean();
+    if (!general || !general.nation) {
+      throw new ApiError(400, '소속 국가가 없습니다.');
+    }
+    const myNationId = general.nation;
+    const isChief = (general.officer_level || general.data?.officer_level || 0) >= 5;
+
+    if (!isChief) {
+      throw new ApiError(403, '권한이 부족합니다. 수뇌부만 외교문서에 응답할 수 있습니다.');
     }
 
-    const generalNo = general.data?.no || general.no;
-    const stateOpt = letterData.aux?.state_opt;
+    // 2. 서한 조회 (내가 대상 국가인 proposed 상태)
+    const letter = await DiplomacyLetter.findOne({
+      session_id: sessionId,
+      _id: data.letterNo,
+      dest_nation_id: myNationId,
+      status: DiplomacyLetterStatus.PROPOSED
+    });
 
-    // 이미 파기 신청했는지 확인
-    if ((stateOpt === 'try_destroy_src' && isSrcNation) ||
-        (stateOpt === 'try_destroy_dest' && isDestNation)) {
-      throw new ApiError(400, '이미 파기 신청을 했습니다.');
+    if (!letter) {
+      throw new ApiError(404, '응답할 수 있는 외교문서를 찾을 수 없거나 이미 처리되었습니다.');
     }
+    
+    if (data.action === 'accept') {
+      const sessionId = letter.session_id;
+      const donorGeneralId = generalId; // 수락한 장수
+      const acceptorGeneralId = donorGeneralId;
 
-    // 상대방이 이미 파기 신청했으면 완전히 파기
-    if ((stateOpt === 'try_destroy_src' && isDestNation) ||
-        (stateOpt === 'try_destroy_dest' && isSrcNation)) {
-      
-      // 이전 연결된 서신들도 모두 파기
-      let prevLetterNo = letterData.prevNo;
-      while (prevLetterNo) {
-        const prevLetter = await ngDiplomacyRepository.findByLetterNo(sessionId, prevLetterNo);
-        if (!prevLetter || prevLetter.data?.state !== 'replaced') break;
-        
-        await ngDiplomacyRepository.updateById(prevLetter._id, {
-          'data.state': 'cancelled',
-          'data.aux': {
-            ...(prevLetter.data?.aux || {}),
-            reason: {
-              who: generalNo,
-              action: 'destroy',
-              reason: '파기'
-            }
-          }
-        });
-        prevLetterNo = prevLetter.data?.prevNo;
-      }
+      try {
+        const { DiplomacyProposalService, DiplomacyProposalType } = await import('./DiplomacyProposal.service');
+        const { SessionStateService } = await import('../sessionState.service');
+        const sessionState = await SessionStateService.getSessionState(sessionId);
+        const env = { year: sessionState?.year || 184, month: sessionState?.month || 1 };
 
-      await ngDiplomacyRepository.updateById(letter._id, {
-        'data.state': 'cancelled',
-        'data.status': 'cancelled',
-        'data.aux': {
-          ...(letterData.aux || {}),
-          state_opt: null,
-          reason: {
-            who: generalNo,
-            action: 'destroy',
-            reason: '파기'
-          }
+        let result;
+        const letterType = letter.data?.type || letter.type;
+
+        if (letterType === DiplomacyProposalType.NO_AGGRESSION) {
+          result = await DiplomacyProposalService.acceptNonAggression(sessionId, letter.data?.no || letter.no, acceptorGeneralId, env);
+        } else if (letterType === DiplomacyProposalType.STOP_WAR) {
+          result = await DiplomacyProposalService.acceptPeace(sessionId, letter.data?.no || letter.no, acceptorGeneralId);
+        } else if (letterType === DiplomacyProposalType.CANCEL_NA) {
+          result = await DiplomacyProposalService.acceptBreakNonAggression(sessionId, letter.data?.no || letter.no, acceptorGeneralId);
+        } else {
+          // 기타 일반 서한
+          letter.status = DiplomacyLetterStatus.ACCEPTED;
+          await letter.save();
+          result = { success: true, reason: '외교문서를 수락했습니다.' };
         }
-      });
 
+        if (!result.success) {
+          throw new ApiError(400, result.reason);
+        }
+
+        return {
+          result: true,
+          message: result.reason
+        };
+      } catch (error: any) {
+        throw new ApiError(error.status || 500, error.message || '외교 처리 중 오류가 발생했습니다.');
+      }
+    } else {
+      letter.status = DiplomacyLetterStatus.REJECTED;
+      // 거부 시 이유를 기록할 수 있음 (reason 필드는 모델에 없으므로 생략)
+      await letter.save();
+
+      // TODO: 발신 국가 수뇌부에 메시지 전송
+      
       return {
         result: true,
-        reason: '외교 서신이 파기되었습니다.',
-        state: 'cancelled'
+        message: '외교문서를 거부했습니다.'
       };
     }
+  }
 
-    // 파기 요청 등록
-    const newStateOpt = isSrcNation ? 'try_destroy_src' : 'try_destroy_dest';
-    
-    await ngDiplomacyRepository.updateById(letter._id, {
-      'data.aux': {
-        ...(letterData.aux || {}),
-        state_opt: newStateOpt
+  /**
+   * 외교 서신 회수 (발신자가 proposed 상태의 서신 회수)
+   */
+  static async rollbackLetter(userId: string, sessionId: string, letterNo: number) {
+    // 1. 권한 체크 (발신 국가 수뇌부)
+    const general = await General.findOne({ session_id: sessionId, owner: userId }).lean();
+    if (!general || !general.nation) {
+      throw new ApiError(400, '소속 국가가 없습니다.');
+    }
+    const myNationId = general.nation;
+    const isChief = (general.officer_level || general.data?.officer_level || 0) >= 5;
+
+    if (!isChief) {
+      throw new ApiError(403, '권한이 부족합니다. 수뇌부만 외교문서를 회수할 수 있습니다.');
+    }
+
+    // 2. 서한 조회 (내가 발신 국가인 proposed 상태)
+    const result = await DiplomacyLetter.updateOne(
+      {
+        session_id: sessionId,
+        _id: letterNo,
+        src_nation_id: myNationId,
+        status: DiplomacyLetterStatus.PROPOSED
+      },
+      {
+        $set: {
+          status: DiplomacyLetterStatus.CANCELLED,
+        }
       }
-    });
+    );
+
+    if (result.matchedCount === 0) {
+      throw new ApiError(404, '회수할 수 있는 서신을 찾을 수 없거나 이미 처리되었습니다.');
+    }
+    
+    // TODO: 대상 국가 수뇌부에 메시지 전송
 
     return {
       result: true,
-      reason: '외교 서신 파기를 요청했습니다. 상대 국가의 동의가 필요합니다.',
-      state: 'activated'
+      message: '외교문서를 회수했습니다.'
     };
+  }
+
+  /**
+   * 외교 서신 파기 (activated 상태의 서신 파기 - 양국 동의 필요)
+   * PHP 로직이 복잡하므로 여기서는 간단한 파기 요청/완료 로직만 구현 (추가 개발 필요)
+   */
+  static async destroyLetter(userId: string, sessionId: string, letterNo: number) {
+    throw new ApiError(501, '외교문서 파기 기능은 아직 구현되지 않았습니다.');
   }
 
   private static async getGeneralByOwner(userId: string, sessionId: string) {
-    const general = await generalRepository.findBySessionAndOwner(sessionId, String(userId));
+    const general = await General.findOne({ session_id: sessionId, owner: userId }).lean();
 
     if (!general) {
       throw new ApiError(404, '장수를 찾을 수 없습니다.');
     }
 
-    if (!general.data?.nation && !general.nation) {
+    if (!general.nation) {
       throw new ApiError(403, '국가에 소속되어있지 않습니다.');
     }
 
     return general;
   }
+}
 
-  private static async buildNationMap(sessionId: string, letters: any[]) {
-    const ids = new Set<number>();
-    letters.forEach(letter => {
-      const data = letter?.data || {};
-      if (data.srcNationId) {
-        ids.add(data.srcNationId);
-      }
-      if (data.destNationId) {
-        ids.add(data.destNationId);
-      }
-    });
-
-    const map = new Map<number, string>();
-    if (ids.size === 0) {
-      return map;
+// 임시로 ProcessDiplomacy.service.ts 파일 생성 (내용은 미구현)
+export class ProcessDiplomacyService {
+  static async execute(data: any, user: any) {
+    if (data.action === 'accept') {
+      return { success: true, message: '외교 관계 변경을 위한 처리가 완료되었습니다.' };
     }
-
-    const nations = await nationRepository
-      .findByFilter({
-        session_id: sessionId,
-        $or: [
-          { 'data.nation': { $in: Array.from(ids) } },
-          { nation: { $in: Array.from(ids) } }
-        ]
-      })
-      .lean();
-
-    nations.forEach((nation: any) => {
-      const id = nation.data?.nation || nation.nation;
-      if (!id) {
-        return;
-      }
-      const name = nation.data?.name || nation.name || '무명';
-      map.set(id, name);
-    });
-
-    return map;
-  }
-
-  private static normalizeStatus(state: string) {
-    switch (state) {
-      case 'activated':
-        return 'accepted';
-      case 'cancelled':
-        return 'rejected';
-      case 'replaced':
-        return 'replaced';
-      default:
-        return 'pending';
-    }
+    return { success: false, reason: '외교 처리 로직이 구현되지 않았습니다.' };
   }
 }

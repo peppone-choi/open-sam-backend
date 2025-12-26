@@ -4,6 +4,9 @@
 
 import { logger } from '../common/logger';
 import { getServerIdentity, ServerIdentityPayload } from '../common/cache/server-identity.helper';
+import { configManager } from '../config/ConfigManager';
+
+const { system } = configManager.get();
 
 export interface UniqueItem {
   id: number;
@@ -29,13 +32,13 @@ export class UniqueConst {
   private static initialized = false;
 
   private static buildDefaultContext(sessionId?: string): ServerIdentity {
-    const resolvedSessionId = sessionId || process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
+    const resolvedSessionId = sessionId || system.sessionId;
     return {
       sessionId: resolvedSessionId,
-      serverId: process.env.SERVER_ID || resolvedSessionId,
-      serverName: process.env.SERVER_NAME || 'OpenSAM',
-      hiddenSeed: process.env.SERVER_HIDDEN_SEED || 'opensam_hidden_seed',
-      season: Number(process.env.SERVER_SEASON_INDEX ?? 0),
+      serverId: system.serverId,
+      serverName: system.serverName,
+      hiddenSeed: system.hiddenSeed,
+      season: system.seasonIndex,
       updatedAt: new Date().toISOString()
     };
   }
@@ -61,7 +64,7 @@ export class UniqueConst {
   }
 
   static async refresh(sessionId?: string): Promise<ServerIdentity> {
-    const targetSessionId = sessionId || this.context.sessionId || process.env.DEFAULT_SESSION_ID || 'sangokushi_default';
+    const targetSessionId = sessionId || this.context.sessionId || system.sessionId;
     try {
       const identity = await getServerIdentity(targetSessionId);
       this.context = identity;
@@ -84,10 +87,9 @@ export class UniqueConst {
    * 유니크 아이템 초기화
    */
   static initialize(): void {
-    if (this.initialized) {
-      return;
-    }
+    if (this.initialized) return;
     this.initialized = true;
+    
     // 전설 무기
     this.addItem({
       id: 1,
@@ -174,95 +176,48 @@ export class UniqueConst {
     });
   }
 
-  /**
-   * 아이템 추가
-   */
   private static addItem(item: UniqueItem): void {
     this.items.set(item.id, item);
   }
 
-  /**
-   * ID로 아이템 조회
-   */
   static getItem(id: number): UniqueItem | undefined {
-    if (this.items.size === 0) {
-      this.initialize();
-    }
+    if (this.items.size === 0) this.initialize();
     return this.items.get(id);
   }
 
-  /**
-   * 모든 아이템 조회
-   */
   static getAllItems(): UniqueItem[] {
-    if (this.items.size === 0) {
-      this.initialize();
-    }
+    if (this.items.size === 0) this.initialize();
     return Array.from(this.items.values());
   }
 
-  /**
-   * 희귀도별 아이템 조회
-   */
   static getItemsByRarity(rarity: number): UniqueItem[] {
-    if (this.items.size === 0) {
-      this.initialize();
-    }
+    if (this.items.size === 0) this.initialize();
     return Array.from(this.items.values()).filter(item => item.rarity === rarity);
   }
 
-  /**
-   * 타입별 아이템 조회
-   */
   static getItemsByType(type: string): UniqueItem[] {
-    if (this.items.size === 0) {
-      this.initialize();
-    }
+    if (this.items.size === 0) this.initialize();
     return Array.from(this.items.values()).filter(item => item.type === type);
   }
 
-  /**
-   * 랜덤 아이템 추첨 (희귀도 가중치 적용)
-   */
   static getRandomItem(rng: any): UniqueItem | null {
-    if (this.items.size === 0) {
-      this.initialize();
-    }
+    if (this.items.size === 0) this.initialize();
 
     const allItems = this.getAllItems();
-    if (allItems.length === 0) {
-      return null;
-    }
+    if (allItems.length === 0) return null;
 
-    // 희귀도별 가중치 (높을수록 나올 확률 낮음)
-    const rarityWeights = {
-      1: 100, // 일반: 100%
-      2: 50,  // 고급: 50%
-      3: 20,  // 희귀: 20%
-      4: 5    // 전설: 5%
-    };
-
-    // 가중치 합계 계산
-    const totalWeight = allItems.reduce((sum, item) => {
-      return sum + (rarityWeights[item.rarity as keyof typeof rarityWeights] || 1);
-    }, 0);
-
-    // 랜덤 값 생성
+    const rarityWeights = { 1: 100, 2: 50, 3: 20, 4: 5 };
+    const totalWeight = allItems.reduce((sum, item) => sum + (rarityWeights[item.rarity as keyof typeof rarityWeights] || 1), 0);
     const randomValue = rng.nextFloat() * totalWeight;
 
-    // 가중치 기반 선택
     let currentWeight = 0;
     for (const item of allItems) {
       currentWeight += rarityWeights[item.rarity as keyof typeof rarityWeights] || 1;
-      if (randomValue <= currentWeight) {
-        return item;
-      }
+      if (randomValue <= currentWeight) return item;
     }
 
-    // 기본값 (마지막 아이템)
     return allItems[allItems.length - 1];
   }
 }
 
-// 초기화
 UniqueConst.initialize();

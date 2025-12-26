@@ -1,99 +1,83 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
+import { configManager } from '../config/ConfigManager';
 
-const RATE_LIMIT_GLOBAL_WINDOW_MS = parseInt(process.env.RATE_LIMIT_GLOBAL_WINDOW_MS || String(15 * 60 * 1000), 10);
-const RATE_LIMIT_GLOBAL_MAX = parseInt(process.env.RATE_LIMIT_GLOBAL_MAX || '1000', 10);
-const RATE_LIMIT_AUTH_WINDOW_MS = parseInt(process.env.RATE_LIMIT_AUTH_WINDOW_MS || String(15 * 60 * 1000), 10);
-const RATE_LIMIT_AUTH_MAX = parseInt(process.env.RATE_LIMIT_AUTH_MAX || '5', 10);
-const RATE_LIMIT_API_WINDOW_MS = parseInt(process.env.RATE_LIMIT_API_WINDOW_MS || String(15 * 60 * 1000), 10);
-const RATE_LIMIT_API_MAX = parseInt(process.env.RATE_LIMIT_API_MAX || '100', 10);
-
-// Battle: High frequency (Polling, RTS actions)
-const RATE_LIMIT_BATTLE_WINDOW_MS = 1 * 60 * 1000; // 1 minute
-const RATE_LIMIT_BATTLE_MAX = 120; // 2 requests per second average
-
-// General: Moderate frequency
-const RATE_LIMIT_GENERAL_WINDOW_MS = 1 * 60 * 1000; // 1 minute
-const RATE_LIMIT_GENERAL_MAX = 60; // 1 request per second average
+const { rateLimit: rl } = configManager.get();
 
 /**
- * Global rate limiter - applies to all requests
- * Allows 1000 requests per 15 minutes per IP
+ * Global rate limiter - 모든 요청에 적용
  */
 export const globalLimiter = rateLimit({
-  windowMs: RATE_LIMIT_GLOBAL_WINDOW_MS, // default 15 minutes
-  max: RATE_LIMIT_GLOBAL_MAX, // default 1000 requests per windowMs
+  windowMs: rl.globalWindowMs,
+  max: rl.globalMax,
   message: {
     error: '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.',
-    retryAfter: '15분'
+    retryAfter: `${rl.globalWindowMs / 60000}분`
   },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  handler: (req: Request, res: Response) => {
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.',
-      retryAfter: '15분'
+      retryAfter: `${rl.globalWindowMs / 60000}분`
     });
   }
 });
 
 /**
- * Auth rate limiter - applies to login/register endpoints
- * Allows 5 requests per 15 minutes per IP to prevent brute force attacks
+ * Auth rate limiter - 로그인/회원가입 보호
  */
 export const authLimiter = rateLimit({
-  windowMs: RATE_LIMIT_AUTH_WINDOW_MS, // default 15 minutes
-  max: RATE_LIMIT_AUTH_MAX, // default 5 requests per windowMs
+  windowMs: rl.authWindowMs,
+  max: process.env.NODE_ENV === 'development' ? 1000 : rl.authMax, // 개발 환경에서는 무제한 가깝게
   message: {
-    error: '로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.',
-    retryAfter: '15분'
+    error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    retryAfter: `${rl.authWindowMs / 60000}분`
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false, // Count successful requests
-  handler: (req: Request, res: Response) => {
+  skipSuccessfulRequests: false,
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
-      error: '로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.',
-      retryAfter: '15분'
+      error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.',
+      retryAfter: `${rl.authWindowMs / 60000}분`
     });
   }
 });
 
 /**
- * API rate limiter - applies to general API endpoints
- * Allows 100 requests per 15 minutes per IP
+ * API rate limiter - 일반 API 보호
  */
 export const apiLimiter = rateLimit({
-  windowMs: RATE_LIMIT_API_WINDOW_MS, // default 15 minutes
-  max: RATE_LIMIT_API_MAX, // default 100 requests per windowMs
+  windowMs: rl.apiWindowMs,
+  max: rl.apiMax,
   message: {
     error: 'API 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
-    retryAfter: '15분'
+    retryAfter: `${rl.apiWindowMs / 60000}분`
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req: Request, res: Response) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: 'API 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
-      retryAfter: '15분'
+      retryAfter: `${rl.apiWindowMs / 60000}분`
     });
   }
 });
 
 /**
- * Battle rate limiter - applies to RTS battle endpoints
- * Allows 120 requests per 1 minute per IP
+ * Battle rate limiter - 실시간 전투 명령 보호
  */
 export const battleLimiter = rateLimit({
-  windowMs: RATE_LIMIT_BATTLE_WINDOW_MS,
-  max: RATE_LIMIT_BATTLE_MAX,
+  windowMs: 1 * 60 * 1000,
+  max: 120,
   message: {
     error: '전투 명령 요청이 너무 많습니다.',
     retryAfter: '1분'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req: Request, res: Response) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: '전투 명령 요청이 너무 많습니다.',
       retryAfter: '1분'
@@ -102,19 +86,18 @@ export const battleLimiter = rateLimit({
 });
 
 /**
- * General rate limiter - applies to General command endpoints
- * Allows 60 requests per 1 minute per IP
+ * General rate limiter - 일반 게임 명령 보호
  */
 export const generalLimiter = rateLimit({
-  windowMs: RATE_LIMIT_GENERAL_WINDOW_MS,
-  max: RATE_LIMIT_GENERAL_MAX,
+  windowMs: 1 * 60 * 1000,
+  max: 60,
   message: {
     error: '명령 요청이 너무 많습니다.',
     retryAfter: '1분'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req: Request, res: Response) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       error: '명령 요청이 너무 많습니다.',
       retryAfter: '1분'

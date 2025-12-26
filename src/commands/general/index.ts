@@ -86,3 +86,4 @@ export { AppointGeneralCommand } from './appointGeneral';
 export { RecruitPrisonerCommand } from './recruitPrisoner';
 export { ReleasePrisonerCommand } from './releasePrisoner';
 export { ExecutePrisonerCommand } from './executePrisoner';
+export { BattleStanceCommand } from './battleStance';

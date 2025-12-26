@@ -1,5 +1,6 @@
 import { IBattleUnit, IBattleMap } from '../../models/battle.model';
 import { UnitType } from '../../core/battle-calculator';
+import { AStarPathfinder, GridPos } from '../../utils/AStarPathfinder';
 import {
   Formation,
   AttackDirection,
@@ -28,9 +29,65 @@ export interface PhysicsConfig {
 
 export class BattlePhysics {
   private config: PhysicsConfig;
+  private pathfinder?: AStarPathfinder;
 
   constructor(config: PhysicsConfig) {
     this.config = config;
+  }
+
+  /**
+   * Pathfinding initialization
+   */
+  private ensurePathfinder(map: IBattleMap): AStarPathfinder {
+    if (this.pathfinder) return this.pathfinder;
+
+    this.pathfinder = new AStarPathfinder({
+      width: Math.ceil(map.width / 20),
+      height: Math.ceil(map.height / 20),
+      cellSize: 20,
+      getTerrainCost: (pos: GridPos) => {
+        const worldPos = { x: pos.x * 20 + 10, y: pos.y * 20 + 10 };
+        
+        // 성벽/성문 체크
+        if (map.castle) {
+          const { center, radius, gates } = map.castle;
+          const dx = worldPos.x - center.x;
+          const dy = worldPos.y - center.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          // 성벽 내부/경계 (단, 성문 위치는 제외)
+          if (Math.abs(dist - radius) < 15) {
+            const isGate = gates.some(g => {
+              const gdx = worldPos.x - g.position.x;
+              const gdy = worldPos.y - g.position.y;
+              return Math.abs(gdx) < g.width / 2 + 10 && Math.abs(gdy) < g.height / 2 + 10;
+            });
+            if (!isGate) return Infinity; // 성벽은 통과 불가
+          }
+        }
+
+        // 지형별 이동 비용
+        if (map.terrain) {
+          for (const t of map.terrain) {
+            if (t.area) {
+              const inX = worldPos.x >= t.area.x && worldPos.x <= t.area.x + t.area.width;
+              const inY = worldPos.y >= t.area.y && worldPos.y <= t.area.y + t.area.height;
+              if (inX && inY) {
+                switch (t.type) {
+                  case 'forest': return 1.5;
+                  case 'hill': return 2.0;
+                  case 'river': return 3.0;
+                }
+              }
+            }
+          }
+        }
+
+        return 1.0; // 기본 비용
+      }
+    });
+
+    return this.pathfinder;
   }
 
   /**
@@ -38,73 +95,90 @@ export class BattlePhysics {
    * deltaTime 동안 목표 지점으로 이동
    */
   updateMovement(unit: IBattleUnit, map: IBattleMap, currentTime?: number): void {
-    if (!unit.targetPosition) return;
-    if (unit.moveSpeed === 0) return; // 성문 등 이동 불가 유닛
-
-    const dx = unit.targetPosition.x - unit.position.x;
-    const dy = unit.targetPosition.y - unit.position.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // 목표에 도달
-    if (distance < 5) {
-      unit.position.x = unit.targetPosition.x;
-      unit.position.y = unit.targetPosition.y;
-      unit.velocity = { x: 0, y: 0 };
-      unit.targetPosition = undefined;
+    if (!unit.targetPosition) {
+      unit.path = undefined;
+      unit.pathTarget = undefined;
       return;
     }
+    if (unit.moveSpeed === 0) return;
 
-    // 이동 방향 계산
-    const dirX = dx / distance;
-    const dirY = dy / distance;
-
-    // 포메이션 속도 보정 적용
-    let effectiveSpeed = unit.moveSpeed;
-    if (currentTime !== undefined) {
-      const formationSpeedMod = this.getFormationSpeedMultiplier(unit, currentTime);
-      effectiveSpeed *= formationSpeedMod;
-    }
-    
-    // 피로도에 따른 속도 감소
-    if (unit.fatigueLevel) {
-      const fatigueEffect = FATIGUE_EFFECTS[unit.fatigueLevel];
-      effectiveSpeed *= fatigueEffect.speed;
-    }
-
-    // 속도 적용 (px/s → px/frame)
-    const moveDistance = (effectiveSpeed * this.config.deltaTime) / 1000;
-    const actualDistance = Math.min(moveDistance, distance);
-
-    unit.position.x += dirX * actualDistance;
-    unit.position.y += dirY * actualDistance;
-
-    // 속도 벡터 업데이트
-    unit.velocity = {
-      x: dirX * effectiveSpeed,
-      y: dirY * effectiveSpeed
-    };
- 
-    // 방향 업데이트 (0~360도)
-    unit.facing = Math.atan2(dy, dx) * (180 / Math.PI);
-
-    // 현재 이동 속도 기반 돌격 상태 보정 (기병 전용)
-    if (unit.unitType === UnitType.CAVALRY) {
-      const speed = Math.sqrt(unit.velocity.x * unit.velocity.x + unit.velocity.y * unit.velocity.y);
-      const threshold = unit.moveSpeed * 0.7; // 최대 속도의 70% 이상이면 돌격
-      if (speed >= threshold && unit.stance !== 'retreat') {
-        unit.isCharging = true;
-      } else if (speed < threshold * 0.3) {
-        // 충분히 느려지면 돌격 해제
-        unit.isCharging = false;
+    // 경로 재생성 필요 여부 확인 (목표가 바뀌었거나 경로가 없는 경우)
+    if (!unit.path || !unit.pathTarget || 
+        unit.pathTarget.x !== unit.targetPosition.x || 
+        unit.pathTarget.y !== unit.targetPosition.y) {
+      
+      const pf = this.ensurePathfinder(map);
+      const newPath = pf.findPath(unit.position, unit.targetPosition);
+      
+      if (newPath && newPath.length > 0) {
+        unit.path = newPath;
+        unit.pathTarget = { ...unit.targetPosition };
+      } else {
+        // 경로를 찾을 수 없는 경우 직선 이동 시도 (또는 정지)
+        unit.path = [ { ...unit.targetPosition } ];
+        unit.pathTarget = { ...unit.targetPosition };
       }
     }
- 
-    // 피로도 업데이트 (달리기 중)
-    this.updateFatigue(unit, true, false);
 
+    // 경로 따라가기
+    if (unit.path && unit.path.length > 0) {
+      const nextWaypoint = unit.path[0];
+      const dx = nextWaypoint.x - unit.position.x;
+      const dy = nextWaypoint.y - unit.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // 맵 경계 제한
-    this.clampToMapBounds(unit);
+      // 웨이포인트 도달
+      if (distance < 10) {
+        unit.path.shift();
+        if (unit.path.length === 0) {
+          unit.targetPosition = undefined;
+          unit.pathTarget = undefined;
+          unit.velocity = { x: 0, y: 0 };
+          return;
+        }
+        // 다음 웨이포인트로 계속 진행
+        this.updateMovement(unit, map, currentTime);
+        return;
+      }
+
+      // 이동 방향 계산
+      const dirX = dx / distance;
+      const dirY = dy / distance;
+
+      // 속도 보정
+      let effectiveSpeed = unit.moveSpeed;
+      if (currentTime !== undefined) {
+        const formationSpeedMod = this.getFormationSpeedMultiplier(unit, currentTime);
+        effectiveSpeed *= formationSpeedMod;
+      }
+      if (unit.fatigueLevel) {
+        effectiveSpeed *= FATIGUE_EFFECTS[unit.fatigueLevel].speed;
+      }
+
+      // 실제 이동
+      const moveDistance = (effectiveSpeed * this.config.deltaTime) / 1000;
+      const actualDistance = Math.min(moveDistance, distance);
+
+      unit.position.x += dirX * actualDistance;
+      unit.position.y += dirY * actualDistance;
+
+      unit.velocity = { x: dirX * effectiveSpeed, y: dirY * effectiveSpeed };
+      unit.facing = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      // 기병 돌격 처리
+      if (unit.unitType === UnitType.CAVALRY) {
+        const speed = Math.sqrt(unit.velocity.x * unit.velocity.x + unit.velocity.y * unit.velocity.y);
+        const threshold = unit.moveSpeed * 0.7;
+        if (speed >= threshold && unit.stance !== 'retreat') {
+          unit.isCharging = true;
+        } else if (speed < threshold * 0.3) {
+          unit.isCharging = false;
+        }
+      }
+
+      this.updateFatigue(unit, true, false);
+      this.clampToMapBounds(unit);
+    }
   }
 
   /**

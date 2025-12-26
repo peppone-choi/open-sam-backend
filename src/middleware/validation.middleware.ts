@@ -215,7 +215,14 @@ export const authRegisterSchema = yup.object({
     .required('username is required')
     .min(2, 'username must be at least 2 characters')
     .max(50, 'username must be <= 50 characters')
-    .matches(/^[a-zA-Z0-9_가-힣]+$/, 'username must contain only letters, numbers, underscores, or Korean characters'),
+    .matches(/^[a-zA-Z0-9_]+$/, 'username must contain only letters, numbers, and underscores'),
+  email: yup.string()
+    .email('must be a valid email')
+    .required('email is required'),
+  name: yup.string()
+    .required('name is required')
+    .min(2, 'name must be at least 2 characters')
+    .max(50, 'name must be <= 50 characters'),
   password: yup.string()
     .required('password is required')
     .min(6, 'password must be at least 6 characters')
@@ -229,6 +236,9 @@ export const authLoginSchema = yup.object({
   password: yup.string()
     .required('password is required')
     .max(100, 'password must be <= 100 characters'),
+  otp: yup.string()
+    .matches(/^[0-9]{6}$/, '인증 코드는 6자리 숫자여야 합니다')
+    .optional(),
 });
 
 // ============================================================

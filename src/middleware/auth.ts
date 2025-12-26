@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/user.model';
+import { configManager } from '../config/ConfigManager';
+
+const { jwtSecret } = configManager.get().system;
 
 // JWT 토큰 페이로드 타입
 export interface JwtPayload {
@@ -22,11 +25,11 @@ function computeGlobalSaltHash(globalSalt?: string | null): string | null {
   if (!globalSalt) {
     return null;
   }
-  if (!process.env.JWT_SECRET) {
+  if (!jwtSecret) {
     throw new Error('JWT_SECRET is not configured');
   }
   return crypto
-    .createHmac('sha256', process.env.JWT_SECRET)
+    .createHmac('sha256', jwtSecret)
     .update(globalSalt)
     .digest('hex');
 }
@@ -44,19 +47,6 @@ export const authenticate = async (
     const authHeader = req.headers.authorization;
     const cookieToken = (req as any).cookies?.authToken;
 
-    console.log('========================================');
-    console.log('[Auth] 인증 시도!');
-    console.log('Path:', req.path);
-    console.log(
-      'Authorization Header:',
-      authHeader ? `${authHeader.substring(0, 30)}...` : 'NONE',
-    );
-    console.log(
-      'Cookie Token:',
-      cookieToken ? `${String(cookieToken).substring(0, 30)}...` : 'NONE',
-    );
-    console.log('========================================');
-
     let token: string | null = null;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -66,7 +56,6 @@ export const authenticate = async (
     }
 
     if (!token) {
-      console.log('[Auth] ❌ 인증 실패 - 토큰 없음');
       return res.status(401).json({
         success: false,
         message: '인증 토큰이 없습니다',
@@ -82,11 +71,11 @@ export const authenticate = async (
       });
     }
 
-    if (!process.env.JWT_SECRET) {
+    if (!jwtSecret) {
       throw new Error('JWT_SECRET is not configured');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload & {
+    const decoded = jwt.verify(token, jwtSecret) as JwtPayload & {
       iat?: number;
     };
 
@@ -135,12 +124,6 @@ export const authenticate = async (
       }
     }
 
-    console.log('[Auth] ✅ 인증 성공!');
-    console.log('Decoded Token:', JSON.stringify(decoded, null, 2));
-    console.log('userId:', decoded.userId);
-    console.log('generalId:', decoded.generalId);
-    console.log('sessionId:', decoded.sessionId);
-
     (req as any).user = decoded;
     return next();
   } catch (error: any) {
@@ -157,7 +140,6 @@ export const authenticate = async (
       });
     }
 
-    console.error('[Auth] 인증 처리 중 오류:', error?.message || error);
     return res.status(500).json({
       success: false,
       message: '인증 처리 중 오류가 발생했습니다',
@@ -185,8 +167,8 @@ export const optionalAuth = async (
       token = String(cookieToken);
     }
 
-    if (token && process.env.JWT_SECRET) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+    if (token && jwtSecret) {
+      const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
       (req as any).user = decoded;
     }
   } catch {
@@ -199,7 +181,6 @@ export const optionalAuth = async (
 /**
  * 전역 JWT 토큰 자동 추출 미들웨어
  * 모든 요청에 대해 토큰이 있으면 자동으로 추출하여 req.user에 저장
- * Authorization 헤더 또는 쿠키에서 토큰을 찾습니다
  */
 export const autoExtractToken = async (
   req: Request,
@@ -230,9 +211,9 @@ export const autoExtractToken = async (
       }
     }
 
-    if (token && process.env.JWT_SECRET) {
+    if (token && jwtSecret) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+        const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
         (req as any).user = decoded;
       } catch {
         // optionalAuth와 동일한 동작: 실패해도 진행
@@ -247,7 +228,6 @@ export const autoExtractToken = async (
 
 /**
  * 세션 검증 미들웨어
- * req.user.sessionId가 req.body.sessionId 또는 req.params.sessionId와 일치하는지 확인
  */
 export const validateSession = (
   req: Request,

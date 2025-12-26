@@ -17,7 +17,23 @@ export class ChePaegwonPersonality extends BasePersonality {
   }
   
   getInfo(): string {
-    return '천하 패권 추구. 대규모 전쟁에서 유리';
+    return '훈련 +5, 징·모병 비용 +20%';
+  }
+
+  override onCalcDomestic(turnType: string, varType: string, value: number, _aux?: any): number {
+    if (['징병', '모병'].includes(turnType)) {
+      if (varType === 'cost') {
+        return value * 1.2;
+      }
+    }
+    return value;
+  }
+
+  override onCalcStat(_general: any, statName: string, value: any, _aux?: any): any {
+    if (statName === 'bonusTrain') {
+      return value + 5;
+    }
+    return value;
   }
 }
 
